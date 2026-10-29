@@ -1,7 +1,15 @@
-import {apiFetch, getApiBaseUrl, unwrapResponse} from '@/lib/api/server/base'
+import {apiFetch, apiFetchPaginated, getApiBaseUrl, unwrapResponse} from '@/lib/api/server/base'
 import type { components } from '@/types/generated/schema'
 import type { ApiResponse } from '@/types/common'
-import type { RegistrationProject } from '@/types/registration'
+import type { PageResult } from '@/lib/api/page'
+import type {
+  AuthorizationLetterListItem,
+  ParseCOAResponse,
+  ProductInfo,
+  ReferenceStandardListItem,
+  RegistrationProject,
+  SupplementaryReplyListItem,
+} from '@/types/registration'
 
 type DrugCreate = components['schemas']['DrugCreate']
 type DrugUpdate = components['schemas']['DrugUpdate']
@@ -45,32 +53,47 @@ export async function deleteReferenceStandard(id: string) {
   })
 }
 
-export async function fetchAuthorizationLetters(params: { page: number; page_size: number }) {
+export async function fetchAuthorizationLetters(
+  params: { page: number; page_size: number },
+): Promise<PageResult<AuthorizationLetterListItem>> {
   const searchParams = new URLSearchParams({
     page: params.page.toString(),
     page_size: params.page_size.toString(),
   })
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/authorization-letters?${searchParams.toString()}`)
+  return apiFetchPaginated<AuthorizationLetterListItem>(
+    `${getApiBaseUrl()}/api/v1/registration/authorization-letters?${searchParams.toString()}`,
+  )
 }
 
-export async function fetchRegistrationProducts() {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/authorization-letters/products`)
+export async function fetchRegistrationProducts(): Promise<ProductInfo[]> {
+  const raw = await apiFetch<ApiResponse<ProductInfo[]>>(
+    `${getApiBaseUrl()}/api/v1/registration/authorization-letters/products`,
+  )
+  return unwrapResponse(raw)
 }
 
-export async function fetchReferenceStandards(params: { page: number; page_size: number }) {
+export async function fetchReferenceStandards(
+  params: { page: number; page_size: number },
+): Promise<PageResult<ReferenceStandardListItem>> {
   const searchParams = new URLSearchParams({
     page: params.page.toString(),
     page_size: params.page_size.toString(),
   })
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/reference-standards?${searchParams.toString()}`)
+  return apiFetchPaginated<ReferenceStandardListItem>(
+    `${getApiBaseUrl()}/api/v1/registration/reference-standards?${searchParams.toString()}`,
+  )
 }
 
-export async function fetchSupplementaryReplies(params: { page: number; page_size: number }) {
+export async function fetchSupplementaryReplies(
+  params: { page: number; page_size: number },
+): Promise<PageResult<SupplementaryReplyListItem>> {
   const searchParams = new URLSearchParams({
     page: params.page.toString(),
     page_size: params.page_size.toString(),
   })
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/supplementary-replies?${searchParams.toString()}`)
+  return apiFetchPaginated<SupplementaryReplyListItem>(
+    `${getApiBaseUrl()}/api/v1/registration/supplementary-replies?${searchParams.toString()}`,
+  )
 }
 
 export async function createDrug(data: DrugCreate) {
@@ -93,13 +116,18 @@ export async function deleteDrug(id: string) {
   })
 }
 
-export async function parseCOA(file: File) {
+export async function parseCOA(file: File): Promise<ParseCOAResponse> {
   const formData = new FormData()
   formData.append('coa', file)
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/reference-standards/parse-coa`, {
-    method: 'POST',
-    body: formData,
-  })
+  // 后端 success_response(data=result) 包了一层信封，调用方要的是 data，不是整个信封
+  const raw = await apiFetch<ApiResponse<ParseCOAResponse>>(
+    `${getApiBaseUrl()}/api/v1/registration/reference-standards/parse-coa`,
+    {
+      method: 'POST',
+      body: formData,
+    },
+  )
+  return unwrapResponse(raw)
 }
 
 export async function fetchRegistrationProjects(): Promise<RegistrationProject[]> {

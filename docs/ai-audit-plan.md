@@ -258,6 +258,7 @@ Full audit
    - `proxy.ts` default fallback (`API_BASE_URL || 'http://localhost:8000'`)
    - CI configuration
    - Docker service discovery names (e.g., `http://backend:8000` in docker-compose.yml, Dockerfile)
+   - E2E 测试脚本里环境变量回退的默认值（如 `frontend/e2e/routes.spec.ts` 的 `E2E_FRONTEND_URL ?? 'http://127.0.0.1:13000'`，可由环境变量覆盖）
 3. Are there hardcoded absolute file paths (e.g. `D:/`, `C:/`, `/home/` as string literals)?
 4. Is `NEXT_PUBLIC_API_BASE_URL` used anywhere in the frontend?
 5. Does `ENCRYPTION_KEY` appear in `.env.example`, the database, or any git-tracked file?

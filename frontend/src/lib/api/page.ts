@@ -1,5 +1,3 @@
-import type { ApiResponse } from '@/types/common'
-
 /** 列表接口统一后的结果：页面只关心「有哪些行、总数多少」。 */
 export interface PageResult<T> {
   items: T[]
@@ -38,11 +36,4 @@ export function toPageResult<T>(payload: unknown): PageResult<T> {
     }
   }
   throw new Error('列表响应格式不符合预期')
-}
-
-/**
- * 客户端 fetch 路径使用：响应已经是 `{ data, meta }` 信封，分页数字在 meta 里。
- */
-export function fromApiResponsePage<T>(response: ApiResponse<T[]> | undefined): PageResult<T> {
-  return { items: response?.data ?? [], total: toTotal(response?.meta?.total) }
 }

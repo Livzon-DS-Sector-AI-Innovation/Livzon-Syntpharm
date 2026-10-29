@@ -37,14 +37,12 @@ export default function SupplementaryReplyClient({
 
   const repliesQuery = useQuery({
     queryKey: ['supplementary-replies', query],
-    queryFn: async () => {
-      const res = await fetchSupplementaryReplies({
+    queryFn: () =>
+      fetchSupplementaryReplies({
         drug_name: query.drugName || undefined,
         page: query.page,
         page_size: query.pageSize,
-      })
-      return { items: res.data, total: res.meta?.total || 0 }
-    },
+      }),
     placeholderData: keepPreviousData,
     // 首屏首页直接用服务端已取好的数据，避免闪一次 loading；其余页码必须真取
     initialData: isInitialQuery ? { items: initialReplies, total: initialTotal } : undefined,

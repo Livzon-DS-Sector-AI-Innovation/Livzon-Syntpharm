@@ -46,15 +46,13 @@ export default function AuthorizationLetterClient({
 
   const lettersQuery = useQuery({
     queryKey: ['authorization-letters', query],
-    queryFn: async () => {
-      const res = await fetchAuthorizationLetters({
+    queryFn: () =>
+      fetchAuthorizationLetters({
         product_name: query.productName || undefined,
         preparation_unit: query.preparationUnit || undefined,
         page: query.page,
         page_size: query.pageSize,
-      })
-      return { items: res.data, total: res.meta?.total || 0 }
-    },
+      }),
     placeholderData: keepPreviousData,
     // 首屏首页直接用服务端已取好的数据，避免闪一次 loading；其余页码必须真取
     initialData: isInitialQuery ? { items: initialLetters, total: initialTotal } : undefined,

@@ -53,27 +53,10 @@ export interface AuthorizationLetterCreateInput {
   remarks?: string
 }
 
-export interface AuthorizationLetterListResponse {
-  code: number
-  message: string
-  data: AuthorizationLetterListItem[]
-  meta?: {
-    page: number
-    page_size: number
-    total: number
-  }
-}
-
 export interface AuthorizationLetterResponse {
   code: number
   message: string
   data: AuthorizationLetter
-}
-
-export interface ProductListResponse {
-  code: number
-  message: string
-  data: ProductInfo[]
 }
 
 export interface AuthorizationLetterListParams {
@@ -108,17 +91,6 @@ export interface SupplementaryReplyListItem {
   output_file_name: string
   question_count: number
   created_at: string
-}
-
-export interface SupplementaryReplyListResponse {
-  code: number
-  message: string
-  data: SupplementaryReplyListItem[]
-  meta?: {
-    page: number
-    page_size: number
-    total: number
-  }
 }
 
 export interface SupplementaryReplyResponse {
@@ -167,17 +139,6 @@ export interface ReferenceStandardListItem {
   created_at: string
 }
 
-export interface ReferenceStandardListResponse {
-  code: number
-  message: string
-  data: ReferenceStandardListItem[]
-  meta?: {
-    page: number
-    page_size: number
-    total: number
-  }
-}
-
 export interface ReferenceStandardResponse {
   code: number
   message: string
@@ -207,6 +168,25 @@ export interface ReferenceStandardCreateInput {
   remarks?: string
 }
 
+/** COA 解析结果（POST /api/v1/registration/reference-standards/parse-coa 的 data 字段） */
+export interface ParseCOAResponse {
+  metadata: {
+    drug_name?: string
+    reference_substance_name?: string
+    batch_number?: string
+    manufacturer?: string
+    english_name?: string
+    molecular_formula?: string
+    molecular_weight?: string
+    cas_number?: string
+    content?: string
+    moisture?: string
+    rsd?: string
+    expiration_date?: string
+    storage_condition?: string
+  }
+}
+
 // ── 药品与审评节点 ──
 
 
@@ -231,7 +211,13 @@ export interface DrugNode {
   updated_at: string
 }
 
-/** 注册项目（GET /api/v1/registration/projects/ 的返回项） */
+/**
+ * 注册项目（GET /api/v1/registration/projects/ 的返回项）。
+ *
+ * 手写原因：后端 `app/modules/registration/api/projects.py` 未声明 `response_model`，
+ * 该端点在 OpenAPI 里的响应是泛化 object，无法生成具体类型。
+ * 待后端补齐 `response_model` 后应改为 `components['schemas']['...']` 并删除本接口。
+ */
 export interface RegistrationProject {
   id: string
   product_name: string

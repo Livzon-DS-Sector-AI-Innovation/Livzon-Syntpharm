@@ -99,7 +99,8 @@ class AiLogService:
         Returns:
             (日志列表, 总数)
         """
-        filters = []
+        # 软删除记录不进列表，与 get_by_id 的过滤口径保持一致
+        filters: list[Any] = [QmsAiLog.is_deleted.is_(False)]
 
         if operate_type:
             filters.append(QmsAiLog.operate_type == operate_type)

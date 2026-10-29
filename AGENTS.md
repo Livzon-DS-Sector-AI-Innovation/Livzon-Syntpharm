@@ -404,7 +404,8 @@ Zod 仅用于**数据边界**的运行时校验，不用于普通表单。适用
 frontend/src/
 ├── app/(dashboard)/<模块>/   # 路由页面（Server Component，只做数据获取和布局）
 ├── components/<模块>/        # 该模块所有 UI 组件
-├── components/shared/        # 公共组件（禁止修改，需新增找架构负责人）
+├── components/common/        # 跨模块共享组件（BoundaryResult、DataUnavailable 等）
+├── components/shared/        # 历史约定路径，当前仓库不存在；新增公共组件放 common/
 ├── actions/<模块>.ts         # 该模块所有写操作（Server Actions）
 ├── stores/<模块>.ts          # 该模块客户端状态
 ├── types/<模块>.ts           # 该模块 TypeScript 类型

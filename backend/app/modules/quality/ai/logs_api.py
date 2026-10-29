@@ -11,11 +11,12 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import BadRequestException, NotFoundException
 from app.core.response import build_response
 from app.modules.quality.ai.models import QmsAiLog
 from app.modules.quality.ai.schemas import (
@@ -52,7 +53,7 @@ def _parse_date(value: str, field: str) -> datetime:
     try:
         return datetime.strptime(value, "%Y-%m-%d")
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=f"{field}格式应为 YYYY-MM-DD") from exc
+        raise BadRequestException(f"{field}格式应为 YYYY-MM-DD") from exc
 
 
 @router.get("/logs", response_model=AiLogPaginatedListApiResponse, summary="查询 AI 交互日志")
@@ -103,9 +104,9 @@ async def get_ai_log(
     try:
         log_uuid = uuid.UUID(log_id)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail="日志 ID 格式不正确") from exc
+        raise BadRequestException("日志 ID 格式不正确") from exc
 
     log = await AiLogService(session).get_by_id(log_uuid)
     if log is None:
-        raise HTTPException(status_code=404, detail="AI 交互日志不存在")
+        raise NotFoundException("AI 交互日志", log_id)
     return build_response(data=_to_item(log))
