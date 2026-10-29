@@ -224,7 +224,7 @@ export async function fetchProductsServer(): Promise<ProductListResponse> {
 }
 
 export async function fetchRegistrationProjectsServer(): Promise<RegistrationProject[]> {
-  return fetchRegistrationProjectsApi() as unknown as RegistrationProject[]
+  return fetchRegistrationProjectsApi()
 }
 
 export async function fetchReferenceStandardsServer(

@@ -1,5 +1,7 @@
 import {apiFetch, getApiBaseUrl, unwrapResponse} from '@/lib/api/server/base'
 import type { components } from '@/types/generated/schema'
+import type { ApiResponse } from '@/types/common'
+import type { RegistrationProject } from '@/types/registration'
 
 type DrugCreate = components['schemas']['DrugCreate']
 type DrugUpdate = components['schemas']['DrugUpdate']
@@ -100,10 +102,10 @@ export async function parseCOA(file: File) {
   })
 }
 
-export async function fetchRegistrationProjects() {
+export async function fetchRegistrationProjects(): Promise<RegistrationProject[]> {
   // 该集合端点的规范路径带尾斜杠（后端 @router.get("/")）；浏览器直连会被 Next 的
   // trailingSlash 归一化 308 掉、再被后端 307 到 backend:8000 触发跨域，因此必须服务端取数。
-  const raw = await apiFetch<{ code: number; data: unknown[] }>(
+  const raw = await apiFetch<ApiResponse<RegistrationProject[]>>(
     `${getApiBaseUrl()}/api/v1/registration/projects/`,
   )
   return unwrapResponse(raw)
