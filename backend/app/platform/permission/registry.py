@@ -174,6 +174,7 @@ RESOURCE_LABELS: dict[str, str] = {
     "regulatory-tracker": "法规追踪",
     "dashboard": "注册看板",
     "approval-record": "审批记录",
+    "quality:ai-log": "AI交互日志",
     "quality:capa": "CAPA管理",
     "quality:cpv": "持续工艺验证(CPV)",
     "quality:deviation": "偏差管理",
@@ -821,6 +822,7 @@ REGISTRATION_PERMISSIONS: tuple[PermissionDef, ...] = (
 
 
 QUALITY_PERMISSIONS: tuple[PermissionDef, ...] = (
+    PermissionDef("quality:ai-log:read", "AI交互日志 - 查看", "quality", "ai-log", "read"),
     PermissionDef("quality:capa:approve", "CAPA管理 - 审批", "quality", "capa", "approve"),
     PermissionDef("quality:capa:create", "CAPA管理 - 新增", "quality", "capa", "create"),
     PermissionDef("quality:capa:delete", "CAPA管理 - 删除", "quality", "capa", "delete"),
@@ -2301,6 +2303,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef(
         "registration:validation-audit:read", "GET", "/api/v1/registration/validation-audit/tasks/{task_id}/report"
     ),
+    ApiBindingDef("quality:ai-log:read", "GET", "/api/v1/quality/ai/logs"),
+    ApiBindingDef("quality:ai-log:read", "GET", "/api/v1/quality/ai/logs/{log_id}"),
     ApiBindingDef("quality:doc-check:create", "POST", "/api/v1/quality/batch"),
     ApiBindingDef("quality:doc-check:create", "POST", "/api/v1/quality/check"),
     ApiBindingDef("quality:doc-check:read", "GET", "/api/v1/quality/check"),

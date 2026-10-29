@@ -16598,6 +16598,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quality/ai/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询 AI 交互日志
+         * @description 查询 AI 交互日志列表，按创建时间倒序。
+         */
+        get: operations["list_ai_logs_api_v1_quality_ai_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/ai/logs/{log_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询 AI 交互日志详情
+         * @description 按 ID 查询单条 AI 交互日志。
+         */
+        get: operations["get_ai_log_api_v1_quality_ai_logs__log_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quality/": {
         parameters: {
             query?: never;
@@ -19269,6 +19309,130 @@ export interface components {
              * @description 备注
              */
             notes?: string | null;
+        };
+        /**
+         * AiLogDetailApiResponse
+         * @description AI 交互日志详情 API 响应信封
+         */
+        AiLogDetailApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["AiLogItem"] | null;
+        };
+        /**
+         * AiLogItem
+         * @description 单条 AI 交互日志
+         */
+        AiLogItem: {
+            /**
+             * Id
+             * @description 日志 ID
+             */
+            id: string;
+            /**
+             * Bill No
+             * @description 关联单据编号
+             */
+            bill_no?: string | null;
+            /**
+             * Operate Type
+             * @description 操作类型
+             */
+            operate_type: string;
+            /**
+             * Operator
+             * @description 操作人账号
+             */
+            operator: string;
+            /**
+             * System Prompt
+             * @description 系统提示词
+             */
+            system_prompt?: string | null;
+            /**
+             * User Input
+             * @description 用户输入内容
+             */
+            user_input?: string | null;
+            /**
+             * Ai Response
+             * @description AI 返回内容
+             */
+            ai_response?: string | null;
+            /**
+             * Error Message
+             * @description 错误信息
+             */
+            error_message?: string | null;
+            /**
+             * Tokens Used
+             * @description 使用的 token 数量
+             */
+            tokens_used?: number | null;
+            /**
+             * Latency Ms
+             * @description 响应耗时（毫秒）
+             */
+            latency_ms?: number | null;
+            /**
+             * Created At
+             * @description 创建时间
+             */
+            created_at: string;
+        };
+        /**
+         * AiLogPaginatedListApiResponse
+         * @description AI 交互日志分页 API 响应信封
+         */
+        AiLogPaginatedListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["AiLogPaginatedListResponse"] | null;
+        };
+        /**
+         * AiLogPaginatedListResponse
+         * @description AI 交互日志分页数据
+         */
+        AiLogPaginatedListResponse: {
+            /**
+             * Items
+             * @description 日志列表
+             */
+            items?: components["schemas"]["AiLogItem"][];
+            /**
+             * Total
+             * @description 总条数
+             * @default 0
+             */
+            total: number;
+            /**
+             * Page
+             * @description 当前页码
+             * @default 1
+             */
+            page: number;
+            /**
+             * Page Size
+             * @description 每页数量
+             * @default 20
+             */
+            page_size: number;
         };
         /** AlertRecordProcessRequest */
         AlertRecordProcessRequest: {
@@ -92020,6 +92184,85 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_ai_logs_api_v1_quality_ai_logs_get: {
+        parameters: {
+            query?: {
+                /** @description 操作类型 */
+                operate_type?: string | null;
+                /** @description 操作人账号 */
+                operator?: string | null;
+                /** @description 关键字（操作类型/操作人/单据编号模糊匹配） */
+                keyword?: string | null;
+                /** @description 开始日期，格式 YYYY-MM-DD */
+                start_date?: string | null;
+                /** @description 结束日期，格式 YYYY-MM-DD */
+                end_date?: string | null;
+                /** @description 页码 */
+                page?: number;
+                /** @description 每页数量 */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AiLogPaginatedListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ai_log_api_v1_quality_ai_logs__log_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                log_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AiLogDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
