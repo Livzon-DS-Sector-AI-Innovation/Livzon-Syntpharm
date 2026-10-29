@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback, Suspense } from 'react'
+import { useState, useMemo, Suspense } from 'react'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { Segmented, Input, Select, DatePicker, Spin } from 'antd'
 import {
   LoadingOutlined, SearchOutlined, FilterOutlined, ReloadOutlined,
@@ -12,6 +13,7 @@ import {
   RegulatoryDocument, DocumentListParams,
   fetchDocuments,
 } from '@/lib/api/client/regulatory-tracker'
+import { DataUnavailable } from '@/components/common/DataUnavailable'
 
 const { RangePicker } = DatePicker
 
@@ -67,10 +69,7 @@ function WorkspaceContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // 状态
-  const [documents, setDocuments] = useState<RegulatoryDocument[]>([])
-  const [loading, setLoading] = useState(true)
-  const [total, setTotal] = useState(0)
+  // 状态（列表数据与加载态由 React Query 派生，不再手写 data/loading/total）
   const [page, setPage] = useState(1)
   const pageSize = 50
 
@@ -104,45 +103,40 @@ function WorkspaceContent() {
     }
   }
 
-  // 构建请求参数
-  const buildParams = useCallback((): DocumentListParams => {
-    const params: DocumentListParams = { page, pageSize }
+  // 请求参数：所有字段都会进入 queryKey，因此日期必须先格式化为字符串。
+  // （dayjs 对象进 queryKey 每次渲染哈希都不同，会导致无限重取，energy 模块有过同类踩坑注释）
+  const params = useMemo<DocumentListParams>(() => {
+    const next: DocumentListParams = { page, pageSize }
 
     const apiCategory = CATEGORY_API_MAP[category]
-    if (apiCategory) params.documentCategory = apiCategory
+    if (apiCategory) next.documentCategory = apiCategory
 
-    if (keyword) params.keyword = keyword
+    if (keyword) next.keyword = keyword
 
     if (dateRange && dateRange[0] && dateRange[1]) {
-      params.firstFoundFrom = dateRange[0].format('YYYY-MM-DD')
-      params.firstFoundTo = dateRange[1].format('YYYY-MM-DD')
+      next.firstFoundFrom = dateRange[0].format('YYYY-MM-DD')
+      next.firstFoundTo = dateRange[1].format('YYYY-MM-DD')
     }
 
-    if (regulationType) params.regulationType = regulationType
+    if (regulationType) next.regulationType = regulationType
 
     // 按发布日期降序（最新优先）
-    params.sortBy = 'publish_date'
-    params.sortOrder = 'desc'
+    next.sortBy = 'publish_date'
+    next.sortOrder = 'desc'
 
-    return params
+    return next
   }, [category, keyword, dateRange, regulationType, page])
 
-  // 加载数据
-  const loadDocuments = useCallback(async () => {
-    setLoading(true)
-    try {
-      const params = buildParams()
-      const data = await fetchDocuments(params)
-      if (data) {
-        setDocuments(data.items)
-        setTotal(data.total)
-      }
-    } catch (error) {
-      console.error('加载法规列表失败:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [buildParams])
+  // 打开即加载：参数变化 → queryKey 变化 → 自动重取。
+  // 翻页时保留上一页数据，避免整表闪成 Spin。
+  const documentsQuery = useQuery({
+    queryKey: ['regulatory-documents', params],
+    queryFn: () => fetchDocuments(params),
+    placeholderData: keepPreviousData,
+  })
+
+  const documents = documentsQuery.data?.items ?? []
+  const total = documentsQuery.data?.total ?? 0
 
   // 搜索处理
   const handleSearch = (value: string) => {
@@ -158,7 +152,7 @@ function WorkspaceContent() {
 
   // 刷新
   const handleRefresh = () => {
-    loadDocuments()
+    void documentsQuery.refetch()
   }
 
   // ====== 渲染函数 ======
@@ -392,7 +386,9 @@ function WorkspaceContent() {
 
       {/* 列表内容 */}
       <div className="max-w-[1400px] mx-auto">
-        {loading ? (
+        {documentsQuery.isError ? (
+          <DataUnavailable onRetry={() => void documentsQuery.refetch()} />
+        ) : documentsQuery.isPending ? (
           <div className="flex items-center justify-center py-20">
             <Spin size="large" />
           </div>

@@ -6,6 +6,7 @@ import {
   AuthorizationLetterListResponse,
   ProductListResponse,
   ReferenceStandardListResponse,
+  RegistrationProject,
   SupplementaryReplyListResponse,
 } from '@/types/registration'
 import type { components } from '@/types/generated/schema'
@@ -18,6 +19,7 @@ import {
   deleteReferenceStandard as deleteReferenceStandardApi,
   fetchAuthorizationLetters as fetchAuthorizationLettersApi,
   fetchRegistrationProducts as fetchRegistrationProductsApi,
+  fetchRegistrationProjects as fetchRegistrationProjectsApi,
   fetchReferenceStandards as fetchReferenceStandardsApi,
   fetchSupplementaryReplies as fetchSupplementaryRepliesApi,
   createDrug as createDrugApi,
@@ -219,6 +221,10 @@ export async function fetchAuthorizationLettersServer(
 
 export async function fetchProductsServer(): Promise<ProductListResponse> {
   return fetchRegistrationProductsApi() as unknown as ProductListResponse
+}
+
+export async function fetchRegistrationProjectsServer(): Promise<RegistrationProject[]> {
+  return fetchRegistrationProjectsApi() as unknown as RegistrationProject[]
 }
 
 export async function fetchReferenceStandardsServer(

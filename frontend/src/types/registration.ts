@@ -231,6 +231,23 @@ export interface DrugNode {
   updated_at: string
 }
 
+/** 注册项目（GET /api/v1/registration/projects/ 的返回项） */
+export interface RegistrationProject {
+  id: string
+  product_name: string
+  market: string
+  registration_type: string | null
+  status: string
+  submitted_at: string | null
+  accepted_at: string | null
+  approved_at: string | null
+  expected_completion_at: string | null
+  owner: string | null
+  latest_progress: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface Holiday {
   id: string
   year: number
