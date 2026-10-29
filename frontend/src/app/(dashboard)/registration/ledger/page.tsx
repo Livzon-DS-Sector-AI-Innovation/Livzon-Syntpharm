@@ -77,7 +77,6 @@ function LedgerContent() {
   const data = ledgerQuery.data ?? []
 
   const handleImport = async (file: File) => {
-    console.log('🚀 Starting import, file:', file.name, 'type:', type)
     try {
       let result: Record<string, unknown> = {}
       switch (type) {
@@ -87,8 +86,6 @@ function LedgerContent() {
         case 'copp': result = await importCoppCertificates(file); break
         case 'wc': result = await importWcCertificates(file); break
       }
-      console.log('✅ Import result:', result)
-      
       const data = result?.data as ImportResultData | undefined
       const successCount = data?.success_count ?? 0
       if (successCount === 0) {
@@ -102,11 +99,9 @@ function LedgerContent() {
       
       // 如果有错误，显示错误详情
       if (data?.errors && data.errors.length > 0) {
-        console.warn('⚠️ Import errors:', data.errors)
-        message.error(`导入有 ${data.errors.length} 条错误，请查看控制台`)
+        message.error(`导入有 ${data.errors.length} 条错误，请检查文件内容后重试`)
       }
     } catch (err: unknown) {
-      console.error('❌ Import error:', err)
       message.error(err instanceof Error ? err.message : '导入失败')
     }
     return false

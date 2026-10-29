@@ -476,8 +476,8 @@ export default function SopManagementPage() {
 
   return (
     <div style={{ padding: 24 }}>
-      <h1 className="sr-only">SOP规则管理</h1>
-      <Card title="SOP规则管理">
+      <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)] mb-4">SOP规则管理</h1>
+      <Card>
         {/* 查询条件 */}
         <Form form={form} layout="inline" style={{ marginBottom: 16 }}>
           <Form.Item name="sop_code" label="SOP编号">

@@ -245,7 +245,8 @@ export default function HistoryPage() {
 
   return (
     <div style={{ padding: 24 }}>
-      <Card title="历史任务查询">
+      <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)] mb-4">历史任务查询</h1>
+      <Card>
         {/* 查询条件 */}
         <Form form={form} layout="inline" style={{ marginBottom: 16 }}>
           <Form.Item name="deviation_no" label="偏差编号">
