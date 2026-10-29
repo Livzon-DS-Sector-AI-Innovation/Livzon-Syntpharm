@@ -189,7 +189,10 @@ async function checkRoute(page: Page, route: RouteCase) {
     // 数据断言：有行，或者有「没有数据」的空态文案。两者都没有 = 列表压根没渲染出内容。
     if (route.expectData) {
       const { rows, empty } = route.expectData
-      const emptyLocator = page.getByText(empty).first()
+      // antd 空态里「暂无数据」出现两次：图标 `<svg><title>暂无数据</title>` 与可见的
+      // `.ant-empty-description`。`<title>` 按文档顺序在前、且没有布局盒，isVisible() 恒为 false，
+      // 所以 `getByText(...).first()` 在空表时永远等不到可见元素（有数据时被 rows 短路，掩盖了这一点）。
+      const emptyLocator = page.getByText(empty).filter({ visible: true }).first()
       await expect
         .poll(
           async () => (await rows(page).count()) > 0 || (await emptyLocator.isVisible()),
