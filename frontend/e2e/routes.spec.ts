@@ -54,12 +54,13 @@ const APP_ORIGIN = (process.env.E2E_FRONTEND_URL ?? 'http://127.0.0.1:13000').re
 /**
  * 取数断言的等待预算。
  *
- * 不能按本地开发机的速度定：CI runner 上 Next 生产构建 + 后端 + PostgreSQL 同机，
- * 实测一次 Server Action 取数要 25~60s（/quality/fqc 30.6s、/quality/instrument/records 57.4s），
- * 台账页的浏览器 fetch 也要 40s+。15s 的预算会把「环境慢」误判成「页面根本没有取数」。
- * 需要更严/更松时用 E2E_DATA_TIMEOUT_MS 覆盖。
+ * CI runner 上 Next 生产构建 + 后端 + PostgreSQL 同机，一次 Server Action 取数实测
+ * 25~60s（/quality/fqc 30.6s、/quality/instrument/records 57.4s），所以不能按本地
+ * 毫秒级速度定预算。但也不能无上限：失败路由实测是「等满仍无行无空态」，
+ * 给到 90s 只是把 CI 从 15 分钟拖到 35 分钟而不改变结论。
+ * 45s 覆盖了正常慢请求，同时让失败快速暴露。需要更严/更松时用 E2E_DATA_TIMEOUT_MS 覆盖。
  */
-const DATA_TIMEOUT_MS = Number(process.env.E2E_DATA_TIMEOUT_MS ?? 90_000)
+const DATA_TIMEOUT_MS = Number(process.env.E2E_DATA_TIMEOUT_MS ?? 45_000)
 
 function summarizeErrors(errors: string[], label: string): string {
   if (errors.length <= 3) return errors.join('\n')

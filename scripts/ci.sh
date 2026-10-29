@@ -222,10 +222,20 @@ run_e2e() {
     local e2e_exit_code=0
     pnpm exec playwright test || e2e_exit_code=$?
 
-    # ── Collect E2E frontend log ────────────────────────────────────────
+    # ── Collect E2E logs ────────────────────────────────────────────────
+    # tail -30 只能截到启动信息，Server Action 的报错会被冲掉，失败时无法定位。
+    # 这里额外按关键字捞错误行，并带上后端日志（取数 action 最终打到后端）。
     if [[ $e2e_exit_code -ne 0 ]]; then
-        echo "=== Frontend container logs ==="
-        docker logs e2e-frontend 2>/dev/null | tail -30 || true
+        echo "=== Frontend container logs (errors) ==="
+        docker logs e2e-frontend 2>&1 \
+            | grep -iE "error|digest|fetch failed|ECONNREFUSED|ETIMEDOUT|unhandled" \
+            | tail -80 || true
+        echo "=== Frontend container logs (tail) ==="
+        docker logs e2e-frontend 2>&1 | tail -40 || true
+        echo "=== Backend container logs (errors) ==="
+        docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" logs --no-log-prefix backend-e2e 2>&1 \
+            | grep -iE "error|exception|traceback|500 internal" \
+            | tail -80 || true
     fi
 
     cd "$REPO_ROOT"
