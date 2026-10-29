@@ -67,10 +67,20 @@ export async function loginWithPassword(
       return { error: '登录响应缺少 token，请检查后端接口' }
     }
 
+    // Secure 必须按「浏览器实际使用的协议」判断，不能用 NODE_ENV：
+    // 当前部署是 nginx 80 端口纯 HTTP（生产构建），若写 Secure cookie，浏览器会直接丢弃，
+    // 下一个请求就是未登录，dashboard layout 随即 redirect('/login') → 表现为「登录成功又被弹回飞书登录页」。
+    // 这与飞书 SSO 状态不一致（后端按 request.url.scheme 判断），也是只坏密码登录的原因。
+    const headersList = await headers()
+    const forwardedProto = headersList.get('x-forwarded-proto')?.split(',')[0]?.trim().toLowerCase()
+    const isHttps =
+      forwardedProto === 'https' ||
+      (forwardedProto === undefined && (process.env.FRONTEND_URL ?? '').startsWith('https://'))
+
     const cookieStore = await cookies()
     cookieStore.set('auth_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isHttps,
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
