@@ -29,6 +29,7 @@ export async function fetchAuthorizationLetters(params?: {
   if (params?.page) searchParams.set('page', String(params.page))
   if (params?.page_size) searchParams.set('page_size', String(params.page_size))
   if (params?.product_name) searchParams.set('product_name', params.product_name)
+  if (params?.preparation_unit) searchParams.set('preparation_unit', params.preparation_unit)
   const query = searchParams.toString()
   const result = await apiFetchPaginated<AuthorizationLetterListItem>(
     `/api/v1/registration/authorization-letters${query ? `?${query}` : ''}`
