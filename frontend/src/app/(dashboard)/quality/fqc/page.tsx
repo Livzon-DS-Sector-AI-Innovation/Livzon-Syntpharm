@@ -2,6 +2,7 @@
 
 import {useState} from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import { toPageResult } from '@/lib/api/page'
 import {
   Table,
   Button,
@@ -119,16 +120,8 @@ export default function FQCPage() {
         ...appliedFilters,
         page,
         page_size: pageSize,
-      }) as { items?: FQCInspectionListItem[]; total?: number; code?: number; message?: string; data?: { items?: FQCInspectionListItem[]; total?: number } }
-
-      // 后端对这批接口存在两种信封形态，这里统一成 { items, total }
-      if (response.items !== undefined) {
-        return { items: response.items ?? [], total: response.total ?? 0 }
-      }
-      if (response.code === 200 || response.code === 0) {
-        return { items: response.data?.items ?? [], total: response.data?.total ?? 0 }
-      }
-      throw new Error(response.message || '加载失败')
+      })
+      return toPageResult<FQCInspectionListItem>(response)
     },
     placeholderData: keepPreviousData,
   })

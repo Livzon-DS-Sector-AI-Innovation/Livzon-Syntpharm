@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import { toPageResult } from '@/lib/api/page'
 import {
   Table,
   Button,
@@ -48,7 +49,6 @@ import {
   SamplingResult,
   SamplingResultLabels,
   SampleStatus,
-  SamplingOrderListResponse,
   SampleStatusLabels,
 } from '@/types/sampling'
 import {
@@ -108,11 +108,7 @@ export default function SamplingPage() {
         page,
         page_size: pageSize,
       })
-      if (response.code === 200 || response.code === 0) {
-        const payload = response.data as SamplingOrderListResponse
-        return { items: payload?.items ?? [], total: payload?.total ?? 0 }
-      }
-      throw new Error(response.message || '加载失败')
+      return toPageResult<SamplingOrderListItem>(response)
     },
     placeholderData: keepPreviousData,
   })
