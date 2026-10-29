@@ -33,8 +33,13 @@ type RouteCase = {
   expectData?: {
     /** 有数据时必然出现的元素（表格行 / 列表项） */
     rows: (page: Page) => Locator
-    /** 没有数据时的空态文案 */
-    empty: RegExp
+    /**
+     * 没有数据时的空态：正则匹配文案，或直接给定位器。
+     *
+     * 用定位器的场景：antd 表格各页空态文案是自定义的（「暂无数据」「暂无注册项目」
+     * 「暂无校准记录」…），枚举不完，改由 `antdEmpty` 按结构判定。
+     */
+    empty: RegExp | ((page: Page) => Locator)
   }
   /**
    * 打开页面必须真实发出取数请求。
@@ -189,10 +194,10 @@ async function checkRoute(page: Page, route: RouteCase) {
     // 数据断言：有行，或者有「没有数据」的空态文案。两者都没有 = 列表压根没渲染出内容。
     if (route.expectData) {
       const { rows, empty } = route.expectData
-      // antd 空态里「暂无数据」出现两次：图标 `<svg><title>暂无数据</title>` 与可见的
-      // `.ant-empty-description`。`<title>` 按文档顺序在前、且没有布局盒，isVisible() 恒为 false，
-      // 所以 `getByText(...).first()` 在空表时永远等不到可见元素（有数据时被 rows 短路，掩盖了这一点）。
-      const emptyLocator = page.getByText(empty).filter({ visible: true }).first()
+      // 正则那支要 filter 可见：antd Empty 的图标 `<svg><title>` 也含同一文案，但它按文档顺序在前、
+      // 且没有布局盒，isVisible() 恒为 false，`.first()` 会一直等不到可见元素。
+      const emptyLocator =
+        typeof empty === 'function' ? empty(page) : page.getByText(empty).filter({ visible: true }).first()
       await expect
         .poll(
           async () => (await rows(page).count()) > 0 || (await emptyLocator.isVisible()),
@@ -251,8 +256,21 @@ const text = (t: string) => (page: Page): Locator => page.getByText(t).first()
 /** antd 表格的数据行（空表时只剩 `.ant-table-placeholder`，匹配不到） */
 const antdRows = (page: Page): Locator => page.locator('.ant-table-tbody tr.ant-table-row')
 
-/** antd 表格「打开即取数」的断言包：有行，或 antd 的空表文案 */
-const antdTableData = { rows: antdRows, empty: /暂无数据/ } as const
+/**
+ * antd 表格的空表占位。
+ *
+ * 按结构判定而不是按文案：各页空态写法不统一——`<Empty description="暂无注册项目" />`、
+ * `<Empty description="暂无校准记录" />`、`locale={{ emptyText: '暂无查重问题' }}`（纯字符串，不生成
+ * `.ant-empty-description`），文案枚举不完。
+ *
+ * 唯一要排除的是取数失败的降级态：表格里嵌的是 `DataUnavailable compact`，它是一段普通 div
+ * （没有 `.ant-result`），只能按文案「数据暂时不可用」识别（见 components/common/DataUnavailable.tsx）。
+ */
+const antdEmpty = (page: Page): Locator =>
+  page.locator('.ant-table-placeholder').filter({ hasNotText: '数据暂时不可用' })
+
+/** antd 表格「打开即取数」的断言包：有行，或表格渲染出了空态 */
+const antdTableData = { rows: antdRows, empty: antdEmpty } as const
 
 
 // ═══════════════════════════════════════════════════════════════
