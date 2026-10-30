@@ -152,9 +152,7 @@ async def _repoint(db: AsyncSession, table: str, src_id: str, tgt_id: str, apply
 
     count = int(
         (
-            await db.execute(
-                select(func.count()).select_from(stmt_table).where(stmt_table.c.workshop_id == src_uuid)
-            )
+            await db.execute(select(func.count()).select_from(stmt_table).where(stmt_table.c.workshop_id == src_uuid))
         ).scalar_one()
     )
     if count and apply:

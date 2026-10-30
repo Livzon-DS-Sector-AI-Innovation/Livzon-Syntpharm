@@ -826,7 +826,7 @@ async def split_preview(
     result = await service.preview_page_splits(asset, available_appendix_slots)
 
     if not result["success"]:
-        raise AppException(status_code=500, message=result['message'])
+        raise AppException(status_code=500, message=result["message"])
 
     return build_response(data=result, message=result["message"])
 
@@ -862,7 +862,7 @@ async def split_confirm_and_insert(
     result = await service.confirm_page_splits_and_insert(dossier, chapter, splits)
 
     if not result["success"]:
-        raise AppException(status_code=500, message=result['message'])
+        raise AppException(status_code=500, message=result["message"])
 
     return build_response(data=result, message=result["message"])
 

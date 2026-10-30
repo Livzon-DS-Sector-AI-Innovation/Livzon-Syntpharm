@@ -428,7 +428,6 @@ async def get_department(
     repo = DepartmentRepository()
     dept = await repo.get_by_feishu_id(db, dept_id)
     if dept is None:
-
         raise NotFoundException("部门")
     return build_response(data=DepartmentResponse.model_validate(dept).model_dump())
 

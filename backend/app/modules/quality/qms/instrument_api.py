@@ -825,7 +825,7 @@ async def post(  # noqa: F811
     except ValueError as e:
         raise BadRequestException(str(e))
     except Exception as e:
-        raise AppException(status_code=500, message=f'识别失败: {str(e)}')
+        raise AppException(status_code=500, message=f"识别失败: {str(e)}")
     finally:
         # 清理临时文件
         if temp_path.exists():
@@ -942,7 +942,7 @@ async def post(  # noqa: F811
             extra={"days": days, "include_overdue": include_overdue, "error": str(e)},
             exc_info=True,
         )
-        raise AppException(status_code=500, message=f'获取提醒记录失败: {str(e)}')
+        raise AppException(status_code=500, message=f"获取提醒记录失败: {str(e)}")
 
     if not records and not overdue_records:
         return InstrumentMessageApiResponse(message="没有需要提醒的校准记录", data={"sent": False, "count": 0})
@@ -1039,7 +1039,7 @@ async def post(  # noqa: F811
                 "发送飞书提醒失败",
                 extra={"chat_id": chat_id, "receive_id_type": receive_id_type, "error": str(e)},
             )
-            raise AppException(status_code=500, message=f'发送失败: {str(e)}')
+            raise AppException(status_code=500, message=f"发送失败: {str(e)}")
 
 
 # ========== 自动提醒触发 API ==========

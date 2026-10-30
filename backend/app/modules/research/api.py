@@ -304,8 +304,9 @@ async def edbo_optimize(
     mode_list = [m.strip() for m in objective_modes.split(",") if m.strip()]
 
     if len(obj_list) != len(mode_list):
-
-        raise BadRequestException(f'objectives ({len(obj_list)}) and objective_modes ({len(mode_list)}) must have the same length')
+        raise BadRequestException(
+            f"objectives ({len(obj_list)}) and objective_modes ({len(mode_list)}) must have the same length"
+        )
 
     # Read CSV content
 
@@ -313,7 +314,6 @@ async def edbo_optimize(
         csv_content = (await file.read()).decode("utf-8")
 
     except UnicodeDecodeError:
-
         raise BadRequestException("文件编码错误：请使用 UTF-8 编码的 CSV 文件")
 
     # Run EDBO+ optimization
@@ -328,7 +328,6 @@ async def edbo_optimize(
         )
 
     except RuntimeError as e:
-
         raise BadRequestException(str(e))
 
     return EDBOOptimizeApiResponse(data=EDBOOptimizeResponse(**result))
@@ -584,7 +583,7 @@ async def edbo_generate_scope(  # type: ignore[no-untyped-def]
         n_combinations *= len(values)
 
     if n_combinations > 10000:
-        raise BadRequestException(f'组合数量过大 ({n_combinations})，请减少组件选项')
+        raise BadRequestException(f"组合数量过大 ({n_combinations})，请减少组件选项")
 
     # Generate Cartesian product
 
@@ -783,7 +782,7 @@ async def start_pilot_workflow(
         raise NotFoundException("工作流")
 
     if workflow.status != "pending":
-        raise BadRequestException(f'工作流状态为 {workflow.status}，无法启动')
+        raise BadRequestException(f"工作流状态为 {workflow.status}，无法启动")
 
     # 异步启动工作流
 
@@ -801,7 +800,7 @@ async def approve_pilot_workflow_step(
     result = await approve_step_engine(workflow_id)
 
     if "error" in result:
-        raise BadRequestException(result['error'])
+        raise BadRequestException(result["error"])
 
     return build_response(data=result)
 
@@ -2092,7 +2091,6 @@ async def transition_stage(
     review_notes = data.get("review_notes")
 
     if not target_stage:
-
         raise BadRequestException("缺少 target_stage 参数")
     user_id = current_user.id
 
@@ -2102,8 +2100,7 @@ async def transition_stage(
         return build_response(data=result, message="阶段流转成功")
 
     else:
-
-        raise BadRequestException(result.get('message', '阶段流转失败'))
+        raise BadRequestException(result.get("message", "阶段流转失败"))
 
 
 @router.get("/rd-projects/{project_id}/transition-check", summary="检查阶段流转条件")

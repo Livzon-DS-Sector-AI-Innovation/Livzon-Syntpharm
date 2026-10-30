@@ -243,7 +243,7 @@ async def post(
         import traceback
 
         traceback.print_exc()
-        raise AppException(status_code=500, message=f'AI处理失败: {str(e)}')
+        raise AppException(status_code=500, message=f"AI处理失败: {str(e)}")
 
 
 @router.post("/ai/analyze-impact", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
@@ -754,7 +754,7 @@ async def put(
         import traceback
 
         traceback.print_exc()
-        raise AppException(status_code=500, message=f'更新失败: {str(e)}')
+        raise AppException(status_code=500, message=f"更新失败: {str(e)}")
 
 
 @router.delete("/{deviation_id}", response_model=MessageApiResponse)

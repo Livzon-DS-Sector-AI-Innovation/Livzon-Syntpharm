@@ -73,7 +73,7 @@ async def api_export_exam(
     try:
         buffer = export_exam(data.model_dump())
     except Exception as e:
-        raise AppException(status_code=500, message=f'导出失败: {e}')
+        raise AppException(status_code=500, message=f"导出失败: {e}")
 
     from urllib.parse import quote
 

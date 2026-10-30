@@ -625,7 +625,7 @@ async def export_onboarding_evaluation_by_employee(  # type: ignore[no-untyped-d
         import traceback
 
         detail = traceback.format_exc()
-        raise AppException(status_code=500, message=f'生成文档失败: {str(e)}\n{detail}')
+        raise AppException(status_code=500, message=f"生成文档失败: {str(e)}\n{detail}")
 
     def _iterfile():  # type: ignore[no-untyped-def]
         buffer.seek(0)
@@ -813,7 +813,7 @@ async def send_training_select_task(  # type: ignore[no-untyped-def]
         im = FeishuIM()
         await im.send_text_message(open_id, msg_content)
     except Exception as e:
-        raise AppException(status_code=500, message=f'发送飞书消息失败: {str(e)}')
+        raise AppException(status_code=500, message=f"发送飞书消息失败: {str(e)}")
 
     return build_response(
         data={"token": token, "url": f"/hr/training/select?token={token}"},

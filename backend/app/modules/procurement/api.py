@@ -107,7 +107,7 @@ async def recognize_invoice(  # type: ignore[no-untyped-def]
     except DuplicateInvoiceError as exc:
         raise AppException(status_code=409, message=str(exc)) from exc
     except Exception as exc:
-        raise BadRequestException(f'发票识别失败：{exc}') from exc
+        raise BadRequestException(f"发票识别失败：{exc}") from exc
 
     return build_response(data=InvoiceRecognitionRecordResponse.model_validate(result).model_dump(mode="json"))
 
@@ -125,7 +125,7 @@ async def _read_upload_file_with_limit(
             break
         total_size += len(chunk)
         if total_size > MAX_INVOICE_PDF_UPLOAD_BYTES:
-            raise AppException(status_code=413, message=f'{file_label}不能超过 {settings.MAX_UPLOAD_SIZE_MB}MB')
+            raise AppException(status_code=413, message=f"{file_label}不能超过 {settings.MAX_UPLOAD_SIZE_MB}MB")
         chunks.append(chunk)
 
     return b"".join(chunks)

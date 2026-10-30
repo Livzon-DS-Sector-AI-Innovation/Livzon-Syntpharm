@@ -55,7 +55,7 @@ ALLOWED_CARD_ACTIONS = {
 
 
 def _secret_runtime_error(exc: RuntimeError) -> AppException:
-    message = f'Livzon 助手飞书密钥加解密失败：{exc}。请检查后端 ENCRYPTION_KEY 配置是否与保存配置时一致。'
+    message = f"Livzon 助手飞书密钥加解密失败：{exc}。请检查后端 ENCRYPTION_KEY 配置是否与保存配置时一致。"
     return AppException(status_code=500, message=message)
 
 
@@ -794,7 +794,7 @@ def _message_shape(
     else:
         expected = "card"
     if message_form != "auto" and message_form != expected:
-        raise BadRequestException(f'消息形态不符合 Livzon 助手规则：当前应使用 {expected}')
+        raise BadRequestException(f"消息形态不符合 Livzon 助手规则：当前应使用 {expected}")
     return expected
 
 
@@ -807,7 +807,7 @@ def _normalize_card_actions(actions: list[dict[str, Any]] | None) -> list[dict[s
     for item in raw_actions:
         action_key = str(item.get("action_key") or "").strip()
         if action_key not in ALLOWED_CARD_ACTIONS:
-            raise BadRequestException(f'不支持的交互卡片动作：{action_key}')
+            raise BadRequestException(f"不支持的交互卡片动作：{action_key}")
         label = str(item.get("label") or ALLOWED_CARD_ACTIONS[action_key]).strip()
         normalized.append(
             {

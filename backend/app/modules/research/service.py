@@ -1267,4 +1267,4 @@ async def generate_report_with_ai(
         }
     except Exception as e:
         logger.exception("LLM call failed")
-        raise AppException(status_code=500, message=f'AI 生成失败: {str(e)}')
+        raise AppException(status_code=500, message=f"AI 生成失败: {str(e)}")

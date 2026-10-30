@@ -235,7 +235,7 @@ async def optimize_text(
     optimized = result.strip()
     for prefix in _OPTIMIZE_RESULT_PREFIXES:
         if optimized.startswith(prefix):
-            optimized = optimized[len(prefix):].lstrip()
+            optimized = optimized[len(prefix) :].lstrip()
             break
 
     return DeviationApiResponse(message="优化成功", data={"optimized_text": optimized})

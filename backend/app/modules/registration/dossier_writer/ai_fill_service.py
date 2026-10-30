@@ -635,7 +635,9 @@ class AIFillService:
                         split_record.image_path = str(img_path)
                         split_record.status = "inserted" if success else "failed"
                 except ValueError as exc:
-                    logger.warning("忽略异常 @ %s: %s", "AIFillService.confirm_page_splits_and_insert", exc)  # split_id 不是有效 UUID，跳过记录更新
+                    logger.warning(
+                        "忽略异常 @ %s: %s", "AIFillService.confirm_page_splits_and_insert", exc
+                    )  # split_id 不是有效 UUID，跳过记录更新
 
         doc.save(str(working_path))
 

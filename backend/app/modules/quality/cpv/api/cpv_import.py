@@ -31,7 +31,6 @@ async def preview_import(
     """上传Excel文件并预览导入数据"""
 
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
-
         raise BadRequestException("请上传 Excel 文件 (.xlsx, .xls)")
 
     file_content = await file.read()
