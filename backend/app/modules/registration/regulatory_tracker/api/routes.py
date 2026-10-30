@@ -400,7 +400,7 @@ async def post(  # noqa: F811
     )
     await db.commit()
 
-    # 后台执行同步（不阻塞响应）。用 spawn_task 而不是 BackgroundTasks：
+    # 后台执行同步（不阻塞响应）。用 submit_job（core.background_jobs 落行）而不是 BackgroundTasks：
     # 后者在响应结束后脱离请求上下文执行，异常只会静默丢失，任务状态永远停在 pending。
     # AI 分析在 sync_service 内部自动执行。
     from app.modules.registration.regulatory_tracker.services.sync_service import (
