@@ -95,8 +95,8 @@ class SchedulerEngine:
                     self._stop_flag.wait(),
                     timeout=sleep_for,
                 )
-            except TimeoutError as exc:
-                logger.warning("忽略异常 @ %s: %s", "SchedulerEngine.run", exc)  # normal — next tick
+            except TimeoutError:
+                logger.exception("忽略异常 @ %s", "SchedulerEngine.run")  # normal — next tick
 
         logger.info("SchedulerEngine stopped")
 

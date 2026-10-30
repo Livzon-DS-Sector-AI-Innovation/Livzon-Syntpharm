@@ -15,9 +15,9 @@ from app.modules.equipment.api.batch_import import map_department_name_v3  # noq
 
 
 async def run():
-    excel_path = "/home/zhuangweizi/.codex/202606sbgz.xls"
-    if not os.path.exists(excel_path):
-        print("❌ Excel 文件不存在")
+    excel_path = os.environ.get("IMPORT_EXCEL_PATH", "")
+    if not excel_path or not os.path.exists(excel_path):
+        print("❌ 请通过环境变量 IMPORT_EXCEL_PATH 指定 Excel 文件路径，且文件必须存在")
         return
 
     wb = xlrd.open_workbook(excel_path)

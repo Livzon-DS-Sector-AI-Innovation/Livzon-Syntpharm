@@ -66,8 +66,8 @@ class RegulationService:
                 abs_path = os.path.abspath(file_path)
                 if os.path.exists(abs_path):
                     os.remove(abs_path)
-        except OSError as exc:
-            logger.warning("忽略异常 @ %s: %s", "RegulationService._cleanup_file", exc)
+        except OSError:
+            logger.exception("忽略异常 @ %s", "RegulationService._cleanup_file")
 
     # ==================== 安全操作规程 CRUD ====================
 

@@ -989,19 +989,18 @@ async def export_training_evaluation(  # type: ignore[no-untyped-def]
     factory: str = Query("old", description="厂别：old=旧厂, new=新厂"),
 ):
     """根据填写的培训信息自动生成培训效果评估表文档。"""
-    buffer: BytesIO = generate_training_evaluation(payload, factory)  # type: ignore[arg-type,call-arg]
+    # factory 保留以兼容既有调用方；当前只有 docx 模板，两种厂别输出一致
+    del factory
+    buffer: BytesIO = generate_training_evaluation(payload)  # type: ignore[arg-type]
 
     def _iterfile():  # type: ignore[no-untyped-def]
         buffer.seek(0)
         yield buffer.read()
 
     safe_date = str(payload.training_date).replace("-", "") if payload.training_date else "nodate"
-    ext = "xlsx" if factory == "old" else "docx"
-    media_type = (
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        if factory == "old"
-        else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
+    # 评估表模板只有 docx（app/modules/hr/templates/training/），不再按厂别切换 xlsx
+    ext = "docx"
+    media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     filename = f"training_evaluation_{safe_date}.{ext}"
     return StreamingResponse(
         _iterfile(),  # type: ignore[no-untyped-call]
@@ -2877,8 +2876,8 @@ async def send_training_session_select_tasks(  # type: ignore[no-untyped-def]
                         update_sql, {"oid": open_id, "eno": specialist.employee_number}
                     )
                     await employee_service.repo.session.flush()
-            except Exception as exc:
-                logger.warning("忽略异常 @ %s: %s", "send_training_session_select_tasks", exc)
+            except Exception:
+                logger.exception("忽略异常 @ %s", "send_training_session_select_tasks")
 
         if open_id:
             select_url = f"{settings.FRONTEND_URL}/hr/training/select?token={token}&department={quote(dept)}"

@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
-from app.core.response import ApiResponse, build_response
+from app.core.response import DataResponse
 from app.modules.equipment import service
 from app.modules.equipment.models import FailureAction, FailureCause, FailureSymptom
 from app.modules.equipment.schemas import (
@@ -32,26 +32,26 @@ def _register_failure_code_routes(
         current_user: RequiredUser,
         ctx: PermissionContext = Depends(require_permission("equipment:failure-code:create")),
         db: AsyncSession = Depends(get_db),
-    ) -> ApiResponse:
+    ) -> DataResponse[FailureCodeResponse]:
         result = await service.create_failure_code(db, model_class, data)
-        return build_response(data=FailureCodeResponse.model_validate(result))
+        return DataResponse[FailureCodeResponse](data=FailureCodeResponse.model_validate(result))
 
     @router.get(f"/{path}", summary=f"查询{summary_prefix}列表")
     async def list_codes(
         ctx: PermissionContext = Depends(require_permission("equipment:failure-code:read")),
         db: AsyncSession = Depends(get_db),
-    ) -> ApiResponse:
+    ) -> DataResponse[list[FailureCodeResponse]]:
         codes = await service.get_failure_codes(db, model_class)
-        return build_response(data=[FailureCodeResponse.model_validate(c) for c in codes])
+        return DataResponse[list[FailureCodeResponse]](data=[FailureCodeResponse.model_validate(c) for c in codes])
 
     @router.get(f"/{path}/{{code_id}}", summary=f"查询单个{summary_prefix}")
     async def get_one(
         code_id: uuid.UUID,
         ctx: PermissionContext = Depends(require_permission("equipment:failure-code:read")),
         db: AsyncSession = Depends(get_db),
-    ) -> ApiResponse:
+    ) -> DataResponse[FailureCodeResponse]:
         result = await service.get_failure_code_by_id(db, model_class, code_id)
-        return build_response(data=FailureCodeResponse.model_validate(result))
+        return DataResponse[FailureCodeResponse](data=FailureCodeResponse.model_validate(result))
 
     @router.put(f"/{path}/{{code_id}}", summary=f"修改{summary_prefix}")
     async def update(
@@ -60,9 +60,9 @@ def _register_failure_code_routes(
         current_user: RequiredUser,
         ctx: PermissionContext = Depends(require_permission("equipment:failure-code:update")),
         db: AsyncSession = Depends(get_db),
-    ) -> ApiResponse:
+    ) -> DataResponse[FailureCodeResponse]:
         result = await service.update_failure_code(db, model_class, code_id, data)
-        return build_response(data=FailureCodeResponse.model_validate(result))
+        return DataResponse[FailureCodeResponse](data=FailureCodeResponse.model_validate(result))
 
     @router.delete(f"/{path}/{{code_id}}", summary=f"删除{summary_prefix}")
     async def delete(
@@ -70,9 +70,9 @@ def _register_failure_code_routes(
         current_user: RequiredUser,
         ctx: PermissionContext = Depends(require_permission("equipment:failure-code:delete")),
         db: AsyncSession = Depends(get_db),
-    ) -> ApiResponse:
+    ) -> DataResponse[None]:
         await service.delete_failure_code(db, model_class, code_id)
-        return build_response(message="删除成功")
+        return DataResponse[None](message="删除成功")
 
 
 _register_failure_code_routes("symptoms", FailureSymptom, "故障现象")

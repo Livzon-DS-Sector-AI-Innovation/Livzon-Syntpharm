@@ -40,8 +40,8 @@ async def member_sync_loop() -> None:
                 timeout=wait_seconds,
             )
             break
-        except TimeoutError as exc:
-            logger.warning("忽略异常 @ %s: %s", "member_sync_loop", exc)
+        except TimeoutError:
+            logger.exception("忽略异常 @ %s", "member_sync_loop")
 
         if not stop_member_sync_flag.is_set() and target:
             try:

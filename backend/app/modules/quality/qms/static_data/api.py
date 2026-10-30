@@ -904,8 +904,8 @@ async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession
 
                             base = date(1899, 12, 30)
                             data["purchase_date"] = base + timedelta(days=int(value))
-                        except (ValueError, TypeError, OverflowError) as exc:
-                            logger.warning("忽略异常 @ %s: %s", "_import_chrom_columns", exc)
+                        except (ValueError, TypeError, OverflowError):
+                            logger.exception("忽略异常 @ %s", "_import_chrom_columns")
                     elif isinstance(value, str) and value.strip() and value.strip() != "/":
                         try:
                             v = value.strip()
@@ -913,8 +913,8 @@ async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession
                                 data["purchase_date"] = date(int(v[:4]), int(v[4:6]), int(v[6:8]))
                             else:
                                 data["purchase_date"] = date.fromisoformat(v.replace("/", "-").split()[0])
-                        except (ValueError, IndexError, AttributeError) as exc:
-                            logger.warning("忽略异常 @ %s: %s", "_import_chrom_columns", exc)
+                        except (ValueError, IndexError, AttributeError):
+                            logger.exception("忽略异常 @ %s", "_import_chrom_columns")
                 elif field == "use_start_date":
                     if isinstance(value, date):
                         data["use_start_date"] = value
@@ -924,8 +924,8 @@ async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession
 
                             base = date(1899, 12, 30)
                             data["use_start_date"] = base + timedelta(days=int(value))
-                        except (ValueError, TypeError, OverflowError) as exc:
-                            logger.warning("忽略异常 @ %s: %s", "_import_chrom_columns", exc)
+                        except (ValueError, TypeError, OverflowError):
+                            logger.exception("忽略异常 @ %s", "_import_chrom_columns")
                     elif isinstance(value, str) and value.strip() and value.strip() != "/":
                         try:
                             v = value.strip()
@@ -933,8 +933,8 @@ async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession
                                 data["use_start_date"] = date(int(v[:4]), int(v[4:6]), int(v[6:8]))
                             else:
                                 data["use_start_date"] = date.fromisoformat(v.replace("/", "-").split()[0])
-                        except (ValueError, IndexError, AttributeError) as exc:
-                            logger.warning("忽略异常 @ %s: %s", "_import_chrom_columns", exc)
+                        except (ValueError, IndexError, AttributeError):
+                            logger.exception("忽略异常 @ %s", "_import_chrom_columns")
                 elif field == "max_use_times":
                     try:
                         data["max_use_times"] = int(float(value))

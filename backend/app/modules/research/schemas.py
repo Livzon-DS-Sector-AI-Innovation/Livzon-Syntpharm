@@ -837,3 +837,53 @@ class EDBOOptimizeApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: EDBOOptimizeResponse | None = None
+
+
+# ===== 各端点响应数据 Schemas =====
+
+
+class ScopeGenerateResponse(BaseModel):
+    """EDBO+ 推荐研究范围（CSV 形式）"""
+
+    csv_data: str = Field(..., description="CSV 文本")
+    row_count: int = Field(0, description="行数")
+    columns: list[str] = Field(default_factory=list, description="列名")
+    optimization_completed: bool = Field(False, description="AI 优化是否完成")
+    optimization_error: str | None = Field(None, description="AI 优化失败原因")
+    recommended_experiments: str | None = Field(None, description="EDBO+ 推荐实验（CSV 文本）")
+
+
+class ResearchTrackListItem(RdResearchTrackResponse):
+    """研究项列表项（比详情多带项目名）"""
+
+    project_name: str | None = None
+
+
+class ConclusionPublishResult(BaseModel):
+    """结论发布结果"""
+
+    version: int = Field(..., description="新版本号")
+    conclusion: str | None = Field(None, description="结论")
+    confidence: str | None = Field(None, description="置信度")
+    updated_at: str | None = Field(None, description="更新时间（ISO 8601）")
+
+
+class ConclusionVersionItem(BaseModel):
+    """研究项结论版本"""
+
+    id: str = Field(..., description="ID")
+    version: int = Field(..., description="版本号")
+    conclusion: str | None = Field(None, description="结论")
+    confidence: str | None = Field(None, description="置信度")
+    change_summary: str | None = Field(None, description="变更摘要")
+    evidence_refs: dict[str, Any] | None = Field(None, description="证据引用")
+    author_id: str | None = Field(None, description="作者ID")
+    created_at: str | None = Field(None, description="创建时间（ISO 8601）")
+
+
+class DeliverableUploadResult(BaseModel):
+    """交付物附件上传结果"""
+
+    file_url: str = Field(..., description="附件访问地址")
+    file_name: str = Field(..., description="文件名")
+    file_size: int = Field(0, description="文件大小（字节）")

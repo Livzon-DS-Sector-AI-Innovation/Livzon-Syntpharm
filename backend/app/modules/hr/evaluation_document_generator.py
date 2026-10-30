@@ -39,9 +39,13 @@ class TrainingEvaluationInput(BaseModel):
 
 def _find_template() -> Path:
     candidates = [
+        # 实际模板随模块代码存放
+        Path(__file__).resolve().parent / "templates" / "training" / "7.11培训效果评估表.docx",
+        Path("app/modules/hr/templates/training/7.11培训效果评估表.docx"),
+        Path("../app/modules/hr/templates/training/7.11培训效果评估表.docx"),
+        # 兼容旧的 assets 目录部署
         Path("assets/hr/7.11培训效果评估表.docx"),
         Path("../assets/hr/7.11培训效果评估表.docx"),
-        Path(__file__).resolve().parent.parent.parent.parent / "assets/hr" / "7.11培训效果评估表.docx",
     ]
     for p in candidates:
         if p.exists():

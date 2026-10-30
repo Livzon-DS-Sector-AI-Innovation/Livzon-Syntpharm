@@ -7,8 +7,11 @@ import os
 _BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, _BACKEND_DIR)
 
-# 强制使用 Docker 内部主机名
-os.environ["DATABASE_URL"] = "postgresql+asyncpg://postgres:postgres123@erp-postgres:5432/dazah"
+# 数据库连接必须由外部环境提供（.env / shell / 容器环境），脚本不内置凭据。
+# 在 Docker 网络内运行时使用服务名，例如：
+#   DATABASE_URL=postgresql+asyncpg://<user>:<password>@erp-postgres:5432/<db>
+if not os.environ.get("DATABASE_URL"):
+    raise SystemExit("请先设置 DATABASE_URL 环境变量（需指向 erp-postgres 服务）")
 
 from app.core.database import async_session_factory  # noqa: E402
 from sqlalchemy import text  # noqa: E402

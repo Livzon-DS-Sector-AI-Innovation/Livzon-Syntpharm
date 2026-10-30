@@ -7,7 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import Body, Depends, File, Query, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,9 +16,12 @@ from app.core.database import async_session_factory, get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException, BadRequestException, NotFoundException
 from app.core.job_store import JobStore, get_job_state_or_404, start_job
-from app.core.response import ApiResponse, build_response, paginated_response
+from app.core.response import ApiResponse, DataResponse, build_response, paginated_response
 from app.modules.research import service
 from app.modules.research.schemas import (
+    ConclusionPublishResult,
+    ConclusionVersionItem,
+    DeliverableUploadResult,
     EDBOOptimizeApiResponse,
     PilotWorkflowCreate,
     PilotWorkflowListResponse,
@@ -68,6 +71,8 @@ from app.modules.research.schemas import (
     ResearchProjectCreate,
     ResearchProjectResponse,
     ResearchProjectUpdate,
+    ResearchTrackListItem,
+    ScopeGenerateResponse,
 )
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
@@ -334,7 +339,7 @@ async def edbo_optimize(
 
 
 @router.post("/edbo/generate-scope", summary="生成反应范围")
-async def edbo_generate_scope(  # type: ignore[no-untyped-def]
+async def edbo_generate_scope(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:optimization:create")),
     components: dict = Body(  # type: ignore[type-arg]
@@ -346,7 +351,7 @@ async def edbo_generate_scope(  # type: ignore[no-untyped-def]
         description="优化目标名称列表，会作为新列添加到结果CSV中，初始值为PENDING",
     ),
     batch_size: int = Body(default=5, ge=1, le=100, description="通量大小，表示同时进行的实验数量"),
-):
+) -> DataResponse[ScopeGenerateResponse]:
     """
 
     生成反应范围 CSV（所有组合的笛卡尔积）
@@ -633,13 +638,15 @@ async def edbo_generate_scope(  # type: ignore[no-untyped-def]
 
             result_csv = result.get("csv_data", scope_csv)
 
-            return {
-                "csv_data": result_csv,
-                "row_count": len(scope),
-                "columns": keys + objectives + ["priority"],
-                "recommended_experiments": result_csv,
-                "optimization_completed": True,
-            }
+            return DataResponse[ScopeGenerateResponse](
+                data={
+                    "csv_data": result_csv,
+                    "row_count": len(scope),
+                    "columns": keys + objectives + ["priority"],
+                    "recommended_experiments": result_csv,
+                    "optimization_completed": True,
+                }
+            )
 
         except Exception as e:
             logger.error(f"EDBO+ optimization failed: {e}")
@@ -657,20 +664,24 @@ async def edbo_generate_scope(  # type: ignore[no-untyped-def]
 
             scope_csv_with_pending = csv_buffer.getvalue()
 
-            return {
-                "csv_data": scope_csv_with_pending,
-                "row_count": len(scope),
-                "columns": keys + objectives,
-                "optimization_completed": False,
-                "optimization_error": str(e),
-            }
+            return DataResponse[ScopeGenerateResponse](
+                data={
+                    "csv_data": scope_csv_with_pending,
+                    "row_count": len(scope),
+                    "columns": keys + objectives,
+                    "optimization_completed": False,
+                    "optimization_error": str(e),
+                }
+            )
 
-    return {
-        "csv_data": scope_csv,
-        "row_count": len(scope),
-        "columns": keys,
-        "optimization_completed": False,
-    }
+    return DataResponse[ScopeGenerateResponse](
+        data={
+            "csv_data": scope_csv,
+            "row_count": len(scope),
+            "columns": keys,
+            "optimization_completed": False,
+        }
+    )
 
 
 # ===== Pilot Workflow API =====
@@ -888,12 +899,12 @@ async def delete_pilot_workflow(
     return build_response(data={"id": str(workflow_id)})
 
 
-@router.post("/literature/analyze", summary="AI 文献解析（流式）")
-async def analyze_literature(  # type: ignore[no-untyped-def]
+@router.post("/literature/analyze", summary="AI 文献解析（流式）", response_model=None)
+async def analyze_literature(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:literature:create")),
     file: UploadFile = File(...),
-):
+) -> StreamingResponse:
     """解析上传的文献文件（PDF/TXT），提取合成路线 - SSE 流式响应"""
 
     import asyncio
@@ -1805,13 +1816,13 @@ async def create_research_track(  # type: ignore[no-untyped-def]
 
 
 @router.get("/tracks", summary="获取所有研究项列表")
-async def get_all_research_tracks(  # type: ignore[no-untyped-def]
+async def get_all_research_tracks(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:track:read")),
     project_id: str | None = Query(None, description="按项目ID筛选"),
     track_type: str | None = Query(None, description="按研究项类型筛选"),
     db: AsyncSession = Depends(get_db),
-):
+) -> DataResponse[list[ResearchTrackListItem]]:
     """获取所有研究项，支持按项目和类型筛选"""
 
     from sqlalchemy import select
@@ -1862,7 +1873,7 @@ async def get_all_research_tracks(  # type: ignore[no-untyped-def]
             }
         )
 
-    return build_response(data=tracks)
+    return DataResponse[list[ResearchTrackListItem]](data=tracks)
 
 
 @router.get(
@@ -1951,13 +1962,13 @@ async def update_research_finding(  # type: ignore[no-untyped-def]
 
 
 @router.post("/tracks/{track_id}/conclusions", summary="发布新结论版本")
-async def publish_conclusion_version(  # type: ignore[no-untyped-def]
+async def publish_conclusion_version(
     track_id: UUID,
     data: dict,  # type: ignore[type-arg]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:track:create")),
     db: AsyncSession = Depends(get_db),
-):
+) -> DataResponse[ConclusionPublishResult]:
     """发布新的结论版本，更新研究项的当前结论"""
 
     user_id = current_user.id
@@ -1966,19 +1977,21 @@ async def publish_conclusion_version(  # type: ignore[no-untyped-def]
 
     confidence = data.get("confidence", "preliminary")
 
-    return await service.publish_conclusion_version(db, track_id, conclusion, confidence, user_id)
+    result = await service.publish_conclusion_version(db, track_id, conclusion, confidence, user_id)
+    return DataResponse[ConclusionPublishResult](data=result)
 
 
 @router.get("/tracks/{track_id}/conclusions", summary="获取结论历史")
-async def get_conclusion_history(  # type: ignore[no-untyped-def]
+async def get_conclusion_history(
     current_user: RequiredUser,
     track_id: UUID,
     db: AsyncSession = Depends(get_db),
     ctx: PermissionContext = Depends(require_permission("research:track:read")),
-):
+) -> DataResponse[list[ConclusionVersionItem]]:
     """获取研究项的结论版本历史"""
 
-    return await service.get_conclusion_history(db, track_id)
+    versions = await service.get_conclusion_history(db, track_id)
+    return DataResponse[list[ConclusionVersionItem]](data=versions)
 
 
 # ===== RdProject API Endpoints =====
@@ -2307,7 +2320,7 @@ async def get_rd_stage_deliverable_api(
     "/rd-stage-deliverables",
     summary="获取阶段交付物列表",
 )
-async def list_rd_stage_deliverables_api(  # type: ignore[no-untyped-def]
+async def list_rd_stage_deliverables_api(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:stage-deliverable:read")),
     project_id: UUID | None = None,
@@ -2317,17 +2330,15 @@ async def list_rd_stage_deliverables_api(  # type: ignore[no-untyped-def]
     page: int = 1,
     page_size: int = 20,
     db: AsyncSession = Depends(get_db),
-):
+) -> DataResponse[list[RdStageDeliverableResponse]]:
     items, total = await service.list_rd_stage_deliverables(
         db, project_id, stage, deliverable_type, status, page, page_size
     )
 
-    return {
-        "items": [RdStageDeliverableResponse.model_validate(i.__dict__).model_dump() for i in items],
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-    }
+    return DataResponse[list[RdStageDeliverableResponse]](
+        data=[RdStageDeliverableResponse.model_validate(i.__dict__) for i in items],
+        meta={"page": page, "page_size": page_size, "total": total},
+    )
 
 
 @router.put(
@@ -2358,12 +2369,12 @@ async def delete_rd_stage_deliverable_api(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:stage-deliverable:delete")),
     db: AsyncSession = Depends(get_db),
-) -> list:  # type: ignore[type-arg]
+) -> DataResponse[None]:
     user_id = current_user.id
 
     await service.delete_rd_stage_deliverable(db, deliverable_id, user_id)
 
-    return {"message": "删除成功"}  # type: ignore[return-value]
+    return DataResponse[None](message="删除成功")
 
 
 @router.post(
@@ -2376,7 +2387,7 @@ async def upload_deliverable_file(
     ctx: PermissionContext = Depends(require_permission("research:stage-deliverable:create")),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-) -> list:  # type: ignore[type-arg]
+) -> DataResponse[DeliverableUploadResult]:
     """上传交付物附件文件（本地存储）"""
 
     UPLOAD_DIR = _deliverable_upload_dir()  # noqa: N806
@@ -2407,12 +2418,8 @@ async def upload_deliverable_file(
         current_user.id,
     )
 
-    return build_response(  # type: ignore[return-value]
-        data={
-            "file_url": file_url,
-            "file_name": filename,
-            "file_size": file_size,
-        }
+    return DataResponse[DeliverableUploadResult](
+        data=DeliverableUploadResult(file_url=file_url, file_name=filename, file_size=file_size)
     )
 
 
@@ -2420,15 +2427,13 @@ async def upload_deliverable_file(
     "/rd-stage-deliverables/{deliverable_id}/download",
     summary="下载交付物附件",
 )
-async def download_deliverable_file(  # type: ignore[no-untyped-def]
+async def download_deliverable_file(
     deliverable_id: UUID,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:stage-deliverable:read")),
     db: AsyncSession = Depends(get_db),
-):
+) -> FileResponse:
     """下载交付物附件文件（本地存储）"""
-
-    from fastapi.responses import FileResponse
 
     deliverable = await service.get_rd_stage_deliverable(db, deliverable_id)
 
@@ -2462,10 +2467,12 @@ async def get_pilot_studies(  # noqa: F811
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:pilot-study:read")),
     db: AsyncSession = Depends(get_db),
-) -> list:  # type: ignore[type-arg]
+) -> DataResponse[list[RdPilotStudyResponse]]:
     items = await service.get_pilot_studies(db, project_id)
 
-    return [RdPilotStudyResponse.model_validate(i.__dict__).model_dump() for i in items]
+    return DataResponse[list[RdPilotStudyResponse]](
+        data=[RdPilotStudyResponse.model_validate(i.__dict__) for i in items]
+    )
 
 
 @router.post("/rd-pilot-studies", summary="创建中试研究")
@@ -2474,12 +2481,12 @@ async def create_pilot_study_api(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:pilot-study:create")),
     db: AsyncSession = Depends(get_db),
-) -> dict:  # type: ignore[type-arg]
+) -> DataResponse[RdPilotStudyResponse]:
     user_id = current_user.id
 
     item = await service.create_pilot_study(db, data, user_id)
 
-    return RdPilotStudyResponse.model_validate(item.__dict__).model_dump()
+    return DataResponse[RdPilotStudyResponse](data=RdPilotStudyResponse.model_validate(item.__dict__))
 
 
 @router.put("/rd-pilot-studies/{study_id}", summary="更新中试研究")
@@ -2489,12 +2496,12 @@ async def update_pilot_study_api(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:pilot-study:update")),
     db: AsyncSession = Depends(get_db),
-) -> dict:  # type: ignore[type-arg]
+) -> DataResponse[RdPilotStudyResponse]:
     user_id = current_user.id
 
     item = await service.update_pilot_study(db, study_id, data, user_id)
 
-    return RdPilotStudyResponse.model_validate(item.__dict__).model_dump()
+    return DataResponse[RdPilotStudyResponse](data=RdPilotStudyResponse.model_validate(item.__dict__))
 
 
 @router.delete("/rd-pilot-studies/{study_id}", summary="删除中试研究")
@@ -2503,12 +2510,12 @@ async def delete_pilot_study_api(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:pilot-study:delete")),
     db: AsyncSession = Depends(get_db),
-) -> dict:  # type: ignore[type-arg]
+) -> DataResponse[None]:
     user_id = current_user.id
 
     await service.delete_pilot_study(db, study_id, user_id)
 
-    return {"message": "删除成功"}
+    return DataResponse[None](message="删除成功")
 
 
 # ===== 工艺验证 API =====
@@ -2520,10 +2527,12 @@ async def get_validations(  # noqa: F811
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:process-validation:read")),
     db: AsyncSession = Depends(get_db),
-) -> list:  # type: ignore[type-arg]
+) -> DataResponse[list[RdProcessValidationResponse]]:
     items = await service.get_validations(db, project_id)
 
-    return [RdProcessValidationResponse.model_validate(i.__dict__).model_dump() for i in items]
+    return DataResponse[list[RdProcessValidationResponse]](
+        data=[RdProcessValidationResponse.model_validate(i.__dict__) for i in items]
+    )
 
 
 @router.post("/rd-process-validations", summary="创建工艺验证")
@@ -2532,12 +2541,12 @@ async def create_validation_api(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:process-validation:create")),
     db: AsyncSession = Depends(get_db),
-) -> dict:  # type: ignore[type-arg]
+) -> DataResponse[RdProcessValidationResponse]:
     user_id = current_user.id
 
     item = await service.create_validation(db, data, user_id)
 
-    return RdProcessValidationResponse.model_validate(item.__dict__).model_dump()
+    return DataResponse[RdProcessValidationResponse](data=RdProcessValidationResponse.model_validate(item.__dict__))
 
 
 @router.put("/rd-process-validations/{validation_id}", summary="更新工艺验证")
@@ -2547,12 +2556,12 @@ async def update_validation_api(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:process-validation:update")),
     db: AsyncSession = Depends(get_db),
-) -> dict:  # type: ignore[type-arg]
+) -> DataResponse[RdProcessValidationResponse]:
     user_id = current_user.id
 
     item = await service.update_validation(db, validation_id, data, user_id)
 
-    return RdProcessValidationResponse.model_validate(item.__dict__).model_dump()
+    return DataResponse[RdProcessValidationResponse](data=RdProcessValidationResponse.model_validate(item.__dict__))
 
 
 @router.delete("/rd-process-validations/{validation_id}", summary="删除工艺验证")
@@ -2561,12 +2570,12 @@ async def delete_validation_api(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:process-validation:delete")),
     db: AsyncSession = Depends(get_db),
-) -> dict:  # type: ignore[type-arg]
+) -> DataResponse[None]:
     user_id = current_user.id
 
     await service.delete_validation(db, validation_id, user_id)
 
-    return {"message": "删除成功"}
+    return DataResponse[None](message="删除成功")
 
 
 # ===== 申报资料 API =====
@@ -2578,10 +2587,12 @@ async def get_filings(  # noqa: F811
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:registration-filing:read")),
     db: AsyncSession = Depends(get_db),
-) -> list:  # type: ignore[type-arg]
+) -> DataResponse[list[RdRegistrationFilingResponse]]:
     items = await service.get_filings(db, project_id)
 
-    return [RdRegistrationFilingResponse.model_validate(i.__dict__).model_dump() for i in items]
+    return DataResponse[list[RdRegistrationFilingResponse]](
+        data=[RdRegistrationFilingResponse.model_validate(i.__dict__) for i in items]
+    )
 
 
 @router.post("/rd-registration-filings", summary="创建申报资料")
@@ -2590,12 +2601,12 @@ async def create_filing_api(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:registration-filing:create")),
     db: AsyncSession = Depends(get_db),
-) -> dict:  # type: ignore[type-arg]
+) -> DataResponse[RdRegistrationFilingResponse]:
     user_id = current_user.id
 
     item = await service.create_filing(db, data, user_id)
 
-    return RdRegistrationFilingResponse.model_validate(item.__dict__).model_dump()
+    return DataResponse[RdRegistrationFilingResponse](data=RdRegistrationFilingResponse.model_validate(item.__dict__))
 
 
 @router.put("/rd-registration-filings/{filing_id}", summary="更新申报资料")
@@ -2605,12 +2616,12 @@ async def update_filing_api(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:registration-filing:update")),
     db: AsyncSession = Depends(get_db),
-) -> dict:  # type: ignore[type-arg]
+) -> DataResponse[RdRegistrationFilingResponse]:
     user_id = current_user.id
 
     item = await service.update_filing(db, filing_id, data, user_id)
 
-    return RdRegistrationFilingResponse.model_validate(item.__dict__).model_dump()
+    return DataResponse[RdRegistrationFilingResponse](data=RdRegistrationFilingResponse.model_validate(item.__dict__))
 
 
 @router.delete("/rd-registration-filings/{filing_id}", summary="删除申报资料")
@@ -2619,12 +2630,12 @@ async def delete_filing_api(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:registration-filing:delete")),
     db: AsyncSession = Depends(get_db),
-) -> dict:  # type: ignore[type-arg]
+) -> DataResponse[None]:
     user_id = current_user.id
 
     await service.delete_filing(db, filing_id, user_id)
 
-    return {"message": "删除成功"}
+    return DataResponse[None](message="删除成功")
 
 
 # ===== 实验记录 API Endpoints =====
@@ -2687,12 +2698,12 @@ async def delete_experiment_log(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:experiment-log:delete")),
     db: AsyncSession = Depends(get_db),
-) -> dict:  # type: ignore[type-arg]
+) -> DataResponse[None]:
     user_id = current_user.id
 
     await service.delete_experiment_log(db, log_id, user_id)
 
-    return {"message": "删除成功"}
+    return DataResponse[None](message="删除成功")
 
 
 # ===== 研发报告 API Endpoints =====
@@ -2755,12 +2766,12 @@ async def delete_report(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:report:delete")),
     db: AsyncSession = Depends(get_db),
-) -> dict:  # type: ignore[type-arg]
+) -> DataResponse[None]:
     user_id = current_user.id
 
     await service.delete_report(db, report_id, user_id)
 
-    return {"message": "删除成功"}
+    return DataResponse[None](message="删除成功")
 
 
 # ===== 立项申请 API Endpoints =====
@@ -2823,12 +2834,12 @@ async def delete_initiation(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:initiation:delete")),
     db: AsyncSession = Depends(get_db),
-) -> dict:  # type: ignore[type-arg]
+) -> DataResponse[None]:
     user_id = current_user.id
 
     await service.delete_initiation(db, initiation_id, user_id)
 
-    return {"message": "删除成功"}
+    return DataResponse[None](message="删除成功")
 
 
 # ===== 研究项/发现删除 API =====
@@ -2840,7 +2851,7 @@ async def delete_research_track(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:track:delete")),
     db: AsyncSession = Depends(get_db),
-) -> dict:  # type: ignore[type-arg]
+) -> DataResponse[None]:
     """软删除研究项"""
 
     from app.modules.research.models import RdResearchTrack
@@ -2863,7 +2874,7 @@ async def delete_research_track(
 
     await db.commit()
 
-    return {"message": "删除成功"}
+    return DataResponse[None](message="删除成功")
 
 
 @router.delete("/findings/{finding_id}", summary="删除研究发现")
@@ -2872,7 +2883,7 @@ async def delete_research_finding(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:track:delete")),
     db: AsyncSession = Depends(get_db),
-) -> dict:  # type: ignore[type-arg]
+) -> DataResponse[None]:
     """软删除研究发现"""
 
     from app.modules.research.models import RdResearchFinding
@@ -2895,7 +2906,7 @@ async def delete_research_finding(
 
     await db.commit()
 
-    return {"message": "删除成功"}
+    return DataResponse[None](message="删除成功")
 
 
 # ===== 研究项详情 API =====
@@ -3001,11 +3012,11 @@ import io  # noqa: E402
 
 
 @router.get("/export/projects", summary="导出项目列表 CSV")
-async def export_projects_csv(  # type: ignore[no-untyped-def]
+async def export_projects_csv(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:project:export")),
     db: AsyncSession = Depends(get_db),
-):
+) -> StreamingResponse:
     """导出所有研发项目为 CSV 文件"""
 
     from sqlalchemy import select
@@ -3081,12 +3092,12 @@ async def export_projects_csv(  # type: ignore[no-untyped-def]
 
 
 @router.get("/export/tracks", summary="导出研究项 CSV")
-async def export_tracks_csv(  # type: ignore[no-untyped-def]
+async def export_tracks_csv(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:track:export")),
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
-):
+) -> StreamingResponse:
     """导出指定项目的研究项为 CSV 文件"""
 
     from sqlalchemy import select
@@ -3153,12 +3164,12 @@ async def export_tracks_csv(  # type: ignore[no-untyped-def]
 
 
 @router.get("/export/experiment-logs", summary="导出实验记录 CSV")
-async def export_experiment_logs_csv(  # type: ignore[no-untyped-def]
+async def export_experiment_logs_csv(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:experiment-log:export")),
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
-):
+) -> StreamingResponse:
     """导出指定项目的实验记录为 CSV 文件"""
 
     from sqlalchemy import select
@@ -3464,12 +3475,12 @@ async def delete_deliverable_template(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:deliverable-template:delete")),
     db: AsyncSession = Depends(get_db),
-) -> dict:  # type: ignore[type-arg]
+) -> DataResponse[None]:
     user_id = current_user.id
 
     await service.delete_deliverable_template(db, template_id, user_id)
 
-    return {"message": "删除成功"}
+    return DataResponse[None](message="删除成功")
 
 
 # ===== AI 报告生成 API =====

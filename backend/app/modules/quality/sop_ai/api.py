@@ -13,8 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import BadRequestException, NotFoundException
+from app.core.response import DataResponse
 from app.modules.quality.sop_ai import schemas
-from app.modules.quality.sop_ai.schemas import ApiResponse
 from app.modules.quality.sop_ai.service import SopAiCheckService
 
 logger = logging.getLogger(__name__)
@@ -30,11 +30,13 @@ async def get(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:sop-ai:read")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[list[schemas.SopAiConfigResponse]]:
     """获取所有配置"""
     service = SopAiCheckService(db)
     configs = await service.list_config()
-    return {"code": 200, "message": "success", "data": configs}
+    return DataResponse[list[schemas.SopAiConfigResponse]](
+        data=[schemas.SopAiConfigResponse.model_validate(c) for c in configs]
+    )
 
 
 @router.get("/config/{config_key}", summary="获取单个配置")
@@ -43,11 +45,13 @@ async def get_config(
     config_key: str,
     ctx: PermissionContext = Depends(require_permission("quality:sop-ai:read")),
     db: AsyncSession = Depends(get_db),
-) -> dict():  # type: ignore[valid-type]
+) -> DataResponse[schemas.SopAiConfigValue]:
     """获取指定配置"""
     service = SopAiCheckService(db)
     value = await service.get_config(config_key)
-    return ApiResponse(data={"config_key": config_key, "config_value": value})
+    return DataResponse[schemas.SopAiConfigValue](
+        data=schemas.SopAiConfigValue(config_key=config_key, config_value=value)
+    )
 
 
 @router.put("/config/{config_key}", summary="更新配置")
@@ -57,7 +61,7 @@ async def update_config(
     request: schemas.SopAiConfigUpdate,
     ctx: PermissionContext = Depends(require_permission("quality:sop-ai:update")),
     db: AsyncSession = Depends(get_db),
-) -> dict():  # type: ignore[valid-type]
+) -> DataResponse[schemas.SopAiConfigUpdateResult]:
     """更新配置"""
     service = SopAiCheckService(db)
     result = await service.set_config(
@@ -66,7 +70,7 @@ async def update_config(
         description=request.description,
         operator=request.operator,
     )
-    return ApiResponse(data=result)
+    return DataResponse[schemas.SopAiConfigUpdateResult](data=result)
 
 
 # ============ 单文件预审接口 ============
@@ -78,7 +82,7 @@ async def single_check(
     request: schemas.SingleCheckRequest,
     ctx: PermissionContext = Depends(require_permission("quality:sop-ai:create")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[schemas.SingleCheckResponse]:
     """对单个文件进行预审校验"""
     service = SopAiCheckService(db)
     result = await service.single_check(
@@ -87,7 +91,7 @@ async def single_check(
         check_type=request.check_type,
         operator=request.operator,
     )
-    return ApiResponse(data=result)
+    return DataResponse[schemas.SingleCheckResponse](data=result)
 
 
 # ============ 批量巡检接口 ============
@@ -99,7 +103,7 @@ async def batch_check(
     request: schemas.BatchCheckRequest,
     ctx: PermissionContext = Depends(require_permission("quality:sop-ai:create")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[schemas.BatchCheckResponse]:
     """对多个文件进行批量巡检"""
     service = SopAiCheckService(db)
     result = await service.batch_check(
@@ -107,7 +111,7 @@ async def batch_check(
         check_type=request.check_type,
         operator=request.operator,
     )
-    return ApiResponse(data=result)
+    return DataResponse[schemas.BatchCheckResponse](data=result)
 
 
 # ============ 记录查询接口 ============
@@ -124,7 +128,7 @@ async def list_records(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[schemas.CheckRecordPage]:
     """获取校验记录列表"""
     service = SopAiCheckService(db)
     records, total = await service.list_records(
@@ -136,33 +140,13 @@ async def list_records(
         page_size=page_size,
     )
 
-    items = [
-        {
-            "id": r.id,
-            "file_code": r.file_code,
-            "file_name": r.file_name,
-            "file_type": r.file_type,
-            "check_type": r.check_type,
-            "status": r.status,
-            "result_summary": r.result_summary,
-            "total_problems": r.total_problems,
-            "risk_high": r.risk_high,
-            "risk_medium": r.risk_medium,
-            "risk_low": r.risk_low,
-            "operator": r.operator,
-            "created_at": r.created_at,
-            "updated_at": r.updated_at,
-        }
-        for r in records
-    ]
-
-    return ApiResponse(
-        data={
-            "items": items,
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-        }
+    return DataResponse[schemas.CheckRecordPage](
+        data=schemas.CheckRecordPage(
+            items=[schemas.CheckMainResponse.model_validate(r) for r in records],
+            total=total,
+            page=page,
+            page_size=page_size,
+        )
     )
 
 
@@ -172,7 +156,7 @@ async def get_record(
     id: str,
     ctx: PermissionContext = Depends(require_permission("quality:sop-ai:read")),
     db: AsyncSession = Depends(get_db),
-) -> dict():  # type: ignore[valid-type]
+) -> DataResponse[schemas.CheckRecordDetail]:
     """获取校验记录详情"""
     service = SopAiCheckService(db)
     record = await service.get_record_detail(id)
@@ -180,7 +164,7 @@ async def get_record(
     if not record:
         raise NotFoundException("记录")
 
-    return ApiResponse(data=record)
+    return DataResponse[schemas.CheckRecordDetail](data=record)
 
 
 # ============ 问题处理接口 ============
@@ -193,7 +177,7 @@ async def handle_problem(
     request: schemas.ProblemHandleRequest,
     ctx: PermissionContext = Depends(require_permission("quality:sop-ai:update")),
     db: AsyncSession = Depends(get_db),
-) -> dict():  # type: ignore[valid-type]
+) -> DataResponse[schemas.ProblemHandleResult]:
     """处理问题"""
     service = SopAiCheckService(db)
     problem = await service.handle_problem(
@@ -206,12 +190,12 @@ async def handle_problem(
     if not problem:
         raise NotFoundException("问题")
 
-    return ApiResponse(
-        data={
-            "id": problem.id,
-            "handle_status": problem.handle_status,
-            "ignore_reason": problem.ignore_reason,
-        }
+    return DataResponse[schemas.ProblemHandleResult](
+        data=schemas.ProblemHandleResult(
+            id=problem.id,
+            handle_status=problem.handle_status,
+            ignore_reason=problem.ignore_reason,
+        )
     )
 
 
@@ -223,22 +207,22 @@ async def list_jobs(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:sop-ai:read")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[list[schemas.ScheduledJobListItem]]:
     """获取定时任务列表"""
     from app.modules.quality.sop_ai.scheduler import get_sop_ai_scheduler
 
     scheduler = get_sop_ai_scheduler()
     jobs = scheduler.list_jobs()
 
-    return ApiResponse(
+    return DataResponse[list[schemas.ScheduledJobListItem]](
         data=[
-            {
-                "job_id": job.job_id,
-                "job_name": job.job_name,
-                "cron_expression": job.cron_expression,
-                "file_pattern": job.file_pattern,
-                "enabled": job.enabled,
-            }
+            schemas.ScheduledJobListItem(
+                job_id=job.job_id,
+                job_name=job.job_name,
+                cron_expression=job.cron_expression,
+                file_pattern=job.file_pattern,
+                enabled=job.enabled,
+            )
             for job in jobs
         ]
     )
@@ -250,7 +234,7 @@ async def create_job(
     request: schemas.ScheduledJobCreate,
     ctx: PermissionContext = Depends(require_permission("quality:sop-ai:create")),
     db: AsyncSession = Depends(get_db),
-) -> dict():  # type: ignore[valid-type]
+) -> DataResponse[schemas.ScheduledJobDetail]:
     """创建定时任务"""
     from app.modules.quality.sop_ai.scheduler import get_sop_ai_scheduler
 
@@ -272,7 +256,7 @@ async def create_job(
     if not job:
         raise BadRequestException("创建任务失败")
 
-    return ApiResponse(data=job.to_dict())
+    return DataResponse[schemas.ScheduledJobDetail](data=job.to_dict())
 
 
 @router.delete("/jobs/{job_id}", summary="删除定时任务")
@@ -281,7 +265,7 @@ async def delete_job(
     job_id: str,
     ctx: PermissionContext = Depends(require_permission("quality:sop-ai:delete")),
     db: AsyncSession = Depends(get_db),
-) -> dict():  # type: ignore[valid-type]
+) -> DataResponse[schemas.JobDeleteResult]:
     """删除定时任务"""
     from app.modules.quality.sop_ai.scheduler import get_sop_ai_scheduler
 
@@ -291,7 +275,7 @@ async def delete_job(
     if not success:
         raise NotFoundException("任务")
 
-    return ApiResponse(data={"job_id": job_id, "deleted": True})
+    return DataResponse[schemas.JobDeleteResult](data=schemas.JobDeleteResult(job_id=job_id, deleted=True))
 
 
 # ============ 导出接口 ============
@@ -305,7 +289,7 @@ async def export_report(
     format: str = Query("excel", description="导出格式: excel/pdf"),
     include_problems: bool = Query(True, description="是否包含问题明细"),
     db: AsyncSession = Depends(get_db),
-) -> dict():  # type: ignore[valid-type]
+) -> DataResponse[schemas.ExportReportResult]:
     """导出校验报告"""
     service = SopAiCheckService(db)
     record = await service.get_record_detail(id)
@@ -314,10 +298,10 @@ async def export_report(
         raise NotFoundException("记录")
 
     # TODO: 实现实际的文件导出逻辑
-    return ApiResponse(
-        data={
-            "id": id,
-            "format": format,
-            "download_url": f"/api/v1/sop-ai/download/{id}.{format}",
-        }
+    return DataResponse[schemas.ExportReportResult](
+        data=schemas.ExportReportResult(
+            id=id,
+            format=format,
+            download_url=f"/api/v1/sop-ai/download/{id}.{format}",
+        )
     )

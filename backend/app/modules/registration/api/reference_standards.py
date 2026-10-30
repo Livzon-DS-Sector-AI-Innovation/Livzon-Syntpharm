@@ -1,6 +1,5 @@
 """对照物质说明表 API 路由"""
 
-from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
@@ -10,7 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import NotFoundException
-from app.core.response import build_response, paginated_response
+from app.core.response import DataResponse
+from app.modules.registration.schemas.authorization import (
+    CoaParseResult,
+    DownloadUrlResponse,
+    ReferenceStandardListItem,
+    ReferenceStandardResponse,
+)
 from app.modules.registration.service import ReferenceStandardService
 from app.shared.schemas import PageParams
 
@@ -26,7 +31,7 @@ async def post(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:reference-standard:create")),
     coa: UploadFile = File(...),
-) -> Any:
+) -> DataResponse[CoaParseResult]:
     """解析COA PDF文件，自动提取关键信息"""
     coa_data = await coa.read()
 
@@ -34,8 +39,8 @@ async def post(
 
     result = parse_coa(coa_data)
 
-    return build_response(
-        data=result,
+    return DataResponse[CoaParseResult](
+        data=CoaParseResult.model_validate(result),
         message="COA解析成功",
     )
 
@@ -60,7 +65,7 @@ async def post(  # noqa: F811
     storage_condition: str | None = Form(None, description="贮存条件"),
     remarks: str | None = Form(None, description="备注"),
     service: ReferenceStandardService = Depends(get_service),
-) -> Any:
+) -> DataResponse[ReferenceStandardResponse]:
     coa_data = await coa.read()
     coa_file_name = coa.filename or "COA.pdf"
 
@@ -82,8 +87,8 @@ async def post(  # noqa: F811
         storage_condition=storage_condition,
         remarks=remarks,
     )
-    return build_response(
-        data=record.model_dump(mode="json"),
+    return DataResponse[ReferenceStandardResponse](
+        data=record,
         message="对照物质说明表生成成功",
         code=201,
     )
@@ -96,18 +101,15 @@ async def get(
     drug_name: str | None = Query(None, description="药品名称搜索"),
     page_params: PageParams = Depends(),
     service: ReferenceStandardService = Depends(get_service),
-) -> Any:
+) -> DataResponse[list[ReferenceStandardListItem]]:
     records, total = await service.list_records(
         drug_name=drug_name,
         page=page_params.page,
         page_size=page_params.page_size,
     )
-    data = [r.model_dump(mode="json") for r in records]
-    return paginated_response(
-        data=data,
-        page=page_params.page,
-        page_size=page_params.page_size,
-        total=total,
+    return DataResponse[list[ReferenceStandardListItem]](
+        data=records,
+        meta={"page": page_params.page, "page_size": page_params.page_size, "total": total},
     )
 
 
@@ -117,9 +119,9 @@ async def get(  # noqa: F811
     record_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:reference-standard:read")),
     service: ReferenceStandardService = Depends(get_service),
-) -> Any:
+) -> DataResponse[ReferenceStandardResponse]:
     record = await service.get_record(record_id)
-    return build_response(data=record.model_dump(mode="json"))
+    return DataResponse[ReferenceStandardResponse](data=record)
 
 
 @router.get("/{record_id}/download-url", summary="获取说明表文件下载URL")  # type: ignore[no-redef]
@@ -128,7 +130,7 @@ async def get(  # noqa: F811
     record_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:reference-standard:read")),
     service: ReferenceStandardService = Depends(get_service),
-) -> Any:
+) -> DataResponse[DownloadUrlResponse]:
     record_model = await service.repo.get_by_id(record_id)
     if not record_model:
         raise NotFoundException("对照物质说明表记录", str(record_id))
@@ -137,7 +139,9 @@ async def get(  # noqa: F811
     if not file_path.exists():
         raise NotFoundException("说明表文件")
 
-    return build_response(data={"url": f"/api/v1/registration/reference-standards/{record_id}/download"})
+    return DataResponse[DownloadUrlResponse](
+        data=DownloadUrlResponse(url=f"/api/v1/registration/reference-standards/{record_id}/download")
+    )
 
 
 @router.get("/{record_id}/download", summary="下载生成的说明表文件")  # type: ignore[no-redef]
@@ -146,7 +150,7 @@ async def get(  # noqa: F811
     record_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:reference-standard:read")),
     service: ReferenceStandardService = Depends(get_service),
-) -> Any:
+) -> FileResponse:
     record_model = await service.repo.get_by_id(record_id)
     if not record_model:
         raise NotFoundException("对照物质说明表记录", str(record_id))
@@ -168,6 +172,6 @@ async def delete(
     record_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:reference-standard:delete")),
     service: ReferenceStandardService = Depends(get_service),
-) -> Any:
+) -> DataResponse[None]:
     await service.delete_record(record_id)
-    return build_response(message="对照物质说明表记录删除成功")
+    return DataResponse[None](message="对照物质说明表记录删除成功")

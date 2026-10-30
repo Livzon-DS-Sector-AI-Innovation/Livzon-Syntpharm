@@ -163,3 +163,25 @@ class FeishuRefreshResult(BaseModel):
     skipped: int = Field(description="跳过（无变更）")
     unmatched: int = Field(description="未匹配（identity 中找不到）")
     errors: list[dict[str, Any]] = Field(default_factory=list)
+
+
+# ── 下拉选人 Schema ──
+
+
+class MaintainerBrief(BaseModel):
+    """维修人员下拉项（姓名 + 账号，重名时可区分）"""
+
+    user_id: str
+    name: str
+    username: str = ""
+    employee_no: str = ""
+    department_id: str = ""
+
+
+class UserBrief(BaseModel):
+    """员工下拉项"""
+
+    user_id: str
+    name: str
+    username: str = ""
+    employee_no: str = ""

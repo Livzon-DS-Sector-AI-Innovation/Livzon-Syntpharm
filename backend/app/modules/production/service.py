@@ -362,8 +362,8 @@ class ProductionService:
                     params = json.loads(r.parameters)  # type: ignore[arg-type]
                     if "quantity" in params:
                         total_input += params["quantity"]
-                except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
-                    logger.warning("忽略异常 @ %s: %s", "ProductionService._sync_batch_input_output", exc)
+                except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+                    logger.exception("忽略异常 @ %s", "ProductionService._sync_batch_input_output")
 
         # 汇总包装记录（累计所有包装产出量）
         total_output = 0.0
@@ -375,8 +375,8 @@ class ProductionService:
                     params = json.loads(r.parameters)  # type: ignore[arg-type]
                     if "quantity" in params:
                         total_output += params["quantity"]
-                except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
-                    logger.warning("忽略异常 @ %s: %s", "ProductionService._sync_batch_input_output", exc)
+                except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+                    logger.exception("忽略异常 @ %s", "ProductionService._sync_batch_input_output")
 
         # 更新批次数据
         update_data = {}
@@ -424,8 +424,8 @@ class ProductionService:
                     params = json.loads(r.parameters)  # type: ignore[arg-type]
                     if "quantity" in params:
                         record_input += params["quantity"]
-                except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
-                    logger.warning("忽略异常 @ %s: %s", "ProductionService.calculate_material_balance", exc)
+                except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+                    logger.exception("忽略异常 @ %s", "ProductionService.calculate_material_balance")
             elif r.operation_type == "packaging" and r.parameters:
                 try:
                     import json
@@ -433,8 +433,8 @@ class ProductionService:
                     params = json.loads(r.parameters)  # type: ignore[arg-type]
                     if "quantity" in params:
                         record_output += params["quantity"]
-                except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
-                    logger.warning("忽略异常 @ %s: %s", "ProductionService.calculate_material_balance", exc)
+                except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+                    logger.exception("忽略异常 @ %s", "ProductionService.calculate_material_balance")
 
         # 投入量优先使用生产记录，如果没有则使用物料表
         total_input = record_input if record_input > 0 else material_input

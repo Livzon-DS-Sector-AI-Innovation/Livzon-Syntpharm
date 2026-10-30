@@ -1,18 +1,25 @@
 """偏差报告 API"""
 
 import logging
-import shutil
-import tempfile
 import uuid
+from io import BytesIO
 from pathlib import Path
+from urllib.parse import quote
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi.responses import StreamingResponse
 
+from app.core import storage
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException, NotFoundException
-from app.modules.quality.qms.deviation_report_schemas import OptimizeTextRequest, SaveHtmlRequest
-from app.modules.quality.qms.deviation_schemas import DeviationApiResponse
+from app.core.llm import llm_client
+from app.core.response import DataResponse
+from app.modules.quality.qms.deviation_report_schemas import (
+    DeviationOptimizeData,
+    DeviationReportUploadData,
+    OptimizeTextRequest,
+    SaveHtmlRequest,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +27,9 @@ router = APIRouter(prefix="/deviation-report", tags=["偏差报告"])
 
 DOCX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
-# 本文件位于 backend/app/modules/quality/qms/，parents[4] 才是 backend/
-_UPLOAD_DIR = Path(__file__).resolve().parents[4] / "uploads" / "deviation_reports"
+# 原始文档存 MinIO 的 quality 模块桶，容器重建不丢；key 前缀与业务目录一致
+_STORAGE_MODULE = "quality"
+_STORAGE_PREFIX = "deviation_reports"
 
 # 优化类型 → 提示词模板
 _OPTIMIZE_PROMPTS: dict[str, str] = {
@@ -78,80 +86,90 @@ _OPTIMIZE_PROMPTS: dict[str, str] = {
 _OPTIMIZE_RESULT_PREFIXES = ("润色结果：", "总结结果：", "扩展结果：", "简化结果：")
 
 
-def _upload_dir() -> Path:
-    _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    return _UPLOAD_DIR
+def _object_key(file_id: str) -> str:
+    return f"{_STORAGE_PREFIX}/{file_id}"
 
 
-def _resolve_uploaded_file(file_id: str) -> Path:
-    """解析上传目录内的文件，拒绝任何目录穿越写法。"""
+def _store_bytes(file_id: str, data: bytes, content_type: str) -> None:
+    """把原始文档写入对象存储。"""
+    if not storage.is_enabled():
+        raise AppException(status_code=503, message="对象存储未启用，无法保存原始文档")
+    storage.upload_object(_STORAGE_MODULE, _object_key(file_id), data, len(data), content_type)
+
+
+def _load_bytes(file_id: str) -> bytes:
+    """按 file_id 读取原始文档，拒绝任何目录穿越写法。"""
     if not file_id or Path(file_id).name != file_id:
         raise AppException(status_code=400, message="文件标识不合法")
-    path = _upload_dir() / file_id
-    if not path.is_file():
+    found = storage.get_object(_STORAGE_MODULE, _object_key(file_id))
+    if found is None:
         raise NotFoundException(resource="原始文件")
-    return path
+    return found[0]
+
+
+def _docx_response(data: bytes, filename: str) -> StreamingResponse:
+    return StreamingResponse(
+        BytesIO(data),
+        media_type=DOCX_MEDIA_TYPE,
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(filename)}"},
+    )
 
 
 # ============ Word 模板上传 API ============
 
 
-@router.post("/upload", summary="上传并解析Word模板", response_model=DeviationApiResponse)
+@router.post("/upload", summary="上传并解析Word模板")
 async def upload_report(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:deviation:update")),
     file: UploadFile = File(...),
-) -> DeviationApiResponse:
+) -> DataResponse[DeviationReportUploadData]:
     """上传Word文档并解析为HTML格式"""
     import mammoth  # type: ignore[import-untyped]
 
     if not file.filename or not file.filename.lower().endswith((".docx", ".doc")):
         raise AppException(status_code=400, message="仅支持 .docx 或 .doc 格式的Word文件")
 
-    uploads_dir = _upload_dir()
     file_ext = Path(file.filename).suffix.lower()
     saved_filename = f"{uuid.uuid4().hex}{file_ext}"
-    file_path = uploads_dir / saved_filename
-
-    with open(file_path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+    raw = await file.read()
+    _store_bytes(saved_filename, raw, file.content_type or DOCX_MEDIA_TYPE)
 
     try:
-        with open(file_path, "rb") as docx_file:
-            result = mammoth.convert_to_html(docx_file)
-            html_content = result.value
+        result = mammoth.convert_to_html(BytesIO(raw))
+        html_content = result.value
         warnings = [msg.message for msg in result.messages]
     except Exception:
         logger.exception("偏差报告解析失败: file_id=%s", saved_filename)
-        file_path.unlink(missing_ok=True)
+        try:
+            storage.delete_object(_STORAGE_MODULE, _object_key(saved_filename))
+        except Exception:
+            logger.exception("偏差报告上传清理失败: file_id=%s", saved_filename)
         raise AppException(status_code=500, message="文档解析失败，请确认文件是有效的 Word 文档") from None
 
-    return DeviationApiResponse(
+    return DataResponse[DeviationReportUploadData](
         message="文档解析成功",
-        data={
-            "file_id": saved_filename,
-            "file_name": file.filename,
-            "html_content": html_content,
-            "file_path": f"/api/v1/quality/deviation-report/download?file_id={saved_filename}",
-            "warnings": warnings,
-        },
+        data=DeviationReportUploadData(
+            file_id=saved_filename,
+            file_name=file.filename,
+            html_content=html_content,
+            file_path=f"/api/v1/quality/deviation-report/download?file_id={saved_filename}",
+            warnings=warnings,
+        ),
     )
 
 
 @router.post("/save", summary="保存HTML内容为Word")
 async def save_report(
     payload: SaveHtmlRequest,
-    background_tasks: BackgroundTasks,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:deviation:update")),
-) -> FileResponse:
+) -> StreamingResponse:
     """将HTML内容保存为Word文档"""
     from bs4 import BeautifulSoup
     from docx import Document
 
-    original_path = _resolve_uploaded_file(payload.file_id)
-
-    doc = Document(str(original_path))
+    doc = Document(BytesIO(_load_bytes(payload.file_id)))
     soup = BeautifulSoup(payload.html_content, "html.parser")
 
     # 清除所有现有段落（保留样式）
@@ -182,17 +200,9 @@ async def save_report(
             para = doc.add_paragraph()
             para.add_run(element.get_text())
 
-    output_path = Path(tempfile.gettempdir()) / f"saved_report_{uuid.uuid4().hex}.docx"
-    doc.save(str(output_path))
-
-    # 响应发送完成后清理临时文件，避免 /tmp 持续增长
-    background_tasks.add_task(output_path.unlink, missing_ok=True)
-
-    return FileResponse(
-        path=str(output_path),
-        filename=f"偏差报告_{uuid.uuid4().hex[:8]}.docx",
-        media_type=DOCX_MEDIA_TYPE,
-    )
+    buf = BytesIO()
+    doc.save(buf)
+    return _docx_response(buf.getvalue(), f"偏差报告_{uuid.uuid4().hex[:8]}.docx")
 
 
 @router.get("/download", summary="下载原始Word文档")
@@ -200,34 +210,30 @@ async def download_report(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:deviation:read")),
     file_id: str = "",
-) -> FileResponse:
+) -> StreamingResponse:
     """下载原始Word文档"""
-    file_path = _resolve_uploaded_file(file_id)
-    return FileResponse(
-        path=str(file_path),
-        filename=file_path.name,
-        media_type=DOCX_MEDIA_TYPE,
-    )
+    return _docx_response(_load_bytes(file_id), file_id)
 
 
 # ============ AI 优化接口 ============
 
 
-@router.post("/ai/optimize", summary="AI优化文本", response_model=DeviationApiResponse)
+@router.post("/ai/optimize", summary="AI优化文本")
 async def optimize_text(
     payload: OptimizeTextRequest,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:deviation:update")),
-) -> DeviationApiResponse:
+) -> DataResponse[DeviationOptimizeData]:
     """使用AI优化选中的文本"""
-    from app.modules.quality.ai.minimax_util import get_vision_util
-
     template = _OPTIMIZE_PROMPTS.get(payload.optimize_type, _OPTIMIZE_PROMPTS["polish"])
     prompt = template.format(text=payload.text)
 
     try:
-        vision_util = get_vision_util()
-        result = await vision_util.recognize_text(prompt=prompt, max_tokens=4096)
+        result = await llm_client.chat(
+            [{"role": "user", "content": prompt}],
+            response_format=None,
+            max_tokens=4096,
+        )
     except Exception:
         logger.exception("偏差报告 AI 优化失败: optimize_type=%s", payload.optimize_type)
         raise AppException(status_code=500, message="AI 优化失败，请稍后重试") from None
@@ -238,4 +244,7 @@ async def optimize_text(
             optimized = optimized[len(prefix) :].lstrip()
             break
 
-    return DeviationApiResponse(message="优化成功", data={"optimized_text": optimized})
+    return DataResponse[DeviationOptimizeData](
+        message="优化成功",
+        data=DeviationOptimizeData(optimized_text=optimized),
+    )

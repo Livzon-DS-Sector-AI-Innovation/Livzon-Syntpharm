@@ -16,7 +16,10 @@ from app.modules.equipment.models.equipment import Equipment  # noqa: E402
 
 
 async def run():
-    excel_path = "/home/zhuangweizi/.codex/202606sbgz.xls"
+    excel_path = os.environ.get("IMPORT_EXCEL_PATH", "")
+    if not excel_path or not os.path.exists(excel_path):
+        print("❌ 请通过环境变量 IMPORT_EXCEL_PATH 指定 Excel 文件路径，且文件必须存在")
+        return
     wb = xlrd.open_workbook(excel_path)
     ws = wb.sheet_by_index(0)
     headers = ws.row_values(4)

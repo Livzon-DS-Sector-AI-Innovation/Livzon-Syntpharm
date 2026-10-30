@@ -98,8 +98,8 @@ async def delete_image(db: AsyncSession, image_id: uuid.UUID) -> None:
     if minio_enabled():
         try:
             delete_object("equipment", image.file_path)
-        except Exception as exc:
-            logger.warning("忽略异常 @ %s: %s", "delete_image", exc)
+        except Exception:
+            logger.exception("忽略异常 @ %s", "delete_image")
     elif os.path.exists(image.file_path):
         os.remove(image.file_path)
 

@@ -63,8 +63,8 @@ async def maintenance_plan_loop() -> None:
                 timeout=wait_seconds,
             )
             break  # stop flag 被设置，退出循环
-        except TimeoutError as exc:
-            logger.warning("忽略异常 @ %s: %s", "maintenance_plan_loop", exc)
+        except TimeoutError:
+            logger.exception("忽略异常 @ %s", "maintenance_plan_loop")
 
         if stop_maintenance_plan_flag.is_set():
             break
@@ -176,6 +176,6 @@ async def timeout_scan_loop() -> None:
                 stop_timeout_flag.wait(),
                 timeout=60,
             )
-        except TimeoutError as exc:
-            logger.warning("忽略异常 @ %s: %s", "timeout_scan_loop", exc)
+        except TimeoutError:
+            logger.exception("忽略异常 @ %s", "timeout_scan_loop")
     logger.info("工单超时扫描任务已停止")
