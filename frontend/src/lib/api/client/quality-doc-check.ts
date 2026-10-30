@@ -2,16 +2,12 @@
 // 交给后端，故按 AGENTS.md 的上传例外条款放在 lib/api/client/。
 // 其余 JSON 写操作见 actions/quality.ts。
 
+import type { ApiResponse } from '@/types/common'
+
 const API_BASE = '/api/v1/quality'
 
-export interface Envelope<T> {
-  code: number
-  message?: string
-  data: T
-}
-
-async function parseEnvelope<T>(res: Response, fallback: string): Promise<Envelope<T>> {
-  const body = (await res.json()) as Envelope<T>
+async function parseEnvelope<T>(res: Response, fallback: string): Promise<ApiResponse<T>> {
+  const body = (await res.json()) as ApiResponse<T>
   if (!res.ok) {
     throw new Error(body?.message || fallback)
   }
@@ -19,7 +15,7 @@ async function parseEnvelope<T>(res: Response, fallback: string): Promise<Envelo
 }
 
 /** 上传文件并登记元数据（文档预审用） */
-export async function uploadDocCheckFile<T>(formData: FormData): Promise<Envelope<T>> {
+export async function uploadDocCheckFile<T>(formData: FormData): Promise<ApiResponse<T>> {
   const res = await fetch(`${API_BASE}/upload`, { method: 'POST', body: formData })
   return parseEnvelope<T>(res, '文件上传失败')
 }
@@ -28,7 +24,7 @@ export async function uploadDocCheckFile<T>(formData: FormData): Promise<Envelop
 export async function uploadDeviationFlowAttachment<T = unknown>(
   deviationId: string,
   formData: FormData,
-): Promise<Envelope<T>> {
+): Promise<ApiResponse<T>> {
   const res = await fetch(`${API_BASE}/deviation-flow/${deviationId}/attachments`, {
     method: 'POST',
     body: formData,

@@ -245,6 +245,7 @@ export default function DeviationReportPage() {
 
   return (
     <div style={{ padding: 24 }}>
+      <h1 className="sr-only">偏差报告编辑器</h1>
       <Card
         title="偏差报告编辑器"
         extra={

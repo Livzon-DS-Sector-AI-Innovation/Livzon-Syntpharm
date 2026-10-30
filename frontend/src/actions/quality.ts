@@ -972,6 +972,7 @@ export async function uploadDeviationReportTemplate(file: File) {
 
 /** AI 优化偏差报告选中文本 */
 export async function optimizeDeviationReportText(text: string, optimizeType: DeviationReportOptimizeType) {
-  const optimized = await DeviationReportServer.optimizeDeviationReportText(text, optimizeType)
-  return { code: 200, message: 'ok', data: { optimized_text: optimized } } as ApiResponse<{ optimized_text: string }>
+  return wrap<components['schemas']['DeviationOptimizeData']>(
+    DeviationReportServer.optimizeDeviationReportText(text, optimizeType),
+  )
 }

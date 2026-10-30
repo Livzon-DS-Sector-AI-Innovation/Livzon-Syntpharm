@@ -1,5 +1,5 @@
 import { apiFetchData } from './base'
-import type { DeviationReportOptimizeType, DeviationReportUploadResult } from '@/types/quality'
+import type { DeviationOptimizeResult, DeviationReportOptimizeType, DeviationReportUploadResult } from '@/types/quality'
 
 const API_BASE = '/api/v1/quality/deviation-report'
 
@@ -13,14 +13,13 @@ export async function uploadDeviationReport(file: File): Promise<DeviationReport
   })
 }
 
-/** AI 优化选中文本，返回优化后的文本 */
+/** AI 优化选中文本，返回后端契约结构 */
 export async function optimizeDeviationReportText(
   text: string,
   optimizeType: DeviationReportOptimizeType,
-): Promise<string> {
-  const data = await apiFetchData<{ optimized_text: string }>(`${API_BASE}/ai/optimize`, {
+): Promise<DeviationOptimizeResult> {
+  return apiFetchData<DeviationOptimizeResult>(`${API_BASE}/ai/optimize`, {
     method: 'POST',
     body: JSON.stringify({ text, optimize_type: optimizeType }),
   })
-  return data.optimized_text
 }

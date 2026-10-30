@@ -742,9 +742,12 @@ export async function fetchTrainingSpecialists(_factory?: string): Promise<Gener
   return res.json()
 }
 
-/** 生成培训效果评估表（返回 xlsx 二进制流，Server Action 无法回传 Blob） */
-export async function generateEvaluationForm(payload: Record<string, unknown>): Promise<Blob> {
-  const res = await fetch('/api/hr/generate-evaluation', {
+/** 生成培训效果评估表（返回 docx 二进制流，Server Action 无法回传 Blob） */
+export async function generateEvaluationForm(
+  payload: Record<string, unknown>,
+  factory: 'old' | 'new' = 'old',
+): Promise<Blob> {
+  const res = await fetch(`/api/v1/hr/training-evaluation?factory=${factory}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

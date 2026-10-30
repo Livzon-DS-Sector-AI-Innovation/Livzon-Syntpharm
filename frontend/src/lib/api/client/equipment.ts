@@ -1,3 +1,4 @@
+import type { components } from '@/types/generated/schema'
 import type { DepartmentOption } from '@/types/equipment/generated-bridge'
 export type { DepartmentOption } from '@/types/equipment/generated-bridge'
 import {
@@ -317,9 +318,5 @@ export async function syncEquipmentExcel(formData: FormData, dryRun: boolean) {
     : '/api/v1/equipment/equipments/sync-excel'
   const res = await fetch(url, { method: 'POST', body: formData })
   if (!res.ok) throw new Error(`服务器响应错误: ${res.status}`)
-  return (await res.json()) as {
-    code: number
-    message?: string
-    data: { updated: number; inserted: number; migrated: number; deleted: number; warnings?: string[] }
-  }
+  return (await res.json()) as components['schemas']['EquipmentSyncResponse']
 }

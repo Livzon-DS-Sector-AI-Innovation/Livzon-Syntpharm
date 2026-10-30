@@ -211,7 +211,7 @@ export default function RegistrationPage() {
       {/* 顶部标题区 */}
       <div className="flex items-center justify-between">
         <div>
-          <Title level={4} style={{ marginBottom: 4, color: 'var(--color-charcoal)' }}>
+          <Title level={1} style={{ marginBottom: 4, fontSize: 22, color: 'var(--color-charcoal)' }}>
             注册管理
           </Title>
           <Paragraph type="secondary" style={{ marginBottom: 0 }}>

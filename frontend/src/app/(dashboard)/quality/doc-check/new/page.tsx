@@ -231,6 +231,7 @@ export default function DocCheckNewPage() {
 
   return (
     <div style={{ padding: 24 }}>
+      <h1 className="sr-only">新建文件审查</h1>
       <div style={{ marginBottom: 16 }}>
         <Button
           icon={<ArrowLeftOutlined />}

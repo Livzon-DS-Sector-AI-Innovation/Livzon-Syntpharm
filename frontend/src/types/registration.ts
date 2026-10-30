@@ -13,6 +13,8 @@
  * See AGENTS.md: "所有 API 相关的类型必须从 @/types/generated/schema 导入"
  */
 
+import type { components } from '@/types/generated/schema'
+
 export interface ProductInfo {
   product_name: string
   registration_number: string
@@ -169,23 +171,9 @@ export interface ReferenceStandardCreateInput {
 }
 
 /** COA 解析结果（POST /api/v1/registration/reference-standards/parse-coa 的 data 字段） */
-export interface ParseCOAResponse {
-  metadata: {
-    drug_name?: string
-    reference_substance_name?: string
-    batch_number?: string
-    manufacturer?: string
-    english_name?: string
-    molecular_formula?: string
-    molecular_weight?: string
-    cas_number?: string
-    content?: string
-    moisture?: string
-    rsd?: string
-    expiration_date?: string
-    storage_condition?: string
-  }
-}
+// COA 解析结果直接使用后端契约（GET/POST 已声明 response_model=CoaParseResult），
+// 不再手写一份容易漂移的 metadata 结构。
+export type ParseCOAResponse = components['schemas']['CoaParseResult']
 
 // ── 药品与审评节点 ──
 

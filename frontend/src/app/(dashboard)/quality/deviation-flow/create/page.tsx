@@ -92,8 +92,6 @@ export default function DeviationCreatePage() {
     department: string
     time: string
   } | null>(null)
-  const [qaUsers, setQaUsers] = useState<FeishuUser[]>([])
-  const [deptLeaders, setDeptLeaders] = useState<FeishuUser[]>([])
   const [uploading, setUploading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -105,29 +103,28 @@ export default function DeviationCreatePage() {
     return () => mq.removeEventListener('change', update)
   }, [])
 
-  useEffect(() => {
-    loadReminderConfig()
-  }, [])
-
-  const loadReminderConfig = async () => {
-    try {
+  // 提醒配置走 React Query，避免在组件里用 useEffect 直接 fetch
+  const { data: reminderConfig } = useQuery({
+    queryKey: ['deviation-reminder-config'],
+    queryFn: async () => {
       const [qaRes, leaderRes] = await Promise.all([
         fetch(`${API_BASE}/quality/deviation-settings/qa-users`),
         fetch(`${API_BASE}/quality/deviation-settings/leaders`),
       ])
       const qaResult = await qaRes.json()
       const leaderResult = await leaderRes.json()
-
-      if (qaResult.code === 200) {
-        setQaUsers(qaResult.data.filter((u: FeishuUser) => u.is_active !== false))
+      return {
+        qaUsers: ((qaResult.code === 200 ? qaResult.data : []) as FeishuUser[]).filter(
+          (u) => u.is_active !== false,
+        ),
+        deptLeaders: ((leaderResult.code === 200 ? leaderResult.data : []) as FeishuUser[]).filter(
+          (u) => u.is_active !== false,
+        ),
       }
-      if (leaderResult.code === 200) {
-        setDeptLeaders(leaderResult.data.filter((u: FeishuUser) => u.is_active !== false))
-      }
-    } catch (error) {
-      console.error('加载提醒配置失败', error)
-    }
-  }
+    },
+  })
+  const qaUsers = reminderConfig?.qaUsers ?? []
+  const deptLeaders = reminderConfig?.deptLeaders ?? []
 
   const { data: deviationData } = useQuery({
     queryKey: ['deviation-flow', editId],

@@ -81,7 +81,7 @@ export default function EvaluationFormPage() {
       const blob = await generateEvaluationForm(payload)
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a'); a.href = url
-      a.download = `培训效果评估表_${payload.training_date||'nodate'}.xlsx`
+      a.download = `培训效果评估表_${payload.training_date||'nodate'}.docx`
       document.body.appendChild(a); a.click(); document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
       message.success('评估表已生成，台账已更新')
