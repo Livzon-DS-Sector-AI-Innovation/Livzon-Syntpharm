@@ -151,8 +151,8 @@ async def energy_collection_loop() -> None:
             logger.debug("能耗自动采集已关闭，跳过本轮 tick")
             try:
                 await asyncio.wait_for(stop_energy_collection_flag.wait(), timeout=TICK_INTERVAL)
-            except TimeoutError:
-                pass
+            except TimeoutError as exc:
+                logger.warning("忽略异常 @ %s: %s", "energy_collection_loop", exc)
             continue
 
         try:
@@ -210,8 +210,8 @@ async def energy_collection_loop() -> None:
         # 等待下一次 tick
         try:
             await asyncio.wait_for(stop_energy_collection_flag.wait(), timeout=TICK_INTERVAL)
-        except TimeoutError:
-            pass
+        except TimeoutError as exc:
+            logger.warning("忽略异常 @ %s: %s", "energy_collection_loop", exc)
 
     logger.info("能耗自动采集任务已停止")
 
@@ -309,8 +309,8 @@ async def bitable_monthly_sync_loop() -> None:
         # 等待60秒后再次检查
         try:
             await asyncio.wait_for(stop_bitable_sync_flag.wait(), timeout=60)
-        except TimeoutError:
-            pass
+        except TimeoutError as exc:
+            logger.warning("忽略异常 @ %s: %s", "bitable_monthly_sync_loop", exc)
 
     logger.info("飞书多维表格月度同步任务已停止")
 
@@ -375,7 +375,7 @@ async def bitable_daily_sync_loop() -> None:
         # 等待60秒后再次检查
         try:
             await asyncio.wait_for(stop_bitable_daily_sync_flag.wait(), timeout=60)
-        except TimeoutError:
-            pass
+        except TimeoutError as exc:
+            logger.warning("忽略异常 @ %s: %s", "bitable_daily_sync_loop", exc)
 
     logger.info("飞书多维表格每日同步任务已停止")

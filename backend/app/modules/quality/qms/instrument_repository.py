@@ -3,6 +3,7 @@
 提供仪器设备台账、校准规则配置、校准记录、审批记录的数据库操作
 """
 
+import logging
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
@@ -18,6 +19,8 @@ from app.modules.quality.qms.instrument_models import (
     InstrumentCalibrationRecord,
     InstrumentCalibrationRule,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class InstrumentRepository:
@@ -223,8 +226,8 @@ class CalibrationRuleRepository:
             if isinstance(instrument_id, str):
                 try:
                     instrument_id = UUID(instrument_id)
-                except ValueError:
-                    pass
+                except ValueError as exc:
+                    logger.warning("忽略异常 @ %s: %s", "CalibrationRuleRepository.list_by_instrument", exc)
             if isinstance(instrument_id, UUID):
                 query = query.where(InstrumentCalibrationRule.instrument_id == instrument_id)
 
@@ -313,8 +316,9 @@ class CalibrationRecordRepository:
             if isinstance(instrument_id, str):
                 try:
                     instrument_id = UUID(instrument_id)
-                except ValueError:
-                    pass  # 无效UUID，跳过此条件
+                except ValueError as exc:
+                    # 无效 UUID：跳过该过滤条件
+                    logger.warning("忽略异常 @ %s: %s", "CalibrationRecordRepository.list_with_filter", exc)
             if isinstance(instrument_id, UUID):
                 query = query.where(InstrumentCalibrationRecord.instrument_id == instrument_id)
         if rule_id:
@@ -322,8 +326,9 @@ class CalibrationRecordRepository:
             if isinstance(rule_id, str):
                 try:
                     rule_id = UUID(rule_id)
-                except ValueError:
-                    pass  # 无效UUID，跳过此条件
+                except ValueError as exc:
+                    # 无效 UUID：跳过该过滤条件
+                    logger.warning("忽略异常 @ %s: %s", "CalibrationRecordRepository.list_with_filter", exc)
             if isinstance(rule_id, UUID):
                 query = query.where(InstrumentCalibrationRecord.rule_id == rule_id)
         if calibration_no:

@@ -32,6 +32,7 @@ from app.modules.quality import (
 )
 from app.modules.quality.ai.logs_api import router as ai_logs_router
 from app.modules.quality.label_verification import router as label_verification_router
+from app.modules.quality.qms.deviation_report_api import router as deviation_report_router
 from app.modules.quality.qms.material_report_api import router as material_report_router
 from app.modules.quality.sop_ai import router as sop_ai_router
 from app.modules.registration import router as registration_router
@@ -100,6 +101,7 @@ api_router.include_router(fqc_router, prefix="/quality", tags=["质量管理 - F
 api_router.include_router(stability_router, prefix="/quality", tags=["质量管理 - 稳定性"])
 api_router.include_router(deviation_router, prefix="/quality", tags=["质量管理 - 偏差"])
 api_router.include_router(deviation_settings_router, prefix="/quality", tags=["质量管理 - 偏差设置"])
+api_router.include_router(deviation_report_router, prefix="/quality", tags=["质量管理 - 偏差报告"])
 api_router.include_router(quality_reagent_router, prefix="/quality", tags=["质量管理 - 试剂"])
 api_router.include_router(doc_check_router, prefix="/quality", tags=["质量管理 - 文件检查"])
 api_router.include_router(static_data_router, prefix="/quality", tags=["质量管理 - 静态数据"])

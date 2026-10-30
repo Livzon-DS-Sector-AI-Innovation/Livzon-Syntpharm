@@ -30,8 +30,8 @@ def is_heading(element: Any, style_map: dict[str, int]) -> int | None:
                 try:
                     # outlineLvl is 0-based, we want 1-based level
                     return int(val) + 1
-                except ValueError:
-                    pass
+                except ValueError as exc:
+                    logger.warning("忽略异常 @ %s: %s", "is_heading", exc)
     return None
 
 
@@ -92,8 +92,8 @@ def split_template(
                 try:
                     elem = target_body[i]
                     target_body.remove(elem)
-                except IndexError:
-                    pass
+                except IndexError as exc:
+                    logger.warning("忽略异常 @ %s: %s", "split_template", exc)
 
         target_doc.save(str(target_path))
         result_paths[code] = target_path

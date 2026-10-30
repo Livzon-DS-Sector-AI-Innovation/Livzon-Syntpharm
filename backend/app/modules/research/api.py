@@ -6,7 +6,7 @@ import uuid
 from typing import Any
 from uuid import UUID
 
-from fastapi import Body, Depends, File, HTTPException, Query, UploadFile
+from fastapi import Body, Depends, File, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.database import async_session_factory, get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import AppException, BadRequestException, NotFoundException
 from app.core.job_store import JobStore, get_job_state_or_404, start_job
 from app.core.response import ApiResponse, build_response, paginated_response
 from app.modules.research import service
@@ -303,12 +304,8 @@ async def edbo_optimize(
     mode_list = [m.strip() for m in objective_modes.split(",") if m.strip()]
 
     if len(obj_list) != len(mode_list):
-        from fastapi import HTTPException
 
-        raise HTTPException(
-            status_code=400,
-            detail=f"objectives ({len(obj_list)}) and objective_modes ({len(mode_list)}) must have the same length",
-        )
+        raise BadRequestException(f'objectives ({len(obj_list)}) and objective_modes ({len(mode_list)}) must have the same length')
 
     # Read CSV content
 
@@ -316,9 +313,8 @@ async def edbo_optimize(
         csv_content = (await file.read()).decode("utf-8")
 
     except UnicodeDecodeError:
-        from fastapi import HTTPException
 
-        raise HTTPException(status_code=400, detail="文件编码错误：请使用 UTF-8 编码的 CSV 文件")
+        raise BadRequestException("文件编码错误：请使用 UTF-8 编码的 CSV 文件")
 
     # Run EDBO+ optimization
 
@@ -332,9 +328,8 @@ async def edbo_optimize(
         )
 
     except RuntimeError as e:
-        from fastapi import HTTPException
 
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
     return EDBOOptimizeApiResponse(data=EDBOOptimizeResponse(**result))
 
@@ -532,7 +527,7 @@ async def edbo_generate_scope(  # type: ignore[no-untyped-def]
     # Validate input
 
     if not components:
-        raise HTTPException(status_code=400, detail="组件定义不能为空")
+        raise BadRequestException("组件定义不能为空")
 
     # Process each component
 
@@ -557,10 +552,7 @@ async def edbo_generate_scope(  # type: ignore[no-untyped-def]
                 data_points = value.get("data_points")
 
                 if lower is None or upper is None or data_points is None:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"组件 '{key}' 缺少必要参数 (lower, upper, data_points)",
-                    )
+                    raise BadRequestException(f"组件 '{key}' 缺少必要参数 (lower, upper, data_points)")
 
                 try:
                     processed_components[key] = generate_numeric_values(  # type: ignore[no-untyped-call]
@@ -568,21 +560,21 @@ async def edbo_generate_scope(  # type: ignore[no-untyped-def]
                     )
 
                 except ValueError as e:
-                    raise HTTPException(status_code=400, detail=f"组件 '{key}': {str(e)}")
+                    raise BadRequestException(f"组件 '{key}': {str(e)}")
 
             elif comp_type == "categorical":
                 cat_values = value.get("values", [])
 
                 if not cat_values:
-                    raise HTTPException(status_code=400, detail=f"组件 '{key}' 的值列表不能为空")
+                    raise BadRequestException(f"组件 '{key}' 的值列表不能为空")
 
                 processed_components[key] = cat_values
 
             else:
-                raise HTTPException(status_code=400, detail=f"组件 '{key}' 的类型无效: {comp_type}")
+                raise BadRequestException(f"组件 '{key}' 的类型无效: {comp_type}")
 
         else:
-            raise HTTPException(status_code=400, detail=f"组件 '{key}' 的格式无效")
+            raise BadRequestException(f"组件 '{key}' 的格式无效")
 
     # Calculate total combinations
 
@@ -592,7 +584,7 @@ async def edbo_generate_scope(  # type: ignore[no-untyped-def]
         n_combinations *= len(values)
 
     if n_combinations > 10000:
-        raise HTTPException(status_code=400, detail=f"组合数量过大 ({n_combinations})，请减少组件选项")
+        raise BadRequestException(f'组合数量过大 ({n_combinations})，请减少组件选项')
 
     # Generate Cartesian product
 
@@ -767,7 +759,7 @@ async def get_pilot_workflow_detail(
     workflow = await pilot_repo.get_workflow_by_id(db, workflow_id)
 
     if not workflow:
-        raise HTTPException(status_code=404, detail="工作流不存在")
+        raise NotFoundException("工作流")
 
     steps = await pilot_repo.get_workflow_steps(db, workflow_id)
 
@@ -788,10 +780,10 @@ async def start_pilot_workflow(
     workflow = await pilot_repo.get_workflow_by_id(db, workflow_id)
 
     if not workflow:
-        raise HTTPException(status_code=404, detail="工作流不存在")
+        raise NotFoundException("工作流")
 
     if workflow.status != "pending":
-        raise HTTPException(status_code=400, detail=f"工作流状态为 {workflow.status}，无法启动")
+        raise BadRequestException(f'工作流状态为 {workflow.status}，无法启动')
 
     # 异步启动工作流
 
@@ -809,7 +801,7 @@ async def approve_pilot_workflow_step(
     result = await approve_step_engine(workflow_id)
 
     if "error" in result:
-        raise HTTPException(status_code=400, detail=result["error"])
+        raise BadRequestException(result['error'])
 
     return build_response(data=result)
 
@@ -825,7 +817,7 @@ async def get_pilot_workflow_step(
     step = await pilot_repo.get_workflow_step_by_id(db, step_id)
 
     if not step or step.workflow_id != workflow_id:
-        raise HTTPException(status_code=404, detail="步骤不存在")
+        raise NotFoundException("步骤")
 
     return build_response(data=PilotWorkflowStepResponse.model_validate(step))
 
@@ -841,10 +833,10 @@ async def upload_pilot_document(
     workflow = await pilot_repo.get_workflow_by_id(db, workflow_id)
 
     if not workflow:
-        raise HTTPException(status_code=404, detail="工作流不存在")
+        raise NotFoundException("工作流")
 
     if workflow.status != "pending":
-        raise HTTPException(status_code=400, detail="只有 pending 状态的工作流可以上传文档")
+        raise BadRequestException("只有 pending 状态的工作流可以上传文档")
 
     # 保存文件
 
@@ -884,7 +876,7 @@ async def delete_pilot_workflow(
     workflow = await pilot_repo.get_workflow_by_id(db, workflow_id)
 
     if not workflow:
-        raise HTTPException(status_code=404, detail="工作流不存在")
+        raise NotFoundException("工作流")
 
     # Soft delete
 
@@ -1131,7 +1123,7 @@ async def get_route(
     route = result.scalar_one_or_none()
 
     if not route:
-        raise HTTPException(status_code=404, detail="路线不存在")
+        raise NotFoundException("路线")
 
     # Load experiments
 
@@ -1250,7 +1242,7 @@ async def update_route(
     route = result.scalar_one_or_none()
 
     if not route:
-        raise HTTPException(status_code=404, detail="路线不存在")
+        raise NotFoundException("路线")
 
     # Update fields
 
@@ -1303,7 +1295,7 @@ async def delete_route(
     route = result.scalar_one_or_none()
 
     if not route:
-        raise HTTPException(status_code=404, detail="路线不存在")
+        raise NotFoundException("路线")
 
     # 如果已经删除，直接返回成功（幂等性）
 
@@ -1396,7 +1388,7 @@ async def update_experiment(
     exp = result.scalar_one_or_none()
 
     if not exp:
-        raise HTTPException(status_code=404, detail="实验记录不存在")
+        raise NotFoundException("实验记录")
 
     updatable = [
         "title",
@@ -1450,7 +1442,7 @@ async def delete_experiment(
     exp = result.scalar_one_or_none()
 
     if not exp:
-        raise HTTPException(status_code=404, detail="实验记录不存在")
+        raise NotFoundException("实验记录")
 
     exp.is_deleted = True
 
@@ -1552,7 +1544,7 @@ async def get_optimization(
     opt = result.scalar_one_or_none()
 
     if not opt:
-        raise HTTPException(status_code=404, detail="工艺优化记录不存在")
+        raise NotFoundException("工艺优化记录")
 
     return build_response(
         data={
@@ -1635,7 +1627,7 @@ async def update_optimization(
     opt = result.scalar_one_or_none()
 
     if not opt:
-        raise HTTPException(status_code=404, detail="工艺优化记录不存在")
+        raise NotFoundException("工艺优化记录")
 
     # 更新字段
 
@@ -2100,9 +2092,8 @@ async def transition_stage(
     review_notes = data.get("review_notes")
 
     if not target_stage:
-        from fastapi import HTTPException
 
-        raise HTTPException(status_code=400, detail="缺少 target_stage 参数")
+        raise BadRequestException("缺少 target_stage 参数")
     user_id = current_user.id
 
     result = await service.transition_stage(db, project_id, target_stage, review_notes, user_id)
@@ -2111,9 +2102,8 @@ async def transition_stage(
         return build_response(data=result, message="阶段流转成功")
 
     else:
-        from fastapi import HTTPException
 
-        raise HTTPException(status_code=400, detail=result.get("message", "阶段流转失败"))
+        raise BadRequestException(result.get('message', '阶段流转失败'))
 
 
 @router.get("/rd-projects/{project_id}/transition-check", summary="检查阶段流转条件")
@@ -2446,7 +2436,7 @@ async def download_deliverable_file(  # type: ignore[no-untyped-def]
     deliverable = await service.get_rd_stage_deliverable(db, deliverable_id)
 
     if not deliverable.file_name:
-        raise HTTPException(status_code=404, detail="未找到附件文件")
+        raise AppException(status_code=404, message="未找到附件文件")
 
     file_name = f"{deliverable_id}_{deliverable.file_name}"
 
@@ -2461,7 +2451,7 @@ async def download_deliverable_file(  # type: ignore[no-untyped-def]
                 file_path = legacy_path
 
     if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="文件不存在")
+        raise NotFoundException("文件")
 
     return FileResponse(file_path, filename=deliverable.file_name, media_type="application/octet-stream")
 
@@ -2868,7 +2858,7 @@ async def delete_research_track(
     track = result.scalar_one_or_none()
 
     if not track:
-        raise HTTPException(status_code=404, detail="研究项不存在")
+        raise NotFoundException("研究项")
 
     track.is_deleted = True
 
@@ -2900,7 +2890,7 @@ async def delete_research_finding(
     finding = result.scalar_one_or_none()
 
     if not finding:
-        raise HTTPException(status_code=404, detail="研究发现不存在")
+        raise NotFoundException("研究发现")
 
     finding.is_deleted = True
 
@@ -2937,7 +2927,7 @@ async def get_track_detail(
     track = result.scalar_one_or_none()
 
     if not track:
-        raise HTTPException(status_code=404, detail="研究项不存在")
+        raise NotFoundException("研究项")
 
     # Get findings
 

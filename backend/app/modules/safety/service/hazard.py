@@ -11,9 +11,10 @@ from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.jobs import spawn_task
+from app.core.jobs import submit_job
 from app.core.storage import delete_object
 from app.core.storage import is_enabled as minio_enabled
+from app.core.tasks import spawn_task
 from app.modules.safety.feishu.notification import send_user_card
 from app.modules.safety.models import HazardReport
 from app.modules.safety.repository import SafetyRepository
@@ -259,8 +260,8 @@ class HazardService:
                 abs_path = os.path.abspath(file_path)
                 if os.path.exists(abs_path):
                     os.remove(abs_path)
-        except OSError:
-            pass
+        except OSError as exc:
+            logger.warning("忽略异常 @ %s: %s", "HazardService._cleanup_file", exc)
 
     @staticmethod
     def _cleanup_json_array_files(json_str: str | None) -> None:
@@ -272,8 +273,8 @@ class HazardService:
                 for p in paths:
                     if isinstance(p, str):
                         HazardService._cleanup_file(p)
-        except (json.JSONDecodeError, TypeError):
-            pass
+        except (json.JSONDecodeError, TypeError) as exc:
+            logger.warning("忽略异常 @ %s: %s", "HazardService._cleanup_json_array_files", exc)
 
     # ==================== HazardReport Operations ====================
 
@@ -495,7 +496,10 @@ class HazardService:
 
         # 整改回复后，异步触发 AI 初审（非阻塞），AI 结果将决定后续通知路由
         if updated:
-            spawn_task(self.run_rectification_review(hazard_id))
+            await submit_job(
+                "safety.rectification-review",
+                lambda _job_id: self.run_rectification_review(hazard_id),
+            )
 
         return updated
 
@@ -624,7 +628,10 @@ class HazardService:
 
         # 重新整改回复后，异步触发 AI 初审（非阻塞），AI 结果将决定后续通知路由
         if updated:
-            spawn_task(self.run_rectification_review(hazard_id))
+            await submit_job(
+                "safety.rectification-review",
+                lambda _job_id: self.run_rectification_review(hazard_id),
+            )
 
         return updated
 

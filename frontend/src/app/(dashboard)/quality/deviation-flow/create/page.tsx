@@ -17,6 +17,7 @@ import dayjs from 'dayjs'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createDeviationFlow, updateDeviationFlow, submitDeviationFlow } from '@/actions/deviation'
 import '../deviation-style.css'
+import { uploadDeviationFlowAttachment } from '@/lib/api/client/quality-doc-check'
 
 const { Title: _Title, Text } = Typography
 const { TextArea } = Input
@@ -216,11 +217,7 @@ export default function DeviationCreatePage() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const response = await fetch(`${API_BASE}/quality/deviation-flow/${currentDeviationId}/attachments`, {
-        method: 'POST',
-        body: formData,
-      })
-      const result = await response.json()
+      const result = await uploadDeviationFlowAttachment(currentDeviationId, formData)
 
       if (result.code === 200) {
         message.success('附件上传成功')

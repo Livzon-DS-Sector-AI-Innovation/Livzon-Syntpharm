@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
-from app.core.response import paginated_response, success_response
+from app.core.response import build_response, paginated_response
 from app.modules.safety.schemas import (
     CardPreviewRequest,
     ScheduledTaskApiResponse,
@@ -33,7 +33,7 @@ scheduled_tasks_router = APIRouter()
 async def get_data_source_options(current_user: RequiredUser) -> Any:
     """获取可用的数据来源列表（供前端下拉选择）"""
     options = ScheduledTaskService.get_data_source_options()
-    return success_response(data=options)
+    return build_response(data=options)
 
 
 @scheduled_tasks_router.post(
@@ -47,7 +47,7 @@ async def preview_card(
     """预览消息卡片渲染效果"""
     service = ScheduledTaskService(db)
     result = await service.preview_card(data)
-    return success_response(data=result)
+    return build_response(data=result)
 
 
 @scheduled_tasks_router.get(
@@ -77,7 +77,7 @@ async def get_feishu_chats(
                 "name": "安全模块功能测试群",
             }
         )
-    return success_response(data=chats)
+    return build_response(data=chats)
 
 
 @scheduled_tasks_router.get("/scheduled-tasks", response_model=ScheduledTaskListApiResponse, summary="获取定时任务列表")
@@ -111,7 +111,7 @@ async def create_scheduled_task(
     service = ScheduledTaskService(db)
     task = await service.create_task(data)
     await db.commit()
-    return success_response(data=ScheduledTaskResponse.model_validate(task))
+    return build_response(data=ScheduledTaskResponse.model_validate(task))
 
 
 @scheduled_tasks_router.get(
@@ -127,7 +127,7 @@ async def get_scheduled_task(
     task = await service.get_task(task_id)
     if not task:
         raise NotFoundException(resource="定时任务")
-    return success_response(data=ScheduledTaskResponse.model_validate(task))
+    return build_response(data=ScheduledTaskResponse.model_validate(task))
 
 
 @scheduled_tasks_router.put(
@@ -145,7 +145,7 @@ async def update_scheduled_task(
     if not task:
         raise NotFoundException(resource="定时任务")
     await db.commit()
-    return success_response(data=ScheduledTaskResponse.model_validate(task))
+    return build_response(data=ScheduledTaskResponse.model_validate(task))
 
 
 @scheduled_tasks_router.delete(
@@ -162,7 +162,7 @@ async def delete_scheduled_task(
     if not ok:
         raise NotFoundException(resource="定时任务")
     await db.commit()
-    return success_response(message="删除成功")
+    return build_response(message="删除成功")
 
 
 @scheduled_tasks_router.post(
@@ -180,7 +180,7 @@ async def toggle_scheduled_task(
     if not task:
         raise NotFoundException(resource="定时任务")
     await db.commit()
-    return success_response(data=ScheduledTaskResponse.model_validate(task))
+    return build_response(data=ScheduledTaskResponse.model_validate(task))
 
 
 @scheduled_tasks_router.post(
@@ -197,7 +197,7 @@ async def run_scheduled_task_now(
     if not log:
         raise NotFoundException(resource="定时任务")
     await db.commit()
-    return success_response(data=ScheduledTaskLogResponse.model_validate(log))
+    return build_response(data=ScheduledTaskLogResponse.model_validate(log))
 
 
 @scheduled_tasks_router.get(
@@ -237,7 +237,7 @@ async def restart_feishu_ws(current_user: RequiredUser) -> Any:
     from app.modules.safety.feishu.event_client import restart_ws
 
     result = await restart_ws()
-    return success_response(data=result)
+    return build_response(data=result)
 
 
 @scheduled_tasks_router.get(
@@ -251,4 +251,4 @@ async def get_feishu_ws_status(current_user: RequiredUser) -> Any:
     from app.modules.safety.feishu.event_client import get_ws_status
 
     result = await get_ws_status()
-    return success_response(data=result)
+    return build_response(data=result)

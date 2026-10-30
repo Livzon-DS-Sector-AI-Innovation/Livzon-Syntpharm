@@ -3,13 +3,12 @@
 import logging
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
-from app.core.response import success_response
+from app.core.response import ApiResponse, build_response
 from app.modules.equipment.models.personnel import EquipmentPersonnel
 from app.platform.identity import User
 
@@ -23,7 +22,7 @@ async def list_maintainers(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("equipment:maintenance-staff:read")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """从人员配置中获取所有在岗人员，供工单指派维修人时选择。"""
     result = await db.execute(
         select(EquipmentPersonnel, User.username)
@@ -49,7 +48,7 @@ async def list_maintainers(
         for p, username in rows
     ]
 
-    return success_response(data=maintainers)
+    return build_response(data=maintainers)
 
 
 @router.get("/all-users", summary="获取全体员工列表")
@@ -57,7 +56,7 @@ async def list_all_users(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("equipment:maintenance-staff:read")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> ApiResponse:
     """返回所有本地用户，供工单责任人选择。"""
     result = await db.execute(
         select(User.id, User.name, User.username, User.employee_no)
@@ -73,4 +72,4 @@ async def list_all_users(
         }
         for row in result.all()
     ]
-    return success_response(data=users)
+    return build_response(data=users)

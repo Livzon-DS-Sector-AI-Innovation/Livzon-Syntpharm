@@ -59,6 +59,8 @@ import {
 
 import {
 } from '@/actions/doc-check'
+import { uploadDocCheckFile } from '@/lib/api/client/quality-doc-check'
+import { confirmDocCheckRecord, startDocCheck, updateDocCheckProblem } from '@/actions/quality'
 
 const { Dragger } = Upload
 
@@ -201,15 +203,9 @@ export default function DocCheckPage() {
 
       message.loading({ content: '正在上传文件...', key: 'upload' })
 
-      const response = await fetch(
-        `/api/v1/quality/upload`,
-        {
-          method: 'POST',
-          body: formData,
-        }
+      const data = await uploadDocCheckFile<{ file_id: string; file_name: string; file_path: string }>(
+        formData,
       )
-
-      const data = await response.json()
 
       if (data.code === 200) {
         message.success({ content: '文件上传成功', key: 'upload' })
@@ -241,19 +237,7 @@ export default function DocCheckPage() {
     try {
       message.loading({ content: '正在启动AI预审...', key: 'check' })
 
-      const response = await fetch(
-        `/api/v1/quality/check`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            file_id: uploadedFile.file_id,
-            check_config: checkConfig,
-          }),
-        }
-      )
-
-      const data = await response.json()
+      const data = await startDocCheck(uploadedFile.file_id, checkConfig)
 
       if (data.code === 200) {
         const taskId = data.data.task_id
@@ -383,19 +367,10 @@ export default function DocCheckPage() {
 
       if (!selectedProblem) return
 
-      const response = await fetch(
-        `/api/v1/quality/problems/${selectedProblem.id}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            handle_status: values.handle_status,
-            ignore_reason: values.ignore_reason,
-          }),
-        }
-      )
-
-      const data = await response.json()
+      const data = await updateDocCheckProblem(selectedProblem.id, {
+        handle_status: values.handle_status,
+        ignore_reason: values.ignore_reason,
+      })
 
       if (data.code === 200) {
         message.success('处理成功')
@@ -446,15 +421,7 @@ export default function DocCheckPage() {
     if (!checkResult) return
 
     try {
-      const response = await fetch(
-        `/api/v1/quality/records/${checkResult.id}/confirm`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      )
-
-      const data = await response.json()
+      const data = await confirmDocCheckRecord(checkResult.id)
 
       if (data.code === 200) {
         message.success('确认通过成功')

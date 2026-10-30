@@ -12,10 +12,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
-from app.core.jobs import spawn_task
+from app.core.jobs import submit_job
 from app.core.response import build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
+from app.core.tasks import spawn_task
 from app.modules.safety.schemas import (
     DepartmentLeaderApiResponse,
     DepartmentLeaderResponse,
@@ -484,7 +485,10 @@ async def handler(  # noqa: F811
         )
 
     # 异步执行，不阻塞 HTTP 响应
-    spawn_task(service.run_rectification_review(hazard_id))
+    await submit_job(
+        "safety.rectification-review",
+        lambda _job_id: service.run_rectification_review(hazard_id),
+    )
 
     return build_response(message="AI 初审已触发，正在异步处理中")
 

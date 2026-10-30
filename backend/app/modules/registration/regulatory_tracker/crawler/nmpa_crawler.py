@@ -203,8 +203,8 @@ class NmpaRecordAdapter(BaseCrawler):
                 if k in params:
                     page_num = int(params[k][0])
                     break
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("忽略异常 @ %s: %s", "NmpaRecordAdapter._parse_api_response", exc)
 
         pages = max(1, (total + 9) // 10)  # 假设每页 10 条
 

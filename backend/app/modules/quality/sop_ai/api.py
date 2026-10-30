@@ -7,11 +7,12 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import BadRequestException, NotFoundException
 from app.modules.quality.sop_ai import schemas
 from app.modules.quality.sop_ai.schemas import ApiResponse
 from app.modules.quality.sop_ai.service import SopAiCheckService
@@ -177,7 +178,7 @@ async def get_record(
     record = await service.get_record_detail(id)
 
     if not record:
-        raise HTTPException(status_code=404, detail="记录不存在")
+        raise NotFoundException("记录")
 
     return ApiResponse(data=record)
 
@@ -203,7 +204,7 @@ async def handle_problem(
     )
 
     if not problem:
-        raise HTTPException(status_code=404, detail="问题不存在")
+        raise NotFoundException("问题")
 
     return ApiResponse(
         data={
@@ -269,7 +270,7 @@ async def create_job(
     )
 
     if not job:
-        raise HTTPException(status_code=400, detail="创建任务失败")
+        raise BadRequestException("创建任务失败")
 
     return ApiResponse(data=job.to_dict())
 
@@ -288,7 +289,7 @@ async def delete_job(
     success = scheduler.remove_job(job_id)
 
     if not success:
-        raise HTTPException(status_code=404, detail="任务不存在")
+        raise NotFoundException("任务")
 
     return ApiResponse(data={"job_id": job_id, "deleted": True})
 
@@ -310,7 +311,7 @@ async def export_report(
     record = await service.get_record_detail(id)
 
     if not record:
-        raise HTTPException(status_code=404, detail="记录不存在")
+        raise NotFoundException("记录")
 
     # TODO: 实现实际的文件导出逻辑
     return ApiResponse(

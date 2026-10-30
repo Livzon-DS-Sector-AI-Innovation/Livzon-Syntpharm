@@ -169,8 +169,8 @@ async def start_ws() -> None:
 
         try:
             await asyncio.wait_for(_stop.wait(), timeout=10)
-        except TimeoutError:
-            pass
+        except TimeoutError as exc:
+            logger.warning("忽略异常 @ %s: %s", "start_ws", exc)
 
     logger.info("飞书 WebSocket 客户端已停止")
 

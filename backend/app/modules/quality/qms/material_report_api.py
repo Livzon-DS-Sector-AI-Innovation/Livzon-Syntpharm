@@ -1,5 +1,6 @@
 """原料报告单 API"""
 
+import logging
 from typing import Any
 from uuid import UUID
 
@@ -22,6 +23,8 @@ from app.modules.quality.qms.material_report_service import (
     ReportTemplateService,
 )
 from app.modules.quality.qms.schemas import InspectionStandardApiResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/quality/material-report", tags=["原料报告单"])
 
@@ -50,8 +53,8 @@ async def get(
     if template_id:
         try:
             template_uuid = UUID(template_id)
-        except ValueError:
-            pass
+        except ValueError as exc:
+            logger.warning("忽略异常 @ %s: %s", "get", exc)
 
     reports, total = await service.list_reports(
         template_id=template_uuid,
@@ -153,14 +156,14 @@ async def post(  # noqa: F811
     if field_mapping:
         try:
             field_mapping_dict = json.loads(field_mapping)
-        except json.JSONDecodeError:
-            pass
+        except json.JSONDecodeError as exc:
+            logger.warning("忽略异常 @ %s: %s", "post", exc)
 
     if table_fields:
         try:
             table_fields_dict = json.loads(table_fields)
-        except json.JSONDecodeError:
-            pass
+        except json.JSONDecodeError as exc:
+            logger.warning("忽略异常 @ %s: %s", "post", exc)
 
     # 创建模板
     service = ReportTemplateService(session)

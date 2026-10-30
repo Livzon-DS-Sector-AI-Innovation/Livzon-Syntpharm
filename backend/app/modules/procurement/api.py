@@ -1,14 +1,15 @@
 from urllib.parse import quote
 from uuid import UUID
 
-from fastapi import Depends, File, Form, HTTPException, Query, Response, UploadFile
+from fastapi import Depends, File, Form, Query, Response, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
-from app.core.response import paginated_response, success_response
+from app.core.exceptions import AppException, BadRequestException
+from app.core.response import build_response, paginated_response
 from app.modules.procurement.contract_generator import (
     get_contract_template_metadata,
 )
@@ -90,11 +91,11 @@ async def recognize_invoice(  # type: ignore[no-untyped-def]
     filename = file.filename or ""
     allowed_content_types = {"application/pdf", "application/octet-stream"}
     if file.content_type not in allowed_content_types and not filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="请上传 PDF 文件")
+        raise BadRequestException("请上传 PDF 文件")
 
     pdf_bytes = await _read_upload_file_with_limit(file)
     if not pdf_bytes:
-        raise HTTPException(status_code=400, detail="上传文件为空")
+        raise BadRequestException("上传文件为空")
 
     try:
         result = await recognize_and_store_invoice_pdf(
@@ -104,11 +105,11 @@ async def recognize_invoice(  # type: ignore[no-untyped-def]
             include_details=include_details,
         )
     except DuplicateInvoiceError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        raise AppException(status_code=409, message=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"发票识别失败：{exc}") from exc
+        raise BadRequestException(f'发票识别失败：{exc}') from exc
 
-    return success_response(data=InvoiceRecognitionRecordResponse.model_validate(result).model_dump(mode="json"))
+    return build_response(data=InvoiceRecognitionRecordResponse.model_validate(result).model_dump(mode="json"))
 
 
 async def _read_upload_file_with_limit(
@@ -124,10 +125,7 @@ async def _read_upload_file_with_limit(
             break
         total_size += len(chunk)
         if total_size > MAX_INVOICE_PDF_UPLOAD_BYTES:
-            raise HTTPException(
-                status_code=413,
-                detail=f"{file_label}不能超过 {settings.MAX_UPLOAD_SIZE_MB}MB",
-            )
+            raise AppException(status_code=413, message=f'{file_label}不能超过 {settings.MAX_UPLOAD_SIZE_MB}MB')
         chunks.append(chunk)
 
     return b"".join(chunks)
@@ -160,7 +158,7 @@ async def list_supplier_records(  # type: ignore[no-untyped-def]
         page_size=page_size,
     )
     data = [supplier.model_dump(mode="json") for supplier in suppliers]
-    return success_response(
+    return build_response(
         data=data,
         meta={
             "page": page,
@@ -186,10 +184,7 @@ async def import_supplier_records(  # type: ignore[no-untyped-def]
     filename = file.filename or ""
     allowed_extensions = (".xlsx", ".xlsm", ".csv", ".tsv")
     if not filename.lower().endswith(allowed_extensions):
-        raise HTTPException(
-            status_code=400,
-            detail="请上传 xlsx、xlsm、csv 或 tsv 文件",
-        )
+        raise BadRequestException("请上传 xlsx、xlsm、csv 或 tsv 文件")
 
     file_bytes = await _read_upload_file_with_limit(file, file_label="表格文件")
     try:
@@ -199,9 +194,9 @@ async def import_supplier_records(  # type: ignore[no-untyped-def]
             file_name=filename,
         )
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise BadRequestException(str(exc)) from exc
 
-    return success_response(
+    return build_response(
         data=result.model_dump(mode="json"),
         message="供应商清单导入成功",
     )
@@ -249,9 +244,9 @@ async def delete_invoice_record(  # type: ignore[no-untyped-def]
 ):
     deleted = await delete_invoice_recognition_record(db, record_id)
     if not deleted:
-        raise HTTPException(status_code=404, detail="识别记录不存在或已删除")
+        raise AppException(status_code=404, message="识别记录不存在或已删除")
 
-    return success_response(
+    return build_response(
         data=InvoiceRecognitionRecordDeleteResult(
             success_count=1,
             fail_count=0,
@@ -273,7 +268,7 @@ async def batch_delete_invoice_records(  # type: ignore[no-untyped-def]
     db: AsyncSession = Depends(get_db),
 ):
     deleted_count = await batch_delete_invoice_recognition_records(db, payload.ids)
-    return success_response(
+    return build_response(
         data=InvoiceRecognitionRecordDeleteResult(
             success_count=deleted_count,
             fail_count=max(0, len(payload.ids) - deleted_count),
@@ -392,8 +387,8 @@ async def create_purchase_request_record(  # type: ignore[no-untyped-def]
     try:
         request = await create_purchase_request(db, payload)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return success_response(
+        raise BadRequestException(str(exc)) from exc
+    return build_response(
         data=request.model_dump(mode="json"),
         message="采购申请已保存",
     )
@@ -413,8 +408,8 @@ async def get_purchase_request_record(  # type: ignore[no-untyped-def]
     try:
         request = await get_purchase_request(db, request_id)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return success_response(data=request.model_dump(mode="json"))
+        raise AppException(status_code=404, message=str(exc)) from exc
+    return build_response(data=request.model_dump(mode="json"))
 
 
 @router.put(
@@ -433,8 +428,8 @@ async def update_purchase_request_record(  # type: ignore[no-untyped-def]
     try:
         request = await update_purchase_request(db, request_id, payload)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return success_response(
+        raise BadRequestException(str(exc)) from exc
+    return build_response(
         data=request.model_dump(mode="json"),
         message="采购申请已更新",
     )
@@ -455,8 +450,8 @@ async def submit_purchase_request_record(  # type: ignore[no-untyped-def]
     try:
         request = await submit_purchase_request(db, request_id)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return success_response(
+        raise BadRequestException(str(exc)) from exc
+    return build_response(
         data=request.model_dump(mode="json"),
         message="采购申请已提交",
     )
@@ -477,8 +472,8 @@ async def approve_purchase_request_record(  # type: ignore[no-untyped-def]
     try:
         request = await approve_purchase_request(db, request_id, payload)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return success_response(data=request.model_dump(mode="json"), message="审批已通过")
+        raise BadRequestException(str(exc)) from exc
+    return build_response(data=request.model_dump(mode="json"), message="审批已通过")
 
 
 @router.post(
@@ -496,8 +491,8 @@ async def reject_purchase_request_record(  # type: ignore[no-untyped-def]
     try:
         request = await reject_purchase_request(db, request_id, payload)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return success_response(data=request.model_dump(mode="json"), message="审批已驳回")
+        raise BadRequestException(str(exc)) from exc
+    return build_response(data=request.model_dump(mode="json"), message="审批已驳回")
 
 
 @router.get(
@@ -536,7 +531,7 @@ async def get_contract_template(  # type: ignore[no-untyped-def]
     ctx: PermissionContext = Depends(require_permission("procurement:contract:read")),
 ):
     metadata = get_contract_template_metadata(category)
-    return success_response(data=metadata.model_dump(mode="json"))
+    return build_response(data=metadata.model_dump(mode="json"))
 
 
 @router.post(
@@ -556,9 +551,9 @@ async def create_contract(  # type: ignore[no-untyped-def]
             payload,
         )
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise BadRequestException(str(exc)) from exc
     except (RuntimeError, ValueError) as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise BadRequestException(str(exc)) from exc
 
     encoded_filename = quote(filename, safe="")
     return StreamingResponse(
@@ -585,8 +580,8 @@ async def get_contract_generation_record(  # type: ignore[no-untyped-def]
     try:
         record = await get_contract_record(db, contract_id)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return success_response(data=ContractRecordResponse.model_validate(record).model_dump(mode="json"))
+        raise AppException(status_code=404, message=str(exc)) from exc
+    return build_response(data=ContractRecordResponse.model_validate(record).model_dump(mode="json"))
 
 
 @router.get(
@@ -602,7 +597,7 @@ async def get_contract_file(  # type: ignore[no-untyped-def]
     try:
         data, content_type, filename = await get_contract_record_file(db, contract_id)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise AppException(status_code=404, message=str(exc)) from exc
 
     encoded_filename = quote(filename, safe="")
     return StreamingResponse(

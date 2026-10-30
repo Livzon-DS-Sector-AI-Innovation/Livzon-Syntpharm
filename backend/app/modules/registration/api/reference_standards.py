@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import NotFoundException
-from app.core.response import paginated_response, success_response
+from app.core.response import build_response, paginated_response
 from app.modules.registration.service import ReferenceStandardService
 from app.shared.schemas import PageParams
 
@@ -34,7 +34,7 @@ async def post(
 
     result = parse_coa(coa_data)
 
-    return success_response(
+    return build_response(
         data=result,
         message="COA解析成功",
     )
@@ -82,10 +82,10 @@ async def post(  # noqa: F811
         storage_condition=storage_condition,
         remarks=remarks,
     )
-    return success_response(
+    return build_response(
         data=record.model_dump(mode="json"),
         message="对照物质说明表生成成功",
-        status_code=201,
+        code=201,
     )
 
 
@@ -119,7 +119,7 @@ async def get(  # noqa: F811
     service: ReferenceStandardService = Depends(get_service),
 ) -> Any:
     record = await service.get_record(record_id)
-    return success_response(data=record.model_dump(mode="json"))
+    return build_response(data=record.model_dump(mode="json"))
 
 
 @router.get("/{record_id}/download-url", summary="获取说明表文件下载URL")  # type: ignore[no-redef]
@@ -137,7 +137,7 @@ async def get(  # noqa: F811
     if not file_path.exists():
         raise NotFoundException("说明表文件")
 
-    return success_response(data={"url": f"/api/v1/registration/reference-standards/{record_id}/download"})
+    return build_response(data={"url": f"/api/v1/registration/reference-standards/{record_id}/download"})
 
 
 @router.get("/{record_id}/download", summary="下载生成的说明表文件")  # type: ignore[no-redef]
@@ -170,4 +170,4 @@ async def delete(
     service: ReferenceStandardService = Depends(get_service),
 ) -> Any:
     await service.delete_record(record_id)
-    return success_response(message="对照物质说明表记录删除成功")
+    return build_response(message="对照物质说明表记录删除成功")

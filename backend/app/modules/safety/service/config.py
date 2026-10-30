@@ -7,43 +7,12 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.safety.repository import SafetyRepository
-from app.shared.config_reader import get_module_setting
 
 logger = logging.getLogger(__name__)
 
 # ═══════════════════════════════════════════════════════════
 # AI 模型配置（从环境变量读取，支持部署时覆盖）
 # ═══════════════════════════════════════════════════════════
-
-
-async def _get_ai_config() -> dict[str, Any]:
-    """读取 AI 模型配置，从数据库读取，不提供硬编码默认值。"""
-    _text_key = await get_module_setting("safety", "SAFETY_AI_TEXT_API_KEY", "")
-    _vision_key = await get_module_setting("safety", "SAFETY_AI_VISION_API_KEY", "")
-    if not _text_key:
-        raise RuntimeError("配置 SAFETY_AI_TEXT_API_KEY 未配置，无法初始化 AI 文本模型。请在管理界面中配置该参数。")
-    if not _vision_key:
-        raise RuntimeError("配置 SAFETY_AI_VISION_API_KEY 未配置，无法初始化 AI 视觉模型。请在管理界面中配置该参数。")
-    return {
-        "text": {
-            "api_key": _text_key,
-            "base_url": await get_module_setting("safety", "SAFETY_AI_TEXT_BASE_URL", "https://api.deepseek.com"),
-            "model": await get_module_setting("safety", "SAFETY_AI_TEXT_MODEL", "deepseek-v4-flash"),
-            "temperature": 0.1,
-            "timeout": 120,
-        },
-        "vision": {
-            "api_key": _vision_key,
-            "base_url": await get_module_setting(
-                "safety",
-                "SAFETY_AI_VISION_BASE_URL",
-                "https://dashscope.aliyuncs.com/compatible-mode/v1",
-            ),
-            "model": await get_module_setting("safety", "SAFETY_AI_VISION_MODEL", "qwen-vl-max"),
-            "temperature": 0.1,
-            "timeout": 120,
-        },
-    }
 
 
 async def create_ai_service(config_type: str = "text") -> Any:
@@ -53,10 +22,10 @@ async def create_ai_service(config_type: str = "text") -> Any:
 
     返回 llm_client 单例，配置从 core.llm_configs 表读取。
     """
-    from app.core.llm import llm_client
+    from app.platform.integrations.ai import get_ai_service
 
-    logger.debug("使用全局 llm_client (config_type=%s)", config_type)
-    return llm_client
+    logger.debug("使用全局 llm_client 适配器 (config_type=%s)", config_type)
+    return get_ai_service()
 
 
 class ConfigService:

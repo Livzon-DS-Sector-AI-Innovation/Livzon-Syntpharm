@@ -11,13 +11,14 @@ import urllib.parse
 from io import BytesIO
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.deps import RequiredUser
+from app.core.exceptions import AppException
 from app.core.storage import get_object
 from app.core.storage import is_enabled as minio_enabled
 
@@ -169,11 +170,11 @@ async def handler(
         local_path = _resolve_local_path(file_path)
         if local_path:
             return FileResponse(local_path, media_type=content_type)
-        raise HTTPException(status_code=404, detail="File not found")
+        raise AppException(status_code=404, message="File not found")
 
     # ── Local mode ──
     local_path = _resolve_local_path(file_path)
     if local_path:
         return FileResponse(local_path, media_type=content_type)
 
-    raise HTTPException(status_code=404, detail="File not found")
+    raise AppException(status_code=404, message="File not found")

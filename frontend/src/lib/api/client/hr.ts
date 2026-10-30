@@ -741,3 +741,14 @@ export async function fetchTrainingSpecialists(_factory?: string): Promise<Gener
   if (!res.ok) throw new Error('获取培训专家列表失败')
   return res.json()
 }
+
+/** 生成培训效果评估表（返回 xlsx 二进制流，Server Action 无法回传 Blob） */
+export async function generateEvaluationForm(payload: Record<string, unknown>): Promise<Blob> {
+  const res = await fetch('/api/hr/generate-evaluation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error('生成失败')
+  return res.blob()
+}

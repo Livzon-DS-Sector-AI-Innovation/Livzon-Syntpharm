@@ -4,10 +4,11 @@ import sys
 import httpx
 import uuid
 
-sys.path.insert(0, "/home/zhuangweizi/Livzon-Syntpharm/backend")
-from app.core.database import async_session_factory
-from app.modules.hr.models import HrDepartment
-from sqlalchemy import select
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, _BACKEND_DIR)
+from app.core.database import async_session_factory  # noqa: E402
+from app.modules.hr.models import HrDepartment  # noqa: E402
+from sqlalchemy import select  # noqa: E402
 
 APP_ID = os.getenv("FEISHU__PLATFORM__APP_ID")
 APP_SECRET = os.getenv("FEISHU__PLATFORM__APP_SECRET")

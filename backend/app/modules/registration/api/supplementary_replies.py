@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import NotFoundException
-from app.core.response import paginated_response, success_response
+from app.core.response import build_response, paginated_response
 from app.modules.registration.service import SupplementaryReplyService
 from app.shared.schemas import PageParams
 
@@ -54,10 +54,10 @@ async def post(
         company_name_override=company_name,
         remarks=remarks,
     )
-    return success_response(
+    return build_response(
         data=reply.model_dump(mode="json"),
         message="发补回复文档生成成功",
-        status_code=201,
+        code=201,
     )
 
 
@@ -91,7 +91,7 @@ async def get(  # noqa: F811
     service: SupplementaryReplyService = Depends(get_service),
 ) -> Any:
     reply = await service.get_reply(reply_id)
-    return success_response(data=reply.model_dump(mode="json"))
+    return build_response(data=reply.model_dump(mode="json"))
 
 
 @router.get("/{reply_id}/download-url", summary="获取发补回复文件下载URL")  # type: ignore[no-redef]
@@ -109,7 +109,7 @@ async def get(  # noqa: F811
     if not file_path.exists():
         raise NotFoundException("发补回复文件")
 
-    return success_response(data={"url": f"/api/v1/registration/supplementary-replies/{reply_id}/download"})
+    return build_response(data={"url": f"/api/v1/registration/supplementary-replies/{reply_id}/download"})
 
 
 @router.get("/{reply_id}/download", summary="下载生成的发补回复文件")  # type: ignore[no-redef]
@@ -142,4 +142,4 @@ async def delete(
     service: SupplementaryReplyService = Depends(get_service),
 ) -> Any:
     await service.delete_reply(reply_id)
-    return success_response(message="发补回复记录删除成功")
+    return build_response(message="发补回复记录删除成功")

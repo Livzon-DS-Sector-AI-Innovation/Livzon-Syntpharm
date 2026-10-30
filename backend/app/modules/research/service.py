@@ -5,10 +5,9 @@ import uuid
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import DuplicateException, NotFoundException
+from app.core.exceptions import AppException, DuplicateException, NotFoundException
 
 logger = logging.getLogger(__name__)
 from app.modules.research import repository as repo  # noqa: E402
@@ -289,7 +288,7 @@ async def update_milestone(
     )
     milestone = result.scalar_one_or_none()
     if not milestone:
-        raise HTTPException(status_code=404, detail="里程碑不存在")
+        raise NotFoundException("里程碑")
 
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -349,7 +348,7 @@ async def update_stage_record(
     )
     record = result.scalar_one_or_none()
     if not record:
-        raise HTTPException(status_code=404, detail="阶段记录不存在")
+        raise NotFoundException("阶段记录")
 
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -413,7 +412,7 @@ async def update_research_track(
     )
     track = result.scalar_one_or_none()
     if not track:
-        raise HTTPException(status_code=404, detail="研究项不存在")
+        raise NotFoundException("研究项")
 
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -442,7 +441,7 @@ async def create_research_finding(
     )
     track = result.scalar_one_or_none()
     if not track:
-        raise HTTPException(status_code=404, detail="研究项不存在")
+        raise NotFoundException("研究项")
 
     finding = RdResearchFinding(
         track_id=track_id,
@@ -485,7 +484,7 @@ async def update_research_finding(
     )
     finding = result.scalar_one_or_none()
     if not finding:
-        raise HTTPException(status_code=404, detail="研究发现不存在")
+        raise NotFoundException("研究发现")
 
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -517,7 +516,7 @@ async def publish_conclusion_version(
     )
     track = result.scalar_one_or_none()
     if not track:
-        raise HTTPException(status_code=404, detail="研究项不存在")
+        raise NotFoundException("研究项")
 
     # Increment version
     new_version = (track.conclusion_version or 0) + 1
@@ -968,7 +967,7 @@ async def update_experiment_log(  # type: ignore[no-untyped-def]
     """更新实验记录"""
     log = await repo.get_experiment_log_by_id(db, log_id)
     if not log:
-        raise HTTPException(status_code=404, detail="实验记录不存在")
+        raise NotFoundException("实验记录")
     update_data = data.model_dump(exclude_unset=True)
     if user_id:
         update_data["updated_by"] = user_id
@@ -1003,7 +1002,7 @@ async def update_report(  # type: ignore[no-untyped-def]
     """更新研发报告"""
     report = await repo.get_report_by_id(db, report_id)
     if not report:
-        raise HTTPException(status_code=404, detail="报告不存在")
+        raise NotFoundException("报告")
     update_data = data.model_dump(exclude_unset=True)
     if user_id:
         update_data["updated_by"] = user_id
@@ -1038,7 +1037,7 @@ async def update_initiation(  # type: ignore[no-untyped-def]
     """更新立项申请"""
     initiation = await repo.get_initiation_by_id(db, initiation_id)
     if not initiation:
-        raise HTTPException(status_code=404, detail="立项申请不存在")
+        raise NotFoundException("立项申请")
     update_data = data.model_dump(exclude_unset=True)
     if user_id:
         update_data["updated_by"] = user_id
@@ -1080,7 +1079,7 @@ async def update_deliverable_template(  # type: ignore[no-untyped-def]
     """更新交付物模板"""
     template = await repo.get_deliverable_template_by_id(db, template_id)
     if not template:
-        raise HTTPException(status_code=404, detail="模板不存在")
+        raise NotFoundException("模板")
     update_data = data.model_dump(exclude_unset=True)
     if user_id:
         update_data["updated_by"] = user_id
@@ -1118,7 +1117,7 @@ async def generate_report_with_ai(
     project_result = await db.execute(select(RdProject).where(RdProject.id == project_id, ~RdProject.is_deleted))
     project = project_result.scalar_one_or_none()
     if not project:
-        raise HTTPException(status_code=404, detail="项目不存在")
+        raise NotFoundException("项目")
 
     # 2. 获取模板（如果有）
     template_content = ""
@@ -1268,4 +1267,4 @@ async def generate_report_with_ai(
         }
     except Exception as e:
         logger.exception("LLM call failed")
-        raise HTTPException(status_code=500, detail=f"AI 生成失败: {str(e)}")
+        raise AppException(status_code=500, message=f'AI 生成失败: {str(e)}')

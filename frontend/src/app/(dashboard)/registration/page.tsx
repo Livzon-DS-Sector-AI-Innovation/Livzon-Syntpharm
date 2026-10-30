@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Card, Row, Col, Typography, Button, Space, Spin } from 'antd'
 import {
   BookOutlined,
@@ -20,10 +20,7 @@ import {
   MessageOutlined,
   ExperimentOutlined,
 } from '@ant-design/icons'
-import {
-  fetchLedgerSummary,
-  type LedgerSummary,
-} from '@/lib/api/client/registration-ledger'
+import { fetchLedgerSummary } from '@/lib/api/client/registration-ledger'
 
 const { Title, Text, Paragraph } = Typography
 
@@ -44,37 +41,13 @@ interface EntryItem {
 }
 
 export default function RegistrationPage() {
-  const [summary, setSummary] = useState<LedgerSummary | null>(null)
-  const [loading, setLoading] = useState(true)
+  const summaryQuery = useQuery({
+    queryKey: ['registration-ledger-summary'],
+    queryFn: fetchLedgerSummary,
+  })
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
-      const data = await fetchLedgerSummary()
-      setSummary(data)
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    let cancelled = false
-    const load = async () => {
-      setLoading(true)
-      try {
-        const data = await fetchLedgerSummary()
-        if (!cancelled) setSummary(data)
-      } catch {
-        // ignore
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    load()
-    return () => { cancelled = true }
-  }, [])
+  const summary = summaryQuery.data ?? null
+  const loading = summaryQuery.isFetching
 
 
   const statCards: StatCard[] = [
@@ -246,7 +219,7 @@ export default function RegistrationPage() {
           </Paragraph>
         </div>
         <Space>
-          <Button icon={<ReloadOutlined />} onClick={loadData} loading={loading}>
+          <Button icon={<ReloadOutlined />} onClick={() => void summaryQuery.refetch()} loading={loading}>
             刷新
           </Button>
           <Link href="/registration/ledger">

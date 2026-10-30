@@ -75,8 +75,8 @@ class SpecialOperationService:
                 abs_path = os.path.abspath(file_path)
                 if os.path.exists(abs_path):
                     os.remove(abs_path)
-        except OSError:
-            pass
+        except OSError as exc:
+            logger.warning("忽略异常 @ %s: %s", "SpecialOperationService._cleanup_file", exc)
 
     # ==================== 人员资质 CRUD ====================
 

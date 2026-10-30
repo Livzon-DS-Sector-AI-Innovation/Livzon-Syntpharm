@@ -12,7 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
-from app.core.response import error_response, success_response
+from app.core.jobs import submit_job
+from app.core.response import build_response, error_response
 from app.modules.registration.regulatory_tracker import repository as repo
 from app.modules.registration.regulatory_tracker.schemas import (
     BatchReadRequest,
@@ -289,7 +290,7 @@ async def get(  # noqa: F811
     # 添加系统分类显示名称
     doc_detail["documentCategoryName"] = get_category_display_name(doc_detail.get("documentCategory") or "general")
 
-    return success_response(doc_detail)
+    return build_response(doc_detail)
 
 
 # ============ 法规文档导出 ============
@@ -349,7 +350,7 @@ async def patch(
 
     await repo.update_document(db, doc_id, {"is_new": False, "is_read": True})
     await db.commit()
-    return success_response({"id": str(doc_id), "marked": True})
+    return build_response({"id": str(doc_id), "marked": True})
 
 
 @router.post("/regulatory-documents/batch-read", summary="批量标记文档已读")
@@ -362,7 +363,7 @@ async def post(
     """批量标记文档为已读"""
     count = await repo.batch_mark_read(db, request.documentIds)
     await db.commit()
-    return success_response({"updatedCount": count})
+    return build_response({"updatedCount": count})
 
 
 # ============ 同步任务触发 ============
@@ -402,7 +403,6 @@ async def post(  # noqa: F811
     # 后台执行同步（不阻塞响应）。用 spawn_task 而不是 BackgroundTasks：
     # 后者在响应结束后脱离请求上下文执行，异常只会静默丢失，任务状态永远停在 pending。
     # AI 分析在 sync_service 内部自动执行。
-    from app.core.tasks import spawn_task
     from app.modules.registration.regulatory_tracker.services.sync_service import (
         run_sync_job,
     )
@@ -429,7 +429,7 @@ async def post(  # noqa: F811
             except Exception:
                 logger.exception("标记同步任务失败状态时出错 jobId=%s", job.id)
 
-    spawn_task(_run_sync(), name=f"regulatory-sync-{job.id}")
+    await submit_job(f"registration.regulatory-sync-{job.id}", lambda _job_id: _run_sync())
 
     return {
         "code": 200,

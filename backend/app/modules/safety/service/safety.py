@@ -203,8 +203,8 @@ class SafetyService:
                 abs_path = os.path.abspath(file_path)
                 if os.path.exists(abs_path):
                     os.remove(abs_path)
-        except OSError:
-            pass
+        except OSError as exc:
+            logger.warning("忽略异常 @ %s: %s", "SafetyService._cleanup_file", exc)
 
     @staticmethod
     def _cleanup_json_array_files(json_str: str | None) -> None:
@@ -217,8 +217,8 @@ class SafetyService:
                 for p in paths:
                     if isinstance(p, str):
                         SafetyService._cleanup_file(p)
-        except (json.JSONDecodeError, TypeError):
-            pass
+        except (json.JSONDecodeError, TypeError) as exc:
+            logger.warning("忽略异常 @ %s: %s", "SafetyService._cleanup_json_array_files", exc)
 
     # ==================== SafetyCheck Operations ====================
 

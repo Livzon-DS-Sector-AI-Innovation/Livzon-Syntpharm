@@ -309,3 +309,17 @@ export async function batchDeleteEquipments(ids: string[]): Promise<void> {
     body: JSON.stringify({ ids }),
   })
 }
+
+/** Excel 批量同步设备（上传 FormData，属上传例外） */
+export async function syncEquipmentExcel(formData: FormData, dryRun: boolean) {
+  const url = dryRun
+    ? '/api/v1/equipment/equipments/sync-excel?dry_run=true'
+    : '/api/v1/equipment/equipments/sync-excel'
+  const res = await fetch(url, { method: 'POST', body: formData })
+  if (!res.ok) throw new Error(`服务器响应错误: ${res.status}`)
+  return (await res.json()) as {
+    code: number
+    message?: string
+    data: { updated: number; inserted: number; migrated: number; deleted: number; warnings?: string[] }
+  }
+}

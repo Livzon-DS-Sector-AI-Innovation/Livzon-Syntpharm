@@ -32,13 +32,13 @@ services:
     image: redis:8-alpine
     container_name: uat-redis
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-redis_uat_pwd}"]
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD 未设置}"]
     volumes:
       - ./uat-data/redis:/data
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_uat_pwd}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?REDIS_PASSWORD 未设置}", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5

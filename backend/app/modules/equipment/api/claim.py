@@ -3,14 +3,13 @@
 import uuid
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException, ForbiddenException
-from app.core.response import success_response
+from app.core.response import ApiResponse, build_response
 from app.core.tasks import spawn_task
 from app.modules.equipment import service
 from app.modules.equipment.schemas import WorkOrderResponse
@@ -27,7 +26,7 @@ async def claim_work_order(
     ctx: PermissionContext = Depends(require_permission("equipment:work-order:update")),
     db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
-) -> JSONResponse:
+) -> ApiResponse:
     assert current_user is not None
 
     dept_id = settings.feishu.platform.equipment_dept_id
@@ -55,4 +54,4 @@ async def claim_work_order(
         resp.reporter_name = wo.reporter.name
     if wo.assignee:
         resp.assignee_name = wo.assignee.name
-    return success_response(data=resp)
+    return build_response(data=resp)

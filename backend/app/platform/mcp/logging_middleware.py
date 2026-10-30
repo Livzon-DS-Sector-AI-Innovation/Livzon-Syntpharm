@@ -144,6 +144,6 @@ class MCPToolLoggingMiddleware(Middleware):
             try:
                 await db.rollback()
                 await db.close()
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("忽略异常 @ %s: %s", "MCPToolLoggingMiddleware.on_call_tool", exc)
             reset_context(db_token, user_token)

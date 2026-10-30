@@ -623,3 +623,15 @@ export interface AiLogFilter {
   end_date?: string
   keyword?: string
 }
+
+/** 偏差报告 Word 模板上传并解析后的结果 */
+export interface DeviationReportUploadResult {
+  file_id: string
+  file_name: string
+  html_content: string
+  file_path: string
+  warnings?: string[]
+}
+
+/** 偏差报告 AI 优化类型 */
+export type DeviationReportOptimizeType = 'polish' | 'summarize' | 'expand' | 'simplify'

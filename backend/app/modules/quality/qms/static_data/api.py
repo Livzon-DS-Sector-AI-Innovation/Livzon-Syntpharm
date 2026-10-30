@@ -20,7 +20,7 @@ from app.core.database import async_session_factory, get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import BadRequestException, NotFoundException
 from app.core.job_repository import JobRepository
-from app.core.jobs import spawn_task
+from app.core.jobs import submit_job
 from app.modules.quality.qms.static_data import schemas as s
 from app.modules.quality.qms.static_data.schemas import (
     # Import shared response wrappers from app.shared.schemas
@@ -443,7 +443,7 @@ async def handler(
                 )
                 await JobRepository(worker_db).fail(job_id, str(e))
 
-    spawn_task(_run(), name=f"static-data-hplc-import-{str(job_id)[:8]}")
+    await submit_job("quality.static-data-hplc-import", lambda _job_id: _run())
 
     return {
         "code": 200,
@@ -904,8 +904,8 @@ async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession
 
                             base = date(1899, 12, 30)
                             data["purchase_date"] = base + timedelta(days=int(value))
-                        except (ValueError, TypeError, OverflowError):
-                            pass
+                        except (ValueError, TypeError, OverflowError) as exc:
+                            logger.warning("忽略异常 @ %s: %s", "_import_chrom_columns", exc)
                     elif isinstance(value, str) and value.strip() and value.strip() != "/":
                         try:
                             v = value.strip()
@@ -913,8 +913,8 @@ async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession
                                 data["purchase_date"] = date(int(v[:4]), int(v[4:6]), int(v[6:8]))
                             else:
                                 data["purchase_date"] = date.fromisoformat(v.replace("/", "-").split()[0])
-                        except (ValueError, IndexError, AttributeError):
-                            pass
+                        except (ValueError, IndexError, AttributeError) as exc:
+                            logger.warning("忽略异常 @ %s: %s", "_import_chrom_columns", exc)
                 elif field == "use_start_date":
                     if isinstance(value, date):
                         data["use_start_date"] = value
@@ -924,8 +924,8 @@ async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession
 
                             base = date(1899, 12, 30)
                             data["use_start_date"] = base + timedelta(days=int(value))
-                        except (ValueError, TypeError, OverflowError):
-                            pass
+                        except (ValueError, TypeError, OverflowError) as exc:
+                            logger.warning("忽略异常 @ %s: %s", "_import_chrom_columns", exc)
                     elif isinstance(value, str) and value.strip() and value.strip() != "/":
                         try:
                             v = value.strip()
@@ -933,8 +933,8 @@ async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession
                                 data["use_start_date"] = date(int(v[:4]), int(v[4:6]), int(v[6:8]))
                             else:
                                 data["use_start_date"] = date.fromisoformat(v.replace("/", "-").split()[0])
-                        except (ValueError, IndexError, AttributeError):
-                            pass
+                        except (ValueError, IndexError, AttributeError) as exc:
+                            logger.warning("忽略异常 @ %s: %s", "_import_chrom_columns", exc)
                 elif field == "max_use_times":
                     try:
                         data["max_use_times"] = int(float(value))
@@ -1053,7 +1053,7 @@ async def handler(  # noqa: F811
                 )
                 await JobRepository(worker_db).fail(job_id, str(e))
 
-    spawn_task(_run(), name=f"static-data-chrom-import-{str(job_id)[:8]}")
+    await submit_job("quality.static-data-chrom-import", lambda _job_id: _run())
 
     return {
         "code": 200,

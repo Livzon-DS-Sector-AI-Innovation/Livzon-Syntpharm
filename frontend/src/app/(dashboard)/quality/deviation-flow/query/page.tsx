@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'next/navigation'
 import dayjs from 'dayjs'
 import '../deviation-style.css'
+import { deleteDeviationFlow } from '@/actions/quality'
 
 
 const API_BASE = '/api/v1'
@@ -127,10 +128,7 @@ export default function DeviationQueryPage() {
       content: `确定要删除偏差单 ${record.deviation_no} 吗？`,
       onOk: async () => {
         try {
-          const response = await fetch(`${API_BASE}/quality/deviation-flow/${record.id}`, {
-            method: 'DELETE',
-          })
-          const result = await response.json()
+          const result = await deleteDeviationFlow(record.id)
 
           if (result.code === 200) {
             message.success('删除成功')

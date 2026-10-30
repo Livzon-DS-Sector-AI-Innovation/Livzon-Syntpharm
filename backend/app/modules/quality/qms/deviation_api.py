@@ -3,10 +3,11 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
 from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import AppException, BadRequestException
 from app.modules.quality.qms.deviation_schemas import (
     AIAnalysisApiResponse,
     BatchLockRequest,
@@ -236,13 +237,13 @@ async def post(
     except ValueError as e:
         error_msg = str(e)
         if "API Key" in error_msg or "AI配置" in error_msg:
-            raise HTTPException(status_code=503, detail=error_msg)
-        raise HTTPException(status_code=400, detail=error_msg)
+            raise AppException(status_code=503, message=error_msg)
+        raise BadRequestException(error_msg)
     except Exception as e:
         import traceback
 
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"AI处理失败: {str(e)}")
+        raise AppException(status_code=500, message=f'AI处理失败: {str(e)}')
 
 
 @router.post("/ai/analyze-impact", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
@@ -309,7 +310,7 @@ async def post(  # noqa: F811
 
         return AIAnalysisApiResponse(data={"impact_analysis": result})
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/ai/generate-emergency-measures", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
@@ -366,7 +367,7 @@ async def post(  # noqa: F811
 
         return AIAnalysisApiResponse(data={"emergency_measures": result})
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/ai/analyze-root-cause", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
@@ -426,7 +427,7 @@ async def post(  # noqa: F811
 
         return AIAnalysisApiResponse(data={"root_cause_analysis": result})
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/ai/analyze-direct-cause", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
@@ -477,7 +478,7 @@ async def post(  # noqa: F811
 
         return AIAnalysisApiResponse(data={"direct_cause_analysis": result})
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/ai/generate-capa", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
@@ -543,7 +544,7 @@ CAPA结构：
 
         return AIAnalysisApiResponse(data={"capa": result})
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/ai/generate-prevention", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
@@ -602,7 +603,7 @@ async def post(  # noqa: F811
 
         return AIAnalysisApiResponse(data={"prevention": result})
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.get("/{deviation_id}", response_model=DeviationApiResponse)  # type: ignore[no-redef]
@@ -708,7 +709,7 @@ async def get(  # noqa: F811
 
         return DeviationApiResponse(data=data)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise AppException(status_code=404, message=str(e))
 
 
 @router.post("", response_model=DeviationApiResponse)  # type: ignore[no-redef]
@@ -730,7 +731,7 @@ async def post(  # noqa: F811
             },
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.put("/{deviation_id}", response_model=DeviationApiResponse)
@@ -748,12 +749,12 @@ async def put(
             raise ValueError("偏差不存在")
         return DeviationApiResponse(message="更新成功", data={"id": str(deviation.id)})  # type: ignore[attr-defined]
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
     except Exception as e:
         import traceback
 
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"更新失败: {str(e)}")
+        raise AppException(status_code=500, message=f'更新失败: {str(e)}')
 
 
 @router.delete("/{deviation_id}", response_model=MessageApiResponse)
@@ -770,7 +771,7 @@ async def delete(
             raise ValueError("偏差不存在")
         return MessageApiResponse(message="删除成功")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/{deviation_id}/submit", response_model=DeviationApiResponse)  # type: ignore[no-redef]
@@ -786,7 +787,7 @@ async def post(  # noqa: F811
         await service.submit_deviation(deviation_id, user_id)
         return DeviationApiResponse(message="提交成功")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/{deviation_id}/approve", response_model=DeviationApiResponse)  # type: ignore[no-redef]
@@ -806,7 +807,7 @@ async def post(  # noqa: F811
         await service.approve_deviation(deviation_id, approved, comments, approval_type, user_id, user_name)
         return DeviationApiResponse(message="审批完成")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/{deviation_id}/lock-batch", response_model=DeviationApiResponse)  # type: ignore[no-redef]
@@ -822,7 +823,7 @@ async def post(  # noqa: F811
         await service.lock_batch(deviation_id, data.reason)
         return DeviationApiResponse(message="批次已锁定")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/{deviation_id}/unlock-batch", response_model=DeviationApiResponse)  # type: ignore[no-redef]
@@ -837,7 +838,7 @@ async def post(  # noqa: F811
         await service.unlock_batch(deviation_id)
         return DeviationApiResponse(message="批次已解锁")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 # ========== 偏差调查 API ==========
@@ -920,7 +921,7 @@ async def post(  # noqa: F811
         investigation = await service.create_investigation(deviation_id, data)
         return DeviationApiResponse(message="创建成功", data={"id": str(investigation.id)})  # type: ignore[attr-defined]
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.put("/{deviation_id}/investigation", response_model=InvestigationApiResponse)  # type: ignore[no-redef]
@@ -938,7 +939,7 @@ async def put(  # noqa: F811
             raise ValueError("调查记录不存在")
         return DeviationApiResponse(message="更新成功")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/{deviation_id}/investigation/complete", response_model=InvestigationApiResponse)  # type: ignore[no-redef]
@@ -953,7 +954,7 @@ async def post(  # noqa: F811
         await service.complete_investigation(deviation_id)
         return DeviationApiResponse(message="调查已完成")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 # ========== 偏差整改 API ==========
@@ -1033,7 +1034,7 @@ async def post(  # noqa: F811
         correction = await service.create_correction(deviation_id, data)
         return DeviationApiResponse(message="创建成功", data={"id": str(correction.id)})  # type: ignore[attr-defined]
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.put("/{deviation_id}/correction", response_model=CorrectionApiResponse)  # type: ignore[no-redef]
@@ -1051,7 +1052,7 @@ async def put(  # noqa: F811
             raise ValueError("整改记录不存在")
         return DeviationApiResponse(message="更新成功")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/{deviation_id}/correction/progress", response_model=MessageApiResponse)  # type: ignore[no-redef]
@@ -1067,7 +1068,7 @@ async def post(  # noqa: F811
         await service.update_progress(deviation_id, progress)
         return DeviationApiResponse(message="进度已更新")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 # ========== 偏差关闭 API ==========
@@ -1145,7 +1146,7 @@ async def post(  # noqa: F811
         closing = await service.create_closing(deviation_id, data)
         return DeviationApiResponse(message="创建成功", data={"id": str(closing.id)})  # type: ignore[attr-defined]
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.put("/{deviation_id}/closing", response_model=ClosingApiResponse)  # type: ignore[no-redef]
@@ -1163,7 +1164,7 @@ async def put(  # noqa: F811
             raise ValueError("关闭记录不存在")
         return DeviationApiResponse(message="更新成功")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/{deviation_id}/closing/complete", response_model=MessageApiResponse)  # type: ignore[no-redef]
@@ -1178,4 +1179,4 @@ async def post(  # noqa: F811
         await service.complete_closing(deviation_id)
         return DeviationApiResponse(message="偏差已关闭")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))

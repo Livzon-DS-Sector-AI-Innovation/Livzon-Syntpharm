@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import BadRequestException
 from app.core.response import build_response, paginated_response
 from app.modules.quality.cpv import service
 from app.modules.quality.cpv.schemas import (
@@ -30,9 +31,8 @@ async def preview_import(
     """上传Excel文件并预览导入数据"""
 
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
-        from fastapi import HTTPException
 
-        raise HTTPException(status_code=400, detail="请上传 Excel 文件 (.xlsx, .xls)")
+        raise BadRequestException("请上传 Excel 文件 (.xlsx, .xls)")
 
     file_content = await file.read()
 

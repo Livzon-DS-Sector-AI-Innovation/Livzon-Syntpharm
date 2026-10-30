@@ -1,6 +1,6 @@
 """偏差报告 Schemas"""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class OptimizeTextRequest(BaseModel):
@@ -8,3 +8,10 @@ class OptimizeTextRequest(BaseModel):
 
     text: str
     optimize_type: str = "polish"
+
+
+class SaveHtmlRequest(BaseModel):
+    """保存HTML为Word请求"""
+
+    file_id: str = Field(min_length=1)
+    html_content: str

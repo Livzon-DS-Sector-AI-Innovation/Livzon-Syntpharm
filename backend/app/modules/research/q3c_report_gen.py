@@ -196,8 +196,8 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source="") -> Any: 
                                 "reason": f"用于早期步骤 ({', '.join(steps_unique)})",
                             }
                         )
-                except (ValueError, TypeError):
-                    pass
+                except (ValueError, TypeError) as exc:
+                    logger.warning("忽略异常 @ %s: %s", "generate_q3c_report", exc)
 
     lines.append("### 2.1 批批检验 (Routine Release)")
     lines.append("")

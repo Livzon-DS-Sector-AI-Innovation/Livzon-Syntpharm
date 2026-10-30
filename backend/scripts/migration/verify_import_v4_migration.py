@@ -4,13 +4,14 @@ import asyncio
 import sys
 import os
 
-sys.path.insert(0, "/home/zhuangweizi/Livzon-Syntpharm/backend")
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, _BACKEND_DIR)
 
 # 强制使用 Docker 内部主机名
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://postgres:postgres123@erp-postgres:5432/dazah"
 
-from app.core.database import async_session_factory
-from sqlalchemy import text
+from app.core.database import async_session_factory  # noqa: E402
+from sqlalchemy import text  # noqa: E402
 
 
 async def verify():

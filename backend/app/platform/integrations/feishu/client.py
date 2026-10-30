@@ -83,8 +83,8 @@ class FeishuClient(IntegrationClient):
             error_body = ""
             try:
                 error_body = resp.text
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("忽略异常 @ %s: %s", "FeishuClient.upload_file", exc)
             logger.error(
                 "Feishu upload_file failed: status=%s, body=%s, parent_type=%s, parent_node=%s",
                 resp.status_code,

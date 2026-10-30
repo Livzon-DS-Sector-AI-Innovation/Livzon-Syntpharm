@@ -16,8 +16,9 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.core.config import get_settings
-from app.core.jobs import spawn_task
+from app.core.jobs import submit_job
 from app.core.redis import redis_client
+from app.core.tasks import spawn_task
 from app.modules.safety.feishu.bitable_client import SafetyBitableClient
 from app.modules.safety.feishu.dept_config import DEPARTMENT_CONFIG
 from app.modules.safety.feishu.event_client import on_event
@@ -381,8 +382,8 @@ def _ms_to_datetime(value: Any) -> datetime | None:
     if isinstance(value, str):
         try:
             return datetime.fromtimestamp(int(value) / 1000, tz=UTC)
-        except (ValueError, OSError):
-            pass
+        except (ValueError, OSError) as exc:
+            logger.warning("忽略异常 @ %s: %s", "_ms_to_datetime", exc)
     return None
 
 
@@ -1701,13 +1702,19 @@ async def _update_hazard_from_bitable(
                     f"UPDATE_NOTIFY_DISPATCH: record_id={record_id} hazard_no={getattr(hazard, 'hazard_no', '?')} "
                     f"→ run_rectification_review(hazard)"
                 )
-                spawn_task(service.hazard.run_rectification_review(hazard.id))
+                await submit_job(
+                    "safety.rectification-review",
+                    lambda _job_id: service.hazard.run_rectification_review(hazard.id),
+                )
             elif new_status == "replied":
                 _debug_log(
                     f"UPDATE_NOTIFY_DISPATCH: record_id={record_id} hazard_no={getattr(hazard, 'hazard_no', '?')} "
                     f"→ run_rectification_review(hazard)"
                 )
-                spawn_task(service.hazard.run_rectification_review(hazard.id))
+                await submit_job(
+                    "safety.rectification-review",
+                    lambda _job_id: service.hazard.run_rectification_review(hazard.id),
+                )
             elif new_status == "level1_approved":
                 # 一般隐患：L2（分管领导）无需复核，自动设为「无需复核」并跳至 L3
                 if getattr(hazard, "hazard_level", None) == "general":
@@ -1915,8 +1922,8 @@ def _convert_after_value_to_fields(
                 parsed = json.loads(raw)
                 if isinstance(parsed, (list, dict)):
                     raw = parsed
-            except (json.JSONDecodeError, TypeError):
-                pass
+            except (json.JSONDecodeError, TypeError) as exc:
+                logger.warning("忽略异常 @ %s: %s", "_convert_after_value_to_fields", exc)
         # 将选项 ID 解析为显示名称
         raw = _resolve_option_ids(raw, opt_map_cache.get(fname, {}), type_cache.get(fname, 0))
         result[fname] = raw
@@ -1952,8 +1959,8 @@ def _extract_field_value(
             parsed = json.loads(raw)
             if isinstance(parsed, (list, dict)):
                 raw = parsed
-        except (json.JSONDecodeError, TypeError):
-            pass
+        except (json.JSONDecodeError, TypeError) as exc:
+            logger.warning("忽略异常 @ %s: %s", "_extract_field_value", exc)
 
     # 将选项 ID 解析为显示名称
     opt_map_cache = _option_map_cache or {}

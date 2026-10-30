@@ -4,11 +4,12 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import AppException, BadRequestException
 from app.modules.quality.qms.capa_schemas import (
     CapaApiResponse,
     CapaCreate,
@@ -74,7 +75,7 @@ async def get_capa(
     service = CapaService(db)
     capa = await service.get_capa(capa_id)
     if not capa:
-        raise HTTPException(status_code=404, detail="CAPA not found")
+        raise AppException(status_code=404, message="CAPA not found")
 
     return CapaApiResponse(data=CapaResponse(**capa))
 
@@ -106,7 +107,7 @@ async def update_capa(
     service = CapaService(db)
     capa = await service.update_capa(capa_id, data)
     if not capa:
-        raise HTTPException(status_code=404, detail="CAPA not found")
+        raise AppException(status_code=404, message="CAPA not found")
     await db.commit()
 
     return CapaApiResponse(data=CapaResponse(**capa))
@@ -123,7 +124,7 @@ async def delete_capa(
     service = CapaService(db)
     success = await service.delete_capa(capa_id)
     if not success:
-        raise HTTPException(status_code=404, detail="CAPA not found")
+        raise AppException(status_code=404, message="CAPA not found")
     await db.commit()
 
     return CapaDeleteApiResponse(data=CapaDeleteResponse(message="CAPA deleted successfully"))
@@ -141,11 +142,11 @@ async def submit_capa(
     try:
         capa = await service.submit_capa(capa_id)
         if not capa:
-            raise HTTPException(status_code=404, detail="CAPA not found")
+            raise AppException(status_code=404, message="CAPA not found")
         await db.commit()
         return CapaApiResponse(data=CapaResponse(**capa))
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @capa_router.post("/{capa_id}/approve", response_model=CapaApiResponse, summary="审核 CAPA")
@@ -168,11 +169,11 @@ async def approve_capa(
             approved=approved,
         )
         if not capa:
-            raise HTTPException(status_code=404, detail="CAPA not found")
+            raise AppException(status_code=404, message="CAPA not found")
         await db.commit()
         return CapaApiResponse(data=CapaResponse(**capa))
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @capa_router.post("/{capa_id}/resubmit", response_model=CapaApiResponse, summary="重新提交 CAPA")
@@ -187,11 +188,11 @@ async def resubmit_capa(
     try:
         capa = await service.resubmit_capa(capa_id)
         if not capa:
-            raise HTTPException(status_code=404, detail="CAPA not found")
+            raise AppException(status_code=404, message="CAPA not found")
         await db.commit()
         return CapaApiResponse(data=CapaResponse(**capa))
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @capa_router.post("/{capa_id}/execution-tracks", response_model=CapaApiResponse, summary="添加执行跟踪")
@@ -211,7 +212,7 @@ async def add_execution_track(
         execution_notes=data.execution_notes,
     )
     if not capa:
-        raise HTTPException(status_code=404, detail="CAPA not found")
+        raise AppException(status_code=404, message="CAPA not found")
     await db.commit()
 
     return CapaApiResponse(data=CapaResponse(**capa))
@@ -231,7 +232,7 @@ async def delete_execution_track(
     service = CapaService(db)
     capa = await service.delete_execution_track(capa_id, track_id)
     if not capa:
-        raise HTTPException(status_code=404, detail="CAPA not found")
+        raise AppException(status_code=404, message="CAPA not found")
     await db.commit()
 
     return CapaDeleteApiResponse(data=CapaDeleteResponse(message="Execution track deleted successfully"))
@@ -253,7 +254,7 @@ async def confirm_execution(
         qa_confirm_date=data.qaConfirmDate,
     )
     if not capa:
-        raise HTTPException(status_code=404, detail="CAPA not found")
+        raise AppException(status_code=404, message="CAPA not found")
     await db.commit()
 
     return CapaApiResponse(data=CapaResponse(**capa))
@@ -276,7 +277,7 @@ async def evaluate_capa(
         evaluation_deadline=data.evaluation_deadline,
     )
     if not capa:
-        raise HTTPException(status_code=404, detail="CAPA not found")
+        raise AppException(status_code=404, message="CAPA not found")
     await db.commit()
 
     return CapaApiResponse(data=CapaResponse(**capa))
@@ -295,11 +296,11 @@ async def complete_part(
     try:
         capa = await service.complete_part(capa_id, data.part)
         if not capa:
-            raise HTTPException(status_code=404, detail="CAPA not found")
+            raise AppException(status_code=404, message="CAPA not found")
         await db.commit()
         return CapaApiResponse(data=CapaResponse(**capa))
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @capa_router.post("/{capa_id}/confirm-dept-head", response_model=CapaApiResponse, summary="部门负责人确认")
@@ -320,7 +321,7 @@ async def confirm_dept_head(
         opinion=data.opinion,
     )
     if not capa:
-        raise HTTPException(status_code=404, detail="CAPA not found")
+        raise AppException(status_code=404, message="CAPA not found")
     await db.commit()
 
     return CapaApiResponse(data=CapaResponse(**capa))

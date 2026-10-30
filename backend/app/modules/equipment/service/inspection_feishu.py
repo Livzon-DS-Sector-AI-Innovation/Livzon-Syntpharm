@@ -198,8 +198,8 @@ async def process_feishu_text(open_id: str, text: str, user_id: str = "") -> Non
                 elif selection.get("select_type") == "work_order":
                     await _handle_work_order_selection(open_id, opt)
                 return
-        except ValueError:
-            pass
+        except ValueError as exc:
+            logger.warning("忽略异常 @ %s: %s", "process_feishu_text", exc)
         await _reply_text(open_id, "请输入有效数字选择，或回复「取消」放弃。")
         return
 

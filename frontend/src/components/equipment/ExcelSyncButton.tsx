@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button, Upload, message, Modal, Checkbox } from 'antd'
 import { UploadOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
+import { syncEquipmentExcel } from '@/lib/api/client/equipment'
 
 const ALLOWED_TYPES = ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
 const ALLOWED_EXTENSIONS = ['.xls', '.xlsx']
@@ -27,19 +28,7 @@ export function ExcelSyncButton() {
     formData.append('file', file as File)
     
     try {
-      // 如果开启预览模式，在 URL 中附加参数
-      const url = dryRun 
-        ? '/api/v1/equipment/equipments/sync-excel?dry_run=true' 
-        : '/api/v1/equipment/equipments/sync-excel'
-
-      const response = await fetch(url, {
-        method: 'POST',
-        body: formData,
-      })
-      
-      if (!response.ok) throw new Error(`服务器响应错误: ${response.status}`)
-
-      const result = await response.json()
+      const result = await syncEquipmentExcel(formData, dryRun)
       if (result.code === 200) {
         const { updated, inserted, migrated, deleted, warnings } = result.data
         

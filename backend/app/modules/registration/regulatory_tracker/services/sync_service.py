@@ -8,7 +8,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.jobs import spawn_task
+from app.core.jobs import submit_job
 from app.modules.registration.regulatory_tracker import repository as repo
 from app.modules.registration.regulatory_tracker.crawler.cde_crawler import (
     CdeDomesticGuidelineAdapter,
@@ -306,7 +306,10 @@ async def run_sync_job(
             workflow = get_ai_workflow()
             # 注意：这里不 await，让 AI 分析在后台执行
             # 在实际部署中，这应该是一个独立的后台任务或队列
-            spawn_task(workflow.submit_documents(new_doc_ids), name="submit-documents")
+            await submit_job(
+                "registration.submit-documents",
+                lambda _job_id: workflow.submit_documents(new_doc_ids),
+            )
         except Exception as e:
             logger.error(f"提交 AI 工作流失败: {e}", exc_info=True)
 

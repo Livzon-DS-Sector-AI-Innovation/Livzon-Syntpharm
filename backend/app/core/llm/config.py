@@ -1,5 +1,6 @@
 """LLM configuration management."""
 
+import logging
 import os
 from dataclasses import dataclass
 
@@ -11,6 +12,8 @@ from app.shared.base_model import BaseModel
 
 from .encryption import decrypt_api_key
 from .exceptions import LLMConfigError
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -100,9 +103,9 @@ async def get_active_config(config_type: str = "text") -> LLMConfigData | None:
             config = result.scalar_one_or_none()
             if config:
                 return config.to_config_data()
-    except Exception:
+    except Exception as exc:
         # Database table doesn't exist or other error, fall back to env
-        pass
+        logger.warning("忽略异常 @ %s: %s", "get_active_config", exc)
     return None
 
 

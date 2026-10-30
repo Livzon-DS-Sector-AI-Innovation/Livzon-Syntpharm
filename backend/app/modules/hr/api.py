@@ -11,7 +11,7 @@ from typing import Any
 from urllib.parse import quote
 from uuid import UUID
 
-from fastapi import Body, Depends, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi import Body, Depends, File, Form, Query, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -22,9 +22,10 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from app.core.database import async_session_factory, get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import AppException, BadRequestException, NotFoundException, UnauthorizedException
 from app.core.job_store import get_job_state_or_404, start_job
 from app.core.redis import cache_get, cache_set
-from app.core.response import paginated_response, success_response
+from app.core.response import build_response, paginated_response
 from app.core.secrets import decrypt_secret, encrypt_secret, mask_secret
 from app.modules.hr.schemas import (
     AnnualTrainingPlanCreate,
@@ -198,7 +199,7 @@ async def _get_new_employee(employee_id: UUID, session: AsyncSession) -> Employe
     result = await session.execute(sql, {"id": str(employee_id)})
     row = result.mappings().first()
     if not row:
-        raise HTTPException(status_code=404, detail="未找到该新厂员工")
+        raise AppException(status_code=404, message="未找到该新厂员工")
     return Employee(**dict(row))
 
 
@@ -309,7 +310,7 @@ async def create_employee(  # type: ignore[no-untyped-def]
     service: EmployeeService = Depends(get_employee_service),
 ):
     employee = await service.create_employee(payload)
-    return success_response(
+    return build_response(
         data=EmployeeResponse.model_validate(employee).model_dump(mode="json"),
         message="员工创建成功",
         status_code=201,
@@ -325,7 +326,7 @@ async def sync_employees_from_feishu(  # type: ignore[no-untyped-def]
     """手动触发：从飞书多维表格拉取全部员工数据并 upsert 到本地 PG。"""
     stats = await service.sync_from_feishu()
     msg = f"同步完成：新增 {stats['created']} 条，更新 {stats['updated']} 条，失败 {stats['failed']} 条"
-    return success_response(
+    return build_response(
         data=stats,
         message=msg,
     )
@@ -339,7 +340,7 @@ async def get_employee_sync_status(  # type: ignore[no-untyped-def]
 ):
     """查看本地与飞书的数据同步统计。"""
     status = await service.get_sync_status()
-    return success_response(
+    return build_response(
         data=status.model_dump(mode="json"),
     )
 
@@ -352,7 +353,7 @@ async def get_employee_by_number(  # type: ignore[no-untyped-def]
     service: EmployeeService = Depends(get_employee_service),
 ):
     employee = await service.get_employee_by_number(employee_number)
-    return success_response(
+    return build_response(
         data=EmployeeResponse.model_validate(employee).model_dump(mode="json"),
     )
 
@@ -365,7 +366,7 @@ async def get_employee(  # type: ignore[no-untyped-def]
     service: EmployeeService = Depends(get_employee_service),
 ):
     employee = await service.get_employee(employee_id)
-    return success_response(
+    return build_response(
         data=EmployeeResponse.model_validate(employee).model_dump(mode="json"),
     )
 
@@ -379,7 +380,7 @@ async def update_employee(  # type: ignore[no-untyped-def]
     service: EmployeeService = Depends(get_employee_service),
 ):
     employee = await service.update_employee(employee_id, payload)
-    return success_response(
+    return build_response(
         data=EmployeeResponse.model_validate(employee).model_dump(mode="json"),
         message="员工更新成功",
     )
@@ -393,7 +394,7 @@ async def delete_employee(  # type: ignore[no-untyped-def]
     service: EmployeeService = Depends(get_employee_service),
 ):
     await service.delete_employee(employee_id)
-    return success_response(message="员工删除成功")
+    return build_response(message="员工删除成功")
 
 
 @router.post("/employees/{employee_id}/sync-to-feishu", summary="同步单个员工到飞书")
@@ -405,7 +406,7 @@ async def sync_employee_to_feishu(  # type: ignore[no-untyped-def]
 ):
     """将本地单个员工强制同步到飞书多维表格。"""
     record_id = await service.sync_to_feishu(employee_id)
-    return success_response(
+    return build_response(
         data={"feishu_record_id": record_id},
         message="员工已同步到飞书",
     )
@@ -430,18 +431,18 @@ async def _verify_feishu_approval_callback(request: Request, payload: dict) -> N
             "HR 飞书审批回调未配置校验凭据（HR_FEISHU_APPROVAL_ENCRYPT_KEY / "
             "HR_FEISHU_APPROVAL_VERIFICATION_TOKEN），已拒绝回调",
         )
-        raise HTTPException(status_code=503, detail="飞书审批回调未配置校验凭据")
+        raise AppException(status_code=503, message="飞书审批回调未配置校验凭据")
 
     if encrypt_key:
         timestamp = request.headers.get("X-Lark-Request-Timestamp")
         nonce = request.headers.get("X-Lark-Request-Nonce")
         signature = request.headers.get("X-Lark-Signature")
         if not timestamp or not nonce or not signature:
-            raise HTTPException(status_code=401, detail="飞书回调缺少签名头")
+            raise UnauthorizedException("飞书回调缺少签名头")
         raw_body = await request.body()
         expected = hashlib.sha256(f"{timestamp}{nonce}{encrypt_key}".encode() + raw_body).hexdigest()
         if not hmac.compare_digest(expected, signature):
-            raise HTTPException(status_code=401, detail="飞书回调签名校验失败")
+            raise UnauthorizedException("飞书回调签名校验失败")
 
     if verification_token:
         header = payload.get("header")
@@ -449,7 +450,7 @@ async def _verify_feishu_approval_callback(request: Request, payload: dict) -> N
         if not isinstance(token, str) and isinstance(header, dict):
             token = header.get("token")
         if not isinstance(token, str) or not hmac.compare_digest(token, verification_token):
-            raise HTTPException(status_code=401, detail="飞书回调 token 校验失败")
+            raise UnauthorizedException("飞书回调 token 校验失败")
 
 
 @router.post("/webhook/feishu-approval", summary="飞书审批完成回调")
@@ -472,16 +473,16 @@ async def feishu_approval_webhook(  # type: ignore[no-untyped-def]
 
     employee_number = payload.get("employee_number")
     if not employee_number:
-        return success_response(message="缺少工号")
+        return build_response(message="缺少工号")
 
     try:
         employee = await service.approve_employee(employee_number)
-        return success_response(
+        return build_response(
             data=EmployeeResponse.model_validate(employee).model_dump(mode="json"),
             message="员工审批通过，状态已更新为在职",
         )
     except Exception as e:
-        return success_response(message=f"审批处理失败: {str(e)}")
+        return build_response(message=f"审批处理失败: {str(e)}")
 
 
 @router.get(
@@ -503,7 +504,7 @@ async def export_onboarding_training_record(  # type: ignore[no-untyped-def]
     try:
         buffer: BytesIO = generate_onboarding_training_record(employee, factory)  # type: ignore[arg-type]
     except FileNotFoundError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
     def _iterfile():  # type: ignore[no-untyped-def]
         buffer.seek(0)
@@ -536,7 +537,7 @@ async def export_prejob_training_plan(  # type: ignore[no-untyped-def]
     try:
         buffer: BytesIO = generate_prejob_training_plan(employee, factory)
     except FileNotFoundError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
     def _iterfile():  # type: ignore[no-untyped-def]
         buffer.seek(0)
@@ -579,7 +580,7 @@ async def export_prejob_training_plan_with_items(  # type: ignore[no-untyped-def
     try:
         buffer: BytesIO = generate_prejob_training_plan(employee, factory, items_dict)  # type: ignore[call-arg]
     except FileNotFoundError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
     def _iterfile():  # type: ignore[no-untyped-def]
         buffer.seek(0)
@@ -619,12 +620,12 @@ async def export_onboarding_evaluation_by_employee(  # type: ignore[no-untyped-d
     try:
         buffer: BytesIO = generate_onboarding_evaluation(employee, factory)
     except FileNotFoundError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
     except Exception as e:
         import traceback
 
         detail = traceback.format_exc()
-        raise HTTPException(status_code=500, detail=f"生成文档失败: {str(e)}\n{detail}")
+        raise AppException(status_code=500, message=f'生成文档失败: {str(e)}\n{detail}')
 
     def _iterfile():  # type: ignore[no-untyped-def]
         buffer.seek(0)
@@ -668,7 +669,7 @@ async def export_training_sign_in_sheet(  # type: ignore[no-untyped-def]
         try:
             buffer: BytesIO = generate_training_sign_in_sheet(payload, factory)  # type: ignore[call-arg]
         except FileNotFoundError as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            raise BadRequestException(str(e))
 
         def _iterfile():  # type: ignore[no-untyped-def]
             buffer.seek(0)
@@ -691,7 +692,7 @@ async def export_training_sign_in_sheet(  # type: ignore[no-untyped-def]
                     payload, factory, page=page
                 )
             except FileNotFoundError as e:
-                raise HTTPException(status_code=400, detail=str(e))
+                raise BadRequestException(str(e))
             page_buffer.seek(0)
             zf.writestr(
                 f"training_sign_in_sheet_{safe_date}_page{page + 1}.{ext}",
@@ -720,7 +721,7 @@ async def send_training_notification(  # type: ignore[no-untyped-def]
     """根据填写的培训信息，向受训人员发送飞书单聊消息。"""
     result = await service.notify_training(payload)
     msg = f"发送完成：成功 {result['sent']} 人，失败 {result['failed']} 人"
-    return success_response(data=result, message=msg)
+    return build_response(data=result, message=msg)
 
 
 # ─── Training Select Task APIs ───
@@ -781,7 +782,7 @@ async def send_training_select_task(  # type: ignore[no-untyped-def]
             break
 
     if not li_employee:
-        raise HTTPException(status_code=404, detail="未找到接收人李文兆")
+        raise AppException(status_code=404, message="未找到接收人李文兆")
 
     open_id = li_employee.feishu_open_id
     if not open_id and li_employee.phone:
@@ -799,7 +800,7 @@ async def send_training_select_task(  # type: ignore[no-untyped-def]
             logger.exception("unexpected error in feishu open_id lookup for employee %s", li_employee.employee_number)
 
     if not open_id:
-        raise HTTPException(status_code=400, detail="李文兆缺少飞书 open_id 且无法实时获取")
+        raise BadRequestException("李文兆缺少飞书 open_id 且无法实时获取")
 
     msg_content = (
         f"【培训人员选择通知】\n"
@@ -812,9 +813,9 @@ async def send_training_select_task(  # type: ignore[no-untyped-def]
         im = FeishuIM()
         await im.send_text_message(open_id, msg_content)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"发送飞书消息失败: {str(e)}")
+        raise AppException(status_code=500, message=f'发送飞书消息失败: {str(e)}')
 
-    return success_response(
+    return build_response(
         data={"token": token, "url": f"/hr/training/select?token={token}"},
         message="已发送飞书选择任务给李文兆",
     )
@@ -830,8 +831,8 @@ async def get_training_select_task(
     cache_key = f"training_select:{token}"
     data = await cache_get(cache_key)
     if not data:
-        raise HTTPException(status_code=404, detail="任务已过期或不存在")
-    return success_response(data=json.loads(data))
+        raise NotFoundException("任务已过期或")
+    return build_response(data=json.loads(data))
 
 
 @router.post("/training-select-tasks/{token}/submit", summary="提交选择结果")
@@ -846,7 +847,7 @@ async def submit_training_select_task(  # type: ignore[no-untyped-def]
     cache_key = f"training_select:{token}"
     data = await cache_get(cache_key)
     if not data:
-        raise HTTPException(status_code=404, detail="任务已过期或不存在")
+        raise NotFoundException("任务已过期或")
 
     task = json.loads(data)
     task["employee_numbers"] = payload.employee_numbers
@@ -869,7 +870,7 @@ async def submit_training_select_task(  # type: ignore[no-untyped-def]
         flag_modified(session_obj, "select_tasks")
         await service.repo.update(session_obj)
 
-    return success_response(
+    return build_response(
         data=task,
         message="选择结果已提交",
     )
@@ -884,7 +885,7 @@ async def list_training_select_tasks(
     list_key = "training_select_list"
     existing = await cache_get(list_key)
     if not existing:
-        return success_response(data=[])
+        return build_response(data=[])
 
     task_list = json.loads(existing)
     results = []
@@ -911,7 +912,7 @@ async def list_training_select_tasks(
 
     # 按时间倒序
     results.sort(key=lambda x: x.get("created_at", ""), reverse=True)
-    return success_response(data=results)
+    return build_response(data=results)
 
 
 @router.get("/training-select-tasks/{token}/result", summary="获取选择结果")
@@ -924,11 +925,11 @@ async def get_training_select_task_result(
     cache_key = f"training_select:{token}"
     data = await cache_get(cache_key)
     if not data:
-        raise HTTPException(status_code=404, detail="任务已过期或不存在")
+        raise NotFoundException("任务已过期或")
     task = json.loads(data)
     if not task.get("employee_numbers"):
-        raise HTTPException(status_code=400, detail="该任务尚未提交选择结果")
-    return success_response(data=task)
+        raise BadRequestException("该任务尚未提交选择结果")
+    return build_response(data=task)
 
 
 @router.post("/training-notification", summary="生成培训通知")
@@ -949,7 +950,7 @@ async def export_training_notification(  # type: ignore[no-untyped-def]
     try:
         buffer: BytesIO = generate_training_notification(payload, factory)  # type: ignore[arg-type,call-arg]
     except FileNotFoundError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
     # 自动关联创建培训台账记录
     employee_service = EmployeeService(service.repo.session)
@@ -1071,7 +1072,7 @@ async def create_department(  # type: ignore[no-untyped-def]
     service: DepartmentService = Depends(get_department_service),
 ):
     department = await service.create_department(payload)
-    return success_response(
+    return build_response(
         data=DepartmentResponse.model_validate(department).model_dump(mode="json"),
         message="部门创建成功",
         status_code=201,
@@ -1086,7 +1087,7 @@ async def get_department(  # type: ignore[no-untyped-def]
     service: DepartmentService = Depends(get_department_service),
 ):
     department = await service.get_department(department_id)
-    return success_response(
+    return build_response(
         data=DepartmentResponse.model_validate(department).model_dump(mode="json"),
     )
 
@@ -1100,7 +1101,7 @@ async def update_department(  # type: ignore[no-untyped-def]
     service: DepartmentService = Depends(get_department_service),
 ):
     department = await service.update_department(department_id, payload)
-    return success_response(
+    return build_response(
         data=DepartmentResponse.model_validate(department).model_dump(mode="json"),
         message="部门更新成功",
     )
@@ -1114,7 +1115,7 @@ async def delete_department(  # type: ignore[no-untyped-def]
     service: DepartmentService = Depends(get_department_service),
 ):
     await service.delete_department(department_id)
-    return success_response(message="部门删除成功")
+    return build_response(message="部门删除成功")
 
 
 if DepartmentProductionSettings is not None:
@@ -1133,7 +1134,7 @@ if DepartmentProductionSettings is not None:
         department.production_start_time = payload.production_start_time
         department.production_end_time = payload.production_end_time
         await service.repo.session.flush()
-        return success_response(
+        return build_response(
             data={"id": str(department.id), "is_production": department.is_production},
             message="生产设置已更新",
         )
@@ -1174,7 +1175,7 @@ async def create_team(  # type: ignore[no-untyped-def]
     service: TeamService = Depends(get_team_service),
 ):
     team = await service.create_team(payload)
-    return success_response(
+    return build_response(
         data=TeamResponse.model_validate(team).model_dump(mode="json"),
         message="班组创建成功",
         status_code=201,
@@ -1189,7 +1190,7 @@ async def get_team(  # type: ignore[no-untyped-def]
     service: TeamService = Depends(get_team_service),
 ):
     team = await service.get_team(team_id)
-    return success_response(
+    return build_response(
         data=TeamResponse.model_validate(team).model_dump(mode="json"),
     )
 
@@ -1203,7 +1204,7 @@ async def update_team(  # type: ignore[no-untyped-def]
     service: TeamService = Depends(get_team_service),
 ):
     team = await service.update_team(team_id, payload)
-    return success_response(
+    return build_response(
         data=TeamResponse.model_validate(team).model_dump(mode="json"),
         message="班组更新成功",
     )
@@ -1217,7 +1218,7 @@ async def delete_team(  # type: ignore[no-untyped-def]
     service: TeamService = Depends(get_team_service),
 ):
     await service.delete_team(team_id)
-    return success_response(message="班组删除成功")
+    return build_response(message="班组删除成功")
 
 
 # ─── OffboardingRecord Routes ───
@@ -1267,7 +1268,7 @@ async def create_offboarding_record(  # type: ignore[no-untyped-def]
         "created_at": record.created_at.isoformat() if record.created_at else None,
         "updated_at": record.updated_at.isoformat() if record.updated_at else None,
     }
-    return success_response(
+    return build_response(
         data=data,
         message="离职记录创建成功，员工状态已更新为离职",
         status_code=201,
@@ -1282,7 +1283,7 @@ async def get_offboarding_record(  # type: ignore[no-untyped-def]
     service: OffboardingRecordService = Depends(get_offboarding_service),
 ):
     record = await service.get_record(record_id)
-    return success_response(
+    return build_response(
         data=OffboardingRecordResponse.model_validate(record).model_dump(mode="json"),
     )
 
@@ -1296,7 +1297,7 @@ async def update_offboarding_record(  # type: ignore[no-untyped-def]
     service: OffboardingRecordService = Depends(get_offboarding_service),
 ):
     record = await service.update_record(record_id, payload)
-    return success_response(
+    return build_response(
         data=OffboardingRecordResponse.model_validate(record).model_dump(mode="json"),
         message="离职记录更新成功",
     )
@@ -1310,7 +1311,7 @@ async def delete_offboarding_record(  # type: ignore[no-untyped-def]
     service: OffboardingRecordService = Depends(get_offboarding_service),
 ):
     await service.delete_record(record_id)
-    return success_response(message="离职记录删除成功")
+    return build_response(message="离职记录删除成功")
 
 
 # ─── OnboardingRecord Routes ───
@@ -1357,7 +1358,7 @@ async def sync_onboarding_from_feishu(  # type: ignore[no-untyped-def]
     """手动触发：从飞书多维表格拉取全部老厂入职数据并 upsert 到本地 PG。"""
     stats = await service.sync_from_feishu()
     msg = f"同步完成：新增 {stats['created']} 条，更新 {stats['updated']} 条，失败 {stats['failed']} 条"
-    return success_response(
+    return build_response(
         data=stats,
         message=msg,
     )
@@ -1371,7 +1372,7 @@ async def get_onboarding_sync_status(  # type: ignore[no-untyped-def]
 ):
     """查看本地与飞书的数据同步统计。"""
     status = await service.get_sync_status()
-    return success_response(
+    return build_response(
         data=status.model_dump(mode="json"),
     )
 
@@ -1384,7 +1385,7 @@ async def get_onboarding_record(  # type: ignore[no-untyped-def]
     service: OnboardingRecordService = Depends(get_onboarding_service),
 ):
     record = await service.get_record(record_id)
-    return success_response(
+    return build_response(
         data=OnboardingRecordResponse.model_validate(record).model_dump(mode="json"),
     )
 
@@ -1430,7 +1431,7 @@ async def create_departure_record(  # type: ignore[no-untyped-def]
     service: DepartureRecordService = Depends(get_departure_service),
 ):
     record = await service.create_record(payload)
-    return success_response(
+    return build_response(
         data=DepartureRecordResponse.model_validate(record).model_dump(mode="json"),
         message="离职台账记录创建成功",
         status_code=201,
@@ -1445,7 +1446,7 @@ async def get_departure_record(  # type: ignore[no-untyped-def]
     service: DepartureRecordService = Depends(get_departure_service),
 ):
     record = await service.get_record(record_id)
-    return success_response(
+    return build_response(
         data=DepartureRecordResponse.model_validate(record).model_dump(mode="json"),
     )
 
@@ -1459,7 +1460,7 @@ async def update_departure_record(  # type: ignore[no-untyped-def]
     service: DepartureRecordService = Depends(get_departure_service),
 ):
     record = await service.update_record(record_id, payload)
-    return success_response(
+    return build_response(
         data=DepartureRecordResponse.model_validate(record).model_dump(mode="json"),
         message="离职台账记录更新成功",
     )
@@ -1473,7 +1474,7 @@ async def delete_departure_record(  # type: ignore[no-untyped-def]
     service: DepartureRecordService = Depends(get_departure_service),
 ):
     await service.delete_record(record_id)
-    return success_response(message="离职台账记录删除成功")
+    return build_response(message="离职台账记录删除成功")
 
 
 @router.post("/departure-records/sync-from-feishu", summary="从飞书同步老厂离职台账")
@@ -1485,7 +1486,7 @@ async def sync_departure_from_feishu(  # type: ignore[no-untyped-def]
     """手动触发：从飞书多维表格拉取全部老厂离职数据并 upsert 到本地 PG。"""
     stats = await service.sync_from_feishu()
     msg = f"同步完成：新增 {stats['created']} 条，更新 {stats['updated']} 条，失败 {stats['failed']} 条"
-    return success_response(
+    return build_response(
         data=stats,
         message=msg,
     )
@@ -1499,7 +1500,7 @@ async def get_departure_sync_status(  # type: ignore[no-untyped-def]
 ):
     """查看本地与飞书的数据同步统计。"""
     status = await service.get_sync_status()
-    return success_response(
+    return build_response(
         data=status.model_dump(mode="json"),
     )
 
@@ -1543,7 +1544,7 @@ async def create_training_ledger(  # type: ignore[no-untyped-def]
     service: TrainingLedgerService = Depends(get_training_ledger_service),
 ):
     record = await service.create_record(payload)
-    return success_response(
+    return build_response(
         data=TrainingLedgerResponse.model_validate(record).model_dump(mode="json"),
         message="培训台账记录创建成功",
         status_code=201,
@@ -1573,7 +1574,7 @@ async def list_training_ledger_pages(  # type: ignore[no-untyped-def]
         }
         for page, dept, factory in pages_with_dept
     ]
-    return success_response(data=data)
+    return build_response(data=data)
 
 
 @router.post("/training-ledgers/pages", summary="创建培训台账页面")
@@ -1584,7 +1585,7 @@ async def create_training_ledger_page(  # type: ignore[no-untyped-def]
     service: TrainingLedgerPageService = Depends(get_training_ledger_page_service),
 ):
     page = await service.create_page(payload)
-    return success_response(
+    return build_response(
         data=TrainingLedgerPageResponse(
             id=page.id,
             employee_number=page.employee_number,
@@ -1765,7 +1766,7 @@ async def export_training_ledger(  # type: ignore[no-untyped-def]
     """根据员工数据、厂区和台账类型选择对应模板导出培训台账。"""
     employee = await employee_service.get_employee_by_number(employee_number)
     if not employee:
-        raise HTTPException(status_code=404, detail="未找到该员工")
+        raise AppException(status_code=404, message="未找到该员工")
 
     records, _ = await ledger_service.list_records(
         employee_number=employee_number,
@@ -1807,7 +1808,7 @@ async def get_training_ledger(  # type: ignore[no-untyped-def]
     service: TrainingLedgerService = Depends(get_training_ledger_service),
 ):
     record = await service.get_record(record_id)
-    return success_response(
+    return build_response(
         data=TrainingLedgerResponse.model_validate(record).model_dump(mode="json"),
     )
 
@@ -1821,7 +1822,7 @@ async def update_training_ledger(  # type: ignore[no-untyped-def]
     service: TrainingLedgerService = Depends(get_training_ledger_service),
 ):
     record = await service.update_record(record_id, payload)
-    return success_response(
+    return build_response(
         data=TrainingLedgerResponse.model_validate(record).model_dump(mode="json"),
         message="培训台账记录更新成功",
     )
@@ -1835,7 +1836,7 @@ async def delete_training_ledger(  # type: ignore[no-untyped-def]
     service: TrainingLedgerService = Depends(get_training_ledger_service),
 ):
     await service.delete_record(record_id)
-    return success_response(message="培训台账记录删除成功")
+    return build_response(message="培训台账记录删除成功")
 
 
 # ─── AnnualTrainingPlan Routes ───
@@ -1873,7 +1874,7 @@ async def create_annual_training_plan(  # type: ignore[no-untyped-def]
     service: AnnualTrainingPlanService = Depends(get_annual_training_plan_service),
 ):
     plan = await service.create_plan(payload)
-    return success_response(
+    return build_response(
         data=AnnualTrainingPlanResponse.model_validate(plan).model_dump(mode="json"),
         message="年度培训计划创建成功",
         status_code=201,
@@ -1888,7 +1889,7 @@ async def get_annual_training_plan(  # type: ignore[no-untyped-def]
     service: AnnualTrainingPlanService = Depends(get_annual_training_plan_service),
 ):
     plan = await service.get_plan(plan_id)
-    return success_response(
+    return build_response(
         data=AnnualTrainingPlanResponse.model_validate(plan).model_dump(mode="json"),
     )
 
@@ -1902,7 +1903,7 @@ async def update_annual_training_plan(  # type: ignore[no-untyped-def]
     service: AnnualTrainingPlanService = Depends(get_annual_training_plan_service),
 ):
     plan = await service.update_plan(plan_id, payload)
-    return success_response(
+    return build_response(
         data=AnnualTrainingPlanResponse.model_validate(plan).model_dump(mode="json"),
         message="年度培训计划更新成功",
     )
@@ -1916,7 +1917,7 @@ async def delete_annual_training_plan(  # type: ignore[no-untyped-def]
     service: AnnualTrainingPlanService = Depends(get_annual_training_plan_service),
 ):
     await service.delete_plan(plan_id)
-    return success_response(message="年度培训计划删除成功")
+    return build_response(message="年度培训计划删除成功")
 
 
 @router.get("/annual-training-plans/{plan_id}/items", summary="年度计划明细列表")
@@ -1928,7 +1929,7 @@ async def list_annual_training_plan_items(  # type: ignore[no-untyped-def]
 ):
     items = await service.list_items(plan_id)
     data = [AnnualTrainingPlanItemResponse.model_validate(i).model_dump(mode="json") for i in items]
-    return success_response(data=data)
+    return build_response(data=data)
 
 
 @router.put("/annual-training-plans/{plan_id}/items/batch", summary="批量更新年度计划明细")
@@ -1941,7 +1942,7 @@ async def batch_update_annual_training_plan_items(  # type: ignore[no-untyped-de
 ):
     items = await service.batch_update_items(plan_id, payload)
     data = [AnnualTrainingPlanItemResponse.model_validate(i).model_dump(mode="json") for i in items]
-    return success_response(
+    return build_response(
         data=data,
         message="年度计划明细更新成功",
     )
@@ -2502,7 +2503,7 @@ async def create_candidate(  # type: ignore[no-untyped-def]
         match_report=match_report,
         recommendation_level=recommendation_level,
     )
-    return success_response(
+    return build_response(
         data=CandidateResponse.model_validate(candidate).model_dump(mode="json"),
         message="候选人创建成功",
     )
@@ -2517,7 +2518,7 @@ async def sync_candidates_from_feishu(  # type: ignore[no-untyped-def]
     """手动触发：从飞书多维表格拉取全部候选人数据并 upsert 到本地 PG。"""
     stats = await service.sync_from_feishu()
     msg = f"同步完成：新增 {stats['created']} 条，更新 {stats['updated']} 条，失败 {stats['failed']} 条"
-    return success_response(
+    return build_response(
         data=stats,
         message=msg,
     )
@@ -2531,7 +2532,7 @@ async def get_candidates_sync_status(  # type: ignore[no-untyped-def]
 ):
     """查看本地与飞书的候选人数据同步统计。"""
     status = await service.get_sync_status()
-    return success_response(
+    return build_response(
         data=status.model_dump(mode="json"),
     )
 
@@ -2545,7 +2546,7 @@ async def sync_candidate_to_feishu(  # type: ignore[no-untyped-def]
 ):
     """手动触发：将单个候选人（含简历）同步到飞书多维表格。"""
     candidate = await service.sync_candidate_to_feishu(candidate_id)
-    return success_response(
+    return build_response(
         data=CandidateResponse.model_validate(candidate).model_dump(mode="json"),
         message="候选人与简历已同步到飞书",
     )
@@ -2559,7 +2560,7 @@ async def get_candidate(  # type: ignore[no-untyped-def]
     service: CandidateService = Depends(get_candidate_service),
 ):
     candidate = await service.get_candidate(candidate_id)
-    return success_response(
+    return build_response(
         data=CandidateResponse.model_validate(candidate).model_dump(mode="json"),
     )
 
@@ -2573,7 +2574,7 @@ async def update_candidate(  # type: ignore[no-untyped-def]
     service: CandidateService = Depends(get_candidate_service),
 ):
     candidate = await service.update_candidate(candidate_id, payload)
-    return success_response(
+    return build_response(
         data=CandidateResponse.model_validate(candidate).model_dump(mode="json"),
         message="候选人信息更新成功",
     )
@@ -2587,7 +2588,7 @@ async def delete_candidate(  # type: ignore[no-untyped-def]
     service: CandidateService = Depends(get_candidate_service),
 ):
     await service.delete_candidate(candidate_id)
-    return success_response(message="候选人删除成功")
+    return build_response(message="候选人删除成功")
 
 
 @router.put("/candidates/{candidate_id}/recommendation-level", summary="更新候选人推荐等级")
@@ -2599,7 +2600,7 @@ async def update_candidate_recommendation_level(  # type: ignore[no-untyped-def]
     service: CandidateService = Depends(get_candidate_service),
 ):
     candidate = await service.update_recommendation_level(candidate_id, payload.recommendation_level)
-    return success_response(
+    return build_response(
         data=CandidateResponse.model_validate(candidate).model_dump(mode="json"),
         message="推荐等级更新成功",
     )
@@ -2700,7 +2701,7 @@ async def create_training_session(  # type: ignore[no-untyped-def]
     service: TrainingSessionService = Depends(get_training_session_service),
 ):
     session_obj = await service.create_session(payload)
-    return success_response(
+    return build_response(
         data=TrainingSessionResponse.model_validate(session_obj).model_dump(mode="json"),
         message="培训记录创建成功",
         status_code=201,
@@ -2716,7 +2717,7 @@ async def update_training_session_status(  # type: ignore[no-untyped-def]
     service: TrainingSessionService = Depends(get_training_session_service),
 ):
     session_obj = await service.update_status(session_id, payload.status)
-    return success_response(
+    return build_response(
         data=TrainingSessionResponse.model_validate(session_obj).model_dump(mode="json"),
         message="状态更新成功",
     )
@@ -2730,7 +2731,7 @@ async def get_training_session(  # type: ignore[no-untyped-def]
     service: TrainingSessionService = Depends(get_training_session_service),
 ):
     session_obj = await service.get_session(session_id)
-    return success_response(
+    return build_response(
         data=TrainingSessionResponse.model_validate(session_obj).model_dump(mode="json"),
     )
 
@@ -2744,7 +2745,7 @@ async def update_training_session(  # type: ignore[no-untyped-def]
     service: TrainingSessionService = Depends(get_training_session_service),
 ):
     session_obj = await service.update_session(session_id, payload)
-    return success_response(
+    return build_response(
         data=TrainingSessionResponse.model_validate(session_obj).model_dump(mode="json"),
         message="培训记录更新成功",
     )
@@ -2758,7 +2759,7 @@ async def delete_training_session(  # type: ignore[no-untyped-def]
     service: TrainingSessionService = Depends(get_training_session_service),
 ):
     await service.delete_session(session_id)
-    return success_response(message="培训记录删除成功")
+    return build_response(message="培训记录删除成功")
 
 
 @router.post(
@@ -2782,7 +2783,7 @@ async def send_training_session_select_tasks(  # type: ignore[no-untyped-def]
     session_obj = await service.get_session(session_id)
     trainee_departments = session_obj.trainee_departments or []
     if not trainee_departments:
-        raise HTTPException(status_code=400, detail="该培训记录没有受训部门")
+        raise BadRequestException("该培训记录没有受训部门")
 
     settings = get_settings()
     select_tasks: list[dict] = []  # type: ignore[type-arg]
@@ -2876,8 +2877,8 @@ async def send_training_session_select_tasks(  # type: ignore[no-untyped-def]
                         update_sql, {"oid": open_id, "eno": specialist.employee_number}
                     )
                     await employee_service.repo.session.flush()
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("忽略异常 @ %s: %s", "send_training_session_select_tasks", exc)
 
         if open_id:
             select_url = f"{settings.FRONTEND_URL}/hr/training/select?token={token}&department={quote(dept)}"
@@ -2909,7 +2910,7 @@ async def send_training_session_select_tasks(  # type: ignore[no-untyped-def]
     session_obj.status = "selecting"
     await service.repo.update(session_obj)
 
-    return success_response(
+    return build_response(
         data={"session_id": str(session_id), "select_tasks": select_tasks},
         message="选择任务已发送",
     )
@@ -2924,7 +2925,7 @@ async def get_training_session_select_tasks(  # type: ignore[no-untyped-def]
 ):
     """获取培训记录的多部门选择任务列表。"""
     session_obj = await service.get_session(session_id)
-    return success_response(data=session_obj.select_tasks or [])
+    return build_response(data=session_obj.select_tasks or [])
 
 
 # ─── Training Specialists ───
@@ -2954,7 +2955,7 @@ async def list_training_specialists(  # type: ignore[no-untyped-def]
         }
         for s in specialists
     ]
-    return success_response(data=data)
+    return build_response(data=data)
 
 
 @router.post("/training-specialists", summary="新增或更新培训专员")
@@ -2970,7 +2971,7 @@ async def upsert_training_specialist(  # type: ignore[no-untyped-def]
         payload.employee_name,
         payload.factory,
     )
-    return success_response(
+    return build_response(
         data={
             "id": str(s.id),
             "department": s.department,
@@ -2990,7 +2991,7 @@ async def delete_training_specialist(  # type: ignore[no-untyped-def]
     repo: TrainingSpecialistRepository = Depends(get_specialist_repo),
 ):
     await repo.delete(specialist_id)
-    return success_response(message="培训专员已删除")
+    return build_response(message="培训专员已删除")
 
 
 @router.post("/training-specialists/sync-feishu-openids", summary="同步培训专员飞书 open_id")
@@ -3070,7 +3071,7 @@ async def sync_specialist_feishu_openids(  # type: ignore[no-untyped-def]
                 }
             )
 
-    return success_response(
+    return build_response(
         data={
             "synced": len([r for r in results if r["status"] == "updated"]),
             "failed": len([r for r in results if r["status"] == "not_found"]),
@@ -3107,7 +3108,7 @@ async def list_training_teams(  # type: ignore[no-untyped-def]
         }
         for t in teams
     ]
-    return success_response(data=data)
+    return build_response(data=data)
 
 
 @router.post("/training-teams", summary="新增自定义受训班组")
@@ -3118,7 +3119,7 @@ async def create_training_team(  # type: ignore[no-untyped-def]
     repo: TrainingTeamRepository = Depends(get_team_repo),
 ):
     t = await repo.create(payload)
-    return success_response(
+    return build_response(
         data={"id": str(t.id), "name": t.name, "factory": t.factory},
         message="班组已创建",
     )
@@ -3133,7 +3134,7 @@ async def update_training_team(  # type: ignore[no-untyped-def]
     repo: TrainingTeamRepository = Depends(get_team_repo),
 ):
     t = await repo.update(team_id, payload)
-    return success_response(
+    return build_response(
         data={"id": str(t.id), "name": t.name},
         message="班组已更新",
     )
@@ -3147,7 +3148,7 @@ async def delete_training_team(  # type: ignore[no-untyped-def]
     repo: TrainingTeamRepository = Depends(get_team_repo),
 ):
     await repo.delete(team_id)
-    return success_response(message="班组已删除")
+    return build_response(message="班组已删除")
 
 
 # ─── Pre-job Training Plan Templates ───
@@ -3173,8 +3174,8 @@ async def get_prejob_template(  # type: ignore[no-untyped-def]
     """获取指定部门+厂区的岗前培训计划模板。若没有保存过模板则返回 null。"""
     template = await repo.get_by_dept_factory(department, factory)
     if template:
-        return success_response(data=PrejobTemplateResponse.model_validate(template).model_dump())
-    return success_response(data=None)
+        return build_response(data=PrejobTemplateResponse.model_validate(template).model_dump())
+    return build_response(data=None)
 
 
 @router.put(
@@ -3190,7 +3191,7 @@ async def save_prejob_template(  # type: ignore[no-untyped-def]
     """保存（新增或覆盖）指定部门+厂区的岗前培训计划模板。"""
     items = [item.model_dump() for item in payload.items]
     template = await repo.upsert(payload.department, payload.factory, items)
-    return success_response(
+    return build_response(
         data=PrejobTemplateResponse.model_validate(template).model_dump(),
         message="岗前培训计划模板已保存",
     )
@@ -3259,7 +3260,7 @@ async def get_system_settings(  # type: ignore[no-untyped-def]
         val = _get_db_setting(db_settings, key) or _get_setting_value(_settings, key)
         result[key] = mask_secret(val) if key in SECRET_SETTING_KEYS else val
 
-    return success_response(data=result)
+    return build_response(data=result)
 
 
 @router.put("/system-settings", summary="保存系统设置")
@@ -3324,4 +3325,4 @@ async def save_system_settings(  # type: ignore[no-untyped-def]
     except Exception:
         logger.exception("写入 .env 失败（设置已保存到数据库，但需手工补环境变量）")
 
-    return success_response(data={"updated": updated}, message=f"已保存 {len(updated)} 项设置")
+    return build_response(data={"updated": updated}, message=f"已保存 {len(updated)} 项设置")

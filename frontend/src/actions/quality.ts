@@ -102,6 +102,9 @@ import {
   parse
 } from '@/lib/validation/schemas'
 import * as QualityServer from '@/lib/api/server/quality'
+import * as DeviationReportServer from '@/lib/api/server/quality-deviation-report'
+import * as DocCheckServer from '@/lib/api/server/quality-doc-check'
+import type { DeviationReportOptimizeType, DeviationReportUploadResult } from '@/types/quality'
 
 /** 判断服务端函数的返回值是不是完整信封 `{code, message, data, meta}`。 */
 function isEnvelope(value: unknown): value is {
@@ -925,4 +928,50 @@ export async function uploadLcExcel(file: File): Promise<UploadLcResponse> {
   const result = await QualityServer.uploadLcExcel(formData)
   revalidatePath('/quality')
   return result
+}
+
+// ============ Doc Check Actions ============
+
+/** 启动文档 AI 预审 */
+export async function startDocCheck(fileId: string, checkConfig: unknown) {
+  const response = await wrap<{ task_id: string }>(DocCheckServer.startDocCheck(fileId, checkConfig))
+  revalidatePath('/quality/doc-check')
+  return response
+}
+
+/** 确认文档预审通过 */
+export async function confirmDocCheckRecord(recordId: string) {
+  const response = await wrap<null>(DocCheckServer.confirmDocCheckRecord(recordId))
+  revalidatePath('/quality/doc-check')
+  return response
+}
+
+/** 更新预审问题的处理结果 */
+export async function updateDocCheckProblem(
+  problemId: string,
+  payload: { handle_status: string; ignore_reason?: string },
+) {
+  const response = await wrap<null>(DocCheckServer.updateDocCheckProblem(problemId, payload))
+  revalidatePath('/quality/doc-check')
+  return response
+}
+
+/** 删除偏差单 */
+export async function deleteDeviationFlow(deviationId: string) {
+  const response = await wrap<null>(DocCheckServer.deleteDeviationFlow(deviationId))
+  revalidatePath('/quality/deviation-flow')
+  return response
+}
+
+// ============ Deviation Report Actions ============
+
+/** 上传 Word 模板并解析为 HTML */
+export async function uploadDeviationReportTemplate(file: File) {
+  return wrap<DeviationReportUploadResult>(DeviationReportServer.uploadDeviationReport(file))
+}
+
+/** AI 优化偏差报告选中文本 */
+export async function optimizeDeviationReportText(text: string, optimizeType: DeviationReportOptimizeType) {
+  const optimized = await DeviationReportServer.optimizeDeviationReportText(text, optimizeType)
+  return { code: 200, message: 'ok', data: { optimized_text: optimized } } as ApiResponse<{ optimized_text: string }>
 }

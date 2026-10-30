@@ -3,10 +3,11 @@
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, Form, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import AppException, BadRequestException
 from app.core.job_store import start_job
 from app.modules.hr.ai_exam.schemas import ExamExportRequest
 from app.modules.hr.ai_exam.service import export_exam, generate_exam
@@ -32,7 +33,7 @@ async def post(
 ) -> Any:
     """提交出题后台任务（LLM 耗时 >5s）；轮询 GET /api/v1/hr/jobs/{job_id} 拿结果。"""
     if not file.filename:
-        raise HTTPException(400, "文件名不能为空")
+        raise BadRequestException("文件名不能为空")
     logger.info(
         "Exam config: choice=%s tf=%s multi=%s fill=%s",
         choice_count,
@@ -72,7 +73,7 @@ async def api_export_exam(
     try:
         buffer = export_exam(data.model_dump())
     except Exception as e:
-        raise HTTPException(500, f"导出失败: {e}")
+        raise AppException(status_code=500, message=f'导出失败: {e}')
 
     from urllib.parse import quote
 
