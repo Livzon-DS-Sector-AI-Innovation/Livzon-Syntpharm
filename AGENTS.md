@@ -307,6 +307,10 @@ CI 会自动检查（`scripts/ci/check_migration_scope.py` 与 `scripts/ci/check
 - 自定义 `asyncio` 循环（必须用 BackgroundWorker）
 - `asyncio.create_task()` 处理业务逻辑（无法重试、无法监控、重启后丢失）
   - **允许例外**：长运行后台工作进程内部的心跳、事件分发等基础设施任务
+  - **允许例外（纯通知）**：飞书消息/卡片投递这类**无业务状态副作用**的副作用可 fire-and-forget，但必须同时满足：
+    1. 不写任何业务表、不改变业务状态，失败只影响送达（可接受丢失或事后人工补发）
+    2. 必须使用 `app/core/tasks.py` 的 `spawn_task()`（异常进日志），禁止裸 `asyncio.create_task()`
+    3. 需要重试、需要查送达状态、或与业务状态绑定的通知，改用 `app/core/jobs.py` 的 `submit_job_safe()`
 - 在 HTTP 请求中执行超过 5 秒的操作（应改为异步任务 + 轮询状态）
 
 ## 错误处理与容错
@@ -561,7 +565,7 @@ React Compiler 已启用（`reactCompiler: true`），编写代码时必须遵�
 
 **架构文件**（只有架构负责人可以修改）：
 - `src/proxy.ts`
-- `src/components/shared/` 下所有文件
+- `src/components/common/` 下所有文件（跨模块共享组件；历史文档里的 `components/shared/` 已不存在）
 - `src/hooks/usePermission.ts`
 
 **治理文件**（影响 AI 审计和开发规范）：

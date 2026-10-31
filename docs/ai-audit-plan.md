@@ -181,7 +181,7 @@ backend/app/
 frontend/src/
 ├── app/(dashboard)/<module>/
 ├── components/<module>/
-├── components/shared/
+├── components/common/
 ├── actions/<module>.ts
 ├── stores/<module>.ts
 ├── types/<module>.ts
@@ -258,7 +258,6 @@ Full audit
    - `proxy.ts` default fallback (`API_BASE_URL || 'http://localhost:8000'`)
    - CI configuration
    - Docker service discovery names (e.g., `http://backend:8000` in docker-compose.yml, Dockerfile)
-   - E2E 测试脚本里环境变量回退的默认值（如 `frontend/e2e/routes.spec.ts` 的 `E2E_FRONTEND_URL ?? 'http://127.0.0.1:13000'`，可由环境变量覆盖）
 3. Are there hardcoded absolute file paths (e.g. `D:/`, `C:/`, `/home/` as string literals)?
 4. Is `NEXT_PUBLIC_API_BASE_URL` used anywhere in the frontend?
 5. Does `ENCRYPTION_KEY` appear in `.env.example`, the database, or any git-tracked file?
@@ -728,7 +727,7 @@ Full audit
 
 **禁止修改的文件:**
 - `src/proxy.ts`
-- `src/components/shared/` 下所有文件
+- `src/components/common/` 下所有文件
 - `src/hooks/usePermission.ts`
 
 ### Directories to inspect
@@ -747,7 +746,7 @@ Full audit
 5. Do component file names follow PascalCase? Do non-component file names follow camelCase?
 6. Do Server Action function names start with a verb (`create`, `update`, `delete`, `submit`, etc.)?
 7. Do API request function names start with `fetch`?
-8. Has `proxy.ts`, `components/shared/`, or `hooks/usePermission.ts` been modified in a way that requires architecture approval?
+8. Has `proxy.ts`, `components/common/`, or `hooks/usePermission.ts` been modified in a way that requires architecture approval?
 9. Does every `page.tsx` have a semantic `<h1>` heading (using `<h1>` or `<Title level={1}>`) that is NOT provided via `<Card title="...">`?
 
 
