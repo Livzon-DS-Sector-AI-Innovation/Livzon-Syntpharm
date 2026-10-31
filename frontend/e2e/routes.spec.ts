@@ -1,5 +1,7 @@
 import { test, expect, Locator, Page } from '@playwright/test'
 
+import { FRONTEND_ORIGIN } from '../playwright.config'
+
 type RouteKind = 'normal' | 'redirect' | 'external-iframe'
 
 type RouteCase = {
@@ -54,7 +56,7 @@ type RouteCase = {
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /** 被测前端源：与 playwright.config.ts 的 baseURL 同源，本地跑 dev 栈时用 E2E_FRONTEND_URL 覆盖 */
-const APP_ORIGIN = (process.env.E2E_FRONTEND_URL ?? 'http://127.0.0.1:13000').replace(/\/+$/, '')
+const APP_ORIGIN = FRONTEND_ORIGIN
 
 /**
  * 取数断言的等待预算。

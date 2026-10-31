@@ -154,7 +154,7 @@ export default function FQCPage() {
   // 编辑
   const handleEdit = async (record: FQCInspectionListItem) => {
     try {
-      const response = await getFQCInspection(record.id) as { code?: number; message?: string; data?: FQCInspection }
+      const response = await getFQCInspection(record.id)
       if (response.code === 200 || response.code === 0) {
         setEditingRecord(response.data!)
         setModalTitle('编辑FQC检验单')
@@ -191,7 +191,7 @@ export default function FQCPage() {
   // 查看详情
   const handleView = async (record: FQCInspectionListItem) => {
     try {
-      const response = await getFQCInspection(record.id) as { code?: number; message?: string; data?: FQCInspection }
+      const response = await getFQCInspection(record.id)
       if (response.code === 200 || response.code === 0) {
         setViewRecord(response.data!)
         setViewModalVisible(true)
@@ -206,7 +206,7 @@ export default function FQCPage() {
   // 删除
   const handleDelete = async (id: string) => {
     try {
-      const response = await deleteFQCInspection(id) as { code?: number; message?: string }
+      const response = await deleteFQCInspection(id)
       if (response.code === 200 || response.code === 0 || response.message?.includes('成功')) {
         message.success('删除成功')
         void inspectionsQuery.refetch()
@@ -221,7 +221,7 @@ export default function FQCPage() {
   // 提交审批
   const handleSubmit = async (id: string) => {
     try {
-      const response = await submitFQCInspectionForApproval(id) as { code?: number; message?: string; data?: { status?: string } }
+      const response = await submitFQCInspectionForApproval(id)
       if (response.code === 200 || response.code === 0 || response.data?.status) {
         message.success('提交成功')
         void inspectionsQuery.refetch()
@@ -238,7 +238,7 @@ export default function FQCPage() {
     try {
       const response = await approveFQCInspection(id, {
         approval_status: approved ? 'approved' : 'rejected',
-      }) as { code?: number; message?: string; data?: { status?: string } }
+      })
       if (response.code === 200 || response.code === 0 || response.data?.status) {
         message.success(approved ? '审批通过' : '已驳回')
         void inspectionsQuery.refetch()
@@ -260,7 +260,7 @@ export default function FQCPage() {
       onOk: async () => {
         const reason = '申请复检' // 实际应该让用户输入
         try {
-          const response = await applyFQCReinspection(id, reason) as { code?: number; message?: string }
+          const response = await applyFQCReinspection(id, reason)
           if (response.code === 200 || response.code === 0) {
             message.success('复检申请已提交')
             void inspectionsQuery.refetch()
@@ -277,7 +277,7 @@ export default function FQCPage() {
   // 放行
   const handleRelease = async (id: string) => {
     try {
-      const response = await releaseFQCInspection(id) as { code?: number; message?: string }
+      const response = await releaseFQCInspection(id)
       if (response.code === 200 || response.code === 0) {
         message.success('放行成功')
         void inspectionsQuery.refetch()
@@ -292,7 +292,7 @@ export default function FQCPage() {
   // 锁定批次
   const handleLockBatch = async (id: string) => {
     try {
-      const response = await lockFQCBatch(id, 'FQC检验不合格，批次锁定') as { code?: number; message?: string }
+      const response = await lockFQCBatch(id, 'FQC检验不合格，批次锁定')
       if (response.code === 200 || response.code === 0) {
         message.success('批次已锁定')
         void inspectionsQuery.refetch()
@@ -307,7 +307,7 @@ export default function FQCPage() {
   // 解锁批次
   const handleUnlockBatch = async (id: string) => {
     try {
-      const response = await unlockFQCBatch(id) as { code?: number; message?: string }
+      const response = await unlockFQCBatch(id)
       if (response.code === 200 || response.code === 0) {
         message.success('批次已解锁')
         void inspectionsQuery.refetch()
@@ -391,7 +391,7 @@ export default function FQCPage() {
         }
 
         setSubmitLoading(true)
-        const createResponse = await createFQCInspection(submitData) as { code?: number; message?: string; data?: { id?: string } }
+        const createResponse = await createFQCInspection(submitData)
         if (createResponse.code !== 200 && createResponse.code !== 0) {
           message.error(createResponse.message || '保存失败')
           setSubmitLoading(false)
@@ -411,7 +411,7 @@ export default function FQCPage() {
         }
 
         setSubmitLoading(true)
-        const updateResponse = await updateFQCInspection(recordId, submitData) as { code?: number; message?: string }
+        const updateResponse = await updateFQCInspection(recordId, submitData)
         if (updateResponse.code !== 200 && updateResponse.code !== 0) {
           message.error(updateResponse.message || '保存失败')
           setSubmitLoading(false)
@@ -420,7 +420,7 @@ export default function FQCPage() {
       }
 
       // 提交审批
-      const submitResponse = await submitFQCInspectionForApproval(recordId!) as { code?: number; message?: string }
+      const submitResponse = await submitFQCInspectionForApproval(recordId!)
       if (submitResponse.code === 200 || submitResponse.code === 0) {
         message.success('保存并提交成功')
         setCreateModalVisible(false)

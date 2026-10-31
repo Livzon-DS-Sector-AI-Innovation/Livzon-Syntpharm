@@ -186,7 +186,11 @@ export default function AuthorizationLetterClient({
     })
   }
 
-  const handleDownload = async (id: string, fileName: string) => {
+  const handleDownload = async (id: string, fileName?: string | null) => {
+    if (!fileName) {
+      message.warning('该授权书暂无可用文件')
+      return
+    }
     const url = await fetchAuthorizationLetterDownloadUrl(id)
     const link = document.createElement('a')
     link.href = url

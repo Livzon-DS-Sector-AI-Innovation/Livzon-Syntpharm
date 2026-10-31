@@ -67,6 +67,8 @@ export default function EvaluationFormPage() {
         subject: vals.subject,
         training_date: vals.training_date?.format('YYYY-MM-DD'),
         training_method: vals.training_method,
+        // 表单没有「是否考试」项，取后端默认值 false
+        is_exam: false,
         trainer: vals.trainer,
         trainee_names: (vals.trainee_names || '').split(/[,，、\s]+/).filter(Boolean),
         assessment_method: vals.assessment_method,

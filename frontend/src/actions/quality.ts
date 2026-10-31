@@ -104,16 +104,20 @@ import {
 import * as QualityServer from '@/lib/api/server/quality'
 import * as DeviationReportServer from '@/lib/api/server/quality-deviation-report'
 import * as DocCheckServer from '@/lib/api/server/quality-doc-check'
-import type { DeviationReportOptimizeType, DeviationReportUploadResult } from '@/types/quality'
+import type {
+  DeviationOptimizeResult,
+  DeviationReportOptimizeType,
+  DeviationReportUploadResult,
+} from '@/types/quality'
 
 /** 判断服务端函数的返回值是不是完整信封 `{code, message, data, meta}`。 */
-function isEnvelope(value: unknown): value is {
-  code: number
-  message?: string
-  data: unknown
-  meta?: unknown
-} {
-  return typeof value === 'object' && value !== null && 'code' in value && 'data' in value
+function isEnvelope(value: unknown): value is components['schemas']['ApiResponse'] {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { code?: unknown }).code === 'number' &&
+    'data' in value
+  )
 }
 
 /**
@@ -121,18 +125,20 @@ function isEnvelope(value: unknown): value is {
  * （直接 `apiFetch`），有的已解包（`unwrapResponse`）。此前一律塞进 `data`，
  * 于是页面把 `{code,data,meta}` 当列表用，传给 antd Table 的 `dataSource`
  * 不是数组 → 整页崩（`xxx.some is not a function`）。
+ *
+ * 除 `data` 需要按调用方的类型参数收窄外，其余字段全部由契约类型推导。
  */
 async function wrap<T>(promise: Promise<unknown>): Promise<ApiResponse<T>> {
   const raw = await promise
   if (isEnvelope(raw)) {
     return {
       code: raw.code,
-      message: raw.message ?? 'ok',
+      message: raw.message,
       data: raw.data as T,
       meta: raw.meta,
-    } as ApiResponse<T>
+    }
   }
-  return { data: raw as T, code: 200, message: 'ok' } as ApiResponse<T>
+  return { code: 200, message: 'ok', data: raw as T }
 }
 
 // ============ InspectionStandard Actions ============
@@ -965,14 +971,15 @@ export async function deleteDeviationFlow(deviationId: string) {
 
 // ============ Deviation Report Actions ============
 
-/** 上传 Word 模板并解析为 HTML */
-export async function uploadDeviationReportTemplate(file: File) {
-  return wrap<DeviationReportUploadResult>(DeviationReportServer.uploadDeviationReport(file))
+/** 上传 Word 模板并解析为 HTML（server 层已解包，直接返回契约数据） */
+export async function uploadDeviationReportTemplate(file: File): Promise<DeviationReportUploadResult> {
+  return DeviationReportServer.uploadDeviationReport(file)
 }
 
-/** AI 优化偏差报告选中文本 */
-export async function optimizeDeviationReportText(text: string, optimizeType: DeviationReportOptimizeType) {
-  return wrap<components['schemas']['DeviationOptimizeData']>(
-    DeviationReportServer.optimizeDeviationReportText(text, optimizeType),
-  )
+/** AI 优化偏差报告选中文本（server 层已解包，直接返回契约数据） */
+export async function optimizeDeviationReportText(
+  text: string,
+  optimizeType: DeviationReportOptimizeType,
+): Promise<DeviationOptimizeResult> {
+  return DeviationReportServer.optimizeDeviationReportText(text, optimizeType)
 }

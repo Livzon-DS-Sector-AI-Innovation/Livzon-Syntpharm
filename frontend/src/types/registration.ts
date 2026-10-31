@@ -1,50 +1,26 @@
 /**
  * Registration module TypeScript types
- * 
- * NOTE: These types are hand-written because the backend doesn't export them via OpenAPI.
- * The backend routes use `response_model=dict` or return dicts via `success_response()`,
- * so these types don't appear in the generated schema.
- * 
- * To fix this properly, the backend needs to:
- * 1. Add `response_model` annotations to routes in `app/modules/registration/api/`
- * 2. Use typed response models instead of `success_response()` dicts
- * 3. Regenerate OpenAPI spec and frontend types
- * 
- * See AGENTS.md: "所有 API 相关的类型必须从 @/types/generated/schema 导入"
+ *
+ * 契约模型一律从 `@/types/generated/schema` 取（后端已声明具名 response_model）。
+ * 仅以下前端专属类型保留手写：
+ * - `*CreateInput`：表单入参
+ * - `*ListParams`：查询参数
+ * - `Drug` / `DrugNode` / `RegistrationProject` / `Holiday` / `DashboardSummary`：后端尚未导出契约
  */
 
 import type { components } from '@/types/generated/schema'
 
-export interface ProductInfo {
-  product_name: string
-  registration_number: string
-}
+/** 契约模型，来自后端 OpenAPI */
+export type ProductInfo = components['schemas']['ProductInfo']
 
-export interface AuthorizationLetter {
-  id: string
-  api_company: string
-  product_name: string
-  registration_number: string
-  preparation_unit: string
-  preparation_name: string
-  administration_route: string
-  template_file_name?: string
-  output_file_name: string
-  remarks?: string
-  created_at: string
-  updated_at: string
-}
 
-export interface AuthorizationLetterListItem {
-  id: string
-  product_name: string
-  registration_number: string
-  preparation_unit: string
-  preparation_name: string
-  administration_route: string
-  output_file_name: string
-  created_at: string
-}
+/** 契约模型，来自后端 OpenAPI */
+export type AuthorizationLetter = components['schemas']['AuthorizationLetterResponse']
+
+
+/** 契约模型，来自后端 OpenAPI */
+export type AuthorizationLetterListItem = components['schemas']['AuthorizationLetterListItem']
+
 
 export interface AuthorizationLetterCreateInput {
   product_name: string
@@ -55,11 +31,9 @@ export interface AuthorizationLetterCreateInput {
   remarks?: string
 }
 
-export interface AuthorizationLetterResponse {
-  code: number
-  message: string
-  data: AuthorizationLetter
-}
+/** 契约模型，来自后端 OpenAPI */
+export type AuthorizationLetterResponse = components['schemas']['DataResponse_AuthorizationLetterResponse_']
+
 
 export interface AuthorizationLetterListParams {
   product_name?: string
@@ -70,36 +44,17 @@ export interface AuthorizationLetterListParams {
 
 // ── 发补回复 ──
 
-export interface SupplementaryReply {
-  id: string
-  drug_name: string
-  registration_number?: string
-  acceptance_number?: string
-  company_name?: string
-  notice_file_name?: string
-  template_file_name?: string
-  output_file_name: string
-  question_count: number
-  remarks?: string
-  created_at: string
-  updated_at: string
-}
+/** 契约模型，来自后端 OpenAPI */
+export type SupplementaryReply = components['schemas']['SupplementaryReplyResponse']
 
-export interface SupplementaryReplyListItem {
-  id: string
-  drug_name: string
-  registration_number?: string
-  acceptance_number?: string
-  output_file_name: string
-  question_count: number
-  created_at: string
-}
 
-export interface SupplementaryReplyResponse {
-  code: number
-  message: string
-  data: SupplementaryReply
-}
+/** 契约模型，来自后端 OpenAPI */
+export type SupplementaryReplyListItem = components['schemas']['SupplementaryReplyListItem']
+
+
+/** 契约模型，来自后端 OpenAPI */
+export type SupplementaryReplyResponse = components['schemas']['DataResponse_SupplementaryReplyResponse_']
+
 
 export interface SupplementaryReplyListParams {
   drug_name?: string
@@ -109,43 +64,17 @@ export interface SupplementaryReplyListParams {
 
 // ── 对照物质说明表 ──
 
-export interface ReferenceStandard {
-  id: string
-  drug_name: string
-  reference_substance_name?: string
-  batch_number?: string
-  manufacturer?: string
-  english_name?: string
-  molecular_formula?: string
-  molecular_weight?: string
-  cas_number?: string
-  content?: string
-  moisture?: string
-  rsd?: string
-  expiration_date?: string
-  storage_condition?: string
-  coa_file_name?: string
-  output_file_name: string
-  remarks?: string
-  created_at: string
-  updated_at: string
-}
+/** 契约模型，来自后端 OpenAPI */
+export type ReferenceStandard = components['schemas']['ReferenceStandardResponse']
 
-export interface ReferenceStandardListItem {
-  id: string
-  drug_name: string
-  reference_substance_name?: string
-  batch_number?: string
-  manufacturer?: string
-  output_file_name: string
-  created_at: string
-}
 
-export interface ReferenceStandardResponse {
-  code: number
-  message: string
-  data: ReferenceStandard
-}
+/** 契约模型，来自后端 OpenAPI */
+export type ReferenceStandardListItem = components['schemas']['ReferenceStandardListItem']
+
+
+/** 契约模型，来自后端 OpenAPI */
+export type ReferenceStandardResponse = components['schemas']['DataResponse_ReferenceStandardResponse_']
+
 
 export interface ReferenceStandardListParams {
   drug_name?: string
@@ -232,36 +161,19 @@ export interface Holiday {
   updated_at: string
 }
 
-export interface ReviewNodeConfig {
-  index: number
-  name: string
-  days: number
-}
+/** 契约模型，来自后端 OpenAPI */
+export type ReviewNodeConfig = components['schemas']['ReviewNodeConfig']
+
 
 // ── Dashboard ──
 
-export interface DashboardProjectItem {
-  id: string
-  product_name: string
-  market: string
-  registration_type: string | null
-  status: string
-  submitted_at: string | null
-  accepted_at: string | null
-  expected_completion_at: string | null
-  owner: string | null
-  latest_progress: string | null
-}
+/** 契约模型，来自后端 OpenAPI */
+export type DashboardProjectItem = components['schemas']['DashboardProjectItem']
 
-export interface DashboardCertificateItem {
-  id: string
-  product_name: string
-  certificate_no: string | null
-  approved_at: string | null
-  valid_until: string | null
-  certificate_status: string
-  file_path: string | null
-}
+
+/** 契约模型，来自后端 OpenAPI */
+export type DashboardCertificateItem = components['schemas']['DashboardCertificateItem']
+
 
 export interface DashboardSummary {
   approved_product_count: number

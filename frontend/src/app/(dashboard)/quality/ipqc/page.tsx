@@ -146,7 +146,7 @@ export default function IPQCPage() {
   // 编辑
   const handleEdit = async (record: IPQCInspectionListItem) => {
     try {
-      const response = await getIPQCInspection(record.id) as { code?: number; message?: string; data?: IPQCInspection }
+      const response = await getIPQCInspection(record.id)
       if (response.code === 200 || response.code === 0) {
         setEditingRecord(response.data!)
         setModalTitle('编辑IPQC检验单')
@@ -183,7 +183,7 @@ export default function IPQCPage() {
   // 查看详情
   const handleView = async (record: IPQCInspectionListItem) => {
     try {
-      const response = await getIPQCInspection(record.id) as { code?: number; message?: string; data?: IPQCInspection }
+      const response = await getIPQCInspection(record.id)
       if (response.code === 200 || response.code === 0) {
         setViewRecord(response.data!)
         setViewModalVisible(true)
@@ -198,7 +198,7 @@ export default function IPQCPage() {
   // 删除
   const handleDelete = async (id: string) => {
     try {
-      const response = await deleteIPQCInspection(id) as { code?: number; message?: string }
+      const response = await deleteIPQCInspection(id)
       if (response.code === 200 || response.code === 0 || response.message?.includes('成功')) {
         message.success('删除成功')
         void inspectionsQuery.refetch()
@@ -213,7 +213,7 @@ export default function IPQCPage() {
   // 提交审批
   const handleSubmit = async (id: string) => {
     try {
-      const response = await submitIPQCInspectionForApproval(id) as { code?: number; message?: string; data?: { status?: string } }
+      const response = await submitIPQCInspectionForApproval(id)
       if (response.code === 200 || response.code === 0 || response.data?.status) {
         message.success('提交成功')
         void inspectionsQuery.refetch()
@@ -230,7 +230,7 @@ export default function IPQCPage() {
     try {
       const response = await approveIPQCInspection(id, {
         approval_status: approved ? 'approved' : 'rejected',
-      }) as { code?: number; message?: string; data?: { status?: string } }
+      })
       if (response.code === 200 || response.code === 0 || response.data?.status) {
         message.success(approved ? '审批通过' : '已驳回')
         void inspectionsQuery.refetch()
@@ -245,7 +245,7 @@ export default function IPQCPage() {
   // 锁定批次
   const handleLockBatch = async (id: string) => {
     try {
-      const response = await lockIPQCBatch(id, 'IPQC检验不合格，批次锁定') as { code?: number; message?: string }
+      const response = await lockIPQCBatch(id, 'IPQC检验不合格，批次锁定')
       if (response.code === 200 || response.code === 0) {
         message.success('批次已锁定')
         void inspectionsQuery.refetch()
@@ -260,7 +260,7 @@ export default function IPQCPage() {
   // 解锁批次
   const handleUnlockBatch = async (id: string) => {
     try {
-      const response = await unlockIPQCBatch(id) as { code?: number; message?: string }
+      const response = await unlockIPQCBatch(id)
       if (response.code === 200 || response.code === 0) {
         message.success('批次已解锁')
         void inspectionsQuery.refetch()
@@ -349,7 +349,7 @@ export default function IPQCPage() {
         }
 
         setSubmitLoading(true)
-        const createResponse = await createIPQCInspection(submitData) as { code?: number; message?: string; data?: { id?: string } }
+        const createResponse = await createIPQCInspection(submitData)
         if (createResponse.code !== 200 && createResponse.code !== 0) {
           message.error(createResponse.message || '保存失败')
           setSubmitLoading(false)
@@ -370,7 +370,7 @@ export default function IPQCPage() {
         }
 
         setSubmitLoading(true)
-        const updateResponse = await updateIPQCInspection(recordId, submitData) as { code?: number; message?: string }
+        const updateResponse = await updateIPQCInspection(recordId, submitData)
         if (updateResponse.code !== 200 && updateResponse.code !== 0) {
           message.error(updateResponse.message || '保存失败')
           setSubmitLoading(false)
@@ -379,7 +379,7 @@ export default function IPQCPage() {
       }
 
       // 提交审批
-      const submitResponse = await submitIPQCInspectionForApproval(recordId!) as { code?: number; message?: string }
+      const submitResponse = await submitIPQCInspectionForApproval(recordId!)
       if (submitResponse.code === 200 || submitResponse.code === 0) {
         message.success('保存并提交成功')
         setModalVisible(false)

@@ -136,7 +136,7 @@ export default function DeviationReportPage() {
 
     try {
       const result = await optimizeDeviationReportText(selectedText, type)
-      setOptimizedText(result.data.optimized_text)
+      setOptimizedText(result.optimized_text)
       setOptimizeModalVisible(true)
       message.success('优化完成')
     } catch (error: unknown) {
@@ -171,8 +171,7 @@ export default function DeviationReportPage() {
   const handleUpload = useCallback(async (file: File) => {
     setLoading(true)
     try {
-      const response = await uploadDeviationReportTemplate(file)
-      const data = response.data
+      const data = await uploadDeviationReportTemplate(file)
       setFileInfo(data)
 
       if (editor) {

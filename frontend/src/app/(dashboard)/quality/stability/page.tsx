@@ -148,7 +148,7 @@ export default function StabilityStudyPage() {
   // 编辑
   const handleEdit = async (record: StabilityStudyListItem) => {
     try {
-      const response = await getStabilityStudy(record.id) as { code?: number; message?: string; data?: StabilityStudy }
+      const response = await getStabilityStudy(record.id)
       if (response.code === 200 || response.code === 0) {
         setEditingRecord(response.data!)
         setModalTitle('编辑稳定性试验方案')
@@ -159,7 +159,7 @@ export default function StabilityStudyPage() {
           expiry_date: response.data?.expiry_date ? dayjs(response.data.expiry_date) : null,
         })
         // 加载取样节点
-        const nodesResponse = await getStabilityStudySampleNodes(record.id) as { code?: number; data?: StabilitySampleNode[] }
+        const nodesResponse = await getStabilityStudySampleNodes(record.id)
         if (nodesResponse.code === 200 || nodesResponse.code === 0) {
           setSampleNodes(nodesResponse.data || [])
         }
@@ -175,11 +175,11 @@ export default function StabilityStudyPage() {
   // 查看详情
   const handleView = async (record: StabilityStudyListItem) => {
     try {
-      const response = await getStabilityStudy(record.id) as { code?: number; message?: string; data?: StabilityStudy }
+      const response = await getStabilityStudy(record.id)
       if (response.code === 200 || response.code === 0) {
         setViewRecord(response.data!)
         // 加载取样节点
-        const nodesResponse = await getStabilityStudySampleNodes(record.id) as { code?: number; data?: StabilitySampleNode[] }
+        const nodesResponse = await getStabilityStudySampleNodes(record.id)
         if (nodesResponse.code === 200 || nodesResponse.code === 0) {
           setSampleNodes(nodesResponse.data || [])
         }
@@ -195,7 +195,7 @@ export default function StabilityStudyPage() {
   // 删除
   const handleDelete = async (id: string) => {
     try {
-      const response = await deleteStabilityStudy(id) as { code?: number; message?: string }
+      const response = await deleteStabilityStudy(id)
       if (response.code === 200 || response.code === 0 || response.message?.includes('成功')) {
         message.success('删除成功')
         void studiesQuery.refetch()
@@ -210,7 +210,7 @@ export default function StabilityStudyPage() {
   // 提交审批
   const handleSubmit = async (id: string) => {
     try {
-      const response = await submitStabilityStudy(id) as { code?: number; message?: string; data?: { status?: string } }
+      const response = await submitStabilityStudy(id)
       if (response.code === 200 || response.code === 0 || response.data?.status) {
         message.success('提交成功')
         void studiesQuery.refetch()
@@ -227,7 +227,7 @@ export default function StabilityStudyPage() {
     try {
       const response = await approveStabilityStudy(id, {
         approval_status: approved ? 'approved' : 'rejected',
-      }) as { code?: number; message?: string; data?: { status?: string } }
+      })
       if (response.code === 200 || response.code === 0 || response.data?.status) {
         message.success(approved ? '审批通过' : '已驳回')
         void studiesQuery.refetch()

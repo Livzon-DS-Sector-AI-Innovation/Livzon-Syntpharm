@@ -141,7 +141,7 @@ export default function IQCPage() {
   // 编辑
   const handleEdit = async (record: IQCInspectionListItem) => {
     try {
-      const response = await getIQCInspection(record.id) as { code?: number; message?: string; data?: IQCInspection }
+      const response = await getIQCInspection(record.id)
       if (response.code === 200 || response.code === 0) {
         setEditRecord(response.data!)
         editForm.setFieldsValue({
@@ -174,7 +174,7 @@ export default function IQCPage() {
   // 查看详情
   const handleView = async (record: IQCInspectionListItem) => {
     try {
-      const response = await getIQCInspection(record.id) as { code?: number; message?: string; data?: IQCInspection }
+      const response = await getIQCInspection(record.id)
       if (response.code === 200 || response.code === 0) {
         setViewRecord(response.data!)
         setViewModalVisible(true)
@@ -189,7 +189,7 @@ export default function IQCPage() {
   // 删除
   const handleDelete = async (id: string) => {
     try {
-      const response = await deleteIQCInspection(id) as { code?: number; message?: string }
+      const response = await deleteIQCInspection(id)
       if (response.code === 200 || response.code === 0 || response.message?.includes('成功')) {
         message.success('删除成功')
         void inspectionsQuery.refetch()
@@ -204,7 +204,7 @@ export default function IQCPage() {
   // 提交审批
   const handleSubmit = async (id: string) => {
     try {
-      const response = await submitIQCInspectionForApproval(id) as { code?: number; message?: string; data?: { status?: string } }
+      const response = await submitIQCInspectionForApproval(id)
       if (response.code === 200 || response.code === 0 || response.data?.status) {
         message.success('提交成功')
         void inspectionsQuery.refetch()
@@ -221,7 +221,7 @@ export default function IQCPage() {
     try {
       const response = await approveIQCInspection(id, {
         approval_status: approved ? 'approved' : 'rejected',
-      }) as { code?: number; message?: string; data?: { status?: string } }
+      })
       if (response.code === 200 || response.code === 0 || response.data?.status) {
         message.success(approved ? '审批通过' : '已驳回')
         void inspectionsQuery.refetch()
@@ -250,7 +250,7 @@ export default function IQCPage() {
       }
 
       setSubmitLoading(true)
-      const response = await createIQCInspection(submitData) as { code?: number; message?: string; data?: { inspection_no?: string } }
+      const response = await createIQCInspection(submitData)
 
       if (response.code === 200 || response.code === 0 || response.data?.inspection_no) {
         message.success('创建成功')
@@ -286,7 +286,7 @@ export default function IQCPage() {
       }
 
       setSubmitLoading(true)
-      const response = await updateIQCInspection(editRecord!.id, submitData) as { code?: number; message?: string; data?: { inspection_no?: string } }
+      const response = await updateIQCInspection(editRecord!.id, submitData)
 
       if (response.code === 200 || response.code === 0) {
         message.success('更新成功')
@@ -324,7 +324,7 @@ export default function IQCPage() {
       setSubmitLoading(true)
 
       // 先更新
-      const updateResponse = await updateIQCInspection(editRecord!.id, submitData) as { code?: number; message?: string }
+      const updateResponse = await updateIQCInspection(editRecord!.id, submitData)
       if (updateResponse.code !== 200 && updateResponse.code !== 0) {
         message.error(updateResponse.message || '保存失败')
         setSubmitLoading(false)
@@ -332,7 +332,7 @@ export default function IQCPage() {
       }
 
       // 提交审批
-      const submitResponse = await submitIQCInspectionForApproval(editRecord!.id) as { code?: number; message?: string }
+      const submitResponse = await submitIQCInspectionForApproval(editRecord!.id)
       if (submitResponse.code === 200 || submitResponse.code === 0) {
         message.success('保存并提交成功')
         setEditModalVisible(false)
