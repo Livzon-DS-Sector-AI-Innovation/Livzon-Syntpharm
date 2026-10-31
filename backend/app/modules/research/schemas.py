@@ -887,3 +887,218 @@ class DeliverableUploadResult(BaseModel):
     file_url: str = Field(..., description="附件访问地址")
     file_name: str = Field(..., description="文件名")
     file_size: int = Field(0, description="文件大小（字节）")
+
+
+# ===== API 响应数据 Schemas（供 DataResponse[T] 声明具体 data 类型） =====
+
+
+class OperationMessage(BaseModel):
+    """仅返回提示文本的写操作结果。"""
+
+    message: str = Field(..., description="操作结果说明")
+
+
+class IdOnlyResult(BaseModel):
+    """仅返回主键的写操作结果。"""
+
+    id: str = Field(..., description="记录 ID")
+
+
+class PilotWorkflowStartResult(BaseModel):
+    """启动中试工作流的返回结果。"""
+
+    message: str = Field(..., description="提示文本")
+    workflow_id: str = Field(..., description="工作流 ID")
+
+
+class PilotWorkflowApproveResult(BaseModel):
+    """确认中试步骤后的返回结果。"""
+
+    status: str = Field(..., description="工作流状态")
+    message: str = Field(..., description="提示文本")
+    step_order: int | None = Field(None, description="下一步序号")
+    step_name: str | None = Field(None, description="下一步名称")
+
+
+class PilotDocumentUploadResult(BaseModel):
+    """中试工艺文档上传结果。"""
+
+    file_path: str = Field(..., description="文件落盘路径")
+    filename: str = Field(..., description="文件名")
+    file_size: int = Field(..., description="文件大小（字节）")
+
+
+class IchRecordResponse(BaseModel):
+    """ICH Q3C/Q3D 杂质识别记录。"""
+
+    id: str = Field(..., description="记录 ID")
+    filename: str = Field(..., description="文件名")
+    route: str | None = Field(None, description="给药途径")
+    q3c_result: dict[str, Any] | None = Field(None, description="Q3C 分析结果")
+    q3d_result: dict[str, Any] | None = Field(None, description="Q3D 分析结果")
+    llm_used: bool = Field(False, description="是否使用 LLM 增强")
+    notes: str | None = Field(None, description="备注")
+    created_at: str | None = Field(None, description="创建时间（ISO 8601）")
+
+
+class ResearchRouteResponse(BaseModel):
+    """工艺路线。"""
+
+    id: str = Field(..., description="路线 ID")
+    project_id: Any = Field(None, description="所属项目 ID")
+    route_no: str = Field(..., description="路线编号")
+    name: str | None = Field(None, description="路线名称")
+    source: str | None = Field(None, description="来源")
+    source_reference: str | None = Field(None, description="来源参考")
+    description: str | None = Field(None, description="描述")
+    status: str | None = Field(None, description="状态")
+    current_module: str | None = Field(None, description="当前模块")
+    literature_sources: list[Any] = Field(default_factory=list, description="文献来源")
+    candidate_routes: list[Any] = Field(default_factory=list, description="候选路线")
+    selected_route_ids: list[Any] = Field(default_factory=list, description="已选路线 ID")
+    experiment_plans: list[Any] = Field(default_factory=list, description="实验计划")
+    experiments: list[Any] = Field(default_factory=list, description="实验记录")
+    assessment: dict[str, Any] | None = Field(None, description="评估结果")
+    deliverables: list[Any] = Field(default_factory=list, description="交付物")
+    start_date: str | None = Field(None, description="开始日期")
+    end_date: str | None = Field(None, description="结束日期")
+    created_at: str | None = Field(None, description="创建时间")
+    updated_at: str | None = Field(None, description="更新时间")
+    created_by: Any = Field(None, description="创建人")
+
+
+class RouteCreateResult(BaseModel):
+    """新建工艺路线的返回结果。"""
+
+    id: str = Field(..., description="路线 ID")
+    route_no: str | None = Field(None, description="路线编号")
+
+
+class RouteUpdateResult(BaseModel):
+    """更新工艺路线的返回结果。"""
+
+    id: str = Field(..., description="路线 ID")
+    message: str = Field(..., description="提示文本")
+
+
+class ExperimentCreateResult(BaseModel):
+    """新建实验的返回结果。"""
+
+    id: str = Field(..., description="实验 ID")
+    experiment_no: str | None = Field(None, description="实验编号")
+
+
+class ExperimentUpdateResult(BaseModel):
+    """更新实验的返回结果。"""
+
+    id: str = Field(..., description="实验 ID")
+    message: str = Field(..., description="提示文本")
+
+
+class OptimizationResponse(BaseModel):
+    """工艺优化记录。"""
+
+    id: str = Field(..., description="优化记录 ID")
+    project_id: Any = Field(None, description="所属项目 ID")
+    source_route_id: Any = Field(None, description="来源路线 ID")
+    name: str | None = Field(None, description="名称")
+    description: str | None = Field(None, description="描述")
+    status: str | None = Field(None, description="状态")
+    current_module: str | None = Field(None, description="当前模块")
+    doe_experiment: Any = Field(None, description="DOE 实验")
+    impurity_study: Any = Field(None, description="杂质研究")
+    crystal_form_study: Any = Field(None, description="晶型研究")
+    quality_standard_set: Any = Field(None, description="质量标准设定")
+    scale_up_study: Any = Field(None, description="放大研究")
+    start_date: str | None = Field(None, description="开始日期")
+    end_date: str | None = Field(None, description="结束日期")
+    created_at: str | None = Field(None, description="创建时间")
+    updated_at: str | None = Field(None, description="更新时间")
+
+
+class OptimizationMutationResult(BaseModel):
+    """工艺优化记录的创建/更新返回结果。"""
+
+    id: str = Field(..., description="优化记录 ID")
+    source_route_id: Any = Field(None, description="来源路线 ID")
+    name: str | None = Field(None, description="名称")
+    status: str | None = Field(None, description="状态")
+    current_module: str | None = Field(None, description="当前模块")
+
+
+class StatsProjects(BaseModel):
+    """研发概览——项目统计。"""
+
+    total: int = Field(0, description="项目总数")
+    by_stage: dict[str, Any] = Field(default_factory=dict, description="按阶段分布")
+    by_status: dict[str, Any] = Field(default_factory=dict, description="按状态分布")
+
+
+class StatsTracks(BaseModel):
+    """研发概览——研究项统计。"""
+
+    total: int = Field(0, description="研究项总数")
+    by_type: dict[str, Any] = Field(default_factory=dict, description="按类型分布")
+
+
+class StatsExperiments(BaseModel):
+    """研发概览——实验记录统计。"""
+
+    total: int = Field(0, description="实验记录总数")
+
+
+class StatsDeliverables(BaseModel):
+    """研发概览——交付物统计。"""
+
+    total: int = Field(0, description="交付物总数")
+    by_status: dict[str, Any] = Field(default_factory=dict, description="按状态分布")
+
+
+class StatsOverviewResponse(BaseModel):
+    """研发概览统计结果。"""
+
+    projects: StatsProjects
+    tracks: StatsTracks
+    experiments: StatsExperiments
+    deliverables: StatsDeliverables
+
+
+class ProjectProgressItem(BaseModel):
+    """单个研发项目的进度统计。"""
+
+    id: str = Field(..., description="项目 ID")
+    name: str | None = Field(None, description="项目名称")
+    current_stage: str | None = Field(None, description="当前阶段")
+    status: str | None = Field(None, description="状态")
+    progress: int = Field(0, description="进度百分比")
+    start_date: str | None = Field(None, description="开始日期")
+    target_filing_date: str | None = Field(None, description="目标申报日期")
+
+
+class StageTransitionCheckResult(BaseModel):
+    """阶段流转条件检查结果。"""
+
+    allowed: bool = Field(..., description="是否允许流转")
+    current_stage: str | None = Field(None, description="当前阶段")
+    target_stage: str | None = Field(None, description="目标阶段")
+    hard_conditions: dict[str, Any] = Field(default_factory=dict, description="硬性条件")
+    soft_conditions: dict[str, Any] = Field(default_factory=dict, description="软性条件")
+    hard_all_passed: bool = Field(True, description="硬性条件是否全部通过")
+    soft_all_passed: bool = Field(True, description="软性条件是否全部通过")
+    reason: str | None = Field(None, description="不允许流转的原因")
+
+
+class StageTransitionResult(BaseModel):
+    """阶段流转执行结果。"""
+
+    success: bool = Field(..., description="是否成功")
+    message: str | None = Field(None, description="提示文本")
+    current_stage: str | None = Field(None, description="流转后阶段")
+
+
+class ResearchTrackDetailResponse(BaseModel):
+    """研究项详情（含研究发现与结论历史）。"""
+
+    id: Any = Field(None, description="研究项 ID")
+    findings: list[Any] = Field(default_factory=list, description="研究发现")
+    conclusion_history: list[Any] = Field(default_factory=list, description="结论版本历史")

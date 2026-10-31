@@ -24968,6 +24968,47 @@ export interface components {
             evidence_attachments?: unknown[] | null;
         };
         /**
+         * CpvImportTaskResponse
+         * @description 导入任务响应
+         */
+        CpvImportTaskResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** File Name */
+            file_name: string;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Data Type */
+            data_type: string;
+            /** Import Mode */
+            import_mode: string;
+            /** Status */
+            status: string;
+            /** Total Rows */
+            total_rows: number;
+            /** Success Rows */
+            success_rows: number;
+            /** Failed Rows */
+            failed_rows: number;
+            /** Error Details */
+            error_details: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string | null;
+        };
+        /**
          * CpvParameterCreate
          * @description 创建参数请求
          */
@@ -26026,6 +26067,21 @@ export interface components {
             data?: components["schemas"]["ConclusionPublishResult"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[CpvImportTaskResponse] */
+        DataResponse_CpvImportTaskResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["CpvImportTaskResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[DashboardSummaryResponse] */
         DataResponse_DashboardSummaryResponse_: {
             /**
@@ -26131,6 +26187,36 @@ export interface components {
             data?: components["schemas"]["DrugWithNodesResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[ExperimentCreateResult] */
+        DataResponse_ExperimentCreateResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ExperimentCreateResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ExperimentUpdateResult] */
+        DataResponse_ExperimentUpdateResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ExperimentUpdateResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[ExportReportResult] */
         DataResponse_ExportReportResult_: {
             /**
@@ -26189,6 +26275,36 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["HolidayResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[IchRecordResponse] */
+        DataResponse_IchRecordResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["IchRecordResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[IdOnlyResult] */
+        DataResponse_IdOnlyResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["IdOnlyResult"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[JobDeleteResult] */
@@ -26252,6 +26368,51 @@ export interface components {
             data?: null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[OperationMessage] */
+        DataResponse_OperationMessage_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["OperationMessage"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[OptimizationMutationResult] */
+        DataResponse_OptimizationMutationResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["OptimizationMutationResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[OptimizationResponse] */
+        DataResponse_OptimizationResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["OptimizationResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[PersonnelAddResult] */
         DataResponse_PersonnelAddResult_: {
             /**
@@ -26280,6 +26441,81 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["PersonnelResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[PilotDocumentUploadResult] */
+        DataResponse_PilotDocumentUploadResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["PilotDocumentUploadResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[PilotWorkflowApproveResult] */
+        DataResponse_PilotWorkflowApproveResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["PilotWorkflowApproveResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[PilotWorkflowResponse] */
+        DataResponse_PilotWorkflowResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["PilotWorkflowResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[PilotWorkflowStartResult] */
+        DataResponse_PilotWorkflowStartResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["PilotWorkflowStartResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[PilotWorkflowStepResponse] */
+        DataResponse_PilotWorkflowStepResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["PilotWorkflowStepResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[ProblemHandleResult] */
@@ -26312,6 +26548,51 @@ export interface components {
             data?: components["schemas"]["ProjectResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[RdDeliverableTemplateResponse] */
+        DataResponse_RdDeliverableTemplateResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["RdDeliverableTemplateResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[RdExperimentLogResponse] */
+        DataResponse_RdExperimentLogResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["RdExperimentLogResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[RdInitiationResponse] */
+        DataResponse_RdInitiationResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["RdInitiationResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[RdPilotStudyResponse] */
         DataResponse_RdPilotStudyResponse_: {
             /**
@@ -26342,6 +26623,21 @@ export interface components {
             data?: components["schemas"]["RdProcessValidationResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[RdProjectResponse] */
+        DataResponse_RdProjectResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["RdProjectResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[RdRegistrationFilingResponse] */
         DataResponse_RdRegistrationFilingResponse_: {
             /**
@@ -26355,6 +26651,21 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["RdRegistrationFilingResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[RdReportResponse] */
+        DataResponse_RdReportResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["RdReportResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[ReferenceStandardResponse] */
@@ -26372,6 +26683,51 @@ export interface components {
             data?: components["schemas"]["ReferenceStandardResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[ResearchProjectResponse] */
+        DataResponse_ResearchProjectResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ResearchProjectResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ResearchRouteResponse] */
+        DataResponse_ResearchRouteResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ResearchRouteResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ResearchTrackDetailResponse] */
+        DataResponse_ResearchTrackDetailResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ResearchTrackDetailResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[RoleResponse] */
         DataResponse_RoleResponse_: {
             /**
@@ -26385,6 +26741,36 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["RoleResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[RouteCreateResult] */
+        DataResponse_RouteCreateResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["RouteCreateResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[RouteUpdateResult] */
+        DataResponse_RouteUpdateResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["RouteUpdateResult"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[ScheduledJobDetail] */
@@ -26460,6 +26846,51 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["SopAiConfigValue"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[StageTransitionCheckResult] */
+        DataResponse_StageTransitionCheckResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["StageTransitionCheckResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[StageTransitionResult] */
+        DataResponse_StageTransitionResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["StageTransitionResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[StatsOverviewResponse] */
+        DataResponse_StatsOverviewResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["StatsOverviewResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[SupplementaryReplyResponse] */
@@ -26572,6 +27003,22 @@ export interface components {
             data?: components["schemas"]["CoppCertificateResponse"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[list[CpvImportTaskResponse]] */
+        DataResponse_list_CpvImportTaskResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["CpvImportTaskResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[list[DomesticApprovalResponse]] */
         DataResponse_list_DomesticApprovalResponse__: {
             /**
@@ -26636,6 +27083,22 @@ export interface components {
             data?: components["schemas"]["HolidayResponse"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[list[IchRecordResponse]] */
+        DataResponse_list_IchRecordResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["IchRecordResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[list[InternationalReviewResponse]] */
         DataResponse_list_InternationalReviewResponse__: {
             /**
@@ -26666,6 +27129,22 @@ export interface components {
             message: string;
             /** Data */
             data?: components["schemas"]["MaintainerBrief"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[OptimizationResponse]] */
+        DataResponse_list_OptimizationResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["OptimizationResponse"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[list[OverseasApprovalResponse]] */
@@ -26700,6 +27179,22 @@ export interface components {
             data?: components["schemas"]["PersonnelResponse"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[list[PilotWorkflowResponse]] */
+        DataResponse_list_PilotWorkflowResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["PilotWorkflowResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[list[ProductInfo]] */
         DataResponse_list_ProductInfo__: {
             /**
@@ -26716,6 +27211,22 @@ export interface components {
             data?: components["schemas"]["ProductInfo"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[list[ProjectProgressItem]] */
+        DataResponse_list_ProjectProgressItem__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["ProjectProgressItem"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[list[ProjectResponse]] */
         DataResponse_list_ProjectResponse__: {
             /**
@@ -26730,6 +27241,54 @@ export interface components {
             message: string;
             /** Data */
             data?: components["schemas"]["ProjectResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[RdDeliverableTemplateResponse]] */
+        DataResponse_list_RdDeliverableTemplateResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["RdDeliverableTemplateResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[RdExperimentLogResponse]] */
+        DataResponse_list_RdExperimentLogResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["RdExperimentLogResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[RdInitiationResponse]] */
+        DataResponse_list_RdInitiationResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["RdInitiationResponse"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[list[RdPilotStudyResponse]] */
@@ -26764,6 +27323,22 @@ export interface components {
             data?: components["schemas"]["RdProcessValidationResponse"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[list[RdProjectResponse]] */
+        DataResponse_list_RdProjectResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["RdProjectResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[list[RdRegistrationFilingResponse]] */
         DataResponse_list_RdRegistrationFilingResponse__: {
             /**
@@ -26778,6 +27353,22 @@ export interface components {
             message: string;
             /** Data */
             data?: components["schemas"]["RdRegistrationFilingResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[RdReportResponse]] */
+        DataResponse_list_RdReportResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["RdReportResponse"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[list[RdStageDeliverableResponse]] */
@@ -26810,6 +27401,38 @@ export interface components {
             message: string;
             /** Data */
             data?: components["schemas"]["ReferenceStandardListItem"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[ResearchProjectResponse]] */
+        DataResponse_list_ResearchProjectResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["ResearchProjectResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[ResearchRouteResponse]] */
+        DataResponse_list_ResearchRouteResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["ResearchRouteResponse"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[list[ResearchTrackListItem]] */
@@ -31080,6 +31703,38 @@ export interface components {
              */
             execution_notes?: string | null;
         };
+        /**
+         * ExperimentCreateResult
+         * @description 新建实验的返回结果。
+         */
+        ExperimentCreateResult: {
+            /**
+             * Id
+             * @description 实验 ID
+             */
+            id: string;
+            /**
+             * Experiment No
+             * @description 实验编号
+             */
+            experiment_no?: string | null;
+        };
+        /**
+         * ExperimentUpdateResult
+         * @description 更新实验的返回结果。
+         */
+        ExperimentUpdateResult: {
+            /**
+             * Id
+             * @description 实验 ID
+             */
+            id: string;
+            /**
+             * Message
+             * @description 提示文本
+             */
+            message: string;
+        };
         /** ExportApiResponse */
         ExportApiResponse: {
             /**
@@ -35240,6 +35895,68 @@ export interface components {
          */
         IQStatus: "pending" | "confirmed" | "not_required";
         /**
+         * IchRecordResponse
+         * @description ICH Q3C/Q3D 杂质识别记录。
+         */
+        IchRecordResponse: {
+            /**
+             * Id
+             * @description 记录 ID
+             */
+            id: string;
+            /**
+             * Filename
+             * @description 文件名
+             */
+            filename: string;
+            /**
+             * Route
+             * @description 给药途径
+             */
+            route?: string | null;
+            /**
+             * Q3C Result
+             * @description Q3C 分析结果
+             */
+            q3c_result?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Q3D Result
+             * @description Q3D 分析结果
+             */
+            q3d_result?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Llm Used
+             * @description 是否使用 LLM 增强
+             * @default false
+             */
+            llm_used: boolean;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+            /**
+             * Created At
+             * @description 创建时间（ISO 8601）
+             */
+            created_at?: string | null;
+        };
+        /**
+         * IdOnlyResult
+         * @description 仅返回主键的写操作结果。
+         */
+        IdOnlyResult: {
+            /**
+             * Id
+             * @description 记录 ID
+             */
+            id: string;
+        };
+        /**
          * IdsBatchRequest
          * @description 按 ID 批量操作；单次上限 100。
          */
@@ -39092,6 +39809,17 @@ export interface components {
          */
         OperationLevel: "special" | "grade1" | "grade2" | "not_applicable";
         /**
+         * OperationMessage
+         * @description 仅返回提示文本的写操作结果。
+         */
+        OperationMessage: {
+            /**
+             * Message
+             * @description 操作结果说明
+             */
+            message: string;
+        };
+        /**
          * OperationRegulationApiResponse
          * @description Single operation regulation response wrapper
          */
@@ -39278,6 +40006,123 @@ export interface components {
              * @description 操规状态
              */
             status?: string | null;
+        };
+        /**
+         * OptimizationMutationResult
+         * @description 工艺优化记录的创建/更新返回结果。
+         */
+        OptimizationMutationResult: {
+            /**
+             * Id
+             * @description 优化记录 ID
+             */
+            id: string;
+            /**
+             * Source Route Id
+             * @description 来源路线 ID
+             */
+            source_route_id?: unknown;
+            /**
+             * Name
+             * @description 名称
+             */
+            name?: string | null;
+            /**
+             * Status
+             * @description 状态
+             */
+            status?: string | null;
+            /**
+             * Current Module
+             * @description 当前模块
+             */
+            current_module?: string | null;
+        };
+        /**
+         * OptimizationResponse
+         * @description 工艺优化记录。
+         */
+        OptimizationResponse: {
+            /**
+             * Id
+             * @description 优化记录 ID
+             */
+            id: string;
+            /**
+             * Project Id
+             * @description 所属项目 ID
+             */
+            project_id?: unknown;
+            /**
+             * Source Route Id
+             * @description 来源路线 ID
+             */
+            source_route_id?: unknown;
+            /**
+             * Name
+             * @description 名称
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description 描述
+             */
+            description?: string | null;
+            /**
+             * Status
+             * @description 状态
+             */
+            status?: string | null;
+            /**
+             * Current Module
+             * @description 当前模块
+             */
+            current_module?: string | null;
+            /**
+             * Doe Experiment
+             * @description DOE 实验
+             */
+            doe_experiment?: unknown;
+            /**
+             * Impurity Study
+             * @description 杂质研究
+             */
+            impurity_study?: unknown;
+            /**
+             * Crystal Form Study
+             * @description 晶型研究
+             */
+            crystal_form_study?: unknown;
+            /**
+             * Quality Standard Set
+             * @description 质量标准设定
+             */
+            quality_standard_set?: unknown;
+            /**
+             * Scale Up Study
+             * @description 放大研究
+             */
+            scale_up_study?: unknown;
+            /**
+             * Start Date
+             * @description 开始日期
+             */
+            start_date?: string | null;
+            /**
+             * End Date
+             * @description 结束日期
+             */
+            end_date?: string | null;
+            /**
+             * Created At
+             * @description 创建时间
+             */
+            created_at?: string | null;
+            /**
+             * Updated At
+             * @description 更新时间
+             */
+            updated_at?: string | null;
         };
         /**
          * OptimizeTextRequest
@@ -39925,6 +40770,53 @@ export interface components {
          */
         Pharmacopeia: "ChP" | "USP" | "EP" | "BP" | "internal";
         /**
+         * PilotDocumentUploadResult
+         * @description 中试工艺文档上传结果。
+         */
+        PilotDocumentUploadResult: {
+            /**
+             * File Path
+             * @description 文件落盘路径
+             */
+            file_path: string;
+            /**
+             * Filename
+             * @description 文件名
+             */
+            filename: string;
+            /**
+             * File Size
+             * @description 文件大小（字节）
+             */
+            file_size: number;
+        };
+        /**
+         * PilotWorkflowApproveResult
+         * @description 确认中试步骤后的返回结果。
+         */
+        PilotWorkflowApproveResult: {
+            /**
+             * Status
+             * @description 工作流状态
+             */
+            status: string;
+            /**
+             * Message
+             * @description 提示文本
+             */
+            message: string;
+            /**
+             * Step Order
+             * @description 下一步序号
+             */
+            step_order?: number | null;
+            /**
+             * Step Name
+             * @description 下一步名称
+             */
+            step_name?: string | null;
+        };
+        /**
          * PilotWorkflowCreate
          * @description 创建中试研究
          */
@@ -39961,6 +40853,122 @@ export interface components {
             input_context?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /**
+         * PilotWorkflowResponse
+         * @description 工作流响应
+         */
+        PilotWorkflowResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Project Id */
+            project_id: string | null;
+            /** Product Name */
+            product_name: string;
+            /** Scale Up Ratio */
+            scale_up_ratio: number;
+            /** Equipment Type */
+            equipment_type: string;
+            /** Equipment Volume */
+            equipment_volume: number;
+            /** Input Document Path */
+            input_document_path: string | null;
+            /** Input Context */
+            input_context: {
+                [key: string]: unknown;
+            } | null;
+            /** Status */
+            status: string;
+            /** Final Report */
+            final_report: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Updated By */
+            updated_by: string | null;
+            /**
+             * Steps
+             * @default []
+             */
+            steps: components["schemas"]["PilotWorkflowStepResponse"][];
+        };
+        /**
+         * PilotWorkflowStartResult
+         * @description 启动中试工作流的返回结果。
+         */
+        PilotWorkflowStartResult: {
+            /**
+             * Message
+             * @description 提示文本
+             */
+            message: string;
+            /**
+             * Workflow Id
+             * @description 工作流 ID
+             */
+            workflow_id: string;
+        };
+        /**
+         * PilotWorkflowStepResponse
+         * @description 工作流步骤响应
+         */
+        PilotWorkflowStepResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workflow Id
+             * Format: uuid
+             */
+            workflow_id: string;
+            /** Step Order */
+            step_order: number;
+            /** Step Code */
+            step_code: string;
+            /** Step Name */
+            step_name: string;
+            /** Status */
+            status: string;
+            /** Input Data */
+            input_data: {
+                [key: string]: unknown;
+            } | null;
+            /** Output Data */
+            output_data: {
+                [key: string]: unknown;
+            } | null;
+            /** Error Message */
+            error_message: string | null;
+            /** Started At */
+            started_at: string | null;
+            /** Completed At */
+            completed_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * PlanStatus
@@ -41850,6 +42858,48 @@ export interface components {
             /** Latest Progress */
             latest_progress?: string | null;
         };
+        /**
+         * ProjectProgressItem
+         * @description 单个研发项目的进度统计。
+         */
+        ProjectProgressItem: {
+            /**
+             * Id
+             * @description 项目 ID
+             */
+            id: string;
+            /**
+             * Name
+             * @description 项目名称
+             */
+            name?: string | null;
+            /**
+             * Current Stage
+             * @description 当前阶段
+             */
+            current_stage?: string | null;
+            /**
+             * Status
+             * @description 状态
+             */
+            status?: string | null;
+            /**
+             * Progress
+             * @description 进度百分比
+             * @default 0
+             */
+            progress: number;
+            /**
+             * Start Date
+             * @description 开始日期
+             */
+            start_date?: string | null;
+            /**
+             * Target Filing Date
+             * @description 目标申报日期
+             */
+            target_filing_date?: string | null;
+        };
         /** ProjectResponse */
         ProjectResponse: {
             /**
@@ -42487,6 +43537,45 @@ export interface components {
              */
             is_active: boolean;
         };
+        /** RdDeliverableTemplateResponse */
+        RdDeliverableTemplateResponse: {
+            /** Name */
+            name: string;
+            /** Deliverable Type */
+            deliverable_type: string;
+            /** Stage */
+            stage: string;
+            /** Description */
+            description?: string | null;
+            /** Template Content */
+            template_content?: string | null;
+            /** Template Structure */
+            template_structure?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Creator Id */
+            creator_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** RdDeliverableTemplateUpdate */
         RdDeliverableTemplateUpdate: {
             /** Name */
@@ -42554,6 +43643,74 @@ export interface components {
             next_steps?: string | null;
             /** Notes */
             notes?: string | null;
+        };
+        /** RdExperimentLogResponse */
+        RdExperimentLogResponse: {
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Stage Record Id */
+            stage_record_id?: string | null;
+            /** Title */
+            title: string;
+            /** Experiment Type */
+            experiment_type: string;
+            /** Experiment Date */
+            experiment_date?: string | null;
+            /** Operator */
+            operator?: string | null;
+            /**
+             * Status
+             * @default planned
+             */
+            status: string;
+            /** Objective */
+            objective?: string | null;
+            /** Materials */
+            materials?: {
+                [key: string]: unknown;
+            } | null;
+            /** Equipment */
+            equipment?: {
+                [key: string]: unknown;
+            } | null;
+            /** Procedure */
+            procedure?: string | null;
+            /** Process Params */
+            process_params?: {
+                [key: string]: unknown;
+            } | null;
+            /** Observations */
+            observations?: string | null;
+            /** Results */
+            results?: {
+                [key: string]: unknown;
+            } | null;
+            /** Conclusion */
+            conclusion?: string | null;
+            /** Issues */
+            issues?: string | null;
+            /** Next Steps */
+            next_steps?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** RdExperimentLogUpdate */
         RdExperimentLogUpdate: {
@@ -42659,6 +43816,83 @@ export interface components {
             } | null;
             /** Notes */
             notes?: string | null;
+        };
+        /** RdInitiationResponse */
+        RdInitiationResponse: {
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Project Background */
+            project_background?: string | null;
+            /** Market Analysis */
+            market_analysis?: string | null;
+            /** Technical Feasibility */
+            technical_feasibility?: string | null;
+            /** Resource Requirements */
+            resource_requirements?: {
+                [key: string]: unknown;
+            } | null;
+            /** Timeline Plan */
+            timeline_plan?: {
+                [key: string]: unknown;
+            } | null;
+            /** Risk Assessment */
+            risk_assessment?: {
+                [key: string]: unknown;
+            } | null;
+            /** Expected Outcomes */
+            expected_outcomes?: string | null;
+            /** Applicant Id */
+            applicant_id?: string | null;
+            /** Application Date */
+            application_date?: string | null;
+            /**
+             * Review Status
+             * @default pending
+             */
+            review_status: string;
+            /** Reviewer Id */
+            reviewer_id?: string | null;
+            /** Review Date */
+            review_date?: string | null;
+            /** Review Comments */
+            review_comments?: string | null;
+            /** Review Score */
+            review_score?: number | null;
+            /**
+             * Approval Status
+             * @default pending
+             */
+            approval_status: string;
+            /** Approver Id */
+            approver_id?: string | null;
+            /** Approval Date */
+            approval_date?: string | null;
+            /** Approval Comments */
+            approval_comments?: string | null;
+            /** Attachments */
+            attachments?: {
+                [key: string]: unknown;
+            } | null;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** RdInitiationUpdate */
         RdInitiationUpdate: {
@@ -43111,6 +44345,97 @@ export interface components {
              */
             current_stage?: string | null;
         };
+        /** RdProjectResponse */
+        RdProjectResponse: {
+            /**
+             * Name
+             * @description 品种名称
+             */
+            name: string;
+            /**
+             * Api Name
+             * @description API全称
+             */
+            api_name: string;
+            /**
+             * Cas Number
+             * @description CAS号
+             */
+            cas_number?: string | null;
+            /**
+             * Molecular Formula
+             * @description 分子式
+             */
+            molecular_formula?: string | null;
+            /**
+             * Molecular Weight
+             * @description 分子量
+             */
+            molecular_weight?: number | null;
+            /**
+             * Indication
+             * @description 适应症
+             */
+            indication?: string | null;
+            /**
+             * Project Type
+             * @description generic/improved
+             */
+            project_type?: string | null;
+            /**
+             * Priority
+             * @description low/normal/high/urgent
+             * @default normal
+             */
+            priority: string;
+            /**
+             * Project Manager Id
+             * @description 项目经理ID
+             */
+            project_manager_id?: string | null;
+            /**
+             * Start Date
+             * @description 开始日期
+             */
+            start_date?: string | null;
+            /**
+             * Target Filing Date
+             * @description 目标申报日期
+             */
+            target_filing_date?: string | null;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+            /** Current Stage */
+            current_stage: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Status */
+            status: string;
+            /** Overall Progress */
+            overall_progress: number | null;
+            /** Actual Filing Date */
+            actual_filing_date: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Updated By */
+            updated_by: string | null;
+        };
         /** RdProjectUpdate */
         RdProjectUpdate: {
             /** Name */
@@ -43289,6 +44614,63 @@ export interface components {
             template_id?: string | null;
             /** Additional Context */
             additional_context?: string | null;
+        };
+        /** RdReportResponse */
+        RdReportResponse: {
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Title */
+            title: string;
+            /** Report Type */
+            report_type: string;
+            /** Stage */
+            stage?: string | null;
+            /**
+             * Status
+             * @default draft
+             */
+            status: string;
+            /**
+             * Version
+             * @default v1.0
+             */
+            version: string;
+            /** Content */
+            content?: string | null;
+            /** Summary */
+            summary?: string | null;
+            /** Key Findings */
+            key_findings?: {
+                [key: string]: unknown;
+            } | null;
+            /** Recommendations */
+            recommendations?: string | null;
+            /** Author Id */
+            author_id?: string | null;
+            /** Reviewer Id */
+            reviewer_id?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reviewed At */
+            reviewed_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** RdReportUpdate */
         RdReportUpdate: {
@@ -45063,6 +46445,49 @@ export interface components {
             description?: string | null;
         };
         /**
+         * ResearchProjectResponse
+         * @description 研发项目响应
+         */
+        ResearchProjectResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Project No */
+            project_no: string;
+            /** Name */
+            name: string;
+            /** Project Type */
+            project_type: string | null;
+            /** Stage */
+            stage: string;
+            /** Status */
+            status: string;
+            /** Leader */
+            leader: string | null;
+            /** Start Date */
+            start_date: string | null;
+            /** End Date */
+            end_date: string | null;
+            /** Description */
+            description: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Updated By */
+            updated_by: string | null;
+        };
+        /**
          * ResearchProjectUpdate
          * @description 更新研发项目请求
          */
@@ -45085,6 +46510,140 @@ export interface components {
             end_date?: string | null;
             /** Description */
             description?: string | null;
+        };
+        /**
+         * ResearchRouteResponse
+         * @description 工艺路线。
+         */
+        ResearchRouteResponse: {
+            /**
+             * Id
+             * @description 路线 ID
+             */
+            id: string;
+            /**
+             * Project Id
+             * @description 所属项目 ID
+             */
+            project_id?: unknown;
+            /**
+             * Route No
+             * @description 路线编号
+             */
+            route_no: string;
+            /**
+             * Name
+             * @description 路线名称
+             */
+            name?: string | null;
+            /**
+             * Source
+             * @description 来源
+             */
+            source?: string | null;
+            /**
+             * Source Reference
+             * @description 来源参考
+             */
+            source_reference?: string | null;
+            /**
+             * Description
+             * @description 描述
+             */
+            description?: string | null;
+            /**
+             * Status
+             * @description 状态
+             */
+            status?: string | null;
+            /**
+             * Current Module
+             * @description 当前模块
+             */
+            current_module?: string | null;
+            /**
+             * Literature Sources
+             * @description 文献来源
+             */
+            literature_sources?: unknown[];
+            /**
+             * Candidate Routes
+             * @description 候选路线
+             */
+            candidate_routes?: unknown[];
+            /**
+             * Selected Route Ids
+             * @description 已选路线 ID
+             */
+            selected_route_ids?: unknown[];
+            /**
+             * Experiment Plans
+             * @description 实验计划
+             */
+            experiment_plans?: unknown[];
+            /**
+             * Experiments
+             * @description 实验记录
+             */
+            experiments?: unknown[];
+            /**
+             * Assessment
+             * @description 评估结果
+             */
+            assessment?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Deliverables
+             * @description 交付物
+             */
+            deliverables?: unknown[];
+            /**
+             * Start Date
+             * @description 开始日期
+             */
+            start_date?: string | null;
+            /**
+             * End Date
+             * @description 结束日期
+             */
+            end_date?: string | null;
+            /**
+             * Created At
+             * @description 创建时间
+             */
+            created_at?: string | null;
+            /**
+             * Updated At
+             * @description 更新时间
+             */
+            updated_at?: string | null;
+            /**
+             * Created By
+             * @description 创建人
+             */
+            created_by?: unknown;
+        };
+        /**
+         * ResearchTrackDetailResponse
+         * @description 研究项详情（含研究发现与结论历史）。
+         */
+        ResearchTrackDetailResponse: {
+            /**
+             * Id
+             * @description 研究项 ID
+             */
+            id?: unknown;
+            /**
+             * Findings
+             * @description 研究发现
+             */
+            findings?: unknown[];
+            /**
+             * Conclusion History
+             * @description 结论版本历史
+             */
+            conclusion_history?: unknown[];
         };
         /**
          * ResearchTrackListItem
@@ -45329,6 +46888,22 @@ export interface components {
             route_summary?: string | null;
         };
         /**
+         * RouteCreateResult
+         * @description 新建工艺路线的返回结果。
+         */
+        RouteCreateResult: {
+            /**
+             * Id
+             * @description 路线 ID
+             */
+            id: string;
+            /**
+             * Route No
+             * @description 路线编号
+             */
+            route_no?: string | null;
+        };
+        /**
          * RouteLocationEquipmentItem
          * @description 地点设备配置请求项
          */
@@ -45384,6 +46959,22 @@ export interface components {
              * @description 地点列表（全量替换）
              */
             locations?: components["schemas"]["RouteLocationItem"][];
+        };
+        /**
+         * RouteUpdateResult
+         * @description 更新工艺路线的返回结果。
+         */
+        RouteUpdateResult: {
+            /**
+             * Id
+             * @description 路线 ID
+             */
+            id: string;
+            /**
+             * Message
+             * @description 提示文本
+             */
+            message: string;
         };
         /**
          * SafetyCheckApiResponse
@@ -49860,6 +51451,79 @@ export interface components {
             };
         };
         /**
+         * StageTransitionCheckResult
+         * @description 阶段流转条件检查结果。
+         */
+        StageTransitionCheckResult: {
+            /**
+             * Allowed
+             * @description 是否允许流转
+             */
+            allowed: boolean;
+            /**
+             * Current Stage
+             * @description 当前阶段
+             */
+            current_stage?: string | null;
+            /**
+             * Target Stage
+             * @description 目标阶段
+             */
+            target_stage?: string | null;
+            /**
+             * Hard Conditions
+             * @description 硬性条件
+             */
+            hard_conditions?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Soft Conditions
+             * @description 软性条件
+             */
+            soft_conditions?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Hard All Passed
+             * @description 硬性条件是否全部通过
+             * @default true
+             */
+            hard_all_passed: boolean;
+            /**
+             * Soft All Passed
+             * @description 软性条件是否全部通过
+             * @default true
+             */
+            soft_all_passed: boolean;
+            /**
+             * Reason
+             * @description 不允许流转的原因
+             */
+            reason?: string | null;
+        };
+        /**
+         * StageTransitionResult
+         * @description 阶段流转执行结果。
+         */
+        StageTransitionResult: {
+            /**
+             * Success
+             * @description 是否成功
+             */
+            success: boolean;
+            /**
+             * Message
+             * @description 提示文本
+             */
+            message?: string | null;
+            /**
+             * Current Stage
+             * @description 流转后阶段
+             */
+            current_stage?: string | null;
+        };
+        /**
          * StandardCreate
          * @description Create Standard
          */
@@ -50053,6 +51717,92 @@ export interface components {
             attach_file?: string | null;
             /** Remark */
             remark?: string | null;
+        };
+        /**
+         * StatsDeliverables
+         * @description 研发概览——交付物统计。
+         */
+        StatsDeliverables: {
+            /**
+             * Total
+             * @description 交付物总数
+             * @default 0
+             */
+            total: number;
+            /**
+             * By Status
+             * @description 按状态分布
+             */
+            by_status?: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * StatsExperiments
+         * @description 研发概览——实验记录统计。
+         */
+        StatsExperiments: {
+            /**
+             * Total
+             * @description 实验记录总数
+             * @default 0
+             */
+            total: number;
+        };
+        /**
+         * StatsOverviewResponse
+         * @description 研发概览统计结果。
+         */
+        StatsOverviewResponse: {
+            projects: components["schemas"]["StatsProjects"];
+            tracks: components["schemas"]["StatsTracks"];
+            experiments: components["schemas"]["StatsExperiments"];
+            deliverables: components["schemas"]["StatsDeliverables"];
+        };
+        /**
+         * StatsProjects
+         * @description 研发概览——项目统计。
+         */
+        StatsProjects: {
+            /**
+             * Total
+             * @description 项目总数
+             * @default 0
+             */
+            total: number;
+            /**
+             * By Stage
+             * @description 按阶段分布
+             */
+            by_stage?: {
+                [key: string]: unknown;
+            };
+            /**
+             * By Status
+             * @description 按状态分布
+             */
+            by_status?: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * StatsTracks
+         * @description 研发概览——研究项统计。
+         */
+        StatsTracks: {
+            /**
+             * Total
+             * @description 研究项总数
+             * @default 0
+             */
+            total: number;
+            /**
+             * By Type
+             * @description 按类型分布
+             */
+            by_type?: {
+                [key: string]: unknown;
+            };
         };
         /** StatusBatchRequest */
         StatusBatchRequest: {
@@ -78568,7 +80318,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_ResearchProjectResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -78603,7 +80353,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ResearchProjectResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -78636,7 +80386,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ResearchProjectResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -78673,7 +80423,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ResearchProjectResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -78706,7 +80456,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_OperationMessage_"];
                 };
             };
             /** @description Validation Error */
@@ -78744,7 +80494,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_IchRecordResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -78784,7 +80534,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_IchRecordResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -78818,7 +80568,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_IchRecordResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -78851,7 +80601,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_IchRecordResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -78884,7 +80634,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_OperationMessage_"];
                 };
             };
             /** @description Validation Error */
@@ -78992,7 +80742,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_PilotWorkflowResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -79027,7 +80777,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_PilotWorkflowResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -79060,7 +80810,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_PilotWorkflowResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -79093,7 +80843,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_IdOnlyResult_"];
                 };
             };
             /** @description Validation Error */
@@ -79126,7 +80876,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_PilotWorkflowStartResult_"];
                 };
             };
             /** @description Validation Error */
@@ -79159,7 +80909,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_PilotWorkflowApproveResult_"];
                 };
             };
             /** @description Validation Error */
@@ -79193,7 +80943,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_PilotWorkflowStepResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -79230,7 +80980,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_PilotDocumentUploadResult_"];
                 };
             };
             /** @description Validation Error */
@@ -79302,7 +81052,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_ResearchRouteResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -79339,7 +81089,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RouteCreateResult_"];
                 };
             };
             /** @description Validation Error */
@@ -79372,7 +81122,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ResearchRouteResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -79411,7 +81161,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RouteUpdateResult_"];
                 };
             };
             /** @description Validation Error */
@@ -79444,7 +81194,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_OperationMessage_"];
                 };
             };
             /** @description Validation Error */
@@ -79483,7 +81233,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ExperimentCreateResult_"];
                 };
             };
             /** @description Validation Error */
@@ -79522,7 +81272,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ExperimentUpdateResult_"];
                 };
             };
             /** @description Validation Error */
@@ -79555,7 +81305,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_OperationMessage_"];
                 };
             };
             /** @description Validation Error */
@@ -79592,7 +81342,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_OptimizationResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -79629,7 +81379,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_OptimizationMutationResult_"];
                 };
             };
             /** @description Validation Error */
@@ -79662,7 +81412,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_OptimizationResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -79701,7 +81451,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_OptimizationMutationResult_"];
                 };
             };
             /** @description Validation Error */
@@ -79734,7 +81484,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_OperationMessage_"];
                 };
             };
             /** @description Validation Error */
@@ -80378,7 +82128,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_RdProjectResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -80413,7 +82163,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdProjectResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -80446,7 +82196,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdProjectResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -80483,7 +82233,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdProjectResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -80516,7 +82266,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_NoneType_"];
                 };
             };
             /** @description Validation Error */
@@ -80555,7 +82305,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_StageTransitionResult_"];
                 };
             };
             /** @description Validation Error */
@@ -80591,7 +82341,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_StageTransitionCheckResult_"];
                 };
             };
             /** @description Validation Error */
@@ -80625,7 +82375,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_RdPilotStudyResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -80660,7 +82410,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdPilotStudyResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -80697,7 +82447,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdPilotStudyResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -80731,7 +82481,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_RdProcessValidationResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -80766,7 +82516,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdProcessValidationResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -80803,7 +82553,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdProcessValidationResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -80837,7 +82587,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_RdRegistrationFilingResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -80872,7 +82622,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdRegistrationFilingResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -80909,7 +82659,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdRegistrationFilingResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -81603,7 +83353,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_RdExperimentLogResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -81638,7 +83388,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdExperimentLogResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -81675,7 +83425,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdExperimentLogResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -81742,7 +83492,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_RdReportResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -81777,7 +83527,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdReportResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -81814,7 +83564,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdReportResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -81881,7 +83631,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_RdInitiationResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -81916,7 +83666,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdInitiationResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -81953,7 +83703,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdInitiationResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -82019,7 +83769,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ResearchTrackDetailResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -82052,7 +83802,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_ConclusionVersionItem__"];
                 };
             };
             /** @description Validation Error */
@@ -82089,7 +83839,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ConclusionPublishResult_"];
                 };
             };
             /** @description Validation Error */
@@ -82219,7 +83969,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_StatsOverviewResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -82250,7 +84000,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_ProjectProgressItem__"];
                 };
             };
             /** @description Validation Error */
@@ -82288,7 +84038,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_RdDeliverableTemplateResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -82323,7 +84073,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdDeliverableTemplateResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -82360,7 +84110,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RdDeliverableTemplateResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -95066,7 +96816,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_CpvImportTaskResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -95104,7 +96854,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_CpvImportTaskResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -95137,7 +96887,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_CpvImportTaskResponse_"];
                 };
             };
             /** @description Validation Error */

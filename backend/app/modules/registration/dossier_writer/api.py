@@ -15,15 +15,17 @@ from app.core.database import async_session_factory, get_db
 from app.core.deps import RequiredUser, require_route_permission
 from app.core.exceptions import AppException, BadRequestException, NotFoundException
 from app.core.job_store import JobStore, get_job_state_or_404, start_job
-from app.core.response import ApiResponse, build_response, error_response
+from app.core.response import build_response, error_response
 from app.shared.schemas import AsyncJobAccepted, AsyncJobAcceptedResponse, AsyncJobStateResponse
 
 from .field_models import FieldFillResult, FieldMapping
 from .models import ChapterAsset, DossierChapter, ProductDossier
 from .schemas import (
+    AIConfirmData,
     AIConfirmRequest,
     AIConfirmResponse,
     AssetCategoryListApiResponse,
+    AssetCategoryUpdateData,
     AssetCategoryUpdateRequest,
     AssetCategoryUpdateResponse,
     AssetListApiResponse,
@@ -31,6 +33,7 @@ from .schemas import (
     AssetResponse,
     AssetUploadBatchApiResponse,
     AssetUploadResponse,
+    AssetUsageToggleData,
     AssetUsageToggleRequest,
     AssetUsageToggleResponse,
     AvailableAssetListApiResponse,
@@ -52,8 +55,10 @@ from .schemas import (
     ProductDossierListResponse,
     ProductDossierResponse,
     ProductDossierUpdate,
+    SplitConfirmData,
     SplitConfirmRequest,
     SplitConfirmResponse,
+    SplitPreviewData,
     SplitPreviewRequest,
     SplitPreviewResponse,
     StringListApiResponse,
@@ -369,7 +374,7 @@ async def update_asset_category(
     asset_id: UUID,
     body: AssetCategoryUpdateRequest,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> AssetCategoryUpdateResponse:
     """更新素材的分类"""
     asset = await db.get(ChapterAsset, asset_id)
     if not asset:
@@ -381,11 +386,12 @@ async def update_asset_category(
     result = await db.execute(select(ChapterAsset).where(ChapterAsset.id == asset_id))
     asset = result.scalar_one()
 
-    return build_response(
-        data={
-            "id": str(asset.id),
-            "category_id": str(asset.category_id) if asset.category_id else None,
-        },
+    return AssetCategoryUpdateResponse(
+        code=200,
+        data=AssetCategoryUpdateData(
+            id=str(asset.id),
+            category_id=str(asset.category_id) if asset.category_id else None,
+        ),
         message="分类已更新",
     )
 
@@ -759,7 +765,7 @@ async def ai_confirm_and_fill(
     chapter_id: UUID,
     data: AIConfirmRequest,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> AIConfirmResponse:
     """AI 填充确认：用户确认后写入文档"""
     from .ai_fill_service import AIFillService
     from .models import DossierChapter, ProductDossier
@@ -784,7 +790,11 @@ async def ai_confirm_and_fill(
     service = AIFillService(db)
     result = await service.confirm_and_fill(dossier, chapter, user_confirmed_fields)
 
-    return build_response(data=result, message=result.get("message", "完成"))
+    return AIConfirmResponse(
+        code=200,
+        data=AIConfirmData.model_validate(result),
+        message=result.get("message", "完成"),
+    )
 
 
 @router.get("/chapters/{chapter_code}/asset-categories", response_model=AssetCategoryListApiResponse)
@@ -808,7 +818,7 @@ async def split_preview(
     asset_id: UUID,
     data: SplitPreviewRequest,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> SplitPreviewResponse:
     """AI 拆分预览：识别多页 PDF 每页的类型"""
     from .ai_fill_service import AIFillService
     from .models import ChapterAsset
@@ -828,7 +838,11 @@ async def split_preview(
     if not result["success"]:
         raise AppException(status_code=500, message=result["message"])
 
-    return build_response(data=result, message=result["message"])
+    return SplitPreviewResponse(
+        code=200,
+        data=SplitPreviewData.model_validate(result),
+        message=result["message"],
+    )
 
 
 @router.post("/chapters/{chapter_id}/split-confirm", response_model=SplitConfirmResponse)
@@ -837,7 +851,7 @@ async def split_confirm_and_insert(
     chapter_id: UUID,
     data: SplitConfirmRequest,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> SplitConfirmResponse:
     """AI 拆分确认：将各页转为图片插入模板"""
     from .ai_fill_service import AIFillService
     from .models import DossierChapter, ProductDossier
@@ -864,7 +878,11 @@ async def split_confirm_and_insert(
     if not result["success"]:
         raise AppException(status_code=500, message=result["message"])
 
-    return build_response(data=result, message=result["message"])
+    return SplitConfirmResponse(
+        code=200,
+        data=SplitConfirmData.model_validate(result),
+        message=result["message"],
+    )
 
 
 @router.get("/chapters/{chapter_code}/appendix-slots", response_model=StringListApiResponse)
@@ -939,7 +957,7 @@ async def toggle_asset_usage(
     asset_id: UUID,
     body: AssetUsageToggleRequest,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> AssetUsageToggleResponse:
     """切换素材的使用状态（勾选/取消勾选）
 
     body: {"is_selected": true/false}
@@ -947,7 +965,11 @@ async def toggle_asset_usage(
     service = DossierService(db)
     try:
         result = await service.toggle_asset_usage(chapter_id, asset_id, body.is_selected)
-        return build_response(data=result, message="更新成功")
+        return AssetUsageToggleResponse(
+            code=200,
+            data=AssetUsageToggleData.model_validate(result),
+            message="更新成功",
+        )
     except ValueError as e:
         raise BadRequestException(str(e))
 

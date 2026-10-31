@@ -48706,7 +48706,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_ResearchProjectResponse_"
                 }
               }
             }
@@ -48848,7 +48848,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_ResearchProjectResponse__"
                 }
               }
             }
@@ -48907,7 +48907,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_ResearchProjectResponse_"
                 }
               }
             }
@@ -48974,7 +48974,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_ResearchProjectResponse_"
                 }
               }
             }
@@ -49031,7 +49031,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_OperationMessage_"
                 }
               }
             }
@@ -49102,7 +49102,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_IchRecordResponse_"
                 }
               }
             }
@@ -49185,7 +49185,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_IchRecordResponse_"
                 }
               }
             }
@@ -49257,7 +49257,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_IchRecordResponse__"
                 }
               }
             }
@@ -49316,7 +49316,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_IchRecordResponse_"
                 }
               }
             }
@@ -49373,7 +49373,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_OperationMessage_"
                 }
               }
             }
@@ -49552,7 +49552,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_PilotWorkflowResponse_"
                 }
               }
             }
@@ -49658,7 +49658,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_PilotWorkflowResponse__"
                 }
               }
             }
@@ -49717,7 +49717,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_PilotWorkflowResponse_"
                 }
               }
             }
@@ -49774,7 +49774,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_IdOnlyResult_"
                 }
               }
             }
@@ -49833,7 +49833,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_PilotWorkflowStartResult_"
                 }
               }
             }
@@ -49892,7 +49892,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_PilotWorkflowApproveResult_"
                 }
               }
             }
@@ -49961,7 +49961,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_PilotWorkflowStepResponse_"
                 }
               }
             }
@@ -50030,7 +50030,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_PilotDocumentUploadResult_"
                 }
               }
             }
@@ -50208,7 +50208,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_ResearchRouteResponse__"
                 }
               }
             }
@@ -50267,7 +50267,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RouteCreateResult_"
                 }
               }
             }
@@ -50325,7 +50325,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_ResearchRouteResponse_"
                 }
               }
             }
@@ -50393,7 +50393,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RouteUpdateResult_"
                 }
               }
             }
@@ -50449,7 +50449,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_OperationMessage_"
                 }
               }
             }
@@ -50519,7 +50519,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_ExperimentCreateResult_"
                 }
               }
             }
@@ -50589,7 +50589,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_ExperimentUpdateResult_"
                 }
               }
             }
@@ -50645,7 +50645,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_OperationMessage_"
                 }
               }
             }
@@ -50765,7 +50765,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_OptimizationResponse__"
                 }
               }
             }
@@ -50824,7 +50824,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_OptimizationMutationResult_"
                 }
               }
             }
@@ -50882,7 +50882,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_OptimizationResponse_"
                 }
               }
             }
@@ -50950,7 +50950,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_OptimizationMutationResult_"
                 }
               }
             }
@@ -51006,7 +51006,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_OperationMessage_"
                 }
               }
             }
@@ -52278,7 +52278,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_RdProjectResponse__"
                 }
               }
             }
@@ -52335,7 +52335,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdProjectResponse_"
                 }
               }
             }
@@ -52394,7 +52394,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdProjectResponse_"
                 }
               }
             }
@@ -52461,7 +52461,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdProjectResponse_"
                 }
               }
             }
@@ -52518,7 +52518,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_NoneType_"
                 }
               }
             }
@@ -52589,7 +52589,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_StageTransitionResult_"
                 }
               }
             }
@@ -52659,7 +52659,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_StageTransitionCheckResult_"
                 }
               }
             }
@@ -52720,7 +52720,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_RdPilotStudyResponse__"
                 }
               }
             }
@@ -52777,7 +52777,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdPilotStudyResponse_"
                 }
               }
             }
@@ -52846,7 +52846,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdPilotStudyResponse_"
                 }
               }
             }
@@ -52907,7 +52907,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_RdProcessValidationResponse__"
                 }
               }
             }
@@ -52964,7 +52964,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdProcessValidationResponse_"
                 }
               }
             }
@@ -53033,7 +53033,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdProcessValidationResponse_"
                 }
               }
             }
@@ -53094,7 +53094,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_RdRegistrationFilingResponse__"
                 }
               }
             }
@@ -53151,7 +53151,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdRegistrationFilingResponse_"
                 }
               }
             }
@@ -53220,7 +53220,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdRegistrationFilingResponse_"
                 }
               }
             }
@@ -54509,7 +54509,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_RdExperimentLogResponse__"
                 }
               }
             }
@@ -54566,7 +54566,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdExperimentLogResponse_"
                 }
               }
             }
@@ -54635,7 +54635,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdExperimentLogResponse_"
                 }
               }
             }
@@ -54753,7 +54753,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_RdReportResponse__"
                 }
               }
             }
@@ -54810,7 +54810,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdReportResponse_"
                 }
               }
             }
@@ -54879,7 +54879,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdReportResponse_"
                 }
               }
             }
@@ -54997,7 +54997,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_RdInitiationResponse__"
                 }
               }
             }
@@ -55054,7 +55054,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdInitiationResponse_"
                 }
               }
             }
@@ -55123,7 +55123,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdInitiationResponse_"
                 }
               }
             }
@@ -55240,7 +55240,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_ResearchTrackDetailResponse_"
                 }
               }
             }
@@ -55310,7 +55310,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_ConclusionPublishResult_"
                 }
               }
             }
@@ -55368,7 +55368,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_ConclusionVersionItem__"
                 }
               }
             }
@@ -55586,7 +55586,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_StatsOverviewResponse_"
                 }
               }
             }
@@ -55636,7 +55636,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_ProjectProgressItem__"
                 }
               }
             }
@@ -55739,7 +55739,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_RdDeliverableTemplateResponse__"
                 }
               }
             }
@@ -55796,7 +55796,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdDeliverableTemplateResponse_"
                 }
               }
             }
@@ -55865,7 +55865,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_RdDeliverableTemplateResponse_"
                 }
               }
             }
@@ -81939,7 +81939,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_CpvImportTaskResponse_"
                 }
               }
             }
@@ -82036,7 +82036,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_CpvImportTaskResponse__"
                 }
               }
             }
@@ -82097,7 +82097,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_CpvImportTaskResponse_"
                 }
               }
             }
@@ -105351,6 +105351,94 @@
         "title": "CorrectionUpdate",
         "description": "\u6574\u6539\u66f4\u65b0"
       },
+      "CpvImportTaskResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "data_type": {
+            "type": "string",
+            "title": "Data Type"
+          },
+          "import_mode": {
+            "type": "string",
+            "title": "Import Mode"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "total_rows": {
+            "type": "integer",
+            "title": "Total Rows"
+          },
+          "success_rows": {
+            "type": "integer",
+            "title": "Success Rows"
+          },
+          "failed_rows": {
+            "type": "integer",
+            "title": "Failed Rows"
+          },
+          "error_details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Details"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "file_name",
+          "product_id",
+          "data_type",
+          "import_mode",
+          "status",
+          "total_rows",
+          "success_rows",
+          "failed_rows",
+          "error_details",
+          "created_at",
+          "created_by"
+        ],
+        "title": "CpvImportTaskResponse",
+        "description": "\u5bfc\u5165\u4efb\u52a1\u54cd\u5e94"
+      },
       "CpvParameterCreate": {
         "properties": {
           "parameter_type": {
@@ -107706,6 +107794,42 @@
         "type": "object",
         "title": "DataResponse[ConclusionPublishResult]"
       },
+      "DataResponse_CpvImportTaskResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CpvImportTaskResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[CpvImportTaskResponse]"
+      },
       "DataResponse_DashboardSummaryResponse_": {
         "properties": {
           "code": {
@@ -107958,6 +108082,78 @@
         "type": "object",
         "title": "DataResponse[DrugWithNodesResponse]"
       },
+      "DataResponse_ExperimentCreateResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExperimentCreateResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ExperimentCreateResult]"
+      },
+      "DataResponse_ExperimentUpdateResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExperimentUpdateResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ExperimentUpdateResult]"
+      },
       "DataResponse_ExportReportResult_": {
         "properties": {
           "code": {
@@ -108102,6 +108298,78 @@
         "type": "object",
         "title": "DataResponse[HolidayResponse]"
       },
+      "DataResponse_IchRecordResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IchRecordResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[IchRecordResponse]"
+      },
+      "DataResponse_IdOnlyResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdOnlyResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[IdOnlyResult]"
+      },
       "DataResponse_JobDeleteResult_": {
         "properties": {
           "code": {
@@ -108240,6 +108508,114 @@
         "type": "object",
         "title": "DataResponse[NoneType]"
       },
+      "DataResponse_OperationMessage_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OperationMessage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[OperationMessage]"
+      },
+      "DataResponse_OptimizationMutationResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OptimizationMutationResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[OptimizationMutationResult]"
+      },
+      "DataResponse_OptimizationResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OptimizationResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[OptimizationResponse]"
+      },
       "DataResponse_PersonnelAddResult_": {
         "properties": {
           "code": {
@@ -108311,6 +108687,186 @@
         },
         "type": "object",
         "title": "DataResponse[PersonnelResponse]"
+      },
+      "DataResponse_PilotDocumentUploadResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PilotDocumentUploadResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[PilotDocumentUploadResult]"
+      },
+      "DataResponse_PilotWorkflowApproveResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PilotWorkflowApproveResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[PilotWorkflowApproveResult]"
+      },
+      "DataResponse_PilotWorkflowResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PilotWorkflowResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[PilotWorkflowResponse]"
+      },
+      "DataResponse_PilotWorkflowStartResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PilotWorkflowStartResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[PilotWorkflowStartResult]"
+      },
+      "DataResponse_PilotWorkflowStepResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PilotWorkflowStepResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[PilotWorkflowStepResponse]"
       },
       "DataResponse_ProblemHandleResult_": {
         "properties": {
@@ -108384,6 +108940,114 @@
         "type": "object",
         "title": "DataResponse[ProjectResponse]"
       },
+      "DataResponse_RdDeliverableTemplateResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RdDeliverableTemplateResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[RdDeliverableTemplateResponse]"
+      },
+      "DataResponse_RdExperimentLogResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RdExperimentLogResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[RdExperimentLogResponse]"
+      },
+      "DataResponse_RdInitiationResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RdInitiationResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[RdInitiationResponse]"
+      },
       "DataResponse_RdPilotStudyResponse_": {
         "properties": {
           "code": {
@@ -108456,6 +109120,42 @@
         "type": "object",
         "title": "DataResponse[RdProcessValidationResponse]"
       },
+      "DataResponse_RdProjectResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RdProjectResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[RdProjectResponse]"
+      },
       "DataResponse_RdRegistrationFilingResponse_": {
         "properties": {
           "code": {
@@ -108491,6 +109191,42 @@
         },
         "type": "object",
         "title": "DataResponse[RdRegistrationFilingResponse]"
+      },
+      "DataResponse_RdReportResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RdReportResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[RdReportResponse]"
       },
       "DataResponse_ReferenceStandardResponse_": {
         "properties": {
@@ -108528,6 +109264,114 @@
         "type": "object",
         "title": "DataResponse[ReferenceStandardResponse]"
       },
+      "DataResponse_ResearchProjectResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchProjectResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ResearchProjectResponse]"
+      },
+      "DataResponse_ResearchRouteResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchRouteResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ResearchRouteResponse]"
+      },
+      "DataResponse_ResearchTrackDetailResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResearchTrackDetailResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ResearchTrackDetailResponse]"
+      },
       "DataResponse_RoleResponse_": {
         "properties": {
           "code": {
@@ -108563,6 +109407,78 @@
         },
         "type": "object",
         "title": "DataResponse[RoleResponse]"
+      },
+      "DataResponse_RouteCreateResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RouteCreateResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[RouteCreateResult]"
+      },
+      "DataResponse_RouteUpdateResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RouteUpdateResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[RouteUpdateResult]"
       },
       "DataResponse_ScheduledJobDetail_": {
         "properties": {
@@ -108743,6 +109659,114 @@
         },
         "type": "object",
         "title": "DataResponse[SopAiConfigValue]"
+      },
+      "DataResponse_StageTransitionCheckResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StageTransitionCheckResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[StageTransitionCheckResult]"
+      },
+      "DataResponse_StageTransitionResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StageTransitionResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[StageTransitionResult]"
+      },
+      "DataResponse_StatsOverviewResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatsOverviewResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[StatsOverviewResponse]"
       },
       "DataResponse_SupplementaryReplyResponse_": {
         "properties": {
@@ -109016,6 +110040,46 @@
         "type": "object",
         "title": "DataResponse[list[CoppCertificateResponse]]"
       },
+      "DataResponse_list_CpvImportTaskResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CpvImportTaskResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[CpvImportTaskResponse]]"
+      },
       "DataResponse_list_DomesticApprovalResponse__": {
         "properties": {
           "code": {
@@ -109176,6 +110240,46 @@
         "type": "object",
         "title": "DataResponse[list[HolidayResponse]]"
       },
+      "DataResponse_list_IchRecordResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/IchRecordResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[IchRecordResponse]]"
+      },
       "DataResponse_list_InternationalReviewResponse__": {
         "properties": {
           "code": {
@@ -109255,6 +110359,46 @@
         },
         "type": "object",
         "title": "DataResponse[list[MaintainerBrief]]"
+      },
+      "DataResponse_list_OptimizationResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OptimizationResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[OptimizationResponse]]"
       },
       "DataResponse_list_OverseasApprovalResponse__": {
         "properties": {
@@ -109336,6 +110480,46 @@
         "type": "object",
         "title": "DataResponse[list[PersonnelResponse]]"
       },
+      "DataResponse_list_PilotWorkflowResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PilotWorkflowResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[PilotWorkflowResponse]]"
+      },
       "DataResponse_list_ProductInfo__": {
         "properties": {
           "code": {
@@ -109376,6 +110560,46 @@
         "type": "object",
         "title": "DataResponse[list[ProductInfo]]"
       },
+      "DataResponse_list_ProjectProgressItem__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ProjectProgressItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[ProjectProgressItem]]"
+      },
       "DataResponse_list_ProjectResponse__": {
         "properties": {
           "code": {
@@ -109415,6 +110639,126 @@
         },
         "type": "object",
         "title": "DataResponse[list[ProjectResponse]]"
+      },
+      "DataResponse_list_RdDeliverableTemplateResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RdDeliverableTemplateResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[RdDeliverableTemplateResponse]]"
+      },
+      "DataResponse_list_RdExperimentLogResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RdExperimentLogResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[RdExperimentLogResponse]]"
+      },
+      "DataResponse_list_RdInitiationResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RdInitiationResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[RdInitiationResponse]]"
       },
       "DataResponse_list_RdPilotStudyResponse__": {
         "properties": {
@@ -109496,6 +110840,46 @@
         "type": "object",
         "title": "DataResponse[list[RdProcessValidationResponse]]"
       },
+      "DataResponse_list_RdProjectResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RdProjectResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[RdProjectResponse]]"
+      },
       "DataResponse_list_RdRegistrationFilingResponse__": {
         "properties": {
           "code": {
@@ -109535,6 +110919,46 @@
         },
         "type": "object",
         "title": "DataResponse[list[RdRegistrationFilingResponse]]"
+      },
+      "DataResponse_list_RdReportResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RdReportResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[RdReportResponse]]"
       },
       "DataResponse_list_RdStageDeliverableResponse__": {
         "properties": {
@@ -109615,6 +111039,86 @@
         },
         "type": "object",
         "title": "DataResponse[list[ReferenceStandardListItem]]"
+      },
+      "DataResponse_list_ResearchProjectResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ResearchProjectResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[ResearchProjectResponse]]"
+      },
+      "DataResponse_list_ResearchRouteResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ResearchRouteResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[ResearchRouteResponse]]"
       },
       "DataResponse_list_ResearchTrackListItem__": {
         "properties": {
@@ -119966,6 +121470,54 @@
         ],
         "title": "ExecutionTrackSubmit",
         "description": "\u63d0\u4ea4\u6267\u884c\u8ddf\u8e2a"
+      },
+      "ExperimentCreateResult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "\u5b9e\u9a8c ID"
+          },
+          "experiment_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experiment No",
+            "description": "\u5b9e\u9a8c\u7f16\u53f7"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "ExperimentCreateResult",
+        "description": "\u65b0\u5efa\u5b9e\u9a8c\u7684\u8fd4\u56de\u7ed3\u679c\u3002"
+      },
+      "ExperimentUpdateResult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "\u5b9e\u9a8c ID"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "\u63d0\u793a\u6587\u672c"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "message"
+        ],
+        "title": "ExperimentUpdateResult",
+        "description": "\u66f4\u65b0\u5b9e\u9a8c\u7684\u8fd4\u56de\u7ed3\u679c\u3002"
       },
       "ExportApiResponse": {
         "properties": {
@@ -130362,6 +131914,110 @@
         "title": "IQStatus",
         "description": "IQ\u786e\u8ba4\u72b6\u6001"
       },
+      "IchRecordResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "\u8bb0\u5f55 ID"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename",
+            "description": "\u6587\u4ef6\u540d"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route",
+            "description": "\u7ed9\u836f\u9014\u5f84"
+          },
+          "q3c_result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Q3C Result",
+            "description": "Q3C \u5206\u6790\u7ed3\u679c"
+          },
+          "q3d_result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Q3D Result",
+            "description": "Q3D \u5206\u6790\u7ed3\u679c"
+          },
+          "llm_used": {
+            "type": "boolean",
+            "title": "Llm Used",
+            "description": "\u662f\u5426\u4f7f\u7528 LLM \u589e\u5f3a",
+            "default": false
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At",
+            "description": "\u521b\u5efa\u65f6\u95f4\uff08ISO 8601\uff09"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename"
+        ],
+        "title": "IchRecordResponse",
+        "description": "ICH Q3C/Q3D \u6742\u8d28\u8bc6\u522b\u8bb0\u5f55\u3002"
+      },
+      "IdOnlyResult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "\u8bb0\u5f55 ID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "IdOnlyResult",
+        "description": "\u4ec5\u8fd4\u56de\u4e3b\u952e\u7684\u5199\u64cd\u4f5c\u7ed3\u679c\u3002"
+      },
       "IdsBatchRequest": {
         "properties": {
           "ids": {
@@ -138826,6 +140482,21 @@
         "title": "OperationLevel",
         "description": "\u7279\u6b8a\u4f5c\u4e1a\u7ea7\u522b\u679a\u4e3e"
       },
+      "OperationMessage": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "\u64cd\u4f5c\u7ed3\u679c\u8bf4\u660e"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "OperationMessage",
+        "description": "\u4ec5\u8fd4\u56de\u63d0\u793a\u6587\u672c\u7684\u5199\u64cd\u4f5c\u7ed3\u679c\u3002"
+      },
       "OperationRegulationApiResponse": {
         "properties": {
           "code": {
@@ -139197,6 +140868,200 @@
         "type": "object",
         "title": "OperationRegulationUpdate",
         "description": "\u66f4\u65b0\u5b89\u5168\u64cd\u4f5c\u89c4\u7a0b"
+      },
+      "OptimizationMutationResult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "\u4f18\u5316\u8bb0\u5f55 ID"
+          },
+          "source_route_id": {
+            "title": "Source Route Id",
+            "description": "\u6765\u6e90\u8def\u7ebf ID"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "\u540d\u79f0"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "\u72b6\u6001"
+          },
+          "current_module": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Module",
+            "description": "\u5f53\u524d\u6a21\u5757"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "OptimizationMutationResult",
+        "description": "\u5de5\u827a\u4f18\u5316\u8bb0\u5f55\u7684\u521b\u5efa/\u66f4\u65b0\u8fd4\u56de\u7ed3\u679c\u3002"
+      },
+      "OptimizationResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "\u4f18\u5316\u8bb0\u5f55 ID"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "description": "\u6240\u5c5e\u9879\u76ee ID"
+          },
+          "source_route_id": {
+            "title": "Source Route Id",
+            "description": "\u6765\u6e90\u8def\u7ebf ID"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "\u540d\u79f0"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "\u63cf\u8ff0"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "\u72b6\u6001"
+          },
+          "current_module": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Module",
+            "description": "\u5f53\u524d\u6a21\u5757"
+          },
+          "doe_experiment": {
+            "title": "Doe Experiment",
+            "description": "DOE \u5b9e\u9a8c"
+          },
+          "impurity_study": {
+            "title": "Impurity Study",
+            "description": "\u6742\u8d28\u7814\u7a76"
+          },
+          "crystal_form_study": {
+            "title": "Crystal Form Study",
+            "description": "\u6676\u578b\u7814\u7a76"
+          },
+          "quality_standard_set": {
+            "title": "Quality Standard Set",
+            "description": "\u8d28\u91cf\u6807\u51c6\u8bbe\u5b9a"
+          },
+          "scale_up_study": {
+            "title": "Scale Up Study",
+            "description": "\u653e\u5927\u7814\u7a76"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "\u5f00\u59cb\u65e5\u671f"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "\u7ed3\u675f\u65e5\u671f"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At",
+            "description": "\u521b\u5efa\u65f6\u95f4"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At",
+            "description": "\u66f4\u65b0\u65f6\u95f4"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "OptimizationResponse",
+        "description": "\u5de5\u827a\u4f18\u5316\u8bb0\u5f55\u3002"
       },
       "OptimizeTextRequest": {
         "properties": {
@@ -140840,6 +142705,78 @@
         "title": "Pharmacopeia",
         "description": "\u6267\u884c\u836f\u5178"
       },
+      "PilotDocumentUploadResult": {
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "title": "File Path",
+            "description": "\u6587\u4ef6\u843d\u76d8\u8def\u5f84"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename",
+            "description": "\u6587\u4ef6\u540d"
+          },
+          "file_size": {
+            "type": "integer",
+            "title": "File Size",
+            "description": "\u6587\u4ef6\u5927\u5c0f\uff08\u5b57\u8282\uff09"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_path",
+          "filename",
+          "file_size"
+        ],
+        "title": "PilotDocumentUploadResult",
+        "description": "\u4e2d\u8bd5\u5de5\u827a\u6587\u6863\u4e0a\u4f20\u7ed3\u679c\u3002"
+      },
+      "PilotWorkflowApproveResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "\u5de5\u4f5c\u6d41\u72b6\u6001"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "\u63d0\u793a\u6587\u672c"
+          },
+          "step_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Order",
+            "description": "\u4e0b\u4e00\u6b65\u5e8f\u53f7"
+          },
+          "step_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Name",
+            "description": "\u4e0b\u4e00\u6b65\u540d\u79f0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message"
+        ],
+        "title": "PilotWorkflowApproveResult",
+        "description": "\u786e\u8ba4\u4e2d\u8bd5\u6b65\u9aa4\u540e\u7684\u8fd4\u56de\u7ed3\u679c\u3002"
+      },
       "PilotWorkflowCreate": {
         "properties": {
           "project_id": {
@@ -140904,6 +142841,281 @@
         ],
         "title": "PilotWorkflowCreate",
         "description": "\u521b\u5efa\u4e2d\u8bd5\u7814\u7a76"
+      },
+      "PilotWorkflowResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "scale_up_ratio": {
+            "type": "number",
+            "title": "Scale Up Ratio"
+          },
+          "equipment_type": {
+            "type": "string",
+            "title": "Equipment Type"
+          },
+          "equipment_volume": {
+            "type": "number",
+            "title": "Equipment Volume"
+          },
+          "input_document_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Document Path"
+          },
+          "input_context": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Context"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "final_report": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Report"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/PilotWorkflowStepResponse"
+            },
+            "type": "array",
+            "title": "Steps",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "product_name",
+          "scale_up_ratio",
+          "equipment_type",
+          "equipment_volume",
+          "input_document_path",
+          "input_context",
+          "status",
+          "final_report",
+          "created_at",
+          "updated_at",
+          "created_by",
+          "updated_by"
+        ],
+        "title": "PilotWorkflowResponse",
+        "description": "\u5de5\u4f5c\u6d41\u54cd\u5e94"
+      },
+      "PilotWorkflowStartResult": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "\u63d0\u793a\u6587\u672c"
+          },
+          "workflow_id": {
+            "type": "string",
+            "title": "Workflow Id",
+            "description": "\u5de5\u4f5c\u6d41 ID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "workflow_id"
+        ],
+        "title": "PilotWorkflowStartResult",
+        "description": "\u542f\u52a8\u4e2d\u8bd5\u5de5\u4f5c\u6d41\u7684\u8fd4\u56de\u7ed3\u679c\u3002"
+      },
+      "PilotWorkflowStepResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workflow_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workflow Id"
+          },
+          "step_order": {
+            "type": "integer",
+            "title": "Step Order"
+          },
+          "step_code": {
+            "type": "string",
+            "title": "Step Code"
+          },
+          "step_name": {
+            "type": "string",
+            "title": "Step Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "input_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Data"
+          },
+          "output_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Data"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workflow_id",
+          "step_order",
+          "step_code",
+          "step_name",
+          "status",
+          "input_data",
+          "output_data",
+          "error_message",
+          "started_at",
+          "completed_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PilotWorkflowStepResponse",
+        "description": "\u5de5\u4f5c\u6d41\u6b65\u9aa4\u54cd\u5e94"
       },
       "PlanStatus": {
         "type": "string",
@@ -144883,6 +147095,87 @@
         ],
         "title": "ProjectCreate"
       },
+      "ProjectProgressItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "\u9879\u76ee ID"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "\u9879\u76ee\u540d\u79f0"
+          },
+          "current_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Stage",
+            "description": "\u5f53\u524d\u9636\u6bb5"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "\u72b6\u6001"
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress",
+            "description": "\u8fdb\u5ea6\u767e\u5206\u6bd4",
+            "default": 0
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "\u5f00\u59cb\u65e5\u671f"
+          },
+          "target_filing_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Filing Date",
+            "description": "\u76ee\u6807\u7533\u62a5\u65e5\u671f"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "ProjectProgressItem",
+        "description": "\u5355\u4e2a\u7814\u53d1\u9879\u76ee\u7684\u8fdb\u5ea6\u7edf\u8ba1\u3002"
+      },
       "ProjectResponse": {
         "properties": {
           "id": {
@@ -146240,6 +148533,101 @@
         ],
         "title": "RdDeliverableTemplateCreate"
       },
+      "RdDeliverableTemplateResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Name"
+          },
+          "deliverable_type": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Deliverable Type"
+          },
+          "stage": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Stage"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "template_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Content"
+          },
+          "template_structure": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Structure"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "creator_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Creator Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "deliverable_type",
+          "stage",
+          "id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RdDeliverableTemplateResponse"
+      },
       "RdDeliverableTemplateUpdate": {
         "properties": {
           "name": {
@@ -146495,6 +148883,217 @@
           "experiment_type"
         ],
         "title": "RdExperimentLogCreate"
+      },
+      "RdExperimentLogResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "stage_record_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage Record Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Title"
+          },
+          "experiment_type": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Experiment Type"
+          },
+          "experiment_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experiment Date"
+          },
+          "operator": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator"
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Status",
+            "default": "planned"
+          },
+          "objective": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objective"
+          },
+          "materials": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Materials"
+          },
+          "equipment": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipment"
+          },
+          "procedure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Procedure"
+          },
+          "process_params": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Process Params"
+          },
+          "observations": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observations"
+          },
+          "results": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Results"
+          },
+          "conclusion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conclusion"
+          },
+          "issues": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issues"
+          },
+          "next_steps": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Steps"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id",
+          "title",
+          "experiment_type",
+          "id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RdExperimentLogResponse"
       },
       "RdExperimentLogUpdate": {
         "properties": {
@@ -146920,6 +149519,258 @@
           "project_id"
         ],
         "title": "RdInitiationCreate"
+      },
+      "RdInitiationResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "project_background": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Background"
+          },
+          "market_analysis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Analysis"
+          },
+          "technical_feasibility": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technical Feasibility"
+          },
+          "resource_requirements": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Requirements"
+          },
+          "timeline_plan": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeline Plan"
+          },
+          "risk_assessment": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Assessment"
+          },
+          "expected_outcomes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Outcomes"
+          },
+          "applicant_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicant Id"
+          },
+          "application_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Application Date"
+          },
+          "review_status": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Review Status",
+            "default": "pending"
+          },
+          "reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer Id"
+          },
+          "review_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Date"
+          },
+          "review_comments": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Comments"
+          },
+          "review_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Score"
+          },
+          "approval_status": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Approval Status",
+            "default": "pending"
+          },
+          "approver_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approver Id"
+          },
+          "approval_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Date"
+          },
+          "approval_comments": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Comments"
+          },
+          "attachments": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attachments"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id",
+          "id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RdInitiationResponse"
       },
       "RdInitiationUpdate": {
         "properties": {
@@ -148249,6 +151100,236 @@
         ],
         "title": "RdProjectCreate"
       },
+      "RdProjectResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Name",
+            "description": "\u54c1\u79cd\u540d\u79f0"
+          },
+          "api_name": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Api Name",
+            "description": "API\u5168\u79f0"
+          },
+          "cas_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cas Number",
+            "description": "CAS\u53f7"
+          },
+          "molecular_formula": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Molecular Formula",
+            "description": "\u5206\u5b50\u5f0f"
+          },
+          "molecular_weight": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Molecular Weight",
+            "description": "\u5206\u5b50\u91cf"
+          },
+          "indication": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indication",
+            "description": "\u9002\u5e94\u75c7"
+          },
+          "project_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Type",
+            "description": "generic/improved"
+          },
+          "priority": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Priority",
+            "description": "low/normal/high/urgent",
+            "default": "normal"
+          },
+          "project_manager_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Manager Id",
+            "description": "\u9879\u76ee\u7ecf\u7406ID"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "\u5f00\u59cb\u65e5\u671f"
+          },
+          "target_filing_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Filing Date",
+            "description": "\u76ee\u6807\u7533\u62a5\u65e5\u671f"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "current_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Stage"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "overall_progress": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overall Progress"
+          },
+          "actual_filing_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Filing Date"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "api_name",
+          "current_stage",
+          "id",
+          "status",
+          "overall_progress",
+          "actual_filing_date",
+          "created_at",
+          "updated_at",
+          "created_by",
+          "updated_by"
+        ],
+        "title": "RdProjectResponse"
+      },
       "RdProjectUpdate": {
         "properties": {
           "name": {
@@ -148844,6 +151925,166 @@
           "deliverable_type"
         ],
         "title": "RdReportGenerateRequest"
+      },
+      "RdReportResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Title"
+          },
+          "report_type": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Report Type"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage"
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Status",
+            "default": "draft"
+          },
+          "version": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Version",
+            "default": "v1.0"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "key_findings": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Findings"
+          },
+          "recommendations": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommendations"
+          },
+          "author_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Id"
+          },
+          "reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id",
+          "title",
+          "report_type",
+          "id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RdReportResponse"
       },
       "RdReportUpdate": {
         "properties": {
@@ -153318,6 +156559,141 @@
         "title": "ResearchProjectCreate",
         "description": "\u521b\u5efa\u7814\u53d1\u9879\u76ee\u8bf7\u6c42"
       },
+      "ResearchProjectResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "project_no": {
+            "type": "string",
+            "title": "Project No"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "project_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Type"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "leader": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leader"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "project_no",
+          "name",
+          "project_type",
+          "stage",
+          "status",
+          "leader",
+          "start_date",
+          "end_date",
+          "description",
+          "created_at",
+          "updated_at",
+          "created_by",
+          "updated_by"
+        ],
+        "title": "ResearchProjectResponse",
+        "description": "\u7814\u53d1\u9879\u76ee\u54cd\u5e94"
+      },
       "ResearchProjectUpdate": {
         "properties": {
           "project_no": {
@@ -153444,6 +156820,227 @@
         "type": "object",
         "title": "ResearchProjectUpdate",
         "description": "\u66f4\u65b0\u7814\u53d1\u9879\u76ee\u8bf7\u6c42"
+      },
+      "ResearchRouteResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "\u8def\u7ebf ID"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "description": "\u6240\u5c5e\u9879\u76ee ID"
+          },
+          "route_no": {
+            "type": "string",
+            "title": "Route No",
+            "description": "\u8def\u7ebf\u7f16\u53f7"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "\u8def\u7ebf\u540d\u79f0"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source",
+            "description": "\u6765\u6e90"
+          },
+          "source_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Reference",
+            "description": "\u6765\u6e90\u53c2\u8003"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "\u63cf\u8ff0"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "\u72b6\u6001"
+          },
+          "current_module": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Module",
+            "description": "\u5f53\u524d\u6a21\u5757"
+          },
+          "literature_sources": {
+            "items": {},
+            "type": "array",
+            "title": "Literature Sources",
+            "description": "\u6587\u732e\u6765\u6e90"
+          },
+          "candidate_routes": {
+            "items": {},
+            "type": "array",
+            "title": "Candidate Routes",
+            "description": "\u5019\u9009\u8def\u7ebf"
+          },
+          "selected_route_ids": {
+            "items": {},
+            "type": "array",
+            "title": "Selected Route Ids",
+            "description": "\u5df2\u9009\u8def\u7ebf ID"
+          },
+          "experiment_plans": {
+            "items": {},
+            "type": "array",
+            "title": "Experiment Plans",
+            "description": "\u5b9e\u9a8c\u8ba1\u5212"
+          },
+          "experiments": {
+            "items": {},
+            "type": "array",
+            "title": "Experiments",
+            "description": "\u5b9e\u9a8c\u8bb0\u5f55"
+          },
+          "assessment": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment",
+            "description": "\u8bc4\u4f30\u7ed3\u679c"
+          },
+          "deliverables": {
+            "items": {},
+            "type": "array",
+            "title": "Deliverables",
+            "description": "\u4ea4\u4ed8\u7269"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "\u5f00\u59cb\u65e5\u671f"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "\u7ed3\u675f\u65e5\u671f"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At",
+            "description": "\u521b\u5efa\u65f6\u95f4"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At",
+            "description": "\u66f4\u65b0\u65f6\u95f4"
+          },
+          "created_by": {
+            "title": "Created By",
+            "description": "\u521b\u5efa\u4eba"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "route_no"
+        ],
+        "title": "ResearchRouteResponse",
+        "description": "\u5de5\u827a\u8def\u7ebf\u3002"
+      },
+      "ResearchTrackDetailResponse": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "description": "\u7814\u7a76\u9879 ID"
+          },
+          "findings": {
+            "items": {},
+            "type": "array",
+            "title": "Findings",
+            "description": "\u7814\u7a76\u53d1\u73b0"
+          },
+          "conclusion_history": {
+            "items": {},
+            "type": "array",
+            "title": "Conclusion History",
+            "description": "\u7ed3\u8bba\u7248\u672c\u5386\u53f2"
+          }
+        },
+        "type": "object",
+        "title": "ResearchTrackDetailResponse",
+        "description": "\u7814\u7a76\u9879\u8be6\u60c5\uff08\u542b\u7814\u7a76\u53d1\u73b0\u4e0e\u7ed3\u8bba\u5386\u53f2\uff09\u3002"
       },
       "ResearchTrackListItem": {
         "properties": {
@@ -153954,6 +157551,33 @@
         "title": "RouteCheckSubmit",
         "description": "\u7ebf\u8def\u5de1\u68c0\u63d0\u4ea4\u8bf7\u6c42"
       },
+      "RouteCreateResult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "\u8def\u7ebf ID"
+          },
+          "route_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route No",
+            "description": "\u8def\u7ebf\u7f16\u53f7"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "RouteCreateResult",
+        "description": "\u65b0\u5efa\u5de5\u827a\u8def\u7ebf\u7684\u8fd4\u56de\u7ed3\u679c\u3002"
+      },
       "RouteLocationEquipmentItem": {
         "properties": {
           "equipment_id": {
@@ -154029,6 +157653,27 @@
         "type": "object",
         "title": "RouteLocationsBatch",
         "description": "\u6279\u91cf\u8bbe\u7f6e\u7ebf\u8def\u5730\u70b9-\u8bbe\u5907-\u6a21\u677f\u8bf7\u6c42"
+      },
+      "RouteUpdateResult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "\u8def\u7ebf ID"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "\u63d0\u793a\u6587\u672c"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "message"
+        ],
+        "title": "RouteUpdateResult",
+        "description": "\u66f4\u65b0\u5de5\u827a\u8def\u7ebf\u7684\u8fd4\u56de\u7ed3\u679c\u3002"
       },
       "SafetyCheckApiResponse": {
         "properties": {
@@ -164198,6 +167843,120 @@
         "title": "StabilityTrendResponse",
         "description": "\u8d8b\u52bf\u5206\u6790\u54cd\u5e94"
       },
+      "StageTransitionCheckResult": {
+        "properties": {
+          "allowed": {
+            "type": "boolean",
+            "title": "Allowed",
+            "description": "\u662f\u5426\u5141\u8bb8\u6d41\u8f6c"
+          },
+          "current_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Stage",
+            "description": "\u5f53\u524d\u9636\u6bb5"
+          },
+          "target_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Stage",
+            "description": "\u76ee\u6807\u9636\u6bb5"
+          },
+          "hard_conditions": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Hard Conditions",
+            "description": "\u786c\u6027\u6761\u4ef6"
+          },
+          "soft_conditions": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Soft Conditions",
+            "description": "\u8f6f\u6027\u6761\u4ef6"
+          },
+          "hard_all_passed": {
+            "type": "boolean",
+            "title": "Hard All Passed",
+            "description": "\u786c\u6027\u6761\u4ef6\u662f\u5426\u5168\u90e8\u901a\u8fc7",
+            "default": true
+          },
+          "soft_all_passed": {
+            "type": "boolean",
+            "title": "Soft All Passed",
+            "description": "\u8f6f\u6027\u6761\u4ef6\u662f\u5426\u5168\u90e8\u901a\u8fc7",
+            "default": true
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason",
+            "description": "\u4e0d\u5141\u8bb8\u6d41\u8f6c\u7684\u539f\u56e0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "allowed"
+        ],
+        "title": "StageTransitionCheckResult",
+        "description": "\u9636\u6bb5\u6d41\u8f6c\u6761\u4ef6\u68c0\u67e5\u7ed3\u679c\u3002"
+      },
+      "StageTransitionResult": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "\u662f\u5426\u6210\u529f"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "\u63d0\u793a\u6587\u672c"
+          },
+          "current_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Stage",
+            "description": "\u6d41\u8f6c\u540e\u9636\u6bb5"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "title": "StageTransitionResult",
+        "description": "\u9636\u6bb5\u6d41\u8f6c\u6267\u884c\u7ed3\u679c\u3002"
+      },
       "StandardCreate": {
         "properties": {
           "std_code": {
@@ -164706,6 +168465,107 @@
         "type": "object",
         "title": "StandardUpdate",
         "description": "Update Standard"
+      },
+      "StatsDeliverables": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "\u4ea4\u4ed8\u7269\u603b\u6570",
+            "default": 0
+          },
+          "by_status": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "By Status",
+            "description": "\u6309\u72b6\u6001\u5206\u5e03"
+          }
+        },
+        "type": "object",
+        "title": "StatsDeliverables",
+        "description": "\u7814\u53d1\u6982\u89c8\u2014\u2014\u4ea4\u4ed8\u7269\u7edf\u8ba1\u3002"
+      },
+      "StatsExperiments": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "\u5b9e\u9a8c\u8bb0\u5f55\u603b\u6570",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "StatsExperiments",
+        "description": "\u7814\u53d1\u6982\u89c8\u2014\u2014\u5b9e\u9a8c\u8bb0\u5f55\u7edf\u8ba1\u3002"
+      },
+      "StatsOverviewResponse": {
+        "properties": {
+          "projects": {
+            "$ref": "#/components/schemas/StatsProjects"
+          },
+          "tracks": {
+            "$ref": "#/components/schemas/StatsTracks"
+          },
+          "experiments": {
+            "$ref": "#/components/schemas/StatsExperiments"
+          },
+          "deliverables": {
+            "$ref": "#/components/schemas/StatsDeliverables"
+          }
+        },
+        "type": "object",
+        "required": [
+          "projects",
+          "tracks",
+          "experiments",
+          "deliverables"
+        ],
+        "title": "StatsOverviewResponse",
+        "description": "\u7814\u53d1\u6982\u89c8\u7edf\u8ba1\u7ed3\u679c\u3002"
+      },
+      "StatsProjects": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "\u9879\u76ee\u603b\u6570",
+            "default": 0
+          },
+          "by_stage": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "By Stage",
+            "description": "\u6309\u9636\u6bb5\u5206\u5e03"
+          },
+          "by_status": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "By Status",
+            "description": "\u6309\u72b6\u6001\u5206\u5e03"
+          }
+        },
+        "type": "object",
+        "title": "StatsProjects",
+        "description": "\u7814\u53d1\u6982\u89c8\u2014\u2014\u9879\u76ee\u7edf\u8ba1\u3002"
+      },
+      "StatsTracks": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "\u7814\u7a76\u9879\u603b\u6570",
+            "default": 0
+          },
+          "by_type": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "By Type",
+            "description": "\u6309\u7c7b\u578b\u5206\u5e03"
+          }
+        },
+        "type": "object",
+        "title": "StatsTracks",
+        "description": "\u7814\u53d1\u6982\u89c8\u2014\u2014\u7814\u7a76\u9879\u7edf\u8ba1\u3002"
       },
       "StatusBatchRequest": {
         "properties": {
