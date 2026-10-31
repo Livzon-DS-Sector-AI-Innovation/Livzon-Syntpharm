@@ -15,8 +15,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.modules.quality.qms.deviation_flow_schemas import (
+    DeviationAttachmentListResponse,
     DeviationCreateRequest,
+    DeviationCreateResponse,
+    DeviationDetailResponse,
+    DeviationEmptyResponse,
+    DeviationListResponse,
+    DeviationOptionsResponse,
+    DeviationSubmitResponse,
     DeviationUpdateRequest,
+    DeviationUploadResponse,
 )
 from app.platform.database import get_db_session
 from app.platform.notification.feishu_client_config import FeishuClient
@@ -346,7 +354,7 @@ async def send_feishu_notification(  # type: ignore[no-untyped-def]
 # ============ API 接口 ============
 
 
-@router.get("/options", summary="获取选项列表")
+@router.get("/options", summary="获取选项列表", response_model=DeviationOptionsResponse)
 async def get_options():  # type: ignore[no-untyped-def]
     """获取偏差类型、紧急等级、状态等选项"""
     return {
@@ -360,7 +368,7 @@ async def get_options():  # type: ignore[no-untyped-def]
     }
 
 
-@router.post("", summary="创建偏差")
+@router.post("", summary="创建偏差", response_model=DeviationCreateResponse)
 async def create_deviation(  # type: ignore[no-untyped-def]
     request: DeviationCreateRequest,
     session: AsyncSession = Depends(get_db_session),
@@ -449,7 +457,7 @@ async def create_deviation(  # type: ignore[no-untyped-def]
     }
 
 
-@router.get("/{deviation_id}", summary="获取偏差详情")
+@router.get("/{deviation_id}", summary="获取偏差详情", response_model=DeviationDetailResponse)
 async def get_deviation(  # type: ignore[no-untyped-def]
     deviation_id: str,
     session: AsyncSession = Depends(get_db_session),
@@ -498,7 +506,7 @@ async def get_deviation(  # type: ignore[no-untyped-def]
     }
 
 
-@router.put("/{deviation_id}", summary="更新偏差")
+@router.put("/{deviation_id}", summary="更新偏差", response_model=DeviationEmptyResponse)
 async def update_deviation(  # type: ignore[no-untyped-def]
     deviation_id: str,
     request: DeviationUpdateRequest,
@@ -547,7 +555,7 @@ async def update_deviation(  # type: ignore[no-untyped-def]
     return {"code": 200, "message": "更新成功", "data": None}
 
 
-@router.delete("/{deviation_id}", summary="删除偏差")
+@router.delete("/{deviation_id}", summary="删除偏差", response_model=DeviationEmptyResponse)
 async def delete_deviation(  # type: ignore[no-untyped-def]
     deviation_id: str,
     session: AsyncSession = Depends(get_db_session),
@@ -574,7 +582,7 @@ async def delete_deviation(  # type: ignore[no-untyped-def]
     return {"code": 200, "message": "删除成功", "data": None}
 
 
-@router.post("/{deviation_id}/submit", summary="提交偏差（分阶段）")
+@router.post("/{deviation_id}/submit", summary="提交偏差（分阶段）", response_model=DeviationSubmitResponse)
 async def submit_deviation(  # type: ignore[no-untyped-def]
     deviation_id: str,
     target_status: str = Query(..., description="目标状态: basic_completed/detail_completed/completed"),
@@ -825,7 +833,7 @@ async def submit_deviation(  # type: ignore[no-untyped-def]
     }
 
 
-@router.get("", summary="偏差列表")
+@router.get("", summary="偏差列表", response_model=DeviationListResponse)
 async def list_deviations(  # type: ignore[no-untyped-def]
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -920,7 +928,7 @@ async def list_deviations(  # type: ignore[no-untyped-def]
 # ============ 附件管理 API ============
 
 
-@router.get("/{deviation_id}/attachments", summary="获取偏差附件列表")
+@router.get("/{deviation_id}/attachments", summary="获取偏差附件列表", response_model=DeviationAttachmentListResponse)
 async def list_attachments(  # type: ignore[no-untyped-def]
     deviation_id: str,
     session: AsyncSession = Depends(get_db_session),
@@ -963,7 +971,7 @@ async def list_attachments(  # type: ignore[no-untyped-def]
     return {"code": 200, "message": "success", "data": attachments}
 
 
-@router.post("/{deviation_id}/attachments", summary="上传偏差附件")
+@router.post("/{deviation_id}/attachments", summary="上传偏差附件", response_model=DeviationUploadResponse)
 async def upload_attachment(  # type: ignore[no-untyped-def]
     deviation_id: str,
     file: UploadFile = File(...),
