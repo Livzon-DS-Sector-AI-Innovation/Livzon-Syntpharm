@@ -29,6 +29,7 @@ import {
   OnboardingRecordListResponse,
   DepartureRecordListResponse,
   DepartureRecord,
+  CandidateListParams,
   CandidateListResponse,
   Candidate,
   CandidateResponse,
@@ -45,7 +46,11 @@ import {
   PrejobTemplate,
   EmployeeResponse,
   TrainingPlanResponse,
+  ImportCounts,
+  SyncOpenIdsResult,
 } from '@/types/hr'
+
+import type { ApiResponse, MessageResponse } from '@/types/common'
 
 import {
   fetchEmployeesApi,
@@ -193,7 +198,7 @@ export async function deleteEmployee(id: string) {
 export async function uploadEmployeesAction(formData: FormData) {
   const res = await uploadEmployeesApi(formData)
   revalidatePath('/hr/profile')
-  return res as { code: number; data: { created: number; updated: number }; message?: string }
+  return res as ApiResponse<ImportCounts>
 }
 
 // ─── Feishu Sync Actions ───
@@ -308,7 +313,7 @@ export async function deleteOffboardingRecord(id: string) {
 export async function createAnnualTrainingPlan(data: { year: number; department: string; status: string }) {
   const res = await createAnnualTrainingPlanApi(data)
   revalidatePath('/hr/training/annual-plan')
-  return res as { code: number; message: string; data: AnnualTrainingPlan }
+  return res as ApiResponse<AnnualTrainingPlan>
 }
 
 export async function deleteAnnualTrainingPlan(id: string) {
@@ -446,7 +451,7 @@ export async function fetchCandidateById(id: string): Promise<CandidateResponse>
   return fetchCandidateByIdApi(id) as Promise<CandidateResponse>
 }
 
-export async function fetchCandidates(params: Record<string, unknown> = {}): Promise<CandidateListResponse> {
+export async function fetchCandidates(params: CandidateListParams = {}): Promise<CandidateListResponse> {
   return fetchCandidatesApi(params).catch(() => ({ code: 0, message: '', data: [] as Candidate[], meta: { page: 1, page_size: 20, total: 0 } }) as CandidateListResponse)
 }
 
@@ -474,8 +479,8 @@ export async function fetchAnnualTrainingPlanById(id: string): Promise<TrainingP
   return fetchAnnualTrainingPlanByIdApi(id) as Promise<TrainingPlanResponse>
 }
 
-export async function fetchPlanItems(id: string): Promise<{ code: number; message: string; data: AnnualTrainingPlanItem[] }> {
-  return fetchPlanItemsApi(id) as Promise<{ code: number; message: string; data: AnnualTrainingPlanItem[] }>
+export async function fetchPlanItems(id: string): Promise<ApiResponse<AnnualTrainingPlanItem[]>> {
+  return fetchPlanItemsApi(id) as Promise<ApiResponse<AnnualTrainingPlanItem[]>>
 }
 
 export async function fetchTrainingRecords(params: Record<string, unknown> = {}): Promise<TrainingLedgerListResponse> {
@@ -493,7 +498,7 @@ export async function fetchEmployeeByNumber(employeeNumber: string): Promise<Emp
 export async function syncTrainingSpecialistsFeishuOpenIds() {
   const res = await syncTrainingSpecialistsFeishuOpenIdsApi()
   revalidatePath('/hr/training/specialists')
-  return res as { code: number; message: string; data: { synced: number; failed: number } }
+  return res as ApiResponse<SyncOpenIdsResult>
 }
 
 // ─── 飞书同步 Actions (from lib/api/hr.ts) ───
@@ -596,7 +601,7 @@ export async function uploadAnnualTrainingPlan(file: File) {
   fd.append('file', file)
   const res = await uploadAnnualTrainingPlanApi(fd)
   revalidatePath('/hr')
-  return res as { code: number; message: string }
+  return res as MessageResponse
 }
 
 export async function uploadTrainers(file: File) {
@@ -604,7 +609,7 @@ export async function uploadTrainers(file: File) {
   fd.append('file', file)
   const res = await uploadTrainersApi(fd)
   revalidatePath('/hr/training/trainers')
-  return res as { code: number; data: { created: number; updated: number }; message?: string }
+  return res as ApiResponse<ImportCounts>
 }
 
 export async function uploadSopCatalog(file: File) {
@@ -612,7 +617,7 @@ export async function uploadSopCatalog(file: File) {
   fd.append('file', file)
   const res = await uploadSopCatalogApi(fd)
   revalidatePath('/hr/training/sop-catalog')
-  return res as { code: number; data: { created: number; updated: number }; message?: string }
+  return res as ApiResponse<ImportCounts>
 }
 
 // ─── TrainingSession Actions ───
@@ -634,13 +639,13 @@ export async function fetchTrainingSessionsAction(
 export async function createTrainingSession(data: TrainingSessionCreateInput) {
   const res = await createTrainingSessionApi(data)
   revalidatePath('/hr/training/records')
-  return res as { code: number; message: string; data: TrainingSession }
+  return res as ApiResponse<TrainingSession>
 }
 
 export async function updateTrainingSession(id: string, data: TrainingSessionUpdateInput) {
   const res = await updateTrainingSessionApi(id, data)
   revalidatePath('/hr/training/records')
-  return res as { code: number; message: string; data: TrainingSession }
+  return res as ApiResponse<TrainingSession>
 }
 
 export async function deleteTrainingSession(id: string) {
@@ -652,21 +657,21 @@ export async function deleteTrainingSession(id: string) {
 export async function updateTrainingSessionStatus(id: string, status: string) {
   const res = await updateTrainingSessionStatusApi(id, status)
   revalidatePath('/hr/training/records')
-  return res as { code: number; message: string; data: TrainingSession }
+  return res as ApiResponse<TrainingSession>
 }
 
 export async function fetchTrainingSessionByIdAction(id: string): Promise<TrainingSessionResponse> {
   return fetchTrainingSessionByIdApi(id) as Promise<TrainingSessionResponse>
 }
 
-export async function sendTrainingSessionSelectTasksAction(id: string): Promise<{ code: number; message: string; data: SelectTask[] }> {
+export async function sendTrainingSessionSelectTasksAction(id: string): Promise<ApiResponse<SelectTask[]>> {
   const res = await sendTrainingSessionSelectTasksApi(id)
   revalidatePath('/hr/training/records')
-  return res as { code: number; message: string; data: SelectTask[] }
+  return res as ApiResponse<SelectTask[]>
 }
 
-export async function fetchTrainingSessionSelectTasksAction(id: string): Promise<{ code: number; message: string; data: SelectTask[] }> {
-  return fetchTrainingSessionSelectTasksApi(id) as Promise<{ code: number; message: string; data: SelectTask[] }>
+export async function fetchTrainingSessionSelectTasksAction(id: string): Promise<ApiResponse<SelectTask[]>> {
+  return fetchTrainingSessionSelectTasksApi(id) as Promise<ApiResponse<SelectTask[]>>
 }
 
 export async function sendTrainingSelectTaskAction(data: unknown) {
@@ -698,7 +703,7 @@ export async function submitTrainingSelectTaskAction(
 ) {
   const res = await submitTrainingSelectTaskApi(token, data)
   revalidatePath('/hr/training')
-  return res as { code: number; message: string; data: Record<string, unknown> }
+  return res as ApiResponse<Record<string, unknown>>
 }
 
 export async function createTrainingTeamAction(data: unknown) {
