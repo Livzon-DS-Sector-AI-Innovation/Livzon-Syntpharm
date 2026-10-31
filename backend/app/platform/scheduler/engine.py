@@ -96,7 +96,7 @@ class SchedulerEngine:
                     timeout=sleep_for,
                 )
             except TimeoutError:
-                pass  # normal — next tick
+                logger.exception("忽略异常 @ %s", "SchedulerEngine.run")  # normal — next tick
 
         logger.info("SchedulerEngine stopped")
 

@@ -1,5 +1,6 @@
 """Production business workflows live here."""
 
+import logging
 import uuid
 from datetime import datetime
 from typing import Any
@@ -37,6 +38,8 @@ from app.modules.production.schemas import (
     ProductionRecordCreate,
     ProductionRecordUpdate,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ProductionService:
@@ -360,7 +363,7 @@ class ProductionService:
                     if "quantity" in params:
                         total_input += params["quantity"]
                 except (json.JSONDecodeError, KeyError, TypeError, ValueError):
-                    pass
+                    logger.exception("忽略异常 @ %s", "ProductionService._sync_batch_input_output")
 
         # 汇总包装记录（累计所有包装产出量）
         total_output = 0.0
@@ -373,7 +376,7 @@ class ProductionService:
                     if "quantity" in params:
                         total_output += params["quantity"]
                 except (json.JSONDecodeError, KeyError, TypeError, ValueError):
-                    pass
+                    logger.exception("忽略异常 @ %s", "ProductionService._sync_batch_input_output")
 
         # 更新批次数据
         update_data = {}
@@ -422,7 +425,7 @@ class ProductionService:
                     if "quantity" in params:
                         record_input += params["quantity"]
                 except (json.JSONDecodeError, KeyError, TypeError, ValueError):
-                    pass
+                    logger.exception("忽略异常 @ %s", "ProductionService.calculate_material_balance")
             elif r.operation_type == "packaging" and r.parameters:
                 try:
                     import json
@@ -431,7 +434,7 @@ class ProductionService:
                     if "quantity" in params:
                         record_output += params["quantity"]
                 except (json.JSONDecodeError, KeyError, TypeError, ValueError):
-                    pass
+                    logger.exception("忽略异常 @ %s", "ProductionService.calculate_material_balance")
 
         # 投入量优先使用生产记录，如果没有则使用物料表
         total_input = record_input if record_input > 0 else material_input

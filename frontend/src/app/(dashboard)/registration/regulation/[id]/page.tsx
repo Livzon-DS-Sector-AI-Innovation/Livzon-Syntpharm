@@ -1,16 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
-import { Spin, Button, Tag, App } from 'antd'
+import { useQuery } from '@tanstack/react-query'
+import { Spin, Button, Tag } from 'antd'
 import {
   ArrowLeftOutlined, LinkOutlined, FileTextOutlined,
   WarningOutlined, CheckCircleOutlined, ClockCircleOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import Link from 'next/link'
-import { DocumentDetail, fetchDocumentDetail } from '@/lib/api/client/regulatory-tracker'
+import { fetchDocumentDetail } from '@/lib/api/client/regulatory-tracker'
 import { markDocumentRead } from '@/actions/regulatory-tracker'
+import { DataUnavailable } from '@/components/common/DataUnavailable'
 
 // 影响等级配置
 const IMPACT_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
@@ -50,32 +52,41 @@ const KEY_POINT_DIMENSIONS = [
 const DEPARTMENTS = ['注册', 'QA', 'QC', '研发', '生产', '验证']
 
 export default function RegulatoryDocumentDetailPage() {
-  const { message } = App.useApp()
   const params = useParams()
   const docId = params.id as string
 
-  const [doc, setDoc] = useState<DocumentDetail | null>(null)
-  const [loading, setLoading] = useState(true)
+  const detailQuery = useQuery({
+    queryKey: ['regulation-document', docId],
+    queryFn: () => fetchDocumentDetail(docId),
+  })
 
-  const _loadDetail = async () => {
-    setLoading(true)
-    try {
-      const data = await fetchDocumentDetail(docId)
-      setDoc(data)
-      // 自动标记已读
-      if (data.isNew) {
-        try {
-          await markDocumentRead(docId)
-        } catch { /* ignore */ }
-      }
-    } catch {
-      message.error('加载法规详情失败')
-    } finally {
-      setLoading(false)
-    }
+  const doc = detailQuery.data ?? null
+
+  // 加载成功后就地标记已读。
+  // 这是**副作用**而非取数（取数在 useQuery 内），所以用 effect 承载；
+  // React Query v5 已移除 useQuery 的 onSuccess，改用 ref 记录已处理的 docId，
+  // 保证 refetch / 命中缓存 / StrictMode 双调用都不会重复写接口。
+  const markedReadDocIdRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!doc?.isNew) return
+    if (markedReadDocIdRef.current === docId) return
+    markedReadDocIdRef.current = docId
+    void markDocumentRead(docId).catch(() => {
+      /* 标记已读失败不阻断阅读，下次进入详情时重试 */
+    })
+  }, [doc, docId])
+
+  if (detailQuery.isError) {
+    return (
+      <DataUnavailable
+        title="法规详情加载失败"
+        description="可能是后端服务暂时不可用，请稍后重试。"
+        onRetry={() => void detailQuery.refetch()}
+      />
+    )
   }
 
-  if (loading) {
+  if (detailQuery.isPending) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Spin size="large" />

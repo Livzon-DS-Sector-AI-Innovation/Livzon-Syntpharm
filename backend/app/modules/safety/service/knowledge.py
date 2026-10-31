@@ -44,7 +44,7 @@ class KnowledgeService:
                 if os.path.exists(abs_path):
                     os.remove(abs_path)
         except OSError:
-            pass
+            logger.exception("忽略异常 @ %s", "KnowledgeService._cleanup_file")
 
     async def get_articles(
         self,

@@ -3,12 +3,15 @@
 import { revalidatePath } from 'next/cache'
 import {
   AuthorizationLetterCreateInput,
-  AuthorizationLetterListResponse,
-  ProductListResponse,
-  ReferenceStandardListResponse,
-  SupplementaryReplyListResponse,
+  AuthorizationLetterListItem,
+  ParseCOAResponse,
+  ProductInfo,
+  ReferenceStandardListItem,
+  RegistrationProject,
+  SupplementaryReplyListItem,
 } from '@/types/registration'
 import type { components } from '@/types/generated/schema'
+import type { PageResult } from '@/lib/api/page'
 import {
   generateAuthorizationLetter as generateAuthorizationLetterApi,
   deleteAuthorizationLetter as deleteAuthorizationLetterApi,
@@ -18,6 +21,7 @@ import {
   deleteReferenceStandard as deleteReferenceStandardApi,
   fetchAuthorizationLetters as fetchAuthorizationLettersApi,
   fetchRegistrationProducts as fetchRegistrationProductsApi,
+  fetchRegistrationProjects as fetchRegistrationProjectsApi,
   fetchReferenceStandards as fetchReferenceStandardsApi,
   fetchSupplementaryReplies as fetchSupplementaryRepliesApi,
   createDrug as createDrugApi,
@@ -31,24 +35,6 @@ import {
 
 type DrugCreate = components['schemas']['DrugCreate']
 type DrugUpdate = components['schemas']['DrugUpdate']
-
-interface ParseCOAResponse {
-  metadata: {
-    drug_name?: string
-    reference_substance_name?: string
-    batch_number?: string
-    manufacturer?: string
-    english_name?: string
-    molecular_formula?: string
-    molecular_weight?: string
-    cas_number?: string
-    content?: string
-    moisture?: string
-    rsd?: string
-    expiration_date?: string
-    storage_condition?: string
-  }
-}
 
 export async function generateAuthorizationLetter(
   formData: FormData,
@@ -213,24 +199,28 @@ export async function deleteReferenceStandardAction(
 
 export async function fetchAuthorizationLettersServer(
   params: { page: number; page_size: number }
-): Promise<AuthorizationLetterListResponse> {
-  return fetchAuthorizationLettersApi(params) as unknown as AuthorizationLetterListResponse
+): Promise<PageResult<AuthorizationLetterListItem>> {
+  return fetchAuthorizationLettersApi(params)
 }
 
-export async function fetchProductsServer(): Promise<ProductListResponse> {
-  return fetchRegistrationProductsApi() as unknown as ProductListResponse
+export async function fetchProductsServer(): Promise<ProductInfo[]> {
+  return fetchRegistrationProductsApi()
+}
+
+export async function fetchRegistrationProjectsServer(): Promise<RegistrationProject[]> {
+  return fetchRegistrationProjectsApi()
 }
 
 export async function fetchReferenceStandardsServer(
   params: { page: number; page_size: number }
-): Promise<ReferenceStandardListResponse> {
-  return fetchReferenceStandardsApi(params) as unknown as ReferenceStandardListResponse
+): Promise<PageResult<ReferenceStandardListItem>> {
+  return fetchReferenceStandardsApi(params)
 }
 
 export async function fetchSupplementaryRepliesServer(
   params: { page: number; page_size: number }
-): Promise<SupplementaryReplyListResponse> {
-  return fetchSupplementaryRepliesApi(params) as unknown as SupplementaryReplyListResponse
+): Promise<PageResult<SupplementaryReplyListItem>> {
+  return fetchSupplementaryRepliesApi(params)
 }
 
 export async function createDrug(
@@ -259,7 +249,7 @@ export async function deleteDrug(
 }
 
 export async function parseCOA(file: File): Promise<ParseCOAResponse> {
-  return parseCOAApi(file) as unknown as ParseCOAResponse
+  return parseCOAApi(file)
 }
 
 export async function createRegistrationProject(

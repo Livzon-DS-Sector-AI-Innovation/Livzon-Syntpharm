@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import BadRequestException, NotFoundException
 from app.modules.quality.qms.schemas import (
     ApprovalRecordListApiResponse,
     ApprovalRecordResponse,
@@ -146,17 +147,16 @@ async def handler(  # noqa: F811
     db: AsyncSession = Depends(get_db),
 ) -> InspectionStandardDeleteApiResponse:  # noqa: F821  # type: ignore[name-defined]
     """删除检验标准"""
-    from fastapi import HTTPException
 
     service = QualityService(db)
     try:
         result = await service.delete_standard(standard_id)
         if not result:
-            raise HTTPException(status_code=404, detail="检验标准不存在")
+            raise NotFoundException("检验标准")
         await db.commit()
         return InspectionStandardDeleteApiResponse(message="删除成功")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post(  # type: ignore[no-redef]

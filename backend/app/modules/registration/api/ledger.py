@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
-from app.core.response import error_response, success_response
+from app.core.response import DataResponse, error_response
 from app.modules.registration.schemas.ledger import (
     CoppCertificateCreate,
     CoppCertificateResponse,
@@ -19,9 +19,11 @@ from app.modules.registration.schemas.ledger import (
     DomesticApprovalResponse,
     InternationalReviewCreate,
     InternationalReviewResponse,
+    LedgerImportResult,
     LedgerSummary,
     OverseasApprovalCreate,
     OverseasApprovalResponse,
+    ReviewingDrugItem,
     WcCertificateCreate,
     WcCertificateResponse,
 )
@@ -42,11 +44,11 @@ async def get(
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[list[DomesticApprovalResponse]]:
     items = await ledger_service.list_domestic_approvals(db, skip, limit)
     adapter = TypeAdapter(list[DomesticApprovalResponse])
     validated = adapter.validate_python(items)
-    return success_response(data=adapter.dump_python(validated, mode="json"))
+    return DataResponse[list[DomesticApprovalResponse]](data=validated)
 
 
 @router.post("/domestic-approvals", response_model=DomesticApprovalResponse)
@@ -66,7 +68,7 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[LedgerImportResult]:
     try:
         content = await file.read()
         file_size = len(content)
@@ -89,7 +91,7 @@ async def post(  # noqa: F811
         # 如果解析失败，直接返回
         if parse_result["success_count"] == 0:
             error_msg = parse_result["errors"][0] if parse_result["errors"] else "未解析到有效数据"
-            return success_response(
+            return DataResponse[LedgerImportResult](
                 data={
                     "count": 0,
                     "message": f"文件已解析但未导入有效数据: {error_msg}",
@@ -120,7 +122,7 @@ async def post(  # noqa: F811
         if db_errors:
             message += f"，{len(db_errors)} 条数据库写入失败"
 
-        return success_response(
+        return DataResponse[LedgerImportResult](
             data={
                 "count": len(created),
                 "message": message,
@@ -162,11 +164,11 @@ async def get(  # noqa: F811
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[list[OverseasApprovalResponse]]:
     items = await ledger_service.list_overseas_approvals(db, skip, limit)
     adapter = TypeAdapter(list[OverseasApprovalResponse])
     validated = adapter.validate_python(items)
-    return success_response(data=adapter.dump_python(validated, mode="json"))
+    return DataResponse[list[OverseasApprovalResponse]](data=validated)
 
 
 @router.post("/overseas-approvals", response_model=OverseasApprovalResponse)  # type: ignore[no-redef]
@@ -186,7 +188,7 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[LedgerImportResult]:
     try:
         content = await file.read()
         file_size = len(content)
@@ -208,7 +210,7 @@ async def post(  # noqa: F811
 
         if parse_result["success_count"] == 0:
             error_msg = parse_result["errors"][0] if parse_result["errors"] else "未解析到有效数据"
-            return success_response(
+            return DataResponse[LedgerImportResult](
                 data={
                     "count": 0,
                     "message": f"文件已解析但未导入有效数据: {error_msg}",
@@ -238,7 +240,7 @@ async def post(  # noqa: F811
         if db_errors:
             message += f"，{len(db_errors)} 条数据库写入失败"
 
-        return success_response(
+        return DataResponse[LedgerImportResult](
             data={
                 "count": len(created),
                 "message": message,
@@ -279,11 +281,11 @@ async def get(  # noqa: F811
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[list[InternationalReviewResponse]]:
     items = await ledger_service.list_international_reviews(db, skip, limit)
     adapter = TypeAdapter(list[InternationalReviewResponse])
     validated = adapter.validate_python(items)
-    return success_response(data=adapter.dump_python(validated, mode="json"))
+    return DataResponse[list[InternationalReviewResponse]](data=validated)
 
 
 @router.post("/international-reviews", response_model=InternationalReviewResponse)  # type: ignore[no-redef]
@@ -303,14 +305,14 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[LedgerImportResult]:
     try:
         content = await file.read()
         parse_result = ledger_service.import_international_reviews_from_excel(content)
 
         if parse_result["success_count"] == 0:
             error_msg = parse_result["errors"][0] if parse_result["errors"] else "未解析到有效数据"
-            return success_response(
+            return DataResponse[LedgerImportResult](
                 data={
                     "count": 0,
                     "message": f"文件已解析但未导入有效数据: {error_msg}",
@@ -340,7 +342,7 @@ async def post(  # noqa: F811
         if db_errors:
             message += f"，{len(db_errors)} 条数据库写入失败"
 
-        return success_response(
+        return DataResponse[LedgerImportResult](
             data={
                 "count": len(created),
                 "message": message,
@@ -381,11 +383,11 @@ async def get(  # noqa: F811
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[list[CoppCertificateResponse]]:
     items = await ledger_service.list_copp_certificates(db, skip, limit)
     adapter = TypeAdapter(list[CoppCertificateResponse])
     validated = adapter.validate_python(items)
-    return success_response(data=adapter.dump_python(validated, mode="json"))
+    return DataResponse[list[CoppCertificateResponse]](data=validated)
 
 
 @router.post("/copp-certificates", response_model=CoppCertificateResponse)  # type: ignore[no-redef]
@@ -405,14 +407,14 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[LedgerImportResult]:
     try:
         content = await file.read()
         parse_result = ledger_service.import_copp_certificates_from_excel(content)
 
         if parse_result["success_count"] == 0:
             error_msg = parse_result["errors"][0] if parse_result["errors"] else "未解析到有效数据"
-            return success_response(
+            return DataResponse[LedgerImportResult](
                 data={
                     "count": 0,
                     "message": f"文件已解析但未导入有效数据: {error_msg}",
@@ -442,7 +444,7 @@ async def post(  # noqa: F811
         if db_errors:
             message += f"，{len(db_errors)} 条数据库写入失败"
 
-        return success_response(
+        return DataResponse[LedgerImportResult](
             data={
                 "count": len(created),
                 "message": message,
@@ -483,11 +485,11 @@ async def get(  # noqa: F811
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[list[WcCertificateResponse]]:
     items = await ledger_service.list_wc_certificates(db, skip, limit)
     adapter = TypeAdapter(list[WcCertificateResponse])
     validated = adapter.validate_python(items)
-    return success_response(data=adapter.dump_python(validated, mode="json"))
+    return DataResponse[list[WcCertificateResponse]](data=validated)
 
 
 @router.post("/wc-certificates", response_model=WcCertificateResponse)  # type: ignore[no-redef]
@@ -507,14 +509,14 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[LedgerImportResult]:
     try:
         content = await file.read()
         parse_result = ledger_service.import_wc_certificates_from_excel(content)
 
         if parse_result["success_count"] == 0:
             error_msg = parse_result["errors"][0] if parse_result["errors"] else "未解析到有效数据"
-            return success_response(
+            return DataResponse[LedgerImportResult](
                 data={
                     "count": 0,
                     "message": f"文件已解析但未导入有效数据: {error_msg}",
@@ -544,7 +546,7 @@ async def post(  # noqa: F811
         if db_errors:
             message += f"，{len(db_errors)} 条数据库写入失败"
 
-        return success_response(
+        return DataResponse[LedgerImportResult](
             data={
                 "count": len(created),
                 "message": message,
@@ -583,10 +585,9 @@ async def get(  # noqa: F811
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[LedgerSummary]:
     summary = await ledger_service.get_ledger_summary(db)
-    adapter = TypeAdapter(LedgerSummary)
-    return success_response(data=adapter.dump_python(summary, mode="json"))
+    return DataResponse[LedgerSummary](data=summary)
 
 
 # ── Reviewing (from drugs table) ───────────────────────────────────
@@ -597,7 +598,7 @@ async def get(  # noqa: F811
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[list[ReviewingDrugItem]]:
     """从 drugs 表获取审评中的品种"""
     from sqlalchemy import select
 
@@ -633,4 +634,4 @@ async def get(  # noqa: F811
             }
         )
 
-    return success_response(data=items)
+    return DataResponse[list[ReviewingDrugItem]](data=items)

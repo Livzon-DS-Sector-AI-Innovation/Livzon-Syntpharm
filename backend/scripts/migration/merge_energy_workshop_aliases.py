@@ -18,11 +18,12 @@ import asyncio
 import json
 import os
 import sys
+import uuid
 from typing import Any
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from sqlalchemy import text  # noqa: E402
+from sqlalchemy import and_, column, func, select, table, text, update  # noqa: E402
 from sqlalchemy.ext.asyncio import AsyncSession  # noqa: E402
 
 from app.core.database import async_session_factory  # noqa: E402
@@ -75,6 +76,14 @@ def _checked_column(name: str) -> str:
     return name
 
 
+def _energy_table(name: str, *columns: str):
+    """把白名单校验过的表名转成 SQLAlchemy 表对象。
+
+    标识符由 Core 表达式生成，不再以字符串插值的方式进入 SQL。
+    """
+    return table(_checked_table(name), *(column(c) for c in columns), schema="energy")
+
+
 def _rollup_markers(canonical: str) -> list[str]:
     """规范实体若是合计行，改名前必须补上排除标记。
 
@@ -119,34 +128,38 @@ async def _find_active(db: AsyncSession, name: str) -> Any:
 
 
 async def _find_conflicts(db: AsyncSession, table: str, src_id: str, tgt_id: str) -> list[Any]:
-    checked_table = _checked_table(table)
     cols = [_checked_column(c) for c in CONFLICT_COLUMNS[table]]
-    on_clause = " and ".join(f"t.{c} = m.{c}" for c in cols)
-    sql = (
-        f"select {', '.join('m.' + c for c in cols)} from energy.{checked_table} m "
-        f"join energy.{checked_table} t on t.workshop_id = cast(:tgt as uuid) and {on_clause} "
-        "where m.workshop_id = cast(:src as uuid)"
+    src_uuid, tgt_uuid = uuid.UUID(str(src_id)), uuid.UUID(str(tgt_id))
+
+    alias_self = _energy_table(table, "workshop_id", *cols).alias("m")
+    alias_tgt = _energy_table(table, "workshop_id", *cols).alias("t")
+    join_cond = and_(
+        alias_tgt.c.workshop_id == tgt_uuid,
+        *(alias_tgt.c[c] == alias_self.c[c] for c in cols),
     )
-    rows = (await db.execute(text(sql), {"src": str(src_id), "tgt": str(tgt_id)})).fetchall()
+    stmt = (
+        select(*(alias_self.c[c] for c in cols))
+        .select_from(alias_self.join(alias_tgt, join_cond))
+        .where(alias_self.c.workshop_id == src_uuid)
+    )
+    rows = (await db.execute(stmt)).fetchall()
     return list(rows)
 
 
 async def _repoint(db: AsyncSession, table: str, src_id: str, tgt_id: str, apply: bool) -> int:
-    checked_table = _checked_table(table)
-    row = (
-        await db.execute(
-            text(f"select count(*) from energy.{checked_table} where workshop_id = cast(:src as uuid)"),
-            {"src": str(src_id)},
-        )
-    ).one()
-    count = int(row[0])
+    src_uuid, tgt_uuid = uuid.UUID(str(src_id)), uuid.UUID(str(tgt_id))
+    stmt_table = _energy_table(table, "workshop_id", "updated_at")
+
+    count = int(
+        (
+            await db.execute(select(func.count()).select_from(stmt_table).where(stmt_table.c.workshop_id == src_uuid))
+        ).scalar_one()
+    )
     if count and apply:
         await db.execute(
-            text(
-                f"update energy.{checked_table} set workshop_id = cast(:tgt as uuid), updated_at = now() "
-                "where workshop_id = cast(:src as uuid)"
-            ),
-            {"src": str(src_id), "tgt": str(tgt_id)},
+            update(stmt_table)
+            .where(stmt_table.c.workshop_id == src_uuid)
+            .values(workshop_id=tgt_uuid, updated_at=func.now())
         )
     return count
 
@@ -205,15 +218,13 @@ async def run(apply: bool, audit_path: str | None) -> int:
                         ),
                         {"name": canonical, "code": canonical, "id": str(src.id)},
                     )
-                    for table, column in NAME_STRING_TABLES:
-                        checked_table = _checked_table(table)
-                        checked_column = _checked_column(column)
+                    for table_name, column_name in NAME_STRING_TABLES:
+                        checked_col = _checked_column(column_name)
+                        name_table = _energy_table(table_name, checked_col)
                         await db.execute(
-                            text(
-                                f"update energy.{checked_table} set {checked_column} = :name "
-                                f"where {checked_column} = :old"
-                            ),
-                            {"name": canonical, "old": alias},
+                            update(name_table)
+                            .where(name_table.c[checked_col] == alias)
+                            .values({checked_col: canonical})
                         )
                     await _add_rollup_markers(db, src.id, canonical)
                 actions.append({"type": "rename", "from": alias, "to": canonical, "workshop_id": str(src.id)})

@@ -197,7 +197,7 @@ def generate_q3c_report(analysis, flag_class1=True, ich_data_source="") -> Any: 
                             }
                         )
                 except (ValueError, TypeError):
-                    pass
+                    logger.exception("忽略异常 @ %s", "generate_q3c_report")
 
     lines.append("### 2.1 批批检验 (Routine Release)")
     lines.append("")

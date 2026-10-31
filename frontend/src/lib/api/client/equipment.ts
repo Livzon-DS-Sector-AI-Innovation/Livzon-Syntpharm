@@ -1,3 +1,4 @@
+import type { components } from '@/types/generated/schema'
 import type { DepartmentOption } from '@/types/equipment/generated-bridge'
 export type { DepartmentOption } from '@/types/equipment/generated-bridge'
 import {
@@ -308,4 +309,14 @@ export async function batchDeleteEquipments(ids: string[]): Promise<void> {
     method: 'POST',
     body: JSON.stringify({ ids }),
   })
+}
+
+/** Excel 批量同步设备（上传 FormData，属上传例外） */
+export async function syncEquipmentExcel(formData: FormData, dryRun: boolean) {
+  const url = dryRun
+    ? '/api/v1/equipment/equipments/sync-excel?dry_run=true'
+    : '/api/v1/equipment/equipments/sync-excel'
+  const res = await fetch(url, { method: 'POST', body: formData })
+  if (!res.ok) throw new Error(`服务器响应错误: ${res.status}`)
+  return (await res.json()) as components['schemas']['EquipmentSyncResponse']
 }

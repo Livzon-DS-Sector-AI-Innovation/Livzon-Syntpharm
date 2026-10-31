@@ -3,6 +3,7 @@
 提供仪器设备台账、校准规则配置、校准记录、审批记录的数据库操作
 """
 
+import logging
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
@@ -18,6 +19,8 @@ from app.modules.quality.qms.instrument_models import (
     InstrumentCalibrationRecord,
     InstrumentCalibrationRule,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class InstrumentRepository:
@@ -224,7 +227,7 @@ class CalibrationRuleRepository:
                 try:
                     instrument_id = UUID(instrument_id)
                 except ValueError:
-                    pass
+                    logger.exception("忽略异常 @ %s", "CalibrationRuleRepository.list_by_instrument")
             if isinstance(instrument_id, UUID):
                 query = query.where(InstrumentCalibrationRule.instrument_id == instrument_id)
 
@@ -314,7 +317,8 @@ class CalibrationRecordRepository:
                 try:
                     instrument_id = UUID(instrument_id)
                 except ValueError:
-                    pass  # 无效UUID，跳过此条件
+                    # 无效 UUID：跳过该过滤条件
+                    logger.exception("忽略异常 @ %s", "CalibrationRecordRepository.list_with_filter")
             if isinstance(instrument_id, UUID):
                 query = query.where(InstrumentCalibrationRecord.instrument_id == instrument_id)
         if rule_id:
@@ -323,7 +327,8 @@ class CalibrationRecordRepository:
                 try:
                     rule_id = UUID(rule_id)
                 except ValueError:
-                    pass  # 无效UUID，跳过此条件
+                    # 无效 UUID：跳过该过滤条件
+                    logger.exception("忽略异常 @ %s", "CalibrationRecordRepository.list_with_filter")
             if isinstance(rule_id, UUID):
                 query = query.where(InstrumentCalibrationRecord.rule_id == rule_id)
         if calibration_no:

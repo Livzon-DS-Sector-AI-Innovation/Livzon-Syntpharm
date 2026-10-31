@@ -1,6 +1,8 @@
 
 // Quality management types (from shared/api.interface.ts)
 
+import type { components } from '@/types/generated/schema'
+
 // ============ Deviation Types ============
 export type DeviationLevel = 'minor' | 'moderate' | 'major';
 export type DeviationStatus =
@@ -623,3 +625,12 @@ export interface AiLogFilter {
   end_date?: string
   keyword?: string
 }
+
+/** 偏差报告 Word 模板上传并解析后的结果（来自后端 OpenAPI 契约） */
+export type DeviationReportUploadResult = components['schemas']['DeviationReportUploadData']
+
+/** 偏差报告 AI 优化结果（来自后端 OpenAPI 契约） */
+export type DeviationOptimizeResult = components['schemas']['DeviationOptimizeData']
+
+/** 偏差报告 AI 优化类型 */
+export type DeviationReportOptimizeType = 'polish' | 'summarize' | 'expand' | 'simplify'

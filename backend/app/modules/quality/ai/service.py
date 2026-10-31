@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.quality.ai.models import QmsAiLog
@@ -78,6 +78,7 @@ class AiLogService:
         operate_type: str | None = None,
         operator: str | None = None,
         bill_no: str | None = None,
+        keyword: str | None = None,
         start_date: datetime | None = None,
         end_date: datetime | None = None,
         page: int = 1,
@@ -89,6 +90,7 @@ class AiLogService:
             operate_type: 操作类型过滤
             operator: 操作人过滤
             bill_no: 单据编号过滤
+            keyword: 关键字模糊过滤（操作类型/操作人/单据编号任一命中）
             start_date: 开始时间过滤
             end_date: 结束时间过滤
             page: 页码
@@ -97,7 +99,8 @@ class AiLogService:
         Returns:
             (日志列表, 总数)
         """
-        filters = []
+        # 软删除记录不进列表，与 get_by_id 的过滤口径保持一致
+        filters: list[Any] = [QmsAiLog.is_deleted.is_(False)]
 
         if operate_type:
             filters.append(QmsAiLog.operate_type == operate_type)
@@ -105,6 +108,15 @@ class AiLogService:
             filters.append(QmsAiLog.operator == operator)
         if bill_no:
             filters.append(QmsAiLog.bill_no == bill_no)
+        if keyword:
+            pattern = f"%{keyword}%"
+            filters.append(
+                or_(
+                    QmsAiLog.operate_type.ilike(pattern),
+                    QmsAiLog.operator.ilike(pattern),
+                    QmsAiLog.bill_no.ilike(pattern),
+                )
+            )
         if start_date:
             filters.append(QmsAiLog.created_at >= start_date)
         if end_date:
@@ -126,6 +138,14 @@ class AiLogService:
         logs = list(result.scalars().all())
 
         return logs, total
+
+    async def get_by_id(self, log_id: uuid.UUID) -> QmsAiLog | None:
+        """按 ID 查询单条 AI 日志，已软删除的返回 None。"""
+        stmt = select(QmsAiLog).where(
+            QmsAiLog.id == log_id,
+            QmsAiLog.is_deleted.is_(False),
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none()
 
 
 def log_ai_interaction(

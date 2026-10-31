@@ -134,7 +134,7 @@ async def get(
         try:
             target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
         except ValueError:
-            pass
+            logger.exception("忽略异常 @ %s", "get")
 
     try:
         next_lot_no = await service.get_next_incoming_lot_no(target_date)
@@ -305,7 +305,7 @@ async def get(  # noqa: F811
                 if cell.value and len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
             except (AttributeError, TypeError):
-                pass
+                logger.exception("忽略异常 @ %s", "get")
         adjusted_width = min(max_length + 2, 30)
         column.width = adjusted_width
 

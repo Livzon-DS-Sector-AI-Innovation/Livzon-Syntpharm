@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession  # noqa: E402
 from app.core.database import get_db  # noqa: E402
 from app.core.deps import PermissionContext, RequiredUser, require_permission  # noqa: E402
 from app.core.job_store import JobStore, get_job_state_or_404, start_job  # noqa: E402
-from app.core.response import paginated_response, success_response  # noqa: E402
+from app.core.response import build_response, paginated_response  # noqa: E402
 from app.shared.module_api import create_module_router  # noqa: E402
 from app.shared.module_registry import MODULES_BY_CODE  # noqa: E402
 from app.shared.schemas import (  # noqa: E402
@@ -83,10 +83,10 @@ async def post(
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     verification = await service.create_verification(payload)
 
-    return success_response(
+    return build_response(
         data=verification.model_dump(mode="json"),
         message="标签复核记录创建成功",
-        status_code=201,
+        code=201,
     )
 
 
@@ -98,7 +98,7 @@ async def get(  # noqa: F811
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     stats = await service.get_statistics()
 
-    return success_response(data=stats.model_dump(mode="json"))
+    return build_response(data=stats.model_dump(mode="json"))
 
 
 @router.get(
@@ -115,7 +115,7 @@ async def handler(
 
     data = [v.model_dump(mode="json") for v in verifications]
 
-    return success_response(data=data)
+    return build_response(data=data)
 
 
 @router.get(  # type: ignore[no-redef]
@@ -130,7 +130,7 @@ async def handler(  # noqa: F811
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     verification = await service.get_verification(verification_id)
 
-    return success_response(
+    return build_response(
         data=verification.model_dump(mode="json"),
     )
 
@@ -148,7 +148,7 @@ async def handler(  # noqa: F811
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     verification = await service.update_verification(verification_id, payload)
 
-    return success_response(
+    return build_response(
         data=verification.model_dump(mode="json"),
         message="标签复核记录更新成功",
     )
@@ -166,7 +166,7 @@ async def handler(  # noqa: F811
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     await service.delete_verification(verification_id)
 
-    return success_response(message="标签复核记录删除成功")
+    return build_response(message="标签复核记录删除成功")
 
 
 @router.post(  # type: ignore[no-redef]
@@ -207,7 +207,7 @@ async def handler(  # noqa: F811
 
     file_key = f"label-verification/{safe_name}"
 
-    return success_response(
+    return build_response(
         data={
             "file_key": file_key,
             "file_name": file.filename or safe_name,

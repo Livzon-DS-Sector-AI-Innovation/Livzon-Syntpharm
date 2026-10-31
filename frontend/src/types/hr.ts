@@ -601,6 +601,19 @@ export interface Candidate {
   updated_at?: string
 }
 
+/** 候选人列表查询参数（对应 GET /hr/candidates 支持的字段，见 OpenAPI list_candidates） */
+export interface CandidateListParams {
+  position?: string
+  education?: string
+  /** 推荐等级筛选，支持逗号分隔多个值（如「推荐,强烈推荐」） */
+  recommendation_level?: string
+  /** 飞书同步状态筛选：synced / failed / unsynced */
+  sync_status?: string
+  keyword?: string
+  page?: number
+  page_size?: number
+}
+
 export interface CandidateListResponse {
   code: number
   message: string
@@ -884,7 +897,21 @@ export type PrejobTemplateSaveResponse = { code: number; message: string; data: 
 
 // ─── Upload Types ───
 
-export type UploadEmployeesResponse = { code: number; message: string; data: { created: number; updated: number } }
+/** 导入类操作（人员名单、培训师、SOP 目录）的计数结果 */
+export interface ImportCounts {
+  created: number
+  updated: number
+}
+
+/** 飞书 open_id 同步结果 */
+export interface SyncOpenIdsResult {
+  synced: number
+  failed: number
+}
+
+
+
+export type UploadEmployeesResponse = { code: number; message: string; data: ImportCounts }
 
 // SOP Catalog item type
 export interface SopCatalogItem {

@@ -1,5 +1,6 @@
 """Inspection service: business logic for routes, tasks, photos."""
 
+import logging
 import os
 import uuid
 from datetime import UTC, date, datetime, timedelta
@@ -31,6 +32,8 @@ from app.modules.equipment.models.work_order import WorkOrder
 from app.modules.equipment.schemas.inspection import (
     InspectionScheduleResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 _UPLOAD_DIR = "uploads/inspection"
 _MAX_RETRIES = 3
@@ -554,7 +557,7 @@ async def delete_photo(db: AsyncSession, photo_id: uuid.UUID) -> bool:
             delete_object("equipment", photo.file_path)
         except Exception:
             # 删除 MinIO 文件失败不阻塞数据库操作
-            pass
+            logger.exception("忽略异常 @ %s", "delete_photo")
     elif os.path.exists(photo.file_path):
         os.remove(photo.file_path)
 

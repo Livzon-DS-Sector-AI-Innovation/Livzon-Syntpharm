@@ -1,8 +1,15 @@
 'use client'
-import { apiGet } from '@/lib/api/client'
-import { deleteRegistrationProject, createRegistrationProject, updateRegistrationProject } from '@/actions/registration'
+import {
+  deleteRegistrationProject,
+  createRegistrationProject,
+  updateRegistrationProject,
+  fetchRegistrationProjectsServer,
+} from '@/actions/registration'
+import type { RegistrationProject as Project } from '@/types/registration'
+import { DataUnavailable } from '@/components/common/DataUnavailable'
 
 import { Suspense, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Table, Button, Space, Tag, Modal, Form, Input, Select, DatePicker,
@@ -15,22 +22,6 @@ import {
 import dayjs from 'dayjs'
 
 const { Title } = Typography
-
-interface Project {
-  id: string
-  product_name: string
-  market: string
-  registration_type: string | null
-  status: string
-  submitted_at: string | null
-  accepted_at: string | null
-  approved_at: string | null
-  expected_completion_at: string | null
-  owner: string | null
-  latest_progress: string | null
-  created_at: string
-  updated_at: string
-}
 
 const STATUS_OPTIONS = [
   { value: 'draft', label: '草稿' },
@@ -51,25 +42,20 @@ const STATUS_MAP: Record<string, { color: string; label: string }> = Object.from
 function ProjectsContent() {
   const _router = useRouter()
   const searchParams = useSearchParams()
-  const [projects, setProjects] = useState<Project[]>([])
-  const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [form] = Form.useForm()
 
   const statusFilter = searchParams.get('status')
 
-  const loadProjects = async () => {
-    setLoading(true)
-    try {
-      const data = await apiGet<Project[]>('/api/v1/registration/projects/')
-      setProjects(data || [])
-    } catch {
-      message.error('加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+  // 打开即加载。status 筛选是纯前端过滤（见下方 filteredProjects），不参与 queryKey。
+  // 取数走 Server Action：该集合端点规范路径带尾斜杠，浏览器直连会被 trailingSlash 归一化打断。
+  const projectsQuery = useQuery({
+    queryKey: ['registration-projects'],
+    queryFn: () => fetchRegistrationProjectsServer(),
+  })
+
+  const projects = projectsQuery.data ?? []
 
 
   const handleAdd = () => {
@@ -94,7 +80,7 @@ function ProjectsContent() {
     try {
       await deleteRegistrationProject(id)
       message.success('删除成功')
-      loadProjects()
+      void projectsQuery.refetch()
     } catch {
       message.error('删除失败')
     }
@@ -118,7 +104,7 @@ function ProjectsContent() {
       }
       message.success(editingProject ? '更新成功' : '创建成功')
       setModalOpen(false)
-      loadProjects()
+      void projectsQuery.refetch()
     } catch {
       message.error('操作失败')
     }
@@ -168,25 +154,29 @@ function ProjectsContent() {
       <div className="flex items-center justify-between">
         <Title level={1} className="mb-0">注册项目管理</Title>
         <Space>
-          <Button icon={<ReloadOutlined />} onClick={loadProjects}>刷新</Button>
+          <Button icon={<ReloadOutlined />} onClick={() => void projectsQuery.refetch()}>刷新</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>新增项目</Button>
         </Space>
       </div>
 
       <Card variant="borderless" className="shadow-sm">
-        {filteredProjects.length > 0 ? (
-          <Table
-            columns={columns}
-            dataSource={filteredProjects}
-            rowKey="id"
-            loading={loading}
-            size="small"
-            scroll={{ x: 1400 }}
-            pagination={{ pageSize: 20, showSizeChanger: true, showTotal: total => `共 ${total} 条` }}
-          />
-        ) : (
-          <Empty description="暂无注册项目" />
-        )}
+        <Table
+          columns={columns}
+          dataSource={filteredProjects}
+          rowKey="id"
+          loading={projectsQuery.isPending}
+          size="small"
+          scroll={{ x: 1400 }}
+          pagination={{ pageSize: 20, showSizeChanger: true, showTotal: total => `共 ${total} 条` }}
+          locale={{
+            // 取数失败时在表格内嵌降级区块，与「确实没有项目」的空态区分开
+            emptyText: projectsQuery.isError ? (
+              <DataUnavailable compact onRetry={() => void projectsQuery.refetch()} />
+            ) : (
+              <Empty description="暂无注册项目" />
+            ),
+          }}
+        />
       </Card>
 
       <Modal

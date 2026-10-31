@@ -1,5 +1,7 @@
 import { test, expect, Locator, Page } from '@playwright/test'
 
+import { FRONTEND_ORIGIN } from '../playwright.config'
+
 type RouteKind = 'normal' | 'redirect' | 'external-iframe'
 
 type RouteCase = {
@@ -24,9 +26,48 @@ type RouteCase = {
    * is what stops a page quietly regressing to no top-level heading (#102).
    */
   topLevelHeading?: string
+  /**
+   * 数据断言：打开页面后必须出现数据元素或空态文案之一。
+   *
+   * 用于「页面打开了但列表永远空白」这类回归（#169）：迁移前这些页面只在事件回调里取数，
+   * 打开后一个请求都不发，表格照样渲染成一张空表 —— 只断言 heading 完全发现不了。
+   */
+  expectData?: {
+    /** 有数据时必然出现的元素（表格行 / 列表项） */
+    rows: (page: Page) => Locator
+    /**
+     * 没有数据时的空态：正则匹配文案，或直接给定位器。
+     *
+     * 用定位器的场景：antd 表格各页空态文案是自定义的（「暂无数据」「暂无注册项目」
+     * 「暂无校准记录」…），枚举不完，改由 `antdEmpty` 按结构判定。
+     */
+    empty: RegExp | ((page: Page) => Locator)
+  }
+  /**
+   * 打开页面必须真实发出取数请求。
+   *
+   * `'server-action'` 表示取数走 Server Action（浏览器侧表现为对当前路由的 POST），
+   * 字符串表示客户端 fetch 的 URL 片段。DOM 断言无法区分「取数返回空」与「根本没取数」，
+   * 这一项补上那个缺口。
+   */
+  expectFetch?: 'server-action' | string
 }
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/** 被测前端源：与 playwright.config.ts 的 baseURL 同源，本地跑 dev 栈时用 E2E_FRONTEND_URL 覆盖 */
+const APP_ORIGIN = FRONTEND_ORIGIN
+
+/**
+ * 取数断言的等待预算。
+ *
+ * CI runner 上 Next 生产构建 + 后端 + PostgreSQL 同机，一次 Server Action 取数实测
+ * 25~60s（/quality/fqc 30.6s、/quality/instrument/records 57.4s），所以不能按本地
+ * 毫秒级速度定预算。但也不能无上限：失败路由实测是「等满仍无行无空态」，
+ * 给到 90s 只是把 CI 从 15 分钟拖到 35 分钟而不改变结论。
+ * 45s 覆盖了正常慢请求，同时让失败快速暴露。需要更严/更松时用 E2E_DATA_TIMEOUT_MS 覆盖。
+ */
+const DATA_TIMEOUT_MS = Number(process.env.E2E_DATA_TIMEOUT_MS ?? 45_000)
 
 function summarizeErrors(errors: string[], label: string): string {
   if (errors.length <= 3) return errors.join('\n')
@@ -59,9 +100,10 @@ async function checkRoute(page: Page, route: RouteCase) {
   const httpErrors: string[] = []
   const networkFailures: string[] = []
   const consoleErrors: string[] = []
+  const seenRequests: { method: string; url: string }[] = []
 
   const isApplicationUrl = (url: string) =>
-    (url.startsWith('http://127.0.0.1:13000') ||
+    (url.startsWith(APP_ORIGIN) ||
     url.includes('/api/')) &&
     !url.includes('?_rsc=') // exclude Next.js RSC prefetch requests that are legitimately aborted on navigation
 
@@ -94,9 +136,17 @@ async function checkRoute(page: Page, route: RouteCase) {
     consoleErrors.push(text.split('\n')[0] ?? text)
   }
 
+  // 记录应用内请求，供 expectFetch 判断「页面到底有没有取数」
+  const onRequest = (request: { method(): string; url(): string }) => {
+    if (isApplicationUrl(request.url())) {
+      seenRequests.push({ method: request.method(), url: request.url() })
+    }
+  }
+
   page.on('response', onResponse)
   page.on('requestfailed', onRequestFailed)
   page.on('console', onConsole)
+  page.on('request', onRequest)
 
   try {
     const response = await page.goto(route.path, {
@@ -143,6 +193,47 @@ async function checkRoute(page: Page, route: RouteCase) {
     await expect(page.getByText('页面加载出错')).not.toBeVisible()
     await expect(page.getByText('应用加载出错')).not.toBeVisible()
 
+    // 数据断言：有行，或者有「没有数据」的空态文案。两者都没有 = 列表压根没渲染出内容。
+    if (route.expectData) {
+      const { rows, empty } = route.expectData
+      // 正则那支要 filter 可见：antd Empty 的图标 `<svg><title>` 也含同一文案，但它按文档顺序在前、
+      // 且没有布局盒，isVisible() 恒为 false，`.first()` 会一直等不到可见元素。
+      const emptyLocator =
+        typeof empty === 'function' ? empty(page) : page.getByText(empty).filter({ visible: true }).first()
+      await expect
+        .poll(
+          async () => (await rows(page).count()) > 0 || (await emptyLocator.isVisible()),
+          {
+            timeout: DATA_TIMEOUT_MS,
+            message: `${route.path} 既没有数据行也没有空态文案：页面可能根本没有发起取数`,
+          },
+        )
+        .toBe(true)
+    }
+
+    // 取数断言：DOM 断言分不清「返回空」和「没请求」，这里直接看请求有没有发出去。
+    if (route.expectFetch) {
+      const spec = route.expectFetch
+      await expect
+        .poll(
+          () =>
+            seenRequests.some((request) => {
+              if (spec === 'server-action') {
+                return (
+                  request.method === 'POST' &&
+                  new URL(request.url).pathname === (route.expectedPath ?? route.path)
+                )
+              }
+              return request.url.includes(spec)
+            }),
+          {
+            timeout: DATA_TIMEOUT_MS,
+            message: `${route.path} 没有发出取数请求（${spec}）：查询可能没有接线`,
+          },
+        )
+        .toBe(true)
+    }
+
     expect(httpErrors.length, summarizeErrors(httpErrors, 'HTTP')).toBe(0)
     expect(networkFailures.length, summarizeErrors(networkFailures, 'network')).toBe(0)
     expect(
@@ -153,6 +244,7 @@ async function checkRoute(page: Page, route: RouteCase) {
     page.off('response', onResponse)
     page.off('requestfailed', onRequestFailed)
     page.off('console', onConsole)
+    page.off('request', onRequest)
   }
 }
 
@@ -162,6 +254,25 @@ const heading =
     page.getByRole('heading', { name }).first()
 
 const text = (t: string) => (page: Page): Locator => page.getByText(t).first()
+
+/** antd 表格的数据行（空表时只剩 `.ant-table-placeholder`，匹配不到） */
+const antdRows = (page: Page): Locator => page.locator('.ant-table-tbody tr.ant-table-row')
+
+/**
+ * antd 表格的空表占位。
+ *
+ * 按结构判定而不是按文案：各页空态写法不统一——`<Empty description="暂无注册项目" />`、
+ * `<Empty description="暂无校准记录" />`、`locale={{ emptyText: '暂无查重问题' }}`（纯字符串，不生成
+ * `.ant-empty-description`），文案枚举不完。
+ *
+ * 唯一要排除的是取数失败的降级态：表格里嵌的是 `DataUnavailable compact`，它是一段普通 div
+ * （没有 `.ant-result`），只能按文案「数据暂时不可用」识别（见 components/common/DataUnavailable.tsx）。
+ */
+const antdEmpty = (page: Page): Locator =>
+  page.locator('.ant-table-placeholder').filter({ hasNotText: '数据暂时不可用' })
+
+/** antd 表格「打开即取数」的断言包：有行，或表格渲染出了空态 */
+const antdTableData = { rows: antdRows, empty: antdEmpty } as const
 
 
 // ═══════════════════════════════════════════════════════════════
@@ -309,7 +420,7 @@ const qualityRoutes: RouteCase[] = [
   // Disabled: endpoint /api/v1/quality/department-contacts not implemented (returns 404)
   // { path: '/quality/department-contacts', module: 'quality', kind: 'normal', expected: heading('部门联系人配置') },
   { path: '/quality/doc-check', module: 'quality', kind: 'normal', expected: heading('审核管理') },
-  { path: '/quality/fqc', module: 'quality', kind: 'normal', expected: heading('FQC') },
+  { path: '/quality/fqc', module: 'quality', kind: 'normal', expected: heading('FQC'), expectData: antdTableData, expectFetch: 'server-action' },
   {
     path: '/quality/inspection',
     module: 'quality',
@@ -325,16 +436,16 @@ const qualityRoutes: RouteCase[] = [
   { path: '/quality/instrument/list', module: 'quality', kind: 'normal', expected: heading('仪器设备台账') },
   { path: '/quality/instrument/records', module: 'quality', kind: 'normal', expected: heading('校准记录') },
   { path: '/quality/instrument/settings', module: 'quality', kind: 'normal', expected: heading('提醒设置') },
-  { path: '/quality/ipqc', module: 'quality', kind: 'normal', expected: heading('IPQC') },
-  { path: '/quality/iqc', module: 'quality', kind: 'normal', expected: heading('IQC') },
+  { path: '/quality/ipqc', module: 'quality', kind: 'normal', expected: heading('IPQC'), expectData: antdTableData, expectFetch: 'server-action' },
+  { path: '/quality/iqc', module: 'quality', kind: 'normal', expected: heading('IQC'), expectData: antdTableData, expectFetch: 'server-action' },
   { path: '/quality/material-report', module: 'quality', kind: 'normal', expected: text('原料报告单管理') },
   { path: '/quality/material-report/template', module: 'quality', kind: 'normal', expected: text('Word模板管理') },
   { path: '/quality/reagent', module: 'quality', kind: 'normal', expected: heading('试剂管理') },
   { path: '/quality/reagent/reminder', module: 'quality', kind: 'normal', expected: heading('试剂库存提醒') },
   { path: '/quality/retention', module: 'quality', kind: 'normal', expected: heading('留样管理') },
-  { path: '/quality/sampling', module: 'quality', kind: 'normal', expected: heading('取样管理') },
+  { path: '/quality/sampling', module: 'quality', kind: 'normal', expected: heading('取样管理'), expectData: antdTableData, expectFetch: 'server-action' },
   { path: '/quality/sop-ai/records', module: 'quality', kind: 'normal', expected: heading('校验记录台账') },
-  { path: '/quality/stability', module: 'quality', kind: 'normal', expected: heading('稳定性') },
+  { path: '/quality/stability', module: 'quality', kind: 'normal', expected: heading('稳定性'), expectData: antdTableData, expectFetch: 'server-action' },
   { path: '/quality/stability/plan', module: 'quality', kind: 'normal', expected: heading('稳定性实验管理 - 方案录入') },
   { path: '/quality/stability/result', module: 'quality', kind: 'normal', expected: heading('稳定性实验管理 - 检测结果') },
   { path: '/quality/static-data', module: 'quality', kind: 'normal', expected: heading('业务静态数据'), topLevelHeading: '业务静态数据' },
@@ -358,15 +469,59 @@ const qualityRoutes: RouteCase[] = [
 
 const registrationRoutes: RouteCase[] = [
   { path: '/registration', module: 'registration', kind: 'normal', expected: heading('注册管理') },
-  { path: '/registration/ledger', module: 'registration', kind: 'normal', expected: heading('注册台账') },
-  { path: '/registration/projects', module: 'registration', kind: 'normal', expected: heading('项目管理') },
+  {
+    path: '/registration/ledger',
+    module: 'registration',
+    kind: 'normal',
+    expected: heading('注册台账'),
+    expectData: antdTableData,
+    expectFetch: '/api/v1/registration/ledger',
+  },
+  {
+    path: '/registration/projects',
+    module: 'registration',
+    kind: 'normal',
+    expected: heading('项目管理'),
+    expectData: antdTableData,
+    // 取数走 Server Action（集合端点尾斜杠会被 Next 归一化，浏览器直连不通）
+    expectFetch: 'server-action',
+  },
   { path: '/registration/regulation', module: 'registration', kind: 'normal', expected: heading('法规看板') },
-  { path: '/registration/regulation/list', module: 'registration', kind: 'normal', expected: heading('法规工作台') },
-  { path: '/registration/authorization-letter', module: 'registration', kind: 'normal', expected: heading('授权书') },
+  {
+    path: '/registration/regulation/list',
+    module: 'registration',
+    kind: 'normal',
+    expected: heading('法规工作台'),
+    // 法规列表不是 antd Table，是自绘列表：每行都有「查看详情」，空态文案按分类不同
+    expectData: { rows: (page) => page.getByText('查看详情'), empty: /暂无法规数据/ },
+    expectFetch: '/api/v1/registration/regulatory-documents',
+  },
+  {
+    path: '/registration/authorization-letter',
+    module: 'registration',
+    kind: 'normal',
+    expected: heading('授权书'),
+    // 首屏首页由服务端直出，浏览器侧不另发请求；翻页才会取数
+    expectData: antdTableData,
+  },
   { path: '/registration/dossier-writer', module: 'registration', kind: 'normal', expected: heading('申报资料撰写') },
-  { path: '/registration/reference-standard', module: 'registration', kind: 'normal', expected: heading('对照物质说明表管理') },
+  {
+    path: '/registration/reference-standard',
+    module: 'registration',
+    kind: 'normal',
+    expected: heading('对照物质说明表管理'),
+    // 首屏首页由服务端直出，浏览器侧不另发请求；翻页才会取数
+    expectData: antdTableData,
+  },
   { path: '/registration/review', module: 'registration', kind: 'normal', expected: heading('申报进度查询') },
-  { path: '/registration/supplementary-reply', module: 'registration', kind: 'normal', expected: heading('发补回复') },
+  {
+    path: '/registration/supplementary-reply',
+    module: 'registration',
+    kind: 'normal',
+    expected: heading('发补回复'),
+    // 首屏首页由服务端直出，浏览器侧不另发请求；翻页才会取数
+    expectData: antdTableData,
+  },
   { path: '/registration/validation-audit', module: 'registration', kind: 'normal', expected: heading('验证文件审核') },
   // Excluded: /registration/validation-audit/new — form page
 ]
@@ -436,9 +591,38 @@ test('root redirects to /home', async ({ page }) => {
   await expect(page).toHaveURL(/\/home(?:\?.*)?$/)
 })
 
+test('regulation detail renders after opening from the list (#169)', async ({ page }) => {
+  await page.goto('/registration/regulation/list', { waitUntil: 'domcontentloaded' })
+
+  const rowLinks = page.getByText('查看详情')
+  const emptyState = page.getByText(/暂无法规数据/).first()
+
+  // 先等列表取数结束：有行，或明确的空态（不是「既没行也没空态」的假空表）
+  await expect
+    .poll(
+      async () => (await rowLinks.count()) > 0 || (await emptyState.isVisible()),
+      { timeout: 15_000, message: '法规列表既没有数据行也没有空态文案：列表可能没有发起取数' },
+    )
+    .toBe(true)
+
+  test.skip((await rowLinks.count()) === 0, '法规列表为空，无法从列表进入详情页')
+
+  // 列表行是 onClick 触发的客户端跳转，水合完成前点击无效：用轮询重试吞掉这段窗口期
+  await expect(async () => {
+    await rowLinks.first().click()
+    await expect(page).toHaveURL(/\/registration\/regulation\/[^/]+$/, { timeout: 5_000 })
+  }).toPass({ timeout: 30_000 })
+
+  // 详情加载完成：Spin 消失、标题可见；失败会渲染降级区块，不应被当成加载成功
+  await expect(page.locator('.ant-spin-spinning')).toHaveCount(0, { timeout: 15_000 })
+  await expect(page.getByText('数据暂时不可用')).toHaveCount(0)
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 15_000 })
+})
+
 for (const { name, routes } of allModuleRouteSets) {
   test(`${name} routes load`, async ({ page }) => {
-    test.setTimeout(Math.max(60_000, routes.length * 15_000)) // 60s base + 15s per route
+    // 60s base + 15s/路由，再留一个 DATA_TIMEOUT_MS 的余量：慢环境下单个页面可能把取数预算用满
+    test.setTimeout(Math.max(60_000, routes.length * 15_000) + DATA_TIMEOUT_MS)
     const failures: { path: string; error: string }[] = []
 
     for (const route of routes) {

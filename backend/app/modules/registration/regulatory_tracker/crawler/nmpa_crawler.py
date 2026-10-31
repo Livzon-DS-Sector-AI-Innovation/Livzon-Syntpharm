@@ -204,7 +204,7 @@ class NmpaRecordAdapter(BaseCrawler):
                     page_num = int(params[k][0])
                     break
         except Exception:
-            pass
+            logger.exception("忽略异常 @ %s", "NmpaRecordAdapter._parse_api_response")
 
         pages = max(1, (total + 9) // 10)  # 假设每页 10 条
 
@@ -341,6 +341,7 @@ class NmpaRecordAdapter(BaseCrawler):
                         logger.info(f"翻页点击: {sel}")
                         break
                 except Exception:
+                    logger.debug("翻页选择器不可用: %s", sel, exc_info=True)
                     continue
 
             if not clicked:

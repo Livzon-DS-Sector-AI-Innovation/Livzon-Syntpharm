@@ -626,14 +626,14 @@ class SafetyRepository:
                 query = query.where(HazardIdentification.created_at >= dfrom)
                 count_query = count_query.where(HazardIdentification.created_at >= dfrom)
             except ValueError:
-                pass
+                logger.exception("忽略异常 @ %s", "SafetyRepository.get_hazard_identifications")
         if date_to:
             try:
                 dto = dt_module.strptime(date_to + " 23:59:59", "%Y-%m-%d %H:%M:%S")
                 query = query.where(HazardIdentification.created_at <= dto)
                 count_query = count_query.where(HazardIdentification.created_at <= dto)
             except ValueError:
-                pass
+                logger.exception("忽略异常 @ %s", "SafetyRepository.get_hazard_identifications")
         if overall_status:
             query = query.where(HazardIdentification.overall_status == overall_status)
             count_query = count_query.where(HazardIdentification.overall_status == overall_status)
@@ -724,14 +724,14 @@ class SafetyRepository:
             try:
                 base = base.where(HazardIdentification.created_at >= dt_module.strptime(date_from, "%Y-%m-%d"))
             except ValueError:
-                pass
+                logger.exception("忽略异常 @ %s", "SafetyRepository.get_hazard_identification_ledger_stats")
         if date_to:
             try:
                 base = base.where(
                     HazardIdentification.created_at <= dt_module.strptime(date_to + " 23:59:59", "%Y-%m-%d %H:%M:%S")
                 )
             except ValueError:
-                pass
+                logger.exception("忽略异常 @ %s", "SafetyRepository.get_hazard_identification_ledger_stats")
 
         total = await self.session.scalar(base) or 0
 
@@ -751,14 +751,14 @@ class SafetyRepository:
                     HazardIdentification.created_at >= dt_module.strptime(date_from, "%Y-%m-%d")
                 )
             except ValueError:
-                pass
+                logger.exception("忽略异常 @ %s", "SafetyRepository.get_hazard_identification_ledger_stats")
         if date_to:
             try:
                 risk_base = risk_base.where(
                     HazardIdentification.created_at <= dt_module.strptime(date_to + " 23:59:59", "%Y-%m-%d %H:%M:%S")
                 )
             except ValueError:
-                pass
+                logger.exception("忽略异常 @ %s", "SafetyRepository.get_hazard_identification_ledger_stats")
 
         levels = {"level_1": 0, "level_2": 0, "level_3": 0, "level_4": 0}
         for level_key in levels:

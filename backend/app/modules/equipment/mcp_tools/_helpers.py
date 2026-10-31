@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from typing import Any
 
@@ -36,6 +37,8 @@ from app.modules.equipment.service import (
 from app.platform.identity.models import User
 from app.platform.identity.repository import UserRepository
 
+logger = logging.getLogger(__name__)
+
 
 async def resolve_user(db: AsyncSession, operator_id: str) -> User:
     """将 operator_id 解析为 User 对象。"""
@@ -45,7 +48,7 @@ async def resolve_user(db: AsyncSession, operator_id: str) -> User:
         if user and not user.is_deleted:
             return user
     except ValueError:
-        pass
+        logger.exception("忽略异常 @ %s", "resolve_user")
 
     repo = UserRepository()
     user = await repo.get_by_feishu_user_id(db, operator_id)
@@ -206,7 +209,7 @@ async def _resolve_equipment(db: AsyncSession, identifier: str) -> Any:
         if equipment:
             return equipment
     except ValueError:
-        pass
+        logger.exception("忽略异常 @ %s", "_resolve_equipment")
     raise ValueError(f"未找到设备「{identifier}」，请提供有效的设备编号或 UUID。")
 
 
@@ -221,7 +224,7 @@ async def _resolve_work_order(db: AsyncSession, identifier: str) -> Any:
         if wo:
             return wo
     except ValueError:
-        pass
+        logger.exception("忽略异常 @ %s", "_resolve_work_order")
     raise ValueError(f"未找到工单「{identifier}」，请提供有效的工单编号（如 WO-20260616-0001）或 UUID。")
 
 
@@ -236,7 +239,7 @@ async def _resolve_template(db: AsyncSession, identifier: str) -> Any:
         if template:
             return template
     except ValueError:
-        pass
+        logger.exception("忽略异常 @ %s", "_resolve_template")
     raise ValueError(f"未找到模板「{identifier}」，请提供有效的模板名称或 UUID。")
 
 

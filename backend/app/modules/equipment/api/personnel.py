@@ -3,19 +3,23 @@
 import uuid
 
 from fastapi import APIRouter, Depends, Query
-from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
-from app.core.response import success_response
+from app.core.response import DataResponse
 from app.modules.equipment import service
 from app.modules.equipment.schemas.personnel import (
+    CandidateResponse,
+    FeishuRefreshResult,
     PersonnelAddRequest,
+    PersonnelAddResult,
     PersonnelCategoryAssign,
+    PersonnelResponse,
     PersonnelRoleAssign,
     PersonnelUpdate,
     RoleCreate,
+    RoleResponse,
     RoleUpdate,
 )
 
@@ -31,9 +35,9 @@ async def create_role(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("equipment:personnel:create")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> DataResponse[RoleResponse]:
     role = await service.create_role(db, data)
-    return success_response(data=role.model_dump(mode="json"))
+    return DataResponse[RoleResponse](data=role.model_dump(mode="json"))
 
 
 @router.get("/roles", summary="角色列表")
@@ -45,7 +49,7 @@ async def list_roles(
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> DataResponse[list[RoleResponse]]:
     roles, total = await service.list_roles(
         db,
         scope=scope,
@@ -53,7 +57,7 @@ async def list_roles(
         page=page,
         page_size=page_size,
     )
-    return success_response(
+    return DataResponse[list[RoleResponse]](
         data=[r.model_dump(mode="json") for r in roles],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -65,9 +69,9 @@ async def get_role(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("equipment:personnel:read")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> DataResponse[RoleResponse]:
     role = await service.get_role(db, role_id)
-    return success_response(data=role.model_dump(mode="json"))
+    return DataResponse[RoleResponse](data=role.model_dump(mode="json"))
 
 
 @router.put("/roles/{role_id}", summary="更新角色")
@@ -76,9 +80,9 @@ async def update_role(
     data: RoleUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> DataResponse[RoleResponse]:
     role = await service.update_role(db, role_id, data)
-    return success_response(data=role.model_dump(mode="json"))
+    return DataResponse[RoleResponse](data=role.model_dump(mode="json"))
 
 
 @router.delete("/roles/{role_id}", summary="删除角色")
@@ -87,9 +91,9 @@ async def delete_role(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("equipment:personnel:delete")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> DataResponse[None]:
     await service.delete_role(db, role_id)
-    return success_response(message="角色已删除")
+    return DataResponse[None](message="角色已删除")
 
 
 # ═══════════════ 人员 API ═══════════════
@@ -100,9 +104,9 @@ async def add_personnel(
     data: PersonnelAddRequest,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> DataResponse[PersonnelAddResult]:
     result = await service.add_personnel(db, data)
-    return success_response(data=result.model_dump(mode="json"))
+    return DataResponse[PersonnelAddResult](data=result.model_dump(mode="json"))
 
 
 @router.get("", summary="人员列表")
@@ -115,7 +119,7 @@ async def list_personnel(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> DataResponse[list[PersonnelResponse]]:
     result = await service.list_personnel(
         db,
         role_ids=role_id,
@@ -124,7 +128,7 @@ async def list_personnel(
         page=page,
         page_size=page_size,
     )
-    return success_response(
+    return DataResponse[list[PersonnelResponse]](
         data=[r.model_dump(mode="json") for r in result.items],
         meta={
             "page": result.page,
@@ -144,13 +148,13 @@ async def get_candidates(
     ),
     category_id: uuid.UUID | None = Query(None, description="设备分类ID（可选）"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> DataResponse[list[CandidateResponse]]:
     candidates = await service.get_candidates(
         db,
         role_codes,
         category_id=category_id,
     )
-    return success_response(data=[c.model_dump(mode="json") for c in candidates])
+    return DataResponse[list[CandidateResponse]](data=[c.model_dump(mode="json") for c in candidates])
 
 
 @router.get("/{personnel_id}", summary="人员详情")
@@ -158,9 +162,9 @@ async def get_personnel(
     personnel_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> DataResponse[PersonnelResponse]:
     person = await service.get_personnel(db, personnel_id)
-    return success_response(data=person.model_dump(mode="json"))
+    return DataResponse[PersonnelResponse](data=person.model_dump(mode="json"))
 
 
 @router.put("/{personnel_id}", summary="更新人员")
@@ -170,9 +174,9 @@ async def update_personnel(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("equipment:personnel:update")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> DataResponse[PersonnelResponse]:
     person = await service.update_personnel(db, personnel_id, data)
-    return success_response(data=person.model_dump(mode="json"))
+    return DataResponse[PersonnelResponse](data=person.model_dump(mode="json"))
 
 
 @router.delete("/{personnel_id}", summary="移除人员")
@@ -180,9 +184,9 @@ async def delete_personnel(
     personnel_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> DataResponse[None]:
     await service.delete_personnel(db, personnel_id)
-    return success_response(message="人员已移除")
+    return DataResponse[None](message="人员已移除")
 
 
 @router.post("/{personnel_id}/roles", summary="为人员分配角色")
@@ -192,9 +196,9 @@ async def assign_roles(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("equipment:personnel:create")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> DataResponse[PersonnelResponse]:
     person = await service.assign_roles(db, personnel_id, data)
-    return success_response(data=person.model_dump(mode="json"))
+    return DataResponse[PersonnelResponse](data=person.model_dump(mode="json"))
 
 
 @router.put("/{personnel_id}/roles", summary="全量更新人员角色")
@@ -203,9 +207,9 @@ async def update_roles(
     data: PersonnelRoleAssign,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> DataResponse[PersonnelResponse]:
     person = await service.assign_roles(db, personnel_id, data)
-    return success_response(data=person.model_dump(mode="json"))
+    return DataResponse[PersonnelResponse](data=person.model_dump(mode="json"))
 
 
 @router.post("/{personnel_id}/categories", summary="设置人员角色设备分类")
@@ -215,9 +219,9 @@ async def assign_categories(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("equipment:personnel:create")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> DataResponse[PersonnelResponse]:
     person = await service.update_categories(db, personnel_id, data)
-    return success_response(data=person.model_dump(mode="json"))
+    return DataResponse[PersonnelResponse](data=person.model_dump(mode="json"))
 
 
 @router.put("/{personnel_id}/categories", summary="全量更新人员角色分类")
@@ -226,9 +230,9 @@ async def update_categories(
     data: PersonnelCategoryAssign,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> DataResponse[PersonnelResponse]:
     person = await service.update_categories(db, personnel_id, data)
-    return success_response(data=person.model_dump(mode="json"))
+    return DataResponse[PersonnelResponse](data=person.model_dump(mode="json"))
 
 
 @router.post("/refresh-feishu", summary="手动刷新飞书信息")
@@ -236,6 +240,6 @@ async def refresh_feishu(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("equipment:personnel:create")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> DataResponse[FeishuRefreshResult]:
     result = await service.refresh_feishu(db)
-    return success_response(data=result.model_dump(mode="json"))
+    return DataResponse[FeishuRefreshResult](data=result.model_dump(mode="json"))

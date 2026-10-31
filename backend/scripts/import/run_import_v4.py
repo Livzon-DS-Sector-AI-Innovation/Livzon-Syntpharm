@@ -4,19 +4,20 @@ import asyncio
 import sys
 import os
 
-sys.path.insert(0, "/home/zhuangweizi/Livzon-Syntpharm/backend")
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, _BACKEND_DIR)
 
-import xlrd
-from app.core.database import async_session_factory
-from app.modules.equipment.service.import_engine import find_existing_equipment
-from app.modules.equipment import repository as repo
-from app.modules.equipment.api.batch_import import map_department_name_v3
+import xlrd  # noqa: E402
+from app.core.database import async_session_factory  # noqa: E402
+from app.modules.equipment.service.import_engine import find_existing_equipment  # noqa: E402
+from app.modules.equipment import repository as repo  # noqa: E402
+from app.modules.equipment.api.batch_import import map_department_name_v3  # noqa: E402
 
 
 async def run():
-    excel_path = "/home/zhuangweizi/.codex/202606sbgz.xls"
-    if not os.path.exists(excel_path):
-        print("❌ Excel 文件不存在")
+    excel_path = os.environ.get("IMPORT_EXCEL_PATH", "")
+    if not excel_path or not os.path.exists(excel_path):
+        print("❌ 请通过环境变量 IMPORT_EXCEL_PATH 指定 Excel 文件路径，且文件必须存在")
         return
 
     wb = xlrd.open_workbook(excel_path)

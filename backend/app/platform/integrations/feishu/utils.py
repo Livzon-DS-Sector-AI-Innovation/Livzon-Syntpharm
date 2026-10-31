@@ -1,5 +1,6 @@
 """Stateless Feishu parsing and connectivity helpers."""
 
+import logging
 import re
 from dataclasses import dataclass
 from urllib.parse import parse_qs, urlparse
@@ -7,6 +8,8 @@ from urllib.parse import parse_qs, urlparse
 import httpx
 
 from app.core.redis import cache_get, cache_set
+
+logger = logging.getLogger(__name__)
 
 OPEN_API_BASE_URL = "https://open.feishu.cn/open-apis"
 FEISHU_BITABLE_RECORD_CHANGED_EVENT = "feishu.bitable_record_changed"
@@ -114,7 +117,7 @@ async def get_tenant_access_token(
             if cached:
                 return cached
         except Exception:
-            pass
+            logger.exception("忽略异常 @ %s", "get_tenant_access_token")
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.post(
@@ -135,7 +138,7 @@ async def get_tenant_access_token(
         try:
             await cache_set(f"feishu:tenant_access_token:{cache_key}", token, ex=6600)
         except Exception:
-            pass
+            logger.exception("忽略异常 @ %s", "get_tenant_access_token")
 
     return token  # type: ignore[no-any-return]
 

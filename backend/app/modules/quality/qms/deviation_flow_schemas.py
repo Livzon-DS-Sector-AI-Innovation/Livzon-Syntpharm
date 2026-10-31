@@ -1,6 +1,6 @@
 """偏差流程管理 Schemas"""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class DeviationCreateRequest(BaseModel):
@@ -131,3 +131,201 @@ class DeviationResponse(BaseModel):
 
     created_at: str
     updated_at: str | None
+
+
+# ============ 偏差流程 API 响应模型 ============
+
+
+class DeviationOption(BaseModel):
+    """下拉选项（value/label）"""
+
+    value: str
+    label: str
+
+
+class DeviationOptionsData(BaseModel):
+    """偏差类型、紧急等级、状态选项集合"""
+
+    deviation_types: list[DeviationOption]
+    urgency_levels: list[DeviationOption]
+    status_options: list[DeviationOption]
+
+
+class DeviationOptionsResponse(BaseModel):
+    """获取选项列表响应"""
+
+    code: int = 200
+    message: str = "success"
+    data: DeviationOptionsData
+
+
+class DeviationCreateData(BaseModel):
+    """新建偏差后的标识信息"""
+
+    id: str
+    deviation_no: str
+
+
+class DeviationCreateResponse(BaseModel):
+    """创建偏差响应"""
+
+    code: int
+    message: str
+    data: DeviationCreateData
+
+
+class DeviationFlowAttachment(BaseModel):
+    """偏差附件（详情/列表内嵌）"""
+
+    id: str | None = None
+    deviation_id: str | None = None
+    file_name: str | None = None
+    file_path: str | None = None
+    file_type: str | None = None
+    file_size: int | None = None
+    is_report: bool | None = None
+    uploaded_at: str | None = None
+
+
+class DeviationDetailData(BaseModel):
+    """偏差详情数据
+
+    列集合来自 ``SELECT * FROM qms.qms_deviation``。未显式声明的列通过
+    ``extra="allow"`` 原样透传，避免表结构演进时被响应模型裁掉。
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str | None = None
+    deviation_no: str | None = None
+    theme: str | None = None
+    occurred_date: str | None = None
+    discovered_date: str | None = None
+    responsible_department: str | None = None
+    occurred_area: str | None = None
+    deviation_type: str | None = None
+    deviation_type_label: str | None = None
+    urgency_level: str | None = None
+    urgency_level_label: str | None = None
+    status: str | None = None
+    status_label: str | None = None
+    product_name: str | None = None
+    batch_no: str | None = None
+    equipment: str | None = None
+    standard_based_on: str | None = None
+    deviation_description: str | None = None
+    risk_assessment: str | None = None
+    temp_measures: str | None = None
+    related_deviation_no: str | None = None
+    related_capa: str | None = None
+    remarks: str | None = None
+    qa_feishu_open_id: str | None = None
+    qa_feishu_name: str | None = None
+    dept_leader_feishu_open_id: str | None = None
+    dept_leader_feishu_name: str | None = None
+    reporter: str | None = None
+    reporter_department: str | None = None
+    reporter_feishu_open_id: str | None = None
+    report_time: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    attachments: list[DeviationFlowAttachment] = Field(default_factory=list)
+
+
+class DeviationDetailResponse(BaseModel):
+    """偏差详情响应"""
+
+    code: int
+    message: str
+    data: DeviationDetailData | None = None
+
+
+class DeviationListItem(BaseModel):
+    """偏差列表行（含倒计时与中文标签）"""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str | None = None
+    deviation_no: str | None = None
+    theme: str | None = None
+    occurred_date: str | None = None
+    discovered_date: str | None = None
+    responsible_department: str | None = None
+    occurred_area: str | None = None
+    deviation_type: str | None = None
+    deviation_type_label: str | None = None
+    urgency_level: str | None = None
+    urgency_level_label: str | None = None
+    status: str | None = None
+    status_label: str | None = None
+    reporter: str | None = None
+    reporter_department: str | None = None
+    report_time: str | None = None
+    created_at: str | None = None
+    remaining_days: int | None = None
+    completed_days: int | None = None
+    deadline_days: int | None = None
+
+
+class DeviationListData(BaseModel):
+    """偏差列表分页数据"""
+
+    items: list[DeviationListItem]
+    total: int
+    page: int
+    page_size: int
+
+
+class DeviationListResponse(BaseModel):
+    """偏差列表响应"""
+
+    code: int
+    message: str
+    data: DeviationListData
+
+
+class DeviationEmptyResponse(BaseModel):
+    """无数据体的操作响应（更新/删除）"""
+
+    code: int
+    message: str
+    data: None = None
+
+
+class DeviationStatusData(BaseModel):
+    """提交偏差后的状态"""
+
+    status: str
+
+
+class DeviationSubmitResponse(BaseModel):
+    """提交偏差响应"""
+
+    code: int
+    message: str
+    data: DeviationStatusData | None = None
+
+
+class DeviationAttachmentListResponse(BaseModel):
+    """偏差附件列表响应"""
+
+    code: int
+    message: str
+    data: list[DeviationFlowAttachment]
+
+
+class DeviationUploadData(BaseModel):
+    """上传附件后返回的文件信息"""
+
+    id: str
+    file_name: str | None = None
+    file_path: str
+    file_size: int
+
+
+class DeviationUploadResponse(BaseModel):
+    """上传偏差附件响应"""
+
+    code: int
+    message: str
+    data: DeviationUploadData | None = None

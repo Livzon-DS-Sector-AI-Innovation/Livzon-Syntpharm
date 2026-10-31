@@ -589,12 +589,12 @@ export async function getAiLogs(params: AiLogParams = {}) {
   if (params.end_date) searchParams.set('end_date', params.end_date)
   if (params.keyword) searchParams.set('keyword', params.keyword)
   const queryString = searchParams.toString()
-  const endpoint = `/ai/logs${queryString ? `?${queryString}` : ''}`
+  const endpoint = `/quality/ai/logs${queryString ? `?${queryString}` : ''}`
   return apiFetch(`/api/v1${endpoint}`)
 }
 
 export async function getAiLogById(id: string) {
-  return apiFetch(`/api/v1/ai/logs/${id}`)
+  return apiFetch(`/api/v1/quality/ai/logs/${id}`)
 }
 
 // ============ Deviation Actions ============

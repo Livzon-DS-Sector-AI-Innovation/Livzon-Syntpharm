@@ -316,6 +316,7 @@ export const REGISTRATION_PERM = {
 
 /** 质量管理（quality）接口级权限码，与后端 QUALITY_PERMISSIONS 一一对应 */
 export const QUALITY_PERM = {
+  aiLogRead: 'quality:ai-log:read',
   cpvCreate: 'quality:cpv:create',
   cpvDelete: 'quality:cpv:delete',
   cpvImport: 'quality:cpv:import',

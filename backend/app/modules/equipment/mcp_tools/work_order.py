@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 
 from fastmcp.tools.base import ToolResult
@@ -23,6 +24,8 @@ from app.platform.identity.models import User
 from app.platform.identity.repository import UserRepository
 from app.platform.mcp.deps import get_db
 from app.platform.mcp.server import mcp
+
+logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────
 # Tool 1: 查询用户身份
@@ -58,7 +61,7 @@ async def query_user(keyword: str) -> ToolResult:
                 structured_content={"users": [u]},
             )
     except ValueError:
-        pass
+        logger.exception("忽略异常 @ %s", "query_user")
 
     # 2) 尝试飞书 user_id 精确匹配
     user = await repo.get_by_feishu_user_id(db, keyword)

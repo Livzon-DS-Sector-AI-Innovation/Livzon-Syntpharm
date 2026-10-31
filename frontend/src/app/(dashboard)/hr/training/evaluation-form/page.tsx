@@ -6,6 +6,7 @@ import { Card, Form, Input, InputNumber, Select, Button, message, Alert } from '
 import { DownloadOutlined } from '@ant-design/icons'
 import EvaluationPreview from '@/components/hr/EvaluationPreview'
 import { apiGet } from '@/lib/api/client'
+import { generateEvaluationForm } from '@/lib/api/client/hr'
 
 const METHODS = [{v:'面授',l:'面授'},{v:'自学',l:'自学'},{v:'自学+面授',l:'自学+面授'}]
 const ASSESSMENT = [{v:'笔试',l:'笔试'},{v:'问答',l:'问答'}]
@@ -66,6 +67,8 @@ export default function EvaluationFormPage() {
         subject: vals.subject,
         training_date: vals.training_date?.format('YYYY-MM-DD'),
         training_method: vals.training_method,
+        // 表单没有「是否考试」项，取后端默认值 false
+        is_exam: false,
         trainer: vals.trainer,
         trainee_names: (vals.trainee_names || '').split(/[,，、\s]+/).filter(Boolean),
         assessment_method: vals.assessment_method,
@@ -77,14 +80,10 @@ export default function EvaluationFormPage() {
         excellent_count: vals.excellent_count, qualified_count: vals.qualified_count,
         unqualified_count: vals.unqualified_count,
       }
-      const res = await fetch('/api/hr/generate-evaluation', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload),
-      })
-      if (!res.ok) throw new Error('生成失败')
-      const blob = await res.blob()
+      const blob = await generateEvaluationForm(payload)
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a'); a.href = url
-      a.download = `培训效果评估表_${payload.training_date||'nodate'}.xlsx`
+      a.download = `培训效果评估表_${payload.training_date||'nodate'}.docx`
       document.body.appendChild(a); a.click(); document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
       message.success('评估表已生成，台账已更新')

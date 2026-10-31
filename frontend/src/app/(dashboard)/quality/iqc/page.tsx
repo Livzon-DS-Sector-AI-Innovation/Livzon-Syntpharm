@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import { toPageResult } from '@/lib/api/page'
 import {
   Table,
   Button,
@@ -58,6 +60,7 @@ import {
   submitIQCInspectionForApproval,
   approveIQCInspection,
 } from '@/actions/quality'
+import { DataUnavailable } from '@/components/common/DataUnavailable'
 
 const { RangePicker } = DatePicker
 const { Text: _Text } = Typography
@@ -77,13 +80,11 @@ const initialFilters: IQCInspectionFilter = {
 }
 
 export default function IQCPage() {
-  // 状态
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<IQCInspectionListItem[]>([])
-  const [total, setTotal] = useState(0)
+  // 状态（data/loading/total 由 React Query 派生，不再手写）
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [filters, setFilters] = useState<IQCInspectionFilter>(initialFilters)
+  const [appliedFilters, setAppliedFilters] = useState<IQCInspectionFilter>(initialFilters)
 
   // 表单 - 两个 form 实例必须放在一起
   const [createForm] = Form.useForm()
@@ -99,42 +100,35 @@ export default function IQCPage() {
   const [viewModalVisible, setViewModalVisible] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
 
-  // 加载数据
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
+  // 打开即加载：已提交的筛选条件 / 翻页变化 → queryKey 变化 → 自动重取。
+  // filters 是输入中的草稿态，appliedFilters 才是真正发请求的条件，避免每敲一个字都请求。
+  const inspectionsQuery = useQuery({
+    queryKey: ['iqc-inspections', appliedFilters, page, pageSize],
+    queryFn: async () => {
       const response = await getIQCInspections({
-        ...filters,
+        ...appliedFilters,
         page,
         page_size: pageSize,
-      }) as { items?: IQCInspectionListItem[]; total?: number; code?: number; message?: string; data?: { items?: IQCInspectionListItem[]; total?: number } }
-      if (response.items !== undefined) {
-        setData(response.items || [])
-        setTotal(response.total || 0)
-      } else if (response.code === 200 || response.code === 0) {
-        setData(response.data?.items || [])
-        setTotal(response.data?.total || 0)
-      } else {
-        message.error(response.message || '加载失败')
-      }
-    } catch (_error) {
-      message.error('加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [filters, page, pageSize])
+      })
+      return toPageResult<IQCInspectionListItem>(response)
+    },
+    placeholderData: keepPreviousData,
+  })
 
-  // 筛选
+  const data = inspectionsQuery.data?.items ?? []
+  const total = inspectionsQuery.data?.total ?? 0
+
+  // 筛选：只更新「已提交条件」与页码，由 queryKey 触发取数（条件未变则不重复请求）
   const handleSearch = () => {
+    setAppliedFilters(filters)
     setPage(1)
-    loadData()
   }
 
   // 重置筛选
   const handleReset = () => {
     setFilters(initialFilters)
+    setAppliedFilters(initialFilters)
     setPage(1)
-    loadData()
   }
 
   // 新建
@@ -147,7 +141,7 @@ export default function IQCPage() {
   // 编辑
   const handleEdit = async (record: IQCInspectionListItem) => {
     try {
-      const response = await getIQCInspection(record.id) as { code?: number; message?: string; data?: IQCInspection }
+      const response = await getIQCInspection(record.id)
       if (response.code === 200 || response.code === 0) {
         setEditRecord(response.data!)
         editForm.setFieldsValue({
@@ -180,7 +174,7 @@ export default function IQCPage() {
   // 查看详情
   const handleView = async (record: IQCInspectionListItem) => {
     try {
-      const response = await getIQCInspection(record.id) as { code?: number; message?: string; data?: IQCInspection }
+      const response = await getIQCInspection(record.id)
       if (response.code === 200 || response.code === 0) {
         setViewRecord(response.data!)
         setViewModalVisible(true)
@@ -195,10 +189,10 @@ export default function IQCPage() {
   // 删除
   const handleDelete = async (id: string) => {
     try {
-      const response = await deleteIQCInspection(id) as { code?: number; message?: string }
+      const response = await deleteIQCInspection(id)
       if (response.code === 200 || response.code === 0 || response.message?.includes('成功')) {
         message.success('删除成功')
-        loadData()
+        void inspectionsQuery.refetch()
       } else {
         message.error(response.message || '删除失败')
       }
@@ -210,10 +204,10 @@ export default function IQCPage() {
   // 提交审批
   const handleSubmit = async (id: string) => {
     try {
-      const response = await submitIQCInspectionForApproval(id) as { code?: number; message?: string; data?: { status?: string } }
+      const response = await submitIQCInspectionForApproval(id)
       if (response.code === 200 || response.code === 0 || response.data?.status) {
         message.success('提交成功')
-        loadData()
+        void inspectionsQuery.refetch()
       } else {
         message.error(response.message || '提交失败')
       }
@@ -227,10 +221,10 @@ export default function IQCPage() {
     try {
       const response = await approveIQCInspection(id, {
         approval_status: approved ? 'approved' : 'rejected',
-      }) as { code?: number; message?: string; data?: { status?: string } }
+      })
       if (response.code === 200 || response.code === 0 || response.data?.status) {
         message.success(approved ? '审批通过' : '已驳回')
-        loadData()
+        void inspectionsQuery.refetch()
       } else {
         message.error(response.message || '操作失败')
       }
@@ -256,12 +250,12 @@ export default function IQCPage() {
       }
 
       setSubmitLoading(true)
-      const response = await createIQCInspection(submitData) as { code?: number; message?: string; data?: { inspection_no?: string } }
+      const response = await createIQCInspection(submitData)
 
       if (response.code === 200 || response.code === 0 || response.data?.inspection_no) {
         message.success('创建成功')
         setCreateModalVisible(false)
-        loadData()
+        void inspectionsQuery.refetch()
       } else {
         message.error(response.message || '操作失败')
       }
@@ -292,12 +286,12 @@ export default function IQCPage() {
       }
 
       setSubmitLoading(true)
-      const response = await updateIQCInspection(editRecord!.id, submitData) as { code?: number; message?: string; data?: { inspection_no?: string } }
+      const response = await updateIQCInspection(editRecord!.id, submitData)
 
       if (response.code === 200 || response.code === 0) {
         message.success('更新成功')
         setEditModalVisible(false)
-        loadData()
+        void inspectionsQuery.refetch()
       } else {
         message.error(response.message || '操作失败')
       }
@@ -330,7 +324,7 @@ export default function IQCPage() {
       setSubmitLoading(true)
 
       // 先更新
-      const updateResponse = await updateIQCInspection(editRecord!.id, submitData) as { code?: number; message?: string }
+      const updateResponse = await updateIQCInspection(editRecord!.id, submitData)
       if (updateResponse.code !== 200 && updateResponse.code !== 0) {
         message.error(updateResponse.message || '保存失败')
         setSubmitLoading(false)
@@ -338,11 +332,11 @@ export default function IQCPage() {
       }
 
       // 提交审批
-      const submitResponse = await submitIQCInspectionForApproval(editRecord!.id) as { code?: number; message?: string }
+      const submitResponse = await submitIQCInspectionForApproval(editRecord!.id)
       if (submitResponse.code === 200 || submitResponse.code === 0) {
         message.success('保存并提交成功')
         setEditModalVisible(false)
-        loadData()
+        void inspectionsQuery.refetch()
       } else {
         message.error(submitResponse.message || '提交失败')
       }
@@ -622,8 +616,14 @@ export default function IQCPage() {
           columns={columns}
           dataSource={data}
           rowKey="id"
-          loading={loading}
+          loading={inspectionsQuery.isPending}
           scroll={{ x: 1600 }}
+          locale={{
+            // 取数失败时在表格内嵌降级区块，与「确实没有记录」的空态区分开
+            emptyText: inspectionsQuery.isError ? (
+              <DataUnavailable compact onRetry={() => void inspectionsQuery.refetch()} />
+            ) : undefined,
+          }}
           pagination={{
             current: page,
             pageSize: pageSize,

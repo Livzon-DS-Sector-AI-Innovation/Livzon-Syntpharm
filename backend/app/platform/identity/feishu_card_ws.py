@@ -138,7 +138,7 @@ async def _ping_loop(ws, service_id: int) -> Any:  # type: ignore[no-untyped-def
             await asyncio.wait_for(_stop.wait(), timeout=_ping_interval)
             return
         except TimeoutError:
-            pass
+            logger.exception("忽略异常 @ %s", "_ping_loop")
 
 
 def _event_type(payload: dict[str, Any]) -> str:
@@ -285,7 +285,7 @@ async def start_livzon_card_ws() -> None:
         try:
             await asyncio.wait_for(_stop.wait(), timeout=10)
         except TimeoutError:
-            pass
+            logger.exception("忽略异常 @ %s", "start_livzon_card_ws")
 
     logger.info("Livzon 助手飞书卡片长连接已停止")
 
@@ -304,7 +304,7 @@ async def restart_livzon_card_ws() -> dict[str, Any]:
         try:
             await _ws_task
         except asyncio.CancelledError:
-            pass
+            logger.exception("忽略异常 @ %s", "restart_livzon_card_ws")
     _ws_task = asyncio.create_task(start_livzon_card_ws())
     return await get_livzon_card_ws_status()
 

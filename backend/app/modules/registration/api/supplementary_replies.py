@@ -1,6 +1,5 @@
 """Supplementary reply API routes."""
 
-from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, Query, UploadFile
@@ -10,7 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import NotFoundException
-from app.core.response import paginated_response, success_response
+from app.core.response import DataResponse
+from app.modules.registration.schemas.authorization import (
+    DownloadUrlResponse,
+    SupplementaryReplyListItem,
+    SupplementaryReplyResponse,
+)
 from app.modules.registration.service import SupplementaryReplyService
 from app.shared.schemas import PageParams
 
@@ -33,7 +37,7 @@ async def post(
     company_name: str | None = Form(None, description="申请人/公司名称（可选）"),
     remarks: str | None = Form(None, description="备注"),
     service: SupplementaryReplyService = Depends(get_service),
-) -> Any:
+) -> DataResponse[SupplementaryReplyResponse]:
     notice_data = await notice.read()
     notice_file_name = notice.filename or "CDE通知函.pdf"
 
@@ -54,10 +58,10 @@ async def post(
         company_name_override=company_name,
         remarks=remarks,
     )
-    return success_response(
-        data=reply.model_dump(mode="json"),
+    return DataResponse[SupplementaryReplyResponse](
+        data=reply,
         message="发补回复文档生成成功",
-        status_code=201,
+        code=201,
     )
 
 
@@ -68,18 +72,15 @@ async def get(
     drug_name: str | None = Query(None, description="药品名称搜索"),
     page_params: PageParams = Depends(),
     service: SupplementaryReplyService = Depends(get_service),
-) -> Any:
+) -> DataResponse[list[SupplementaryReplyListItem]]:
     replies, total = await service.list_replies(
         drug_name=drug_name,
         page=page_params.page,
         page_size=page_params.page_size,
     )
-    data = [reply.model_dump(mode="json") for reply in replies]
-    return paginated_response(
-        data=data,
-        page=page_params.page,
-        page_size=page_params.page_size,
-        total=total,
+    return DataResponse[list[SupplementaryReplyListItem]](
+        data=replies,
+        meta={"page": page_params.page, "page_size": page_params.page_size, "total": total},
     )
 
 
@@ -89,9 +90,9 @@ async def get(  # noqa: F811
     reply_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:read")),
     service: SupplementaryReplyService = Depends(get_service),
-) -> Any:
+) -> DataResponse[SupplementaryReplyResponse]:
     reply = await service.get_reply(reply_id)
-    return success_response(data=reply.model_dump(mode="json"))
+    return DataResponse[SupplementaryReplyResponse](data=reply)
 
 
 @router.get("/{reply_id}/download-url", summary="获取发补回复文件下载URL")  # type: ignore[no-redef]
@@ -100,7 +101,7 @@ async def get(  # noqa: F811
     reply_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:read")),
     service: SupplementaryReplyService = Depends(get_service),
-) -> Any:
+) -> DataResponse[DownloadUrlResponse]:
     reply_model = await service.repo.get_by_id(reply_id)
     if not reply_model:
         raise NotFoundException("发补回复记录", str(reply_id))
@@ -109,7 +110,9 @@ async def get(  # noqa: F811
     if not file_path.exists():
         raise NotFoundException("发补回复文件")
 
-    return success_response(data={"url": f"/api/v1/registration/supplementary-replies/{reply_id}/download"})
+    return DataResponse[DownloadUrlResponse](
+        data=DownloadUrlResponse(url=f"/api/v1/registration/supplementary-replies/{reply_id}/download")
+    )
 
 
 @router.get("/{reply_id}/download", summary="下载生成的发补回复文件")  # type: ignore[no-redef]
@@ -118,7 +121,7 @@ async def get(  # noqa: F811
     reply_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:read")),
     service: SupplementaryReplyService = Depends(get_service),
-) -> Any:
+) -> FileResponse:
     reply_model = await service.repo.get_by_id(reply_id)
     if not reply_model:
         raise NotFoundException("发补回复记录", str(reply_id))
@@ -140,6 +143,6 @@ async def delete(
     reply_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:delete")),
     service: SupplementaryReplyService = Depends(get_service),
-) -> Any:
+) -> DataResponse[None]:
     await service.delete_reply(reply_id)
-    return success_response(message="发补回复记录删除成功")
+    return DataResponse[None](message="发补回复记录删除成功")

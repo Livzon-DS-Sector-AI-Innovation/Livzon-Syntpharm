@@ -16,8 +16,9 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.core.config import get_settings
-from app.core.jobs import spawn_task
+from app.core.jobs import submit_job, submit_job_safe
 from app.core.redis import redis_client
+from app.core.tasks import spawn_task
 from app.modules.safety.feishu.bitable_client import SafetyBitableClient
 from app.modules.safety.feishu.dept_config import DEPARTMENT_CONFIG
 from app.modules.safety.feishu.event_client import on_event
@@ -382,7 +383,7 @@ def _ms_to_datetime(value: Any) -> datetime | None:
         try:
             return datetime.fromtimestamp(int(value) / 1000, tz=UTC)
         except (ValueError, OSError):
-            pass
+            logger.exception("忽略异常 @ %s", "_ms_to_datetime")
     return None
 
 
@@ -1701,17 +1702,27 @@ async def _update_hazard_from_bitable(
                     f"UPDATE_NOTIFY_DISPATCH: record_id={record_id} hazard_no={getattr(hazard, 'hazard_no', '?')} "
                     f"→ run_rectification_review(hazard)"
                 )
-                spawn_task(service.hazard.run_rectification_review(hazard.id))
+                await submit_job(
+                    "safety.rectification-review",
+                    lambda _job_id: service.hazard.run_rectification_review(hazard.id),
+                )
             elif new_status == "replied":
                 _debug_log(
                     f"UPDATE_NOTIFY_DISPATCH: record_id={record_id} hazard_no={getattr(hazard, 'hazard_no', '?')} "
                     f"→ run_rectification_review(hazard)"
                 )
-                spawn_task(service.hazard.run_rectification_review(hazard.id))
+                await submit_job(
+                    "safety.rectification-review",
+                    lambda _job_id: service.hazard.run_rectification_review(hazard.id),
+                )
             elif new_status == "level1_approved":
                 # 一般隐患：L2（分管领导）无需复核，自动设为「无需复核」并跳至 L3
                 if getattr(hazard, "hazard_level", None) == "general":
-                    spawn_task(_auto_skip_level2_for_general_hazard(hazard, record_id))
+                    # DB + Bitable 双写，登记失败也不能打断 Bitable 事件处理（submit_job_safe 降级）
+                    await submit_job_safe(
+                        "safety.auto-skip-level2",
+                        lambda _job_id: _auto_skip_level2_for_general_hazard(hazard, record_id),
+                    )
                 else:
                     spawn_task(_send_verify_notification(hazard, 2))
             elif new_status == "level2_approved":
@@ -1916,7 +1927,7 @@ def _convert_after_value_to_fields(
                 if isinstance(parsed, (list, dict)):
                     raw = parsed
             except (json.JSONDecodeError, TypeError):
-                pass
+                logger.exception("忽略异常 @ %s", "_convert_after_value_to_fields")
         # 将选项 ID 解析为显示名称
         raw = _resolve_option_ids(raw, opt_map_cache.get(fname, {}), type_cache.get(fname, 0))
         result[fname] = raw
@@ -1953,7 +1964,7 @@ def _extract_field_value(
             if isinstance(parsed, (list, dict)):
                 raw = parsed
         except (json.JSONDecodeError, TypeError):
-            pass
+            logger.exception("忽略异常 @ %s", "_extract_field_value")
 
     # 将选项 ID 解析为显示名称
     opt_map_cache = _option_map_cache or {}
@@ -2550,8 +2561,11 @@ async def handle_card_action(event: dict[str, Any]) -> dict[str, Any] | None:  #
     # ── 第二步：Bitable 更新 + PATCH 卡片放入后台异步执行 ──
     open_message_id = event.get("context", {}).get("open_message_id", "")
     hazard_no = getattr(hazard, "hazard_no", "") if hazard else ""
-    spawn_task(
-        _handle_approve_background(
+    # Bitable 更新 + 卡片 PATCH 是有状态写操作：落 core.background_jobs 便于事后追查；
+    # 用 submit_job_safe 保证登记失败时仍能走到第三步 ACK（否则卡片超时会回滚）。
+    await submit_job_safe(
+        "safety.approve-card-background",
+        lambda _job_id: _handle_approve_background(
             record_id=record_id,
             bt_field=bt_field,
             bt_value=bt_value,
@@ -2560,7 +2574,7 @@ async def handle_card_action(event: dict[str, Any]) -> dict[str, Any] | None:  #
             open_message_id=open_message_id,
             updated_card=updated_card,
             hazard_no=hazard_no,
-        )
+        ),
     )
 
     # ── 第三步：ACK 立即返回卡片更新（防止超时回滚）──

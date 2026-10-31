@@ -43,6 +43,7 @@ import {
   HANDLE_STATUS_OPTIONS,
   CheckItemType,
 } from '@/types/doc-check'
+import { confirmDocCheckRecord, updateDocCheckProblem } from '@/actions/quality'
 
 // 风险颜色映射
 const RISK_COLORS: Record<RiskLevel, string> = {
@@ -124,19 +125,10 @@ export default function DocCheckDetailPage({ params }: PageProps) {
 
       if (!selectedProblem) return
 
-      const response = await fetch(
-        `/api/v1/quality/problems/${selectedProblem.id}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            handle_status: values.handle_status,
-            ignore_reason: values.ignore_reason,
-          }),
-        }
-      )
-
-      const data = await response.json()
+      const data = await updateDocCheckProblem(selectedProblem.id, {
+        handle_status: values.handle_status,
+        ignore_reason: values.ignore_reason,
+      })
 
       if (data.code === 200) {
         message.success('处理成功')
@@ -179,15 +171,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
     if (!checkDetail) return
 
     try {
-      const response = await fetch(
-        `/api/v1/quality/records/${checkDetail.id}/confirm`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      )
-
-      const data = await response.json()
+      const data = await confirmDocCheckRecord(checkDetail.id)
 
       if (data.code === 200) {
         message.success('确认通过成功')

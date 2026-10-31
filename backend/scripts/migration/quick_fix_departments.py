@@ -3,17 +3,23 @@
 import asyncio
 import sys
 
-sys.path.insert(0, "/home/zhuangweizi/Livzon-Syntpharm/backend")
+import os
 
-import xlrd
-from app.core.database import async_session_factory
-from app.modules.equipment.api.batch_import import map_department_name_v3
-from sqlalchemy import select
-from app.modules.equipment.models.equipment import Equipment
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, _BACKEND_DIR)
+
+import xlrd  # noqa: E402
+from app.core.database import async_session_factory  # noqa: E402
+from app.modules.equipment.api.batch_import import map_department_name_v3  # noqa: E402
+from sqlalchemy import select  # noqa: E402
+from app.modules.equipment.models.equipment import Equipment  # noqa: E402
 
 
 async def run():
-    excel_path = "/home/zhuangweizi/.codex/202606sbgz.xls"
+    excel_path = os.environ.get("IMPORT_EXCEL_PATH", "")
+    if not excel_path or not os.path.exists(excel_path):
+        print("❌ 请通过环境变量 IMPORT_EXCEL_PATH 指定 Excel 文件路径，且文件必须存在")
+        return
     wb = xlrd.open_workbook(excel_path)
     ws = wb.sheet_by_index(0)
     headers = ws.row_values(4)

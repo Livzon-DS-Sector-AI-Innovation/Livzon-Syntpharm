@@ -163,7 +163,7 @@ async def _ping_loop(ws, service_id: int) -> Any:  # type: ignore[no-untyped-def
             await asyncio.wait_for(_stop.wait(), timeout=_ping_interval)  # type: ignore[union-attr]
             return
         except TimeoutError:
-            pass
+            logger.exception("忽略异常 @ %s", "_ping_loop")
 
 
 # ── 消息处理 ──
@@ -411,7 +411,7 @@ async def start_ws() -> None:
         try:
             await asyncio.wait_for(_stop.wait(), timeout=10)
         except TimeoutError:
-            pass
+            logger.exception("忽略异常 @ %s", "start_ws")
 
     logger.info("安全飞书 WebSocket 客户端已停止")
 
@@ -453,7 +453,7 @@ async def restart_ws() -> dict[str, Any]:
         try:
             await _ws_task
         except asyncio.CancelledError:
-            pass
+            logger.exception("忽略异常 @ %s", "restart_ws")
 
     _ws_task = asyncio.create_task(start_ws())
     logger.info("安全飞书 WebSocket 已通过 restart_ws() 手动恢复")

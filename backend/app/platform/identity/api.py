@@ -4,14 +4,22 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Cookie, Depends, Header, Query, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
-from app.core.jobs import spawn_task
+from app.core.exceptions import (
+    AppException,
+    BadRequestException,
+    DuplicateException,
+    ForbiddenException,
+    NotFoundException,
+    UnauthorizedException,
+)
+from app.core.jobs import submit_job
 from app.core.response import build_response
 from app.platform.audit.service import record_audit_log
 from app.platform.identity.models import User
@@ -98,14 +106,14 @@ async def test_login(
 ) -> dict[str, Any]:
     """Return a JWT for the e2e test user. Requires APP_ENV=test/e2e + X-E2E-Secret header."""
     if settings.APP_ENV not in ("test", "e2e"):
-        raise HTTPException(status_code=404)
+        raise AppException(status_code=404)
 
     if not settings.E2E_AUTH_SECRET:
-        raise HTTPException(status_code=404)
+        raise AppException(status_code=404)
 
     expected_secret = settings.E2E_AUTH_SECRET
     if x_e2e_secret != expected_secret:
-        raise HTTPException(status_code=404)
+        raise AppException(status_code=404)
 
     from app.platform.identity.service import generate_jwt, get_or_create_e2e_user
     from app.platform.permission.public_api import ensure_superadmin
@@ -132,7 +140,6 @@ async def local_login(
     """
     from datetime import timedelta
 
-    from app.core.exceptions import UnauthorizedException
     from app.platform.identity.repository import LoginLogRepository
     from app.platform.identity.service import (
         generate_jwt,
@@ -421,9 +428,7 @@ async def get_department(
     repo = DepartmentRepository()
     dept = await repo.get_by_feishu_id(db, dept_id)
     if dept is None:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=404, detail="部门不存在")
+        raise NotFoundException("部门")
     return build_response(data=DepartmentResponse.model_validate(dept).model_dump())
 
 
@@ -478,7 +483,7 @@ async def trigger_sync_departments(
 
     from app.platform.integrations.feishu.sync import sync_departments
 
-    spawn_task(sync_departments(root_id), name="identity.sync_departments")
+    await submit_job("identity.sync-departments", lambda _job_id: sync_departments(root_id))
     logger.info("Department sync triggered for root=%s", root_id or "(自动：可见范围内的部门)")
     return build_response(
         data={"message": "组织架构同步已触发", "root_dept_id": root_id or "auto"},
@@ -500,7 +505,7 @@ async def trigger_sync_members(
 
     from app.platform.integrations.feishu.sync import sync_members
 
-    spawn_task(sync_members(target_id), name="identity.sync_members")
+    await submit_job("identity.sync-members", lambda _job_id: sync_members(target_id))
     logger.info("Member sync triggered for target=%s", target_id or "(自动)")
     return build_response(
         data={"message": "成员同步已触发", "target_dept_id": target_id or "auto"},
@@ -522,7 +527,7 @@ async def trigger_sync_all(
     """
     from app.platform.identity.service import sync_livzon_feishu_contacts_all
 
-    spawn_task(sync_livzon_feishu_contacts_all(), name="identity.sync_all")
+    await submit_job("identity.sync-all", lambda _job_id: sync_livzon_feishu_contacts_all())
     logger.info("Livzon Feishu contacts sync (departments + members) triggered")
     return build_response(
         data={
@@ -676,7 +681,6 @@ async def create_user_management(
     - 两种情况都置 `must_change_password`，用户首次登录必须自行改密 —— 一次性密码
       不应该变成长期凭据。
     """
-    from app.core.exceptions import BadRequestException, DuplicateException
     from app.platform.identity.service import (
         generate_random_password,
         hash_password,
@@ -738,7 +742,7 @@ async def update_user_management(
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    from app.core.exceptions import ForbiddenException, NotFoundException
+    from app.core.exceptions import NotFoundException
 
     repo = UserRepository()
     user = await repo.get_by_id(db, user_id)
@@ -828,7 +832,6 @@ async def batch_update_user_status(
     超管或权限更高的账号。失败条目不影响其他条目，结果里返回失败原因。
     状态与目标一致的条目按幂等处理（计入成功，不写审计）。
     """
-    from app.core.exceptions import ForbiddenException
     from app.platform.identity.service import SYSTEM_ADMIN_USERNAME
     from app.platform.permission.public_api import guard_manage_target
 
@@ -897,7 +900,7 @@ async def delete_user_management(
     账号名不会被释放——`uq_identity_users_username` 不区分 `is_deleted`，删除后同名
     账号无法重建；如需复用名称，请另建新名（或后续做改名迁移）。
     """
-    from app.core.exceptions import ForbiddenException, NotFoundException
+    from app.core.exceptions import NotFoundException
     from app.platform.identity.service import SYSTEM_ADMIN_USERNAME
     from app.platform.identity.session import revoke_all_user_sessions
     from app.platform.permission.public_api import (
@@ -978,7 +981,7 @@ async def reset_user_password(
     - 两种情况都把账号标记为「首登需改密」；
     - 超级管理员账号不允许被他人重置 —— 其密码只能由本人登录后自助修改。
     """
-    from app.core.exceptions import ForbiddenException, NotFoundException
+    from app.core.exceptions import NotFoundException
     from app.platform.identity.service import reset_password_by_admin
     from app.platform.permission.public_api import guard_manage_target, user_is_superuser
 
@@ -1145,7 +1148,7 @@ async def bind_user_feishu(
     （见 `handle_oauth_callback`）。本接口保留，以便后续「系统自动合并重复账号」
     等场景调用；若需彻底禁止人工调用，可把依赖换成更高权限码或直接下线。
     """
-    from app.core.exceptions import BadRequestException, NotFoundException
+    from app.core.exceptions import NotFoundException
     from app.platform.identity.service import bind_feishu_user
 
     repo = UserRepository()
@@ -1185,7 +1188,7 @@ async def unbind_user_feishu(
       因为它没有本地密码，解绑后已无可用登录身份；
     - 本地创建后绑定飞书的账号：只清空飞书字段，账号本体与角色授权保留。
     """
-    from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
+    from app.core.exceptions import NotFoundException
     from app.platform.identity.service import unbind_feishu_user
 
     repo = UserRepository()

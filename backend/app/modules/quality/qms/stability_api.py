@@ -5,11 +5,12 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import AppException, BadRequestException
 from app.modules.quality.qms.stability_schemas import (
     StabilityApprovalCreate,
     StabilityInspectionApiResponse,
@@ -61,7 +62,7 @@ async def post(
             data=StabilityStudyResponse.model_validate(study),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.get("/studies", response_model=StabilityStudyPageResponse)
@@ -112,7 +113,7 @@ async def get(  # noqa: F811
         study = await service.get_study(study_id)
         return StabilityStudyApiResponse(data=StabilityStudyResponse.model_validate(study))
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise AppException(status_code=404, message=str(e))
 
 
 @router.put("/studies/{study_id}", response_model=StabilityStudyApiResponse)
@@ -132,7 +133,7 @@ async def put(
             data=StabilityStudyResponse.model_validate(study),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.delete("/studies/{study_id}")
@@ -148,7 +149,7 @@ async def delete(
         await service.delete_study(study_id, user_id)
         return StabilityStudyApiResponse(code=200, message="操作成功", data=None)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/studies/{study_id}/submit", response_model=StabilityStudyApiResponse)  # type: ignore[no-redef]
@@ -167,7 +168,7 @@ async def post(  # noqa: F811
             data=StabilityStudyResponse.model_validate(study),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/studies/{study_id}/approve", response_model=StabilityStudyApiResponse)  # type: ignore[no-redef]
@@ -189,7 +190,7 @@ async def post(  # noqa: F811
             data=StabilityStudyResponse.model_validate(study),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 # ========== Sample Node Routes ==========
@@ -224,7 +225,7 @@ async def put(  # noqa: F811
             data=StabilitySampleNodeResponse.model_validate(node),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 # ========== Stability Inspection Routes ==========
@@ -246,7 +247,7 @@ async def post(  # noqa: F811
             data=StabilityInspectionResponse.model_validate(inspection),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.get("/inspections", response_model=StabilityInspectionPageResponse)  # type: ignore[no-redef]
@@ -295,7 +296,7 @@ async def get(  # noqa: F811
         inspection = await service.get_inspection(inspection_id)
         return StabilityInspectionApiResponse(data=StabilityInspectionResponse.model_validate(inspection))
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise AppException(status_code=404, message=str(e))
 
 
 @router.put("/inspections/{inspection_id}", response_model=StabilityStudyApiResponse)  # type: ignore[no-redef]
@@ -315,7 +316,7 @@ async def put(  # noqa: F811
             data=StabilityInspectionResponse.model_validate(inspection),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/inspections/{inspection_id}/submit", response_model=StabilityStudyApiResponse)  # type: ignore[no-redef]
@@ -334,7 +335,7 @@ async def post(  # noqa: F811
             data=StabilityInspectionResponse.model_validate(inspection),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 # ========== Trend Analysis Routes ==========
@@ -354,4 +355,4 @@ async def get(  # noqa: F811
         trend_response = StabilityTrendResponse.model_validate(trend_data)
         return StabilityTrendApiResponse(data=trend_response)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))

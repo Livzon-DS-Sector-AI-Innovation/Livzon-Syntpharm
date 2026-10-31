@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import { DataUnavailable } from '@/components/common/DataUnavailable'
 import { UploadFile, Table, Input, Button, Space, App, Card, Modal, Form, Upload } from 'antd'
 import { UploadOutlined, DownloadOutlined, DeleteOutlined } from '@ant-design/icons'
 import { SupplementaryReplyListItem } from '@/types/registration'
@@ -18,38 +20,49 @@ export default function SupplementaryReplyClient({
   initialTotal,
 }: SupplementaryReplyClientProps) {
   const { message } = App.useApp()
-  const [replies, setReplies] = useState<SupplementaryReplyListItem[]>(initialReplies)
-  const [total, setTotal] = useState(initialTotal)
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
-  const [loading, setLoading] = useState(false)
   const [drugName, setDrugName] = useState('')
+  // 已提交的查询条件：输入框内容不直接触发请求，点「搜索」才提交
+  const [query, setQuery] = useState<{ page: number; pageSize: number; drugName: string }>({
+    page: 1,
+    pageSize: 20,
+    drugName: '',
+  })
   const [generateModalOpen, setGenerateModalOpen] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [form] = Form.useForm()
   const [noticeFileList, setNoticeFileList] = useState<UploadFile[]>([])
   const [templateFileList, setTemplateFileList] = useState<UploadFile[]>([])
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await fetchSupplementaryReplies({
-        drug_name: drugName || undefined,
-        page,
-        page_size: pageSize,
-      })
-      setReplies(res.data)
-      setTotal(res.meta?.total || 0)
-    } catch (err: unknown) {
-      message.error((err instanceof Error ? err.message : null) || '加载数据失败')
-    } finally {
-      setLoading(false)
+  const isInitialQuery = query.page === 1 && query.pageSize === 20 && !query.drugName
+
+  const repliesQuery = useQuery({
+    queryKey: ['supplementary-replies', query],
+    queryFn: () =>
+      fetchSupplementaryReplies({
+        drug_name: query.drugName || undefined,
+        page: query.page,
+        page_size: query.pageSize,
+      }),
+    placeholderData: keepPreviousData,
+    // 首屏首页直接用服务端已取好的数据，避免闪一次 loading；其余页码必须真取
+    initialData: isInitialQuery ? { items: initialReplies, total: initialTotal } : undefined,
+  })
+
+  const replies = repliesQuery.data?.items ?? []
+  const total = repliesQuery.data?.total ?? 0
+
+  // 搜索：条件与当前一致时强制重取，否则提交新条件（页码回到 1）
+  const handleSearch = () => {
+    const nextDrugName = drugName.trim()
+    if (nextDrugName === query.drugName && query.page === 1) {
+      void repliesQuery.refetch()
+      return
     }
-  }, [drugName, page, pageSize, message])
+    setQuery({ page: 1, pageSize: query.pageSize, drugName: nextDrugName })
+  }
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
-    setPage(newPage)
-    setPageSize(newPageSize)
+    setQuery(prev => ({ ...prev, page: newPage, pageSize: newPageSize }))
   }
 
   const handleGenerate = async () => {
@@ -84,7 +97,7 @@ export default function SupplementaryReplyClient({
         form.resetFields()
         setNoticeFileList([])
         setTemplateFileList([])
-        loadData()
+        void repliesQuery.refetch()
       } else {
         message.error(result.message)
       }
@@ -99,7 +112,7 @@ export default function SupplementaryReplyClient({
     try {
       await deleteSupplementaryReplyAction(id)
       message.success('删除成功')
-      loadData()
+      void repliesQuery.refetch()
     } catch (err: unknown) {
       message.error((err instanceof Error ? err.message : null) || '删除失败')
     }
@@ -189,7 +202,7 @@ export default function SupplementaryReplyClient({
             style={{ width: 200 }}
             allowClear
           />
-          <Button onClick={() => { setPage(1); loadData() }}>搜索</Button>
+          <Button onClick={handleSearch}>搜索</Button>
           <Button type="primary" onClick={() => setGenerateModalOpen(true)}>
             生成发补回复
           </Button>
@@ -199,16 +212,24 @@ export default function SupplementaryReplyClient({
           columns={columns}
           dataSource={replies}
           rowKey="id"
-          loading={loading}
+          loading={repliesQuery.isPending}
           pagination={{
-            current: page,
-            pageSize: pageSize,
+            current: query.page,
+            pageSize: query.pageSize,
             total: total,
             showSizeChanger: true,
+            // 后端 PageParams 为 le=200，选项不得超过该上限否则 422
+            pageSizeOptions: [10, 20, 50, 100],
             showTotal: (total) => `共 ${total} 条`,
             onChange: handlePageChange,
           }}
           scroll={{ x: 1200 }}
+          locale={{
+            // 取数失败时在表格内嵌降级区块，与「确实没有记录」的空态区分开
+            emptyText: repliesQuery.isError ? (
+              <DataUnavailable compact onRetry={() => void repliesQuery.refetch()} />
+            ) : undefined,
+          }}
         />
       </Card>
 

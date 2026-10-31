@@ -2,6 +2,8 @@ import { chromium, expect } from '@playwright/test'
 import path from 'path'
 import fs from 'fs'
 
+import { BACKEND_ORIGIN, FRONTEND_ORIGIN } from '../playwright.config'
+
 const authFile = path.join(__dirname, '.auth', 'storageState.json')
 
 async function saveStorageState(context: import('@playwright/test').BrowserContext) {
@@ -13,8 +15,8 @@ async function saveStorageState(context: import('@playwright/test').BrowserConte
 }
 
 async function globalSetup(config: { projects?: Array<{ use?: { baseURL?: string } }> }) {
-  const baseURL = config.projects?.[0]?.use?.baseURL || 'http://localhost:3000'
-  const apiURL = process.env.E2E_BACKEND_URL || 'http://localhost:18000'
+  const baseURL = config.projects?.[0]?.use?.baseURL || FRONTEND_ORIGIN
+  const apiURL = BACKEND_ORIGIN
   const e2eSecret = process.env.E2E_AUTH_SECRET || 'e2e-test-secret'
   
   const browser = await chromium.launch()

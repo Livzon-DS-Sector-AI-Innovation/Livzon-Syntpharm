@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.database import async_session_factory
+from app.core.exceptions import AppException, BadRequestException, ForbiddenException, UnauthorizedException
 from app.core.secrets import decrypt_secret, encrypt_secret, mask_secret
 from app.platform.audit.models import AuditLog
 from app.platform.identity.models import FeishuCardAction, FeishuConfig, User
@@ -53,11 +54,9 @@ ALLOWED_CARD_ACTIONS = {
 }
 
 
-def _secret_runtime_error(exc: RuntimeError) -> HTTPException:
-    return HTTPException(
-        status.HTTP_500_INTERNAL_SERVER_ERROR,
-        (f"Livzon 助手飞书密钥加解密失败：{exc}。请检查后端 ENCRYPTION_KEY 配置是否与保存配置时一致。"),
-    )
+def _secret_runtime_error(exc: RuntimeError) -> AppException:
+    message = f"Livzon 助手飞书密钥加解密失败：{exc}。请检查后端 ENCRYPTION_KEY 配置是否与保存配置时一致。"
+    return AppException(status_code=500, message=message)
 
 
 def hash_password(password: str) -> str:
@@ -253,7 +252,7 @@ async def save_livzon_feishu_config(db: AsyncSession, payload: FeishuConfigUpser
         else None
     )
     if not encrypted_secret:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "请输入 App Secret")
+        raise BadRequestException("请输入 App Secret")
 
     if existing:
         existing.config_name = target_name
@@ -316,10 +315,7 @@ async def _effective_feishu_credentials(
         or root_id
     )
     if not app_id or not app_secret:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            "Livzon 助手飞书 App ID 或 App Secret 未配置",
-        )
+        raise BadRequestException("Livzon 助手飞书 App ID 或 App Secret 未配置")
     return app_id, app_secret, root_id, member_id
 
 
@@ -676,7 +672,7 @@ async def run_livzon_feishu_sync_all(db: AsyncSession) -> dict[str, Any]:
             config.last_sync_message = message
             config.last_synced_at = datetime.now(UTC)
             await db.flush()
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, message)
+        raise BadRequestException(message)
 
     sync_status = "warning" if all_errors else "ok"
     sync_message = f"同步完成：部门 {dept_count} 个，部门用户 {member_count} 名，直接授权用户 {direct_user_count} 名。"
@@ -758,19 +754,13 @@ async def record_member_sync_result(result: dict[str, Any]) -> None:
 async def _active_livzon_feishu_credentials(db: AsyncSession) -> tuple[str, str]:
     config = await _feishu_config_repo.get_active(db)
     if config is None or not config.app_id or not config.encrypted_app_secret:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            "Livzon 助手飞书 App ID 或 App Secret 未配置",
-        )
+        raise BadRequestException("Livzon 助手飞书 App ID 或 App Secret 未配置")
     try:
         app_secret = decrypt_secret(config.encrypted_app_secret)
     except RuntimeError as exc:
         raise _secret_runtime_error(exc) from exc
     if not app_secret:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            "Livzon 助手飞书 App Secret 未配置",
-        )
+        raise BadRequestException("Livzon 助手飞书 App Secret 未配置")
     return config.app_id, app_secret
 
 
@@ -804,10 +794,7 @@ def _message_shape(
     else:
         expected = "card"
     if message_form != "auto" and message_form != expected:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            f"消息形态不符合 Livzon 助手规则：当前应使用 {expected}",
-        )
+        raise BadRequestException(f"消息形态不符合 Livzon 助手规则：当前应使用 {expected}")
     return expected
 
 
@@ -820,10 +807,7 @@ def _normalize_card_actions(actions: list[dict[str, Any]] | None) -> list[dict[s
     for item in raw_actions:
         action_key = str(item.get("action_key") or "").strip()
         if action_key not in ALLOWED_CARD_ACTIONS:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                f"不支持的交互卡片动作：{action_key}",
-            )
+            raise BadRequestException(f"不支持的交互卡片动作：{action_key}")
         label = str(item.get("label") or ALLOWED_CARD_ACTIONS[action_key]).strip()
         normalized.append(
             {
@@ -978,13 +962,9 @@ async def _send_livzon_feishu_callback_card(
     if config is None or (
         not config.card_callback_verification_token and not settings.LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED
     ):
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            (
-                "Livzon 助手飞书交互卡片回调未配置。HTTP 回调需要 "
-                "Verification Token；开发环境可开启长连接 "
-                "LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED=true。"
-            ),
+        raise BadRequestException(
+            "Livzon 助手飞书交互卡片回调未配置。HTTP 回调需要 Verification Token；"
+            "开发环境可开启长连接 LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED=true。"
         )
     app_id, app_secret = await _active_livzon_feishu_credentials(db)
     token = await get_tenant_access_token(
@@ -1256,10 +1236,7 @@ async def handle_livzon_feishu_card_callback(
 ) -> dict[str, Any]:
     config = await _feishu_config_repo.get_active(db)
     if config is None or not config.card_callback_verification_token:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            "Livzon 助手飞书卡片回调未配置",
-        )
+        raise BadRequestException("Livzon 助手飞书卡片回调未配置")
     encrypt_key = None
     if config.encrypted_card_callback_encrypt_key:
         try:
@@ -1273,18 +1250,15 @@ async def handle_livzon_feishu_card_callback(
         nonce=nonce,
         signature=signature,
     ):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "飞书回调签名校验失败")
+        raise UnauthorizedException("飞书回调签名校验失败")
     if "encrypt" in payload:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            "暂不支持加密后的飞书卡片回调 payload，请关闭加密或使用签名校验",
-        )
+        raise BadRequestException("暂不支持加密后的飞书卡片回调 payload，请关闭加密或使用签名校验")
     token = _callback_payload_token(payload)
     if not token or not hmac.compare_digest(
         token,
         config.card_callback_verification_token,
     ):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "飞书回调 token 校验失败")
+        raise UnauthorizedException("飞书回调 token 校验失败")
     challenge = payload.get("challenge")
     if isinstance(challenge, str):
         return {"challenge": challenge}
@@ -1304,12 +1278,12 @@ async def handle_livzon_feishu_card_action_event(
     """
     action_id, action_key, clicked_open_id = _extract_callback_action(payload)
     if not action_id or not action_key:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "飞书回调缺少 action_id")
+        raise BadRequestException("飞书回调缺少 action_id")
     action = await _feishu_card_action_repo.get_pending_by_id(db, action_id)
     if action is None:
         return {"toast": {"type": "warning", "content": "操作不存在或已删除"}}
     if action.action_key != action_key:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "飞书回调动作不匹配")
+        raise BadRequestException("飞书回调动作不匹配")
     now = datetime.now(UTC)
     if action.expires_at and action.expires_at < now:
         action.status = "expired"
@@ -1586,11 +1560,11 @@ def lockout_policy() -> tuple[int, int]:
 async def authenticate_local_user(db: AsyncSession, *, username: str, password: str) -> tuple[User, str]:
     user = await _repo.get_by_login_identifier(db, username)
     if user is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "账号或密码错误")
+        raise UnauthorizedException("账号或密码错误")
 
     now = datetime.now(UTC)
     if user.locked_until is not None and user.locked_until > now:
-        raise HTTPException(status.HTTP_423_LOCKED, "登录失败次数过多，账号已临时锁定，请稍后再试")
+        raise AppException(status_code=423, message="登录失败次数过多，账号已临时锁定，请稍后再试")
 
     max_failures, lockout_seconds = lockout_policy()
     if not verify_password(password, user.password_hash):
@@ -1599,10 +1573,10 @@ async def authenticate_local_user(db: AsyncSession, *, username: str, password: 
             user.locked_until = now + timedelta(seconds=lockout_seconds)
             user.failed_login_attempts = 0
         await db.flush()
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "账号或密码错误")
+        raise UnauthorizedException("账号或密码错误")
 
     if user.status == "disabled":
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "账号已禁用")
+        raise ForbiddenException("账号已禁用")
 
     user.failed_login_attempts = 0
     user.locked_until = None
