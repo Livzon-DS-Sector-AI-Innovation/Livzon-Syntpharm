@@ -37,3 +37,19 @@ class DeviationOptimizeData(BaseModel):
     """AI 优化结果"""
 
     optimized_text: str
+
+
+class DeviationOptimizeJobData(BaseModel):
+    """AI 优化任务受理结果（202，任务在后台执行）"""
+
+    job_id: str = Field(description="任务标识，用于轮询结果")
+    status: str = Field(description="任务状态：pending/running")
+
+
+class DeviationOptimizeJobResultData(BaseModel):
+    """AI 优化任务状态（轮询用）"""
+
+    job_id: str
+    status: str = Field(description="任务状态：pending/running/done/failed")
+    optimized_text: str | None = Field(default=None, description="status=done 时返回")
+    error: str | None = Field(default=None, description="status=failed 时返回")

@@ -105,7 +105,8 @@ import * as QualityServer from '@/lib/api/server/quality'
 import * as DeviationReportServer from '@/lib/api/server/quality-deviation-report'
 import * as DocCheckServer from '@/lib/api/server/quality-doc-check'
 import type {
-  DeviationOptimizeResult,
+  DeviationOptimizeJob,
+  DeviationOptimizeJobResult,
   DeviationReportOptimizeType,
   DeviationReportUploadResult,
 } from '@/types/quality'
@@ -976,10 +977,15 @@ export async function uploadDeviationReportTemplate(file: File): Promise<Deviati
   return DeviationReportServer.uploadDeviationReport(file)
 }
 
-/** AI 优化偏差报告选中文本（server 层已解包，直接返回契约数据） */
-export async function optimizeDeviationReportText(
+/** 提交 AI 优化任务，返回 job_id（结果由客户端轮询，避免单个请求等 LLM 二三十秒） */
+export async function startDeviationReportOptimize(
   text: string,
   optimizeType: DeviationReportOptimizeType,
-): Promise<DeviationOptimizeResult> {
-  return DeviationReportServer.optimizeDeviationReportText(text, optimizeType)
+): Promise<DeviationOptimizeJob> {
+  return DeviationReportServer.startDeviationReportOptimize(text, optimizeType)
+}
+
+/** 轮询 AI 优化任务状态 */
+export async function getDeviationReportOptimizeJob(jobId: string): Promise<DeviationOptimizeJobResult> {
+  return DeviationReportServer.fetchDeviationReportOptimizeJob(jobId)
 }

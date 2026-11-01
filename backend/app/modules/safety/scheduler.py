@@ -34,7 +34,7 @@ async def scheduled_task_loop() -> Any:
         try:
             await asyncio.wait_for(stop_scheduled_task_flag.wait(), timeout=TICK_INTERVAL)
         except TimeoutError:
-            logger.exception("忽略异常 @ %s", "scheduled_task_loop")  # Normal tick timeout, loop continues
+            pass  # 正常控制流（等待超时/主动取消），不是异常
 
     logger.info("Scheduled task loop stopped")
 

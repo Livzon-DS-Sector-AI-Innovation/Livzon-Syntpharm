@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
-import { Card, Row, Col, Typography, Button, Space, Spin } from 'antd'
+import { Card, Row, Col, Typography, Button, Space, Spin, Alert } from 'antd'
 import {
   BookOutlined,
   ProjectOutlined,
@@ -230,7 +230,20 @@ export default function RegistrationPage() {
         </Space>
       </div>
 
-      {/* 统计看板区 */}
+      {/* 统计看板区：失败时明确提示，避免把「加载失败」显示成 0 */}
+      {summaryQuery.isError && (
+        <Alert
+          type="warning"
+          showIcon
+          message="统计数据加载失败"
+          description="注册台账汇总接口暂时不可用，下方入口功能不受影响。"
+          action={
+            <Button size="small" onClick={() => void summaryQuery.refetch()}>
+              重试
+            </Button>
+          }
+        />
+      )}
       <Spin spinning={loading}>
         <Row gutter={[16, 16]}>
           {statCards.map((card) => (

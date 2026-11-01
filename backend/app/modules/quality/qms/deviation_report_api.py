@@ -8,14 +8,19 @@ from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import StreamingResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import storage
+from app.core.database import async_session_factory, get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException, NotFoundException
+from app.core.job_repository import JobRepository
+from app.core.jobs import submit_job
 from app.core.llm import llm_client
 from app.core.response import DataResponse
 from app.modules.quality.qms.deviation_report_schemas import (
-    DeviationOptimizeData,
+    DeviationOptimizeJobData,
+    DeviationOptimizeJobResultData,
     DeviationReportUploadData,
     OptimizeTextRequest,
     SaveHtmlRequest,
@@ -84,6 +89,47 @@ _OPTIMIZE_PROMPTS: dict[str, str] = {
 }
 
 _OPTIMIZE_RESULT_PREFIXES = ("润色结果：", "总结结果：", "扩展结果：", "简化结果：")
+
+# 任务名遵循 `<module>.<动作>` 约定，便于在 job 表里按模块检索
+_OPTIMIZE_JOB_KIND = "quality.deviation-ai-optimize"
+
+
+def _strip_result_prefix(raw: str) -> str:
+    """去掉模型爱加的前缀（"润色结果："之类）。"""
+    optimized = raw.strip()
+    for prefix in _OPTIMIZE_RESULT_PREFIXES:
+        if optimized.startswith(prefix):
+            return optimized[len(prefix) :].lstrip()
+    return optimized
+
+
+async def _run_optimize(job_id: uuid.UUID, text: str, optimize_type: str) -> None:
+    """后台执行 AI 优化。
+
+    没有调用方可以回报错误，因此异常写进 job.error 由轮询方读取；
+    `extra` 带上 job_id，日志可以按任务号回溯。
+    """
+    template = _OPTIMIZE_PROMPTS.get(optimize_type, _OPTIMIZE_PROMPTS["polish"])
+    prompt = template.format(text=text)
+
+    async with async_session_factory() as worker_db:
+        try:
+            result = await llm_client.chat(
+                [{"role": "user", "content": prompt}],
+                response_format=None,
+                max_tokens=4096,
+            )
+            await JobRepository(worker_db).complete(
+                job_id,
+                {"optimized_text": _strip_result_prefix(result)},
+            )
+        except Exception as exc:
+            logger.exception(
+                "偏差报告 AI 优化失败: optimize_type=%s",
+                optimize_type,
+                extra={"job_id": str(job_id)},
+            )
+            await JobRepository(worker_db).fail(job_id, str(exc))
 
 
 def _object_key(file_id: str) -> str:
@@ -218,33 +264,66 @@ async def download_report(
 # ============ AI 优化接口 ============
 
 
-@router.post("/ai/optimize", summary="AI优化文本")
+@router.post(
+    "/ai/optimize",
+    response_model=DataResponse[DeviationOptimizeJobData],
+    status_code=202,
+    summary="提交AI优化文本任务",
+)
 async def optimize_text(
     payload: OptimizeTextRequest,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:deviation:update")),
-) -> DataResponse[DeviationOptimizeData]:
-    """使用AI优化选中的文本"""
-    template = _OPTIMIZE_PROMPTS.get(payload.optimize_type, _OPTIMIZE_PROMPTS["polish"])
-    prompt = template.format(text=payload.text)
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[DeviationOptimizeJobData]:
+    """提交 AI 优化任务，立即返回 job_id。
 
+    LLM 调用常态 5–30 秒，超过 AGENTS.md 的 5 秒请求上限，因此不在请求路径上执行；
+    客户端拿 job_id 轮询 `GET /ai/optimize/jobs/{job_id}`。
+    """
+    job_id = await JobRepository(db).create(_OPTIMIZE_JOB_KIND)
+
+    await submit_job(
+        _OPTIMIZE_JOB_KIND,
+        lambda _job_id: _run_optimize(job_id, payload.text, payload.optimize_type),
+    )
+
+    return DataResponse[DeviationOptimizeJobData](
+        code=202,
+        message="优化任务已提交",
+        data=DeviationOptimizeJobData(job_id=str(job_id), status="running"),
+    )
+
+
+@router.get(
+    "/ai/optimize/jobs/{job_id}",
+    response_model=DataResponse[DeviationOptimizeJobResultData],
+    summary="查询AI优化任务",
+)
+async def get_optimize_job(
+    job_id: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:read")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[DeviationOptimizeJobResultData]:
+    """轮询 AI 优化任务状态；`done` 时返回 optimized_text，`failed` 时返回 error。"""
     try:
-        result = await llm_client.chat(
-            [{"role": "user", "content": prompt}],
-            response_format=None,
-            max_tokens=4096,
-        )
-    except Exception:
-        logger.exception("偏差报告 AI 优化失败: optimize_type=%s", payload.optimize_type)
-        raise AppException(status_code=500, message="AI 优化失败，请稍后重试") from None
+        job_uuid = uuid.UUID(job_id)
+    except ValueError:
+        raise NotFoundException(resource="优化任务", resource_id=job_id) from None
 
-    optimized = result.strip()
-    for prefix in _OPTIMIZE_RESULT_PREFIXES:
-        if optimized.startswith(prefix):
-            optimized = optimized[len(prefix) :].lstrip()
-            break
+    job = await JobRepository(db).get(job_uuid)
+    if job is None:
+        raise NotFoundException(resource="优化任务", resource_id=job_id)
 
-    return DataResponse[DeviationOptimizeData](
-        message="优化成功",
-        data=DeviationOptimizeData(optimized_text=optimized),
+    result = job.result if isinstance(job.result, dict) else {}
+    optimized = result.get("optimized_text")
+
+    return DataResponse[DeviationOptimizeJobResultData](
+        data=DeviationOptimizeJobResultData(
+            job_id=str(job.id),
+            status=job.state,
+            optimized_text=optimized if isinstance(optimized, str) else None,
+            error=job.error,
+        ),
     )

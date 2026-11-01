@@ -14392,10 +14392,169 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * AI优化文本
-         * @description 使用AI优化选中的文本
+         * 提交AI优化文本任务
+         * @description 提交 AI 优化任务，立即返回 job_id。
+         *
+         *     LLM 调用常态 5–30 秒，超过 AGENTS.md 的 5 秒请求上限，因此不在请求路径上执行；
+         *     客户端拿 job_id 轮询 `GET /ai/optimize/jobs/{job_id}`。
          */
         post: operations["optimize_text_api_v1_quality_deviation_report_ai_optimize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-report/ai/optimize/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询AI优化任务
+         * @description 轮询 AI 优化任务状态；`done` 时返回 optimized_text，`failed` 时返回 error。
+         */
+        get: operations["get_optimize_job_api_v1_quality_deviation_report_ai_optimize_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-flow/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取选项列表
+         * @description 获取偏差类型、紧急等级、状态等选项
+         */
+        get: operations["get_options_api_v1_quality_deviation_flow_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-flow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 偏差列表
+         * @description 获取偏差列表
+         */
+        get: operations["list_deviations_api_v1_quality_deviation_flow_get"];
+        put?: never;
+        /**
+         * 创建偏差
+         * @description 创建新偏差（草稿状态）
+         */
+        post: operations["create_deviation_api_v1_quality_deviation_flow_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-flow/{deviation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取偏差详情
+         * @description 获取偏差详情
+         */
+        get: operations["get_deviation_api_v1_quality_deviation_flow__deviation_id__get"];
+        /**
+         * 更新偏差
+         * @description 更新偏差（草稿状态和基础完成状态可编辑）
+         */
+        put: operations["update_deviation_api_v1_quality_deviation_flow__deviation_id__put"];
+        post?: never;
+        /**
+         * 删除偏差
+         * @description 删除偏差（仅草稿状态可删除）
+         */
+        delete: operations["delete_deviation_api_v1_quality_deviation_flow__deviation_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-flow/{deviation_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 提交偏差（分阶段）
+         * @description 分阶段提交偏差，触发飞书通知
+         */
+        post: operations["submit_deviation_api_v1_quality_deviation_flow__deviation_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-flow/{deviation_id}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取偏差附件列表
+         * @description 获取偏差的附件列表
+         */
+        get: operations["list_attachments_api_v1_quality_deviation_flow__deviation_id__attachments_get"];
+        put?: never;
+        /**
+         * 上传偏差附件
+         * @description 上传偏差附件（仅 detail_completed 状态可上传）
+         */
+        post: operations["upload_attachment_api_v1_quality_deviation_flow__deviation_id__attachments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation-flow/attachments/{attachment_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 下载偏差附件
+         * @description 下载偏差附件
+         */
+        get: operations["download_attachment_api_v1_quality_deviation_flow_attachments__attachment_id__download_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -21887,6 +22046,11 @@ export interface components {
             /** Files */
             files: string[];
         };
+        /** Body_upload_attachment_api_v1_quality_deviation_flow__deviation_id__attachments_post */
+        Body_upload_attachment_api_v1_quality_deviation_flow__deviation_id__attachments_post: {
+            /** File */
+            file: string;
+        };
         /** Body_upload_deliverable_file_api_v1_research_rd_stage_deliverables__deliverable_id__upload_post */
         Body_upload_deliverable_file_api_v1_research_rd_stage_deliverables__deliverable_id__upload_post: {
             /** File */
@@ -26112,8 +26276,8 @@ export interface components {
             data?: components["schemas"]["DeliverableUploadResult"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
-        /** DataResponse[DeviationOptimizeData] */
-        DataResponse_DeviationOptimizeData_: {
+        /** DataResponse[DeviationOptimizeJobData] */
+        DataResponse_DeviationOptimizeJobData_: {
             /**
              * Code
              * @default 200
@@ -26124,7 +26288,22 @@ export interface components {
              * @default success
              */
             message: string;
-            data?: components["schemas"]["DeviationOptimizeData"] | null;
+            data?: components["schemas"]["DeviationOptimizeJobData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[DeviationOptimizeJobResultData] */
+        DataResponse_DeviationOptimizeJobResultData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DeviationOptimizeJobResultData"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[DeviationReportUploadData] */
@@ -28256,6 +28435,18 @@ export interface components {
             data?: unknown;
         };
         /**
+         * DeviationAttachmentListResponse
+         * @description 偏差附件列表响应
+         */
+        DeviationAttachmentListResponse: {
+            /** Code */
+            code: number;
+            /** Message */
+            message: string;
+            /** Data */
+            data: components["schemas"]["DeviationFlowAttachment"][];
+        };
+        /**
          * DeviationCreate
          * @description 偏差创建
          */
@@ -28300,6 +28491,277 @@ export interface components {
             batch_lock_reason?: string | null;
         };
         /**
+         * DeviationCreateData
+         * @description 新建偏差后的标识信息
+         */
+        DeviationCreateData: {
+            /** Id */
+            id: string;
+            /** Deviation No */
+            deviation_no: string;
+        };
+        /**
+         * DeviationCreateRequest
+         * @description 创建偏差请求
+         */
+        DeviationCreateRequest: {
+            /**
+             * Theme
+             * @description 偏差主题
+             */
+            theme?: string | null;
+            /**
+             * Occurred Date
+             * @description 偏差发生日期
+             */
+            occurred_date?: string | null;
+            /**
+             * Discovered Date
+             * @description 发现日期
+             */
+            discovered_date?: string | null;
+            /**
+             * Responsible Department
+             * @description 责任部门
+             */
+            responsible_department?: string | null;
+            /**
+             * Occurred Area
+             * @description 发生区域/车间
+             */
+            occurred_area?: string | null;
+            /**
+             * Deviation Type
+             * @description 偏差类型
+             */
+            deviation_type?: string | null;
+            /**
+             * Urgency Level
+             * @description 紧急等级
+             */
+            urgency_level?: string | null;
+            /**
+             * Product Name
+             * @description 涉及产品/物料
+             */
+            product_name?: string | null;
+            /**
+             * Batch No
+             * @description 批次号
+             */
+            batch_no?: string | null;
+            /**
+             * Equipment
+             * @description 涉及设备/仪器
+             */
+            equipment?: string | null;
+            /**
+             * Standard Based On
+             * @description 偏离标准依据
+             */
+            standard_based_on?: string | null;
+            /**
+             * Deviation Description
+             * @description 偏差完整经过描述
+             */
+            deviation_description?: string | null;
+            /**
+             * Risk Assessment
+             * @description 初步风险影响评估
+             */
+            risk_assessment?: string | null;
+            /**
+             * Temp Measures
+             * @description 临时处置措施
+             */
+            temp_measures?: string | null;
+            /**
+             * Related Deviation No
+             * @description 关联偏差单号
+             */
+            related_deviation_no?: string | null;
+            /**
+             * Related Capa
+             * @description 关联CAPA
+             */
+            related_capa?: string | null;
+            /**
+             * Remarks
+             * @description 备注说明
+             */
+            remarks?: string | null;
+            /**
+             * Qa Feishu Open Id
+             * @description QA人员飞书OpenID
+             */
+            qa_feishu_open_id?: string | null;
+            /**
+             * Qa Feishu Name
+             * @description QA人员姓名
+             */
+            qa_feishu_name?: string | null;
+            /**
+             * Dept Leader Feishu Open Id
+             * @description 部门负责人飞书OpenID
+             */
+            dept_leader_feishu_open_id?: string | null;
+            /**
+             * Dept Leader Feishu Name
+             * @description 部门负责人姓名
+             */
+            dept_leader_feishu_name?: string | null;
+            /**
+             * Reporter
+             * @description 填报人
+             */
+            reporter?: string | null;
+            /**
+             * Reporter Department
+             * @description 填报部门
+             */
+            reporter_department?: string | null;
+            /**
+             * Reporter Feishu Open Id
+             * @description 填报人飞书OpenID
+             */
+            reporter_feishu_open_id?: string | null;
+        };
+        /**
+         * DeviationCreateResponse
+         * @description 创建偏差响应
+         */
+        DeviationCreateResponse: {
+            /** Code */
+            code: number;
+            /** Message */
+            message: string;
+            data: components["schemas"]["DeviationCreateData"];
+        };
+        /**
+         * DeviationDetailData
+         * @description 偏差详情数据
+         *
+         *     列集合来自 ``SELECT * FROM qms.qms_deviation``。未显式声明的列通过
+         *     ``extra="allow"`` 原样透传，避免表结构演进时被响应模型裁掉。
+         */
+        DeviationDetailData: {
+            /** Id */
+            id?: string | null;
+            /** Deviation No */
+            deviation_no?: string | null;
+            /** Theme */
+            theme?: string | null;
+            /** Occurred Date */
+            occurred_date?: string | null;
+            /** Discovered Date */
+            discovered_date?: string | null;
+            /** Responsible Department */
+            responsible_department?: string | null;
+            /** Occurred Area */
+            occurred_area?: string | null;
+            /** Deviation Type */
+            deviation_type?: string | null;
+            /** Deviation Type Label */
+            deviation_type_label?: string | null;
+            /** Urgency Level */
+            urgency_level?: string | null;
+            /** Urgency Level Label */
+            urgency_level_label?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Status Label */
+            status_label?: string | null;
+            /** Product Name */
+            product_name?: string | null;
+            /** Batch No */
+            batch_no?: string | null;
+            /** Equipment */
+            equipment?: string | null;
+            /** Standard Based On */
+            standard_based_on?: string | null;
+            /** Deviation Description */
+            deviation_description?: string | null;
+            /** Risk Assessment */
+            risk_assessment?: string | null;
+            /** Temp Measures */
+            temp_measures?: string | null;
+            /** Related Deviation No */
+            related_deviation_no?: string | null;
+            /** Related Capa */
+            related_capa?: string | null;
+            /** Remarks */
+            remarks?: string | null;
+            /** Qa Feishu Open Id */
+            qa_feishu_open_id?: string | null;
+            /** Qa Feishu Name */
+            qa_feishu_name?: string | null;
+            /** Dept Leader Feishu Open Id */
+            dept_leader_feishu_open_id?: string | null;
+            /** Dept Leader Feishu Name */
+            dept_leader_feishu_name?: string | null;
+            /** Reporter */
+            reporter?: string | null;
+            /** Reporter Department */
+            reporter_department?: string | null;
+            /** Reporter Feishu Open Id */
+            reporter_feishu_open_id?: string | null;
+            /** Report Time */
+            report_time?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Attachments */
+            attachments?: components["schemas"]["DeviationFlowAttachment"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * DeviationDetailResponse
+         * @description 偏差详情响应
+         */
+        DeviationDetailResponse: {
+            /** Code */
+            code: number;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["DeviationDetailData"] | null;
+        };
+        /**
+         * DeviationEmptyResponse
+         * @description 无数据体的操作响应（更新/删除）
+         */
+        DeviationEmptyResponse: {
+            /** Code */
+            code: number;
+            /** Message */
+            message: string;
+            /** Data */
+            data?: null;
+        };
+        /**
+         * DeviationFlowAttachment
+         * @description 偏差附件（详情/列表内嵌）
+         */
+        DeviationFlowAttachment: {
+            /** Id */
+            id?: string | null;
+            /** Deviation Id */
+            deviation_id?: string | null;
+            /** File Name */
+            file_name?: string | null;
+            /** File Path */
+            file_path?: string | null;
+            /** File Type */
+            file_type?: string | null;
+            /** File Size */
+            file_size?: number | null;
+            /** Is Report */
+            is_report?: boolean | null;
+            /** Uploaded At */
+            uploaded_at?: string | null;
+        };
+        /**
          * DeviationLevel
          * @description 偏差等级
          * @enum {string}
@@ -28328,12 +28790,155 @@ export interface components {
             } | null;
         };
         /**
-         * DeviationOptimizeData
-         * @description AI 优化结果
+         * DeviationListData
+         * @description 偏差列表分页数据
          */
-        DeviationOptimizeData: {
-            /** Optimized Text */
-            optimized_text: string;
+        DeviationListData: {
+            /** Items */
+            items: components["schemas"]["DeviationListItem"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /**
+         * DeviationListItem
+         * @description 偏差列表行（含倒计时与中文标签）
+         */
+        DeviationListItem: {
+            /** Id */
+            id?: string | null;
+            /** Deviation No */
+            deviation_no?: string | null;
+            /** Theme */
+            theme?: string | null;
+            /** Occurred Date */
+            occurred_date?: string | null;
+            /** Discovered Date */
+            discovered_date?: string | null;
+            /** Responsible Department */
+            responsible_department?: string | null;
+            /** Occurred Area */
+            occurred_area?: string | null;
+            /** Deviation Type */
+            deviation_type?: string | null;
+            /** Deviation Type Label */
+            deviation_type_label?: string | null;
+            /** Urgency Level */
+            urgency_level?: string | null;
+            /** Urgency Level Label */
+            urgency_level_label?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Status Label */
+            status_label?: string | null;
+            /** Reporter */
+            reporter?: string | null;
+            /** Reporter Department */
+            reporter_department?: string | null;
+            /** Report Time */
+            report_time?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Remaining Days */
+            remaining_days?: number | null;
+            /** Completed Days */
+            completed_days?: number | null;
+            /** Deadline Days */
+            deadline_days?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * DeviationListResponse
+         * @description 偏差列表响应
+         */
+        DeviationListResponse: {
+            /** Code */
+            code: number;
+            /** Message */
+            message: string;
+            data: components["schemas"]["DeviationListData"];
+        };
+        /**
+         * DeviationOptimizeJobData
+         * @description AI 优化任务受理结果（202，任务在后台执行）
+         */
+        DeviationOptimizeJobData: {
+            /**
+             * Job Id
+             * @description 任务标识，用于轮询结果
+             */
+            job_id: string;
+            /**
+             * Status
+             * @description 任务状态：pending/running
+             */
+            status: string;
+        };
+        /**
+         * DeviationOptimizeJobResultData
+         * @description AI 优化任务状态（轮询用）
+         */
+        DeviationOptimizeJobResultData: {
+            /** Job Id */
+            job_id: string;
+            /**
+             * Status
+             * @description 任务状态：pending/running/done/failed
+             */
+            status: string;
+            /**
+             * Optimized Text
+             * @description status=done 时返回
+             */
+            optimized_text?: string | null;
+            /**
+             * Error
+             * @description status=failed 时返回
+             */
+            error?: string | null;
+        };
+        /**
+         * DeviationOption
+         * @description 下拉选项（value/label）
+         */
+        DeviationOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+        };
+        /**
+         * DeviationOptionsData
+         * @description 偏差类型、紧急等级、状态选项集合
+         */
+        DeviationOptionsData: {
+            /** Deviation Types */
+            deviation_types: components["schemas"]["DeviationOption"][];
+            /** Urgency Levels */
+            urgency_levels: components["schemas"]["DeviationOption"][];
+            /** Status Options */
+            status_options: components["schemas"]["DeviationOption"][];
+        };
+        /**
+         * DeviationOptionsResponse
+         * @description 获取选项列表响应
+         */
+        DeviationOptionsResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DeviationOptionsData"];
         };
         /**
          * DeviationReportUploadData
@@ -28491,6 +29096,25 @@ export interface components {
          */
         DeviationStatus: "draft" | "submitted" | "admin_approved" | "qa_approved" | "quality_approved" | "active" | "investigating" | "investigation_completed" | "correction_pending" | "correction_in_progress" | "correction_completed" | "closing_pending" | "closed" | "rejected";
         /**
+         * DeviationStatusData
+         * @description 提交偏差后的状态
+         */
+        DeviationStatusData: {
+            /** Status */
+            status: string;
+        };
+        /**
+         * DeviationSubmitResponse
+         * @description 提交偏差响应
+         */
+        DeviationSubmitResponse: {
+            /** Code */
+            code: number;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["DeviationStatusData"] | null;
+        };
+        /**
          * DeviationType
          * @description 偏差类型
          * @enum {string}
@@ -28540,6 +29164,85 @@ export interface components {
             correction?: components["schemas"]["CorrectionUpdate"] | null;
             /** Status */
             status?: string | null;
+        };
+        /**
+         * DeviationUpdateRequest
+         * @description 更新偏差请求
+         */
+        DeviationUpdateRequest: {
+            /** Theme */
+            theme?: string | null;
+            /** Occurred Date */
+            occurred_date?: string | null;
+            /** Discovered Date */
+            discovered_date?: string | null;
+            /** Responsible Department */
+            responsible_department?: string | null;
+            /** Occurred Area */
+            occurred_area?: string | null;
+            /** Deviation Type */
+            deviation_type?: string | null;
+            /** Urgency Level */
+            urgency_level?: string | null;
+            /** Product Name */
+            product_name?: string | null;
+            /** Batch No */
+            batch_no?: string | null;
+            /** Equipment */
+            equipment?: string | null;
+            /** Standard Based On */
+            standard_based_on?: string | null;
+            /** Deviation Description */
+            deviation_description?: string | null;
+            /** Risk Assessment */
+            risk_assessment?: string | null;
+            /** Temp Measures */
+            temp_measures?: string | null;
+            /** Related Deviation No */
+            related_deviation_no?: string | null;
+            /** Related Capa */
+            related_capa?: string | null;
+            /** Remarks */
+            remarks?: string | null;
+            /** Qa Feishu Open Id */
+            qa_feishu_open_id?: string | null;
+            /** Qa Feishu Name */
+            qa_feishu_name?: string | null;
+            /** Dept Leader Feishu Open Id */
+            dept_leader_feishu_open_id?: string | null;
+            /** Dept Leader Feishu Name */
+            dept_leader_feishu_name?: string | null;
+            /** Reporter */
+            reporter?: string | null;
+            /** Reporter Department */
+            reporter_department?: string | null;
+            /** Reporter Feishu Open Id */
+            reporter_feishu_open_id?: string | null;
+        };
+        /**
+         * DeviationUploadData
+         * @description 上传附件后返回的文件信息
+         */
+        DeviationUploadData: {
+            /** Id */
+            id: string;
+            /** File Name */
+            file_name?: string | null;
+            /** File Path */
+            file_path: string;
+            /** File Size */
+            file_size: number;
+        };
+        /**
+         * DeviationUploadResponse
+         * @description 上传偏差附件响应
+         */
+        DeviationUploadResponse: {
+            /** Code */
+            code: number;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["DeviationUploadData"] | null;
         };
         /** DiskUsage */
         DiskUsage: {
@@ -91776,12 +92479,370 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DeviationOptimizeJobData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_optimize_job_api_v1_quality_deviation_report_ai_optimize_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DeviationOptimizeData_"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DeviationOptimizeJobResultData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_options_api_v1_quality_deviation_flow_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DeviationOptionsResponse"];
+                };
+            };
+        };
+    };
+    list_deviations_api_v1_quality_deviation_flow_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+                /** @description 搜索关键词 */
+                keyword?: string;
+                /** @description 状态筛选 */
+                status?: string;
+                /** @description 偏差类型筛选 */
+                deviation_type?: string;
+                /** @description 紧急等级筛选 */
+                urgency_level?: string;
+                /** @description 开始日期 */
+                start_date?: string;
+                /** @description 结束日期 */
+                end_date?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DeviationListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_deviation_api_v1_quality_deviation_flow_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviationCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DeviationCreateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_deviation_api_v1_quality_deviation_flow__deviation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deviation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DeviationDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_deviation_api_v1_quality_deviation_flow__deviation_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deviation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviationUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DeviationEmptyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_deviation_api_v1_quality_deviation_flow__deviation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deviation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DeviationEmptyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_deviation_api_v1_quality_deviation_flow__deviation_id__submit_post: {
+        parameters: {
+            query: {
+                /** @description 目标状态: basic_completed/detail_completed/completed */
+                target_status: string;
+            };
+            header?: never;
+            path: {
+                deviation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DeviationSubmitResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_attachments_api_v1_quality_deviation_flow__deviation_id__attachments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deviation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DeviationAttachmentListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_attachment_api_v1_quality_deviation_flow__deviation_id__attachments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deviation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_attachment_api_v1_quality_deviation_flow__deviation_id__attachments_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DeviationUploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_attachment_api_v1_quality_deviation_flow_attachments__attachment_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */

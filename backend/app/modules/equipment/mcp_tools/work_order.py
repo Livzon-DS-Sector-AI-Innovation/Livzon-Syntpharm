@@ -61,7 +61,7 @@ async def query_user(keyword: str) -> ToolResult:
                 structured_content={"users": [u]},
             )
     except ValueError:
-        logger.exception("忽略异常 @ %s", "query_user")
+        logger.warning("忽略异常 @ %s", "query_user", exc_info=True)
 
     # 2) 尝试飞书 user_id 精确匹配
     user = await repo.get_by_feishu_user_id(db, keyword)

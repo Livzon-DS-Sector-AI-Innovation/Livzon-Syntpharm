@@ -93,7 +93,7 @@ async def post(
             rules = json.loads(replacements)
             template_placeholders = {r["old"]: r["new"] for r in rules}
         except (json.JSONDecodeError, KeyError, TypeError):
-            logger.exception("忽略异常 @ %s", "post")
+            logger.warning("忽略异常 @ %s", "post", exc_info=True)
 
     data = AuthorizationLetterCreate(
         product_name=product_name,

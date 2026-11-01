@@ -41,7 +41,8 @@ async def member_sync_loop() -> None:
             )
             break
         except TimeoutError:
-            logger.exception("忽略异常 @ %s", "member_sync_loop")
+            # 正常等到次日零点，属控制流而非异常
+            pass
 
         if not stop_member_sync_flag.is_set() and target:
             try:

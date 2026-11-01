@@ -106,6 +106,10 @@ const _STATUS_LABELS: Record<CheckStatus, string> = {
   cancelled: '已取消',
 }
 
+// 记录列表查询的固定分页参数（页面暂未提供分页控件）
+const RECORDS_PAGE = 1
+const RECORDS_PAGE_SIZE = 10
+
 export default function DocCheckPage() {
   // ============ 状态管理 ============
 
@@ -131,10 +135,6 @@ export default function DocCheckPage() {
   // 校验结果状态
   const [checkResult, setCheckResult] = useState<CheckMainDetail | null>(null)
   const [activeTab, setActiveTab] = useState<string>('duplicate')
-
-  // 记录列表状态
-  const [page, _setPage] = useState(1)
-  const [pageSize, _setPageSize] = useState(10)
 
   // 问题处理弹窗
   const [problemModalVisible, setProblemModalVisible] = useState(false)
@@ -446,10 +446,11 @@ export default function DocCheckPage() {
   // ============ 记录列表 ============
 
   // 记录列表由 React Query 负责拉取与缓存（页面暂未渲染这些数据，保留查询便于后续接入）
+  // 分页参数固定为首页，避免出现「状态永远不变」的伪分页
   const { refetch: refetchRecords } = useQuery({
-    queryKey: ['doc-check-records', page, pageSize],
+    queryKey: ['doc-check-records', RECORDS_PAGE, RECORDS_PAGE_SIZE],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/quality/records?page=${page}&page_size=${pageSize}`)
+      const response = await fetch(`/api/v1/quality/records?page=${RECORDS_PAGE}&page_size=${RECORDS_PAGE_SIZE}`)
       const data = await response.json()
       return data.code === 200 ? (data.data?.items ?? []) : []
     },

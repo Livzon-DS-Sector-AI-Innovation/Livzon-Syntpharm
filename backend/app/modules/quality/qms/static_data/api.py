@@ -21,6 +21,7 @@ from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import BadRequestException, NotFoundException
 from app.core.job_repository import JobRepository
 from app.core.jobs import submit_job
+from app.core.response import build_response
 from app.modules.quality.qms.static_data import schemas as s
 from app.modules.quality.qms.static_data.schemas import (
     # Import shared response wrappers from app.shared.schemas
@@ -446,7 +447,7 @@ async def handler(
     await submit_job("quality.static-data-hplc-import", lambda _job_id: _run())
 
     return {
-        "code": 200,
+        "code": 202,
         "message": "Import started",
         "data": {"job_id": str(job_id), "status": "running"},
     }
@@ -905,7 +906,7 @@ async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession
                             base = date(1899, 12, 30)
                             data["purchase_date"] = base + timedelta(days=int(value))
                         except (ValueError, TypeError, OverflowError):
-                            logger.exception("忽略异常 @ %s", "_import_chrom_columns")
+                            logger.warning("忽略异常 @ %s", "_import_chrom_columns", exc_info=True)
                     elif isinstance(value, str) and value.strip() and value.strip() != "/":
                         try:
                             v = value.strip()
@@ -914,7 +915,7 @@ async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession
                             else:
                                 data["purchase_date"] = date.fromisoformat(v.replace("/", "-").split()[0])
                         except (ValueError, IndexError, AttributeError):
-                            logger.exception("忽略异常 @ %s", "_import_chrom_columns")
+                            logger.warning("忽略异常 @ %s", "_import_chrom_columns", exc_info=True)
                 elif field == "use_start_date":
                     if isinstance(value, date):
                         data["use_start_date"] = value
@@ -925,7 +926,7 @@ async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession
                             base = date(1899, 12, 30)
                             data["use_start_date"] = base + timedelta(days=int(value))
                         except (ValueError, TypeError, OverflowError):
-                            logger.exception("忽略异常 @ %s", "_import_chrom_columns")
+                            logger.warning("忽略异常 @ %s", "_import_chrom_columns", exc_info=True)
                     elif isinstance(value, str) and value.strip() and value.strip() != "/":
                         try:
                             v = value.strip()
@@ -934,7 +935,7 @@ async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession
                             else:
                                 data["use_start_date"] = date.fromisoformat(v.replace("/", "-").split()[0])
                         except (ValueError, IndexError, AttributeError):
-                            logger.exception("忽略异常 @ %s", "_import_chrom_columns")
+                            logger.warning("忽略异常 @ %s", "_import_chrom_columns", exc_info=True)
                 elif field == "max_use_times":
                     try:
                         data["max_use_times"] = int(float(value))
@@ -1056,7 +1057,7 @@ async def handler(  # noqa: F811
     await submit_job("quality.static-data-chrom-import", lambda _job_id: _run())
 
     return {
-        "code": 200,
+        "code": 202,
         "message": "Import started",
         "data": {"job_id": job_id, "status": "running"},
     }
@@ -1159,7 +1160,7 @@ async def get_medium_stats(
     The page fetched every row and counted in JavaScript; as the table grew the
     stats got slower with it (#103).
     """
-    return {"code": 200, "message": "success", "data": await service.get_medium_stats(medium_type)}
+    return build_response(data=await service.get_medium_stats(medium_type))
 
 
 @router.get("/medium", summary="List medium")  # type: ignore[no-redef]
@@ -1278,7 +1279,7 @@ async def get_standard_stats(
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     """Counts the standards page renders, in one request (see #103)."""
-    return {"code": 200, "message": "success", "data": await service.get_standard_stats()}
+    return build_response(data=await service.get_standard_stats())
 
 
 @router.get("/standard", summary="List standards")  # type: ignore[no-redef]

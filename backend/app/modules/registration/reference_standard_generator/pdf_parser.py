@@ -224,7 +224,7 @@ class COAParser:
                     expiry_date = test_date + timedelta(days=4 * 365)  # 假设 4 年有效期
                     self.metadata["expiration_date"] = expiry_date.strftime("%Y-%m-%d")
                 except (ValueError, TypeError, AttributeError):
-                    logger.exception("忽略异常 @ %s", "COAParser.extract_metadata")
+                    logger.warning("忽略异常 @ %s", "COAParser.extract_metadata", exc_info=True)
 
         # 贮存条件 - 匹配 "Storage Temperature" 或 "Storage Condition"
         patterns_storage = [

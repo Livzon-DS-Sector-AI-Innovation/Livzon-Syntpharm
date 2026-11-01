@@ -54,7 +54,7 @@ async def get(
         try:
             template_uuid = UUID(template_id)
         except ValueError:
-            logger.exception("忽略异常 @ %s", "get")
+            logger.warning("忽略异常 @ %s", "get", exc_info=True)
 
     reports, total = await service.list_reports(
         template_id=template_uuid,
@@ -157,13 +157,13 @@ async def post(  # noqa: F811
         try:
             field_mapping_dict = json.loads(field_mapping)
         except json.JSONDecodeError:
-            logger.exception("忽略异常 @ %s", "post")
+            logger.warning("忽略异常 @ %s", "post", exc_info=True)
 
     if table_fields:
         try:
             table_fields_dict = json.loads(table_fields)
         except json.JSONDecodeError:
-            logger.exception("忽略异常 @ %s", "post")
+            logger.warning("忽略异常 @ %s", "post", exc_info=True)
 
     # 创建模板
     service = ReportTemplateService(session)

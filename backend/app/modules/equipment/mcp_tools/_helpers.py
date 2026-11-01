@@ -48,7 +48,7 @@ async def resolve_user(db: AsyncSession, operator_id: str) -> User:
         if user and not user.is_deleted:
             return user
     except ValueError:
-        logger.exception("忽略异常 @ %s", "resolve_user")
+        logger.warning("忽略异常 @ %s", "resolve_user", exc_info=True)
 
     repo = UserRepository()
     user = await repo.get_by_feishu_user_id(db, operator_id)
@@ -209,7 +209,7 @@ async def _resolve_equipment(db: AsyncSession, identifier: str) -> Any:
         if equipment:
             return equipment
     except ValueError:
-        logger.exception("忽略异常 @ %s", "_resolve_equipment")
+        logger.warning("忽略异常 @ %s", "_resolve_equipment", exc_info=True)
     raise ValueError(f"未找到设备「{identifier}」，请提供有效的设备编号或 UUID。")
 
 
@@ -224,7 +224,7 @@ async def _resolve_work_order(db: AsyncSession, identifier: str) -> Any:
         if wo:
             return wo
     except ValueError:
-        logger.exception("忽略异常 @ %s", "_resolve_work_order")
+        logger.warning("忽略异常 @ %s", "_resolve_work_order", exc_info=True)
     raise ValueError(f"未找到工单「{identifier}」，请提供有效的工单编号（如 WO-20260616-0001）或 UUID。")
 
 
@@ -239,7 +239,7 @@ async def _resolve_template(db: AsyncSession, identifier: str) -> Any:
         if template:
             return template
     except ValueError:
-        logger.exception("忽略异常 @ %s", "_resolve_template")
+        logger.warning("忽略异常 @ %s", "_resolve_template", exc_info=True)
     raise ValueError(f"未找到模板「{identifier}」，请提供有效的模板名称或 UUID。")
 
 

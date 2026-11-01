@@ -37,8 +37,11 @@ services:
       - ./uat-data/redis:/data
     ports:
       - "6379:6379"
+    environment:
+      # 用 REDISCLI_AUTH 传递口令，避免口令出现在容器命令行/docker inspect 里
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?REDIS_PASSWORD 未设置}
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?REDIS_PASSWORD 未设置}", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5

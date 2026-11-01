@@ -105,7 +105,7 @@ async def get_active_config(config_type: str = "text") -> LLMConfigData | None:
                 return config.to_config_data()
     except Exception:
         # Database table doesn't exist or other error, fall back to env
-        logger.exception("忽略异常 @ %s", "get_active_config")
+        logger.warning("忽略异常 @ %s", "get_active_config", exc_info=True)
     return None
 
 

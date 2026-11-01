@@ -2877,7 +2877,7 @@ async def send_training_session_select_tasks(  # type: ignore[no-untyped-def]
                     )
                     await employee_service.repo.session.flush()
             except Exception:
-                logger.exception("忽略异常 @ %s", "send_training_session_select_tasks")
+                logger.warning("忽略异常 @ %s", "send_training_session_select_tasks", exc_info=True)
 
         if open_id:
             select_url = f"{settings.FRONTEND_URL}/hr/training/select?token={token}&department={quote(dept)}"

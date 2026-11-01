@@ -382,7 +382,7 @@ def _ms_to_datetime(value: Any) -> datetime | None:
         try:
             return datetime.fromtimestamp(int(value) / 1000, tz=UTC)
         except (ValueError, OSError):
-            logger.exception("忽略异常 @ %s", "_ms_to_datetime")
+            logger.warning("忽略异常 @ %s", "_ms_to_datetime", exc_info=True)
     return None
 
 
@@ -1935,7 +1935,7 @@ def _convert_after_value_to_fields(
                 if isinstance(parsed, (list, dict)):
                     raw = parsed
             except (json.JSONDecodeError, TypeError):
-                logger.exception("忽略异常 @ %s", "_convert_after_value_to_fields")
+                logger.warning("忽略异常 @ %s", "_convert_after_value_to_fields", exc_info=True)
         # 将选项 ID 解析为显示名称
         raw = _resolve_option_ids(raw, opt_map_cache.get(fname, {}), type_cache.get(fname, 0))
         result[fname] = raw
@@ -1972,7 +1972,7 @@ def _extract_field_value(
             if isinstance(parsed, (list, dict)):
                 raw = parsed
         except (json.JSONDecodeError, TypeError):
-            logger.exception("忽略异常 @ %s", "_extract_field_value")
+            logger.warning("忽略异常 @ %s", "_extract_field_value", exc_info=True)
 
     # 将选项 ID 解析为显示名称
     opt_map_cache = _option_map_cache or {}

@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 """偏差流程管理 API
 
 提供偏差的创建、编辑、提交、查询等完整流程管理功能。
@@ -7,12 +6,14 @@
 import logging
 import uuid
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from dateutil import parser as date_parser  # type: ignore[import-untyped]
 from fastapi import APIRouter, Depends, File, Query, UploadFile
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import storage
 from app.core.config import get_settings
 from app.modules.quality.qms.deviation_flow_schemas import (
     DeviationAttachmentListResponse,
@@ -34,6 +35,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/deviation-flow", tags=["偏差流程管理"])
 
 settings = get_settings()
+
+# 附件统一存对象存储（与 deviation_report 一致），file_path 字段存 object_key
+_STORAGE_MODULE = "quality"
+_ATTACHMENT_PREFIX = "deviation_attachments"
 
 # ============ SQL 常量 ============
 
@@ -821,7 +826,7 @@ async def submit_deviation(  # type: ignore[no-untyped-def]
                 send_completion_notification,
             )
 
-            send_completion_notification(session, reporter_open_id, deviation_no, theme or "")
+            await send_completion_notification(session, reporter_open_id, deviation_no, theme or "")
             logger.info(f"已触发完成通知发送给填报人: {reporter_open_id}")
         except Exception as e:
             logger.error(f"发送完成通知失败: {e}")
@@ -991,29 +996,20 @@ async def upload_attachment(  # type: ignore[no-untyped-def]
     if row[0] != "detail_completed":
         return {"code": 400, "message": "当前状态不允许上传附件", "data": None}
 
-    # 保存文件
-    import os
-    import uuid
-    from datetime import datetime
-
-    upload_dir = os.path.join(settings.UPLOAD_DIR, "deviation_attachments", deviation_id)
-    os.makedirs(upload_dir, exist_ok=True)
-
-    # 获取文件扩展名
-    file_ext = os.path.splitext(file.filename)[1] if file.filename else ""
+    # 保存文件（对象存储，不落容器本地磁盘）
+    file_ext = Path(file.filename).suffix if file.filename else ""
     stored_filename = f"{uuid.uuid4()}{file_ext}"
-    file_path = os.path.join(upload_dir, stored_filename)
+    file_path = f"{_ATTACHMENT_PREFIX}/{deviation_id}/{stored_filename}"
 
-    # 保存文件
     content = await file.read()
-    with open(file_path, "wb") as f:
-        f.write(content)
+    file_type = file.content_type or "application/octet-stream"
+    if not storage.is_enabled():
+        return {"code": 503, "message": "对象存储未启用，无法保存附件", "data": None}
+
+    storage.upload_object(_STORAGE_MODULE, file_path, content, len(content), file_type)
 
     # 获取文件大小
     file_size = len(content)
-
-    # 获取文件类型
-    file_type = file.content_type or "application/octet-stream"
 
     # 判断是否为报告类型（根据文件名或类型判断）
     is_report = "report" in (file.filename or "").lower() or "报告" in (file.filename or "")
@@ -1077,13 +1073,12 @@ async def download_attachment(  # type: ignore[no-untyped-def]
 
     file_name, file_path, file_type, file_size = row
 
-    # 检查文件是否存在
-    if not os.path.exists(file_path):  # noqa: F821  # type: ignore[name-defined]
+    # 从对象存储读取（file_path 存的是 object_key）
+    found = storage.get_object(_STORAGE_MODULE, file_path)
+    if found is None:
         return {"code": 404, "message": "文件不存在", "data": None}
 
-    # 读取文件
-    with open(file_path, "rb") as f:
-        file_content = f.read()
+    file_content, stored_content_type = found
 
     from io import BytesIO
 
@@ -1091,7 +1086,7 @@ async def download_attachment(  # type: ignore[no-untyped-def]
 
     return StreamingResponse(
         BytesIO(file_content),
-        media_type=file_type or "application/octet-stream",
+        media_type=file_type or stored_content_type or "application/octet-stream",
         headers={
             "Content-Disposition": f'attachment; filename="{file_name}"',
             "Content-Length": str(file_size),

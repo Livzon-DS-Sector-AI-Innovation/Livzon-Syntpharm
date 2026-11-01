@@ -34,7 +34,7 @@ export default function EvaluationFormPage() {
   const watchedAssessment = Form.useWatch('assessment_method', form)
   const watchedExpected = Form.useWatch('expected_count', form)
 
-  const { data: pendingListData } = useQuery({
+  const { data: pendingListData, isError: pendingListError, refetch: refetchPendingList } = useQuery({
     queryKey: ['hr-pending-evaluations'],
     queryFn: async () => {
       const data = await apiGet<PendingEvaluation[]>('/api/v1/hr/training-evaluations/pending')
@@ -99,6 +99,20 @@ export default function EvaluationFormPage() {
   return (
     <div className="space-y-4 max-w-5xl">
       <h1 className="text-[22px] font-semibold">培训效果评估表</h1>
+
+      {pendingListError && (
+        <Alert
+          type="warning"
+          showIcon
+          message="待评估培训列表加载失败"
+          description="无法自动带出培训计划，仍可手动填写表单。"
+          action={
+            <Button size="small" onClick={() => void refetchPendingList()}>
+              重试
+            </Button>
+          }
+        />
+      )}
 
       {pendingList.length > 0 && (
         <Alert type="info" showIcon title={`${pendingList.length} 条培训待评估，选择后自动填表`} />

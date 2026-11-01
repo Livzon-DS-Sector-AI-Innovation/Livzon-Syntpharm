@@ -99,7 +99,7 @@ async def delete_image(db: AsyncSession, image_id: uuid.UUID) -> None:
         try:
             delete_object("equipment", image.file_path)
         except Exception:
-            logger.exception("忽略异常 @ %s", "delete_image")
+            logger.debug("忽略异常 @ %s", "delete_image")
     elif os.path.exists(image.file_path):
         os.remove(image.file_path)
 

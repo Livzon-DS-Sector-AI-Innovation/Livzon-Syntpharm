@@ -227,7 +227,7 @@ class CalibrationRuleRepository:
                 try:
                     instrument_id = UUID(instrument_id)
                 except ValueError:
-                    logger.exception("忽略异常 @ %s", "CalibrationRuleRepository.list_by_instrument")
+                    logger.warning("忽略异常 @ %s", "CalibrationRuleRepository.list_by_instrument", exc_info=True)
             if isinstance(instrument_id, UUID):
                 query = query.where(InstrumentCalibrationRule.instrument_id == instrument_id)
 
@@ -318,7 +318,7 @@ class CalibrationRecordRepository:
                     instrument_id = UUID(instrument_id)
                 except ValueError:
                     # 无效 UUID：跳过该过滤条件
-                    logger.exception("忽略异常 @ %s", "CalibrationRecordRepository.list_with_filter")
+                    logger.warning("忽略异常 @ %s", "CalibrationRecordRepository.list_with_filter", exc_info=True)
             if isinstance(instrument_id, UUID):
                 query = query.where(InstrumentCalibrationRecord.instrument_id == instrument_id)
         if rule_id:
@@ -328,7 +328,7 @@ class CalibrationRecordRepository:
                     rule_id = UUID(rule_id)
                 except ValueError:
                     # 无效 UUID：跳过该过滤条件
-                    logger.exception("忽略异常 @ %s", "CalibrationRecordRepository.list_with_filter")
+                    logger.warning("忽略异常 @ %s", "CalibrationRecordRepository.list_with_filter", exc_info=True)
             if isinstance(rule_id, UUID):
                 query = query.where(InstrumentCalibrationRecord.rule_id == rule_id)
         if calibration_no:

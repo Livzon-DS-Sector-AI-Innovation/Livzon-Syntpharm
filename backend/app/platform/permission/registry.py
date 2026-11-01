@@ -616,13 +616,10 @@ PROCUREMENT_PERMISSIONS: tuple[PermissionDef, ...] = (
 )
 
 # ── 业务模块细粒度权限码：administration（行政管理）─────────────────
+# 车辆管理功能已下线（models/service/路由均已删除），对应权限码与接口绑定同步移除；
+# 恢复该功能时再按需补回，避免出现「权限码指向不存在端点」的陈旧登记。
 
-ADMINISTRATION_PERMISSIONS: tuple[PermissionDef, ...] = (
-    PermissionDef("administration:vehicle:read", "查看车辆信息", "administration", "vehicle", "read"),
-    PermissionDef("administration:vehicle:create", "创建车辆记录", "administration", "vehicle", "create"),
-    PermissionDef("administration:vehicle:update", "更新车辆记录", "administration", "vehicle", "update"),
-    PermissionDef("administration:vehicle:delete", "删除车辆记录", "administration", "vehicle", "delete"),
-)
+ADMINISTRATION_PERMISSIONS: tuple[PermissionDef, ...] = ()
 
 # ── 业务模块细粒度权限码：energy（能耗管理）─────────────────
 
@@ -1405,12 +1402,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("administration:module:read", "GET", "/api/v1/administration"),
     ApiBindingDef("administration:module:read", "GET", "/api/v1/administration/"),
     # ── administration 业务接口 ──
-    ApiBindingDef("administration:vehicle:read", "GET", "/api/v1/administration/vehicles"),
-    ApiBindingDef("administration:vehicle:create", "POST", "/api/v1/administration/vehicles"),
-    ApiBindingDef("administration:vehicle:read", "GET", "/api/v1/administration/vehicles/{vehicle_id}"),
-    ApiBindingDef("administration:vehicle:update", "PUT", "/api/v1/administration/vehicles/{vehicle_id}"),
-    ApiBindingDef("administration:vehicle:delete", "DELETE", "/api/v1/administration/vehicles/{vehicle_id}"),
-    ApiBindingDef("administration:vehicle:read", "GET", "/api/v1/administration/vehicles/template/download"),
+    # 车辆管理已下线，相关绑定随之移除（见 ADMINISTRATION_PERMISSIONS 注释）
     ApiBindingDef("warehouse:module:read", "GET", "/api/v1/warehouse"),
     ApiBindingDef("warehouse:module:read", "GET", "/api/v1/warehouse/"),
     ApiBindingDef("procurement:module:read", "GET", "/api/v1/procurement"),
@@ -2337,9 +2329,20 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("quality:cpv:read", "GET", "/api/v1/quality/cpv/products/{product_id}/trend"),
     ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation"),
     ApiBindingDef("quality:deviation:create", "POST", "/api/v1/quality/deviation"),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation-flow"),
+    ApiBindingDef("quality:deviation:create", "POST", "/api/v1/quality/deviation-flow"),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation-flow/options"),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation-flow/{id}"),
+    ApiBindingDef("quality:deviation:update", "PUT", "/api/v1/quality/deviation-flow/{id}"),
+    ApiBindingDef("quality:deviation:delete", "DELETE", "/api/v1/quality/deviation-flow/{id}"),
+    ApiBindingDef("quality:deviation:submit", "POST", "/api/v1/quality/deviation-flow/{id}/submit"),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation-flow/{id}/attachments"),
+    ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation-flow/{id}/attachments"),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation-flow/attachments/{id}/download"),
     ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation-report/upload"),
     ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation-report/save"),
     ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation-report/ai/optimize"),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation-report/ai/optimize/jobs/{id}"),
     ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation-report/download"),
     ApiBindingDef("quality:deviation-settings:read", "GET", "/api/v1/quality/deviation-settings/auto-triggers"),
     ApiBindingDef("quality:deviation-settings:create", "POST", "/api/v1/quality/deviation-settings/auto-triggers"),

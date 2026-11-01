@@ -71422,8 +71422,8 @@
           "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u62a5\u544a",
           "\u504f\u5dee\u62a5\u544a"
         ],
-        "summary": "AI\u4f18\u5316\u6587\u672c",
-        "description": "\u4f7f\u7528AI\u4f18\u5316\u9009\u4e2d\u7684\u6587\u672c",
+        "summary": "\u63d0\u4ea4AI\u4f18\u5316\u6587\u672c\u4efb\u52a1",
+        "description": "\u63d0\u4ea4 AI \u4f18\u5316\u4efb\u52a1\uff0c\u7acb\u5373\u8fd4\u56de job_id\u3002\n\nLLM \u8c03\u7528\u5e38\u6001 5\u201330 \u79d2\uff0c\u8d85\u8fc7 AGENTS.md \u7684 5 \u79d2\u8bf7\u6c42\u4e0a\u9650\uff0c\u56e0\u6b64\u4e0d\u5728\u8bf7\u6c42\u8def\u5f84\u4e0a\u6267\u884c\uff1b\n\u5ba2\u6237\u7aef\u62ff job_id \u8f6e\u8be2 `GET /ai/optimize/jobs/{job_id}`\u3002",
         "operationId": "optimize_text_api_v1_quality_deviation_report_ai_optimize_post",
         "parameters": [
           {
@@ -71454,13 +71454,592 @@
           }
         },
         "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_DeviationOptimizeJobData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-report/ai/optimize/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u62a5\u544a",
+          "\u504f\u5dee\u62a5\u544a"
+        ],
+        "summary": "\u67e5\u8be2AI\u4f18\u5316\u4efb\u52a1",
+        "description": "\u8f6e\u8be2 AI \u4f18\u5316\u4efb\u52a1\u72b6\u6001\uff1b`done` \u65f6\u8fd4\u56de optimized_text\uff0c`failed` \u65f6\u8fd4\u56de error\u3002",
+        "operationId": "get_optimize_job_api_v1_quality_deviation_report_ai_optimize_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/DataResponse_DeviationOptimizeData_"
+                  "$ref": "#/components/schemas/DataResponse_DeviationOptimizeJobResultData_"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-flow/options": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u6d41\u7a0b",
+          "\u504f\u5dee\u6d41\u7a0b\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u9009\u9879\u5217\u8868",
+        "description": "\u83b7\u53d6\u504f\u5dee\u7c7b\u578b\u3001\u7d27\u6025\u7b49\u7ea7\u3001\u72b6\u6001\u7b49\u9009\u9879",
+        "operationId": "get_options_api_v1_quality_deviation_flow_options_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviationOptionsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-flow": {
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u6d41\u7a0b",
+          "\u504f\u5dee\u6d41\u7a0b\u7ba1\u7406"
+        ],
+        "summary": "\u521b\u5efa\u504f\u5dee",
+        "description": "\u521b\u5efa\u65b0\u504f\u5dee\uff08\u8349\u7a3f\u72b6\u6001\uff09",
+        "operationId": "create_deviation_api_v1_quality_deviation_flow_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviationCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviationCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u6d41\u7a0b",
+          "\u504f\u5dee\u6d41\u7a0b\u7ba1\u7406"
+        ],
+        "summary": "\u504f\u5dee\u5217\u8868",
+        "description": "\u83b7\u53d6\u504f\u5dee\u5217\u8868",
+        "operationId": "list_deviations_api_v1_quality_deviation_flow_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "\u641c\u7d22\u5173\u952e\u8bcd",
+              "title": "Keyword"
+            },
+            "description": "\u641c\u7d22\u5173\u952e\u8bcd"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "\u72b6\u6001\u7b5b\u9009",
+              "title": "Status"
+            },
+            "description": "\u72b6\u6001\u7b5b\u9009"
+          },
+          {
+            "name": "deviation_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "\u504f\u5dee\u7c7b\u578b\u7b5b\u9009",
+              "title": "Deviation Type"
+            },
+            "description": "\u504f\u5dee\u7c7b\u578b\u7b5b\u9009"
+          },
+          {
+            "name": "urgency_level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "\u7d27\u6025\u7b49\u7ea7\u7b5b\u9009",
+              "title": "Urgency Level"
+            },
+            "description": "\u7d27\u6025\u7b49\u7ea7\u7b5b\u9009"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "\u5f00\u59cb\u65e5\u671f",
+              "title": "Start Date"
+            },
+            "description": "\u5f00\u59cb\u65e5\u671f"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "\u7ed3\u675f\u65e5\u671f",
+              "title": "End Date"
+            },
+            "description": "\u7ed3\u675f\u65e5\u671f"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviationListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-flow/{deviation_id}": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u6d41\u7a0b",
+          "\u504f\u5dee\u6d41\u7a0b\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u504f\u5dee\u8be6\u60c5",
+        "description": "\u83b7\u53d6\u504f\u5dee\u8be6\u60c5",
+        "operationId": "get_deviation_api_v1_quality_deviation_flow__deviation_id__get",
+        "parameters": [
+          {
+            "name": "deviation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Deviation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviationDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u6d41\u7a0b",
+          "\u504f\u5dee\u6d41\u7a0b\u7ba1\u7406"
+        ],
+        "summary": "\u66f4\u65b0\u504f\u5dee",
+        "description": "\u66f4\u65b0\u504f\u5dee\uff08\u8349\u7a3f\u72b6\u6001\u548c\u57fa\u7840\u5b8c\u6210\u72b6\u6001\u53ef\u7f16\u8f91\uff09",
+        "operationId": "update_deviation_api_v1_quality_deviation_flow__deviation_id__put",
+        "parameters": [
+          {
+            "name": "deviation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Deviation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviationUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviationEmptyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u6d41\u7a0b",
+          "\u504f\u5dee\u6d41\u7a0b\u7ba1\u7406"
+        ],
+        "summary": "\u5220\u9664\u504f\u5dee",
+        "description": "\u5220\u9664\u504f\u5dee\uff08\u4ec5\u8349\u7a3f\u72b6\u6001\u53ef\u5220\u9664\uff09",
+        "operationId": "delete_deviation_api_v1_quality_deviation_flow__deviation_id__delete",
+        "parameters": [
+          {
+            "name": "deviation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Deviation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviationEmptyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-flow/{deviation_id}/submit": {
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u6d41\u7a0b",
+          "\u504f\u5dee\u6d41\u7a0b\u7ba1\u7406"
+        ],
+        "summary": "\u63d0\u4ea4\u504f\u5dee\uff08\u5206\u9636\u6bb5\uff09",
+        "description": "\u5206\u9636\u6bb5\u63d0\u4ea4\u504f\u5dee\uff0c\u89e6\u53d1\u98de\u4e66\u901a\u77e5",
+        "operationId": "submit_deviation_api_v1_quality_deviation_flow__deviation_id__submit_post",
+        "parameters": [
+          {
+            "name": "deviation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Deviation Id"
+            }
+          },
+          {
+            "name": "target_status",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "\u76ee\u6807\u72b6\u6001: basic_completed/detail_completed/completed",
+              "title": "Target Status"
+            },
+            "description": "\u76ee\u6807\u72b6\u6001: basic_completed/detail_completed/completed"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviationSubmitResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-flow/{deviation_id}/attachments": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u6d41\u7a0b",
+          "\u504f\u5dee\u6d41\u7a0b\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u504f\u5dee\u9644\u4ef6\u5217\u8868",
+        "description": "\u83b7\u53d6\u504f\u5dee\u7684\u9644\u4ef6\u5217\u8868",
+        "operationId": "list_attachments_api_v1_quality_deviation_flow__deviation_id__attachments_get",
+        "parameters": [
+          {
+            "name": "deviation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Deviation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviationAttachmentListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u6d41\u7a0b",
+          "\u504f\u5dee\u6d41\u7a0b\u7ba1\u7406"
+        ],
+        "summary": "\u4e0a\u4f20\u504f\u5dee\u9644\u4ef6",
+        "description": "\u4e0a\u4f20\u504f\u5dee\u9644\u4ef6\uff08\u4ec5 detail_completed \u72b6\u6001\u53ef\u4e0a\u4f20\uff09",
+        "operationId": "upload_attachment_api_v1_quality_deviation_flow__deviation_id__attachments_post",
+        "parameters": [
+          {
+            "name": "deviation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Deviation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_attachment_api_v1_quality_deviation_flow__deviation_id__attachments_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviationUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/deviation-flow/attachments/{attachment_id}/download": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u6d41\u7a0b",
+          "\u504f\u5dee\u6d41\u7a0b\u7ba1\u7406"
+        ],
+        "summary": "\u4e0b\u8f7d\u504f\u5dee\u9644\u4ef6",
+        "description": "\u4e0b\u8f7d\u504f\u5dee\u9644\u4ef6",
+        "operationId": "download_attachment_api_v1_quality_deviation_flow_attachments__attachment_id__download_get",
+        "parameters": [
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Attachment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
               }
             }
           },
@@ -98152,6 +98731,20 @@
         ],
         "title": "Body_upload_asset_api_v1_registration_dossier_writer_chapters__chapter_id__assets_post"
       },
+      "Body_upload_attachment_api_v1_quality_deviation_flow__deviation_id__attachments_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_attachment_api_v1_quality_deviation_flow__deviation_id__attachments_post"
+      },
       "Body_upload_deliverable_file_api_v1_research_rd_stage_deliverables__deliverable_id__upload_post": {
         "properties": {
           "file": {
@@ -107902,7 +108495,7 @@
         "type": "object",
         "title": "DataResponse[DeliverableUploadResult]"
       },
-      "DataResponse_DeviationOptimizeData_": {
+      "DataResponse_DeviationOptimizeJobData_": {
         "properties": {
           "code": {
             "type": "integer",
@@ -107917,7 +108510,7 @@
           "data": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DeviationOptimizeData"
+                "$ref": "#/components/schemas/DeviationOptimizeJobData"
               },
               {
                 "type": "null"
@@ -107936,7 +108529,43 @@
           }
         },
         "type": "object",
-        "title": "DataResponse[DeviationOptimizeData]"
+        "title": "DataResponse[DeviationOptimizeJobData]"
+      },
+      "DataResponse_DeviationOptimizeJobResultData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeviationOptimizeJobResultData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[DeviationOptimizeJobResultData]"
       },
       "DataResponse_DeviationReportUploadData_": {
         "properties": {
@@ -113125,6 +113754,33 @@
         "title": "DeviationApiResponse",
         "description": "Single deviation response wrapper"
       },
+      "DeviationAttachmentListResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DeviationFlowAttachment"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "data"
+        ],
+        "title": "DeviationAttachmentListResponse",
+        "description": "\u504f\u5dee\u9644\u4ef6\u5217\u8868\u54cd\u5e94"
+      },
       "DeviationCreate": {
         "properties": {
           "occurrence_date": {
@@ -113304,6 +113960,868 @@
         "title": "DeviationCreate",
         "description": "\u504f\u5dee\u521b\u5efa"
       },
+      "DeviationCreateData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "deviation_no": {
+            "type": "string",
+            "title": "Deviation No"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "deviation_no"
+        ],
+        "title": "DeviationCreateData",
+        "description": "\u65b0\u5efa\u504f\u5dee\u540e\u7684\u6807\u8bc6\u4fe1\u606f"
+      },
+      "DeviationCreateRequest": {
+        "properties": {
+          "theme": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theme",
+            "description": "\u504f\u5dee\u4e3b\u9898"
+          },
+          "occurred_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred Date",
+            "description": "\u504f\u5dee\u53d1\u751f\u65e5\u671f"
+          },
+          "discovered_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discovered Date",
+            "description": "\u53d1\u73b0\u65e5\u671f"
+          },
+          "responsible_department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsible Department",
+            "description": "\u8d23\u4efb\u90e8\u95e8"
+          },
+          "occurred_area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred Area",
+            "description": "\u53d1\u751f\u533a\u57df/\u8f66\u95f4"
+          },
+          "deviation_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deviation Type",
+            "description": "\u504f\u5dee\u7c7b\u578b"
+          },
+          "urgency_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Urgency Level",
+            "description": "\u7d27\u6025\u7b49\u7ea7"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name",
+            "description": "\u6d89\u53ca\u4ea7\u54c1/\u7269\u6599"
+          },
+          "batch_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch No",
+            "description": "\u6279\u6b21\u53f7"
+          },
+          "equipment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipment",
+            "description": "\u6d89\u53ca\u8bbe\u5907/\u4eea\u5668"
+          },
+          "standard_based_on": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Based On",
+            "description": "\u504f\u79bb\u6807\u51c6\u4f9d\u636e"
+          },
+          "deviation_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deviation Description",
+            "description": "\u504f\u5dee\u5b8c\u6574\u7ecf\u8fc7\u63cf\u8ff0"
+          },
+          "risk_assessment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Assessment",
+            "description": "\u521d\u6b65\u98ce\u9669\u5f71\u54cd\u8bc4\u4f30"
+          },
+          "temp_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temp Measures",
+            "description": "\u4e34\u65f6\u5904\u7f6e\u63aa\u65bd"
+          },
+          "related_deviation_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Related Deviation No",
+            "description": "\u5173\u8054\u504f\u5dee\u5355\u53f7"
+          },
+          "related_capa": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Related Capa",
+            "description": "\u5173\u8054CAPA"
+          },
+          "remarks": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remarks",
+            "description": "\u5907\u6ce8\u8bf4\u660e"
+          },
+          "qa_feishu_open_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qa Feishu Open Id",
+            "description": "QA\u4eba\u5458\u98de\u4e66OpenID"
+          },
+          "qa_feishu_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qa Feishu Name",
+            "description": "QA\u4eba\u5458\u59d3\u540d"
+          },
+          "dept_leader_feishu_open_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dept Leader Feishu Open Id",
+            "description": "\u90e8\u95e8\u8d1f\u8d23\u4eba\u98de\u4e66OpenID"
+          },
+          "dept_leader_feishu_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dept Leader Feishu Name",
+            "description": "\u90e8\u95e8\u8d1f\u8d23\u4eba\u59d3\u540d"
+          },
+          "reporter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter",
+            "description": "\u586b\u62a5\u4eba"
+          },
+          "reporter_department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Department",
+            "description": "\u586b\u62a5\u90e8\u95e8"
+          },
+          "reporter_feishu_open_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Feishu Open Id",
+            "description": "\u586b\u62a5\u4eba\u98de\u4e66OpenID"
+          }
+        },
+        "type": "object",
+        "title": "DeviationCreateRequest",
+        "description": "\u521b\u5efa\u504f\u5dee\u8bf7\u6c42"
+      },
+      "DeviationCreateResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DeviationCreateData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "data"
+        ],
+        "title": "DeviationCreateResponse",
+        "description": "\u521b\u5efa\u504f\u5dee\u54cd\u5e94"
+      },
+      "DeviationDetailData": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "deviation_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deviation No"
+          },
+          "theme": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theme"
+          },
+          "occurred_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred Date"
+          },
+          "discovered_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discovered Date"
+          },
+          "responsible_department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsible Department"
+          },
+          "occurred_area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred Area"
+          },
+          "deviation_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deviation Type"
+          },
+          "deviation_type_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deviation Type Label"
+          },
+          "urgency_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Urgency Level"
+          },
+          "urgency_level_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Urgency Level Label"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "status_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Label"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "batch_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch No"
+          },
+          "equipment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipment"
+          },
+          "standard_based_on": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Based On"
+          },
+          "deviation_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deviation Description"
+          },
+          "risk_assessment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Assessment"
+          },
+          "temp_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temp Measures"
+          },
+          "related_deviation_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Related Deviation No"
+          },
+          "related_capa": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Related Capa"
+          },
+          "remarks": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remarks"
+          },
+          "qa_feishu_open_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qa Feishu Open Id"
+          },
+          "qa_feishu_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qa Feishu Name"
+          },
+          "dept_leader_feishu_open_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dept Leader Feishu Open Id"
+          },
+          "dept_leader_feishu_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dept Leader Feishu Name"
+          },
+          "reporter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter"
+          },
+          "reporter_department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Department"
+          },
+          "reporter_feishu_open_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Feishu Open Id"
+          },
+          "report_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Time"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/DeviationFlowAttachment"
+            },
+            "type": "array",
+            "title": "Attachments"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "DeviationDetailData",
+        "description": "\u504f\u5dee\u8be6\u60c5\u6570\u636e\n\n\u5217\u96c6\u5408\u6765\u81ea ``SELECT * FROM qms.qms_deviation``\u3002\u672a\u663e\u5f0f\u58f0\u660e\u7684\u5217\u901a\u8fc7\n``extra=\"allow\"`` \u539f\u6837\u900f\u4f20\uff0c\u907f\u514d\u8868\u7ed3\u6784\u6f14\u8fdb\u65f6\u88ab\u54cd\u5e94\u6a21\u578b\u88c1\u6389\u3002"
+      },
+      "DeviationDetailResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeviationDetailData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "DeviationDetailResponse",
+        "description": "\u504f\u5dee\u8be6\u60c5\u54cd\u5e94"
+      },
+      "DeviationEmptyResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "DeviationEmptyResponse",
+        "description": "\u65e0\u6570\u636e\u4f53\u7684\u64cd\u4f5c\u54cd\u5e94\uff08\u66f4\u65b0/\u5220\u9664\uff09"
+      },
+      "DeviationFlowAttachment": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "deviation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deviation Id"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Name"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
+          },
+          "file_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Type"
+          },
+          "file_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Size"
+          },
+          "is_report": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Report"
+          },
+          "uploaded_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploaded At"
+          }
+        },
+        "type": "object",
+        "title": "DeviationFlowAttachment",
+        "description": "\u504f\u5dee\u9644\u4ef6\uff08\u8be6\u60c5/\u5217\u8868\u5185\u5d4c\uff09"
+      },
       "DeviationLevel": {
         "type": "string",
         "enum": [
@@ -113353,19 +114871,428 @@
         "title": "DeviationListApiResponse",
         "description": "Deviation list response wrapper"
       },
-      "DeviationOptimizeData": {
+      "DeviationListData": {
         "properties": {
-          "optimized_text": {
-            "type": "string",
-            "title": "Optimized Text"
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DeviationListItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
           }
         },
         "type": "object",
         "required": [
-          "optimized_text"
+          "items",
+          "total",
+          "page",
+          "page_size"
         ],
-        "title": "DeviationOptimizeData",
-        "description": "AI \u4f18\u5316\u7ed3\u679c"
+        "title": "DeviationListData",
+        "description": "\u504f\u5dee\u5217\u8868\u5206\u9875\u6570\u636e"
+      },
+      "DeviationListItem": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "deviation_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deviation No"
+          },
+          "theme": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theme"
+          },
+          "occurred_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred Date"
+          },
+          "discovered_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discovered Date"
+          },
+          "responsible_department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsible Department"
+          },
+          "occurred_area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred Area"
+          },
+          "deviation_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deviation Type"
+          },
+          "deviation_type_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deviation Type Label"
+          },
+          "urgency_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Urgency Level"
+          },
+          "urgency_level_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Urgency Level Label"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "status_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Label"
+          },
+          "reporter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter"
+          },
+          "reporter_department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Department"
+          },
+          "report_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Time"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "remaining_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Days"
+          },
+          "completed_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Days"
+          },
+          "deadline_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline Days"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "DeviationListItem",
+        "description": "\u504f\u5dee\u5217\u8868\u884c\uff08\u542b\u5012\u8ba1\u65f6\u4e0e\u4e2d\u6587\u6807\u7b7e\uff09"
+      },
+      "DeviationListResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DeviationListData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "data"
+        ],
+        "title": "DeviationListResponse",
+        "description": "\u504f\u5dee\u5217\u8868\u54cd\u5e94"
+      },
+      "DeviationOptimizeJobData": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id",
+            "description": "\u4efb\u52a1\u6807\u8bc6\uff0c\u7528\u4e8e\u8f6e\u8be2\u7ed3\u679c"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "\u4efb\u52a1\u72b6\u6001\uff1apending/running"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status"
+        ],
+        "title": "DeviationOptimizeJobData",
+        "description": "AI \u4f18\u5316\u4efb\u52a1\u53d7\u7406\u7ed3\u679c\uff08202\uff0c\u4efb\u52a1\u5728\u540e\u53f0\u6267\u884c\uff09"
+      },
+      "DeviationOptimizeJobResultData": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "\u4efb\u52a1\u72b6\u6001\uff1apending/running/done/failed"
+          },
+          "optimized_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Optimized Text",
+            "description": "status=done \u65f6\u8fd4\u56de"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error",
+            "description": "status=failed \u65f6\u8fd4\u56de"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status"
+        ],
+        "title": "DeviationOptimizeJobResultData",
+        "description": "AI \u4f18\u5316\u4efb\u52a1\u72b6\u6001\uff08\u8f6e\u8be2\u7528\uff09"
+      },
+      "DeviationOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "DeviationOption",
+        "description": "\u4e0b\u62c9\u9009\u9879\uff08value/label\uff09"
+      },
+      "DeviationOptionsData": {
+        "properties": {
+          "deviation_types": {
+            "items": {
+              "$ref": "#/components/schemas/DeviationOption"
+            },
+            "type": "array",
+            "title": "Deviation Types"
+          },
+          "urgency_levels": {
+            "items": {
+              "$ref": "#/components/schemas/DeviationOption"
+            },
+            "type": "array",
+            "title": "Urgency Levels"
+          },
+          "status_options": {
+            "items": {
+              "$ref": "#/components/schemas/DeviationOption"
+            },
+            "type": "array",
+            "title": "Status Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deviation_types",
+          "urgency_levels",
+          "status_options"
+        ],
+        "title": "DeviationOptionsData",
+        "description": "\u504f\u5dee\u7c7b\u578b\u3001\u7d27\u6025\u7b49\u7ea7\u3001\u72b6\u6001\u9009\u9879\u96c6\u5408"
+      },
+      "DeviationOptionsResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DeviationOptionsData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DeviationOptionsResponse",
+        "description": "\u83b7\u53d6\u9009\u9879\u5217\u8868\u54cd\u5e94"
       },
       "DeviationReportUploadData": {
         "properties": {
@@ -113706,6 +115633,49 @@
         "title": "DeviationStatus",
         "description": "\u504f\u5dee\u72b6\u6001"
       },
+      "DeviationStatusData": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "DeviationStatusData",
+        "description": "\u63d0\u4ea4\u504f\u5dee\u540e\u7684\u72b6\u6001"
+      },
+      "DeviationSubmitResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeviationStatusData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "DeviationSubmitResponse",
+        "description": "\u63d0\u4ea4\u504f\u5dee\u54cd\u5e94"
+      },
       "DeviationType": {
         "type": "string",
         "enum": [
@@ -113950,6 +115920,341 @@
         "type": "object",
         "title": "DeviationUpdate",
         "description": "\u504f\u5dee\u66f4\u65b0"
+      },
+      "DeviationUpdateRequest": {
+        "properties": {
+          "theme": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theme"
+          },
+          "occurred_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred Date"
+          },
+          "discovered_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discovered Date"
+          },
+          "responsible_department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsible Department"
+          },
+          "occurred_area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred Area"
+          },
+          "deviation_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deviation Type"
+          },
+          "urgency_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Urgency Level"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "batch_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch No"
+          },
+          "equipment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipment"
+          },
+          "standard_based_on": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Based On"
+          },
+          "deviation_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deviation Description"
+          },
+          "risk_assessment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Assessment"
+          },
+          "temp_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temp Measures"
+          },
+          "related_deviation_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Related Deviation No"
+          },
+          "related_capa": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Related Capa"
+          },
+          "remarks": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remarks"
+          },
+          "qa_feishu_open_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qa Feishu Open Id"
+          },
+          "qa_feishu_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qa Feishu Name"
+          },
+          "dept_leader_feishu_open_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dept Leader Feishu Open Id"
+          },
+          "dept_leader_feishu_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dept Leader Feishu Name"
+          },
+          "reporter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter"
+          },
+          "reporter_department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Department"
+          },
+          "reporter_feishu_open_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Feishu Open Id"
+          }
+        },
+        "type": "object",
+        "title": "DeviationUpdateRequest",
+        "description": "\u66f4\u65b0\u504f\u5dee\u8bf7\u6c42"
+      },
+      "DeviationUploadData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Name"
+          },
+          "file_path": {
+            "type": "string",
+            "title": "File Path"
+          },
+          "file_size": {
+            "type": "integer",
+            "title": "File Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "file_path",
+          "file_size"
+        ],
+        "title": "DeviationUploadData",
+        "description": "\u4e0a\u4f20\u9644\u4ef6\u540e\u8fd4\u56de\u7684\u6587\u4ef6\u4fe1\u606f"
+      },
+      "DeviationUploadResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeviationUploadData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "DeviationUploadResponse",
+        "description": "\u4e0a\u4f20\u504f\u5dee\u9644\u4ef6\u54cd\u5e94"
       },
       "DiskUsage": {
         "properties": {

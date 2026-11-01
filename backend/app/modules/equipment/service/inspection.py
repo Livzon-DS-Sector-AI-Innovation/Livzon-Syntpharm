@@ -557,7 +557,7 @@ async def delete_photo(db: AsyncSession, photo_id: uuid.UUID) -> bool:
             delete_object("equipment", photo.file_path)
         except Exception:
             # 删除 MinIO 文件失败不阻塞数据库操作
-            logger.exception("忽略异常 @ %s", "delete_photo")
+            logger.debug("忽略异常 @ %s", "delete_photo")
     elif os.path.exists(photo.file_path):
         os.remove(photo.file_path)
 

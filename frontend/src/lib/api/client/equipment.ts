@@ -204,12 +204,12 @@ export async function fetchMaintenancePlans(filters: MaintenancePlanFilters = {}
 }
 
 export async function fetchMaintenancePlanById(id: string): Promise<MaintenancePlan> {
-  return apiGet(`${API_BASE}/equipment/maintenance/plans${id}`)
+  return apiGet(`${API_BASE}/equipment/maintenance/plans/${id}`)
 }
 
 export async function fetchOverdueMaintenancePlans(days?: number): Promise<MaintenancePlan[]> {
   const params = days ? `?days=${days}` : ''
-  return apiGet(`${API_BASE}/equipment/maintenance/plansoverdue${params}`)
+  return apiGet(`${API_BASE}/equipment/maintenance/plans/overdue${params}`)
 }
 
 // ═══════════════════════════════════════════════════════════

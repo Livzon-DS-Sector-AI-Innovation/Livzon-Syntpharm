@@ -289,7 +289,7 @@ class HazardService:
                 if os.path.exists(abs_path):
                     os.remove(abs_path)
         except OSError:
-            logger.exception("忽略异常 @ %s", "HazardService._cleanup_file")
+            logger.debug("忽略异常 @ %s", "HazardService._cleanup_file")
 
     @staticmethod
     def _cleanup_json_array_files(json_str: str | None) -> None:
@@ -302,7 +302,7 @@ class HazardService:
                     if isinstance(p, str):
                         HazardService._cleanup_file(p)
         except (json.JSONDecodeError, TypeError):
-            logger.exception("忽略异常 @ %s", "HazardService._cleanup_json_array_files")
+            logger.debug("忽略异常 @ %s", "HazardService._cleanup_json_array_files")
 
     # ==================== HazardReport Operations ====================
 

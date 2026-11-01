@@ -104,7 +104,8 @@ async def _ping_loop(ws: Any, service_id: int) -> None:
             await asyncio.wait_for(_stop.wait(), timeout=_ping_interval)  # type: ignore[union-attr]
             return
         except TimeoutError:
-            logger.exception("忽略异常 @ %s", "_ping_loop")
+            # 正常等到下一个 ping 间隔，属控制流而非异常
+            pass
 
 
 def _build_ack_frame(frame: Any, biz_rt: int) -> bytes:
@@ -200,7 +201,7 @@ async def start_equipment_ws() -> None:
         try:
             await asyncio.wait_for(_stop.wait(), timeout=5)
         except TimeoutError:
-            logger.exception("忽略异常 @ %s", "start_equipment_ws")
+            logger.warning("忽略异常 @ %s", "start_equipment_ws", exc_info=True)
 
     logger.info("设备机器人 WebSocket 客户端已停止")
 
@@ -420,7 +421,7 @@ async def _handle_text_command(
                         )
                 return
         except ValueError:
-            logger.exception("忽略异常 @ %s", "_handle_text_command")
+            logger.warning("忽略异常 @ %s", "_handle_text_command", exc_info=True)
         await send_user_card(
             open_id=open_id,
             title="💡 提示",
@@ -534,7 +535,7 @@ async def _handle_text_command(
                 if match:
                     first_arg = match.get("work_order_no", first_arg)
         except ValueError:
-            logger.exception("忽略异常 @ %s", "_handle_text_command")
+            logger.warning("忽略异常 @ %s", "_handle_text_command", exc_info=True)
 
         from app.modules.equipment.service.work_order_feishu import (
             complete_work_order_by_no,

@@ -630,7 +630,11 @@ export interface AiLogFilter {
 export type DeviationReportUploadResult = components['schemas']['DeviationReportUploadData']
 
 /** 偏差报告 AI 优化结果（来自后端 OpenAPI 契约） */
-export type DeviationOptimizeResult = components['schemas']['DeviationOptimizeData']
+/** AI 优化任务受理结果（202：任务已入队） */
+export type DeviationOptimizeJob = components['schemas']['DeviationOptimizeJobData']
+
+/** AI 优化任务轮询结果 */
+export type DeviationOptimizeJobResult = components['schemas']['DeviationOptimizeJobResultData']
 
 /**
  * 偏差报告 AI 优化类型。

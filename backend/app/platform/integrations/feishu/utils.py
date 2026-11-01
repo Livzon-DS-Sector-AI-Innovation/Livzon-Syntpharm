@@ -117,7 +117,7 @@ async def get_tenant_access_token(
             if cached:
                 return cached
         except Exception:
-            logger.exception("忽略异常 @ %s", "get_tenant_access_token")
+            logger.warning("忽略异常 @ %s", "get_tenant_access_token", exc_info=True)
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.post(
@@ -138,7 +138,7 @@ async def get_tenant_access_token(
         try:
             await cache_set(f"feishu:tenant_access_token:{cache_key}", token, ex=6600)
         except Exception:
-            logger.exception("忽略异常 @ %s", "get_tenant_access_token")
+            logger.warning("忽略异常 @ %s", "get_tenant_access_token", exc_info=True)
 
     return token  # type: ignore[no-any-return]
 

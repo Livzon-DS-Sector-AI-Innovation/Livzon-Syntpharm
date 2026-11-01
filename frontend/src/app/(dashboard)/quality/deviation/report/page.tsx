@@ -30,8 +30,28 @@ import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
 import styles from './page.module.css'
 import { downloadDeviationReport, saveDeviationReport } from '@/lib/api/client/quality-deviation-report'
-import { optimizeDeviationReportText, uploadDeviationReportTemplate } from '@/actions/quality'
+import { getDeviationReportOptimizeJob, startDeviationReportOptimize, uploadDeviationReportTemplate } from '@/actions/quality'
 import type { DeviationReportOptimizeType, DeviationReportUploadResult } from '@/types/quality'
+
+const OPTIMIZE_POLL_INTERVAL_MS = 1500
+const OPTIMIZE_POLL_TIMEOUT_MS = 90_000
+
+/** 轮询 AI 优化任务，直到 done / failed / 超时。每次调用都是一次短请求。 */
+async function waitForOptimizeResult(jobId: string): Promise<string> {
+  const deadline = Date.now() + OPTIMIZE_POLL_TIMEOUT_MS
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, OPTIMIZE_POLL_INTERVAL_MS))
+    const job = await getDeviationReportOptimizeJob(jobId)
+    if (job.status === 'done') {
+      if (!job.optimized_text) throw new Error('AI 优化返回为空，请重试')
+      return job.optimized_text
+    }
+    if (job.status === 'failed') {
+      throw new Error(job.error || 'AI 优化失败，请稍后重试')
+    }
+  }
+  throw new Error('AI 优化超时，请稍后重试')
+}
 
 export default function DeviationReportPage() {
   const [loading, setLoading] = useState(false)
@@ -135,8 +155,10 @@ export default function DeviationReportPage() {
     setOptimizedText('')
 
     try {
-      const result = await optimizeDeviationReportText(selectedText, type)
-      setOptimizedText(result.optimized_text)
+      // 后端只入队，LLM 在后台跑；这里轮询任务状态（单次请求都在 5 秒内）
+      const job = await startDeviationReportOptimize(selectedText, type)
+      const optimized = await waitForOptimizeResult(job.job_id)
+      setOptimizedText(optimized)
       setOptimizeModalVisible(true)
       message.success('优化完成')
     } catch (error: unknown) {
