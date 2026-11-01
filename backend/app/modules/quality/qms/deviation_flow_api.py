@@ -172,6 +172,18 @@ STATUS_OPTIONS = [
 ]
 
 
+def as_text(value: object) -> str | None:
+    """把 UUID / 日期等非字符串列值转成字符串，供响应模型使用（None 原样透传）。
+
+    原生 SQL 返回的是 `uuid.UUID` / `date` / `datetime` 对象，而 schema 声明的字段是
+    `str | None`；Pydantic v2 不做 UUID -> str 的隐式转换，直接透传会触发响应校验
+    错误（HTTP 500），所以在构造响应体时统一转换。
+    """
+    if value is None or isinstance(value, str):
+        return value
+    return str(value)
+
+
 def get_type_label(deviation_type: str) -> str:
     """获取偏差类型标签"""
     for t in DEVIATION_TYPES:
@@ -504,18 +516,21 @@ async def get_deviation(  # type: ignore[no-untyped-def]
         "message": "success",
         "data": {
             **deviation,
+            "id": as_text(deviation.get("id")),
             "deviation_type_label": get_type_label(deviation.get("deviation_type")),  # type: ignore[arg-type]
             "urgency_level_label": get_level_label(deviation.get("urgency_level")),  # type: ignore[arg-type]
             "status_label": get_status_label(deviation.get("status")),  # type: ignore[arg-type]
-            "occurred_date": str(deviation.get("occurred_date")) if deviation.get("occurred_date") else None,
-            "discovered_date": str(deviation.get("discovered_date")) if deviation.get("discovered_date") else None,
-            "report_time": str(deviation.get("report_time")) if deviation.get("report_time") else None,
-            "created_at": str(deviation.get("created_at")) if deviation.get("created_at") else None,
-            "updated_at": str(deviation.get("updated_at")) if deviation.get("updated_at") else None,
+            "occurred_date": as_text(deviation.get("occurred_date")),
+            "discovered_date": as_text(deviation.get("discovered_date")),
+            "report_time": as_text(deviation.get("report_time")),
+            "created_at": as_text(deviation.get("created_at")),
+            "updated_at": as_text(deviation.get("updated_at")),
             "attachments": [
                 {
                     **a,
-                    "uploaded_at": str(a.get("uploaded_at")) if a.get("uploaded_at") else None,
+                    "id": as_text(a.get("id")),
+                    "deviation_id": as_text(a.get("deviation_id")),
+                    "uploaded_at": as_text(a.get("uploaded_at")),
                 }
                 for a in attachments
             ],
@@ -660,11 +675,7 @@ async def submit_deviation(  # type: ignore[no-untyped-def]
         raise BadRequestException("当前状态不允许提交")
 
     if target_status not in valid_transitions.get(current_status, []):
-        return {
-            "code": 400,
-            "message": f"状态流转无效: {current_status} -> {target_status}",
-            "data": None,
-        }
+        raise BadRequestException(f"状态流转无效: {current_status} -> {target_status}")
 
     # 检查各阶段必填字段
     # draft -> basic_completed: 需要基础信息（theme等已在表单验证）
@@ -680,7 +691,7 @@ async def submit_deviation(  # type: ignore[no-untyped-def]
     # 更新状态
     await session.execute(
         text("UPDATE qms.qms_deviation SET status = :status, updated_at = :updated_at WHERE id = :id"),
-        {"id": deviation_id, "status": target_status, "updated_at": datetime.now()},  # noqa: F823
+        {"id": deviation_id, "status": target_status, "updated_at": datetime.now()},
     )
 
     status_labels = {
@@ -715,8 +726,6 @@ async def submit_deviation(  # type: ignore[no-untyped-def]
             status_label = status_labels.get(target_status, target_status)
 
             # 计算剩余完成天数
-            from datetime import datetime, timedelta
-
             now = datetime.now()
             deadline_days = 30
             remaining_days = 0
@@ -891,8 +900,6 @@ async def list_deviations(  # type: ignore[no-untyped-def]
     )
 
     items = []
-    from datetime import datetime
-
     now = datetime.now()
     deadline_days = 30  # 倒计时天数
 
@@ -927,10 +934,13 @@ async def list_deviations(  # type: ignore[no-untyped-def]
         items.append(
             {
                 **item,
+                "id": as_text(item.get("id")),
                 "deviation_type_label": get_type_label(item.get("deviation_type")),  # type: ignore[arg-type]
                 "urgency_level_label": get_level_label(item.get("urgency_level")),  # type: ignore[arg-type]
                 "status_label": get_status_label(item.get("status")),  # type: ignore[arg-type]
-                "occurred_date": str(item.get("occurred_date"))[:10] if item.get("occurred_date") else None,
+                "occurred_date": as_text(item.get("occurred_date")),
+                "discovered_date": as_text(item.get("discovered_date")),
+                "report_time": as_text(item.get("report_time")),
                 "created_at": str(item.get("created_at"))[:19] if item.get("created_at") else None,
                 "remaining_days": remaining_days,
                 "completed_days": completed_days,
@@ -985,13 +995,13 @@ async def list_attachments(  # type: ignore[no-untyped-def]
     for row in rows:
         attachments.append(
             {
-                "id": row[0],
+                "id": as_text(row[0]),
                 "file_name": row[1],
                 "file_path": row[2],
                 "file_type": row[3],
                 "file_size": row[4],
                 "is_report": row[5],
-                "uploaded_at": str(row[6]) if row[6] else None,
+                "uploaded_at": as_text(row[6]),
             }
         )
 

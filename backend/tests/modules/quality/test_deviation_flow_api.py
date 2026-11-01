@@ -39,14 +39,6 @@ async def test_anonymous_cannot_read_or_write_deviation_flow(
     assert response.status_code == 401, response.text
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "阻塞：deviation_flow_api 的裸 SQL 打的是 qms.qms_deviation / qms.qms_deviation_attachment，"
-        "而 alembic 跑到 head（0092）也没有这两张表，全仓无任何建表 DDL。"
-        "表补齐后本用例应转绿（strict 会让它 XPASS 报错，提醒摘掉这个标记）。"
-    ),
-)
 @pytest.mark.usefixtures("db_session")
 async def test_missing_deviation_returns_real_404(auth_client: AsyncClient) -> None:
     """原来是 HTTP 200 + 信封 code=404，前端 `apiGet` 当成功处理、拿到 data=null。"""
@@ -54,3 +46,76 @@ async def test_missing_deviation_returns_real_404(auth_client: AsyncClient) -> N
 
     assert response.status_code == 404, response.text
     assert response.json()["code"] == 404
+
+
+@pytest.mark.usefixtures("db_session")
+async def test_create_detail_list_submit_and_delete(auth_client: AsyncClient) -> None:
+    """建表后打通主流程：创建 -> 详情 -> 列表 -> 提交 -> 删除。
+
+    这几步依赖 `qms.qms_deviation` / `qms_deviation_attachment` / `qms_deviation_log`
+    三张表，缺任一表都会在建表前那版代码上直接 500。
+    """
+    created = await auth_client.post(
+        BASE,
+        json={
+            "theme": "测试偏差：配料间温湿度超标",
+            "occurred_date": "2026-11-01",
+            "discovered_date": "2026-11-01",
+            "responsible_department": "生产部",
+            "occurred_area": "固体制剂车间",
+            "deviation_type": "personnel_error",
+            "urgency_level": "minor",
+            "reporter": "张三",
+            "reporter_department": "生产部",
+        },
+    )
+    assert created.status_code == 200, created.text
+    created_data = created.json()["data"]
+    deviation_id = created_data["id"]
+    assert isinstance(deviation_id, str)
+    assert created_data["deviation_no"]
+
+    detail = await auth_client.get(f"{BASE}/{deviation_id}")
+    assert detail.status_code == 200, detail.text
+    detail_data = detail.json()["data"]
+    # UUID 列必须是字符串，否则 Pydantic 响应校验会 500
+    assert detail_data["id"] == deviation_id
+    assert detail_data["status"] == "draft"
+    assert detail_data["theme"] == "测试偏差：配料间温湿度超标"
+    assert detail_data["occurred_date"] == "2026-11-01"
+    assert detail_data["attachments"] == []
+
+    listing = await auth_client.get(BASE, params={"page": 1, "page_size": 10})
+    assert listing.status_code == 200, listing.text
+    list_data = listing.json()["data"]
+    assert list_data["total"] >= 1
+    matched = [item for item in list_data["items"] if item["id"] == deviation_id]
+    assert matched, list_data["items"]
+    assert isinstance(matched[0]["id"], str)
+
+    attachments = await auth_client.get(f"{BASE}/{deviation_id}/attachments")
+    assert attachments.status_code == 200, attachments.text
+    assert attachments.json()["data"] == []
+
+    # 非法流转必须返回真实 4xx（曾是 HTTP 200 + 信封 code=400，前端当成功处理）
+    invalid = await auth_client.post(f"{BASE}/{deviation_id}/submit", params={"target_status": "completed"})
+    assert invalid.status_code == 400, invalid.text
+    assert invalid.json()["code"] == 400
+
+    submitted = await auth_client.post(f"{BASE}/{deviation_id}/submit", params={"target_status": "basic_completed"})
+    assert submitted.status_code == 200, submitted.text
+    assert submitted.json()["data"]["status"] == "basic_completed"
+
+    # 已提交的单据不允许删除，只有草稿可删
+    rejected = await auth_client.delete(f"{BASE}/{deviation_id}")
+    assert rejected.status_code == 400, rejected.text
+
+    draft = await auth_client.post(BASE, json={"theme": "待删除的草稿偏差", "reporter": "李四"})
+    assert draft.status_code == 200, draft.text
+    draft_id = draft.json()["data"]["id"]
+
+    deleted = await auth_client.delete(f"{BASE}/{draft_id}")
+    assert deleted.status_code == 200, deleted.text
+
+    gone = await auth_client.get(f"{BASE}/{draft_id}")
+    assert gone.status_code == 404, gone.text
