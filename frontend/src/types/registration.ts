@@ -128,28 +128,8 @@ export interface DrugNode {
   updated_at: string
 }
 
-/**
- * 注册项目（GET /api/v1/registration/projects/ 的返回项）。
- *
- * 手写原因：后端 `app/modules/registration/api/projects.py` 未声明 `response_model`，
- * 该端点在 OpenAPI 里的响应是泛化 object，无法生成具体类型。
- * 待后端补齐 `response_model` 后应改为 `components['schemas']['...']` 并删除本接口。
- */
-export interface RegistrationProject {
-  id: string
-  product_name: string
-  market: string
-  registration_type: string | null
-  status: string
-  submitted_at: string | null
-  accepted_at: string | null
-  approved_at: string | null
-  expected_completion_at: string | null
-  owner: string | null
-  latest_progress: string | null
-  created_at: string
-  updated_at: string
-}
+/** 契约模型，来自后端 OpenAPI（`projects.py` 已声明 `DataResponse[ProjectResponse]`） */
+export type RegistrationProject = components['schemas']['ProjectResponse']
 
 export interface Holiday {
   id: string

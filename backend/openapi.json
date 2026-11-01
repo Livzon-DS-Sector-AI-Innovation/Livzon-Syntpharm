@@ -141071,6 +141071,12 @@
           },
           "optimize_type": {
             "type": "string",
+            "enum": [
+              "polish",
+              "summarize",
+              "expand",
+              "simplify"
+            ],
             "title": "Optimize Type",
             "default": "polish"
           }

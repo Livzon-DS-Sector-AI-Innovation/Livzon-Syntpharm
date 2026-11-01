@@ -632,5 +632,10 @@ export type DeviationReportUploadResult = components['schemas']['DeviationReport
 /** 偏差报告 AI 优化结果（来自后端 OpenAPI 契约） */
 export type DeviationOptimizeResult = components['schemas']['DeviationOptimizeData']
 
-/** 偏差报告 AI 优化类型 */
-export type DeviationReportOptimizeType = 'polish' | 'summarize' | 'expand' | 'simplify'
+/**
+ * 偏差报告 AI 优化类型。
+ *
+ * 取值集合由后端 `OptimizeTextRequest.optimize_type` 的 `Literal` 定义，
+ * 经 OpenAPI 输出为 enum，因此这里直接取生成类型，不再手写联合类型。
+ */
+export type DeviationReportOptimizeType = components['schemas']['OptimizeTextRequest']['optimize_type']

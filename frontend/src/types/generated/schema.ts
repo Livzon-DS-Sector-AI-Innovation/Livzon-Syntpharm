@@ -40134,8 +40134,9 @@ export interface components {
             /**
              * Optimize Type
              * @default polish
+             * @enum {string}
              */
-            optimize_type: string;
+            optimize_type: "polish" | "summarize" | "expand" | "simplify";
         };
         /** OverseasApprovalCreate */
         OverseasApprovalCreate: {

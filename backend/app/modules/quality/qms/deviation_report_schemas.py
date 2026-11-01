@@ -1,13 +1,19 @@
 """偏差报告 Schemas"""
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
+# 与 deviation_report_api._OPTIMIZE_PROMPTS 的键保持一致，由 OpenAPI 输出为 enum，
+# 前端类型因此可以从生成 schema 派生，不再手写联合类型。
+OptimizeType = Literal["polish", "summarize", "expand", "simplify"]
 
 
 class OptimizeTextRequest(BaseModel):
     """AI优化文本请求"""
 
     text: str
-    optimize_type: str = "polish"
+    optimize_type: OptimizeType = "polish"
 
 
 class SaveHtmlRequest(BaseModel):

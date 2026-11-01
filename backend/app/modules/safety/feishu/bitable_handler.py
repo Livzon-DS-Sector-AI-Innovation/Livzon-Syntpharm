@@ -18,7 +18,6 @@ from typing import Any
 from app.core.config import get_settings
 from app.core.jobs import submit_job, submit_job_safe
 from app.core.redis import redis_client
-from app.core.tasks import spawn_task
 from app.modules.safety.feishu.bitable_client import SafetyBitableClient
 from app.modules.safety.feishu.dept_config import DEPARTMENT_CONFIG
 from app.modules.safety.feishu.event_client import on_event
@@ -1288,7 +1287,10 @@ async def _create_hazard_from_bitable(
             f"CREATE_DISPATCH_RECTIFY: record_id={record_id} hazard_no={item.hazard_no} "
             f"resp_name={item.rectification_responsible_person_name} dept={item.department}"
         )
-        spawn_task(_send_rectification_notification(item))
+        await submit_job_safe(
+            "safety.hazard-rectification-notify",
+            lambda _job_id: _send_rectification_notification(item),
+        )
 
         _debug_log(
             f"CREATE_DONE: record_id={record_id} hazard_no={item.hazard_no} "
@@ -1724,9 +1726,15 @@ async def _update_hazard_from_bitable(
                         lambda _job_id: _auto_skip_level2_for_general_hazard(hazard, record_id),
                     )
                 else:
-                    spawn_task(_send_verify_notification(hazard, 2))
+                    await submit_job_safe(
+                        "safety.hazard-verify-notify",
+                        lambda _job_id: _send_verify_notification(hazard, 2),
+                    )
             elif new_status == "level2_approved":
-                spawn_task(_send_verify_notification(hazard, 3))
+                await submit_job_safe(
+                    "safety.hazard-verify-notify",
+                    lambda _job_id: _send_verify_notification(hazard, 3),
+                )
 
             # ── 回写整改状态到 Bitable（跳过 ai_reviewing 中间态，AI 完成后会同步最终状态）──
             if new_status != "ai_reviewing":
@@ -2466,7 +2474,10 @@ async def _auto_skip_level2_for_general_hazard(hazard: Any, record_id: str) -> N
     # 更新内存对象以便通知使用最新状态
     hazard.verify_level_2_status = "no_review_needed"
     hazard.rectification_status = "level2_approved"
-    spawn_task(_send_verify_notification(hazard, 3))
+    await submit_job_safe(
+        "safety.hazard-verify-notify",
+        lambda _job_id: _send_verify_notification(hazard, 3),
+    )
 
 
 # ═══════════════════════════════════════════════════════════════

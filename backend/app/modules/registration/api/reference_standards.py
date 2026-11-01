@@ -26,7 +26,7 @@ def get_service(session: AsyncSession = Depends(get_db)) -> ReferenceStandardSer
     return ReferenceStandardService(session)
 
 
-@router.post("/parse-coa", summary="解析COA文件提取信息")
+@router.post("/parse-coa", response_model=DataResponse[CoaParseResult], summary="解析COA文件提取信息")
 async def post(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:reference-standard:create")),
@@ -45,7 +45,7 @@ async def post(
     )
 
 
-@router.post("/generate", summary="生成对照物质说明表")  # type: ignore[no-redef]
+@router.post("/generate", response_model=DataResponse[ReferenceStandardResponse], summary="生成对照物质说明表")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: RequiredUser,
     coa: UploadFile,
@@ -94,7 +94,7 @@ async def post(  # noqa: F811
     )
 
 
-@router.get("", summary="对照物质说明表记录列表")
+@router.get("", response_model=DataResponse[list[ReferenceStandardListItem]], summary="对照物质说明表记录列表")
 async def get(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:reference-standard:read")),
@@ -113,7 +113,7 @@ async def get(
     )
 
 
-@router.get("/{record_id}", summary="对照物质说明表记录详情")  # type: ignore[no-redef]
+@router.get("/{record_id}", response_model=DataResponse[ReferenceStandardResponse], summary="对照物质说明表记录详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
     record_id: UUID,
@@ -124,7 +124,11 @@ async def get(  # noqa: F811
     return DataResponse[ReferenceStandardResponse](data=record)
 
 
-@router.get("/{record_id}/download-url", summary="获取说明表文件下载URL")  # type: ignore[no-redef]
+@router.get(  # type: ignore[no-redef]
+    "/{record_id}/download-url",
+    response_model=DataResponse[DownloadUrlResponse],
+    summary="获取说明表文件下载URL",
+)
 async def get(  # noqa: F811
     current_user: RequiredUser,
     record_id: UUID,
@@ -166,7 +170,7 @@ async def get(  # noqa: F811
     )
 
 
-@router.delete("/{record_id}", summary="删除对照物质说明表记录")
+@router.delete("/{record_id}", response_model=DataResponse[None], summary="删除对照物质说明表记录")
 async def delete(
     current_user: RequiredUser,
     record_id: UUID,

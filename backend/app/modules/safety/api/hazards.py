@@ -12,11 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
-from app.core.jobs import submit_job
+from app.core.jobs import submit_job, submit_job_safe
 from app.core.response import build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
-from app.core.tasks import spawn_task
 from app.modules.safety.schemas import (
     DepartmentLeaderApiResponse,
     DepartmentLeaderResponse,
@@ -401,7 +400,10 @@ async def handler(  # noqa: F811
     # AI 识别完成后异步通知责任人整改（与 Bitable 同步流程对齐：
     # _create_hazard_from_bitable → AI 完成 → _send_rectification_notification）
     if script_number == 1 and item and not item.ai_error_message:
-        spawn_task(_send_rectification_notification(item))
+        await submit_job_safe(
+            "safety.hazard-rectification-notify",
+            lambda _job_id: _send_rectification_notification(item),
+        )
 
     return HazardApiResponse(data=HazardReportResponse.model_validate(item))
 
@@ -451,7 +453,10 @@ async def handler(  # noqa: F811
     level_labels = {1: "部门负责人", 2: "分管领导", 3: "检查人员"}
 
     # 异步发送飞书通知，不阻塞响应
-    spawn_task(_send_verify_notification(hazard, current_level))
+    await submit_job_safe(
+        "safety.hazard-verify-notify",
+        lambda _job_id: _send_verify_notification(hazard, current_level),
+    )
 
     return build_response(
         message=f"已向{level_labels[current_level]}发送飞书通知",
@@ -508,7 +513,10 @@ async def handler(  # noqa: F811
         raise NotFoundException(resource="隐患")
 
     # 异步发送飞书通知，不阻塞响应
-    spawn_task(_send_rectification_notification(hazard))
+    await submit_job_safe(
+        "safety.hazard-rectification-notify",
+        lambda _job_id: _send_rectification_notification(hazard),
+    )
 
     return build_response(
         message="已向整改责任人发送飞书通知",

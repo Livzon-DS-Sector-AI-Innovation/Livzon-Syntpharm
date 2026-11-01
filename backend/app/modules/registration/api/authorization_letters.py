@@ -31,7 +31,7 @@ def get_service(session: AsyncSession = Depends(get_db)) -> AuthorizationLetterS
     return AuthorizationLetterService(session)
 
 
-@router.get("/products", summary="获取品种登记号对照表")
+@router.get("/products", response_model=DataResponse[list[ProductInfo]], summary="获取品种登记号对照表")
 async def list_products(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:read")),
@@ -41,7 +41,7 @@ async def list_products(
     return DataResponse[list[ProductInfo]](data=products)
 
 
-@router.get("", summary="授权书生成记录列表")
+@router.get("", response_model=DataResponse[list[AuthorizationLetterListItem]], summary="授权书生成记录列表")
 async def get(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:read")),
@@ -62,7 +62,12 @@ async def get(
     )
 
 
-@router.post("/generate", summary="生成授权书", status_code=201)
+@router.post(
+    "/generate",
+    response_model=DataResponse[AuthorizationLetterResponse],
+    summary="生成授权书",
+    status_code=201,
+)
 async def post(
     current_user: RequiredUser,
     template: UploadFile,
@@ -108,7 +113,7 @@ async def post(
     return DataResponse[AuthorizationLetterResponse](data=letter, message="授权书生成成功", code=201)
 
 
-@router.get("/{letter_id}", summary="授权书记录详情")  # type: ignore[no-redef]
+@router.get("/{letter_id}", response_model=DataResponse[AuthorizationLetterResponse], summary="授权书记录详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
     letter_id: UUID,
@@ -119,7 +124,11 @@ async def get(  # noqa: F811
     return DataResponse[AuthorizationLetterResponse](data=letter)
 
 
-@router.get("/{letter_id}/download-url", summary="获取授权书文件下载URL")  # type: ignore[no-redef]
+@router.get(  # type: ignore[no-redef]
+    "/{letter_id}/download-url",
+    response_model=DataResponse[DownloadUrlResponse],
+    summary="获取授权书文件下载URL",
+)
 async def get(  # noqa: F811
     current_user: RequiredUser,
     letter_id: UUID,
@@ -161,7 +170,7 @@ async def get(  # noqa: F811
     )
 
 
-@router.delete("/{letter_id}", summary="删除授权书记录")
+@router.delete("/{letter_id}", response_model=DataResponse[None], summary="删除授权书记录")
 async def delete(
     current_user: RequiredUser,
     letter_id: UUID,

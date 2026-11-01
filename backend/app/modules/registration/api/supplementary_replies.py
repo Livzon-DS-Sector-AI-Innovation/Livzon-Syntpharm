@@ -25,7 +25,7 @@ def get_service(session: AsyncSession = Depends(get_db)) -> SupplementaryReplySe
     return SupplementaryReplyService(session)
 
 
-@router.post("/generate", summary="生成发补回复文档")
+@router.post("/generate", response_model=DataResponse[SupplementaryReplyResponse], summary="生成发补回复文档")
 async def post(
     current_user: RequiredUser,
     notice: UploadFile,
@@ -65,7 +65,7 @@ async def post(
     )
 
 
-@router.get("", summary="发补回复记录列表")
+@router.get("", response_model=DataResponse[list[SupplementaryReplyListItem]], summary="发补回复记录列表")
 async def get(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:read")),
@@ -84,7 +84,7 @@ async def get(
     )
 
 
-@router.get("/{reply_id}", summary="发补回复记录详情")  # type: ignore[no-redef]
+@router.get("/{reply_id}", response_model=DataResponse[SupplementaryReplyResponse], summary="发补回复记录详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
     reply_id: UUID,
@@ -95,7 +95,11 @@ async def get(  # noqa: F811
     return DataResponse[SupplementaryReplyResponse](data=reply)
 
 
-@router.get("/{reply_id}/download-url", summary="获取发补回复文件下载URL")  # type: ignore[no-redef]
+@router.get(  # type: ignore[no-redef]
+    "/{reply_id}/download-url",
+    response_model=DataResponse[DownloadUrlResponse],
+    summary="获取发补回复文件下载URL",
+)
 async def get(  # noqa: F811
     current_user: RequiredUser,
     reply_id: UUID,
@@ -137,7 +141,7 @@ async def get(  # noqa: F811
     )
 
 
-@router.delete("/{reply_id}", summary="删除发补回复记录")
+@router.delete("/{reply_id}", response_model=DataResponse[None], summary="删除发补回复记录")
 async def delete(
     current_user: RequiredUser,
     reply_id: UUID,

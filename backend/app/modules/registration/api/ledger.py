@@ -37,7 +37,7 @@ router = APIRouter()
 # ── Domestic Approvals ─────────────────────────────────────────────
 
 
-@router.get("/domestic-approvals")
+@router.get("/domestic-approvals", response_model=DataResponse[list[DomesticApprovalResponse]])
 async def get(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
@@ -157,7 +157,7 @@ async def get(  # noqa: F811
 # ── Overseas Approvals ─────────────────────────────────────────────
 
 
-@router.get("/overseas-approvals")  # type: ignore[no-redef]
+@router.get("/overseas-approvals", response_model=DataResponse[list[OverseasApprovalResponse]])  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
@@ -274,7 +274,7 @@ async def get(  # noqa: F811
 # ── International Reviews ──────────────────────────────────────────
 
 
-@router.get("/international-reviews")  # type: ignore[no-redef]
+@router.get("/international-reviews", response_model=DataResponse[list[InternationalReviewResponse]])  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
@@ -376,7 +376,7 @@ async def get(  # noqa: F811
 # ── COPP Certificates ──────────────────────────────────────────────
 
 
-@router.get("/copp-certificates")  # type: ignore[no-redef]
+@router.get("/copp-certificates", response_model=DataResponse[list[CoppCertificateResponse]])  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
@@ -478,7 +478,7 @@ async def get(  # noqa: F811
 # ── WC Certificates ────────────────────────────────────────────────
 
 
-@router.get("/wc-certificates")  # type: ignore[no-redef]
+@router.get("/wc-certificates", response_model=DataResponse[list[WcCertificateResponse]])  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
@@ -580,7 +580,7 @@ async def get(  # noqa: F811
 # ── Dashboard Summary ──────────────────────────────────────────────
 
 
-@router.get("/summary")  # type: ignore[no-redef]
+@router.get("/summary", response_model=DataResponse[LedgerSummary])  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
@@ -593,7 +593,7 @@ async def get(  # noqa: F811
 # ── Reviewing (from drugs table) ───────────────────────────────────
 
 
-@router.get("/reviewing")  # type: ignore[no-redef]
+@router.get("/reviewing", response_model=DataResponse[list[ReviewingDrugItem]])  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
