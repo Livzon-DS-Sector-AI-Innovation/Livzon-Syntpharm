@@ -25,8 +25,10 @@ import {
   GenericDataResponse,
   GenericDataListResponse,
   PrejobTemplateResponse,
-  Candidate,
+  CandidateListParams,
+  CandidateListResponse,
 } from '@/types/hr'
+import type { components } from '@/types/generated/schema'
 
 const API_BASE = '/api/v1'
 
@@ -645,11 +647,23 @@ export async function fetchPlanItems(id: string): Promise<AnnualTrainingPlanItem
   return res.json()
 }
 
-// ─── 招聘候选人（待后端实现）───
+// ─── 招聘候选人 ───
 
-export async function fetchCandidates(_params?: Record<string, unknown>): Promise<{ data: Candidate[]; meta?: { total: number } }> {
-  // TODO: backend candidate API not yet implemented
-  return { data: [], meta: { total: 0 } }
+export async function fetchCandidates(params?: CandidateListParams): Promise<CandidateListResponse> {
+  const searchParams = new URLSearchParams()
+  if (params?.position) searchParams.set('position', params.position)
+  if (params?.education) searchParams.set('education', params.education)
+  if (params?.recommendation_level) searchParams.set('recommendation_level', params.recommendation_level)
+  if (params?.sync_status) searchParams.set('sync_status', params.sync_status)
+  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  searchParams.set('page', String(params?.page || 1))
+  searchParams.set('page_size', String(params?.page_size || 20))
+
+  const res = await fetch(`${API_BASE}/hr/candidates?${searchParams.toString()}`, {
+    cache: 'no-store',
+  })
+  if (!res.ok) throw new Error('获取候选人列表失败')
+  return res.json()
 }
 
 // ─── SOP Catalog APIs ───
@@ -740,4 +754,18 @@ export async function fetchTrainingSpecialists(_factory?: string): Promise<Gener
   })
   if (!res.ok) throw new Error('获取培训专家列表失败')
   return res.json()
+}
+
+/** 生成培训效果评估表（返回 docx 二进制流，Server Action 无法回传 Blob） */
+export async function generateEvaluationForm(
+  payload: components['schemas']['TrainingEvaluationInput'],
+  factory: 'old' | 'new' = 'old',
+): Promise<Blob> {
+  const res = await fetch(`/api/v1/hr/training-evaluation?factory=${factory}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error('生成失败')
+  return res.blob()
 }

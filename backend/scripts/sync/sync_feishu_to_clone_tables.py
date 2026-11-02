@@ -23,7 +23,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from sqlalchemy import text
+from sqlalchemy import delete, insert, table
 
 from app.core.database import engine
 from app.platform.integrations.feishu.client import FeishuClient
@@ -419,13 +419,24 @@ def _build_record(fields: dict, mapping: dict, defaults: dict | None = None) -> 
     return record
 
 
-def _build_insert_sql(table: str, record: dict) -> tuple[str, dict]:
-    """Build INSERT SQL and parameters."""
-    table = _checked_identifier(table, "表名")
-    cols = [_checked_identifier(c, "列名") for c in record]
-    placeholders = [f":{c}" for c in cols]
-    sql = f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({', '.join(placeholders)})"
-    return sql, record
+def _sa_table(db_table: str):
+    """把校验过的 schema.table 转成 SQLAlchemy 表对象。
+
+    标识符由 Core 表达式生成，不再以字符串插值的方式进入 SQL。
+    """
+    checked = _checked_identifier(db_table, "表名")
+    schema, _, name = checked.partition(".")
+    if not name:
+        return table(checked)
+    return table(name, schema=schema)
+
+
+def _build_insert_stmt(db_table: str, record: dict):
+    """Build INSERT statement from a whitelisted table name and record."""
+    columns = {_checked_identifier(c, "列名"): v for c, v in record.items()}
+    if not columns:
+        raise ValueError("空记录无法插入")
+    return insert(_sa_table(db_table)).values(**columns)
 
 
 # ─── Sync logic ───
@@ -443,7 +454,7 @@ async def sync_table(
     logger.info("Syncing %s -> %s", feishu_table_id, db_table)
 
     # Clear existing data
-    await conn.execute(text(f"DELETE FROM {_checked_identifier(db_table, '表名')}"))
+    await conn.execute(delete(_sa_table(db_table)))
 
     # Fetch all records from Feishu
     records_data = await client.request(
@@ -494,8 +505,7 @@ async def sync_table(
                 continue
 
         try:
-            sql, params = _build_insert_sql(db_table, record)
-            await conn.execute(text(sql), params)
+            await conn.execute(_build_insert_stmt(db_table, record))
             inserted += 1
         except Exception as e:
             errors += 1

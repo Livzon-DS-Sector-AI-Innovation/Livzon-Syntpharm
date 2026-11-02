@@ -30,6 +30,24 @@ class ApiResponse(BaseModel):
     meta: PaginationMeta | None = None
 
 
+class DataResponse[T](BaseModel):
+    """带具体 `data` 类型的响应信封。
+
+    AGENTS.md:133 禁止 `response_model=ApiResponse` 与 `response_model=dict`，
+    因为 `ApiResponse.data` 是 `Any`，OpenAPI 只能生成 `{type: object}`。
+    这里用泛型把 `data` 固定为端点的真实返回类型，OpenAPI 会展开成
+    `DataResponse_PersonnelResponse_` 这类具名 schema，前端可从生成的
+    TypeScript 类型里直接拿到字段。
+
+    用法：`response_model=DataResponse[PersonnelResponse]`，或以返回注解声明。
+    """
+
+    code: int = 200
+    message: str = "success"
+    data: T | None = None
+    meta: PaginationMeta | None = None
+
+
 class PageParams(BaseModel):
     page: int = Field(default=1, ge=1)
     page_size: int = Field(default=20, ge=1, le=200)

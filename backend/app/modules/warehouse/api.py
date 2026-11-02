@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
-from app.core.response import success_response
+from app.core.response import build_response
 from app.modules.warehouse.schemas import (
     PackagingMaterialListResponse,
     PackagingMaterialResponse,
@@ -54,7 +54,7 @@ async def handler(
 
     data = [RawMaterialResponse.model_validate(item).model_dump(mode="json") for item in items]
 
-    return success_response(data=data)
+    return build_response(data=data)
 
 
 @router.get(  # type: ignore[no-redef]
@@ -71,7 +71,7 @@ async def handler(  # noqa: F811
 
     data = [PackagingMaterialResponse.model_validate(item).model_dump(mode="json") for item in items]
 
-    return success_response(data=data)
+    return build_response(data=data)
 
 
 @router.get(  # type: ignore[no-redef]
@@ -88,7 +88,7 @@ async def handler(  # noqa: F811
 
     data = [ProductInventoryResponse.model_validate(item).model_dump(mode="json") for item in items]
 
-    return success_response(data=data)
+    return build_response(data=data)
 
 
 @router.get(  # type: ignore[no-redef]
@@ -103,7 +103,7 @@ async def handler(  # noqa: F811
 ) -> Any:
     data = await service.get_feishu_config_response()
 
-    return success_response(data=data.model_dump(mode="json"))
+    return build_response(data=data.model_dump(mode="json"))
 
 
 @router.put(  # type: ignore[no-redef]
@@ -119,7 +119,7 @@ async def handler(  # noqa: F811
 ) -> Any:
     data = await service.save_feishu_config(payload)
 
-    return success_response(data=data.model_dump(mode="json"))
+    return build_response(data=data.model_dump(mode="json"))
 
 
 @router.post(  # type: ignore[no-redef]
@@ -135,7 +135,7 @@ async def handler(  # noqa: F811
 ) -> Any:
     data = await service.test_feishu_connectivity(payload)
 
-    return success_response(data=data.model_dump(mode="json"))
+    return build_response(data=data.model_dump(mode="json"))
 
 
 @router.get(  # type: ignore[no-redef]
@@ -159,7 +159,7 @@ async def handler(  # noqa: F811
 
     data = [WarehouseFeishuTableResponse.model_validate(item).model_dump(mode="json") for item in items]
 
-    return success_response(data=data)
+    return build_response(data=data)
 
 
 @router.post(  # type: ignore[no-redef]
@@ -176,7 +176,7 @@ async def handler(  # noqa: F811
 
     data = [WarehouseFeishuTableResponse.model_validate(item).model_dump(mode="json") for item in items]
 
-    return success_response(data=data)
+    return build_response(data=data)
 
 
 @router.post(  # type: ignore[no-redef]
@@ -197,7 +197,7 @@ async def handler(  # noqa: F811
 
     data = [WarehouseFeishuTableResponse.model_validate(item).model_dump(mode="json") for item in items]
 
-    return success_response(data=data)
+    return build_response(data=data)
 
 
 @router.patch(  # type: ignore[no-redef]
@@ -216,7 +216,7 @@ async def handler(  # noqa: F811
 
     data = WarehouseFeishuTableResponse.model_validate(table).model_dump(mode="json")
 
-    return success_response(data=data)
+    return build_response(data=data)
 
 
 @router.post(  # type: ignore[no-redef]
@@ -232,7 +232,7 @@ async def handler(  # noqa: F811
 ) -> Any:
     data = await service.sync_feishu_table(table_id)
 
-    return success_response(data=data.model_dump(mode="json"))
+    return build_response(data=data.model_dump(mode="json"))
 
 
 @router.get(  # type: ignore[no-redef]
@@ -265,7 +265,7 @@ async def handler(  # noqa: F811
         page_size=page_size,
     )
 
-    return success_response(data=data.model_dump(mode="json"))
+    return build_response(data=data.model_dump(mode="json"))
 
 
 @router.get(  # type: ignore[no-redef]
@@ -300,7 +300,7 @@ async def handler(  # noqa: F811
         page_size=page_size,
     )
 
-    return success_response(data=data.model_dump(mode="json"))
+    return build_response(data=data.model_dump(mode="json"))
 
 
 @router.get(
@@ -315,7 +315,7 @@ async def get_feishu_ws_status(
 
     from app.modules.warehouse.ws_client import get_ws_status
 
-    return success_response(data=(await get_ws_status()).model_dump(mode="json"))
+    return build_response(data=(await get_ws_status()).model_dump(mode="json"))
 
 
 @router.post(
@@ -330,4 +330,4 @@ async def restart_feishu_ws(
 
     from app.modules.warehouse.ws_client import restart_ws_from_db
 
-    return success_response(data=(await restart_ws_from_db()).model_dump(mode="json"))
+    return build_response(data=(await restart_ws_from_db()).model_dump(mode="json"))

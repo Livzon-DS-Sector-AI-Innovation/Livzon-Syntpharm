@@ -2,9 +2,16 @@ from typing import Any
 
 from fastapi.responses import JSONResponse
 
-from app.shared.schemas import ApiResponse
+from app.shared.schemas import ApiResponse, DataResponse
 
-__all__ = ["ApiResponse", "build_response", "success_response", "error_response", "paginated_response"]
+__all__ = [
+    "ApiResponse",
+    "DataResponse",
+    "build_response",
+    "success_response",
+    "error_response",
+    "paginated_response",
+]
 
 # 显式声明 UTF-8：响应体含中文（如错误提示「数据重复，该记录已存在」）时，
 # 若 Content-Type 不带 charset，某些客户端/代理会按 ISO-8859-1 解析 → 出现

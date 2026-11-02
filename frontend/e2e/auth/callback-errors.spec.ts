@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test'
 
+import { FRONTEND_ORIGIN } from '../../playwright.config'
+
 const LOGIN_URL = /\/login(?:\?.*)?$/
+
+/** 写 cookie 需要的域：取自被测前端源，避免在用例里硬编码主机名 */
+const COOKIE_DOMAIN = new URL(FRONTEND_ORIGIN).hostname
 
 test('missing token redirects to /login?error=callback_failed', async ({ page, request }) => {
   const res = await request.get('/auth/callback', { maxRedirects: 0 })
@@ -24,7 +29,7 @@ test('empty token redirects to /login?error=callback_failed', async ({ page, req
 
 test('garbage token set as cookie → dashboard rejects → redirects to /login', async ({ page }) => {
   await page.context().addCookies([
-    { name: 'auth_token', value: 'not-a-valid-jwt', path: '/', domain: '127.0.0.1' },
+    { name: 'auth_token', value: 'not-a-valid-jwt', path: '/', domain: COOKIE_DOMAIN },
   ])
   await page.goto('/production')
   await expect(page).toHaveURL(LOGIN_URL)
@@ -32,7 +37,7 @@ test('garbage token set as cookie → dashboard rejects → redirects to /login'
 
 test('tampered JWT set as cookie → dashboard rejects → redirects to /login', async ({ page }) => {
   await page.context().addCookies([
-    { name: 'auth_token', value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYWtlIiwibmFtZSI6IkphbmUgRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.tampered_signature_here', path: '/', domain: '127.0.0.1' },
+    { name: 'auth_token', value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYWtlIiwibmFtZSI6IkphbmUgRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.tampered_signature_here', path: '/', domain: COOKIE_DOMAIN },
   ])
   await page.goto('/production')
   await expect(page).toHaveURL(LOGIN_URL)

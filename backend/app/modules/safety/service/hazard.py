@@ -11,7 +11,7 @@ from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.jobs import spawn_task
+from app.core.jobs import JobRunner, submit_job, submit_job_safe
 from app.core.storage import delete_object
 from app.core.storage import is_enabled as minio_enabled
 from app.modules.safety.feishu.notification import send_user_card
@@ -216,6 +216,35 @@ async def _sync_verify_status_to_bitable(hazard: HazardReport, field_name: str, 
         )
 
 
+def _bitable_sync_runner(
+    hazard: HazardReport,
+    *,
+    ai_review_result: dict[str, Any] | None = None,
+    rectification_status: str | None = None,
+    verify_status: list[tuple[str, str]] | None = None,
+) -> JobRunner:
+    """把同一隐患的多条 Bitable 回写聚合成一个后台任务。
+
+    逐条串行执行：这几条回写都改同一条 Bitable 记录，并发 PATCH 会互相覆盖。
+    聚合后 `core.background_jobs` 的增长量按隐患条数算，而不是按回写次数算。
+    """
+
+    async def _run(_job_id: uuid.UUID) -> dict[str, Any]:
+        synced: list[str] = []
+        if ai_review_result is not None:
+            await _sync_ai_review_to_bitable(hazard, ai_review_result)
+            synced.append("ai_review")
+        if rectification_status is not None:
+            await _sync_rectification_status_to_bitable(hazard, rectification_status)
+            synced.append("rectification_status")
+        for field_name, value in verify_status or []:
+            await _sync_verify_status_to_bitable(hazard, field_name, value)
+            synced.append(f"verify:{field_name}")
+        return {"hazard_no": hazard.hazard_no, "synced": synced}
+
+    return _run
+
+
 class HazardService:
     """HazardReport CRUD, AI identification, rectification review, notifications."""
 
@@ -260,7 +289,7 @@ class HazardService:
                 if os.path.exists(abs_path):
                     os.remove(abs_path)
         except OSError:
-            pass
+            logger.debug("忽略异常 @ %s", "HazardService._cleanup_file")
 
     @staticmethod
     def _cleanup_json_array_files(json_str: str | None) -> None:
@@ -273,7 +302,7 @@ class HazardService:
                     if isinstance(p, str):
                         HazardService._cleanup_file(p)
         except (json.JSONDecodeError, TypeError):
-            pass
+            logger.debug("忽略异常 @ %s", "HazardService._cleanup_json_array_files")
 
     # ==================== HazardReport Operations ====================
 
@@ -495,7 +524,10 @@ class HazardService:
 
         # 整改回复后，异步触发 AI 初审（非阻塞），AI 结果将决定后续通知路由
         if updated:
-            spawn_task(self.run_rectification_review(hazard_id))
+            await submit_job(
+                "safety.rectification-review",
+                lambda _job_id: self.run_rectification_review(hazard_id),
+            )
 
         return updated
 
@@ -589,9 +621,15 @@ class HazardService:
                 # re-fetch 获取最新状态
                 updated = await self.repo.get_hazard_by_id(hazard_id)
                 if updated:
-                    spawn_task(_send_verify_notification(updated, 3))
+                    await submit_job_safe(
+                        "safety.hazard-verify-notify",
+                        lambda _job_id: _send_verify_notification(updated, 3),
+                    )
             else:
-                spawn_task(_send_verify_notification(updated, level + 1))
+                await submit_job_safe(
+                    "safety.hazard-verify-notify",
+                    lambda _job_id: _send_verify_notification(updated, level + 1),
+                )
 
         return updated
 
@@ -624,7 +662,10 @@ class HazardService:
 
         # 重新整改回复后，异步触发 AI 初审（非阻塞），AI 结果将决定后续通知路由
         if updated:
-            spawn_task(self.run_rectification_review(hazard_id))
+            await submit_job(
+                "safety.rectification-review",
+                lambda _job_id: self.run_rectification_review(hazard_id),
+            )
 
         return updated
 
@@ -1010,11 +1051,19 @@ class HazardService:
                     await bg_session.commit()
                     passed = await bg_service.repo.get_hazard_by_id(hazard_id)
                     if passed:
-                        spawn_task(_send_verify_notification(passed, 1))
-                        # 同步「已回复」状态到 Bitable
-                        spawn_task(_sync_rectification_status_to_bitable(passed, "replied"))
-                        # 同步 AI 初审结果到 Bitable
-                        spawn_task(_sync_ai_review_to_bitable(passed, result))
+                        await submit_job_safe(
+                            "safety.hazard-verify-notify",
+                            lambda _job_id: _send_verify_notification(passed, 1),
+                        )
+                        # 「已回复」状态 + AI 初审结果回写 Bitable：聚合成一个可查的后台任务
+                        await submit_job_safe(
+                            "safety.rectification-bitable-sync",
+                            _bitable_sync_runner(
+                                passed,
+                                ai_review_result=result,
+                                rectification_status="replied",
+                            ),
+                        )
                     logger.info("AI 初审通过 → 通知一级复核人: hazard_id=%s", hazard_id)
                 elif conclusion == "不通过":
                     # AI 判定不通过 → 自动驳回，通知责任人重新整改
@@ -1022,12 +1071,20 @@ class HazardService:
                     await bg_session.commit()
                     rejected = await bg_service.repo.get_hazard_by_id(hazard_id)
                     if rejected:
-                        spawn_task(_send_rectification_notification(rejected))
-                        # 同步「已驳回」状态到 Bitable，防止 Bitable 仍显示「已回复」
-                        # 导致部门负责人误认为仍需复核
-                        spawn_task(_sync_rectification_status_to_bitable(rejected, "rejected"))
-                        # 同步 AI 初审结果到 Bitable
-                        spawn_task(_sync_ai_review_to_bitable(rejected, result))
+                        await submit_job_safe(
+                            "safety.hazard-rectification-notify",
+                            lambda _job_id: _send_rectification_notification(rejected),
+                        )
+                        # 「已驳回」状态 + AI 初审结果回写 Bitable
+                        # （不同步会让 Bitable 仍显示「已回复」，部门负责人误认为仍需复核）
+                        await submit_job_safe(
+                            "safety.rectification-bitable-sync",
+                            _bitable_sync_runner(
+                                rejected,
+                                ai_review_result=result,
+                                rectification_status="rejected",
+                            ),
+                        )
                     logger.info(
                         "AI 初审不通过 → 自动驳回，通知责任人: hazard_id=%s",
                         hazard_id,
@@ -1048,30 +1105,23 @@ class HazardService:
                     no_need = await bg_service.repo.get_hazard_by_id(hazard_id)
                     if no_need:
                         # 通知 L3 检查人员闭环确认，卡片中标注「AI 判定：无需整改」
-                        spawn_task(_send_verify_notification(no_need, 3))
-                        # 同步 AI 初审结果到 Bitable
-                        spawn_task(_sync_ai_review_to_bitable(no_need, result))
-                        # 同步整改状态「无需整改」到 Bitable
-                        spawn_task(
-                            _sync_rectification_status_to_bitable(
-                                no_need,
-                                "no_rectification_needed",
-                            )
+                        await submit_job_safe(
+                            "safety.hazard-verify-notify",
+                            lambda _job_id: _send_verify_notification(no_need, 3),
                         )
-                        # 同步 V1/V2「无需复核」到 Bitable（与多維表格保持一致）
-                        spawn_task(
-                            _sync_verify_status_to_bitable(
+                        # AI 初审结果 + 整改状态 + V1/V2「无需复核」回写 Bitable
+                        # （四条聚合成一个后台任务，与多维表格保持一致）
+                        await submit_job_safe(
+                            "safety.rectification-bitable-sync",
+                            _bitable_sync_runner(
                                 no_need,
-                                "部门负责人复核",
-                                "无需复核",
-                            )
-                        )
-                        spawn_task(
-                            _sync_verify_status_to_bitable(
-                                no_need,
-                                "分管领导复核",
-                                "无需复核",
-                            )
+                                ai_review_result=result,
+                                rectification_status="no_rectification_needed",
+                                verify_status=[
+                                    ("部门负责人复核", "无需复核"),
+                                    ("分管领导复核", "无需复核"),
+                                ],
+                            ),
                         )
                     logger.info(
                         "AI 初审无需整改 → 跳过 L1/L2，通知 L3 检查人员闭环: hazard_id=%s",
@@ -1089,9 +1139,15 @@ class HazardService:
                     await bg_session.commit()
                     unknown = await bg_service.repo.get_hazard_by_id(hazard_id)
                     if unknown:
-                        spawn_task(_send_rectification_notification(unknown))
+                        await submit_job_safe(
+                            "safety.hazard-rectification-notify",
+                            lambda _job_id: _send_rectification_notification(unknown),
+                        )
                         # 同步 AI 初审结果到 Bitable
-                        spawn_task(_sync_ai_review_to_bitable(unknown, result))
+                        await submit_job_safe(
+                            "safety.rectification-bitable-sync",
+                            _bitable_sync_runner(unknown, ai_review_result=result),
+                        )
                 return updated
             except AIOutputError as e:
                 logger.error("AI 整改初审失败(hazard %s): %s", hazard_id, e)
@@ -1105,7 +1161,10 @@ class HazardService:
                 )
                 await bg_session.commit()
                 # AI 失败兜底：开放复核 + 通知一级复核人进行人工审核，避免流程卡死
-                spawn_task(_send_verify_notification(item, 1))
+                await submit_job_safe(
+                    "safety.hazard-verify-notify",
+                    lambda _job_id: _send_verify_notification(item, 1),
+                )
                 return None
             except Exception as e:
                 logger.error("AI 整改初审异常(hazard %s): %s", hazard_id, e)
@@ -1119,7 +1178,10 @@ class HazardService:
                 )
                 await bg_session.commit()
                 # AI 异常兜底：开放复核 + 通知一级复核人进行人工审核，避免流程卡死
-                spawn_task(_send_verify_notification(item, 1))
+                await submit_job_safe(
+                    "safety.hazard-verify-notify",
+                    lambda _job_id: _send_verify_notification(item, 1),
+                )
                 return None
 
     # ── AI 服务工厂 ──

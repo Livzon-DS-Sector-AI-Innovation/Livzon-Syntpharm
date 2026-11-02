@@ -16,6 +16,15 @@ export type ApiResponse<T> = Omit<components['schemas']['ApiResponse'], 'data'> 
 }
 
 /**
+ * Envelope for operations that only report success and carry no `data` body
+ * (deletes, status updates). Field types still come from the generated schema.
+ */
+export type MessageResponse = {
+  code: components['schemas']['ApiResponse']['code']
+  message: components['schemas']['ApiResponse']['message']
+}
+
+/**
  * A page of results, projected from the contract rather than declared here:
  * the list lives in `data`, the pagination numbers in `meta`. Both shapes come
  * from the generated schema, so this cannot drift from the backend.

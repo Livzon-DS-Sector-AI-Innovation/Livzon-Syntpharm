@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import { DataUnavailable } from '@/components/common/DataUnavailable'
 import {Table, Input, Select, Button, Space, App, Card, Modal, Form, Upload, UploadFile} from 'antd'
 import { PlusOutlined, UploadOutlined, DownloadOutlined, DeleteOutlined } from '@ant-design/icons'
 import { AuthorizationLetterListItem, ProductInfo } from '@/types/registration'
@@ -22,13 +24,15 @@ export default function AuthorizationLetterClient({
   products,
 }: AuthorizationLetterClientProps) {
   const { message, modal } = App.useApp()
-  const [letters, setLetters] = useState<AuthorizationLetterListItem[]>(initialLetters)
-  const [total, setTotal] = useState(initialTotal)
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
-  const [loading, setLoading] = useState(false)
   const [productName, setProductName] = useState('')
   const [preparationUnit, setPreparationUnit] = useState('')
+  // 已提交的查询条件：输入框内容不直接触发请求，点「搜索」才提交
+  const [query, setQuery] = useState<{
+    page: number
+    pageSize: number
+    productName: string
+    preparationUnit: string
+  }>({ page: 1, pageSize: 20, productName: '', preparationUnit: '' })
   const [generateModalOpen, setGenerateModalOpen] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [form] = Form.useForm()
@@ -37,27 +41,48 @@ export default function AuthorizationLetterClient({
     {old: '', new: ''},
   ])
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await fetchAuthorizationLetters({
-        product_name: productName || undefined,
-        preparation_unit: preparationUnit || undefined,
-        page,
-        page_size: pageSize,
-      })
-      setLetters(res.data)
-      setTotal(res.meta?.total || 0)
-    } catch (err: unknown) {
-      message.error((err instanceof Error ? err.message : null) || '加载数据失败')
-    } finally {
-      setLoading(false)
+  const isInitialQuery =
+    query.page === 1 && query.pageSize === 20 && !query.productName && !query.preparationUnit
+
+  const lettersQuery = useQuery({
+    queryKey: ['authorization-letters', query],
+    queryFn: () =>
+      fetchAuthorizationLetters({
+        product_name: query.productName || undefined,
+        preparation_unit: query.preparationUnit || undefined,
+        page: query.page,
+        page_size: query.pageSize,
+      }),
+    placeholderData: keepPreviousData,
+    // 首屏首页直接用服务端已取好的数据，避免闪一次 loading；其余页码必须真取
+    initialData: isInitialQuery ? { items: initialLetters, total: initialTotal } : undefined,
+  })
+
+  const letters = lettersQuery.data?.items ?? []
+  const total = lettersQuery.data?.total ?? 0
+
+  // 搜索：条件与当前一致时强制重取，否则提交新条件（页码回到 1）
+  const handleSearch = () => {
+    const nextProductName = productName.trim()
+    const nextPreparationUnit = preparationUnit.trim()
+    if (
+      nextProductName === query.productName &&
+      nextPreparationUnit === query.preparationUnit &&
+      query.page === 1
+    ) {
+      void lettersQuery.refetch()
+      return
     }
-  }, [productName, preparationUnit, page, pageSize, message])
+    setQuery({
+      page: 1,
+      pageSize: query.pageSize,
+      productName: nextProductName,
+      preparationUnit: nextPreparationUnit,
+    })
+  }
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
-    setPage(newPage)
-    setPageSize(newPageSize)
+    setQuery(prev => ({ ...prev, page: newPage, pageSize: newPageSize }))
   }
 
   const handleProductChange = (value: string) => {
@@ -134,7 +159,7 @@ export default function AuthorizationLetterClient({
         setGenerateModalOpen(false)
         form.resetFields()
         setFileList([])
-        loadData()
+        void lettersQuery.refetch()
       } else {
         message.error(result.message)
       }
@@ -153,7 +178,7 @@ export default function AuthorizationLetterClient({
         try {
           await deleteAuthorizationLetter(id)
           message.success('删除成功')
-          loadData()
+          void lettersQuery.refetch()
         } catch (err: unknown) {
           message.error((err instanceof Error ? err.message : null) || '删除失败')
         }
@@ -161,7 +186,11 @@ export default function AuthorizationLetterClient({
     })
   }
 
-  const handleDownload = async (id: string, fileName: string) => {
+  const handleDownload = async (id: string, fileName?: string | null) => {
+    if (!fileName) {
+      message.warning('该授权书暂无可用文件')
+      return
+    }
     const url = await fetchAuthorizationLetterDownloadUrl(id)
     const link = document.createElement('a')
     link.href = url
@@ -267,23 +296,31 @@ export default function AuthorizationLetterClient({
             style={{ width: 200 }}
             allowClear
           />
-          <Button onClick={() => { setPage(1); loadData() }}>搜索</Button>
+          <Button onClick={handleSearch}>搜索</Button>
         </div>
 
         <Table
           columns={columns}
           dataSource={letters}
           rowKey="id"
-          loading={loading}
+          loading={lettersQuery.isPending}
           pagination={{
-            current: page,
-            pageSize: pageSize,
+            current: query.page,
+            pageSize: query.pageSize,
             total: total,
             showSizeChanger: true,
+            // 后端 PageParams 为 le=200，选项不得超过该上限否则 422
+            pageSizeOptions: [10, 20, 50, 100],
             showTotal: (total) => `共 ${total} 条`,
             onChange: handlePageChange,
           }}
           scroll={{ x: 1200 }}
+          locale={{
+            // 取数失败时在表格内嵌降级区块，与「确实没有记录」的空态区分开
+            emptyText: lettersQuery.isError ? (
+              <DataUnavailable compact onRetry={() => void lettersQuery.refetch()} />
+            ) : undefined,
+          }}
         />
       </Card>
 

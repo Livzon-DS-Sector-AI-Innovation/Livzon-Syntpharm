@@ -1,3 +1,4 @@
+import type { components } from '@/types/generated/schema'
 import type { DepartmentOption } from '@/types/equipment/generated-bridge'
 export type { DepartmentOption } from '@/types/equipment/generated-bridge'
 import {
@@ -203,12 +204,12 @@ export async function fetchMaintenancePlans(filters: MaintenancePlanFilters = {}
 }
 
 export async function fetchMaintenancePlanById(id: string): Promise<MaintenancePlan> {
-  return apiGet(`${API_BASE}/equipment/maintenance/plans${id}`)
+  return apiGet(`${API_BASE}/equipment/maintenance/plans/${id}`)
 }
 
 export async function fetchOverdueMaintenancePlans(days?: number): Promise<MaintenancePlan[]> {
   const params = days ? `?days=${days}` : ''
-  return apiGet(`${API_BASE}/equipment/maintenance/plansoverdue${params}`)
+  return apiGet(`${API_BASE}/equipment/maintenance/plans/overdue${params}`)
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -308,4 +309,24 @@ export async function batchDeleteEquipments(ids: string[]): Promise<void> {
     method: 'POST',
     body: JSON.stringify({ ids }),
   })
+}
+
+/**
+ * Excel 批量同步设备（上传 FormData，属上传例外）。
+ *
+ * 直接返回信封里的 `data`，调用点不再自行判断 `code` / 解包 `.data`；
+ * 业务失败（HTTP 200 但 code != 200）在此处转成异常，调用点只需 try/catch。
+ */
+export async function syncEquipmentExcel(
+  formData: FormData,
+  dryRun: boolean
+): Promise<components['schemas']['EquipmentSyncResult']> {
+  const url = dryRun
+    ? '/api/v1/equipment/equipments/sync-excel?dry_run=true'
+    : '/api/v1/equipment/equipments/sync-excel'
+  const res = await fetch(url, { method: 'POST', body: formData })
+  if (!res.ok) throw new Error(`服务器响应错误: ${res.status}`)
+  const json = (await res.json()) as components['schemas']['EquipmentSyncResponse']
+  if (json.code !== 200) throw new Error(json.message || '同步业务逻辑失败')
+  return json.data
 }

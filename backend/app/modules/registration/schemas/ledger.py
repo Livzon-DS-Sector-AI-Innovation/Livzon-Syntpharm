@@ -3,7 +3,7 @@
 from datetime import date, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 # ── Domestic Approval ──────────────────────────────────────────────
 
@@ -178,3 +178,36 @@ class LedgerSummary(BaseModel):
     wc_count: int
     reviewing_count: int
     planned_count: int
+
+
+# ── Excel 导入 / 审评中品种 ─────────────────────────────────────────
+
+
+class LedgerImportResult(BaseModel):
+    """台账 Excel 导入回执"""
+
+    count: int = 0
+    message: str = ""
+    total_rows: int = 0
+    success_count: int = 0
+    skipped_count: int = 0
+    error_count: int = 0
+    errors: list[str] = Field(default_factory=list)
+
+
+class ReviewingDrugItem(BaseModel):
+    """审评中品种
+
+    `node_N`（各审评节点的实际完成日期）随品种节点数动态变化，无法在契约里穷举，
+    因此允许额外字段——这样既能声明固定字段，也不会丢掉节点日期。
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    product_name: str
+    drug_type: str | None = None
+    acceptance_date: str | None = None
+    current_node: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None

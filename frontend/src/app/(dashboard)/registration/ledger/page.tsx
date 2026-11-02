@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback, Suspense } from 'react'
+import { useState, Suspense } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Select, Card, Table, Button, Space, Upload, Modal, Form, Input, DatePicker, InputNumber, App } from 'antd'
 import { UploadOutlined, DownloadOutlined, PlusOutlined } from '@ant-design/icons'
@@ -20,9 +21,20 @@ import {
   createCoppCertificate, importCoppCertificates,
   createWcCertificate, importWcCertificates,
 } from '@/actions/registration-ledger'
+import { DataUnavailable } from '@/components/common/DataUnavailable'
 import dayjs from 'dayjs'
 
 type LedgerType = 'domestic' | 'overseas' | 'international' | 'copp' | 'wc' | 'reviewing'
+
+/** 每种台账对应一个浏览器只读 GET；切换类型即切换 queryFn 取到的数据 */
+const LEDGER_FETCHERS: Record<LedgerType, () => Promise<unknown[]>> = {
+  domestic: fetchDomesticApprovals,
+  overseas: fetchOverseasApprovals,
+  international: fetchInternationalReviews,
+  copp: fetchCoppCertificates,
+  wc: fetchWcCertificates,
+  reviewing: fetchReviewingDrugs,
+}
 
 const LEDGER_TYPES = [
   { value: 'domestic', label: '国内已获批' },
@@ -45,8 +57,6 @@ function LedgerContent() {
   const urlType = searchParams.get('type') as LedgerType | null
 
   const [type, setType] = useState<LedgerType>(urlType || 'domestic')
-  const [data, setData] = useState<Record<string, unknown>[]>([])
-  const [loading, setLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [form] = Form.useForm()
 
@@ -57,28 +67,16 @@ function LedgerContent() {
     setType(urlType)
   }
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      let result: unknown[] = []
-      switch (type) {
-        case 'domestic': result = await fetchDomesticApprovals(); break
-        case 'overseas': result = await fetchOverseasApprovals(); break
-        case 'international': result = await fetchInternationalReviews(); break
-        case 'copp': result = await fetchCoppCertificates(); break
-        case 'wc': result = await fetchWcCertificates(); break
-        case 'reviewing': result = await fetchReviewingDrugs(); break
-      }
-      setData(result as Record<string, unknown>[])
-    } catch {
-      message.error('加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [type, message])
+  // 打开即加载：类型切换 → queryKey 变化 → 自动取对应台账数据
+  const ledgerQuery = useQuery({
+    queryKey: ['registration-ledger', type],
+    queryFn: async () =>
+      (await LEDGER_FETCHERS[type]()) as unknown as Record<string, unknown>[],
+  })
+
+  const data = ledgerQuery.data ?? []
 
   const handleImport = async (file: File) => {
-    console.log('🚀 Starting import, file:', file.name, 'type:', type)
     try {
       let result: Record<string, unknown> = {}
       switch (type) {
@@ -88,8 +86,6 @@ function LedgerContent() {
         case 'copp': result = await importCoppCertificates(file); break
         case 'wc': result = await importWcCertificates(file); break
       }
-      console.log('✅ Import result:', result)
-      
       const data = result?.data as ImportResultData | undefined
       const successCount = data?.success_count ?? 0
       if (successCount === 0) {
@@ -98,16 +94,14 @@ function LedgerContent() {
       } else {
         // 成功导入
         message.success(data?.message || `成功导入 ${successCount} 条记录`)
-        loadData()  // 只在有数据时刷新
+        void ledgerQuery.refetch()  // 只在有数据时刷新
       }
       
       // 如果有错误，显示错误详情
       if (data?.errors && data.errors.length > 0) {
-        console.warn('⚠️ Import errors:', data.errors)
-        message.error(`导入有 ${data.errors.length} 条错误，请查看控制台`)
+        message.error(`导入有 ${data.errors.length} 条错误，请检查文件内容后重试`)
       }
     } catch (err: unknown) {
-      console.error('❌ Import error:', err)
       message.error(err instanceof Error ? err.message : '导入失败')
     }
     return false
@@ -140,7 +134,7 @@ function LedgerContent() {
       message.success('添加成功')
       setModalOpen(false)
       form.resetFields()
-      loadData()
+      void ledgerQuery.refetch()
     } catch {
       message.error('添加失败')
     }
@@ -279,10 +273,15 @@ function LedgerContent() {
           columns={getColumns()}
           dataSource={data}
           rowKey="id"
-          loading={loading}
+          loading={ledgerQuery.isPending}
           pagination={{ pageSize: 20 }}
           scroll={{ x: 'max-content' }}
           size="small"
+          locale={{
+            emptyText: ledgerQuery.isError ? (
+              <DataUnavailable compact onRetry={() => void ledgerQuery.refetch()} />
+            ) : undefined,
+          }}
         />
       </Card>
 

@@ -13,6 +13,12 @@ class ProductInfo(BaseModel):
     registration_number: str = Field(..., description="登记号")
 
 
+class DownloadUrlResponse(BaseModel):
+    """文件下载地址"""
+
+    url: str = Field(..., description="下载地址")
+
+
 class AuthorizationLetterCreate(BaseModel):
     """生成授权书请求"""
 
@@ -150,3 +156,28 @@ class ReferenceStandardListItem(BaseModel):
     manufacturer: str | None = None
     output_file_name: str
     created_at: datetime | None = None
+
+
+class CoaMetadata(BaseModel):
+    """COA 解析出的对照物质信息；解析不到的字段为 None"""
+
+    drug_name: str | None = None
+    reference_substance_name: str | None = None
+    batch_number: str | None = None
+    manufacturer: str | None = None
+    english_name: str | None = None
+    molecular_formula: str | None = None
+    molecular_weight: str | None = None
+    cas_number: str | None = None
+    content: str | None = None
+    moisture: str | None = None
+    rsd: str | None = None
+    expiration_date: str | None = None
+    storage_condition: str | None = None
+
+
+class CoaParseResult(BaseModel):
+    """COA 解析结果"""
+
+    metadata: CoaMetadata = Field(..., description="解析出的对照物质信息")
+    raw_text: str = Field(..., description="PDF 前 2000 字符，用于核对解析效果")

@@ -4,11 +4,14 @@ import asyncio
 import uuid
 import sys
 
-sys.path.insert(0, "/home/zhuangweizi/Livzon-Syntpharm/backend")
+import os
 
-from app.core.database import async_session_factory
-from app.modules.hr.models import HrDepartment
-from sqlalchemy import select
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, _BACKEND_DIR)
+
+from app.core.database import async_session_factory  # noqa: E402
+from app.modules.hr.models import HrDepartment  # noqa: E402
+from sqlalchemy import select  # noqa: E402
 
 # 根据飞书截图提取的核心部门结构
 CORE_DEPARTMENTS = [

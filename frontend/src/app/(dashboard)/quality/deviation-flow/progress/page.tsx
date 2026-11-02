@@ -11,10 +11,9 @@ import {
 import { useRouter, useSearchParams } from 'next/navigation'
 import dayjs from 'dayjs'
 import '../deviation-style.css'
+import { fetchDeviationFlowDetail } from '@/lib/api/client/quality'
 
 const { Text } = Typography
-
-const API_BASE = '/api/v1'
 
 const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
   draft: { color: 'default', label: '草稿' },
@@ -67,14 +66,8 @@ export default function DeviationProgressPage() {
 
   const { data, isLoading: loading } = useQuery({
     queryKey: ['deviation-flow-progress', deviationId],
-    queryFn: async () => {
-      const response = await fetch(`${API_BASE}/quality/deviation-flow/${deviationId}`)
-      const result = await response.json()
-      if (result.code === 200) {
-        return result.data
-      }
-      throw new Error(result.message || '加载失败')
-    },
+    // 取数统一走 lib/api/client 层，页面不再直连后端路径
+    queryFn: () => fetchDeviationFlowDetail(deviationId as string),
     enabled: !!deviationId,
   })
 
@@ -98,8 +91,8 @@ export default function DeviationProgressPage() {
     )
   }
 
-  const statusConfig = STATUS_CONFIG[data.status] || { color: 'default', label: data.status }
-  const urgencyColor = URGENCY_COLORS[data.urgency_level] || 'default'
+  const statusConfig = (data.status && STATUS_CONFIG[data.status]) || { color: 'default', label: data.status ?? '-' }
+  const urgencyColor = (data.urgency_level && URGENCY_COLORS[data.urgency_level]) || 'default'
 
   return (
     <div className="deviation-page">

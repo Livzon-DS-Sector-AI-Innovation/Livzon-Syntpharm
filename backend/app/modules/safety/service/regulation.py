@@ -67,7 +67,7 @@ class RegulationService:
                 if os.path.exists(abs_path):
                     os.remove(abs_path)
         except OSError:
-            pass
+            logger.debug("忽略异常 @ %s", "RegulationService._cleanup_file")
 
     # ==================== 安全操作规程 CRUD ====================
 

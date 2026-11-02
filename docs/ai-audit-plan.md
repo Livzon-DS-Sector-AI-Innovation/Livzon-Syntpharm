@@ -181,7 +181,7 @@ backend/app/
 frontend/src/
 ├── app/(dashboard)/<module>/
 ├── components/<module>/
-├── components/shared/
+├── components/common/
 ├── actions/<module>.ts
 ├── stores/<module>.ts
 ├── types/<module>.ts
@@ -727,7 +727,7 @@ Full audit
 
 **禁止修改的文件:**
 - `src/proxy.ts`
-- `src/components/shared/` 下所有文件
+- `src/components/common/` 下所有文件
 - `src/hooks/usePermission.ts`
 
 ### Directories to inspect
@@ -746,7 +746,7 @@ Full audit
 5. Do component file names follow PascalCase? Do non-component file names follow camelCase?
 6. Do Server Action function names start with a verb (`create`, `update`, `delete`, `submit`, etc.)?
 7. Do API request function names start with `fetch`?
-8. Has `proxy.ts`, `components/shared/`, or `hooks/usePermission.ts` been modified in a way that requires architecture approval?
+8. Has `proxy.ts`, `components/common/`, or `hooks/usePermission.ts` been modified in a way that requires architecture approval?
 9. Does every `page.tsx` have a semantic `<h1>` heading (using `<h1>` or `<Title level={1}>`) that is NOT provided via `<Card title="...">`?
 
 
