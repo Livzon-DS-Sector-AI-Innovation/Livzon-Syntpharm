@@ -64,7 +64,7 @@ async def maintenance_plan_loop() -> None:
             )
             break  # stop flag 被设置，退出循环
         except TimeoutError:
-            pass
+            pass  # 正常控制流（等待超时/主动取消），不是异常
 
         if stop_maintenance_plan_flag.is_set():
             break
@@ -177,5 +177,5 @@ async def timeout_scan_loop() -> None:
                 timeout=60,
             )
         except TimeoutError:
-            pass
+            pass  # 正常控制流（等待超时/主动取消），不是异常
     logger.info("工单超时扫描任务已停止")

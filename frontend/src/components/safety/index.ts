@@ -5,7 +5,6 @@
 export { default as SafetyDashboard } from './SafetyDashboard'
 export type { DashboardData } from './SafetyDashboard'
 export { default as SpecialOpsManagement } from './SpecialOpsManagement'
-export { default as SpecialOpsLedger } from './SpecialOpsLedger'
 export { default as SpecialOpsReportPanel } from './SpecialOpsReportPanel'
 export { default as SpecialOpsPersonnelPanel } from './SpecialOpsPersonnelPanel'
 export { default as WorkflowListPanel } from './WorkflowListPanel'

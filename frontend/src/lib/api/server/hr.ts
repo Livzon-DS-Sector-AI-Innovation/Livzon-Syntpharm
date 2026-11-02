@@ -1,4 +1,5 @@
 import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
+import type { CandidateListParams } from '@/types/hr'
 
 async function apiFetchFormData(url: string, body: FormData): Promise<unknown> {
   const res = await fetch(url, {
@@ -232,10 +233,13 @@ export async function fetchCandidateByIdApi(id: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/candidates/${id}`)
 }
 
-export async function fetchCandidatesApi(params?: Record<string, unknown>) {
+export async function fetchCandidatesApi(params?: CandidateListParams) {
   const searchParams = new URLSearchParams()
+  if (params?.position) searchParams.set('position', String(params.position))
+  if (params?.education) searchParams.set('education', String(params.education))
+  if (params?.recommendation_level) searchParams.set('recommendation_level', String(params.recommendation_level))
+  if (params?.sync_status) searchParams.set('sync_status', String(params.sync_status))
   if (params?.keyword) searchParams.set('keyword', String(params.keyword))
-  if (params?.status) searchParams.set('status', String(params.status))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/candidates?${searchParams.toString()}`)

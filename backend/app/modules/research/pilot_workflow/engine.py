@@ -9,7 +9,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import async_session_factory
-from app.core.jobs import spawn_task
+from app.core.jobs import submit_job
 from app.modules.research.models import PilotWorkflow, PilotWorkflowStep
 from app.modules.research.pilot_workflow.step1_param_extraction import (
     execute_param_extraction,
@@ -198,9 +198,9 @@ async def approve_step(workflow_id: uuid.UUID) -> dict[str, Any]:
         await session.commit()
 
         # 在后台异步执行下一步
-        spawn_task(
-            _execute_next_step_async(workflow_id, next_idx),
-            name="research.workflow_step",
+        await submit_job(
+            "research.pilot-workflow-step",
+            lambda _job_id: _execute_next_step_async(workflow_id, next_idx),
         )
 
         return {

@@ -77,6 +77,18 @@ export async function apiFetch<T = any>(url: string, options?: RequestInit): Pro
   return JSON.parse(text) as T
 }
 
+/**
+ * 在 `apiFetch` 基础上直接返回信封里的 `data`。
+ * 需要响应的业务数据、又不想在每个调用点重复 `.data` 解包时使用。
+ */
+export async function apiFetchData<T>(url: string, options?: RequestInit): Promise<T> {
+  const result = await apiFetch<T>(url, options)
+  if (result && typeof result === 'object' && 'data' in (result as Record<string, unknown>)) {
+    return (result as unknown as { data: T }).data
+  }
+  return result
+}
+
 export async function apiFetchRaw(url: string, options?: RequestInit): Promise<Response> {
   const authHeaders = await getAuthHeaders()
 

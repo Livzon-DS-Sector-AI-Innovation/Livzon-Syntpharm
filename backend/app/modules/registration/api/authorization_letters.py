@@ -1,7 +1,7 @@
 """Authorization letter API routes."""
 
 import json
-from typing import Any
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, Query, UploadFile
@@ -11,10 +11,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import NotFoundException
-from app.core.response import paginated_response, success_response
+from app.core.response import DataResponse
 from app.modules.registration.schemas import AuthorizationLetterCreate
+from app.modules.registration.schemas.authorization import (
+    AuthorizationLetterListItem,
+    AuthorizationLetterResponse,
+    DownloadUrlResponse,
+    ProductInfo,
+)
 from app.modules.registration.service import AuthorizationLetterService
 from app.shared.schemas import PageParams
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -23,17 +31,17 @@ def get_service(session: AsyncSession = Depends(get_db)) -> AuthorizationLetterS
     return AuthorizationLetterService(session)
 
 
-@router.get("/products", summary="获取品种登记号对照表")
+@router.get("/products", response_model=DataResponse[list[ProductInfo]], summary="获取品种登记号对照表")
 async def list_products(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:read")),
     service: AuthorizationLetterService = Depends(get_service),
-) -> Any:
+) -> DataResponse[list[ProductInfo]]:
     products = service.get_product_list()
-    return success_response(data=[p.model_dump() for p in products])
+    return DataResponse[list[ProductInfo]](data=products)
 
 
-@router.get("", summary="授权书生成记录列表")
+@router.get("", response_model=DataResponse[list[AuthorizationLetterListItem]], summary="授权书生成记录列表")
 async def get(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:read")),
@@ -41,23 +49,25 @@ async def get(
     preparation_unit: str | None = Query(None, description="制剂单位搜索"),
     page_params: PageParams = Depends(),
     service: AuthorizationLetterService = Depends(get_service),
-) -> Any:
+) -> DataResponse[list[AuthorizationLetterListItem]]:
     letters, total = await service.list_letters(
         product_name=product_name,
         preparation_unit=preparation_unit,
         page=page_params.page,
         page_size=page_params.page_size,
     )
-    data = [letter.model_dump(mode="json") for letter in letters]
-    return paginated_response(
-        data=data,
-        page=page_params.page,
-        page_size=page_params.page_size,
-        total=total,
+    return DataResponse[list[AuthorizationLetterListItem]](
+        data=letters,
+        meta={"page": page_params.page, "page_size": page_params.page_size, "total": total},
     )
 
 
-@router.post("/generate", summary="生成授权书")
+@router.post(
+    "/generate",
+    response_model=DataResponse[AuthorizationLetterResponse],
+    summary="生成授权书",
+    status_code=201,
+)
 async def post(
     current_user: RequiredUser,
     template: UploadFile,
@@ -73,7 +83,7 @@ async def post(
         description='替换规则 JSON，格式: [{"old": "原文本", "new": "新文本"}]',
     ),
     service: AuthorizationLetterService = Depends(get_service),
-) -> Any:
+) -> DataResponse[AuthorizationLetterResponse]:
     template_data = await template.read()
     template_file_name = template.filename or "模板.doc"
 
@@ -83,7 +93,7 @@ async def post(
             rules = json.loads(replacements)
             template_placeholders = {r["old"]: r["new"] for r in rules}
         except (json.JSONDecodeError, KeyError, TypeError):
-            pass
+            logger.warning("忽略异常 @ %s", "post", exc_info=True)
 
     data = AuthorizationLetterCreate(
         product_name=product_name,
@@ -100,27 +110,31 @@ async def post(
         template_file_name=template_file_name,
         template_placeholders=template_placeholders,
     )
-    return success_response(data=letter.model_dump(mode="json"), message="授权书生成成功", status_code=201)
+    return DataResponse[AuthorizationLetterResponse](data=letter, message="授权书生成成功", code=201)
 
 
-@router.get("/{letter_id}", summary="授权书记录详情")  # type: ignore[no-redef]
+@router.get("/{letter_id}", response_model=DataResponse[AuthorizationLetterResponse], summary="授权书记录详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
     letter_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:read")),
     service: AuthorizationLetterService = Depends(get_service),
-) -> Any:
+) -> DataResponse[AuthorizationLetterResponse]:
     letter = await service.get_letter(letter_id)
-    return success_response(data=letter.model_dump(mode="json"))
+    return DataResponse[AuthorizationLetterResponse](data=letter)
 
 
-@router.get("/{letter_id}/download-url", summary="获取授权书文件下载URL")  # type: ignore[no-redef]
+@router.get(  # type: ignore[no-redef]
+    "/{letter_id}/download-url",
+    response_model=DataResponse[DownloadUrlResponse],
+    summary="获取授权书文件下载URL",
+)
 async def get(  # noqa: F811
     current_user: RequiredUser,
     letter_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:read")),
     service: AuthorizationLetterService = Depends(get_service),
-) -> Any:
+) -> DataResponse[DownloadUrlResponse]:
     letter_model = await service.repo.get_by_id(letter_id)
     if not letter_model:
         raise NotFoundException("授权书记录", str(letter_id))
@@ -129,7 +143,9 @@ async def get(  # noqa: F811
     if not file_path.exists():
         raise NotFoundException("授权书文件")
 
-    return success_response(data={"url": f"/api/v1/registration/authorization-letters/{letter_id}/download"})
+    return DataResponse[DownloadUrlResponse](
+        data=DownloadUrlResponse(url=f"/api/v1/registration/authorization-letters/{letter_id}/download")
+    )
 
 
 @router.get("/{letter_id}/download", summary="下载生成的授权书文件")  # type: ignore[no-redef]
@@ -138,7 +154,7 @@ async def get(  # noqa: F811
     letter_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:read")),
     service: AuthorizationLetterService = Depends(get_service),
-) -> Any:
+) -> FileResponse:
     letter_model = await service.repo.get_by_id(letter_id)
     if not letter_model:
         raise NotFoundException("授权书记录", str(letter_id))
@@ -154,12 +170,12 @@ async def get(  # noqa: F811
     )
 
 
-@router.delete("/{letter_id}", summary="删除授权书记录")
+@router.delete("/{letter_id}", response_model=DataResponse[None], summary="删除授权书记录")
 async def delete(
     current_user: RequiredUser,
     letter_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:delete")),
     service: AuthorizationLetterService = Depends(get_service),
-) -> Any:
+) -> DataResponse[None]:
     await service.delete_letter(letter_id)
-    return success_response(message="授权书记录删除成功")
+    return DataResponse[None](message="授权书记录删除成功")

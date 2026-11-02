@@ -12,7 +12,7 @@ from app.core.database import async_session_factory, get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import NotFoundException
 from app.core.job_store import JobStore, get_job_state_or_404, start_job
-from app.core.jobs import spawn_task
+from app.core.jobs import submit_job
 from app.modules.energy import service
 from app.modules.energy.adapters import ADAPTERS
 from app.modules.energy.job_store import sync_job_store
@@ -1040,7 +1040,7 @@ async def sync_from_bitable(
                 logger.exception("sync_from_bitable failed")
                 sync_job_store.fail(job_id, str(e))
 
-    spawn_task(_run(), name=f"energy-sync-bitable-{job_id[:8]}")
+    await submit_job("energy.sync-bitable", lambda _job_id: _run())
     return SyncJobApiResponse(data=SyncJobStatus(job_id=job_id, status="running"))
 
 
@@ -1063,7 +1063,7 @@ async def sync_workshops_from_bitable(
                 logger.exception("sync_workshops_from_bitable failed")
                 sync_job_store.fail(job_id, str(e))
 
-    spawn_task(_run(), name=f"energy-sync-workshops-{job_id[:8]}")
+    await submit_job("energy.sync-workshops", lambda _job_id: _run())
     return SyncJobApiResponse(data=SyncJobStatus(job_id=job_id, status="running"))
 
 
@@ -1086,7 +1086,7 @@ async def sync_monthly_from_bitable(
                 logger.exception("sync_monthly_from_bitable failed")
                 sync_job_store.fail(job_id, str(e))
 
-    spawn_task(_run(), name=f"energy-sync-monthly-{job_id[:8]}")
+    await submit_job("energy.sync-monthly", lambda _job_id: _run())
     return SyncJobApiResponse(data=SyncJobStatus(job_id=job_id, status="running"))
 
 
@@ -1116,7 +1116,7 @@ async def cross_import_from_bitable(
                 logger.exception("cross_import_from_bitable failed")
                 sync_job_store.fail(job_id, str(e))
 
-    spawn_task(_run(), name=f"energy-cross-import-{job_id[:8]}")
+    await submit_job("energy.cross-import", lambda _job_id: _run())
     return SyncJobApiResponse(data=SyncJobStatus(job_id=job_id, status="running"))
 
 
@@ -1157,7 +1157,7 @@ async def daily_import_from_bitable(
                 logger.exception("daily_import_from_bitable failed")
                 sync_job_store.fail(job_id, str(e))
 
-    spawn_task(_run(), name=f"energy-daily-import-{job_id[:8]}")
+    await submit_job("energy.daily-import", lambda _job_id: _run())
     return SyncJobApiResponse(data=SyncJobStatus(job_id=job_id, status="running"))
 
 

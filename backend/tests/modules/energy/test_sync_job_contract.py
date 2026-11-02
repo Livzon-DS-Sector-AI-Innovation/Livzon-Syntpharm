@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from uuid import uuid4
 
 import pytest
 
@@ -41,12 +42,12 @@ def _refs(node: object) -> Iterator[str]:
 
 @pytest.fixture
 def no_spawn(monkeypatch):
-    """拦住后台任务派发：测试里不能真打飞书，未 await 的协程要显式关闭。"""
+    """拦住后台任务派发：测试里不能真打飞书，也不能往 core.background_jobs 写行。"""
 
-    def _fake_spawn(coro, **kwargs):
-        coro.close()
+    async def _fake_submit(name, runner):
+        return uuid4()
 
-    monkeypatch.setattr(energy_api, "spawn_task", _fake_spawn)
+    monkeypatch.setattr(energy_api, "submit_job", _fake_submit)
 
 
 async def test_job_response_schema_is_typed():

@@ -1,7 +1,9 @@
 'use client'
 import {deleteSopRule, updateSopRuleStatus, createSopRule, uploadSopRule, aiParseSopRule} from '@/actions/quality'
+import { DataUnavailable } from '@/components/common/DataUnavailable'
 
 import { useState, useRef } from 'react'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import {
   Card,
   Table,
@@ -64,13 +66,13 @@ const getStatusTag = (status: number) => {
 export default function SopManagementPage() {
   const [form] = Form.useForm()
   const [modalForm] = Form.useForm()
-  const [data, setData] = useState<SopRule[]>([])
-  const [loading, setLoading] = useState(false)
-  const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 20,
-    total: 0,
-  })
+  const [query, setQuery] = useState<{
+    page: number
+    pageSize: number
+    sop_code?: string
+    sop_full_name?: string
+    status?: number
+  }>({ page: 1, pageSize: 20 })
   const [modalVisible, setModalVisible] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -79,17 +81,17 @@ export default function SopManagementPage() {
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const fileListRef = useRef<UploadFile[]>([])
 
-  const fetchData = async (page = 1, pageSize = 20) => {
-    setLoading(true)
-    try {
-      const values = form.getFieldsValue()
+  // 打开即加载：query 变化 → queryKey 变化 → 自动重取
+  const rulesQuery = useQuery({
+    queryKey: ['sop-rules', query],
+    queryFn: async () => {
       const params = new URLSearchParams()
-      params.set('page', String(page))
-      params.set('page_size', String(pageSize))
+      params.set('page', String(query.page))
+      params.set('page_size', String(query.pageSize))
 
-      if (values.sop_code) params.set('sop_code', values.sop_code)
-      if (values.sop_full_name) params.set('sop_full_name', values.sop_full_name)
-      if (values.status !== undefined) params.set('status', String(values.status))
+      if (query.sop_code) params.set('sop_code', query.sop_code)
+      if (query.sop_full_name) params.set('sop_full_name', query.sop_full_name)
+      if (query.status !== undefined) params.set('status', String(query.status))
 
       const response = await fetch(
         `${API_BASE}/quality/deviation-automation/sop-rules?${params.toString()}`
@@ -97,31 +99,48 @@ export default function SopManagementPage() {
       if (!response.ok) throw new Error('查询失败')
 
       const result = await response.json()
-      setData(result.data.items)
-      setPagination({
-        ...pagination,
-        current: page,
-        pageSize,
-        total: result.data.total,
-      })
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : '操作失败'))
-    } finally {
-      setLoading(false)
-    }
+      return {
+        items: (result.data?.items ?? []) as SopRule[],
+        total: (result.data?.total ?? 0) as number,
+      }
+    },
+    placeholderData: keepPreviousData,
+  })
+
+  const data = rulesQuery.data?.items ?? []
+  const pagination = {
+    current: query.page,
+    pageSize: query.pageSize,
+    total: rulesQuery.data?.total ?? 0,
   }
 
+  // 搜索：把表单当前值提交为查询条件（字段均为文本/数字，可直接进 queryKey）
   const handleSearch = () => {
-    fetchData(1, pagination.pageSize)
+    const values = form.getFieldsValue() as {
+      sop_code?: string
+      sop_full_name?: string
+      status?: number
+    }
+    setQuery({
+      page: 1,
+      pageSize: query.pageSize,
+      sop_code: values.sop_code || undefined,
+      sop_full_name: values.sop_full_name || undefined,
+      status: values.status,
+    })
   }
 
   const handleReset = () => {
     form.resetFields()
-    fetchData(1, pagination.pageSize)
+    setQuery({ page: 1, pageSize: query.pageSize })
   }
 
   const handleTableChange = (newPagination: TablePaginationConfig) => {
-    fetchData(newPagination.current ?? 1, newPagination.pageSize ?? 20)
+    setQuery(prev => ({
+      ...prev,
+      page: newPagination.current ?? 1,
+      pageSize: newPagination.pageSize ?? 20,
+    }))
   }
 
   const handleAdd = () => {
@@ -153,7 +172,7 @@ export default function SopManagementPage() {
     try {
       await deleteSopRule(id)
       message.success('删除成功')
-      fetchData(pagination.current, pagination.pageSize)
+      void rulesQuery.refetch()
     } catch (error: unknown) {
       message.error((error instanceof Error ? error.message : '操作失败'))
     }
@@ -163,7 +182,7 @@ export default function SopManagementPage() {
     try {
       await updateSopRuleStatus(id, newStatus)
       message.success(newStatus === 1 ? '已启用' : '已停用')
-      fetchData(pagination.current, pagination.pageSize)
+      void rulesQuery.refetch()
     } catch (error: unknown) {
       message.error((error instanceof Error ? error.message : '操作失败'))
     }
@@ -192,7 +211,7 @@ export default function SopManagementPage() {
 
       message.success(editingId ? '更新成功' : '创建成功')
       setModalVisible(false)
-      fetchData(pagination.current, pagination.pageSize)
+      void rulesQuery.refetch()
     } catch (error: unknown) {
       message.error((error instanceof Error ? error.message : '操作失败'))
     }
@@ -242,7 +261,7 @@ export default function SopManagementPage() {
       setFileList([{ uid: '-1', name: file.name, status: 'done' }])
       fileListRef.current = [{ uid: '-1', name: file.name, status: 'done' }]
       setParseResult(null)
-      fetchData(pagination.current, pagination.pageSize)
+      void rulesQuery.refetch()
       return false
     } catch (error: unknown) {
       message.error({ content: (error instanceof Error ? error.message : undefined) || '上传失败', key: 'upload' })
@@ -279,7 +298,7 @@ export default function SopManagementPage() {
       }
 
       message.success('AI解析完成')
-      fetchData(pagination.current, pagination.pageSize)
+      void rulesQuery.refetch()
     } catch (error: unknown) {
       message.error((error instanceof Error ? error.message : undefined) || 'AI解析失败')
     } finally {
@@ -457,8 +476,8 @@ export default function SopManagementPage() {
 
   return (
     <div style={{ padding: 24 }}>
-      <h1 className="sr-only">SOP规则管理</h1>
-      <Card title="SOP规则管理">
+      <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)] mb-4">SOP规则管理</h1>
+      <Card>
         {/* 查询条件 */}
         <Form form={form} layout="inline" style={{ marginBottom: 16 }}>
           <Form.Item name="sop_code" label="SOP编号">
@@ -493,13 +512,19 @@ export default function SopManagementPage() {
           columns={columns}
           dataSource={data}
           rowKey="id"
-          loading={loading}
+          loading={rulesQuery.isPending}
           pagination={{
             ...pagination,
             showSizeChanger: true,
             showTotal: (total) => `共 ${total} 条`,
           }}
           onChange={handleTableChange}
+          locale={{
+            // 取数失败时在表格内嵌降级区块，与「确实没有记录」的空态区分开
+            emptyText: rulesQuery.isError ? (
+              <DataUnavailable compact onRetry={() => void rulesQuery.refetch()} />
+            ) : undefined,
+          }}
         />
       </Card>
 

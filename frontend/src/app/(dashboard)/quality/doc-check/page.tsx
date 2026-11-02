@@ -59,6 +59,8 @@ import {
 
 import {
 } from '@/actions/doc-check'
+import { uploadDocCheckFile } from '@/lib/api/client/quality-doc-check'
+import { confirmDocCheckRecord, startDocCheck, updateDocCheckProblem } from '@/actions/quality'
 
 const { Dragger } = Upload
 
@@ -104,6 +106,10 @@ const _STATUS_LABELS: Record<CheckStatus, string> = {
   cancelled: '已取消',
 }
 
+// 记录列表查询的固定分页参数（页面暂未提供分页控件）
+const RECORDS_PAGE = 1
+const RECORDS_PAGE_SIZE = 10
+
 export default function DocCheckPage() {
   // ============ 状态管理 ============
 
@@ -129,10 +135,6 @@ export default function DocCheckPage() {
   // 校验结果状态
   const [checkResult, setCheckResult] = useState<CheckMainDetail | null>(null)
   const [activeTab, setActiveTab] = useState<string>('duplicate')
-
-  // 记录列表状态
-  const [page, _setPage] = useState(1)
-  const [pageSize, _setPageSize] = useState(10)
 
   // 问题处理弹窗
   const [problemModalVisible, setProblemModalVisible] = useState(false)
@@ -201,15 +203,9 @@ export default function DocCheckPage() {
 
       message.loading({ content: '正在上传文件...', key: 'upload' })
 
-      const response = await fetch(
-        `/api/v1/quality/upload`,
-        {
-          method: 'POST',
-          body: formData,
-        }
+      const data = await uploadDocCheckFile<{ file_id: string; file_name: string; file_path: string }>(
+        formData,
       )
-
-      const data = await response.json()
 
       if (data.code === 200) {
         message.success({ content: '文件上传成功', key: 'upload' })
@@ -241,19 +237,7 @@ export default function DocCheckPage() {
     try {
       message.loading({ content: '正在启动AI预审...', key: 'check' })
 
-      const response = await fetch(
-        `/api/v1/quality/check`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            file_id: uploadedFile.file_id,
-            check_config: checkConfig,
-          }),
-        }
-      )
-
-      const data = await response.json()
+      const data = await startDocCheck(uploadedFile.file_id, checkConfig)
 
       if (data.code === 200) {
         const taskId = data.data.task_id
@@ -383,19 +367,10 @@ export default function DocCheckPage() {
 
       if (!selectedProblem) return
 
-      const response = await fetch(
-        `/api/v1/quality/problems/${selectedProblem.id}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            handle_status: values.handle_status,
-            ignore_reason: values.ignore_reason,
-          }),
-        }
-      )
-
-      const data = await response.json()
+      const data = await updateDocCheckProblem(selectedProblem.id, {
+        handle_status: values.handle_status,
+        ignore_reason: values.ignore_reason,
+      })
 
       if (data.code === 200) {
         message.success('处理成功')
@@ -446,15 +421,7 @@ export default function DocCheckPage() {
     if (!checkResult) return
 
     try {
-      const response = await fetch(
-        `/api/v1/quality/records/${checkResult.id}/confirm`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      )
-
-      const data = await response.json()
+      const data = await confirmDocCheckRecord(checkResult.id)
 
       if (data.code === 200) {
         message.success('确认通过成功')
@@ -479,10 +446,11 @@ export default function DocCheckPage() {
   // ============ 记录列表 ============
 
   // 记录列表由 React Query 负责拉取与缓存（页面暂未渲染这些数据，保留查询便于后续接入）
+  // 分页参数固定为首页，避免出现「状态永远不变」的伪分页
   const { refetch: refetchRecords } = useQuery({
-    queryKey: ['doc-check-records', page, pageSize],
+    queryKey: ['doc-check-records', RECORDS_PAGE, RECORDS_PAGE_SIZE],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/quality/records?page=${page}&page_size=${pageSize}`)
+      const response = await fetch(`/api/v1/quality/records?page=${RECORDS_PAGE}&page_size=${RECORDS_PAGE_SIZE}`)
       const data = await response.json()
       return data.code === 200 ? (data.data?.items ?? []) : []
     },

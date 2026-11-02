@@ -13,6 +13,14 @@ from app.modules.quality.qms.deviation_automation_models import (
     DevTask,
     SOPRule,
 )
+from app.modules.quality.qms.deviation_flow_models import (
+    QmsDeviation,
+    QmsDeviationAttachment,
+    QmsDeviationAutoTrigger,
+    QmsDeviationFeishuBotConfig,
+    QmsDeviationLog,
+    QmsDeviationMessageTemplate,
+)
 from app.modules.quality.qms.deviation_settings_models import (
     DeviationLeaderConfig,
     DeviationQAConfig,
@@ -70,6 +78,12 @@ __all__ = [
     "ReagentQuality",
     "QmsDeviationReminderRule",
     "QmsReagentItemReminderConfig",
+    "QmsDeviation",
+    "QmsDeviationAttachment",
+    "QmsDeviationAutoTrigger",
+    "QmsDeviationFeishuBotConfig",
+    "QmsDeviationLog",
+    "QmsDeviationMessageTemplate",
     "StorageCondition",
     "Unit",
     "HplcReference",

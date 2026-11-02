@@ -89,6 +89,20 @@ def _test_engine():
     )
 
 
+@pytest.fixture(autouse=True)
+async def _reset_app_engine() -> AsyncIterator[None]:
+    """每个用例结束后释放全局引擎连接池。
+
+    pytest-asyncio 每个用例一个事件循环；应用侧 `async_session_factory` 走全局引擎，
+    池里残留的 asyncpg 连接会绑定到上一个（已关闭的）循环，导致
+    「got Future attached to a different loop」。
+    """
+    yield
+    from app.core.database import engine
+
+    await engine.dispose()
+
+
 @pytest.fixture
 async def db_session(_test_engine) -> AsyncIterator[AsyncSession]:
     """Provide an AsyncSession with savepoint isolation.

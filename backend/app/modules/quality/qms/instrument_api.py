@@ -8,13 +8,13 @@ from datetime import UTC
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
 from sqlalchemy import and_, select
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, get_current_user, require_permission
-from app.core.exceptions import BadRequestException
+from app.core.exceptions import AppException, BadRequestException
 from app.core.secrets import decrypt_secret, mask_secret
 from app.modules.quality.qms.instrument_models import InstrumentCalibrationRecord
 from app.modules.quality.qms.instrument_schemas import (
@@ -294,7 +294,7 @@ async def post(  # noqa: F811
             data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/{instrument_id}/submit", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
@@ -313,7 +313,7 @@ async def post(  # noqa: F811
             data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/{instrument_id}/approve", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
@@ -338,7 +338,7 @@ async def post(  # noqa: F811
             data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/{instrument_id}/activate", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
@@ -357,7 +357,7 @@ async def post(  # noqa: F811
             data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/{instrument_id}/deactivate", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
@@ -377,7 +377,7 @@ async def post(  # noqa: F811
             data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 # ========== 校准规则 API ==========
@@ -427,7 +427,7 @@ async def post(  # noqa: F811  # type: ignore[no-untyped-def]
             data=CalibrationRuleResponse.model_validate(rule).model_dump(),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.put("/rules/{rule_id}", response_model=InstrumentRuleApiResponse)  # type: ignore[no-redef]
@@ -447,7 +447,7 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
             data=CalibrationRuleResponse.model_validate(rule).model_dump(),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.delete("/rules/{rule_id}", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
@@ -462,7 +462,7 @@ async def delete(  # noqa: F811
         await service.delete_rule(rule_id)
         return {"message": "删除成功"}
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.get("/upcoming", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
@@ -567,7 +567,7 @@ async def get(  # noqa: F811
         record = await service.get_record(record_id)
         return InstrumentRecordApiResponse(data=CalibrationRecordResponse.model_validate(record).model_dump())
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise AppException(status_code=404, message=str(e))
 
 
 @router.post("/records", response_model=InstrumentRecordApiResponse)  # type: ignore[no-redef]
@@ -586,7 +586,7 @@ async def post(  # noqa: F811  # type: ignore[no-untyped-def]
             data=CalibrationRecordResponse.model_validate(record).model_dump(),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.put("/records/{record_id}", response_model=InstrumentRecordApiResponse)  # type: ignore[no-redef]
@@ -606,7 +606,7 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
             data=CalibrationRecordResponse.model_validate(record).model_dump(),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.delete("/records/{record_id}", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
@@ -621,7 +621,7 @@ async def delete(  # noqa: F811
         await service.delete_record(record_id)
         return {"message": "删除成功"}
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/records/{record_id}/submit", response_model=InstrumentRecordApiResponse)  # type: ignore[no-redef]
@@ -640,7 +640,7 @@ async def post(  # noqa: F811
             data=CalibrationRecordResponse.model_validate(record).model_dump(),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/records/{record_id}/approve", response_model=InstrumentApprovalApiResponse)  # type: ignore[no-redef]
@@ -663,7 +663,7 @@ async def post(  # noqa: F811
             data=CalibrationRecordResponse.model_validate(record).model_dump(),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 # ========== 仪器设备详情/更新/删除 API (必须在/records之后) ==========
@@ -681,7 +681,7 @@ async def get(  # noqa: F811
         instrument = await service.get_instrument(instrument_id)
         return InstrumentApiResponse(data=InstrumentResponse.model_validate(instrument).model_dump())
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise AppException(status_code=404, message=str(e))
 
 
 @router.put("/{instrument_id}", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
@@ -701,7 +701,7 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
             data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.delete("/{instrument_id}", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
@@ -716,7 +716,7 @@ async def delete(  # noqa: F811
         await service.delete_instrument(instrument_id)
         return {"message": "删除成功"}
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 # ========== AI 识别 API ==========
@@ -735,7 +735,7 @@ async def post(  # noqa: F811
 
     # 检查文件类型
     if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="请上传图片文件")
+        raise BadRequestException("请上传图片文件")
 
     # 保存上传的文件到临时目录
     backend_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -823,9 +823,9 @@ async def post(  # noqa: F811
             )
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"识别失败: {str(e)}")
+        raise AppException(status_code=500, message=f"识别失败: {str(e)}")
     finally:
         # 清理临时文件
         if temp_path.exists():
@@ -942,7 +942,7 @@ async def post(  # noqa: F811
             extra={"days": days, "include_overdue": include_overdue, "error": str(e)},
             exc_info=True,
         )
-        raise HTTPException(status_code=500, detail=f"获取提醒记录失败: {str(e)}")
+        raise AppException(status_code=500, message=f"获取提醒记录失败: {str(e)}")
 
     if not records and not overdue_records:
         return InstrumentMessageApiResponse(message="没有需要提醒的校准记录", data={"sent": False, "count": 0})
@@ -1039,7 +1039,7 @@ async def post(  # noqa: F811
                 "发送飞书提醒失败",
                 extra={"chat_id": chat_id, "receive_id_type": receive_id_type, "error": str(e)},
             )
-            raise HTTPException(status_code=500, detail=f"发送失败: {str(e)}")
+            raise AppException(status_code=500, message=f"发送失败: {str(e)}")
 
 
 # ========== 自动提醒触发 API ==========

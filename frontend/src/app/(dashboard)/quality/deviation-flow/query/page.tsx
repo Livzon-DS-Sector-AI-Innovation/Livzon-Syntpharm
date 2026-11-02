@@ -11,9 +11,8 @@ import {
 import { useRouter } from 'next/navigation'
 import dayjs from 'dayjs'
 import '../deviation-style.css'
-
-
-const API_BASE = '/api/v1'
+import { deleteDeviationFlow } from '@/actions/quality'
+import { fetchDeviationFlowList } from '@/lib/api/client/quality'
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'default',
@@ -89,12 +88,16 @@ export default function DeviationQueryPage() {
 
   const { data: queryResult, isLoading: loading, refetch: loadData } = useQuery({
     queryKey: ['deviation-flow', queryParams],
-    queryFn: async () => {
-      const response = await fetch(`${API_BASE}/quality/deviation-flow?${queryParams}`)
-      const result = await response.json()
-      if (result.code === 200) return result.data
-      return null
-    },
+    // 取数统一走 lib/api/client 层，页面不再直连后端路径
+    queryFn: () =>
+      fetchDeviationFlowList<DeviationFlowItem>({
+        page,
+        page_size: pageSize,
+        keyword: keyword || undefined,
+        status: status || undefined,
+        deviation_type: deviationType || undefined,
+        urgency_level: urgencyLevel || undefined,
+      }),
   })
 
   const data = queryResult?.items || []
@@ -127,10 +130,7 @@ export default function DeviationQueryPage() {
       content: `确定要删除偏差单 ${record.deviation_no} 吗？`,
       onOk: async () => {
         try {
-          const response = await fetch(`${API_BASE}/quality/deviation-flow/${record.id}`, {
-            method: 'DELETE',
-          })
-          const result = await response.json()
+          const result = await deleteDeviationFlow(record.id)
 
           if (result.code === 200) {
             message.success('删除成功')
