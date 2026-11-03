@@ -1,13 +1,45 @@
 services:
   backend:
+    # 本地调试直接用 worker 镜像：单页试听（POST .../preview）在 API 进程内同步合成，
+    # 需要 kokoro/torch/soundfile + ffmpeg 之外的东西，主 API 镜像里没有。
+    # 一次构建（worker 镜像）同时服务 API 与 worker，避免两套依赖。
+    image: livzon-syntpharm-ppt-video-worker:dev
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
     volumes:
     - ./backend/app:/app/app:ro
     # DATABASE_URL 的 host 是容器网络服务名，宿主机连不到 Postgres，DB 测试只能在容器内跑
     - ./backend/tests:/app/tests:ro
+    # 本机已校验过的 Kokoro 权重缓存（hexgrad/Kokoro-82M + v1.1-zh，11 个文件 sha256 对齐 tts_assets.py）
+    # 厂区不通 huggingface.co，容器内联网下载会失败，所以离线挂载 + HF_HUB_OFFLINE
+    - ${HOME}/.cache/kokoro-hub:/opt/tts-models/hub
     environment:
     - UVICORN_RELOAD=true
+    - HF_HUB_OFFLINE=1
     command: "bash -c \"\n  cd /app &&\n  uv run uvicorn app.main:app --reload --host\
       \ 0.0.0.0 --port 8000\n\"\n"
+  # 智能体 - PPT 配音视频 worker
+  # 注意：Dockerfile.dev 没有 libreoffice/ffmpeg，本地调试渲染必须用 worker 镜像。
+  # 首次构建会拉 libreoffice + torch + 权重，镜像较大；只改业务代码时靠 bind mount 生效。
+  ppt-video-worker:
+    image: livzon-syntpharm-ppt-video-worker:dev
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    container_name: erp-ppt-video-worker-dev
+    restart: unless-stopped
+    env_file:
+    - .env
+    environment:
+    - PPT_VIDEO_WORKER_CONCURRENCY=1
+    - HF_ENDPOINT=${HF_ENDPOINT:-https://hf-mirror.com}
+    - HF_HUB_OFFLINE=1
+    volumes:
+    - ./backend/app:/app/app:ro
+    - ./uploads:/app/uploads
+    - ./storage:/app/storage
+    - ${HOME}/.cache/kokoro-hub:/opt/tts-models/hub
   frontend:
     volumes:
     - ./frontend:/app

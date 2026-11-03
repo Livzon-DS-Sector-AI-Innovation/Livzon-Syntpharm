@@ -71,8 +71,15 @@ async def list_configs(  # type: ignore[no-untyped-def]
     config_type: str | None = Query(None, pattern="^(text|vision)$"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """List all LLM configurations."""
-    query = select(LLMConfigModel).where(~LLMConfigModel.is_deleted)
+    """List all LLM configurations.
+
+    平台管理页只关心系统预置配置；个人私有 Key 由各业务模块自己的入口管理，
+    避免管理员的列表被他人私钥淹没，也避免私钥配置被误删。
+    """
+    query = select(LLMConfigModel).where(
+        ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
+        LLMConfigModel.visibility == "system",
+    )
 
     if config_type:
         query = query.where(LLMConfigModel.config_type == config_type)
@@ -115,6 +122,7 @@ async def post(  # type: ignore[no-untyped-def]
             update(LLMConfigModel)
             .where(
                 LLMConfigModel.config_type == data.config_type,
+                LLMConfigModel.visibility == "system",
                 ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
             )
             .values(is_active=False)
@@ -130,6 +138,7 @@ async def post(  # type: ignore[no-untyped-def]
         timeout_seconds=data.timeout_seconds,
         is_active=data.is_active,
         notes=data.notes,
+        visibility="system",
         created_by=current_user.id,
         updated_by=current_user.id,
     )
@@ -165,6 +174,7 @@ async def get(  # type: ignore[no-untyped-def]
     result = await db.execute(
         select(LLMConfigModel).where(
             LLMConfigModel.id == uuid.UUID(config_id),
+            LLMConfigModel.visibility == "system",
             ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
         )
     )
@@ -201,6 +211,7 @@ async def put(  # type: ignore[no-untyped-def]
     result = await db.execute(
         select(LLMConfigModel).where(
             LLMConfigModel.id == uuid.UUID(config_id),
+            LLMConfigModel.visibility == "system",
             ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
         )
     )
@@ -215,6 +226,7 @@ async def put(  # type: ignore[no-untyped-def]
             update(LLMConfigModel)
             .where(
                 LLMConfigModel.config_type == config.config_type,
+                LLMConfigModel.visibility == "system",
                 LLMConfigModel.id != config.id,
                 ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
             )
@@ -263,6 +275,7 @@ async def delete(  # type: ignore[no-untyped-def]
     result = await db.execute(
         select(LLMConfigModel).where(
             LLMConfigModel.id == uuid.UUID(config_id),
+            LLMConfigModel.visibility == "system",
             ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
         )
     )

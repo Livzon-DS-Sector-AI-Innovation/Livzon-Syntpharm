@@ -27,6 +27,13 @@ export const MODULE_PERM = {
   researchRead: 'research:module:read',
   registrationRead: 'registration:module:read',
   qualityRead: 'quality:module:read',
+  agentRead: 'agent:module:read',
+} as const
+
+/** 智能体（agent）接口级权限码，与后端 AGENT_PERMISSIONS 一一对应 */
+export const AGENT_PERM = {
+  pptVideoRead: 'agent:ppt-video:read',
+  pptVideoManage: 'agent:ppt-video:manage',
 } as const
 
 /** 研发管理（research）接口级权限码，与后端 RESEARCH_PERMISSIONS 一一对应 */
@@ -587,6 +594,7 @@ export const PERM = {
   ...QUALITY_PERM,
   ...HR_PERM,
   ...PRODUCTION_PERM,
+  ...AGENT_PERM,
 } as const
 
 export type PermissionCode = (typeof PERM)[keyof typeof PERM]

@@ -1,0 +1,90 @@
+# 智能体模块 —— PPT 配音视频渲染 worker
+#
+# 与 API 镜像（Dockerfile）同源代码，只替换「系统依赖 + CMD」：
+# - libreoffice / poppler-utils：pptx → pdf → 逐页 PNG
+# - ffmpeg：静帧 + 旁白 → 页片段 mp4，再 `-c copy` 拼接成片
+# - fonts-noto-cjk：**没有它中文会整屏方块**（渲染踩坑第一位，不要删）
+# - TTS 运行时（Kokoro-82M，Apache-2.0）：只装在 worker，API 镜像保持轻量
+#
+# 构建（必须限资源，本机是共用服务器）：
+#   docker buildx build --memory=4g --cpu-quota=200000 -f Dockerfile.worker -t erp-backend-worker .
+#
+# 权重离线化：huggingface.co 在内网不可达，默认走 hf-mirror.com；
+# 需要完全离线时在构建期加 `--build-arg PRELOAD_TTS_MODELS=true`，
+# 权重会被烤进镜像的 /opt/tts-models，运行时通过 HF_HOME 直接命中。
+
+FROM python:3.12-slim-bookworm
+
+WORKDIR /app
+
+# 与主镜像一致使用中科大源，避免欧盟/官方源在厂区内网超时
+RUN rm -f /etc/apt/sources.list /etc/apt/sources.list.d/* && \
+    echo "deb https://mirrors.ustc.edu.cn/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
+    echo "deb https://mirrors.ustc.edu.cn/debian/ bookworm-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
+    echo "deb https://mirrors.ustc.edu.cn/debian-security/ bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list
+
+# libreoffice-impress 足够渲染演示文稿，装整套 libreoffice 会让镜像多出数百 MB
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ffmpeg \
+    fontconfig \
+    fonts-noto-cjk \
+    fonts-noto-cjk-extra \
+    libreoffice-impress \
+    libreoffice-core \
+    poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# 字体自检：fc-match 命中 Noto CJK 才算镜像可用（构建期就报错，别等渲染出方块）
+RUN fc-match "Noto Sans CJK SC" | grep -qi "noto" || (echo "缺少 CJK 字体，中文渲染会变方块" && exit 1)
+
+RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ uv==0.12.2
+
+ENV UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ \
+    UV_EXTRA_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ \
+    UV_PYTHON=/usr/local/bin/python3 \
+    HF_ENDPOINT=https://hf-mirror.com \
+    HF_HOME=/opt/tts-models \
+    OMP_NUM_THREADS=2 \
+    MKL_NUM_THREADS=2 \
+    TOKENIZERS_PARALLELISM=false
+
+COPY pyproject.toml uv.lock* ./
+RUN uv sync --frozen --no-dev
+
+# TTS 运行时单独安装（不进主锁文件，理由见 requirements-tts.txt）
+# 分两步：先装 CPU 版 torch，再装其余依赖。
+# 一步装完会选到 CUDA 版 torch（PyPI/阿里云上有更高版本），额外拉
+# nvidia-cudnn/triton 约 2~3 GB，纯 CPU 推理用不上。
+# 这里钉 `+cpu` local version 并按 unsafe-best-match 只在 PyTorch CPU 索引取：
+# 不加这两项时 uv 的 first-index 策略会落到 PyPI 的 CUDA 版。
+# torch 大版本升级时改这里的版本号即可（kokoro 只要求 torch>=2.0）。
+COPY requirements-tts.txt ./
+RUN env -u UV_INDEX_URL -u UV_EXTRA_INDEX_URL uv pip install --python /app/.venv/bin/python \
+        --index-strategy unsafe-best-match \
+        --index-url https://download.pytorch.org/whl/cpu \
+        "torch==2.15.0+cpu" \
+    && uv pip install --python /app/.venv/bin/python \
+        --index-url https://mirrors.aliyun.com/pypi/simple/ \
+        -r requirements-tts.txt
+
+# spaCy 英文模型：PyPI 不收录，Kokoro 英文 G2P 缺它直接报错。
+# 构建期按 github → hf-mirror 依次取并校验 sha256，两条都失败就让构建失败（不许静默发布英文不可用的镜像）。
+COPY scripts/ci/install_spacy_en_model.py ./scripts/ci/install_spacy_en_model.py
+RUN .venv/bin/python scripts/ci/install_spacy_en_model.py
+
+ARG PRELOAD_TTS_MODELS=false
+COPY scripts/ci/preload_tts_models.py ./scripts/ci/preload_tts_models.py
+RUN if [ "$PRELOAD_TTS_MODELS" = "true" ]; then \
+        .venv/bin/python scripts/ci/preload_tts_models.py; \
+    else \
+        echo "跳过权重预下载（运行时首次合成会通过 HF_ENDPOINT 拉取）"; \
+    fi
+
+COPY . .
+
+# worker 不监听端口，健康检查只验证「模块能导入 + 外部命令齐全」
+HEALTHCHECK --interval=60s --timeout=15s --start-period=30s --retries=3 \
+  CMD .venv/bin/python -c "from app.modules.agent import worker; print('ok')" || exit 1
+
+CMD [".venv/bin/python", "-m", "app.modules.agent.worker"]

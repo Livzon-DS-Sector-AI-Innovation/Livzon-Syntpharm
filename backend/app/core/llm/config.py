@@ -2,9 +2,11 @@
 
 import logging
 import os
+import uuid
 from dataclasses import dataclass
 
 from sqlalchemy import Boolean, Float, Integer, String, Text, select
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import async_session_factory
@@ -29,6 +31,9 @@ class LLMConfigData:
     temperature: float
     timeout_seconds: int
     is_active: bool
+    # system=平台预置（所有人可选）；personal=个人私有（仅 owner 可见可用）
+    visibility: str = "system"
+    owner_user_id: str | None = None
 
 
 class LLMConfigModel(BaseModel):
@@ -66,6 +71,16 @@ class LLMConfigModel(BaseModel):
         comment="Is active config",
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="Notes")
+    owner_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, comment="个人配置归属用户；系统配置为空"
+    )
+    visibility: Mapped[str] = mapped_column(
+        String(16),
+        default="system",
+        server_default="system",
+        nullable=False,
+        comment="system=平台预置所有人可选；personal=仅 owner 可见可用",
+    )
 
     def to_config_data(self) -> LLMConfigData:
         """Convert to config data with decrypted API key."""
@@ -79,7 +94,13 @@ class LLMConfigModel(BaseModel):
             temperature=self.temperature,
             timeout_seconds=self.timeout_seconds,
             is_active=self.is_active,
+            visibility=self.visibility,
+            owner_user_id=str(self.owner_user_id) if self.owner_user_id else None,
         )
+
+    @property
+    def is_personal(self) -> bool:
+        return self.visibility == "personal"
 
 
 async def get_active_config(config_type: str = "text") -> LLMConfigData | None:
@@ -97,6 +118,7 @@ async def get_active_config(config_type: str = "text") -> LLMConfigData | None:
                 select(LLMConfigModel).where(
                     LLMConfigModel.is_active,
                     LLMConfigModel.config_type == config_type,
+                    LLMConfigModel.visibility == "system",
                     ~LLMConfigModel.is_deleted,
                 )
             )
@@ -107,6 +129,53 @@ async def get_active_config(config_type: str = "text") -> LLMConfigData | None:
         # Database table doesn't exist or other error, fall back to env
         logger.warning("忽略异常 @ %s", "get_active_config", exc_info=True)
     return None
+
+
+async def get_config_by_id(
+    config_id: str,
+    config_type: str = "text",
+    owner_user_id: str | None = None,
+) -> LLMConfigData | None:
+    """按 id 取一条可用配置。
+
+    个人私有配置只有 owner 本人能用；系统配置对所有调用方可见。
+    找不到、类型不符、已删除、越权访问统一返回 None，由调用方决定降级策略。
+    """
+    try:
+        async with async_session_factory() as session:
+            result = await session.execute(
+                select(LLMConfigModel).where(
+                    LLMConfigModel.id == config_id,
+                    LLMConfigModel.config_type == config_type,
+                    ~LLMConfigModel.is_deleted,
+                )
+            )
+            config = result.scalar_one_or_none()
+            if not config:
+                return None
+            if config.visibility == "personal" and (not owner_user_id or str(config.owner_user_id) != str(owner_user_id)):
+                return None
+            return config.to_config_data()
+    except Exception:
+        logger.warning("忽略异常 @ %s", "get_config_by_id", exc_info=True)
+        return None
+
+
+async def list_visible_configs(config_type: str = "text", owner_user_id: str | None = None) -> list[LLMConfigData]:
+    """列出该用户可选的全部配置：系统预置 + 本人私有。"""
+    try:
+        async with async_session_factory() as session:
+            stmt = select(LLMConfigModel).where(
+                LLMConfigModel.config_type == config_type,
+                ~LLMConfigModel.is_deleted,
+                (LLMConfigModel.visibility == "system")
+                | ((LLMConfigModel.visibility == "personal") & (LLMConfigModel.owner_user_id == owner_user_id)),
+            )
+            result = await session.execute(stmt.order_by(LLMConfigModel.visibility, LLMConfigModel.created_at))
+            return [row.to_config_data() for row in result.scalars().all()]
+    except Exception:
+        logger.warning("忽略异常 @ %s", "list_visible_configs", exc_info=True)
+        return []
 
 
 def get_env_config() -> LLMConfigData | None:

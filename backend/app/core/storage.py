@@ -135,6 +135,76 @@ def is_enabled() -> bool:
     return _enabled or False
 
 
+def upload_file(
+    module: str,
+    object_key: str,
+    file_path: str,
+    content_type: str = "application/octet-stream",
+) -> str:
+    """从磁盘文件流式上传（大文件用：不把整块内容读进内存）。"""
+    client = _get_client()
+    if client is None:
+        raise RuntimeError("MinIO is not enabled")
+    _ensure_bucket(module)
+    client.fput_object(
+        bucket_name=_module_bucket(module),
+        object_name=object_key,
+        file_path=file_path,
+        content_type=content_type,
+    )
+    return object_key
+
+
+def stat_object(module: str, object_key: str) -> int | None:
+    """对象字节数；不存在返回 None。"""
+    client = _get_client()
+    if client is None:
+        return None
+    from minio.error import S3Error
+
+    try:
+        stat = client.stat_object(_module_bucket(module), object_key)
+        return int(stat.size or 0)
+    except S3Error:
+        return None
+
+
+def get_object_range(
+    module: str,
+    object_key: str,
+    offset: int = 0,
+    length: int | None = None,
+) -> tuple[bytes, str, int] | None:
+    """读取对象的一段（Range 请求用），返回 (data, content_type, total_size)。
+
+    `length` 为 None 时读到对象末尾。对象不存在返回 None。
+    """
+    client = _get_client()
+    if client is None:
+        return None
+    from minio.error import S3Error
+
+    try:
+        # minio 里 length=0 即「读到末尾」（Range 只带起点），正好对应 None
+        resp = client.get_object(
+            bucket_name=_module_bucket(module),
+            object_name=object_key,
+            offset=offset,
+            length=length or 0,
+        )
+        try:
+            data = resp.read()
+            content_type = resp.getheader("Content-Type") or "application/octet-stream"
+            content_range = resp.getheader("Content-Range") or ""
+            total = int(content_range.split("/")[-1] or 0) or (offset + len(data))
+        finally:
+            resp.close()
+            resp.release_conn()
+        return data, content_type, total
+    except S3Error:
+        return None
+
+
 async def save_upload_file(file: UploadFile, sub_dir: str = "reagent-labels") -> str:
     """保存单个上传文件到本地存储
 

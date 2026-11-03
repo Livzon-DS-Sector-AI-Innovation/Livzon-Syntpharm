@@ -1119,6 +1119,15 @@ PRODUCTION_PERMISSIONS: tuple[PermissionDef, ...] = (
 )
 
 
+# ── 智能体（agent）─────────────────────────────────────────────────
+# 首期能力为 PPT 配音视频：读接口（列表/详情/媒体/版本）与管理接口（上传/改稿/渲染/删除）分两个码。
+
+AGENT_PERMISSIONS: tuple[PermissionDef, ...] = (
+    PermissionDef("agent:ppt-video:read", "PPT 配音视频 - 查看", "agent", "ppt-video", "read"),
+    PermissionDef("agent:ppt-video:manage", "PPT 配音视频 - 管理", "agent", "ppt-video", "manage"),
+)
+
+
 # 全部权限码（业务模块接入存量接口时，把业务权限码合并进来即可，权限树会自动生长）
 ALL_PERMISSIONS: tuple[PermissionDef, ...] = (
     PLATFORM_PERMISSIONS
@@ -1134,6 +1143,7 @@ ALL_PERMISSIONS: tuple[PermissionDef, ...] = (
     + QUALITY_PERMISSIONS
     + HR_PERMISSIONS
     + PRODUCTION_PERMISSIONS
+    + AGENT_PERMISSIONS
 )
 
 
@@ -3047,6 +3057,47 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "POST",
         "/api/v1/registration/dossier-writer/products/{dossier_id}/templates",
     ),
+    # 智能体 - PPT 配音视频
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/voices"),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos"),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/versions/{version_id}/manifest",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/versions/{version_id}/file",
+    ),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}"),
+    ApiBindingDef("agent:ppt-video:manage", "PATCH", "/api/v1/agent/ppt-videos/{project_id}"),
+    ApiBindingDef("agent:ppt-video:manage", "DELETE", "/api/v1/agent/ppt-videos/{project_id}"),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "PUT",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "POST",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/preview",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/image",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/audio",
+    ),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/render"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/script-ai"),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/job"),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/versions"),
 )
 # ── 登录入口 / 当前用户自取（豁免绑定兜底）─────────────────────────
 # 这些接口无法绑定权限码，若按「未登记即 403」处理，开启
@@ -3129,6 +3180,7 @@ ENFORCE_READY_MODULES: tuple[str, ...] = (
     "quality",
     "hr",
     "production",
+    "agent",
 )
 
 

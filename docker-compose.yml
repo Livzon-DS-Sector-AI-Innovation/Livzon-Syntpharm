@@ -92,6 +92,29 @@ services:
     - ./backend/scripts:/app/scripts
     ports:
     - 8000:8000
+  # 智能体 - PPT 配音视频渲染 worker（soffice + ffmpeg + 本地 TTS，CPU 重活与 API 隔离）
+  ppt-video-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    container_name: erp-ppt-video-worker
+    restart: unless-stopped
+    env_file:
+    - .env
+    environment:
+    - REDIS_URL=redis://erp-redis:6379/0
+    - PPT_VIDEO_WORKER_CONCURRENCY=1
+    - HF_ENDPOINT=${HF_ENDPOINT:-https://hf-mirror.com}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+    - ./uploads:/app/uploads
+    - ./storage:/app/storage
   edbo-service:
     build:
       context: ./backend

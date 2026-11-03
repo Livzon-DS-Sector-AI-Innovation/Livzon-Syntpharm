@@ -44,6 +44,11 @@ docs/
 tests/
 scripts/
 
+# 例外：构建期脚本必须进镜像（Dockerfile.worker 会 COPY 它们）
+# worker 用它装 spaCy 英文模型、预下载并校验 TTS 权重，缺了构建直接失败
+!scripts/ci/install_spacy_en_model.py
+!scripts/ci/preload_tts_models.py
+
 # Docker 配置
 .dockerignore
 Dockerfile
