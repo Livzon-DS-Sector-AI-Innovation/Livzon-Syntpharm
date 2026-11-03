@@ -44,6 +44,26 @@ MODULE = "agent"
 SETTING_GLOBAL_CONFIG_ID = "AGENT_PPT_VIDEO_SCRIPT_AI_CONFIG_ID"
 SETTING_GLOBAL_GUIDE = "AGENT_PPT_VIDEO_SCRIPT_AI_GUIDE"
 
+__all__ = [
+    "MODULE",
+    "SETTING_GLOBAL_CONFIG_ID",
+    "SETTING_GLOBAL_GUIDE",
+    "ResolvedGuide",
+    "ResolvedModel",
+    "compose_guide_block",
+    "create_personal",
+    "delete_personal",
+    "get_personal",
+    "masked_key",
+    "read_global_settings",
+    "resolve",
+    "resolve_guide",
+    "save_setting",
+    "test_connection",
+    "update_personal",
+    "visible_configs",
+]
+
 ModelSource = Literal["project", "global", "active", "env"]
 
 
@@ -83,7 +103,7 @@ async def _read_setting(session: AsyncSession, key: str) -> str:
         select(ModuleSetting).where(
             ModuleSetting.module == MODULE,
             ModuleSetting.key == key,
-            ~ModuleSetting.is_deleted,  # type: ignore[arg-type]
+            ~ModuleSetting.is_deleted,
         )
     )
     row = result.scalar_one_or_none()
@@ -104,7 +124,7 @@ async def save_setting(session: AsyncSession, key: str, value: str, description:
         select(ModuleSetting).where(
             ModuleSetting.module == MODULE,
             ModuleSetting.key == key,
-            ~ModuleSetting.is_deleted,  # type: ignore[arg-type]
+            ~ModuleSetting.is_deleted,
         )
     )
     row = result.scalar_one_or_none()
@@ -212,7 +232,7 @@ async def visible_configs(session: AsyncSession, user_id: uuid.UUID | None) -> l
     personal_owner = user_id if user_id else uuid.UUID(int=0)
     stmt = select(LLMConfigModel).where(
         LLMConfigModel.config_type == "text",
-        ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
+        ~LLMConfigModel.is_deleted,
         (LLMConfigModel.visibility == "system")
         | ((LLMConfigModel.visibility == "personal") & (LLMConfigModel.owner_user_id == personal_owner)),
     )
@@ -256,7 +276,7 @@ async def get_personal(session: AsyncSession, config_id: str, user_id: uuid.UUID
             LLMConfigModel.id == parsed_id,
             LLMConfigModel.visibility == "personal",
             LLMConfigModel.owner_user_id == user_id,
-            ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
+            ~LLMConfigModel.is_deleted,
         )
     )
     return result.scalar_one_or_none()

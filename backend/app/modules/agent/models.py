@@ -205,8 +205,8 @@ class PptVideoSlide(BaseModel):
     page_fingerprint: Mapped[str | None] = mapped_column(
         String(64), nullable=True, comment="页内容指纹（文字+备注+形状数+坐标摘要），用于换源对齐"
     )
-    layout: Mapped[list[dict[str, Any]] | None] = mapped_column(
-        JSON, nullable=True, comment="形状坐标清单：name/kind/text/left/top/width/height（EMU）"
+    layout: Mapped[dict[str, Any] | list[dict[str, Any]] | None] = mapped_column(
+        JSON, nullable=True, comment="页版式：{width,height,shapes[]} 字典或裸形状列表（EMU）"
     )
     script_stale: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false", nullable=False, comment="画面已变、讲稿尚未按新画面重写"

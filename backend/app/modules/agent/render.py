@@ -12,6 +12,7 @@
 import logging
 import shutil
 import subprocess
+from collections.abc import Sequence
 from pathlib import Path
 
 from app.modules.agent.config import CANVAS_HEIGHT, CANVAS_WIDTH, FRAME_RATE
@@ -230,7 +231,7 @@ def compose_highlight_frame(
 
 
 def build_highlighted_segment(
-    frames: list[tuple[str | Path, int]],
+    frames: Sequence[tuple[str | Path, int]],
     wav_path: str | Path,
     out_path: str | Path,
     audio_duration_ms: int,

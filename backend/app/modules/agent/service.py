@@ -1021,9 +1021,10 @@ async def apply_source_replace(
 
 async def _current_pptx_bytes(project: PptVideoProject) -> bytes:
     """取当前源 PPT（统一是 pptx）；老项目或异常内容就地转一次。"""
-    data = await asyncio.to_thread(storage.get_object, BUCKET_MODULE, project.source_object_key)
-    if not data:
+    payload = await asyncio.to_thread(storage.get_object, BUCKET_MODULE, project.source_object_key)
+    if payload is None:
         raise ServiceError("源 PPT 已丢失，请重新上传")
+    data, _content_type = payload
     if data[:2] == b"PK":
         return data
 
@@ -1094,7 +1095,7 @@ async def edit_slide(
     applied = await apply_source_replace(
         session,
         project_id,
-        load_settings(),
+        await load_settings(),
         requested_by_name,
         user_id,
         auto_rewrite=False,

@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
+from app.core.llm.config import LLMConfigModel, get_config_by_id
 from app.core.llm.exceptions import LLMConfigError
 from app.core.response import DataResponse
 from app.core.storage import get_object_range, stat_object
@@ -59,6 +60,7 @@ from app.modules.agent.schemas import (
     VoiceCatalogResponse,
     VoiceOption,
 )
+from app.platform.identity.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -477,18 +479,18 @@ async def list_versions(
 PERM_GLOBAL_SETTING = "platform:module-setting:manage"
 
 
-async def _can_manage_global(db: AsyncSession, user) -> bool:
+async def _can_manage_global(db: AsyncSession, user: User) -> bool:
     from app.platform.permission.public_api import has_permission
 
     return await has_permission(db, user, PERM_GLOBAL_SETTING)
 
 
-async def _require_global_manage(db: AsyncSession, user) -> None:
+async def _require_global_manage(db: AsyncSession, user: User) -> None:
     if not await _can_manage_global(db, user):
         raise ForbiddenException("只有平台管理员可以修改全局 AI 配置")
 
 
-def _ai_config_item(row, owner_id: uuid.UUID | None) -> AiConfigItem:
+def _ai_config_item(row: LLMConfigModel, owner_id: uuid.UUID | None) -> AiConfigItem:
     visibility = (row.visibility or "system").strip() or "system"
     return AiConfigItem(
         id=row.id,
@@ -504,7 +506,7 @@ def _ai_config_item(row, owner_id: uuid.UUID | None) -> AiConfigItem:
     )
 
 
-async def _ai_config_payload(db: AsyncSession, user) -> AiConfigListResponse:
+async def _ai_config_payload(db: AsyncSession, user: User) -> AiConfigListResponse:
     settings = await agent_config.load_settings()
     rows = await ai_config.visible_configs(db, user.id)
     global_id, global_guide = await ai_config.read_global_settings(db)
@@ -559,7 +561,7 @@ async def update_global_ai_settings(
     if payload.clear_global_config:
         global_id = ""
     elif payload.global_config_id is not None:
-        config = await ai_config.get_config_by_id(str(payload.global_config_id), "text", str(current_user.id))
+        config = await get_config_by_id(str(payload.global_config_id), "text", str(current_user.id))
         if not config:
             raise NotFoundException("模型配置")
         global_id = str(config.id)
@@ -586,7 +588,7 @@ async def test_ai_config(
     db: AsyncSession = Depends(get_db),
 ) -> DataResponse[AiConfigTestResponse]:
     if payload.config_id is not None:
-        config = await ai_config.get_config_by_id(str(payload.config_id), "text", str(current_user.id))
+        config = await get_config_by_id(str(payload.config_id), "text", str(current_user.id))
         if not config:
             raise NotFoundException("模型配置")
         ok, message = await ai_config.test_connection(

@@ -29,6 +29,9 @@ CHANGE_SIMILARITY_THRESHOLD = 0.6
 
 DiffStatus = Literal["unchanged", "changed", "added", "removed"]
 
+#: 页版式载荷。新解析产出 {width, height, shapes} 字典；历史数据可能是裸形状列表
+Layout = dict[str, Any] | list[dict[str, Any]]
+
 _WHITESPACE_RE = re.compile(r"\s+")
 
 
@@ -39,7 +42,7 @@ class PageSnapshot:
     index: int
     page_text: str = ""
     notes: str = ""
-    layout: list[dict[str, Any]] = field(default_factory=list)
+    layout: Layout = field(default_factory=list)
     fingerprint: str | None = None
 
     @property
@@ -147,7 +150,7 @@ def _layout_signature(layout: Any) -> str:
 def build_fingerprint(
     page_text: str | None,
     notes: str | None,
-    layout: list[dict[str, Any]] | None = None,
+    layout: Layout | None = None,
 ) -> str:
     """页内容指纹：文字 + 备注 + 形状数 + 文本形状坐标摘要。"""
     shapes = _shapes(layout)

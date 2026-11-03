@@ -3098,6 +3098,41 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/script-ai"),
     ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/job"),
     ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/versions"),
+    # 智能体 - AI 配置（个人 Key 与全局默认模型；全局写入在函数内再校验平台管理员）
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ai-configs"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ai-configs"),
+    ApiBindingDef("agent:ppt-video:read", "PUT", "/api/v1/agent/ai-configs/global"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ai-configs/test"),
+    ApiBindingDef("agent:ppt-video:manage", "PATCH", "/api/v1/agent/ai-configs/{config_id}"),
+    ApiBindingDef("agent:ppt-video:manage", "DELETE", "/api/v1/agent/ai-configs/{config_id}"),
+    # 智能体 - 项目级 AI 设置、讲稿改写与修订回滚
+    ApiBindingDef("agent:ppt-video:manage", "PUT", "/api/v1/agent/ppt-videos/{project_id}/ai"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/script-rewrite"),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/revisions"),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "POST",
+        "/api/v1/agent/ppt-videos/{project_id}/revisions/{revision_id}/rollback",
+    ),
+    # 智能体 - 换源
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/source"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/source/apply"),
+    # 智能体 - 页级轻量编辑
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/shapes",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "PUT",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/edit-text",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "POST",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/edit-image",
+    ),
 )
 # ── 登录入口 / 当前用户自取（豁免绑定兜底）─────────────────────────
 # 这些接口无法绑定权限码，若按「未登记即 403」处理，开启

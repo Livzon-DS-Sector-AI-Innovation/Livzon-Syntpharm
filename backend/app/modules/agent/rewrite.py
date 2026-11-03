@@ -23,9 +23,10 @@ import asyncio
 import logging
 import uuid
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from sqlalchemy import func, select, update
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import async_session_factory
@@ -470,7 +471,7 @@ async def rollback_revision(
                 updated_at=func.now(),
             )
         )
-        restored += updated.rowcount or 0
+        restored += cast(CursorResult[Any], updated).rowcount or 0
 
     revision.applied = False
     revision.status = REVISION_STATUS_FAILED if revision.status == REVISION_STATUS_RUNNING else revision.status

@@ -25,6 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core import storage
 from app.core.database import async_session_factory, engine
 from app.modules.agent import highlight, queue, render, service, tts
+from app.modules.agent.alignment import Layout
 from app.modules.agent.cache import (
     Manifest,
     ManifestSlide,
@@ -265,7 +266,7 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
 
 def _build_highlight_plan(
     script: str,
-    layout: dict | None,
+    layout: Layout | None,
     duration_ms: int,
     settings: PptVideoSettings,
 ) -> highlight.HighlightPlan:
@@ -294,7 +295,7 @@ def _render_highlighted_segment(
     audio_path: Path,
     segment_path: Path,
     plan: highlight.HighlightPlan,
-    layout: dict | None,
+    layout: Layout | None,
     settings: PptVideoSettings,
     work_dir: Path,
     segment_fp: str,

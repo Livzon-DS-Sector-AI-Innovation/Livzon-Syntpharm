@@ -17,6 +17,16 @@ from .exceptions import LLMConfigError
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    "LLMConfigData",
+    "LLMConfigModel",
+    "get_active_config",
+    "get_config",
+    "get_config_by_id",
+    "get_env_config",
+    "list_visible_configs",
+]
+
 
 @dataclass
 class LLMConfigData:
@@ -153,7 +163,7 @@ async def get_config_by_id(
             config = result.scalar_one_or_none()
             if not config:
                 return None
-            if config.visibility == "personal" and (not owner_user_id or str(config.owner_user_id) != str(owner_user_id)):
+            if config.visibility == "personal" and str(config.owner_user_id) != str(owner_user_id or ""):
                 return None
             return config.to_config_data()
     except Exception:

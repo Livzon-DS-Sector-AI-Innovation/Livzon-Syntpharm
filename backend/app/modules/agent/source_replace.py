@@ -82,9 +82,11 @@ def pending_object_key(project_id: uuid.UUID, filename: str | None = None) -> st
 def _read_pending(project_id: uuid.UUID) -> tuple[bytes, str]:
     """取回待应用文件；两种后缀都探一遍，避免上传 .ppt 后找不到。"""
     for suffix in (".pptx", ".ppt"):
-        data = storage.get_object(BUCKET_MODULE, pending_object_key(project_id, f"x{suffix}"))
-        if data:
-            return data, f"source{suffix}"
+        payload = storage.get_object(BUCKET_MODULE, pending_object_key(project_id, f"x{suffix}"))
+        if payload is None:
+            continue
+        data, _content_type = payload
+        return data, f"source{suffix}"
     raise SourceReplaceError("未找到待应用的 PPT，请重新上传")
 
 
