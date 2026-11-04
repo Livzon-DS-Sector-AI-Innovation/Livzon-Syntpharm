@@ -203,6 +203,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
 
       if (currentHazard) {
         const updateRes = await updateHazard(currentHazard.id, {
+          inspection_name: values.inspection_name,
           inspection_category: values.inspection_category,
           discovered_by: values.discovered_by,
           discovered_by_name: values.discovered_by_name,
@@ -221,6 +222,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
       } else {
         const createRes = await createHazard({
           hazard_no: '',
+          inspection_name: values.inspection_name,
           inspection_category: values.inspection_category,
           discovered_by: values.discovered_by,
           discovered_by_name: values.discovered_by_name,
@@ -297,6 +299,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
 
       if (currentHazard) {
         const updateRes = await updateHazard(currentHazard.id, {
+          inspection_name: values.inspection_name,
           inspection_category: values.inspection_category,
           discovered_by: values.discovered_by,
           discovered_by_name: values.discovered_by_name,
@@ -314,6 +317,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
       } else {
         const createRes = await createHazard({
           hazard_no: '',
+          inspection_name: values.inspection_name,
           inspection_category: values.inspection_category,
           discovered_by: values.discovered_by,
           discovered_by_name: values.discovered_by_name,
@@ -372,14 +376,14 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
         : draft.inspection_category
           ? draft.inspection_category.split(/[,，]/).filter(Boolean)
           : undefined,
-      discovered_by: draft.discovered_by,
-      discovered_by_name: draft.discovered_by_name,
+      discovered_by: draft.discovered_by ?? undefined,
+      discovered_by_name: draft.discovered_by_name ?? undefined,
       inspector_department: Array.isArray(draft.inspector_department)
         ? draft.inspector_department
         : draft.inspector_department
           ? draft.inspector_department.split(/[,，]/).filter(Boolean)
           : undefined,
-      department: draft.department,
+      department: draft.department ?? undefined,
       discovered_at: draft.discovered_at,
       description: draft.description,
     })

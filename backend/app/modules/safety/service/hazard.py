@@ -245,6 +245,16 @@ def _bitable_sync_runner(
     return _run
 
 
+def resolve_rectification_reply(rectification_reply: str | None, capa_measures: str | None) -> str:
+    """AI 整改初审的整改回复输入。
+
+    飞书 Bitable 自 2026-11 起把「纠正预防措施」落在 capa_measures（不再写
+    rectification_reply），若只取 rectification_reply，Bitable 渠道的记录会拿到空串，
+    触发 RectificationReviewInput 的 min_length=1 校验失败，AI 初审必然判 failed。
+    """
+    return rectification_reply or capa_measures or ""
+
+
 class HazardService:
     """HazardReport CRUD, AI identification, rectification review, notifications."""
 
@@ -654,6 +664,7 @@ class HazardService:
         rectification_photos: str | None,
         user_id: uuid.UUID,
         user_name: str,
+        capa_measures: str | None = None,
     ) -> HazardReport | None:
         """重新整改：rejected → ai_reviewing，重置所有复核级别，AI 重新审查"""
         hazard = await self.repo.get_hazard_by_id(hazard_id)
@@ -684,6 +695,8 @@ class HazardService:
         }
         if rectification_photos is not None:
             update_data["rectification_photos"] = rectification_photos
+        if capa_measures is not None:
+            update_data["capa_measures"] = capa_measures
         updated = await self.repo.update_hazard(hazard_id, update_data)
 
         # 重新整改回复后，异步触发 AI 初审（非阻塞），AI 结果将决定后续通知路由
@@ -936,12 +949,16 @@ class HazardService:
             self._parse_defect_photo_urls(item.rectification_photos) if item.rectification_photos else []
         )
 
+        # Bitable 入站自 2026-11 起把「纠正预防措施」落在 capa_measures，rectification_reply 可能为空；
+        # 取二者之一作为整改回复，避免 AI 初审因输入为空而必然校验失败。
+        rectification_reply_text = resolve_rectification_reply(item.rectification_reply, item.capa_measures)
+
         logger.info(
             "AI 整改初审插件启动: hazard_id=%s defect_photos=%d rectification_photos=%d reply_len=%d",
             item.id,
             len(defect_image_urls),
             len(rectification_image_urls),
-            len(item.rectification_reply or ""),
+            len(rectification_reply_text),
         )
 
         # 解析 AI 识别结果中的整改建议
@@ -965,7 +982,7 @@ class HazardService:
             hazard_category=item.hazard_category or "",
             hazard_level=item.hazard_level or "",
             ai_rectification_suggestion=ai_suggestion,
-            rectification_reply=item.rectification_reply or "",
+            rectification_reply=rectification_reply_text,
             rectification_photos=rectification_image_urls,
             department=item.department or "",
             defect_substance=item.defect_substance or "",

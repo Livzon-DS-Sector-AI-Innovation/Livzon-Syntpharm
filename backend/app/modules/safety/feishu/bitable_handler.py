@@ -11,6 +11,7 @@ Bitable → 平台：用户填表 → 自动创建隐患 + AI识别 + 回写结�
 import json
 import logging
 import os
+import time
 import uuid as _uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -1382,7 +1383,7 @@ async def _update_hazard_from_bitable(
         list(mapped.keys()),
         list(update_data.keys()),
     )
-    if "rectification_reply" in bitable_fields:
+    if "纠正预防措施" in bitable_fields:
         logger.info(
             "📝 整改回复内容: record_id=%s raw_type=%s raw_preview=%s",
             record_id,
@@ -1849,6 +1850,9 @@ _field_name_cache: dict[str, str] | None = None
 _option_map_cache: dict[str, dict[str, str]] | None = None
 # field_name → field_type 缓存
 _field_type_cache: dict[str, int] | None = None
+# 字段定义缓存加载时间（monotonic），用于 TTL 刷新；Bitable 新建列后无需重启即可生效
+_field_cache_loaded_at: float | None = None
+_FIELD_CACHE_TTL_SECONDS = 600
 
 # 飞书 action_list action 映射
 _ACTION_MAP: dict[str, str] = {
@@ -1858,12 +1862,31 @@ _ACTION_MAP: dict[str, str] = {
 }
 
 
-async def _get_field_definitions(bitable: SafetyBitableClient) -> None:
-    """加载字段定义（ID映射 + 类型 + 选项映射），惰性缓存。"""
-    global _field_name_cache, _option_map_cache, _field_type_cache
-    if _option_map_cache is not None and _field_type_cache is not None:
+async def _get_field_definitions(bitable: SafetyBitableClient, *, force: bool = False) -> None:
+    """加载字段定义（ID映射 + 类型 + 选项映射），带 TTL 的惰性缓存。
+
+    Bitable 表结构会变（新增「检查名称」「纠正预防措施」等列），永久缓存会导致
+    新列被当成缺失字段跳过回写，必须重启进程才恢复。这里按 TTL 定期刷新；
+    刷新失败时沿用旧缓存，避免回写链路因一次接口抖动整体失败。
+    """
+    global _field_name_cache, _option_map_cache, _field_type_cache, _field_cache_loaded_at
+    now = time.monotonic()
+    if (
+        not force
+        and _option_map_cache is not None
+        and _field_type_cache is not None
+        and _field_cache_loaded_at is not None
+        and now - _field_cache_loaded_at < _FIELD_CACHE_TTL_SECONDS
+    ):
         return
-    fields = await bitable.list_fields()
+    try:
+        fields = await bitable.list_fields()
+    except Exception:
+        if _field_type_cache is not None:
+            logger.warning("Bitable 字段定义刷新失败，继续使用旧缓存", exc_info=True)
+            _field_cache_loaded_at = now
+            return
+        raise
     _field_name_cache = {}
     _option_map_cache = {}
     _field_type_cache = {}
@@ -1885,6 +1908,7 @@ async def _get_field_definitions(bitable: SafetyBitableClient) -> None:
                     opts[oid] = oname
             if opts:
                 _option_map_cache[fname] = opts
+    _field_cache_loaded_at = now
     logger.info(
         "Bitable 字段定义已缓存: %d 个字段, %d 个有选项映射",
         len(_field_name_cache),

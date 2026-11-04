@@ -1126,7 +1126,9 @@ export default function HazardLedgerPage() {
         if (urls.length === 0) return <span style={{ color: '#a4a097' }}>-</span>
         return (
           <Space size={4}>
-            <Image src={urls[0]} alt="整改前证据" width={32} height={32} style={{ objectFit: 'cover', borderRadius: 4 }} />
+            <Image.PreviewGroup items={urls}>
+              <Image src={urls[0]} alt="整改前证据" width={32} height={32} style={{ objectFit: 'cover', borderRadius: 4 }} />
+            </Image.PreviewGroup>
             {urls.length > 1 && <span style={{ fontSize: 11, color: '#787671' }}>+{urls.length - 1}</span>}
           </Space>
         )
@@ -1142,7 +1144,9 @@ export default function HazardLedgerPage() {
         if (urls.length === 0) return <span style={{ color: '#a4a097' }}>-</span>
         return (
           <Space size={4}>
-            <Image src={urls[0]} alt="整改后照片" width={32} height={32} style={{ objectFit: 'cover', borderRadius: 4 }} />
+            <Image.PreviewGroup items={urls}>
+              <Image src={urls[0]} alt="整改后照片" width={32} height={32} style={{ objectFit: 'cover', borderRadius: 4 }} />
+            </Image.PreviewGroup>
             {urls.length > 1 && <span style={{ fontSize: 11, color: '#787671' }}>+{urls.length - 1}</span>}
           </Space>
         )

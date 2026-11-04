@@ -8,6 +8,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.concurrency import run_in_threadpool
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
@@ -195,8 +196,12 @@ async def handler(  # noqa: F811
     """上传隐患缺陷图片，追加到 defect_photos JSON 数组"""
 
     content = await file.read()
-    content, file_ext, content_type = compress_image(content, file.filename, file.content_type)
-    safe_name = f"hazard_{hazard_id}_{int(datetime.now().timestamp())}{file_ext}"
+    # Pillow 解码/重编码是 CPU 密集同步操作，放线程池避免阻塞事件循环
+    content, file_ext, content_type = await run_in_threadpool(
+        compress_image, content, file.filename, file.content_type
+    )
+    # 时间戳仅到秒，同秒多图会互相覆盖，追加随机后缀保证对象名唯一
+    safe_name = f"hazard_{hazard_id}_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}{file_ext}"
 
     if minio_enabled():
         object_key = f"hazard/{safe_name}"
@@ -237,8 +242,12 @@ async def handler(  # noqa: F811
     """上传整改后图片，追加到 rectification_photos JSON 数组"""
 
     content = await file.read()
-    content, file_ext, content_type = compress_image(content, file.filename, file.content_type)
-    safe_name = f"rectification_{hazard_id}_{int(datetime.now().timestamp())}{file_ext}"
+    # Pillow 解码/重编码是 CPU 密集同步操作，放线程池避免阻塞事件循环
+    content, file_ext, content_type = await run_in_threadpool(
+        compress_image, content, file.filename, file.content_type
+    )
+    # 时间戳仅到秒，同秒多图会互相覆盖，追加随机后缀保证对象名唯一
+    safe_name = f"rectification_{hazard_id}_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}{file_ext}"
 
     if minio_enabled():
         object_key = f"hazard/{safe_name}"
@@ -359,6 +368,7 @@ async def handler(  # noqa: F811
         rectification_photos=data.rectification_photos,
         user_id=user_id,
         user_name=user_name,
+        capa_measures=data.capa_measures,
     )
     if not item:
         return build_response(code=400, message="无法重新整改，当前状态不允许")
