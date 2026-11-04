@@ -58,9 +58,7 @@ class TestNotifyEndpointsResponseModel:
     ) -> None:
         hazard = await _create_hazard(db_session, rectification_responsible_person_name="张三")
 
-        response = await auth_client.post(
-            f"/api/v1/safety/hazards/{hazard.id}/rectification/notify-rectification"
-        )
+        response = await auth_client.post(f"/api/v1/safety/hazards/{hazard.id}/rectification/notify-rectification")
 
         assert response.status_code == 200, response.text
         body = response.json()
@@ -72,9 +70,7 @@ class TestNotifyEndpointsResponseModel:
     ) -> None:
         hazard = await _create_hazard(db_session, rectification_responsible_person_name=None)
 
-        response = await auth_client.post(
-            f"/api/v1/safety/hazards/{hazard.id}/rectification/notify-rectification"
-        )
+        response = await auth_client.post(f"/api/v1/safety/hazards/{hazard.id}/rectification/notify-rectification")
 
         assert response.status_code == 200, response.text
         assert response.json()["data"] == {"target": "未知"}
