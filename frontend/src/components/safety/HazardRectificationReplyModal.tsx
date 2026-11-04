@@ -85,8 +85,11 @@ export default function HazardRectificationReplyModal({
         setUploading(false)
       }
 
-      const data: { reply_content: string; rectification_photos?: string } = {
+      const data: { reply_content: string; rectification_photos?: string; capa_measures?: string } = {
         reply_content: values.reply_content,
+      }
+      if (values.capa_measures) {
+        data.capa_measures = values.capa_measures
       }
       // 合并已有 + 新上传的照片路径，转为 JSON 字符串提交
       if (uploadedUrls.length > 0) {
@@ -173,12 +176,19 @@ export default function HazardRectificationReplyModal({
       <Form form={form} layout="vertical">
         <Form.Item
           name="reply_content"
-          label="纠正预防措施"
-          rules={[{ required: true, message: '请描述纠正预防措施' }]}
+          label="整改回复"
+          rules={[{ required: true, message: '请描述整改回复' }]}
         >
           <TextArea
             rows={4}
-            placeholder="请详细描述纠正预防措施，包括具体整改措施、实施过程、完成情况等"
+            placeholder="请详细描述整改过程、实施情况及完成情况"
+          />
+        </Form.Item>
+
+        <Form.Item name="capa_measures" label="纠正预防措施（CAPA）">
+          <TextArea
+            rows={3}
+            placeholder="针对该隐患制定的纠正与预防措施，如完善制度、增加巡检频次、加装防护设施等"
           />
         </Form.Item>
 

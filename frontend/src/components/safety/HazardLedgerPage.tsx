@@ -13,6 +13,7 @@ import {
   Space,
   Checkbox,
   Popover,
+  Image,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
@@ -55,8 +56,42 @@ import HazardVerifyModal from './HazardVerifyModal'
 import HazardRegistrationDrawer from './HazardRegistrationDrawer'
 import dayjs from 'dayjs'
 import { statusPill, actionLink } from '@/components/safety/sharedStyles'
+import { fileProxyUrl } from '@/lib/file-url'
 
 const { Text } = Typography
+
+// ── 照片 JSON 数组 → 可访问 URL ──
+// 本地路径/object_key 走 /api/v1/safety/files 代理（与详情页 parsePhotos 保持一致），
+// Bitable attachment 用预签名 url
+function parsePhotoUrls(photos?: string | null): string[] {
+  if (!photos) return []
+  let arr: unknown[] = []
+  try {
+    const parsed: unknown = JSON.parse(photos)
+    arr = Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+  return arr
+    .map((item): string | null => {
+      if (typeof item === 'string') {
+        return item.startsWith('http') ? item : fileProxyUrl(item)
+      }
+      if (typeof item === 'object' && item !== null) {
+        const att = item as Record<string, unknown>
+        if (typeof att.url === 'string' && att.url) return att.url
+        if (typeof att.tmp_url === 'string' && att.tmp_url) return att.tmp_url
+      }
+      return null
+    })
+    .filter((url): url is string => url !== null)
+}
+
+// ── 关闭状态（复用 status 字段）──
+function renderCloseStatus(status?: string | null) {
+  if (status === 'closed') return <span style={statusPill('#1f7a45', '#d9f3e1')}>已关闭</span>
+  return <span style={statusPill('#5d5b54', '#f0eeec')}>未关闭</span>
+}
 
 // ── 整改状态语义色配置 ──
 const RECTIFICATION_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -135,7 +170,7 @@ const _AI_FIELD_LABELS: Record<string, string> = {
   hazard_type: '隐患分类',
   hazard_level: '隐患等级',
   hazard_category: '隐患类别',
-  description: '隐患描述',
+  description: '缺陷项描述',
   key_defect: '重点缺陷',
   major_hazard_basis: '判定依据',
   corrective_preventive_measures: '纠正预防措施',
@@ -845,6 +880,14 @@ export default function HazardLedgerPage() {
       ),
     },
     {
+      title: '检查名称',
+      dataIndex: 'inspection_name',
+      key: 'inspection_name',
+      width: 140,
+      ellipsis: true,
+      render: (text: string) => text || <span style={{ color: '#a4a097' }}>-</span>,
+    },
+    {
       title: '检查类别',
       dataIndex: 'inspection_category',
       key: 'inspection_category',
@@ -912,11 +955,19 @@ export default function HazardLedgerPage() {
       },
     },
     {
-      title: '隐患描述',
+      title: '缺陷项描述',
       dataIndex: 'description',
       key: 'description',
       width: 150,
       ellipsis: true,
+    },
+    {
+      title: '纠正预防措施',
+      dataIndex: 'capa_measures',
+      key: 'capa_measures',
+      width: 150,
+      ellipsis: true,
+      render: (text: string) => text || <span style={{ color: '#a4a097' }}>-</span>,
     },
     {
       title: (
@@ -931,6 +982,14 @@ export default function HazardLedgerPage() {
       key: 'department',
       width: 100,
       sorter: false,
+    },
+    {
+      title: '整改负责人',
+      dataIndex: 'rectification_responsible_person_name',
+      key: 'rectification_responsible_person_name',
+      width: 90,
+      ellipsis: true,
+      render: (text: string) => text || <span style={{ color: '#a4a097' }}>-</span>,
     },
     {
       title: '检查人员',
@@ -959,15 +1018,22 @@ export default function HazardLedgerPage() {
       },
     },
     {
-      title: '整改状态',
+      title: '整改进度',
       dataIndex: 'rectification_status',
       key: 'rectification_status',
-      width: 80,
+      width: 90,
       render: (status: string) => {
         const cfg = RECTIFICATION_STATUS_CONFIG[status]
         if (!cfg) return <span style={statusPill('#5d5b54', '#f0eeec')}>{status}</span>
         return <span style={statusPill(cfg.color, cfg.bg)}>{cfg.label}</span>
       },
+    },
+    {
+      title: '关闭状态',
+      dataIndex: 'status',
+      key: 'status',
+      width: 90,
+      render: (status: string) => renderCloseStatus(status),
     },
     {
       title: '复核进度',
@@ -1021,12 +1087,12 @@ export default function HazardLedgerPage() {
           onClick={() => handleSort('deadline')}
           style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
         >
-          整改期限{renderSortIcon('deadline')}
+          目标完成日期{renderSortIcon('deadline')}
         </span>
       ),
       dataIndex: 'deadline',
       key: 'deadline',
-      width: 100,
+      width: 110,
       sorter: false,
       render: (date: string) => {
         if (!date) return '-'
@@ -1035,6 +1101,50 @@ export default function HazardLedgerPage() {
           <span style={{ color: isOverdue ? '#e03131' : '#1a1a1a', fontWeight: isOverdue ? 600 : 400, fontSize: 13 }}>
             {dayjs(date).format('YYYY-MM-DD')}
           </span>
+        )
+      },
+    },
+    {
+      title: '完成/关闭日期',
+      dataIndex: 'closed_at',
+      key: 'closed_at',
+      width: 110,
+      render: (date?: string | null) =>
+        date ? (
+          <span style={{ fontSize: 13 }}>{dayjs(date).format('YYYY-MM-DD')}</span>
+        ) : (
+          <span style={{ color: '#a4a097' }}>-</span>
+        ),
+    },
+    {
+      title: '证据（整改前）',
+      dataIndex: 'defect_photos',
+      key: 'defect_photos',
+      width: 100,
+      render: (json: string) => {
+        const urls = parsePhotoUrls(json)
+        if (urls.length === 0) return <span style={{ color: '#a4a097' }}>-</span>
+        return (
+          <Space size={4}>
+            <Image src={urls[0]} alt="整改前证据" width={32} height={32} style={{ objectFit: 'cover', borderRadius: 4 }} />
+            {urls.length > 1 && <span style={{ fontSize: 11, color: '#787671' }}>+{urls.length - 1}</span>}
+          </Space>
+        )
+      },
+    },
+    {
+      title: '整改后照片',
+      dataIndex: 'rectification_photos',
+      key: 'rectification_photos',
+      width: 100,
+      render: (json: string) => {
+        const urls = parsePhotoUrls(json)
+        if (urls.length === 0) return <span style={{ color: '#a4a097' }}>-</span>
+        return (
+          <Space size={4}>
+            <Image src={urls[0]} alt="整改后照片" width={32} height={32} style={{ objectFit: 'cover', borderRadius: 4 }} />
+            {urls.length > 1 && <span style={{ fontSize: 11, color: '#787671' }}>+{urls.length - 1}</span>}
+          </Space>
         )
       },
     },

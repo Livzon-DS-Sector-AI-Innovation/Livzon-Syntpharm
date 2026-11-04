@@ -927,9 +927,11 @@ export default function HazardLedgerDetailPage() {
 
       // 3. 根据状态调用 replyRectification 或 reworkRectification
       const replyContent = edits.rectification_reply || record.rectification_reply || fieldVal('rectification_reply')
+      const capaMeasures = edits.capa_measures ?? record.capa_measures
       const data = {
         reply_content: replyContent,
         rectification_photos: allPhotoPaths.length > 0 ? JSON.stringify(allPhotoPaths) : undefined,
+        capa_measures: capaMeasures || undefined,
       }
       const isRework = record.rectification_status === 'rejected'
       const replyRes = isRework
@@ -964,6 +966,19 @@ export default function HazardLedgerDetailPage() {
     return pillNeutral(label)
   }
   const rectificationPill = makeRectificationPill()
+
+  // ── 关闭状态（复用 status 字段：open / closed）──
+  const closeStatusPill =
+    record.status === 'closed'
+      ? pillSuccess(`已关闭${record.closed_at ? ` · ${fmtDate(record.closed_at, 'YYYY-MM-DD')}` : ''}`)
+      : pillNeutral('未关闭')
+
+  // ── 审批人留痕（每级只保留最后一次）──
+  const reviewerTrail: [string, string | null | undefined, string | null | undefined][] = [
+    ['一级复核', record.verify_level_1_reviewer_name, record.verify_level_1_reviewed_at],
+    ['二级复核', record.verify_level_2_reviewer_name, record.verify_level_2_reviewed_at],
+    ['三级复核', record.verify_level_3_reviewer_name, record.verify_level_3_reviewed_at],
+  ]
 
   // ── 阶段状态 pill ──
   const stage1Pill = pillSuccess('已完成')
@@ -1162,6 +1177,7 @@ export default function HazardLedgerDetailPage() {
           <Space size={8}>
             {levelPill}
             {rectificationPill}
+            {closeStatusPill}
           </Space>
         </div>
       </div>
@@ -1235,7 +1251,7 @@ export default function HazardLedgerDetailPage() {
                   </FieldEditor>
                 </Col>
                 <Col span={24}>
-                  <FieldEditor label="隐患描述">
+                  <FieldEditor label="缺陷项描述">
                     <TextArea rows={3} value={fieldVal('description')}
                       onChange={(e) => setEdits((p) => ({ ...p, description: e.target.value }))} />
                   </FieldEditor>
@@ -1285,16 +1301,25 @@ export default function HazardLedgerDetailPage() {
                   </Col>
                 </Row>
 
+                {record.inspection_name && (
+                  <div style={{ marginTop: 16 }}>
+                    <FieldLabel>检查名称</FieldLabel>
+                    <FieldTile>
+                      <Text style={{ fontSize: 14 }}>{record.inspection_name}</Text>
+                    </FieldTile>
+                  </div>
+                )}
+
                 {record.description && (
                   <div style={{ marginTop: 16 }}>
-                    <FieldLabel>隐患描述</FieldLabel>
+                    <FieldLabel>缺陷项描述</FieldLabel>
                     <TextBlock>{record.description}</TextBlock>
                   </div>
                 )}
 
                 {photos.defect.length > 0 && (
                   <div style={{ marginTop: 16 }}>
-                    <FieldLabel><CameraOutlined style={{ marginRight: 4 }} />缺陷照片</FieldLabel>
+                    <FieldLabel><CameraOutlined style={{ marginRight: 4 }} />证据（整改前照片）</FieldLabel>
                     <PhotoGallery photos={photos.defect} />
                   </div>
                 )}
@@ -1480,10 +1505,10 @@ export default function HazardLedgerDetailPage() {
 
             {editSection === 'rectification' ? (
               <>
-                {/* 整改期限 — 只读，自动计算 */}
+                {/* 目标完成日期 — 只读，自动计算 */}
                 <Row gutter={[16, 12]} style={{ marginBottom: 16 }}>
                   <Col span={12}>
-                    <FieldLabel>整改期限</FieldLabel>
+                    <FieldLabel>目标完成日期</FieldLabel>
                     <FieldTile>
                       <Text style={{ fontSize: 14, fontWeight: 500 }}>
                         {record.deadline
@@ -1504,11 +1529,18 @@ export default function HazardLedgerDetailPage() {
                   </Col>
                 </Row>
 
-                <FieldEditor label="纠正预防措施">
-                  <TextArea rows={5}
+                <FieldEditor label="整改回复">
+                  <TextArea rows={4}
                     value={fieldVal('rectification_reply')}
                     onChange={(e) => setEdits((p) => ({ ...p, rectification_reply: e.target.value }))}
-                    placeholder="请详细描述纠正预防措施，包括具体整改措施、实施过程、完成情况等" />
+                    placeholder="请详细描述整改过程、实施情况及完成情况" />
+                </FieldEditor>
+
+                <FieldEditor label="纠正预防措施（CAPA）">
+                  <TextArea rows={3}
+                    value={fieldVal('capa_measures')}
+                    onChange={(e) => setEdits((p) => ({ ...p, capa_measures: e.target.value }))}
+                    placeholder="针对该隐患制定的纠正与预防措施，如完善制度、增加巡检频次、加装防护设施等" />
                 </FieldEditor>
 
                 {/* 整改照片上传 */}
@@ -1548,7 +1580,7 @@ export default function HazardLedgerDetailPage() {
               <>
                 <Row gutter={[16, 12]}>
                   <Col span={12}>
-                    <FieldLabel>整改期限</FieldLabel>
+                    <FieldLabel>目标完成日期</FieldLabel>
                     <FieldTile>
                       {record.deadline ? (
                         <span>
@@ -1573,9 +1605,16 @@ export default function HazardLedgerDetailPage() {
                 </Row>
 
                 <div style={{ marginTop: 16 }}>
-                  <FieldLabel><EditOutlined style={{ marginRight: 4 }} />纠正预防措施</FieldLabel>
+                  <FieldLabel><EditOutlined style={{ marginRight: 4 }} />整改回复</FieldLabel>
                   <FieldTile>
                     <Text style={{ fontSize: 14 }}>{record.rectification_reply || '-'}</Text>
+                  </FieldTile>
+                </div>
+
+                <div style={{ marginTop: 16 }}>
+                  <FieldLabel><EditOutlined style={{ marginRight: 4 }} />纠正预防措施（CAPA）</FieldLabel>
+                  <FieldTile>
+                    <Text style={{ fontSize: 14 }}>{record.capa_measures || '-'}</Text>
                   </FieldTile>
                 </div>
 
@@ -1722,6 +1761,23 @@ export default function HazardLedgerDetailPage() {
               items={buildReviewTimelineItems()}
               style={{ marginTop: 4 }}
             />
+
+            {/* 审批人留痕（每级只保留最后一次，无记录不展示） */}
+            {reviewerTrail.some(([, name]) => name) && (
+              <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #ede9e4' }}>
+                <FieldLabel>审批人</FieldLabel>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 }}>
+                  {reviewerTrail
+                    .filter(([, name]) => name)
+                    .map(([label, name, at]) => (
+                      <Text key={label} style={{ fontSize: 13 }}>
+                        {label}：{name}
+                        {at ? `（${fmtDate(at, 'YYYY-MM-DD HH:mm')}）` : ''}
+                      </Text>
+                    ))}
+                </div>
+              </div>
+            )}
 
             {/* 已关闭状态 */}
             {!currentLevel && (rStatus === 'completed' || rStatus === 'closed') && (

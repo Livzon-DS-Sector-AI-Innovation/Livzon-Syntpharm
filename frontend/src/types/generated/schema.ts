@@ -34566,6 +34566,11 @@ export interface components {
              */
             hazard_no?: string | null;
             /**
+             * Inspection Name
+             * @description 检查名称
+             */
+            inspection_name?: string | null;
+            /**
              * Inspection Category
              * @description 检查类别（日常检查/专项检查…）
              */
@@ -34642,8 +34647,13 @@ export interface components {
              */
             rectification_reply?: string | null;
             /**
+             * Capa Measures
+             * @description 纠正预防措施（人工填写）
+             */
+            capa_measures?: string | null;
+            /**
              * Deadline
-             * @description 整改期限
+             * @description 目标完成日期
              */
             deadline?: string | null;
             /**
@@ -34677,6 +34687,11 @@ export interface components {
              * @description 隐患编号
              */
             hazard_no: string;
+            /**
+             * Inspection Name
+             * @description 检查名称
+             */
+            inspection_name?: string | null;
             /**
              * Inspection Category
              * @description 检查类别（日常检查/专项检查…）
@@ -34758,8 +34773,13 @@ export interface components {
              */
             rectification_reply?: string | null;
             /**
+             * Capa Measures
+             * @description 纠正预防措施（人工填写）
+             */
+            capa_measures?: string | null;
+            /**
              * Deadline
-             * @description 整改期限
+             * @description 目标完成日期
              */
             deadline?: string | null;
             /**
@@ -34791,6 +34811,8 @@ export interface components {
             rectification_status: string;
             /** Status */
             status: string;
+            /** Closed At */
+            closed_at?: string | null;
             /**
              * Verify Level 1 Status
              * @default pending
@@ -34806,6 +34828,24 @@ export interface components {
              * @default pending
              */
             verify_level_3_status: string;
+            /** Verify Level 1 Reviewer Id */
+            verify_level_1_reviewer_id?: string | null;
+            /** Verify Level 1 Reviewer Name */
+            verify_level_1_reviewer_name?: string | null;
+            /** Verify Level 1 Reviewed At */
+            verify_level_1_reviewed_at?: string | null;
+            /** Verify Level 2 Reviewer Id */
+            verify_level_2_reviewer_id?: string | null;
+            /** Verify Level 2 Reviewer Name */
+            verify_level_2_reviewer_name?: string | null;
+            /** Verify Level 2 Reviewed At */
+            verify_level_2_reviewed_at?: string | null;
+            /** Verify Level 3 Reviewer Id */
+            verify_level_3_reviewer_id?: string | null;
+            /** Verify Level 3 Reviewer Name */
+            verify_level_3_reviewer_name?: string | null;
+            /** Verify Level 3 Reviewed At */
+            verify_level_3_reviewed_at?: string | null;
             /**
              * Ai Node Progress
              * @default pending_input
@@ -34879,6 +34919,11 @@ export interface components {
              * @description 隐患编号
              */
             hazard_no?: string | null;
+            /**
+             * Inspection Name
+             * @description 检查名称
+             */
+            inspection_name?: string | null;
             /**
              * Inspection Category
              * @description 检查类别（日常检查/专项检查…）
@@ -34956,8 +35001,13 @@ export interface components {
              */
             rectification_reply?: string | null;
             /**
+             * Capa Measures
+             * @description 纠正预防措施（人工填写）
+             */
+            capa_measures?: string | null;
+            /**
              * Deadline
-             * @description 整改期限
+             * @description 目标完成日期
              */
             deadline?: string | null;
             /**
@@ -46326,6 +46376,11 @@ export interface components {
              * @description 整改回复内容（新字段）
              */
             rectification_reply?: string | null;
+            /**
+             * Capa Measures
+             * @description 纠正预防措施（人工填写）
+             */
+            capa_measures?: string | null;
             /**
              * Actual Completion Date
              * @description 整改完成时间（默认当前时间）

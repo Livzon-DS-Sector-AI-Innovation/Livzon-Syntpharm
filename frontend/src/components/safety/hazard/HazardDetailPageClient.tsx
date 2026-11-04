@@ -924,6 +924,12 @@ export function HazardDetailPageClient() {
                     </FieldTile>
                   </Col>
                   <Col span={8}>
+                    <FieldLabel>检查名称</FieldLabel>
+                    <FieldTile>
+                      <Text style={{ fontSize: 14 }}>{record.inspection_name || '-'}</Text>
+                    </FieldTile>
+                  </Col>
+                  <Col span={8}>
                     <FieldLabel>检查类别</FieldLabel>
                     <FieldTile>
                       {record.inspection_category
@@ -1105,10 +1111,10 @@ export function HazardDetailPageClient() {
 
             {editSection === 'rectification' ? (
               <>
-                {/* 整改期限 — 只读，自动计算 */}
+                {/* 目标完成日期 — 只读，自动计算 */}
                 <Row gutter={[16, 12]} style={{ marginBottom: 16 }}>
                   <Col span={12}>
-                    <FieldLabel>整改期限</FieldLabel>
+                    <FieldLabel>目标完成日期</FieldLabel>
                     <FieldTile>
                       <Text style={{ fontSize: 14, fontWeight: 500 }}>
                         {record.deadline
@@ -1129,11 +1135,18 @@ export function HazardDetailPageClient() {
                   </Col>
                 </Row>
 
-                <FieldEditor label="纠正预防措施">
-                  <TextArea rows={5}
+                <FieldEditor label="整改回复">
+                  <TextArea rows={4}
                     value={fieldVal('rectification_reply')}
                     onChange={(e) => setEdits((p: Partial<Record<string, string>>) => ({ ...p, rectification_reply: e.target.value }))}
-                    placeholder="请详细描述纠正预防措施，包括具体整改措施、实施过程、完成情况等" />
+                    placeholder="请详细描述整改过程、实施情况及完成情况" />
+                </FieldEditor>
+
+                <FieldEditor label="纠正预防措施（CAPA）">
+                  <TextArea rows={3}
+                    value={fieldVal('capa_measures')}
+                    onChange={(e) => setEdits((p: Partial<Record<string, string>>) => ({ ...p, capa_measures: e.target.value }))}
+                    placeholder="针对该隐患制定的纠正与预防措施，如完善制度、增加巡检频次、加装防护设施等" />
                 </FieldEditor>
 
                 {/* 整改照片上传 */}
@@ -1173,7 +1186,7 @@ export function HazardDetailPageClient() {
               <>
                 <Row gutter={[16, 12]}>
                   <Col span={12}>
-                    <FieldLabel>整改期限</FieldLabel>
+                    <FieldLabel>目标完成日期</FieldLabel>
                     <FieldTile>
                       {record.deadline ? (
                         <span>
@@ -1198,9 +1211,16 @@ export function HazardDetailPageClient() {
                 </Row>
 
                 <div style={{ marginTop: 16 }}>
-                  <FieldLabel><EditOutlined style={{ marginRight: 4 }} />纠正预防措施</FieldLabel>
+                  <FieldLabel><EditOutlined style={{ marginRight: 4 }} />整改回复</FieldLabel>
                   <FieldTile>
                     <Text style={{ fontSize: 14 }}>{record.rectification_reply || '-'}</Text>
+                  </FieldTile>
+                </div>
+
+                <div style={{ marginTop: 16 }}>
+                  <FieldLabel><EditOutlined style={{ marginRight: 4 }} />纠正预防措施（CAPA）</FieldLabel>
+                  <FieldTile>
+                    <Text style={{ fontSize: 14 }}>{record.capa_measures || '-'}</Text>
                   </FieldTile>
                 </div>
 
@@ -1252,9 +1272,49 @@ export function HazardDetailPageClient() {
             />
 
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <Text style={{ fontSize: 13, color: '#5d5b54', marginRight: 8 }}>整改状态</Text>
+              <Text style={{ fontSize: 13, color: '#5d5b54', marginRight: 8 }}>整改进度</Text>
               {rectificationPill}
             </div>
+
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <Text style={{ fontSize: 13, color: '#5d5b54', marginRight: 8 }}>关闭状态</Text>
+              {record.status === 'closed' ? (
+                <StatusPill color="#1f7a45" bg="#d9f3e1">已关闭</StatusPill>
+              ) : (
+                <StatusPill color="#5d5b54" bg="#f0eeec">未关闭</StatusPill>
+              )}
+              {record.closed_at && (
+                <Text style={{ fontSize: 12, color: '#787671', marginLeft: 8 }}>
+                  {fmtDate(record.closed_at, 'YYYY-MM-DD')}
+                </Text>
+              )}
+            </div>
+
+            {(record.verify_level_1_reviewer_name ||
+              record.verify_level_2_reviewer_name ||
+              record.verify_level_3_reviewer_name) && (
+              <div style={{ marginBottom: 20 }}>
+                <FieldLabel>审批人</FieldLabel>
+                <FieldTile>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {(
+                      [
+                        ['一级复核', record.verify_level_1_reviewer_name, record.verify_level_1_reviewed_at],
+                        ['二级复核', record.verify_level_2_reviewer_name, record.verify_level_2_reviewed_at],
+                        ['三级复核', record.verify_level_3_reviewer_name, record.verify_level_3_reviewed_at],
+                      ] as [string, string | null | undefined, string | null | undefined][]
+                    )
+                      .filter(([, name]) => name)
+                      .map(([label, name, at]) => (
+                        <Text key={label} style={{ fontSize: 13 }}>
+                          {label}：{name}
+                          {at ? `（${fmtDate(at, 'YYYY-MM-DD HH:mm')}）` : ''}
+                        </Text>
+                      ))}
+                  </div>
+                </FieldTile>
+              </div>
+            )}
 
             <Flex gap={16} wrap="wrap" justify="center">
               {reviewCard(1, '部门负责人复核', v1, currentLevel === 1)}

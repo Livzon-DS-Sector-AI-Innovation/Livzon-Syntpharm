@@ -52,6 +52,7 @@ def _debug_log(msg: str) -> None:
 BITABLE_TO_MODEL: dict[str, str] = {
     # ── 基本信息 ──
     "检查日期": "discovered_at",
+    "检查名称": "inspection_name",  # text
     "检查人员": "discovered_by_name",  # person 类型 → 取 name
     "检查人员.部门": "inspector_department",  # multi_select → 逗号拼接（60 部门选项）
     "检查类别": "inspection_category",  # multi_select → 逗号拼接
@@ -68,9 +69,12 @@ BITABLE_TO_MODEL: dict[str, str] = {
     "缺陷图片": "defect_photos",  # attachment → JSON 路径数组
     "整改后图片": "rectification_photos",
     # ── 整改相关（整改状态为平台→Bitable 单向，不在此映射）──
-    "纠正预防措施": "rectification_reply",
+    # 「纠正预防措施」自 2026-11 起落 capa_measures（人工填写），不再写 rectification_reply
+    "纠正预防措施": "capa_measures",
     "整改期限": "deadline",
     "整改完成时间": "actual_completion_date",
+    # 未映射（Bitable 侧列未确认，建列后再加）：
+    #   关闭状态 → status、完成/关闭日期 → closed_at、审批人 → verify_level_3_reviewer_name
     # ── 三级复核（Bitable 审批字段）──
     "部门负责人复核": "verify_level_1_status",  # single_select: 已同意→approved / 未同意→rejected
     "分管领导复核": "verify_level_2_status",  # single_select: 已同意→approved / 未同意→rejected
@@ -1797,6 +1801,16 @@ async def push_hazard_to_bitable(hazard: Any) -> bool:
     fields = _map_model_to_bitable(hazard)
     if not fields:
         return True
+
+    # 过滤 Bitable 表中不存在的列：update_record 遇到未知字段名会整次 400，
+    # 新增映射（如「检查名称」）必须先建列，未建时只跳过该列而不是让整次回写失败。
+    if _field_type_cache:
+        missing = [cn for cn in fields if cn not in _field_type_cache]
+        if missing:
+            logger.warning("Bitable 表缺少字段，跳过回写: %s", missing)
+            fields = {cn: v for cn, v in fields.items() if cn in _field_type_cache}
+        if not fields:
+            return True
 
     bitable = SafetyBitableClient()
     await _set_sync_ignore(hazard.feishu_record_id, ttl=30)

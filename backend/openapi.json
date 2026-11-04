@@ -129177,6 +129177,19 @@
             "title": "Hazard No",
             "description": "\u9690\u60a3\u7f16\u53f7\uff08\u7559\u7a7a\u81ea\u52a8\u751f\u6210\uff09"
           },
+          "inspection_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Name",
+            "description": "\u68c0\u67e5\u540d\u79f0"
+          },
           "inspection_category": {
             "anyOf": [
               {
@@ -129386,6 +129399,18 @@
             "title": "Rectification Reply",
             "description": "\u6574\u6539\u56de\u590d\u5185\u5bb9"
           },
+          "capa_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capa Measures",
+            "description": "\u7ea0\u6b63\u9884\u9632\u63aa\u65bd\uff08\u4eba\u5de5\u586b\u5199\uff09"
+          },
           "deadline": {
             "anyOf": [
               {
@@ -129397,7 +129422,7 @@
               }
             ],
             "title": "Deadline",
-            "description": "\u6574\u6539\u671f\u9650"
+            "description": "\u76ee\u6807\u5b8c\u6210\u65e5\u671f"
           },
           "actual_completion_date": {
             "anyOf": [
@@ -129461,6 +129486,19 @@
             "maxLength": 64,
             "title": "Hazard No",
             "description": "\u9690\u60a3\u7f16\u53f7"
+          },
+          "inspection_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Name",
+            "description": "\u68c0\u67e5\u540d\u79f0"
           },
           "inspection_category": {
             "anyOf": [
@@ -129644,6 +129682,18 @@
             "title": "Rectification Reply",
             "description": "\u6574\u6539\u56de\u590d\u5185\u5bb9"
           },
+          "capa_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capa Measures",
+            "description": "\u7ea0\u6b63\u9884\u9632\u63aa\u65bd\uff08\u4eba\u5de5\u586b\u5199\uff09"
+          },
           "deadline": {
             "anyOf": [
               {
@@ -129655,7 +129705,7 @@
               }
             ],
             "title": "Deadline",
-            "description": "\u6574\u6539\u671f\u9650"
+            "description": "\u76ee\u6807\u5b8c\u6210\u65e5\u671f"
           },
           "actual_completion_date": {
             "anyOf": [
@@ -129720,6 +129770,18 @@
             "type": "string",
             "title": "Status"
           },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
           "verify_level_1_status": {
             "type": "string",
             "title": "Verify Level 1 Status",
@@ -129734,6 +129796,111 @@
             "type": "string",
             "title": "Verify Level 3 Status",
             "default": "pending"
+          },
+          "verify_level_1_reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 1 Reviewer Id"
+          },
+          "verify_level_1_reviewer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 1 Reviewer Name"
+          },
+          "verify_level_1_reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 1 Reviewed At"
+          },
+          "verify_level_2_reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 2 Reviewer Id"
+          },
+          "verify_level_2_reviewer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 2 Reviewer Name"
+          },
+          "verify_level_2_reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 2 Reviewed At"
+          },
+          "verify_level_3_reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 3 Reviewer Id"
+          },
+          "verify_level_3_reviewer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 3 Reviewer Name"
+          },
+          "verify_level_3_reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 3 Reviewed At"
           },
           "ai_node_progress": {
             "type": "string",
@@ -129919,6 +130086,19 @@
             ],
             "title": "Hazard No",
             "description": "\u9690\u60a3\u7f16\u53f7"
+          },
+          "inspection_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Name",
+            "description": "\u68c0\u67e5\u540d\u79f0"
           },
           "inspection_category": {
             "anyOf": [
@@ -130129,6 +130309,18 @@
             "title": "Rectification Reply",
             "description": "\u6574\u6539\u56de\u590d\u5185\u5bb9"
           },
+          "capa_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capa Measures",
+            "description": "\u7ea0\u6b63\u9884\u9632\u63aa\u65bd\uff08\u4eba\u5de5\u586b\u5199\uff09"
+          },
           "deadline": {
             "anyOf": [
               {
@@ -130140,7 +130332,7 @@
               }
             ],
             "title": "Deadline",
-            "description": "\u6574\u6539\u671f\u9650"
+            "description": "\u76ee\u6807\u5b8c\u6210\u65e5\u671f"
           },
           "actual_completion_date": {
             "anyOf": [
@@ -157136,6 +157328,18 @@
             ],
             "title": "Rectification Reply",
             "description": "\u6574\u6539\u56de\u590d\u5185\u5bb9\uff08\u65b0\u5b57\u6bb5\uff09"
+          },
+          "capa_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capa Measures",
+            "description": "\u7ea0\u6b63\u9884\u9632\u63aa\u65bd\uff08\u4eba\u5de5\u586b\u5199\uff09"
           },
           "actual_completion_date": {
             "anyOf": [

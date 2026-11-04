@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.jobs import JobRunner, submit_job, submit_job_safe
-from app.core.storage import delete_object
+from app.core.storage import delete_object, get_object
 from app.core.storage import is_enabled as minio_enabled
 from app.modules.safety.feishu.notification import send_user_card
 from app.modules.safety.models import HazardReport
@@ -497,6 +497,7 @@ class HazardService:
         corrective_preventive_measures: str | None = None,
         rectification_reply: str | None = None,
         actual_completion_date: datetime | None = None,
+        capa_measures: str | None = None,
     ) -> HazardReport | None:
         """整改回复：in_progress → ai_reviewing（AI 初审作为复核阶段第一道关卡）。"""
         hazard = await self.repo.get_hazard_by_id(hazard_id)
@@ -505,6 +506,8 @@ class HazardService:
         update_data: dict[str, Any] = {
             "rectification_status": "ai_reviewing",
         }
+        if capa_measures is not None:
+            update_data["capa_measures"] = capa_measures
         # 整改完成时间：优先用传入值，其次保留已有值，最后 fallback 当前时间
         if actual_completion_date:
             update_data["actual_completion_date"] = actual_completion_date
@@ -574,10 +577,18 @@ class HazardService:
         ):
             return None
 
+        # 审批人留痕：每级只保留最后一次（同一级被驳回后重审会覆盖）
+        reviewer_data: dict[str, Any] = {
+            f"verify_level_{level}_reviewer_id": user_id,
+            f"verify_level_{level}_reviewer_name": user_name,
+            f"verify_level_{level}_reviewed_at": datetime.now(),
+        }
+
         if action == "rejected":
             update_data: dict[str, Any] = {
                 "rectification_status": "rejected",
                 f"verify_level_{level}_status": "rejected",
+                **reviewer_data,
             }
             return await self.repo.update_hazard(hazard_id, update_data)
 
@@ -586,13 +597,16 @@ class HazardService:
             update_data: dict[str, Any] = {  # type: ignore[no-redef]
                 "rectification_status": "closed",
                 "status": "closed",
+                "closed_at": datetime.now(),
                 "verify_level_3_status": "approved",
+                **reviewer_data,
             }
         else:
             next_status = f"level{level}_approved"
             update_data: dict[str, Any] = {  # type: ignore[no-redef]
                 "rectification_status": next_status,
                 f"verify_level_{level}_status": "approved",
+                **reviewer_data,
             }
         updated = await self.repo.update_hazard(hazard_id, update_data)
 
@@ -651,6 +665,18 @@ class HazardService:
             "verify_level_1_status": "pending",
             "verify_level_2_status": "pending",
             "verify_level_3_status": "pending",
+            # 重置关闭状态与审批人留痕（驳回后重新走流程）
+            "status": "open",
+            "closed_at": None,
+            "verify_level_1_reviewer_id": None,
+            "verify_level_1_reviewer_name": None,
+            "verify_level_1_reviewed_at": None,
+            "verify_level_2_reviewer_id": None,
+            "verify_level_2_reviewer_name": None,
+            "verify_level_2_reviewed_at": None,
+            "verify_level_3_reviewer_id": None,
+            "verify_level_3_reviewer_name": None,
+            "verify_level_3_reviewed_at": None,
             # 重置 AI 初审状态，重新审查
             "ai_review_status": "pending",
             "ai_review_result": None,
@@ -861,7 +887,22 @@ class HazardService:
                 except Exception as exc:
                     logger.warning("无法读取图片 %s: %s", found_path, exc)
             else:
-                # 文件不存在，记录警告以便排查（AI 审查缺少图片时可根据此日志定位）
+                # 本地文件不存在 → MinIO 模式下存的是 object_key，回落到对象存储读取
+                if minio_enabled():
+                    try:
+                        obj = get_object("safety", p_str)
+                    except Exception:
+                        obj = None
+                        logger.warning("MinIO 读取失败: key=%s", p_str, exc_info=True)
+                    if obj:
+                        obj_data, obj_type = obj
+                        urls.append(
+                            f"data:{obj_type or 'image/jpeg'};base64,"
+                            f"{base64.b64encode(obj_data).decode()}"
+                        )
+                        logger.debug("从 MinIO 读取图片: %s (%s)", p_str, obj_type)
+                        continue
+                # 仍未取到，记录警告以便排查（AI 审查缺少图片时可根据此日志定位）
                 logger.warning(
                     "defect_photos 本地文件不存在: path=%s (checked: %s)",
                     p_str,

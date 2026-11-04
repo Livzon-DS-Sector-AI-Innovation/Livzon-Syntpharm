@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
+from app.core.image_utils import compress_image
 from app.core.jobs import submit_job, submit_job_safe
 from app.core.response import build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
@@ -193,9 +194,9 @@ async def handler(  # noqa: F811
 ) -> Any:
     """上传隐患缺陷图片，追加到 defect_photos JSON 数组"""
 
-    file_ext = os.path.splitext(file.filename or ".png")[1]
-    safe_name = f"hazard_{hazard_id}_{int(datetime.now().timestamp())}{file_ext}"
     content = await file.read()
+    content, file_ext, content_type = compress_image(content, file.filename, file.content_type)
+    safe_name = f"hazard_{hazard_id}_{int(datetime.now().timestamp())}{file_ext}"
 
     if minio_enabled():
         object_key = f"hazard/{safe_name}"
@@ -204,7 +205,7 @@ async def handler(  # noqa: F811
             object_key,
             content,
             len(content),
-            file.content_type or "image/jpeg",
+            content_type,
         )
         stored_path = object_key
     else:
@@ -235,9 +236,9 @@ async def handler(  # noqa: F811
 ) -> Any:
     """上传整改后图片，追加到 rectification_photos JSON 数组"""
 
-    file_ext = os.path.splitext(file.filename or ".png")[1]
-    safe_name = f"rectification_{hazard_id}_{int(datetime.now().timestamp())}{file_ext}"
     content = await file.read()
+    content, file_ext, content_type = compress_image(content, file.filename, file.content_type)
+    safe_name = f"rectification_{hazard_id}_{int(datetime.now().timestamp())}{file_ext}"
 
     if minio_enabled():
         object_key = f"hazard/{safe_name}"
@@ -246,7 +247,7 @@ async def handler(  # noqa: F811
             object_key,
             content,
             len(content),
-            file.content_type or "image/jpeg",
+            content_type,
         )
         stored_path = object_key
     else:
@@ -303,6 +304,7 @@ async def handler(  # noqa: F811
         corrective_preventive_measures=data.corrective_preventive_measures,
         rectification_reply=data.rectification_reply,
         actual_completion_date=data.actual_completion_date,
+        capa_measures=data.capa_measures,
     )
     if not item:
         return build_response(code=400, message="无法回复，当前状态不允许")

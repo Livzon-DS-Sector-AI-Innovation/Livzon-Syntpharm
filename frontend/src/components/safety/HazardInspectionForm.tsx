@@ -43,6 +43,7 @@ interface UserOption {
 }
 
 export interface InspectionFormValues {
+  inspection_name?: string                    // 检查名称（Bitable「检查名称」）
   inspection_category?: string | string[]     // 逗号分隔的多选值（匹配 Bitable multi_select）
   discovered_by?: string                      // user UUID (person field)
   discovered_by_name?: string                 // display name
@@ -118,6 +119,7 @@ export default function HazardInspectionForm({
   useEffect(() => {
     if (initialValues) {
       form.setFieldsValue({
+        inspection_name: initialValues.inspection_name,
         // inspection_category / inspector_department 兼容字符串和数组
         inspection_category: Array.isArray(initialValues.inspection_category)
           ? initialValues.inspection_category
@@ -293,6 +295,14 @@ export default function HazardInspectionForm({
       >
         <Row gutter={16}>
           <Col span={24}>
+            <Form.Item name="inspection_name" label="检查名称">
+              <Input placeholder="如「2026 年 11 月合成车间月度安全检查」" maxLength={255} />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={24}>
             <Form.Item
               name="inspection_category"
               label="检查类别"
@@ -408,10 +418,10 @@ export default function HazardInspectionForm({
           </Col>
         </Row>
 
-        <Form.Item name="description" label="隐患描述">
+        <Form.Item name="description" label="缺陷项描述">
           <TextArea
             rows={3}
-            placeholder="填写隐患描述"
+            placeholder="填写缺陷项描述"
           />
         </Form.Item>
 

@@ -10,6 +10,7 @@ import { HazardType, HazardLevel, HazardCategory } from "./enums"
 export interface HazardReport {
   id: string
   hazard_no: string
+  inspection_name?: string
   inspection_category?: string
   hazard_type: HazardType
   hazard_level: HazardLevel
@@ -27,15 +28,28 @@ export interface HazardReport {
   rectification_responsible_person_name?: string
   corrective_preventive_measures?: string
   rectification_reply?: string
+  capa_measures?: string
   deadline?: string
   actual_completion_date?: string
   rectification_photos?: string
   rectification_status: string
-  // 三级复核（仅状态，审核人/时间由系统自动记录）
+  // 三级复核
   verify_level_1_status: string
   verify_level_2_status: string
   verify_level_3_status: string
+  // 审批人留痕（每级只保留最后一次）
+  verify_level_1_reviewer_id?: string | null
+  verify_level_1_reviewer_name?: string | null
+  verify_level_1_reviewed_at?: string | null
+  verify_level_2_reviewer_id?: string | null
+  verify_level_2_reviewer_name?: string | null
+  verify_level_2_reviewed_at?: string | null
+  verify_level_3_reviewer_id?: string | null
+  verify_level_3_reviewer_name?: string | null
+  verify_level_3_reviewed_at?: string | null
+  // 关闭状态：open=未关闭 / closed=已关闭
   status: string
+  closed_at?: string | null
   check_id?: string
   notes?: string
   // ── AI 流程字段 ──
@@ -63,6 +77,7 @@ export interface HazardReport {
 
 export interface HazardReportFormData {
   hazard_no: string
+  inspection_name?: string
   inspection_category?: string
   inspector_department?: string
   hazard_type?: HazardType
@@ -80,6 +95,7 @@ export interface HazardReportFormData {
   rectification_responsible_person_name?: string
   corrective_preventive_measures?: string
   rectification_reply?: string
+  capa_measures?: string
   deadline?: string
   actual_completion_date?: string
   rectification_photos?: string
@@ -119,6 +135,7 @@ export interface RectificationReplyRequest {
   rectification_photos?: string
   corrective_preventive_measures?: string
   rectification_reply?: string
+  capa_measures?: string
   actual_completion_date?: string
 }
 
