@@ -5369,7 +5369,11 @@ export interface paths {
         put?: never;
         /**
          * 执行隐患AI工作流
-         * @description 执行隐患AI工作流脚本。AI从已有数据库数据读取上下文，无需额外传入参数。
+         * @description 提交隐患AI工作流脚本（后台异步执行）。
+         *
+         *     AI 调用耗时通常远超 HTTP 请求预算（AGENTS.md：请求内不执行超过 5 秒的操作），
+         *     所以这里只做存在性校验 + 置「执行中」标记，真正的 AI 调用交给后台任务；
+         *     前端轮询隐患详情，读 `ai_node_progress` / `ai_error_message` 取最终结果。
          *
          *     没有 body 参数——FastAPI 不会解析请求 body，避免空 body + JSON Content-Type 触发 422。
          */
@@ -33930,6 +33934,44 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * HazardAiRunApiResponse
+         * @description AI 工作流提交响应包装
+         */
+        HazardAiRunApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["HazardAiRunData"] | null;
+        };
+        /**
+         * HazardAiRunData
+         * @description AI 工作流提交结果（后端异步执行，前端轮询隐患详情取最终结果）
+         */
+        HazardAiRunData: {
+            /**
+             * Job Id
+             * @description 后台任务 ID
+             */
+            job_id: string;
+            /**
+             * Hazard Id
+             * @description 隐患 ID
+             */
+            hazard_id: string;
+            /**
+             * Script Number
+             * @description AI 工作流脚本编号
+             */
+            script_number: number;
         };
         /**
          * HazardApiResponse
@@ -70127,7 +70169,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardAiRunApiResponse"];
                 };
             };
             /** @description Validation Error */

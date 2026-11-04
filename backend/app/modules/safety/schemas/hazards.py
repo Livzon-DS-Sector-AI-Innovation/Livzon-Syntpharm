@@ -272,3 +272,19 @@ class HazardRectificationNotifyApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: HazardRectificationNotifyData | None = None
+
+
+class HazardAiRunData(BaseModel):
+    """AI 工作流提交结果（后端异步执行，前端轮询隐患详情取最终结果）"""
+
+    job_id: str = Field(..., description="后台任务 ID")
+    hazard_id: str = Field(..., description="隐患 ID")
+    script_number: int = Field(..., description="AI 工作流脚本编号")
+
+
+class HazardAiRunApiResponse(BaseModel):
+    """AI 工作流提交响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: HazardAiRunData | None = None
