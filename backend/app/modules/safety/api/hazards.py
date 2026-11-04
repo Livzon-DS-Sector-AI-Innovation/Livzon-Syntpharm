@@ -25,11 +25,15 @@ from app.modules.safety.schemas import (
     DepartmentSafetyOfficerResponse,
     HazardApiResponse,
     HazardListApiResponse,
+    HazardRectificationNotifyApiResponse,
+    HazardRectificationNotifyData,
     HazardReportCreate,
     HazardReportResponse,
     HazardReportUpdate,
     HazardStatsApiResponse,
     HazardStatsResponse,
+    HazardVerifyNotifyApiResponse,
+    HazardVerifyNotifyData,
     RectificationReplyRequest,
     VerifyLevelRequest,
 )
@@ -418,7 +422,7 @@ async def handler(  # noqa: F811
 
 @hazards_router.post(  # type: ignore[no-redef]
     "/hazards/{hazard_id}/rectification/notify-reviewer",
-    response_model=HazardApiResponse,
+    response_model=HazardVerifyNotifyApiResponse,
     summary="飞书通知当前复核人",
 )
 async def handler(  # noqa: F811
@@ -466,9 +470,9 @@ async def handler(  # noqa: F811
         lambda _job_id: _send_verify_notification(hazard, current_level),
     )
 
-    return build_response(
+    return HazardVerifyNotifyApiResponse(
         message=f"已向{level_labels[current_level]}发送飞书通知",
-        data={"level": current_level, "level_label": level_labels[current_level]},
+        data=HazardVerifyNotifyData(level=current_level, level_label=level_labels[current_level]),
     )
 
 
@@ -508,7 +512,7 @@ async def handler(  # noqa: F811
 
 @hazards_router.post(  # type: ignore[no-redef]
     "/hazards/{hazard_id}/rectification/notify-rectification",
-    response_model=HazardApiResponse,
+    response_model=HazardRectificationNotifyApiResponse,
     summary="飞书通知整改责任人",
 )
 async def handler(  # noqa: F811
@@ -526,9 +530,9 @@ async def handler(  # noqa: F811
         lambda _job_id: _send_rectification_notification(hazard),
     )
 
-    return build_response(
+    return HazardRectificationNotifyApiResponse(
         message="已向整改责任人发送飞书通知",
-        data={"target": hazard.rectification_responsible_person_name or "未知"},
+        data=HazardRectificationNotifyData(target=hazard.rectification_responsible_person_name or "未知"),
     )
 
 

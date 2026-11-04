@@ -34556,6 +34556,34 @@ export interface components {
             } | null;
         };
         /**
+         * HazardRectificationNotifyApiResponse
+         * @description 整改通知响应包装
+         */
+        HazardRectificationNotifyApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["HazardRectificationNotifyData"] | null;
+        };
+        /**
+         * HazardRectificationNotifyData
+         * @description 整改通知发送结果
+         */
+        HazardRectificationNotifyData: {
+            /**
+             * Target
+             * @description 整改责任人姓名，未知时为「未知」
+             */
+            target: string;
+        };
+        /**
          * HazardReportCreate
          * @description 创建隐患报告
          */
@@ -35135,6 +35163,39 @@ export interface components {
          * @enum {string}
          */
         HazardType: "unsafe_condition" | "unsafe_action" | "management_defect" | "environmental";
+        /**
+         * HazardVerifyNotifyApiResponse
+         * @description 复核通知响应包装
+         */
+        HazardVerifyNotifyApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["HazardVerifyNotifyData"] | null;
+        };
+        /**
+         * HazardVerifyNotifyData
+         * @description 复核通知发送结果
+         */
+        HazardVerifyNotifyData: {
+            /**
+             * Level
+             * @description 当前复核级别：1 部门负责人 / 2 分管领导 / 3 检查人员
+             */
+            level: number;
+            /**
+             * Level Label
+             * @description 复核级别名称
+             */
+            level_label: string;
+        };
         /**
          * HeaderColorEnum
          * @description 卡片头部颜色枚举
@@ -46625,6 +46686,84 @@ export interface components {
             usage_method?: string | null;
             /** Coa File Url */
             coa_file_url?: string | null;
+        };
+        /**
+         * RegulationContentApiResponse
+         * @description 操规内容响应包装
+         */
+        RegulationContentApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["RegulationContentData"] | null;
+        };
+        /**
+         * RegulationContentData
+         * @description 操规 Markdown 内容（供编辑器加载）
+         */
+        RegulationContentData: {
+            /**
+             * Regulation Id
+             * @description 操规 UUID（字符串形式）
+             */
+            regulation_id: string;
+            /**
+             * Regulation Name
+             * @description 操规名称
+             */
+            regulation_name: string;
+            /**
+             * Content
+             * @description 标准化 Markdown 内容
+             * @default
+             */
+            content: string;
+            /**
+             * Status
+             * @description 操规状态
+             * @default draft
+             */
+            status: string;
+        };
+        /**
+         * RegulationContentUpdateApiResponse
+         * @description 操规内容保存响应包装
+         */
+        RegulationContentUpdateApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["RegulationContentUpdateData"] | null;
+        };
+        /**
+         * RegulationContentUpdateData
+         * @description 操规内容保存结果
+         */
+        RegulationContentUpdateData: {
+            /**
+             * Regulation Id
+             * @description 操规 UUID（字符串形式）
+             */
+            regulation_id: string;
+            /**
+             * Status
+             * @description 保存后的操规状态
+             */
+            status: string;
         };
         /**
          * RegulationReviseRequest
@@ -70021,7 +70160,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardVerifyNotifyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70087,7 +70226,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardRectificationNotifyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -72357,7 +72496,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RegulationContentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -72394,7 +72533,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RegulationContentUpdateApiResponse"];
                 };
             };
             /** @description Validation Error */

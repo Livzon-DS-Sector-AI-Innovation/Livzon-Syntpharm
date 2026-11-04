@@ -6,6 +6,9 @@ type HazardListApiResponse = components['schemas']['HazardListApiResponse']
 type HazardStatsApiResponse = components['schemas']['HazardStatsApiResponse']
 type DepartmentLeaderApiResponse = components['schemas']['DepartmentLeaderApiResponse']
 type DepartmentSafetyOfficerApiResponse = components['schemas']['DepartmentSafetyOfficerApiResponse']
+type HazardVerifyNotifyApiResponse = components['schemas']['HazardVerifyNotifyApiResponse']
+type HazardRectificationNotifyApiResponse = components['schemas']['HazardRectificationNotifyApiResponse']
+type RegulationContentUpdateApiResponse = components['schemas']['RegulationContentUpdateApiResponse']
 
 type SafetyCheckListApiResponse = components['schemas']['SafetyCheckListApiResponse']
 type SafetyCheckApiResponse = components['schemas']['SafetyCheckApiResponse']
@@ -195,14 +198,14 @@ export async function verifyLevel(id: string, data: unknown, authHeaders?: Recor
 }
 
 export async function notifyReviewer(id: string, authHeaders?: Record<string, string>) {
-  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazards/${id}/rectification/notify-reviewer`, {
+  return apiFetch<HazardVerifyNotifyApiResponse>(`/api/v1/safety/hazards/${id}/rectification/notify-reviewer`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function notifyRectification(id: string, authHeaders?: Record<string, string>) {
-  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazards/${id}/rectification/notify-rectification`, {
+  return apiFetch<HazardRectificationNotifyApiResponse>(`/api/v1/safety/hazards/${id}/rectification/notify-rectification`, {
     method: 'POST',
     headers: authHeaders,
   })
@@ -637,7 +640,7 @@ export async function generateSop(formData: FormData, authHeaders?: Record<strin
 }
 
 export async function updateSopContent(regulationId: string, data: unknown, authHeaders?: Record<string, string>) {
-  return apiFetch<OperationRegulationApiResponse>(`/api/v1/safety/regulations/${regulationId}/content`, {
+  return apiFetch<RegulationContentUpdateApiResponse>(`/api/v1/safety/regulations/${regulationId}/content`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),

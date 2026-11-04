@@ -224,3 +224,35 @@ class RegulationRevisionListApiResponse(BaseModel):
     message: str = "success"
     data: list[RegulationRevisionResponse]
     meta: dict[str, Any] | None = None
+
+
+class RegulationContentData(BaseModel):
+    """操规 Markdown 内容（供编辑器加载）"""
+
+    regulation_id: str = Field(..., description="操规 UUID（字符串形式）")
+    regulation_name: str = Field(..., description="操规名称")
+    content: str = Field("", description="标准化 Markdown 内容")
+    status: str = Field("draft", description="操规状态")
+
+
+class RegulationContentApiResponse(BaseModel):
+    """操规内容响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: RegulationContentData | None = None
+
+
+class RegulationContentUpdateData(BaseModel):
+    """操规内容保存结果"""
+
+    regulation_id: str = Field(..., description="操规 UUID（字符串形式）")
+    status: str = Field(..., description="保存后的操规状态")
+
+
+class RegulationContentUpdateApiResponse(BaseModel):
+    """操规内容保存响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: RegulationContentUpdateData | None = None

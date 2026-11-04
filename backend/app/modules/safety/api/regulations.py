@@ -23,6 +23,10 @@ from app.modules.safety.schemas import (
     OperationRegulationListApiResponse,
     OperationRegulationResponse,
     OperationRegulationUpdate,
+    RegulationContentApiResponse,
+    RegulationContentData,
+    RegulationContentUpdateApiResponse,
+    RegulationContentUpdateData,
     RegulationReviseRequest,
     RegulationRevisionApiResponse,
     RegulationRevisionCreate,
@@ -403,7 +407,7 @@ async def handler(  # noqa: F811
 
 @regulations_router.get(  # type: ignore[no-redef]
     "/regulations/{regulation_id}/content",
-    response_model=OperationRegulationApiResponse,
+    response_model=RegulationContentApiResponse,
     summary="获取操规标准化内容",
 )
 async def handler(  # noqa: F811
@@ -415,12 +419,12 @@ async def handler(  # noqa: F811
     if not result:
         return build_response(code=404, message="操规不存在")
 
-    return build_response(data=result)
+    return RegulationContentApiResponse(data=RegulationContentData(**result))
 
 
 @regulations_router.put(  # type: ignore[no-redef]
     "/regulations/{regulation_id}/content",
-    response_model=OperationRegulationApiResponse,
+    response_model=RegulationContentUpdateApiResponse,
     summary="保存编辑后的操规内容",
 )
 async def handler(  # noqa: F811
@@ -433,12 +437,12 @@ async def handler(  # noqa: F811
         return build_response(code=404, message="操规不存在")
     await db.commit()
 
-    return build_response(
-        data={
-            "regulation_id": str(regulation_id),
-            "status": item.status if hasattr(item, "status") else "reviewed",
-        },
+    return RegulationContentUpdateApiResponse(
         message="内容保存成功",
+        data=RegulationContentUpdateData(
+            regulation_id=str(regulation_id),
+            status=item.status if hasattr(item, "status") else "reviewed",
+        ),
     )
 
 

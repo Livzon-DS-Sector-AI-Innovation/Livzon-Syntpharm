@@ -243,3 +243,32 @@ class DepartmentSafetyOfficerApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: DepartmentSafetyOfficerResponse | None = None
+
+
+class HazardVerifyNotifyData(BaseModel):
+    """复核通知发送结果"""
+
+    level: int = Field(..., description="当前复核级别：1 部门负责人 / 2 分管领导 / 3 检查人员")
+    level_label: str = Field(..., description="复核级别名称")
+
+
+class HazardVerifyNotifyApiResponse(BaseModel):
+    """复核通知响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: HazardVerifyNotifyData | None = None
+
+
+class HazardRectificationNotifyData(BaseModel):
+    """整改通知发送结果"""
+
+    target: str = Field(..., description="整改责任人姓名，未知时为「未知」")
+
+
+class HazardRectificationNotifyApiResponse(BaseModel):
+    """整改通知响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: HazardRectificationNotifyData | None = None
