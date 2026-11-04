@@ -5,6 +5,8 @@
 2. 改一页不能被识别成「删一页 + 加一页」——那页的讲稿就丢了。
 """
 
+from typing import Any
+
 from app.modules.agent.alignment import (
     CHANGE_SIMILARITY_THRESHOLD,
     PageSnapshot,
@@ -14,8 +16,8 @@ from app.modules.agent.alignment import (
 )
 
 
-def _layout(text: str, *, left: int = 100000, top: int = 200000, image_sha: str | None = None) -> list[dict]:
-    shape: dict = {
+def _layout(text: str, *, left: int = 100000, top: int = 200000, image_sha: str | None = None) -> list[dict[str, Any]]:
+    shape: dict[str, Any] = {
         "name": "标题",
         "kind": "text",
         "text": text,
@@ -29,7 +31,7 @@ def _layout(text: str, *, left: int = 100000, top: int = 200000, image_sha: str 
     return [shape]
 
 
-def _page(index: int, text: str, *, notes: str = "", layout: list[dict] | None = None) -> PageSnapshot:
+def _page(index: int, text: str, *, notes: str = "", layout: list[dict[str, Any]] | None = None) -> PageSnapshot:
     return PageSnapshot(index=index, page_text=text, notes=notes, layout=layout or [])
 
 

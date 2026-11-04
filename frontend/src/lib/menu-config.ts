@@ -521,6 +521,7 @@ export const moduleMenus: ModuleMenu[] = [
     children: [
       { key: "agent-overview", label: "能力概览", path: "/agent" },
       { key: "ppt-videos", label: "PPT 配音视频", path: "/agent/ppt-videos" },
+      { key: "agent-settings", label: "参数设置", path: "/agent/settings" },
     ],
   },
 

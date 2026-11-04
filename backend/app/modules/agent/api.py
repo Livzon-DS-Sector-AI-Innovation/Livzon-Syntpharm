@@ -20,12 +20,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
-from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
+from app.core.exceptions import AppException, BadRequestException, ForbiddenException, NotFoundException
 from app.core.llm.config import LLMConfigModel, get_config_by_id
 from app.core.llm.exceptions import LLMConfigError
 from app.core.response import DataResponse
-from app.core.storage import get_object_range, stat_object
-from app.modules.agent import ai_config
+from app.core.storage import delete_object, get_object_range, stat_object
+from app.modules.agent import ai_config, source_replace
 from app.modules.agent import config as agent_config
 from app.modules.agent import queue as agent_queue
 from app.modules.agent import service as agent_service
@@ -41,6 +41,8 @@ from app.modules.agent.schemas import (
     JobState,
     ManifestResponse,
     MessageResult,
+    PageImagesAccepted,
+    PageImagesState,
     PreviewResponse,
     ProjectAiSettingsRequest,
     ProjectDetail,
@@ -53,6 +55,7 @@ from app.modules.agent.schemas import (
     SlideEditResult,
     SlideEditTextRequest,
     SlideItem,
+    SlideRegionsResponse,
     SlideUpdateRequest,
     SourceApplyResult,
     SourceDiffSummary,
@@ -76,6 +79,39 @@ PERM_MANAGE = "agent:ppt-video:manage"
 
 
 # ── 错误翻译 ────────────────────────────────────────────────────────────────
+
+#: 499 不在 FastAPI/Starlette 的 status 常量里：客户端主动断开（nginx 也用 499 记这种请求）
+CLIENT_CLOSED_REQUEST = 499
+
+
+class ClientDisconnectedException(AppException):
+    """客户端已断开（HTTP 499）。
+
+    只用来打断事务：取消上传时响应没人读，但必须让 `get_db()` 走 rollback，
+    否则 `create_project()` 已 flush 的项目与逐页记录会被 commit 成半成品。
+    """
+
+    def __init__(self) -> None:
+        super().__init__(status_code=CLIENT_CLOSED_REQUEST, message="客户端已取消上传")
+
+
+async def _raise_if_client_disconnected(request: Request) -> None:
+    """解析前先看一眼连接：客户端已走就不必白跑几十秒的 LibreOffice 转换。"""
+    if await request.is_disconnected():
+        raise ClientDisconnectedException()
+
+
+def _discard_source_object(project_id: uuid.UUID) -> None:
+    """取消新建时清掉已写入对象存储的源 PPT（数据库记录由 get_db 回滚）。"""
+    try:
+        delete_object(BUCKET, agent_service.source_object_key(project_id))
+    except Exception:
+        # 清理失败不能改变「已取消」的结论，留痕给后续人工清理
+        logger.warning(
+            "取消新建时清理源 PPT 失败",
+            extra={"project_id": str(project_id)},
+            exc_info=True,
+        )
 
 
 @contextmanager
@@ -145,6 +181,7 @@ def _stream_object(
     content_type: str,
     request: Request,
     file_name: str | None = None,
+    cache_control: str = "private, max-age=3600",
 ) -> StreamingResponse:
     total = stat_object(BUCKET, object_key)
     if total is None or total <= 0:
@@ -153,7 +190,7 @@ def _stream_object(
     headers = {
         "Accept-Ranges": "bytes",
         "Content-Length": str(length),
-        "Cache-Control": "private, max-age=3600",
+        "Cache-Control": cache_control,
     }
     if partial:
         headers["Content-Range"] = f"bytes {offset}-{offset + length - 1}/{total}"
@@ -165,6 +202,29 @@ def _stream_object(
         media_type=content_type,
         headers=headers,
     )
+
+
+def _first_existing_key(*keys: str) -> str | None:
+    """按优先级返回第一个存在的对象。
+
+    新产物（JPEG 预览/缩略图）是逐步补齐的，早期项目只有 PNG 原件，
+    这里逐级回退，避免升级后老项目页图直接 404。
+    """
+    for key in keys:
+        if stat_object(BUCKET, key) is not None:
+            return key
+    return None
+
+
+def _slide_asset_cache_control(request: Request) -> str:
+    """页图缓存策略。
+
+    地址带内容指纹（`?v=<image_sha 前 12 位>`）时内容永不变化，可以永久缓存，
+    重复打开工作台就是本地命中；列表页缩略图没有指纹，只缓存 5 分钟。
+    """
+    if request.query_params.get("v"):
+        return "private, max-age=31536000, immutable"
+    return "private, max-age=300"
 
 
 # ── 音色目录 ────────────────────────────────────────────────────────────────
@@ -207,6 +267,7 @@ async def list_projects(
 
 @router.post("/ppt-videos", summary="新建配音视频项目（上传 PPT + 可选逐页讲稿）")
 async def create_project(
+    request: Request,
     file: Annotated[UploadFile, File(description="PPT 文件（.ppt / .pptx）")],
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(PERM_MANAGE)),
@@ -224,6 +285,9 @@ async def create_project(
     if script_file is not None and script_file.filename:
         script_bytes = await _read_upload(script_file, agent_config.MAX_UPLOAD_BYTES)
 
+    # 客户端已断开就别再跑几十秒的转换与解析
+    await _raise_if_client_disconnected(request)
+
     with _translate_errors():
         project = await agent_service.create_project(
             db,
@@ -237,9 +301,23 @@ async def create_project(
             speed=speed,
             created_by=current_user.id,
         )
+        # 解析期间用户可能点了「停止上传」或直接关页：create_project 只 flush 未提交，
+        # 这里断开就清掉已写入的源 PPT 并打断事务，保证不留半成品项目。
+        if await request.is_disconnected():
+            logger.info("取消新建：客户端已断开", extra={"project_id": str(project.id)})
+            _discard_source_object(project.id)
+            raise ClientDisconnectedException()
+
         # 上传即触发初稿生成：start_script_ai 内部提交事务后再投递后台任务，
         # 保证后台会话能读到刚建的项目；投递失败不影响上传成功。
         await agent_service.start_script_ai(db, project.id, settings)
+        # 页图是编辑态底图：上传后就在后台出图，用户写讲稿时已有画面可看，
+        # 之后渲染也能直接复用，不必再跑一次 soffice。
+        # 先在本事务里落 queued 再投递：返回的详情自带进度条，前端首屏即可开始轮询，
+        # 不用等用户手动刷新才看到缩略图。
+        agent_service.mark_page_images_queued(project)
+        await db.flush()
+        await agent_service.submit_page_images(project.id, project.source_version)
         detail = await agent_service.get_detail(db, project.id, settings, user_id=current_user.id)
     return DataResponse[ProjectDetail](data=detail)
 
@@ -267,6 +345,19 @@ async def download_version(
     with _translate_errors():
         version = await agent_service.get_version(db, version_id)
     return _stream_object(version.object_key, "video/mp4", request, file_name=version.file_name)
+
+
+@router.get("/ppt-videos/{project_id}/source/file", summary="下载当前源 PPT（含页内编辑结果）")
+async def download_source_pptx(
+    project_id: uuid.UUID,
+    request: Request,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(PERM_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    with _translate_errors():
+        object_key, file_name = await agent_service.source_download_target(db, project_id)
+    return _stream_object(object_key, source_replace.PPTX_CONTENT_TYPE, request, file_name=file_name)
 
 
 @router.get("/ppt-videos/{project_id}", summary="项目详情（含逐页讲稿、版本、最近任务）")
@@ -338,13 +429,37 @@ async def update_slide(
             language=payload.language,
             voice_id=payload.voice_id,
             speed=payload.speed,
+            highlight_style=payload.highlight_style,
+            highlight_color=payload.highlight_color,
+            highlight_regions=(
+                payload.highlight_regions.model_dump() if payload.highlight_regions is not None else None
+            ),
             clear_language=payload.clear_language,
             clear_voice=payload.clear_voice,
             clear_speed=payload.clear_speed,
+            clear_highlight_style=payload.clear_highlight_style,
+            clear_highlight_color=payload.clear_highlight_color,
+            clear_highlight_regions=payload.clear_highlight_regions,
             updated_by=current_user.id,
         )
         item = agent_service.slide_item(slide, project_id)
     return DataResponse[SlideItem](data=item)
+
+
+@router.get(
+    "/ppt-videos/{project_id}/slides/{slide_uid}/regions",
+    summary="单页可高亮区域清单（区域设置面板用）",
+)
+async def slide_regions(
+    project_id: uuid.UUID,
+    slide_uid: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(PERM_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[SlideRegionsResponse]:
+    with _translate_errors():
+        data = await agent_service.slide_regions(db, project_id, slide_uid)
+    return DataResponse[SlideRegionsResponse](data=data)
 
 
 @router.post("/ppt-videos/{project_id}/slides/{slide_uid}/preview", summary="单页试听（合成或命中缓存）")
@@ -370,7 +485,7 @@ async def preview_slide(
     )
 
 
-@router.get("/ppt-videos/{project_id}/slides/{slide_no}/image", summary="页面图片（播放器/缩略图）")
+@router.get("/ppt-videos/{project_id}/slides/{slide_no}/image", summary="页面图片（播放器/编辑器大图）")
 async def get_slide_image(
     project_id: uuid.UUID,
     slide_no: int,
@@ -383,7 +498,79 @@ async def get_slide_image(
         slide = await agent_service.get_slide(db, project_id, slide_no)
     if not slide.image_object_key:
         raise NotFoundException("页面图片")
-    return _stream_object(slide.image_object_key, "image/png", request)
+    preview_key = agent_service.slide_preview_key(project_id, slide.slide_uid)
+    object_key = _first_existing_key(preview_key, slide.image_object_key)
+    if object_key is None:
+        raise NotFoundException("页面图片")
+    return _stream_object(
+        object_key,
+        "image/jpeg" if object_key == preview_key else "image/png",
+        request,
+        cache_control=_slide_asset_cache_control(request),
+    )
+
+
+@router.get("/ppt-videos/{project_id}/slides/{slide_no}/thumb", summary="页面缩略图（时间轴/列表）")
+async def get_slide_thumb(
+    project_id: uuid.UUID,
+    slide_no: int,
+    request: Request,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(PERM_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    with _translate_errors():
+        slide = await agent_service.get_slide(db, project_id, slide_no)
+    if not slide.image_object_key:
+        raise NotFoundException("页面缩略图")
+    thumb_key = agent_service.slide_thumb_key(project_id, slide.slide_uid)
+    preview_key = agent_service.slide_preview_key(project_id, slide.slide_uid)
+    object_key = _first_existing_key(thumb_key, preview_key, slide.image_object_key)
+    if object_key is None:
+        raise NotFoundException("页面缩略图")
+    content_type = "image/png" if object_key == slide.image_object_key else "image/jpeg"
+    return _stream_object(object_key, content_type, request, cache_control=_slide_asset_cache_control(request))
+
+
+@router.post(
+    "/ppt-videos/{project_id}/page-images",
+    status_code=202,
+    summary="重新生成页图（老项目回填 / 页图异常时手动重试）",
+)
+async def refresh_page_images(
+    project_id: uuid.UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(PERM_MANAGE)),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[PageImagesAccepted]:
+    """立刻返回 job_id，进度由前端轮 `GET .../page-images/status`。
+
+    投递前先落 `queued`（同一事务提交）：前端拿到的详情/状态里就带「排队中」，
+    刷新页面也不会退回上一次的 done/failed。后台任务认领时会覆盖成 running。
+    """
+    with _translate_errors():
+        project = await agent_service.get_project(db, project_id)
+        agent_service.mark_page_images_queued(project)
+        await db.flush()
+    job_id = await agent_service.submit_page_images(project_id, project.source_version, force=True)
+    if job_id is None:
+        raise AppException(status_code=503, message="页图任务登记失败，请稍后重试")
+    return DataResponse[PageImagesAccepted](data=PageImagesAccepted(job_id=job_id, status="queued"))
+
+
+@router.get(
+    "/ppt-videos/{project_id}/page-images/status",
+    summary="页图生成状态（左栏进度条轮询，单表查询）",
+)
+async def get_page_images_status(
+    project_id: uuid.UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(PERM_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[PageImagesState]:
+    with _translate_errors():
+        project = await agent_service.get_project(db, project_id)
+    return DataResponse[PageImagesState](data=agent_service.page_images_state(project))
 
 
 @router.get("/ppt-videos/{project_id}/slides/{slide_no}/audio", summary="页面旁白 wav（支持 Range）")

@@ -25,6 +25,9 @@ logger = logging.getLogger(__name__)
 #: soffice 单次转换超时（秒）
 SOFFICE_TIMEOUT = 180
 
+#: 单页表格单元格抽取上限：单元格过多会挤占讲稿 prompt 预算，也让高亮候选膨胀
+MAX_TABLE_CELLS = 60
+
 #: 独占一行的分页标记；`3.` / `3、` 这种短行也算标记
 _PAGE_MARKER = re.compile(
     r"^\s*(?:#{1,6}\s*)?(?:"
@@ -227,7 +230,7 @@ def _run_soffice(args: list[str], work_dir: str | Path = ".") -> None:
 
 def _image_sha(shape: Any) -> str:
     """图片形状的内容 sha256；非图片或取不到时返回空串。"""
-    if not getattr(shape, "has_picture", False):
+    if not hasattr(shape, "image"):
         return ""
     try:
         blob = shape.image.blob
@@ -235,6 +238,94 @@ def _image_sha(shape: Any) -> str:
         logger.debug("图片内容读取失败，跳过摘要: %s", shape.name)
         return ""
     return hashlib.sha256(blob).hexdigest()
+
+
+def _shape_box(shape: Any) -> tuple[int, int, int, int] | None:
+    """形状在页面上的 EMU 框；无有效几何（占位符/损坏）时返回 None。"""
+    try:
+        left = int(shape.left or 0)
+        top = int(shape.top or 0)
+        width = int(shape.width or 0)
+        height = int(shape.height or 0)
+    except (TypeError, ValueError):
+        return None
+    if width <= 0 or height <= 0:
+        return None
+    return left, top, width, height
+
+
+def _group_text(shape: Any) -> str:
+    """递归收集组合形状内的文本。
+
+    组内子形状的坐标是「组内坐标系」的偏移，直接拿来当页面坐标会亮错位置，
+    所以这里只取文本（讲稿需要），坐标仍用整组在页面上的外框。
+    """
+    parts: list[str] = []
+    for child in getattr(shape, "shapes", ()) or ():
+        if getattr(child, "has_text_frame", False):
+            text = child.text_frame.text.strip()
+            if text:
+                parts.append(text)
+        if hasattr(child, "shapes"):
+            nested = _group_text(child)
+            if nested:
+                parts.append(nested)
+    return "\n".join(parts)
+
+
+def _table_payload(shape: Any) -> tuple[str, list[dict[str, Any]]]:
+    """表格 → (整表文字, 单元格清单)。
+
+    python-pptx 的单元格**没有** left/top 属性，只能按行列宽高累加算几何；
+    合并单元格只在合并起点出一条记录，并把宽高按跨度放大。
+    """
+    box = _shape_box(shape)
+    if box is None:
+        return "", []
+    origin_left, origin_top = box[0], box[1]
+    try:
+        table = shape.table
+        widths = [max(0, int(column.width or 0)) for column in table.columns]
+        heights = [max(0, int(row.height or 0)) for row in table.rows]
+    except Exception:  # noqa: BLE001 - 结构异常的表格当作无文本形状，不影响整页解析
+        logger.debug("表格结构读取失败，跳过单元格: %s", shape.name)
+        return "", []
+
+    texts: list[str] = []
+    cells: list[dict[str, Any]] = []
+    top = origin_top
+    for row_index in range(len(heights)):
+        left = origin_left
+        for column_index in range(len(widths)):
+            width = widths[column_index]
+            if len(cells) < MAX_TABLE_CELLS:
+                try:
+                    cell = table.cell(row_index, column_index)
+                except IndexError:
+                    cell = None
+                if cell is not None and not cell.is_spanned:
+                    span_width = max(1, int(getattr(cell, "span_width", 1) or 1))
+                    span_height = max(1, int(getattr(cell, "span_height", 1) or 1))
+                    cell_width = sum(widths[column_index : column_index + span_width]) or width
+                    cell_height = sum(heights[row_index : row_index + span_height]) or heights[row_index]
+                    text = (cell.text or "").strip()
+                    if text:
+                        texts.append(text)
+                    if cell_width > 0 and cell_height > 0:
+                        cells.append(
+                            {
+                                "row": row_index + 1,
+                                "col": column_index + 1,
+                                "text": text,
+                                "left": left,
+                                "top": top,
+                                "width": cell_width,
+                                "height": cell_height,
+                            }
+                        )
+            left += width
+        top += heights[row_index]
+    return "\n".join(texts), cells
 
 
 def parse_pptx(pptx_path: str | Path) -> list[ParsedSlide]:
@@ -255,27 +346,36 @@ def parse_pptx(pptx_path: str | Path) -> list[ParsedSlide]:
         shapes: list[dict[str, Any]] = []
         for shape in slide.shapes:
             shape_text = ""
+            cells: list[dict[str, Any]] = []
             if shape.has_text_frame:
                 shape_text = shape.text_frame.text.strip()
-                if shape_text:
-                    texts.append(shape_text)
-            try:
-                shapes.append(
-                    {
-                        "name": shape.name,
-                        "kind": str(getattr(shape, "shape_type", "")),
-                        "text": shape_text,
-                        "left": int(shape.left or 0),
-                        "top": int(shape.top or 0),
-                        "width": int(shape.width or 0),
-                        "height": int(shape.height or 0),
-                        # 图片内容摘要：换图但文字/坐标不变时，靠它识别出「这页变了」
-                        "image_sha": _image_sha(shape),
-                    }
-                )
-            except (TypeError, ValueError):
+            elif getattr(shape, "has_table", False):
+                # 表格文字此前完全丢失（表格不是 text_frame），讲稿根本看不到数据
+                shape_text, cells = _table_payload(shape)
+            elif hasattr(shape, "shapes"):
+                shape_text = _group_text(shape)
+            if shape_text:
+                texts.append(shape_text)
+
+            box = _shape_box(shape)
+            if box is None:
                 # 个别占位符没有有效几何信息，跳过即可，不影响文字抽取
                 logger.debug("跳过无坐标形状: %s", shape.name)
+                continue
+            payload: dict[str, Any] = {
+                "name": shape.name,
+                "kind": str(getattr(shape, "shape_type", "")),
+                "text": shape_text,
+                "left": box[0],
+                "top": box[1],
+                "width": box[2],
+                "height": box[3],
+                # 图片内容摘要：换图但文字/坐标不变时，靠它识别出「这页变了」
+                "image_sha": _image_sha(shape),
+            }
+            if cells:
+                payload["cells"] = cells
+            shapes.append(payload)
 
         notes = ""
         if slide.has_notes_slide and slide.notes_slide.notes_text_frame is not None:

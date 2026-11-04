@@ -5,13 +5,21 @@
 """
 
 import uuid
+from types import SimpleNamespace
+from typing import Any
 
 import pytest
 from httpx import AsyncClient
+from starlette.requests import Request as StarletteRequest
 
+from app.modules.agent import service as agent_service
 from app.platform.permission.registry import ALL_PERMISSIONS, API_BINDINGS
 
 API = "/api/v1/agent"
+
+#: 只需通过 `_check_ppt_magic`（解析被 mock），内容本身不重要
+FAKE_PPTX = b"PK\x03\x04" + b"\x00" * 32
+PPTX_MIME = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 
 
 def test_agent_permission_codes_are_registered() -> None:
@@ -28,6 +36,8 @@ def test_every_agent_endpoint_has_binding() -> None:
         ("agent:ppt-video:manage", "POST", f"{API}/ppt-videos/{'{project_id}'}/render"),
         # AI 讲稿初稿重生成：只填空页，权限复用 manage
         ("agent:ppt-video:manage", "POST", f"{API}/ppt-videos/{'{project_id}'}/script-ai"),
+        # 下载源 PPT：只读，与成片下载同权限
+        ("agent:ppt-video:read", "GET", f"{API}/ppt-videos/{'{project_id}'}/source/file"),
     }
     assert expected <= bindings
 
@@ -75,6 +85,69 @@ async def test_upload_rejects_fake_pptx(client: AsyncClient) -> None:
     assert "不是有效的 .pptx" in response.json()["message"]
 
 
+async def test_upload_stops_before_parsing_when_client_disconnected(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """解析前就断开：直接 499，不白跑 LibreOffice 转换。"""
+
+    async def _disconnected(_request: StarletteRequest) -> bool:
+        return True
+
+    async def _forbidden_create(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("客户端已断开时不应进入解析")
+
+    monkeypatch.setattr(StarletteRequest, "is_disconnected", _disconnected)
+    monkeypatch.setattr(agent_service, "create_project", _forbidden_create)
+
+    response = await client.post(
+        f"{API}/ppt-videos",
+        files={"file": ("deck.pptx", FAKE_PPTX, PPTX_MIME)},
+        data={"default_language": "zh"},
+    )
+
+    assert response.status_code == 499
+    assert response.json()["code"] == 499
+
+
+async def test_upload_discards_created_project_when_client_disconnected(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """解析完成后才发现断开：删掉源 PPT、不投递初稿任务，并靠异常让事务回滚。"""
+    from app.modules.agent import api as agent_api
+
+    project = SimpleNamespace(id=uuid.uuid4())
+    calls: dict[str, Any] = {"start_script_ai": 0, "deleted": []}
+    # 第一次检测（解析前）仍在，第二次（解析后）已断开
+    answers = iter([False, True])
+
+    async def _disconnected(_request: StarletteRequest) -> bool:
+        return next(answers)
+
+    async def _create(*_args: object, **_kwargs: object) -> SimpleNamespace:
+        return project
+
+    async def _start_script_ai(*_args: object, **_kwargs: object) -> None:
+        calls["start_script_ai"] += 1
+
+    def _delete_object(module: str, object_key: str) -> None:
+        calls["deleted"].append((module, object_key))
+
+    monkeypatch.setattr(StarletteRequest, "is_disconnected", _disconnected)
+    monkeypatch.setattr(agent_service, "create_project", _create)
+    monkeypatch.setattr(agent_service, "start_script_ai", _start_script_ai)
+    monkeypatch.setattr(agent_api, "delete_object", _delete_object)
+
+    response = await client.post(
+        f"{API}/ppt-videos",
+        files={"file": ("deck.pptx", FAKE_PPTX, PPTX_MIME)},
+        data={"default_language": "zh"},
+    )
+
+    assert response.status_code == 499
+    assert calls["start_script_ai"] == 0
+    assert calls["deleted"] == [(agent_api.BUCKET, agent_service.source_object_key(project.id))]
+
+
 async def test_unknown_project_returns_404(client: AsyncClient) -> None:
     response = await client.get(f"{API}/ppt-videos/{uuid.uuid4()}")
 
@@ -98,3 +171,32 @@ async def test_version_manifest_requires_existing_version(client: AsyncClient) -
     response = await client.get(f"{API}/ppt-videos/versions/{uuid.uuid4()}/manifest")
 
     assert response.status_code == 404
+
+
+async def test_source_download_requires_existing_project(client: AsyncClient) -> None:
+    response = await client.get(f"{API}/ppt-videos/{uuid.uuid4()}/source/file")
+
+    assert response.status_code == 404
+
+
+async def test_page_images_status_requires_existing_project(client: AsyncClient) -> None:
+    response = await client.get(f"{API}/ppt-videos/{uuid.uuid4()}/page-images/status")
+
+    assert response.status_code == 404
+
+
+async def test_regenerate_page_images_requires_existing_project(client: AsyncClient) -> None:
+    response = await client.post(f"{API}/ppt-videos/{uuid.uuid4()}/page-images")
+
+    assert response.status_code == 404
+
+
+def test_page_images_endpoints_are_bound_to_permissions() -> None:
+    bindings = {(b.permission_code, b.method, b.route_template) for b in API_BINDINGS}
+
+    assert ("agent:ppt-video:manage", "POST", f"{API}/ppt-videos/{'{project_id}'}/page-images") in bindings
+    assert (
+        "agent:ppt-video:read",
+        "GET",
+        f"{API}/ppt-videos/{'{project_id}'}/page-images/status",
+    ) in bindings

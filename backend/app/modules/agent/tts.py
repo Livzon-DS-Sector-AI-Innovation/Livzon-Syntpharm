@@ -219,3 +219,46 @@ def synthesize_to_wav(
     if not 0.5 <= speed <= 2.0:
         raise TtsError("语速需在 0.5~2.0 之间")
     return get_engine(engine_name).synthesize(text.strip(), language, voice_id, speed, out_path)
+
+
+def concat_wavs(parts: list[Path], out_path: Path, pause_ms: int = 0) -> tuple[Path, int]:
+    """按序拼接 16bit 单声道 PCM WAV，段间插入静音，返回 (路径, 总时长ms)。
+
+    格式不一致（换过引擎/采样率不同）直接抛 `TtsError`，由上层退回整页合成；
+    宁可多合成一次，也不能拼出一段采样率错乱的音频把整条视频带坏。
+    """
+    if not parts:
+        raise TtsError("没有可拼接的音频片段")
+    with wave.open(str(parts[0]), "rb") as first:
+        sample_rate = first.getframerate()
+        channels = first.getnchannels()
+        sampwidth = first.getsampwidth()
+    if channels != 1 or sampwidth != 2:
+        raise TtsError(f"不支持的音频格式：{channels} 声道 / {sampwidth * 8} bit")
+
+    silence = b"\x00\x00" * int(sample_rate * max(0, pause_ms) / 1000)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    total_frames = 0
+    with wave.open(str(out_path), "wb") as target:
+        target.setnchannels(1)
+        target.setsampwidth(2)
+        target.setframerate(sample_rate)
+        for index, part in enumerate(parts):
+            with wave.open(str(part), "rb") as source:
+                if source.getnchannels() != 1 or source.getsampwidth() != 2 or source.getframerate() != sample_rate:
+                    raise TtsError("音频片段格式不一致，无法拼接")
+                data = source.readframes(source.getnframes())
+            if index and silence:
+                target.writeframes(silence)
+                total_frames += len(silence) // 2
+            target.writeframes(data)
+            total_frames += len(data) // 2
+    return out_path, int(total_frames / sample_rate * 1000)
+
+
+def wav_duration_ms(path: Path) -> int:
+    """读 WAV 头算时长（不加载音频数据）。"""
+    with wave.open(str(path), "rb") as handle:
+        frames = handle.getnframes()
+        rate = handle.getframerate() or 1
+    return int(frames / rate * 1000)

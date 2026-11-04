@@ -6,11 +6,14 @@ API 层只做参数校验与响应组装，所有跨表/跨存储的动作落在
 """
 
 import asyncio
+import json
 import logging
+import re
 import shutil
 import tempfile
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -18,13 +21,27 @@ from sqlalchemy import ColumnElement, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import storage
-from app.modules.agent import ai_config, editor, parser, queue, rewrite, script_ai, source_replace, tts
+from app.modules.agent import (
+    ai_config,
+    editor,
+    highlight,
+    page_images,
+    parser,
+    queue,
+    render,
+    rewrite,
+    script_ai,
+    source_replace,
+    tts,
+)
 from app.modules.agent.cache import (
     Manifest,
     body_input_key,
     normalize_script,
     script_key,
+    segment_audio_key,
     sha256_bytes,
+    sha256_file,
     slide_input_key,
     voice_key,
 )
@@ -33,13 +50,19 @@ from app.modules.agent.cache import (
 )
 from app.modules.agent.config import (
     DEFAULTS,
+    HIGHLIGHT_STYLES,
     MAX_SCRIPT_CHARS,
     MODULE_CODE,
     SCRIPT_GUIDE_MAX_CHARS,
     PptVideoSettings,
     load_settings,
+    normalize_hex_color,
 )
 from app.modules.agent.models import (
+    PAGE_IMAGES_STATUS_DONE,
+    PAGE_IMAGES_STATUS_FAILED,
+    PAGE_IMAGES_STATUS_QUEUED,
+    PAGE_IMAGES_STATUS_RUNNING,
     PROJECT_STATUS_DRAFT,
     PROJECT_STATUS_RENDERING,
     REWRITE_MODE_SOURCE_REPLACE,
@@ -59,9 +82,11 @@ from app.modules.agent.models import (
 from app.modules.agent.schemas import (
     EditableShapeItem,
     EditableShapeList,
+    HighlightRegionsPayload,
     JobState,
     ManifestResponse,
     ManifestSlideItem,
+    PageImagesState,
     ProjectDetail,
     ProjectSummary,
     ReuseSummary,
@@ -71,6 +96,8 @@ from app.modules.agent.schemas import (
     ScriptRuntime,
     SlideEditResult,
     SlideItem,
+    SlideRegionItem,
+    SlideRegionsResponse,
     SourceApplyResult,
     SourceDiffSummary,
     VersionItem,
@@ -81,7 +108,18 @@ logger = logging.getLogger(__name__)
 
 BUCKET_MODULE = MODULE_CODE
 
+# 下载文件名里不允许出现的字符：路径分隔符会变成目录，换行会截断响应头
+_FILENAME_ILLEGAL = re.compile(r'[/\\\r\n"]+')
+
 GUIDE_MAX_CHARS = SCRIPT_GUIDE_MAX_CHARS
+
+#: 页图任务超过这么久没有任何进度写入，就认为进程已死（见 `_page_images_stale`）
+PAGE_IMAGES_STALE_SECONDS = 30 * 60
+#: 排队中超过这么久还没被任务认领，说明投递丢了（防线：不让进度条永远转）
+PAGE_IMAGES_QUEUE_STALE_SECONDS = 2 * 60
+
+#: 区域面板回给前端的句子数上限（与 `MAX_SENTENCE_RULES` 同量级，够配到每一句）
+_SENTENCE_PREVIEW_STEPS = 32
 
 
 class ServiceError(ValueError):
@@ -105,6 +143,19 @@ def slide_image_key(project_id: uuid.UUID, slide_uid: uuid.UUID) -> str:
     return f"ppt-video/{project_id}/slides/{slide_uid}.png"
 
 
+def slide_preview_key(project_id: uuid.UUID, slide_uid: uuid.UUID) -> str:
+    """页图预览版（JPEG）：给编辑器中间画面用。
+
+    成片仍读 PNG 原件，所以换预览格式不会让已缓存的视频片段失效。
+    """
+    return f"ppt-video/{project_id}/slides/{slide_uid}.jpg"
+
+
+def slide_thumb_key(project_id: uuid.UUID, slide_uid: uuid.UUID) -> str:
+    """时间轴/列表缩略图（JPEG，320 宽），避免为 96px 的格子拉整张原图。"""
+    return f"ppt-video/{project_id}/slides/{slide_uid}-thumb.jpg"
+
+
 def audio_object_key(audio_fingerprint: str) -> str:
     """旁白按内容寻址存：不同项目同一页讲稿可共用一份音频。"""
     return f"ppt-video/audio/{audio_fingerprint}.wav"
@@ -124,6 +175,12 @@ def image_url(project_id: uuid.UUID, slide_no: int, version_token: str | None = 
     return f"{base}?v={version_token[:12]}" if version_token else base
 
 
+def thumb_url(project_id: uuid.UUID, slide_no: int, version_token: str | None = None) -> str:
+    """缩略图地址：同样带内容指纹，时间轴换页后不会被旧图顶住。"""
+    base = f"/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/thumb"
+    return f"{base}?v={version_token[:12]}" if version_token else base
+
+
 def audio_url(project_id: uuid.UUID, slide_no: int, version_token: str | None = None) -> str:
     base = f"/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/audio"
     return f"{base}?v={version_token[:12]}" if version_token else base
@@ -131,6 +188,11 @@ def audio_url(project_id: uuid.UUID, slide_no: int, version_token: str | None = 
 
 def download_url(version_id: uuid.UUID) -> str:
     return f"/api/v1/agent/ppt-videos/versions/{version_id}/file"
+
+
+def source_download_url(project_id: uuid.UUID) -> str:
+    """当前源 PPT 下载地址；前端只用这个字段，不自己拼路径。"""
+    return f"/api/v1/agent/ppt-videos/{project_id}/source/file"
 
 
 # ── 参数解析 ────────────────────────────────────────────────────────────────
@@ -193,6 +255,265 @@ def compute_body_input_key(
 def current_engine(settings: PptVideoSettings) -> tuple[str, str]:
     name = (settings.tts_engine or DEFAULTS.tts_engine).lower()
     return name, tts.get_engine(name).version()
+
+
+# ── 旁白音频（逐段合成） ────────────────────────────────────────────────────
+
+
+def segment_audio_object_key(fingerprint: str) -> str:
+    """段级音频按内容寻址：改一句只重合成那一句，其余句子直接命中。"""
+    return f"ppt-video/audio-seg/{fingerprint}.wav"
+
+
+def page_audio_meta_key(audio_fingerprint: str) -> str:
+    """段时长元数据：命中页音频时靠它还原高亮时间轴，不必再读一遍每段音频。"""
+    return f"ppt-video/audio/{audio_fingerprint}.json"
+
+
+@dataclass(frozen=True)
+class PageAudio:
+    """一页旁白的音频产物 + 出帧需要的段信息。"""
+
+    path: Path
+    duration_ms: int
+    sha256: str
+    audio_key: str
+    #: 分段结果；为空表示退回「整页单段合成」，出帧走旧的字数估算
+    segments: list[highlight.ScriptSegment] = field(default_factory=list)
+    segment_durations_ms: list[int] = field(default_factory=list)
+    pause_ms: int = 0
+
+    @property
+    def segmented(self) -> bool:
+        return len(self.segments) > 1 and len(self.segments) == len(self.segment_durations_ms)
+
+    @property
+    def segment_slots_ms(self) -> list[int]:
+        """出帧用：每段占用时长 = 该段音频 + 段后停顿（末段不含停顿）。"""
+        slots = [max(0, int(value)) for value in self.segment_durations_ms]
+        if len(slots) > 1 and self.pause_ms > 0:
+            slots = [value + self.pause_ms for value in slots[:-1]] + [slots[-1]]
+        return slots
+
+
+def page_audio_plan(
+    slide: PptVideoSlide,
+    effective: EffectiveVoice,
+    settings: PptVideoSettings,
+) -> tuple[list[highlight.ScriptSegment], int, str]:
+    """决定本页走逐段合成还是整页合成，并给出页音频指纹。
+
+    只有「高亮开启 + 逐段合成开启 + 段数 > 1」才分段；否则指纹与改造前完全一致，
+    老项目的音频缓存继续命中。
+    """
+    segments: list[highlight.ScriptSegment] = []
+    if settings.highlight_enabled and settings.segment_tts_enabled:
+        segments = highlight.resolve_segments(
+            effective.script,
+            slide.layout or {},
+            slide.script_segments,
+            settings.highlight_max_steps,
+        )
+    if len(segments) <= 1:
+        return [], 0, build_audio_key(effective.script_sha256, effective.voice_fingerprint)
+
+    pause_ms = settings.segment_pause_ms
+    texts = "\n".join(segment.text for segment in segments)
+    boundaries = sha256_bytes(f"segments\n{pause_ms}\n{texts}".encode())[:16]
+    return (
+        segments,
+        pause_ms,
+        # 段边界与段间停顿都会改变波形，必须进指纹，否则改了分段还会复用旧音频
+        build_audio_key(effective.script_sha256, effective.voice_fingerprint, f"seg{boundaries}"),
+    )
+
+
+def _download_object(object_key: str, target: Path) -> bool:
+    """按对象 key 落盘；不存在返回 False。"""
+    payload = storage.get_object(BUCKET_MODULE, object_key)
+    if payload is None:
+        return False
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(payload[0])
+    return True
+
+
+def _load_segment_durations(audio_fingerprint: str) -> list[int]:
+    payload = storage.get_object(BUCKET_MODULE, page_audio_meta_key(audio_fingerprint))
+    if payload is None:
+        return []
+    try:
+        data = json.loads(payload[0].decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        logger.warning("页音频元数据损坏，按未命中处理: %s", audio_fingerprint)
+        return []
+    raw = data.get("durations") if isinstance(data, dict) else None
+    if not isinstance(raw, list):
+        return []
+    durations: list[int] = []
+    for value in raw:
+        try:
+            durations.append(max(0, int(value)))
+        except (TypeError, ValueError):
+            return []
+    return durations
+
+
+async def _ensure_whole_page_audio(
+    effective: EffectiveVoice,
+    audio_fingerprint: str,
+    audio_path: Path,
+    engine_name: str,
+    sha_hint: str,
+) -> PageAudio:
+    """整页单段合成（改造前的路径，也是分段失败时的兜底）。"""
+    if _download_object(audio_object_key(audio_fingerprint), audio_path):
+        sha = sha_hint or await asyncio.to_thread(sha256_file, audio_path)
+        duration = await asyncio.to_thread(tts.wav_duration_ms, audio_path)
+        return PageAudio(audio_path, duration, sha, audio_fingerprint)
+
+    try:
+        result = await asyncio.to_thread(
+            tts.synthesize_to_wav,
+            effective.script,
+            effective.language,
+            effective.voice_id,
+            effective.speed,
+            audio_path,
+            engine_name,
+        )
+    except tts.TtsError as exc:
+        raise ServiceError(str(exc)) from exc
+
+    data = await asyncio.to_thread(audio_path.read_bytes)
+    await asyncio.to_thread(
+        storage.upload_object,
+        BUCKET_MODULE,
+        audio_object_key(audio_fingerprint),
+        data,
+        len(data),
+        "audio/wav",
+    )
+    return PageAudio(audio_path, result.duration_ms, result.sha256, audio_fingerprint)
+
+
+async def _synthesize_by_segments(
+    segments: list[highlight.ScriptSegment],
+    effective: EffectiveVoice,
+    settings: PptVideoSettings,
+    engine_name: str,
+    audio_fingerprint: str,
+    pause_ms: int,
+    audio_path: Path,
+    work_dir: Path,
+) -> PageAudio:
+    """逐段合成（段级缓存）→ 拼接页面音频 → 落库 + 写段时长元数据。"""
+    part_paths: list[Path] = []
+    durations: list[int] = []
+    for index, segment in enumerate(segments):
+        part_path = work_dir / "audio-seg" / f"{audio_fingerprint}-{index:02d}.wav"
+        key = segment_audio_key(segment.text, effective.language, effective.voice_fingerprint)
+        if not _download_object(segment_audio_object_key(key), part_path):
+            result = await asyncio.to_thread(
+                tts.synthesize_to_wav,
+                segment.text,
+                effective.language,
+                effective.voice_id,
+                effective.speed,
+                part_path,
+                engine_name,
+            )
+            part_bytes = await asyncio.to_thread(part_path.read_bytes)
+            await asyncio.to_thread(
+                storage.upload_object,
+                BUCKET_MODULE,
+                segment_audio_object_key(key),
+                part_bytes,
+                len(part_bytes),
+                "audio/wav",
+            )
+            durations.append(result.duration_ms)
+        else:
+            durations.append(await asyncio.to_thread(tts.wav_duration_ms, part_path))
+        part_paths.append(part_path)
+
+    merged_path, _joined_ms = await asyncio.to_thread(tts.concat_wavs, part_paths, audio_path, pause_ms)
+    duration = await asyncio.to_thread(tts.wav_duration_ms, merged_path)
+    wav_bytes = await asyncio.to_thread(merged_path.read_bytes)
+    await asyncio.to_thread(
+        storage.upload_object,
+        BUCKET_MODULE,
+        audio_object_key(audio_fingerprint),
+        wav_bytes,
+        len(wav_bytes),
+        "audio/wav",
+    )
+    meta = json.dumps(
+        {"durations": durations, "segments": len(segments), "pause_ms": pause_ms}, ensure_ascii=False
+    ).encode()
+    await asyncio.to_thread(
+        storage.upload_object,
+        BUCKET_MODULE,
+        page_audio_meta_key(audio_fingerprint),
+        meta,
+        len(meta),
+        "application/json",
+    )
+    return PageAudio(
+        merged_path,
+        duration,
+        sha256_bytes(wav_bytes),
+        audio_fingerprint,
+        segments,
+        durations,
+        pause_ms,
+    )
+
+
+async def prepare_page_audio(
+    slide: PptVideoSlide,
+    project: PptVideoProject,
+    settings: PptVideoSettings,
+    engine_name: str,
+    engine_version: str,
+    work_dir: Path,
+) -> PageAudio:
+    """合成（或命中缓存）一页旁白；渲染与试听共用，避免两条路径的指纹不一致。
+
+    分段合成出任何问题都退回整页单段合成：单页旁白不该把整条视频带崩。
+    """
+    effective = resolve_effective(slide, project, engine_name, engine_version)
+    if not effective.script:
+        raise ServiceError("本页讲稿为空，请先填写后再试听")
+
+    segments, pause_ms, audio_fingerprint = page_audio_plan(slide, effective, settings)
+    audio_path = work_dir / "audio" / f"{audio_fingerprint}.wav"
+    sha_hint = (slide.audio_sha256 or "") if slide.audio_key == audio_fingerprint else ""
+
+    if not segments:
+        return await _ensure_whole_page_audio(effective, audio_fingerprint, audio_path, engine_name, sha_hint)
+
+    durations = _load_segment_durations(audio_fingerprint)
+    if _download_object(audio_object_key(audio_fingerprint), audio_path) and len(durations) == len(segments):
+        sha = sha_hint or await asyncio.to_thread(sha256_file, audio_path)
+        duration = await asyncio.to_thread(tts.wav_duration_ms, audio_path)
+        return PageAudio(audio_path, duration, sha, audio_fingerprint, segments, durations, pause_ms)
+
+    try:
+        return await _synthesize_by_segments(
+            segments, effective, settings, engine_name, audio_fingerprint, pause_ms, audio_path, work_dir
+        )
+    except Exception:  # noqa: BLE001 - 分段合成任何失败都退回整页，保证出片
+        logger.exception(
+            "逐段合成失败，退回整页合成: project=%s slide=%s segments=%s",
+            project.id,
+            slide.slide_no,
+            len(segments),
+        )
+        whole_fingerprint = build_audio_key(effective.script_sha256, effective.voice_fingerprint)
+        whole_path = work_dir / "audio" / f"{whole_fingerprint}.wav"
+        whole_sha = (slide.audio_sha256 or "") if slide.audio_key == whole_fingerprint else ""
+        return await _ensure_whole_page_audio(effective, whole_fingerprint, whole_path, engine_name, whole_sha)
 
 
 # ── 项目 ────────────────────────────────────────────────────────────────────
@@ -348,6 +669,31 @@ async def start_script_ai(
     return script_ai_state(project, slides)
 
 
+def mark_page_images_queued(project: PptVideoProject) -> None:
+    """把项目行标成「排队中」，调用方负责 flush/commit。
+
+    页图任务在后台会话里写 running，写进去之前前端只能看到上一轮的状态；上传或换源时先在
+    本事务里落 queued，前端拿到的详情就带进度条，可以直接开始轮询，不用等用户手动刷新。
+    必须在投递**前**写：投递之后后台任务可能已经认领，再写 queued 会把 running 盖回去。
+    """
+    project.page_images_status = PAGE_IMAGES_STATUS_QUEUED
+    project.page_images_progress = 0
+    project.page_images_total = project.slide_count
+    project.page_images_done = 0
+    project.page_images_error = None
+
+
+async def submit_page_images(
+    project_id: uuid.UUID, expect_version: int = 0, *, force: bool = False
+) -> uuid.UUID | None:
+    """异步生成页图（编辑态底图）。
+
+    投递失败只记日志：没有页图最坏是「编辑态暂时看不到画面」，
+    渲染时会自己转一次，不该阻塞上传。
+    """
+    return await page_images.submit(project_id, expect_version, force)
+
+
 async def get_project(session: AsyncSession, project_id: uuid.UUID) -> PptVideoProject:
     project = await session.scalar(
         select(PptVideoProject).where(PptVideoProject.id == project_id, PptVideoProject.is_deleted.is_(False))
@@ -424,6 +770,13 @@ def version_item(version: PptVideoVersion) -> VersionItem:
     )
 
 
+def _highlight_regions_payload(slide: PptVideoSlide) -> HighlightRegionsPayload | None:
+    """区域配置回显：落库值本应已校验，但老数据/手改库可能带坏值，这里再兜一次。"""
+    config = highlight.parse_region_config(getattr(slide, "highlight_regions", None), slide.layout)
+    dumped = highlight.dump_region_config(config)
+    return HighlightRegionsPayload.model_validate(dumped) if dumped else None
+
+
 def slide_item(slide: PptVideoSlide, project_id: uuid.UUID) -> SlideItem:
     return SlideItem(
         slide_no=slide.slide_no,
@@ -435,9 +788,13 @@ def slide_item(slide: PptVideoSlide, project_id: uuid.UUID) -> SlideItem:
         language=slide.language,
         voice_id=slide.voice_id,
         speed=slide.speed,
+        highlight_style=slide.highlight_style,
+        highlight_color=slide.highlight_color,
+        highlight_regions=_highlight_regions_payload(slide),
         page_text=slide.page_text,
         page_notes=slide.page_notes,
         image_url=image_url(project_id, slide.slide_no, slide.image_sha256) if slide.image_object_key else None,
+        thumb_url=thumb_url(project_id, slide.slide_no, slide.image_sha256) if slide.image_object_key else None,
         audio_url=audio_url(project_id, slide.slide_no, slide.audio_sha256) if slide.audio_object_key else None,
         audio_sha256=slide.audio_sha256,
         duration_ms=slide.duration_ms or 0,
@@ -475,6 +832,66 @@ def script_ai_state(project: PptVideoProject, slides: list[PptVideoSlide]) -> Sc
         skipped=skipped,
         failed=pending if finished_with_gap else 0,
     )
+
+
+def page_images_state(project: PptVideoProject) -> PageImagesState:
+    """页图生成状态：全部取自项目列，不再额外查表。
+
+    `page_images_version == source_version` 且渲染指纹一致时页图一定是最新的，此时即使
+    状态列还是 idle（老项目升级后没跑过任务）也按 done/100 呈现，
+    否则前端会为一个本来就有图的页面显示「重新生成」。
+    """
+    status = project.page_images_status or "idle"
+    progress = project.page_images_progress or 0
+    total = project.page_images_total or 0
+    done = project.page_images_done or 0
+    error = project.page_images_error
+    up_to_date = (
+        project.page_images_version == project.source_version
+        and project.page_images_version > 0
+        and project.page_images_renderer == render.RENDERER_KEY
+    )
+    # 排队 / 正在跑 / 失败的状态必须以状态列为准：否则强制重试一个「内容已最新」的项目时，
+    # 这里会把 queued 抹成 done，进度条一出现就消失、失败原因也看不到。
+    if up_to_date and status not in (
+        PAGE_IMAGES_STATUS_QUEUED,
+        PAGE_IMAGES_STATUS_RUNNING,
+        PAGE_IMAGES_STATUS_FAILED,
+    ):
+        status = PAGE_IMAGES_STATUS_DONE
+        progress = 100
+        total = total or project.slide_count
+        done = total
+    elif status == PAGE_IMAGES_STATUS_RUNNING and _page_images_stale(project, PAGE_IMAGES_STALE_SECONDS):
+        # 进程被杀 / 重启后状态会永远停在 running，前端会无限轮询：超时未推进按失败呈现，
+        # 用户点「重试」会重新投递（新任务认领后覆盖这一行）
+        status = PAGE_IMAGES_STATUS_FAILED
+        error = error or "生成超时或服务已重启，请重试"
+        progress = min(progress, 99)
+    elif status == PAGE_IMAGES_STATUS_QUEUED and _page_images_stale(project, PAGE_IMAGES_QUEUE_STALE_SECONDS):
+        # 投递成功但任务始终没被认领（队列丢任务 / 进程不在）：别让进度条永远停在 0
+        status = PAGE_IMAGES_STATUS_FAILED
+        error = error or "任务未启动，请重试"
+        progress = 0
+    return PageImagesState(
+        status=status,
+        error=error,
+        progress=max(0, min(100, progress)),
+        done=done,
+        total=total,
+        job_id=project.page_images_job_id,
+    )
+
+
+def _page_images_stale(project: PptVideoProject, threshold_seconds: int) -> bool:
+    """页图任务超过 `threshold_seconds` 没有推进过就认为已经死掉。
+
+    `_set_state` 的单条 UPDATE 会带 `updated_at=now()`，所以活跃任务每出一页都会刷新它；
+    运行中取 30 分钟（给大文件 soffice 转换留余量），排队中只给 2 分钟（这时还没有进度可等）。
+    """
+    if project.updated_at is None:
+        return False
+    return (datetime.now(UTC) - project.updated_at).total_seconds() > threshold_seconds
 
 
 def job_state(job: PptVideoJob | None) -> JobState | None:
@@ -561,8 +978,10 @@ async def get_detail(
         versions=[version_item(version) for version in versions],
         latest_job=job_state(job),
         script_ai=script_ai_state(project, slides),
+        page_images=page_images_state(project),
         script_runtime=await script_runtime_state(session, project, settings, user_id),
         source_version=project.source_version or 1,
+        source_download_url=source_download_url(project.id),
         script_guide=project.script_guide or "",
         llm_config_id=project.llm_config_id,
         updated_at=project.updated_at,
@@ -627,7 +1046,7 @@ async def list_projects(
                 version_count=version_count or 0,
                 latest_version_id=latest.id if latest else None,
                 latest_error=project.last_error,
-                thumbnail_url=image_url(project.id, 1),
+                thumbnail_url=thumb_url(project.id, 1),
                 updated_at=project.updated_at,
             )
         )
@@ -711,9 +1130,15 @@ async def update_slide(
     language: str | None,
     voice_id: str | None,
     speed: float | None,
+    highlight_style: str | None = None,
+    highlight_color: str | None = None,
+    highlight_regions: dict[str, Any] | None = None,
     clear_language: bool,
     clear_voice: bool,
     clear_speed: bool,
+    clear_highlight_style: bool = False,
+    clear_highlight_color: bool = False,
+    clear_highlight_regions: bool = False,
     updated_by: uuid.UUID | None,
 ) -> PptVideoSlide:
     project = await get_project(session, project_id)
@@ -722,8 +1147,12 @@ async def update_slide(
     if script_text is not None:
         if len(script_text) > MAX_SCRIPT_CHARS:
             raise ServiceError(f"单页讲稿不能超过 {MAX_SCRIPT_CHARS} 字")
+        changed = script_text != (slide.script_text or "")
         slide.script_text = script_text
         slide.script_stale = False
+        if changed:
+            # 手改后段级绑定与文本不再配套，宁可退回字面匹配，也不能按旧绑定亮错
+            slide.script_segments = None
         # 用户手改即视为自有内容：清空来源，避免后续被标成「AI 初稿」
         slide.script_source = "" if script_ai.is_blank_script(script_text) else SCRIPT_SOURCE_MANUAL
     if language is not None:
@@ -751,9 +1180,65 @@ async def update_slide(
         slide.voice_id = None
     if clear_speed:
         slide.speed = None
+    if highlight_style is not None:
+        if highlight_style not in HIGHLIGHT_STYLES:
+            raise ServiceError(f"高亮样式仅支持 {'/'.join(HIGHLIGHT_STYLES)}")
+        slide.highlight_style = highlight_style
+    if highlight_color is not None:
+        # 空串当作「清除覆盖」，非法值直接拒绝：坏颜色进了渲染只会把画面染脏
+        normalized = normalize_hex_color(highlight_color, "")
+        if not normalized:
+            raise ServiceError("高亮颜色需为 #RRGGBB 格式")
+        slide.highlight_color = normalized
+    if clear_highlight_style:
+        slide.highlight_style = None
+    if clear_highlight_color:
+        slide.highlight_color = None
+    if highlight_regions is not None:
+        # 整份替换而不是增量合并：前后端各存一半会对不上，渲染时更难排查。
+        # 元素 id 必须能在本页 layout 里找到，否则存进去也亮不出来，直接丢掉。
+        config = highlight.parse_region_config(highlight_regions, slide.layout)
+        slide.highlight_regions = highlight.dump_region_config(config)
+    if clear_highlight_regions:
+        slide.highlight_regions = None
     slide.updated_by = updated_by
     await session.flush()
     return slide
+
+
+async def slide_regions(
+    session: AsyncSession,
+    project_id: uuid.UUID,
+    slide_uid: str,
+) -> SlideRegionsResponse:
+    """区域设置面板的数据源：页面尺寸 + 可点选元素清单（坐标来自 layout 解析）。
+
+    人工点选只落元素 id，坐标在渲染时按 layout 现算，所以换分辨率、重出片都不会偏。
+    """
+    slide = await get_slide_by_uid(session, project_id, slide_uid)
+    size = highlight.slide_size(slide.layout)
+    page_width, page_height = size or (0, 0)
+    items = [
+        SlideRegionItem(
+            element_id=ref.element_id,
+            kind=ref.box.kind,
+            label=highlight.kind_label(ref.box.kind),
+            text=(ref.text or "").strip()[: highlight.ELEMENT_TEXT_CHARS],
+            left=ref.box.left,
+            top=ref.box.top,
+            width=ref.box.width,
+            height=ref.box.height,
+        )
+        for ref in highlight.iter_elements(slide.layout)
+    ]
+    return SlideRegionsResponse(
+        page_width=page_width,
+        page_height=page_height,
+        items=items,
+        # 逐句微调用的句子必须与渲染时切法一致，所以由服务端切好回给前端
+        sentences=highlight.split_sentences(slide.script_text or "", max_steps=_SENTENCE_PREVIEW_STEPS),
+        image_sha256=slide.image_sha256,
+    )
 
 
 async def preview_slide(
@@ -771,7 +1256,7 @@ async def preview_slide(
     if not effective.script:
         raise ServiceError("本页讲稿为空，请先填写后再试听")
 
-    fingerprint = build_audio_key(effective.script_sha256, effective.voice_fingerprint)
+    _segments, _pause_ms, fingerprint = page_audio_plan(slide, effective, settings)
     if slide.audio_key == fingerprint and slide.audio_object_key:
         return (
             slide.slide_no,
@@ -782,24 +1267,18 @@ async def preview_slide(
 
     work_dir = Path(tempfile.mkdtemp(prefix=f"preview-{project_id.hex[:8]}-"))
     try:
-        wav_path = work_dir / "preview.wav"
-        try:
-            result = tts.synthesize_to_wav(
-                effective.script, effective.language, effective.voice_id, effective.speed, wav_path, engine_name
-            )
-        except tts.TtsError as exc:
-            raise ServiceError(str(exc)) from exc
-
-        wav_bytes = wav_path.read_bytes()
-        object_key = audio_object_key(fingerprint)
-        storage.upload_object(BUCKET_MODULE, object_key, wav_bytes, len(wav_bytes), "audio/wav")
-
-        slide.audio_object_key = object_key
-        slide.audio_key = fingerprint
-        slide.audio_sha256 = result.sha256
-        slide.duration_ms = result.duration_ms
+        page_audio = await prepare_page_audio(slide, project, settings, engine_name, engine_version, work_dir)
+        slide.audio_object_key = audio_object_key(page_audio.audio_key)
+        slide.audio_key = page_audio.audio_key
+        slide.audio_sha256 = page_audio.sha256
+        slide.duration_ms = page_audio.duration_ms
         await session.flush()
-        return slide.slide_no, audio_url(project_id, slide.slide_no, result.sha256), result.duration_ms, result.sha256
+        return (
+            slide.slide_no,
+            audio_url(project_id, slide.slide_no, page_audio.sha256),
+            page_audio.duration_ms,
+            page_audio.sha256,
+        )
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
 
@@ -1007,6 +1486,18 @@ async def apply_source_replace(
         )
         logger.info("换源后已提交改写任务: project=%s 页数=%s", project_id, len(result.rewrite_uids))
 
+    # 换源/页内编辑后立刻刷新页图：编辑器里的画面必须跟着新源走。
+    # 带上期望版本号，任务会等到主事务提交、新版本可见后再出图，不会按旧源白转一次。
+    # 先把「排队中」写进项目行（随本次事务一起提交）：前端拿到新详情就能显示进度条并开始轮询。
+    # 这一步不能交给后台会话——那时本事务还没提交，独立会话的 UPDATE 会命中 0 行。
+    mark_page_images_queued(project)
+    await session.flush()
+    if await page_images.submit(project_id, result.source_version) is None:
+        # 投递失败（登记 job 抛错）时把排队态改掉：不然要等 2 分钟超时前端才看到失败
+        project.page_images_status = PAGE_IMAGES_STATUS_FAILED
+        project.page_images_error = "页图任务投递失败，请重试"
+        await session.flush()
+
     return SourceApplyResult(
         revision_id=result.revision_id,
         source_version=result.source_version,
@@ -1036,6 +1527,21 @@ async def _current_pptx_bytes(project: PptVideoProject) -> bytes:
         return pptx_path.read_bytes()
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
+
+
+async def source_download_target(session: AsyncSession, project_id: uuid.UUID) -> tuple[str, str]:
+    """源 PPT 下载目标：(对象 key, 下载文件名)。
+
+    文件名只用项目名与版本号，不拼用户上传的原名，避免中文/特殊字符带来的路径问题；
+    项目名本身是用户输入，路径分隔符与换行会破坏 Content-Disposition，统一替换掉。
+    """
+    project = await get_project(session, project_id)
+    total = await asyncio.to_thread(storage.stat_object, BUCKET_MODULE, project.source_object_key)
+    if not total:
+        raise NotFoundError("源 PPT 已丢失，请重新上传")
+    version = project.source_version or 1
+    safe_name = _FILENAME_ILLEGAL.sub("_", project.name or "ppt").strip() or "ppt"
+    return project.source_object_key, f"{safe_name}-v{version}.pptx"
 
 
 async def list_slide_shapes(session: AsyncSession, project_id: uuid.UUID, slide_uid: str) -> EditableShapeList:

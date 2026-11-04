@@ -10,6 +10,8 @@ export type VoiceOption = components['schemas']['VoiceOption']
 export type JobState = components['schemas']['JobState']
 export type SlideItem = components['schemas']['SlideItem']
 export type ScriptAiState = components['schemas']['ScriptAiState']
+export type PageImagesState = components['schemas']['PageImagesState']
+export type PageImagesAccepted = components['schemas']['PageImagesAccepted']
 export type ReuseSummary = components['schemas']['ReuseSummary']
 export type VersionItem = components['schemas']['VersionItem']
 export type ProjectSummary = components['schemas']['ProjectSummary']
@@ -30,6 +32,24 @@ export type SourceApplyResult = components['schemas']['SourceApplyResult']
 export type EditableShapeItem = components['schemas']['EditableShapeItem']
 export type EditableShapeList = components['schemas']['EditableShapeList']
 export type SlideEditResult = components['schemas']['SlideEditResult']
+export type HighlightRect = components['schemas']['HighlightRect']
+export type HighlightRegionItem = components['schemas']['HighlightRegionItem']
+export type HighlightSentenceItem = components['schemas']['HighlightSentenceItem']
+export type HighlightRegionsPayload = components['schemas']['HighlightRegionsPayload']
+export type SlideRegionItem = components['schemas']['SlideRegionItem']
+export type SlideRegionsResponse = components['schemas']['SlideRegionsResponse']
+
+/** 区域三态：不亮 / 只给文字变色 / 整块铺底色（与后端 REGION_MODES 对齐） */
+export type RegionMode = 'off' | 'text' | 'area'
+
+export const REGION_MODE_OPTIONS: { value: RegionMode; label: string }[] = [
+  { value: 'off', label: '不亮' },
+  { value: 'text', label: '文字变色' },
+  { value: 'area', label: '区域铺底色' },
+]
+
+/** 区域类型标签：元素来自 layout 解析，手绘框是解析不出时的兜底 */
+export const REGION_SOURCE_LABEL = { element: '页内元素', manual: '手绘区域' } as const
 
 /** 改写语义（与后端 RewriteMode 对齐） */
 export type RewriteMode = 'fill_blank' | 'rewrite_all' | 'rewrite_selected' | 'rewrite_one'
@@ -131,10 +151,27 @@ export interface SlideUpdatePayload {
   language?: LanguageCode | null
   voice_id?: string | null
   speed?: number | null
+  /** 本页高亮样式覆盖；null 表示跟随模块设置 */
+  highlight_style?: string | null
+  /** 本页高亮主色 #RRGGBB；null 表示跟随模块设置 */
+  highlight_color?: string | null
+  /** 区域级配置；整份替换语义，传空数组对象即清空（后端不区分「未传」和「传空」） */
+  highlight_regions?: HighlightRegionsPayload | null
   clear_language?: boolean
   clear_voice?: boolean
   clear_speed?: boolean
+  clear_highlight_style?: boolean
+  clear_highlight_color?: boolean
+  clear_highlight_regions?: boolean
 }
+
+/** 页级可选的视觉引导样式（与后端 HIGHLIGHT_STYLES 对齐） */
+export const HIGHLIGHT_STYLE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'text_recolor', label: '文字变色（不画框，背景不动）' },
+  { value: 'dim_outline', label: '压暗 + 描边' },
+  { value: 'dim', label: '仅压暗' },
+  { value: 'outline', label: '仅描边' },
+]
 
 /** 项目默认设置提交体（与后端 ProjectUpdateRequest 对齐） */
 export interface ProjectUpdatePayload {
@@ -154,6 +191,17 @@ export const STAGE_LABEL: Record<string, string> = {
   upload: '上传成片',
   done: '已完成',
   failed: '失败',
+}
+
+/**
+ * 页图生成阶段文案：后端只给一个 0~100 的百分比，阶段由区间反推，
+ * 与 `page_images.py` 的 `PROGRESS_CONVERT_END` / `PROGRESS_UPLOAD_END` 保持一致。
+ */
+export function pageImagesStageLabel(progress: number): string {
+  if (progress >= 100) return '已完成'
+  if (progress >= 85) return '编码上传'
+  if (progress >= 40) return '拆图'
+  return '转换'
 }
 
 export const PROJECT_STATUS_LABEL: Record<string, string> = {

@@ -30,6 +30,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fontconfig \
     fonts-noto-cjk \
     fonts-noto-cjk-extra \
+    fonts-liberation \
+    fonts-crosextra-carlito \
+    fonts-crosextra-caladea \
     libreoffice-impress \
     libreoffice-core \
     poppler-utils \
@@ -37,6 +40,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # 字体自检：fc-match 命中 Noto CJK 才算镜像可用（构建期就报错，别等渲染出方块）
 RUN fc-match "Noto Sans CJK SC" | grep -qi "noto" || (echo "缺少 CJK 字体，中文渲染会变方块" && exit 1)
+
+# 字体别名（必须与 Dockerfile 一致）：PPT 里声明的「微软雅黑 / 宋体 / 思源黑体」
+# 在容器里没有对应文件，不加别名会被 fontconfig 判给无中文字形的 DejaVu，
+# 再逐字形回退到 Noto，中西文度量不一致 → 文字重叠、表格跑位。
+COPY assets/fontconfig/69-ppt-font-alias.conf /etc/fonts/conf.d/69-ppt-font-alias.conf
+RUN fc-cache -f && \
+    for name in "微软雅黑" "Microsoft YaHei" "宋体" "SimSun" "思源黑体 CN"; do \
+        hit="$(fc-match -f '%{family}' "$name")"; \
+        case "$hit" in \
+            *Noto*) ;; \
+            *) echo "字体别名未生效：$name -> $hit"; exit 1 ;; \
+        esac; \
+    done && \
+    for pair in "Arial=Liberation Sans" "Times New Roman=Liberation Serif" "Calibri=Carlito"; do \
+        src="${pair%%=*}"; want="${pair#*=}"; \
+        hit="$(fc-match -f '%{family}' "$src")"; \
+        [ "$hit" = "$want" ] || { echo "拉丁字体度量兼容未生效：$src -> $hit（期望 $want）"; exit 1; }; \
+    done
 
 RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ uv==0.12.2
 

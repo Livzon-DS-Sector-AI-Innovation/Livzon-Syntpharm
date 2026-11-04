@@ -8,6 +8,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.agent import queue
@@ -83,7 +84,7 @@ async def test_claim_marks_running_and_counts_attempt(db_session: AsyncSession) 
 
 
 async def test_claim_returns_none_when_nothing_queued(db_session: AsyncSession) -> None:
-    await db_session.execute(PptVideoJob.__table__.delete())
+    await db_session.execute(delete(PptVideoJob))
     assert await queue.claim(db_session, "worker-1") is None
 
 

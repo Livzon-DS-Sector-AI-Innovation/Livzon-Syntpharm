@@ -1,13 +1,26 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Alert, App, Button, Input, Select, Slider, Space, Tag, Typography } from 'antd'
-import { RobotOutlined, SaveOutlined, SoundOutlined } from '@ant-design/icons'
-
-import { previewSlide, rewriteScripts, saveSlideScript } from '@/actions/agent/ppt-video'
-import { fetchPptVideoDetail } from '@/lib/api/client/agent'
+import { Alert, App, Button, ColorPicker, Input, Modal, Select, Slider, Space, Tag, Typography } from 'antd'
 import {
+  DownloadOutlined,
+  EditOutlined,
+  HighlightOutlined,
+  RobotOutlined,
+  SaveOutlined,
+  SoundOutlined,
+} from '@ant-design/icons'
+
+import HighlightRegionsDrawer from './HighlightRegionsDrawer'
+import SlideContentEditor from './SlideContentEditor'
+import { previewSlide, rewriteScripts, saveSlideScript } from '@/actions/agent/ppt-video'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { fetchPptVideoDetail } from '@/lib/api/client/agent'
+import { PERM } from '@/lib/permissions/codes'
+import {
+  HIGHLIGHT_STYLE_OPTIONS,
   formatDuration,
+  type HighlightRegionsPayload,
   type LanguageCode,
   type ProjectDetail,
   type SlideItem,
@@ -37,10 +50,22 @@ interface Props {
  */
 export default function SlideEditor({ detail, slide, voices, onDetailChange }: Props) {
   const { message } = App.useApp()
+  const [contentOpen, setContentOpen] = useState(false)
+  const [rewritePromptOpen, setRewritePromptOpen] = useState(false)
   const [scriptText, setScriptText] = useState(slide.script_text ?? '')
   const [language, setLanguage] = useState<LanguageCode | undefined>(slide.language ?? undefined)
   const [voiceId, setVoiceId] = useState<string | undefined>(slide.voice_id ?? undefined)
   const [speed, setSpeed] = useState<number | undefined>(slide.speed ?? undefined)
+  // 页级高亮覆盖：留空 = 跟随设置页的模块默认（含颜色）
+  const [highlightStyle, setHighlightStyle] = useState<string | undefined>(slide.highlight_style ?? undefined)
+  const [highlightColor, setHighlightColor] = useState<string | undefined>(slide.highlight_color ?? undefined)
+  // 区域级配置：同样只在本页草案里改，随「保存本页」整份提交（后端是整份替换语义）
+  const [highlightRegions, setHighlightRegions] = useState<HighlightRegionsPayload | null>(
+    slide.highlight_regions ?? null,
+  )
+  const [regionsOpen, setRegionsOpen] = useState(false)
+  const regionCount = highlightRegions?.regions?.length ?? 0
+  const sentenceRuleCount = highlightRegions?.sentences?.length ?? 0
   const [saving, setSaving] = useState(false)
   const [previewing, setPreviewing] = useState(false)
   const [rewriting, setRewriting] = useState(false)
@@ -71,9 +96,18 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
         language: language ?? null,
         voice_id: voiceId ?? null,
         speed: speed ?? null,
+        highlight_style: highlightStyle ?? null,
+        highlight_color: highlightColor ?? null,
+        // 总是整份回写：空配置写成空数组对象，后端据此清空；不传会让库里旧配置留着
+        highlight_regions:
+          highlightRegions && (highlightRegions.regions?.length || highlightRegions.sentences?.length)
+            ? highlightRegions
+            : { regions: [], sentences: [] },
         clear_language: !language,
         clear_voice: !voiceId,
         clear_speed: speed === undefined,
+        clear_highlight_style: !highlightStyle,
+        clear_highlight_color: !highlightColor,
       },
       slide.slide_no,
     )
@@ -116,6 +150,15 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
     }
   }
 
+  /**
+   * 页内编辑保存成功：画面变了但讲稿没变，默认不覆盖人工精修稿。
+   * 「暂不重写」放在主按钮位置，是 Enter 与视觉上的默认项。
+   */
+  const handleContentSaved = (next: ProjectDetail) => {
+    onDetailChange(next)
+    setRewritePromptOpen(true)
+  }
+
   const handlePreview = async () => {
     setPreviewing(true)
     const result = await previewSlide(detail.id, slide.slide_uid)
@@ -131,14 +174,39 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
   return (
     <div className="flex h-full flex-col gap-3 overflow-y-auto">
       <div className="rounded-xl border border-[#E5E3DF] bg-[#141414] p-3">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <span className="text-[12px] text-[#A4A097]">页面预览</span>
+          <Space size={6}>
+            <PermissionGate code={PERM.pptVideoManage}>
+              <Button size="small" type="primary" icon={<EditOutlined />} onClick={() => setContentOpen(true)}>
+                编辑本页内容
+              </Button>
+            </PermissionGate>
+            <PermissionGate code={PERM.pptVideoRead}>
+              <Button size="small" icon={<DownloadOutlined />} href={detail.source_download_url} download>
+                下载 PPT
+              </Button>
+            </PermissionGate>
+          </Space>
+        </div>
         <div className="flex aspect-video items-center justify-center overflow-hidden rounded-lg bg-black">
           {slide.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={slide.image_url}
               alt={`第 ${slide.slide_no} 页预览`}
+              decoding="async"
               className="max-h-full max-w-full object-contain"
             />
+          ) : slide.script_stale ? (
+            <div className="flex flex-col items-center gap-2">
+              <Typography.Text className="!text-[#A4A097]">
+                本页画面已修改，旧页图已失效，重新生成视频后才能看到新画面
+              </Typography.Text>
+              <Button size="small" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                去生成视频
+              </Button>
+            </div>
           ) : (
             <Typography.Text className="!text-[#A4A097]">
               页面图尚未生成（渲染任务完成后可见）
@@ -152,6 +220,49 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
           </span>
         </div>
       </div>
+
+      <SlideContentEditor
+        open={contentOpen}
+        projectId={detail.id}
+        slideUid={slide.slide_uid}
+        slideNo={slide.slide_no}
+        onClose={() => setContentOpen(false)}
+        onDetailChange={onDetailChange}
+        onSaved={handleContentSaved}
+      />
+
+      <HighlightRegionsDrawer
+        open={regionsOpen}
+        projectId={detail.id}
+        slide={slide}
+        value={highlightRegions}
+        onClose={() => setRegionsOpen(false)}
+        onChange={setHighlightRegions}
+      />
+
+      <Modal
+        open={rewritePromptOpen}
+        title="画面已更新"
+        closable={false}
+        maskClosable={false}
+        footer={[
+          <Button key="skip" type="primary" onClick={() => setRewritePromptOpen(false)}>
+            暂不重写
+          </Button>,
+          <Button
+            key="rewrite"
+            loading={rewriting}
+            onClick={() => {
+              setRewritePromptOpen(false)
+              void handleRewriteOne()
+            }}
+          >
+            按新画面重写本页
+          </Button>,
+        ]}
+      >
+        本页画面已更新，讲稿还是按旧画面写的。要现在按新画面重写这一页吗？重写会覆盖本页现有讲稿。
+      </Modal>
 
       <div className="rounded-xl border border-[#E5E3DF] bg-white p-4">
         <div className="mb-2 flex items-center justify-between">
@@ -266,6 +377,57 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
           </div>
         </div>
 
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div>
+            <Typography.Text type="secondary" className="text-[12px]">
+              本页高亮样式（留空跟随设置页）
+            </Typography.Text>
+            <Select<string>
+              allowClear
+              className="mt-1 w-full"
+              placeholder="跟随模块设置"
+              value={highlightStyle}
+              onChange={(value) => setHighlightStyle(value)}
+              options={HIGHLIGHT_STYLE_OPTIONS}
+            />
+          </div>
+          <div>
+            <Typography.Text type="secondary" className="text-[12px]">
+              本页高亮颜色（留空跟随设置页）
+            </Typography.Text>
+            <div className="mt-1 flex items-center gap-2">
+              <ColorPicker
+                value={highlightColor ?? '#FF3B30'}
+                onChange={(color) => setHighlightColor(color.toHexString().toUpperCase())}
+              />
+              <Typography.Text type="secondary" className="text-[12px]">
+                {highlightColor ?? '未覆盖，用设置页的默认色'}
+              </Typography.Text>
+              {highlightColor && (
+                <Button type="link" size="small" onClick={() => setHighlightColor(undefined)}>
+                  清除
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Button size="small" icon={<HighlightOutlined />} onClick={() => setRegionsOpen(true)}>
+            高亮区域设置
+          </Button>
+          <Typography.Text type="secondary" className="!text-[12px]">
+            {regionCount
+              ? `已配 ${regionCount} 个区域${sentenceRuleCount ? `、${sentenceRuleCount} 条句级规则` : ''}`
+              : '默认按讲稿自动定位；可逐区域指定效果，或手绘一块区域兜底'}
+          </Typography.Text>
+          {regionCount + sentenceRuleCount > 0 && (
+            <Button type="link" size="small" onClick={() => setHighlightRegions(null)}>
+              清空区域配置
+            </Button>
+          )}
+        </div>
+
         <Space className="mt-3">
           <Button type="primary" icon={<SaveOutlined />} loading={saving} onClick={handleSave}>
             保存本页
@@ -276,16 +438,24 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
           <Button icon={<SoundOutlined />} loading={previewing} onClick={handlePreview}>
             试听 / 重新生成旁白
           </Button>
-          {(language || voiceId || speed !== undefined) && (
+          {(language ||
+            voiceId ||
+            speed !== undefined ||
+            highlightStyle ||
+            highlightColor ||
+            regionCount + sentenceRuleCount > 0) && (
             <Button
               type="text"
               onClick={() => {
                 setLanguage(undefined)
                 setVoiceId(undefined)
                 setSpeed(undefined)
+                setHighlightStyle(undefined)
+                setHighlightColor(undefined)
+                setHighlightRegions(null)
               }}
             >
-              跟随项目默认
+              全部跟随默认
             </Button>
           )}
         </Space>

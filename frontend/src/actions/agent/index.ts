@@ -1,5 +1,4 @@
 export {
-  createPptVideoProject,
   deletePptVideoProject,
   previewSlide,
   requestRender,

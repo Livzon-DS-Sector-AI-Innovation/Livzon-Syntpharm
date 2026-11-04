@@ -15,12 +15,12 @@ from __future__ import annotations
 
 import io
 import logging
-import tempfile
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
 from pptx import Presentation
+from pptx.enum.shapes import MSO_SHAPE_TYPE
+from pptx.parts.image import Image
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,15 @@ def _slide(prs: Any, page_index: int) -> Any:
     if page_index < 1 or page_index > len(prs.slides):
         raise EditError(f"页码超出范围：{page_index}")
     return prs.slides[page_index - 1]
+
+
+def _is_picture(shape: Any) -> bool:
+    """判断是否图片形状。
+
+    python-pptx 的 `Picture` 没有 `has_picture` 属性（取不到会静默为 False），
+    只能按 `shape_type` 判定。
+    """
+    return getattr(shape, "shape_type", None) == MSO_SHAPE_TYPE.PICTURE
 
 
 def _find_shape(slide: Any, identifier: str | int) -> Any:
@@ -70,7 +79,7 @@ def list_editable_shapes(pptx_bytes: bytes, page_index: int) -> list[EditableSha
                 name=shape.name,
                 kind=str(getattr(shape, "shape_type", "")),
                 text=text[:200],
-                has_picture=bool(getattr(shape, "has_picture", False)),
+                has_picture=_is_picture(shape),
                 editable_text=editable_text,
             )
         )
@@ -101,20 +110,44 @@ def _replace_text(shape: Any, new_text: str) -> None:
             run.text = ""
 
 
+def _is_native_image(image_bytes: bytes) -> bool:
+    """python-pptx 能否直接写入该格式（BMP/GIF/JPEG/PNG/TIFF/WMF）。
+
+    `ext` 是懒加载属性：格式不认识时抛 ValueError，内容根本不是图片时抛 OSError。
+    """
+    try:
+        return bool(Image.from_blob(image_bytes, None).ext)
+    except (OSError, ValueError):
+        return False
+
+
+def _image_stream(image_bytes: bytes) -> io.BytesIO:
+    """把上传图片整理成 python-pptx 可写入的字节流。
+
+    python-pptx 只认 BMP/GIF/JPEG/PNG/TIFF/WMF，webp 之类会直接抛 ValueError，
+    这里先用 Pillow 转成 PNG，避免把「不支持的格式」暴露成 500。
+    """
+    if _is_native_image(image_bytes):
+        return io.BytesIO(image_bytes)
+
+    try:
+        from PIL import Image as PILImage
+
+        with PILImage.open(io.BytesIO(image_bytes)) as source:
+            buffer = io.BytesIO()
+            source.convert("RGBA").save(buffer, format="PNG")
+    except (OSError, ValueError) as exc:
+        raise EditError("图片无法解析，请换一张 png / jpg 图片") from exc
+    buffer.seek(0)
+    return buffer
+
+
 def _replace_image(shape: Any, image_bytes: bytes) -> None:
     """替换图片关系而不是重建形状，位置尺寸完全不变。"""
-    if not getattr(shape, "has_picture", False):
+    if not _is_picture(shape):
         raise EditError(f"形状「{shape.name}」不是图片")
 
-    slide_part = shape.part
-    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as handle:
-        handle.write(image_bytes)
-        temp_path = Path(handle.name)
-    try:
-        _image_part, r_id = slide_part.get_or_add_image_part(str(temp_path))
-    finally:
-        temp_path.unlink(missing_ok=True)
-
+    _image_part, r_id = shape.part.get_or_add_image_part(_image_stream(image_bytes))
     blip = shape._element.blipFill.blip  # noqa: SLF001 — python-pptx 未暴露公开 API
     blip.rEmbed = r_id
 

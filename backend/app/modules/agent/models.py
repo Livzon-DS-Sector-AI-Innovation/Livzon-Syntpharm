@@ -63,6 +63,15 @@ SCRIPT_AI_STATUS_PARTIAL = "partial"
 SCRIPT_AI_STATUS_FAILED = "failed"
 SCRIPT_AI_STATUS_DISABLED = "disabled"
 
+# 页图（编辑态底图）生成状态
+PAGE_IMAGES_STATUS_IDLE = "idle"
+#: 后端不写这个值（上传流程里项目行还没提交，独立会话 UPDATE 会命中 0 行）；
+#: 它只作为前端提交后的乐观态与 API 契约里的合法取值存在
+PAGE_IMAGES_STATUS_QUEUED = "queued"
+PAGE_IMAGES_STATUS_RUNNING = "running"
+PAGE_IMAGES_STATUS_DONE = "done"
+PAGE_IMAGES_STATUS_FAILED = "failed"
+
 # 单页讲稿来源
 SCRIPT_SOURCE_UPLOAD = "upload"
 SCRIPT_SOURCE_AI = "ai"
@@ -141,11 +150,43 @@ class PptVideoProject(BaseModel):
     llm_config_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True, comment="项目级模型覆盖（core.llm_configs.id）；空=跟随全局默认"
     )
-    script_guide: Mapped[str | None] = mapped_column(
-        Text, nullable=True, comment="项目级讲稿风格指南；空=继承全局"
-    )
+    script_guide: Mapped[str | None] = mapped_column(Text, nullable=True, comment="项目级讲稿风格指南；空=继承全局")
     source_version: Mapped[int] = mapped_column(
         Integer, default=1, server_default="1", nullable=False, comment="源 PPT 版本号，对象 key 为 source-v{n}.pptx"
+    )
+    page_images_version: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        server_default="0",
+        nullable=False,
+        comment="已生成页图对应的源版本；等于 source_version 才能跳过重新转换",
+    )
+    page_images_status: Mapped[str] = mapped_column(
+        String(16),
+        default=PAGE_IMAGES_STATUS_IDLE,
+        server_default=PAGE_IMAGES_STATUS_IDLE,
+        nullable=False,
+        comment="页图生成状态: idle/queued/running/done/failed",
+    )
+    page_images_progress: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False, comment="页图生成进度 0~100"
+    )
+    page_images_done: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False, comment="已完成页数（含跳过）"
+    )
+    page_images_total: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False, comment="本次出图总页数"
+    )
+    page_images_error: Mapped[str | None] = mapped_column(Text, nullable=True, comment="页图最近一次失败原因")
+    page_images_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, comment="最近一次页图任务的 core.background_jobs.id"
+    )
+    page_images_renderer: Mapped[str] = mapped_column(
+        String(64),
+        default="",
+        server_default="",
+        nullable=False,
+        comment="产出当前页图的渲染管线指纹；与 render.RENDERER_KEY 不一致即视为过期",
     )
 
     def body_is_stale(self, current_body_key: str) -> bool:
@@ -184,9 +225,27 @@ class PptVideoSlide(BaseModel):
         Integer, default=0, server_default="0", nullable=False, comment="当前源 PPT 中的页序（1 起）"
     )
     script_text: Mapped[str] = mapped_column(Text, default="", server_default="", nullable=False, comment="本页讲稿")
+    script_segments: Mapped[list[dict[str, Any]] | None] = mapped_column(
+        JSON,
+        nullable=True,
+        comment="段级讲稿 [{text,targets[]}]：拼起来必须等于 script_text，否则视为已手改、按字面兜底",
+    )
     language: Mapped[str | None] = mapped_column(String(8), nullable=True, comment="覆盖语言: zh/en；空=用项目默认")
     voice_id: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="覆盖音色；空=用项目默认")
     speed: Mapped[float | None] = mapped_column(Float, nullable=True, comment="覆盖语速；空=用项目默认")
+    highlight_style: Mapped[str | None] = mapped_column(
+        String(16), nullable=True, comment="覆盖本页视觉引导样式；空=用模块设置"
+    )
+    highlight_color: Mapped[str | None] = mapped_column(
+        String(16), nullable=True, comment="覆盖本页高亮主色 #RRGGBB；空=用模块设置"
+    )
+    #: none_as_null=True：清空配置要落成 SQL NULL，否则会存成 JSON 'null'，
+    #: 「已配置的页」按 is not null 统计就会多算，读回来也得再判一次
+    highlight_regions: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON(none_as_null=True),
+        nullable=True,
+        comment="区域级高亮配置 {regions,sentences}；空=按讲稿自动判定",
+    )
     page_text: Mapped[str | None] = mapped_column(Text, nullable=True, comment="从 PPT 解析出的本页文本（辅助填稿）")
     page_notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="PPT 演讲者备注（辅助填稿）")
     script_source: Mapped[str] = mapped_column(

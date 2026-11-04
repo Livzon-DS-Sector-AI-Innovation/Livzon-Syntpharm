@@ -12,8 +12,10 @@
 import logging
 import shutil
 import subprocess
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from app.modules.agent.config import CANVAS_HEIGHT, CANVAS_WIDTH, FRAME_RATE
 
@@ -24,9 +26,85 @@ FFPROBE_TIMEOUT = 60
 AUDIO_SAMPLE_RATE = 48000
 AUDIO_BITRATE = "128k"
 
+#: 渲染管线版本：**只要改了影响画面像素的东西（字体、soffice/poppler 参数、dpi）就必须加一**。
+#: 它同时作用于两处，保证「预览页图」与「成片画面」不会一半新一半旧：
+#: 1. 中间 PDF 的内容寻址 key（旧 PDF 自然不再命中，见 `page_images.source_pdf_key`）；
+#: 2. 项目行的 `page_images_renderer`（不等即视为页图过期，下次投递自动重出）。
+RENDERER_VERSION = "2"
+#: 字体配置指纹：与 `backend/assets/fontconfig/69-ppt-font-alias.conf` + 镜像里的字体包
+#: （Noto CJK / Liberation / Carlito / Caladea）一一对应，改任一处都要同步改这里。
+#: v2：v1 时期镜像里其实没装 Liberation/Carlito（Dockerfile 改了但镜像没重建），
+#: 旧页图是「按 DejaVu 排版」的，必须整批失效重出。
+FONT_PROFILE = "noto-liberation-v2"
+RENDERER_KEY = f"r{RENDERER_VERSION}-{FONT_PROFILE}"
+
+#: 拉丁字体必须命中的度量兼容替代（左边是 PPT 里声明的族名，右边是 fontconfig 应给出的 family）。
+#: 映射不上时会被判给更宽的 DejaVu：文本框提前折行、压住下一行/下一个形状，
+#: 实测 Arial→DejaVu 时第 4 页 6 条要点挤成 5 行、第 32 页标题折行压框。
+REQUIRED_LATIN_FONTS: dict[str, str] = {
+    "Arial": "Liberation Sans",
+    "Times New Roman": "Liberation Serif",
+    "Calibri": "Carlito",
+}
+#: 中文族名必须命中带中文字形的字族，否则中文整屏方块或逐字回退导致中西文度量不一致
+REQUIRED_CJK_FONTS: tuple[str, ...] = ("微软雅黑", "Microsoft YaHei", "宋体", "SimSun", "思源黑体 CN")
+#: 判定「含中文字形」的 family 关键字（镜像里由 fonts-noto-cjk 提供）
+CJK_FAMILY_MARKER = "noto"
+
 
 class RenderError(RuntimeError):
     """渲染失败，message 直接给用户看。"""
+
+
+def _fc_match_family(name: str) -> str:
+    """查 fontconfig 实际会把 `name` 判给哪个字族；环境缺失时返回空串。"""
+    if not shutil.which("fc-match"):
+        return ""
+    completed = subprocess.run(  # noqa: S603 - 命令由服务端常量拼装
+        ["fc-match", "-f", "%{family}", name],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+    if completed.returncode != 0:
+        return ""
+    # 一个字体文件可能列出多个 family（"Liberation Sans, Liberation Sans Narrow"），取第一个
+    return completed.stdout.split(",")[0].strip()
+
+
+def font_environment_problems(match: Callable[[str], str] | None = None) -> list[str]:
+    """列出「字体环境会让页图排版跑偏」的问题；空列表表示可用。
+
+    只做族名解析（fc-match），不读 PPT——同一镜像对所有项目的结果相同，
+    目的是把「镜像少装字体」这类环境问题在出图前就暴露，而不是渲染出一批错图。
+    """
+    lookup = match or _fc_match_family
+    problems: list[str] = []
+    for declared, expected in REQUIRED_LATIN_FONTS.items():
+        actual = lookup(declared)
+        if actual != expected:
+            problems.append(f"{declared} → {actual or '（无匹配）'}（期望 {expected}）")
+    for declared in REQUIRED_CJK_FONTS:
+        actual = lookup(declared)
+        if CJK_FAMILY_MARKER not in actual.lower():
+            problems.append(f"{declared} → {actual or '（无匹配）'}（期望 Noto CJK 等中文字体）")
+    return problems
+
+
+def verify_font_environment() -> None:
+    """出图前校验字体：不合格就直接失败，避免生成一批错位页图。
+
+    宁可不渲染，也不要让用户拿到「文字折行压字」的成片——错图比报错更难排查
+    （错误文本会被人当成内容读出问题）。
+    """
+    problems = font_environment_problems()
+    if problems:
+        raise RenderError(
+            "渲染环境字体不完整，页图会文字折行、互相压字："
+            + "；".join(problems)
+            + "。请用 backend/Dockerfile.worker（以及页面出图用的 backend/Dockerfile）重建镜像后重试。"
+        )
 
 
 def ensure_tools() -> None:
@@ -36,6 +114,7 @@ def ensure_tools() -> None:
         raise RenderError(
             "渲染环境缺少必要工具：" + "、".join(missing) + "。请使用 backend/Dockerfile.worker 构建的 worker 镜像。"
         )
+    verify_font_environment()
 
 
 def run_command(command: list[str], timeout: int, cwd: str | Path | None = None) -> subprocess.CompletedProcess[str]:
@@ -86,26 +165,105 @@ def pptx_to_pdf(pptx_path: str | Path, out_dir: str | Path, profile_dir: str | P
     return pdf_path
 
 
-def pdf_to_pngs(pdf_path: str | Path, out_dir: str | Path, dpi: int = 150) -> list[Path]:
-    """pdf → 每页 png（按页码顺序）。"""
+def pdf_page_count(pdf_path: str | Path) -> int:
+    """PDF 页数（走 poppler 的 pdfinfo，不把页面读进内存）。"""
+    from pdf2image import pdfinfo_from_path
+
+    try:
+        info = pdfinfo_from_path(str(pdf_path))
+    except Exception as exc:  # noqa: BLE001 - pdf2image 抛多种底层异常
+        logger.exception("pdf_page_count failed")
+        raise RenderError(f"无法读取 PDF 页数：{exc}") from exc
+    try:
+        return int(info["Pages"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise RenderError("无法读取 PDF 页数") from exc
+
+
+#: 逐页拆图回调：`(页码, 总页数)`，页码从 1 开始
+PageCallback = Callable[[int, int], None]
+
+
+def render_pdf_page(pdf_path: str | Path, out_dir: str | Path, page: int, dpi: int = 150) -> Path:
+    """渲染单页 PDF 为 PNG（页码从 1 开始）。
+
+    页图任务逐页调用它可以按页上报进度；`render_pdf_pages` 也走这一份实现，
+    保证「带进度」与「不带进度」两条路径渲染结果完全一致。
+    """
     from pdf2image import convert_from_path
 
     target_dir = Path(out_dir)
     target_dir.mkdir(parents=True, exist_ok=True)
     try:
-        pages = convert_from_path(str(pdf_path), dpi=dpi, fmt="png")
+        pages = convert_from_path(str(pdf_path), dpi=dpi, fmt="png", first_page=page, last_page=page)
     except Exception as exc:  # noqa: BLE001 - pdf2image 抛多种底层异常
-        logger.exception("pdf_to_pngs failed")
-        raise RenderError(f"PPT 转图片失败：{exc}") from exc
+        logger.exception("render_pdf_page failed at page %s", page)
+        raise RenderError(f"PPT 转图片失败（第 {page} 页）：{exc}") from exc
+    if not pages:
+        raise RenderError(f"PPT 第 {page} 页渲染为空")
+    path = target_dir / f"slide-{page:03d}.png"
+    pages[0].save(path, "PNG", optimize=True)
+    return path
+
+
+def render_pdf_pages(
+    pdf_path: str | Path,
+    out_dir: str | Path,
+    dpi: int = 150,
+    on_page: PageCallback | None = None,
+) -> list[Path]:
+    """pdf → 每页 png（按页码顺序），逐页渲染。
+
+    为什么逐页：一次 `convert_from_path` 会把整本的 PIL image 全留在内存里
+    （53 页 150dpi 约 300MB+），而且拆图期间没有任何进度可报。
+    逐页调用 `pdftoppm -f n -l n` 后峰值内存只有单页，
+    同时可以按页向上层回调进度。53 页多 53 次进程启动（合计几秒），
+    相对于本就串行的 soffice + 拆图耗时可以忽略。
+    """
+    target_dir = Path(out_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    total = pdf_page_count(pdf_path)
+    if total <= 0:
+        raise RenderError("PPT 未渲染出任何页面")
 
     paths: list[Path] = []
-    for index, page in enumerate(pages, start=1):
-        path = target_dir / f"slide-{index:03d}.png"
-        page.save(path, "PNG", optimize=True)
-        paths.append(path)
-    if not paths:
-        raise RenderError("PPT 未渲染出任何页面")
+    for index in range(1, total + 1):
+        paths.append(render_pdf_page(pdf_path, target_dir, index, dpi))
+        if on_page is not None:
+            on_page(index, total)
     return paths
+
+
+def pdf_to_pngs(pdf_path: str | Path, out_dir: str | Path, dpi: int = 150) -> list[Path]:
+    """pdf → 每页 png（兼容旧调用，等价于不带进度回调的 `render_pdf_pages`）。"""
+    return render_pdf_pages(pdf_path, out_dir, dpi)
+
+
+#: 预览大图（编辑器中间画面）最宽像素；成片仍用原始 PNG，避免改格式触发全量重算
+PREVIEW_MAX_WIDTH = 1920
+PREVIEW_JPEG_QUALITY = 88
+#: 时间轴缩略图最宽像素；显示区 96px，留 3 倍余量给高分屏
+THUMB_WIDTH = 320
+THUMB_JPEG_QUALITY = 78
+
+
+def encode_jpeg(source: str | Path, out_path: str | Path, max_width: int, quality: int) -> Path:
+    """页图 PNG → 指定宽度的 JPEG（预览图 / 缩略图）。
+
+    只等比缩小、不裁切：预览图与成片必须保持同一构图，
+    否则用户在预览里看到的版式会和成片对不上。
+    """
+    from PIL import Image
+
+    target = Path(out_path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with Image.open(source) as image:
+        frame = image.convert("RGB")
+        if frame.width > max_width:
+            height = max(1, round(frame.height * max_width / frame.width))
+            frame = frame.resize((max_width, height), Image.Resampling.LANCZOS)
+        frame.save(target, "JPEG", quality=quality, optimize=True, progressive=True)
+    return target
 
 
 def build_slide_segment(
@@ -179,6 +337,70 @@ def build_slide_segment(
     return total_ms
 
 
+_TEXT_KIND_PREFIXES = ("", "TEXT", "PLACEHOLDER", "CELL")
+
+
+def _is_text_kind(kind: str | None) -> bool:
+    """只有文本类区域才做文字染色；图片/图表整块染色会糊成红色剪影。"""
+    prefix = str(kind or "").split(" ", 1)[0].strip().upper()
+    return prefix in _TEXT_KIND_PREFIXES or prefix.startswith("TEXT")
+
+
+def _quantile(histogram: Sequence[int], total: int, ratio: float) -> int:
+    target = total * ratio
+    seen = 0
+    for value, count in enumerate(histogram):
+        seen += count
+        if seen >= target:
+            return value
+    return 255
+
+
+def _text_mask(region: Any, strength: float) -> Any:
+    """区域内「文字像素」的软遮罩。
+
+    文字在文本框里总是占面积更小的一侧：浅底深字取暗侧、深底浅字取亮侧，
+    所以按两侧像素数比较来定极性，比固定「暗=文字」更稳。
+    对比度太低（纯色块、照片、渐变）时返回 None，调用方退化为只描边，不硬染。
+    """
+    gray = region.convert("L")
+    histogram = gray.histogram()
+    total = sum(histogram)
+    if total <= 0:
+        return None
+    low = _quantile(histogram, total, 0.05)
+    high = _quantile(histogram, total, 0.95)
+    if high - low < 32:
+        return None
+    threshold = (low + high) / 2.0
+    band = max(6.0, (high - low) / 4.0)
+    dark_count = sum(histogram[: int(threshold)])
+    dark_is_foreground = dark_count <= total - dark_count
+    table: list[int] = []
+    for value in range(256):
+        ratio = (threshold - value) / band if dark_is_foreground else (value - threshold) / band
+        ratio = 0.0 if ratio <= 0 else (1.0 if ratio >= 1 else ratio)
+        table.append(int(255 * ratio * strength))
+    return gray.point(table)
+
+
+@dataclass(frozen=True)
+class RegionPaint:
+    """一个区域实际怎么画：只染字，或铺一层底色，颜色与强度各自可调。
+
+    区域三态（`HighlightBox.mode`）在 worker 里归一到它，渲染循环因此不再判断
+    「是不是文本」——那是解析阶段的决定，这里只认画法。
+    """
+
+    accent: tuple[int, int, int] = (86, 69, 212)
+    #: 只给文字染色（背景不动）
+    text: bool = False
+    #: 铺底色的透明度（0-255）；`area` 档用它
+    fill_alpha: int = 0
+    #: 文字染色强度（0-100）；`text` 档用它
+    recolor_strength: int = 0
+
+
 def compose_highlight_frame(
     source_path: str | Path,
     out_path: str | Path,
@@ -187,13 +409,27 @@ def compose_highlight_frame(
     dim_alpha: int = 150,
     accent: tuple[int, int, int] = (86, 69, 212),
     outline_px: int = 4,
+    *,
+    kinds: Sequence[str] | None = None,
+    fill_alpha: int = 0,
+    recolor_strength: int = 0,
+    paints: Sequence[RegionPaint] | None = None,
 ) -> Path:
     """生成一段高亮静帧：整页压暗，命中区域还原亮度并描边。
 
     boxes 为 EMU 坐标，需配合 slide_size（页面 EMU 尺寸）换算成像素；
     slide_size 缺失或换算异常时退化为「不变暗」的原始画面，宁可不亮也不亮错。
+
+    `paints` 与 boxes 一一对应时按框取画法（区域级配置走它）；
+    不传则退回老口径：`recolor_strength > 0` 的文本区域做**文字染色**，
+    其余只贴回原图并叠淡色底，避免整块变红剪影。
     """
     from PIL import Image, ImageDraw  # 延迟导入：只有开启视觉引导时才需要 Pillow
+
+    def _legacy_paint(kind: str) -> RegionPaint:
+        if recolor_strength > 0 and _is_text_kind(kind):
+            return RegionPaint(accent, text=True, fill_alpha=0, recolor_strength=recolor_strength)
+        return RegionPaint(accent, text=False, fill_alpha=fill_alpha, recolor_strength=0)
 
     target = Path(out_path)
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -201,30 +437,44 @@ def compose_highlight_frame(
         base = handle.convert("RGB")
 
     width_px, height_px = base.size
-    usable: list[tuple[int, int, int, int]] = []
+    regions: list[tuple[tuple[int, int, int, int], RegionPaint]] = []
     if boxes and slide_size and slide_size[0] > 0 and slide_size[1] > 0:
         scale_x = width_px / slide_size[0]
         scale_y = height_px / slide_size[1]
-        for left, top, box_width, box_height in boxes:
+        for index, (left, top, box_width, box_height) in enumerate(boxes):
             x0 = max(0, min(width_px - 1, int(left * scale_x)))
             y0 = max(0, min(height_px - 1, int(top * scale_y)))
             x1 = max(x0 + 1, min(width_px, int((left + box_width) * scale_x)))
             y1 = max(y0 + 1, min(height_px, int((top + box_height) * scale_y)))
             if x1 - x0 >= 4 and y1 - y0 >= 4:
-                usable.append((x0, y0, x1, y1))
+                kind = kinds[index] if kinds is not None and index < len(kinds) else ""
+                paint = paints[index] if paints is not None and index < len(paints) else _legacy_paint(kind)
+                regions.append(((x0, y0, x1, y1), paint))
 
-    if not usable:
+    if not regions:
         base.save(target, "PNG", optimize=True)
         return target
 
     alpha = max(0, min(255, dim_alpha)) / 255.0
     result = Image.blend(base, Image.new("RGB", base.size, (0, 0, 0)), alpha) if alpha > 0 else base.copy()
-    for box in usable:
-        result.paste(base.crop(box), box[:2])
+    for box, paint in regions:
+        region = base.crop(box)
+        painted = region
+        strength = max(0, min(100, paint.recolor_strength)) / 100.0
+        if paint.text and strength > 0:
+            mask = _text_mask(region, strength)
+            if mask is not None:
+                painted = Image.composite(Image.new("RGB", region.size, paint.accent), region, mask)
+        else:
+            fill = max(0, min(255, paint.fill_alpha)) / 255.0
+            if fill > 0:
+                # 区域变色：整块铺一层主色底（文字仍可读），不做文字遮罩
+                painted = Image.blend(region, Image.new("RGB", region.size, paint.accent), fill)
+        result.paste(painted, box[:2])
     if outline_px > 0:
         draw = ImageDraw.Draw(result)
-        for box in usable:
-            draw.rectangle([box[0], box[1], box[2] - 1, box[3] - 1], outline=accent, width=outline_px)
+        for box, paint in regions:
+            draw.rectangle([box[0], box[1], box[2] - 1, box[3] - 1], outline=paint.accent, width=outline_px)
 
     result.save(target, "PNG", optimize=True)
     return target

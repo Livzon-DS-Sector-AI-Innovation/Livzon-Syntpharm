@@ -6,12 +6,13 @@
 
 import uuid
 from dataclasses import replace
+from typing import Any
 
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.llm import LLMProviderError
+from app.core.llm import LLMProviderError, llm_client
 from app.modules.agent import rewrite
 from app.modules.agent.ai_config import ResolvedModel
 from app.modules.agent.config import DEFAULTS
@@ -94,13 +95,15 @@ async def _add_slide(
     return slide
 
 
-def _fake_llm(monkeypatch: pytest.MonkeyPatch, scripts: dict[int, str], seen: list[list[dict]] | None = None):
+def _fake_llm(
+    monkeypatch: pytest.MonkeyPatch, scripts: dict[int, str], seen: list[list[dict[str, Any]]] | None = None
+) -> None:
     async def fake_chat_json(messages, expected_keys=None, **kwargs):
         if seen is not None:
             seen.append(messages)
         return {"slides": [{"slide_no": no, "script": text} for no, text in scripts.items()]}
 
-    monkeypatch.setattr(rewrite.llm_client, "chat_json", fake_chat_json)
+    monkeypatch.setattr(llm_client, "chat_json", fake_chat_json)
 
 
 def _raise_on_nth(monkeypatch: pytest.MonkeyPatch, fail_at: int):
@@ -112,7 +115,7 @@ def _raise_on_nth(monkeypatch: pytest.MonkeyPatch, fail_at: int):
             raise LLMProviderError("上游 502")
         return {"slides": []}
 
-    monkeypatch.setattr(rewrite.llm_client, "chat_json", fake_chat_json)
+    monkeypatch.setattr(llm_client, "chat_json", fake_chat_json)
 
 
 # ── 目标页选择 ────────────────────────────────────────────────────────────
@@ -181,7 +184,7 @@ async def test_run_writes_script_and_keeps_before_snapshot(
     slide.script_stale = True
     await db_session.flush()
 
-    seen: list[list[dict]] = []
+    seen: list[list[dict[str, Any]]] = []
     _fake_llm(monkeypatch, {1: "新的讲稿内容"}, seen)
 
     result = await rewrite.run(
@@ -201,6 +204,7 @@ async def test_run_writes_script_and_keeps_before_snapshot(
     assert result.revision_id is not None
 
     refreshed = await db_session.get(PptVideoSlide, slide.id)
+    assert refreshed is not None
     await db_session.refresh(refreshed)
     assert refreshed.script_text == "新的讲稿内容"
     assert refreshed.script_source == SCRIPT_SOURCE_AI
@@ -225,9 +229,7 @@ async def test_run_writes_script_and_keeps_before_snapshot(
     assert "更口语一点" in seen[0][1]["content"]
 
 
-async def test_run_partial_when_one_batch_fails(
-    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_run_partial_when_one_batch_fails(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch) -> None:
     project = await _make_project(db_session)
     await _add_slide(db_session, project, 1, text="第一页")
     await _add_slide(db_session, project, 2, text="第二页")
@@ -240,7 +242,7 @@ async def test_run_partial_when_one_batch_fails(
             return {"slides": [{"slide_no": 1, "script": "第一页新稿"}]}
         raise LLMProviderError("上游 502")
 
-    monkeypatch.setattr(rewrite.llm_client, "chat_json", fake_chat_json)
+    monkeypatch.setattr(llm_client, "chat_json", fake_chat_json)
 
     # 每批 1 页，才能只让第二批失败
     result = await rewrite.run(
@@ -268,9 +270,7 @@ async def test_run_marks_failed_when_all_batches_fail(
 
     _raise_on_nth(monkeypatch, fail_at=1)
 
-    result = await rewrite.run(
-        db_session, project, rewrite.RewriteRequest(mode=REWRITE_MODE_REWRITE_ALL), SETTINGS
-    )
+    result = await rewrite.run(db_session, project, rewrite.RewriteRequest(mode=REWRITE_MODE_REWRITE_ALL), SETTINGS)
 
     assert result.status == SCRIPT_AI_STATUS_FAILED
     revision = await db_session.get(PptVideoScriptRevision, result.revision_id)
@@ -279,21 +279,18 @@ async def test_run_marks_failed_when_all_batches_fail(
     assert revision.error_message
 
     refreshed = await db_session.get(PptVideoProject, project.id)
+    assert refreshed is not None
     await db_session.refresh(refreshed)
     assert refreshed.script_ai_status == SCRIPT_AI_STATUS_FAILED
 
 
-async def test_run_without_targets_finishes_cleanly(
-    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_run_without_targets_finishes_cleanly(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch) -> None:
     project = await _make_project(db_session)
     await _add_slide(db_session, project, 1, text="第一页", script="已有稿")
 
     _fake_llm(monkeypatch, {})
 
-    result = await rewrite.run(
-        db_session, project, rewrite.RewriteRequest(mode=REWRITE_MODE_FILL_BLANK), SETTINGS
-    )
+    result = await rewrite.run(db_session, project, rewrite.RewriteRequest(mode=REWRITE_MODE_FILL_BLANK), SETTINGS)
 
     assert result.total == 0 and result.done == 0
     assert result.status == SCRIPT_AI_STATUS_DONE
@@ -320,6 +317,7 @@ async def test_run_ignores_pages_outside_allowed_batch(
 
     # 只改第 1 页时模型顺手写了第 2 页，属于越界，必须丢弃
     refreshed = await db_session.get(PptVideoSlide, other.id)
+    assert refreshed is not None
     await db_session.refresh(refreshed)
     assert refreshed.script_text == "第二页原稿"
 
@@ -355,6 +353,7 @@ async def test_rollback_restores_before_and_marks_unapplied(
 
     assert restored == 1
     refreshed = await db_session.get(PptVideoSlide, slide.id)
+    assert refreshed is not None
     await db_session.refresh(refreshed)
     assert refreshed.script_text == "人工稿"
     assert refreshed.audio_object_key is None  # 回滚也要让旧音频失效
@@ -373,9 +372,7 @@ async def test_rollback_unknown_revision_raises(db_session: AsyncSession) -> Non
         await rewrite.rollback_revision(db_session, project.id, uuid.uuid4())
 
 
-async def test_list_revisions_newest_first(
-    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_list_revisions_newest_first(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch) -> None:
     project = await _make_project(db_session)
     slide = await _add_slide(db_session, project, 1, text="第一页", script="底稿")
     _fake_llm(monkeypatch, {1: "第一次改"})

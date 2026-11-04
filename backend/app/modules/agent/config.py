@@ -4,6 +4,7 @@
 默认值刻意写死在这里，保证 worker 在没有模块配置行时也能跑。
 """
 
+import re
 from dataclasses import dataclass
 
 from app.shared.config_reader import (
@@ -36,10 +37,40 @@ ENCODER_KEY = "v2-h264-1920x1080-30-yuv420p-aac48000-128k"
 SCRIPT_GUIDE_MAX_CHARS = 2000
 
 #: 页内视觉引导样式
+HIGHLIGHT_STYLE_TEXT_RECOLOR = "text_recolor"  # 讲到的文字变主色，背景不动；不画框（图片/图表只加淡色底）
 HIGHLIGHT_STYLE_DIM_OUTLINE = "dim_outline"  # 其余区域压暗 + 目标描边
 HIGHLIGHT_STYLE_DIM = "dim"  # 仅压暗
 HIGHLIGHT_STYLE_OUTLINE = "outline"  # 仅描边
-HIGHLIGHT_STYLES: tuple[str, ...] = (HIGHLIGHT_STYLE_DIM_OUTLINE, HIGHLIGHT_STYLE_DIM, HIGHLIGHT_STYLE_OUTLINE)
+HIGHLIGHT_STYLES: tuple[str, ...] = (
+    HIGHLIGHT_STYLE_TEXT_RECOLOR,
+    HIGHLIGHT_STYLE_DIM_OUTLINE,
+    HIGHLIGHT_STYLE_DIM,
+    HIGHLIGHT_STYLE_OUTLINE,
+)
+
+#: 高亮主色：文字染色、描边、淡色底都用它
+DEFAULT_HIGHLIGHT_COLOR = "#FF3B30"
+_HEX_COLOR_RE = re.compile(r"^#?([0-9a-fA-F]{6})$")
+
+
+def normalize_hex_color(value: str, default: str = DEFAULT_HIGHLIGHT_COLOR) -> str:
+    """把用户输入归一成 `#RRGGBB`；不合法一律回落默认色，不让坏值进渲染。"""
+    match = _HEX_COLOR_RE.match(str(value or "").strip())
+    return f"#{match.group(1).upper()}" if match else default
+
+
+def normalize_highlight_style(value: str, default: str = HIGHLIGHT_STYLE_TEXT_RECOLOR) -> str:
+    """未知样式（手工写错、老版本遗留）回落默认档，避免渲染分支走到未定义状态。"""
+    style = str(value or "").strip()
+    return style if style in HIGHLIGHT_STYLES else default
+
+
+def parse_hex_color(value: str, default: tuple[int, int, int] = (255, 59, 48)) -> tuple[int, int, int]:
+    match = _HEX_COLOR_RE.match(str(value or "").strip())
+    if not match:
+        return default
+    digits = match.group(1)
+    return (int(digits[0:2], 16), int(digits[2:4], 16), int(digits[4:6], 16))
 
 
 @dataclass(frozen=True)
@@ -67,7 +98,21 @@ class PptVideoSettings:
     script_guide_max_chars: int
     highlight_enabled: bool
     highlight_style: str
+    #: 主色（#RRGGBB）：文字染色 / 描边 / 淡色底共用
+    highlight_color: str
+    #: 非命中区域压暗透明度（0 不压暗，255 全黑）
+    highlight_dim_alpha: int
+    highlight_outline_px: int
+    #: 图片/图表命中时的淡色底透明度（不做染色，避免整块变红剪影）
+    highlight_fill_alpha: int
+    #: 文字染色强度（0 不染色，100 完全换成主色）
+    highlight_recolor_strength: int
     highlight_max_steps: int
+    #: 逐段合成旁白：高亮时间轴 = 各段音频实测时长；关掉则退回整页单段与估算
+    segment_tts_enabled: bool
+    segment_pause_ms: int
+    highlight_min_dwell_ms: int
+    highlight_text_match_coverage: float
 
     def default_voice(self, language: str) -> str:
         return self.default_voice_zh if language == "zh" else self.default_voice_en
@@ -95,8 +140,20 @@ DEFAULTS = PptVideoSettings(
     script_ai_global_guide="",
     script_guide_max_chars=SCRIPT_GUIDE_MAX_CHARS,
     highlight_enabled=True,
-    highlight_style=HIGHLIGHT_STYLE_DIM_OUTLINE,
+    # 用户要的默认效果：讲到的文字变红，背景不动
+    highlight_style=HIGHLIGHT_STYLE_TEXT_RECOLOR,
+    highlight_color=DEFAULT_HIGHLIGHT_COLOR,
+    highlight_dim_alpha=150,
+    highlight_outline_px=4,
+    highlight_fill_alpha=28,
+    highlight_recolor_strength=100,
     highlight_max_steps=6,
+    segment_tts_enabled=True,
+    # 180ms 是「句间自然换气」的下限；再大就会显得旁白在卡顿
+    segment_pause_ms=180,
+    # 一段不足 0.7 秒观众来不及看清，直接并入相邻段，避免画面高频闪烁
+    highlight_min_dwell_ms=700,
+    highlight_text_match_coverage=0.6,
 )
 
 
@@ -119,6 +176,12 @@ async def load_settings() -> PptVideoSettings:
         speed = float(speed_raw) if speed_raw else DEFAULTS.default_speed
     except ValueError:
         speed = DEFAULTS.default_speed
+
+    coverage_raw = await _text("AGENT_PPT_VIDEO_HIGHLIGHT_TEXT_MATCH_COVERAGE", "")
+    try:
+        coverage = float(coverage_raw) if coverage_raw else DEFAULTS.highlight_text_match_coverage
+    except ValueError:
+        coverage = DEFAULTS.highlight_text_match_coverage
 
     return PptVideoSettings(
         default_language=await _text("AGENT_PPT_VIDEO_DEFAULT_LANGUAGE", DEFAULTS.default_language),
@@ -151,8 +214,41 @@ async def load_settings() -> PptVideoSettings:
             await _number("AGENT_PPT_VIDEO_SCRIPT_GUIDE_MAX_CHARS", DEFAULTS.script_guide_max_chars),
         ),
         highlight_enabled=await _flag("AGENT_PPT_VIDEO_HIGHLIGHT_ENABLED", DEFAULTS.highlight_enabled),
-        highlight_style=await _text("AGENT_PPT_VIDEO_HIGHLIGHT_STYLE", DEFAULTS.highlight_style),
+        highlight_style=normalize_highlight_style(
+            await _text("AGENT_PPT_VIDEO_HIGHLIGHT_STYLE", DEFAULTS.highlight_style), DEFAULTS.highlight_style
+        ),
+        highlight_color=normalize_hex_color(
+            await _text("AGENT_PPT_VIDEO_HIGHLIGHT_COLOR", DEFAULTS.highlight_color), DEFAULTS.highlight_color
+        ),
+        highlight_dim_alpha=min(
+            max(await _number("AGENT_PPT_VIDEO_HIGHLIGHT_DIM_ALPHA", DEFAULTS.highlight_dim_alpha), 0), 255
+        ),
+        highlight_outline_px=min(
+            max(await _number("AGENT_PPT_VIDEO_HIGHLIGHT_OUTLINE_PX", DEFAULTS.highlight_outline_px), 0), 12
+        ),
+        highlight_fill_alpha=min(
+            max(await _number("AGENT_PPT_VIDEO_HIGHLIGHT_FILL_ALPHA", DEFAULTS.highlight_fill_alpha), 0), 255
+        ),
+        highlight_recolor_strength=min(
+            max(
+                await _number("AGENT_PPT_VIDEO_HIGHLIGHT_RECOLOR_STRENGTH", DEFAULTS.highlight_recolor_strength),
+                0,
+            ),
+            100,
+        ),
         highlight_max_steps=max(
             1, min(await _number("AGENT_PPT_VIDEO_HIGHLIGHT_MAX_STEPS", DEFAULTS.highlight_max_steps), 12)
         ),
+        segment_tts_enabled=await _flag("AGENT_PPT_VIDEO_SEGMENT_TTS_ENABLED", DEFAULTS.segment_tts_enabled),
+        segment_pause_ms=max(
+            0, min(await _number("AGENT_PPT_VIDEO_SEGMENT_PAUSE_MS", DEFAULTS.segment_pause_ms), 1000)
+        ),
+        highlight_min_dwell_ms=max(
+            0,
+            min(
+                await _number("AGENT_PPT_VIDEO_HIGHLIGHT_MIN_DWELL_MS", DEFAULTS.highlight_min_dwell_ms),
+                5000,
+            ),
+        ),
+        highlight_text_match_coverage=min(max(coverage, 0.2), 1.0),
     )

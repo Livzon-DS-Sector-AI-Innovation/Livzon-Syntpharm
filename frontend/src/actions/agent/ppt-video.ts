@@ -13,7 +13,6 @@ import { revalidatePath } from 'next/cache'
 import {
   applySourceRequest,
   createAiConfigRequest,
-  createPptVideoProjectRequest,
   deleteAiConfigRequest,
   deleteProjectRequest,
   editSlideImageRequest,
@@ -24,6 +23,7 @@ import {
   fetchScriptRevisions,
   previewSlideRequest,
   previewSourceRequest,
+  regeneratePageImagesRequest,
   regenerateScriptAiRequest,
   requestRenderRequest,
   rewriteScriptsRequest,
@@ -41,6 +41,7 @@ import type {
   AiConfigListResponse,
   AiConfigTestResponse,
   EditableShapeList,
+  PageImagesAccepted,
   PreviewResult,
   ProjectDetail,
   RenderAccepted,
@@ -57,17 +58,6 @@ const LIST_PATH = '/agent/ppt-videos'
 function toMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message) return error.message
   return fallback
-}
-
-/** 新建项目：`formData` 里带 file / script_file / name / default_language / default_voice_id / speed */
-export async function createPptVideoProject(formData: FormData): Promise<ActionResult<ProjectDetail>> {
-  try {
-    const raw = await createPptVideoProjectRequest(formData)
-    revalidatePath(LIST_PATH)
-    return { success: true, message: raw.message || '项目已创建', data: raw.data }
-  } catch (error) {
-    return { success: false, message: toMessage(error, '创建项目失败，请检查文件格式与页数') }
-  }
 }
 
 export async function updateProjectSettings(
@@ -131,6 +121,19 @@ export async function requestRender(projectId: string): Promise<ActionResult<Ren
     return { success: true, message: '已加入渲染队列', data: raw.data as RenderAccepted }
   } catch (error) {
     return { success: false, message: toMessage(error, '提交渲染失败') }
+  }
+}
+
+/**
+ * 页图重生成（老项目回填 / 页图渲染失败后手动重试）。
+ * 返回 job_id 供左栏进度条开始轮询；走 Server Action 而非客户端 fetch 写接口。
+ */
+export async function regeneratePageImages(projectId: string): Promise<ActionResult<PageImagesAccepted>> {
+  try {
+    const raw = await regeneratePageImagesRequest(projectId)
+    return { success: true, message: '已开始生成页图', data: raw.data }
+  } catch (error) {
+    return { success: false, message: toMessage(error, '重新生成页图失败') }
   }
 }
 

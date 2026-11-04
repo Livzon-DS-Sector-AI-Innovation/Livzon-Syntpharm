@@ -7,9 +7,11 @@
 import { apiGet, fetchApi } from '@/lib/api/client'
 import type {
   JobState,
+  PageImagesState,
   ProjectDetail,
   ProjectPage,
   ProjectSummary,
+  SlideRegionsResponse,
   VersionManifest,
 } from '@/types/agent/ppt-video'
 
@@ -52,6 +54,22 @@ export async function fetchPptVideoDetail(projectId: string): Promise<ProjectDet
   return apiGet<ProjectDetail>(`${API}/ppt-videos/${projectId}`)
 }
 
+/**
+ * 页图生成状态：单行查询，比整份详情便宜一个量级，
+ * 左栏进度条 2 秒轮一次只在终态时才回拉详情。
+ */
+export async function fetchPageImagesStatus(projectId: string): Promise<PageImagesState> {
+  return apiGet<PageImagesState>(`${API}/ppt-videos/${projectId}/page-images/status`)
+}
+
 export async function fetchVersionManifest(versionId: string): Promise<VersionManifest> {
   return apiGet<VersionManifest>(`${API}/ppt-videos/versions/${versionId}/manifest`)
+}
+
+/**
+ * 单页可高亮区域清单：页面尺寸 + layout 元素坐标 + 服务端切好的句子。
+ * 只在打开区域设置抽屉时取一次，比整份详情便宜。
+ */
+export async function fetchSlideRegions(projectId: string, slideUid: string): Promise<SlideRegionsResponse> {
+  return apiGet<SlideRegionsResponse>(`${API}/ppt-videos/${projectId}/slides/${slideUid}/regions`)
 }

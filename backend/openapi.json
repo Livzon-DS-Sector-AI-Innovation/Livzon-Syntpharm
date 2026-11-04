@@ -91631,6 +91631,63 @@
         }
       }
     },
+    "/api/v1/agent/ppt-videos/{project_id}/source/file": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u4e0b\u8f7d\u5f53\u524d\u6e90 PPT\uff08\u542b\u9875\u5185\u7f16\u8f91\u7ed3\u679c\uff09",
+        "operationId": "download_source_pptx_api_v1_agent_ppt_videos__project_id__source_file_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/agent/ppt-videos/{project_id}": {
       "get": {
         "tags": [
@@ -91892,6 +91949,74 @@
         }
       }
     },
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/regions": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u5355\u9875\u53ef\u9ad8\u4eae\u533a\u57df\u6e05\u5355\uff08\u533a\u57df\u8bbe\u7f6e\u9762\u677f\u7528\uff09",
+        "operationId": "slide_regions_api_v1_agent_ppt_videos__project_id__slides__slide_uid__regions_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "slide_uid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slide Uid"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_SlideRegionsResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/preview": {
       "post": {
         "tags": [
@@ -91965,7 +92090,7 @@
         "tags": [
           "\u667a\u80fd\u4f53"
         ],
-        "summary": "\u9875\u9762\u56fe\u7247\uff08\u64ad\u653e\u5668/\u7f29\u7565\u56fe\uff09",
+        "summary": "\u9875\u9762\u56fe\u7247\uff08\u64ad\u653e\u5668/\u7f16\u8f91\u5668\u5927\u56fe\uff09",
         "operationId": "get_slide_image_api_v1_agent_ppt_videos__project_id__slides__slide_no__image_get",
         "parameters": [
           {
@@ -92010,6 +92135,191 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/thumb": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u9875\u9762\u7f29\u7565\u56fe\uff08\u65f6\u95f4\u8f74/\u5217\u8868\uff09",
+        "operationId": "get_slide_thumb_api_v1_agent_ppt_videos__project_id__slides__slide_no__thumb_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "slide_no",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Slide No"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/page-images": {
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u91cd\u65b0\u751f\u6210\u9875\u56fe\uff08\u8001\u9879\u76ee\u56de\u586b / \u9875\u56fe\u5f02\u5e38\u65f6\u624b\u52a8\u91cd\u8bd5\uff09",
+        "description": "\u7acb\u523b\u8fd4\u56de job_id\uff0c\u8fdb\u5ea6\u7531\u524d\u7aef\u8f6e `GET .../page-images/status`\u3002\n\n\u6295\u9012\u524d\u5148\u843d `queued`\uff08\u540c\u4e00\u4e8b\u52a1\u63d0\u4ea4\uff09\uff1a\u524d\u7aef\u62ff\u5230\u7684\u8be6\u60c5/\u72b6\u6001\u91cc\u5c31\u5e26\u300c\u6392\u961f\u4e2d\u300d\uff0c\n\u5237\u65b0\u9875\u9762\u4e5f\u4e0d\u4f1a\u9000\u56de\u4e0a\u4e00\u6b21\u7684 done/failed\u3002\u540e\u53f0\u4efb\u52a1\u8ba4\u9886\u65f6\u4f1a\u8986\u76d6\u6210 running\u3002",
+        "operationId": "refresh_page_images_api_v1_agent_ppt_videos__project_id__page_images_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_PageImagesAccepted_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/page-images/status": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u9875\u56fe\u751f\u6210\u72b6\u6001\uff08\u5de6\u680f\u8fdb\u5ea6\u6761\u8f6e\u8be2\uff0c\u5355\u8868\u67e5\u8be2\uff09",
+        "operationId": "get_page_images_status_api_v1_agent_ppt_videos__project_id__page_images_status_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_PageImagesState_"
+                }
               }
             }
           },
@@ -112108,6 +112418,78 @@
         "type": "object",
         "title": "DataResponse[OptimizationResponse]"
       },
+      "DataResponse_PageImagesAccepted_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PageImagesAccepted"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[PageImagesAccepted]"
+      },
+      "DataResponse_PageImagesState_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PageImagesState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[PageImagesState]"
+      },
       "DataResponse_PersonnelAddResult_": {
         "properties": {
           "code": {
@@ -113367,6 +113749,42 @@
         },
         "type": "object",
         "title": "DataResponse[SlideItem]"
+      },
+      "DataResponse_SlideRegionsResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SlideRegionsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[SlideRegionsResponse]"
       },
       "DataResponse_SopAiConfigUpdateResult_": {
         "properties": {
@@ -133652,6 +134070,171 @@
         ],
         "title": "HealthResponse"
       },
+      "HighlightRect": {
+        "properties": {
+          "x": {
+            "type": "number",
+            "exclusiveMaximum": 1.0,
+            "minimum": 0.0,
+            "title": "X"
+          },
+          "y": {
+            "type": "number",
+            "exclusiveMaximum": 1.0,
+            "minimum": 0.0,
+            "title": "Y"
+          },
+          "w": {
+            "type": "number",
+            "maximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "W"
+          },
+          "h": {
+            "type": "number",
+            "maximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "H"
+          }
+        },
+        "type": "object",
+        "required": [
+          "x",
+          "y",
+          "w",
+          "h"
+        ],
+        "title": "HighlightRect",
+        "description": "\u624b\u7ed8\u77e9\u5f62\uff1a\u76f8\u5bf9\u6574\u9875\u7684\u6bd4\u4f8b\u5750\u6807\uff0c\u6309\u50cf\u7d20\u5b58\u4f1a\u968f\u5206\u8fa8\u7387/\u7248\u5f0f\u4e00\u8d77\u504f\u3002"
+      },
+      "HighlightRegionItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Id"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "off",
+              "text",
+              "area"
+            ],
+            "title": "Mode"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "fill_alpha": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 255.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fill Alpha"
+          },
+          "rect": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HighlightRect"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "shape_sha": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shape Sha"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "mode"
+        ],
+        "title": "HighlightRegionItem",
+        "description": "\u4e00\u4e2a\u533a\u57df\u7684\u4eba\u5de5\u914d\u7f6e\uff1b`id` \u662f layout \u5143\u7d20 id\uff08`s0`\u3001`s3.r2c1`\uff09\u6216 `rect:N`\u3002"
+      },
+      "HighlightRegionsPayload": {
+        "properties": {
+          "regions": {
+            "items": {
+              "$ref": "#/components/schemas/HighlightRegionItem"
+            },
+            "type": "array",
+            "maxItems": 60,
+            "title": "Regions"
+          },
+          "sentences": {
+            "items": {
+              "$ref": "#/components/schemas/HighlightSentenceItem"
+            },
+            "type": "array",
+            "maxItems": 40,
+            "title": "Sentences"
+          }
+        },
+        "type": "object",
+        "title": "HighlightRegionsPayload",
+        "description": "\u4e00\u9875\u7684\u533a\u57df\u7ea7\u914d\u7f6e\uff1b\u7a7a\u5bf9\u8c61\u7b49\u4ef7\u4e8e\u672a\u914d\u7f6e\uff08\u8d70\u81ea\u52a8\u5224\u5b9a\uff09\u3002"
+      },
+      "HighlightSentenceItem": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "targets": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Targets"
+          },
+          "mute": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Mute"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "HighlightSentenceItem",
+        "description": "\u53e5\u7ea7\u5fae\u8c03\uff1a\u8fd9\u53e5\u8bb2\u54ea\u4e9b\u533a\u57df\u3001\u8fd9\u53e5\u54ea\u4e9b\u533a\u57df\u4e0d\u4eae\u3002"
+      },
       "HolidayCreate": {
         "properties": {
           "year": {
@@ -147545,6 +148128,89 @@
         ],
         "title": "PackagingMaterialResponse"
       },
+      "PageImagesAccepted": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running"
+            ],
+            "title": "Status",
+            "default": "queued"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "PageImagesAccepted",
+        "description": "\u9875\u56fe\u91cd\u751f\u6210\u53d7\u7406\u7ed3\u679c\uff08202\uff09\uff1a\u524d\u7aef\u62ff\u5230 job_id \u540e\u5f00\u59cb\u8f6e\u8be2\u72b6\u6001\u3002"
+      },
+      "PageImagesState": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "queued",
+              "running",
+              "done",
+              "failed"
+            ],
+            "title": "Status",
+            "default": "idle"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "progress": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Progress",
+            "default": 0
+          },
+          "done": {
+            "type": "integer",
+            "title": "Done",
+            "default": 0
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          }
+        },
+        "type": "object",
+        "title": "PageImagesState",
+        "description": "\u9875\u56fe\uff08\u7f16\u8f91\u6001\u5e95\u56fe\uff09\u751f\u6210\u72b6\u6001\u3002\n\n\u4e0e `ScriptAiState` \u540c\u6784\uff1a\u72b6\u6001\u4e0e\u8fdb\u5ea6\u53d6\u81ea\u9879\u76ee\u5217\uff0c\u524d\u7aef\u5de6\u680f\u8fdb\u5ea6\u6761\u8f6e\u8be2\n`GET /ppt-videos/{id}/page-images/status`\uff0c\u7ec8\u6001\u518d\u56de\u586b\u4e00\u6b21\u6574\u4efd\u8be6\u60c5\u3002"
+      },
       "PageSplitItem": {
         "properties": {
           "page_number": {
@@ -153201,6 +153867,9 @@
           "script_ai": {
             "$ref": "#/components/schemas/ScriptAiState"
           },
+          "page_images": {
+            "$ref": "#/components/schemas/PageImagesState"
+          },
           "script_runtime": {
             "anyOf": [
               {
@@ -153215,6 +153884,11 @@
             "type": "integer",
             "title": "Source Version",
             "default": 1
+          },
+          "source_download_url": {
+            "type": "string",
+            "title": "Source Download Url",
+            "default": ""
           },
           "script_guide": {
             "type": "string",
@@ -169532,6 +170206,38 @@
             ],
             "title": "Speed"
           },
+          "highlight_style": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Style"
+          },
+          "highlight_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Color"
+          },
+          "highlight_regions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HighlightRegionsPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "page_text": {
             "anyOf": [
               {
@@ -169564,6 +170270,17 @@
               }
             ],
             "title": "Image Url"
+          },
+          "thumb_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumb Url"
           },
           "audio_url": {
             "anyOf": [
@@ -169605,6 +170322,97 @@
         ],
         "title": "SlideItem",
         "description": "\u4e00\u9875\u5e7b\u706f\u7247\uff08\u5de5\u4f5c\u53f0\u65f6\u95f4\u8f74\u4e0e\u7f16\u8f91\u533a\u5171\u7528\uff09\u3002"
+      },
+      "SlideRegionItem": {
+        "properties": {
+          "element_id": {
+            "type": "string",
+            "title": "Element Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "default": ""
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "default": ""
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "default": ""
+          },
+          "left": {
+            "type": "integer",
+            "title": "Left",
+            "default": 0
+          },
+          "top": {
+            "type": "integer",
+            "title": "Top",
+            "default": 0
+          },
+          "width": {
+            "type": "integer",
+            "title": "Width",
+            "default": 0
+          },
+          "height": {
+            "type": "integer",
+            "title": "Height",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "element_id"
+        ],
+        "title": "SlideRegionItem",
+        "description": "\u53ef\u88ab\u4eba\u5de5\u70b9\u9009\u7684\u533a\u57df\uff08\u5750\u6807\u6765\u81ea layout \u89e3\u6790\uff0c\u6362\u5206\u8fa8\u7387\u4e0d\u4f1a\u504f\uff09\u3002"
+      },
+      "SlideRegionsResponse": {
+        "properties": {
+          "page_width": {
+            "type": "integer",
+            "title": "Page Width",
+            "default": 0
+          },
+          "page_height": {
+            "type": "integer",
+            "title": "Page Height",
+            "default": 0
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SlideRegionItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "sentences": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sentences"
+          },
+          "image_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Sha256"
+          }
+        },
+        "type": "object",
+        "title": "SlideRegionsResponse",
+        "description": "\u533a\u57df\u8bbe\u7f6e\u9762\u677f\u7684\u6570\u636e\uff1a\u9875\u9762\u5c3a\u5bf8 + \u5143\u7d20\u6e05\u5355 + \u53ef\u9010\u53e5\u5fae\u8c03\u7684\u53e5\u5b50\u3002"
       },
       "SlideUpdateRequest": {
         "properties": {
@@ -169659,6 +170467,40 @@
             ],
             "title": "Speed"
           },
+          "highlight_style": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Style"
+          },
+          "highlight_color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Color"
+          },
+          "highlight_regions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HighlightRegionsPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "clear_language": {
             "type": "boolean",
             "title": "Clear Language",
@@ -169672,6 +170514,21 @@
           "clear_speed": {
             "type": "boolean",
             "title": "Clear Speed",
+            "default": false
+          },
+          "clear_highlight_style": {
+            "type": "boolean",
+            "title": "Clear Highlight Style",
+            "default": false
+          },
+          "clear_highlight_color": {
+            "type": "boolean",
+            "title": "Clear Highlight Color",
+            "default": false
+          },
+          "clear_highlight_regions": {
+            "type": "boolean",
+            "title": "Clear Highlight Regions",
             "default": false
           }
         },

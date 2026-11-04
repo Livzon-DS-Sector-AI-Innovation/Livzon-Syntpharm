@@ -71,8 +71,22 @@ def voice_key(language: str, voice_id: str, speed: float, engine: str, engine_ve
     return sha256_bytes(payload)
 
 
-def audio_key(script_sha256: str, voice_fingerprint: str) -> str:
-    return sha256_bytes(f"audio\n{script_sha256}\n{voice_fingerprint}".encode())
+def audio_key(script_sha256: str, voice_fingerprint: str, variant: str = "") -> str:
+    """页音频指纹。
+
+    `variant` 区分「同一讲稿 + 同一音色」下的不同合成方式（如段间停顿变化）；
+    为空时与改造前完全一致，老缓存照样命中。
+    """
+    payload = f"audio\n{script_sha256}\n{voice_fingerprint}"
+    if variant:
+        payload = f"{payload}\n{variant}"
+    return sha256_bytes(payload.encode())
+
+
+def segment_audio_key(text: str, language: str, voice_fingerprint: str) -> str:
+    """段级音频指纹：只改一句话时，其余句子的音频仍能命中缓存。"""
+    payload = f"audio-seg\n{language}\n{normalize_script(text)}\n{voice_fingerprint}".encode()
+    return sha256_bytes(payload)
 
 
 def segment_key(

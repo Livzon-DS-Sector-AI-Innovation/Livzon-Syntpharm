@@ -96,12 +96,15 @@ API 与渲染彻底分离：API 侧不做 ffmpeg/LibreOffice，任何请求都�
 | GET | `/voices` | read | 音色目录（含语言、许可） |
 | GET | `/ppt-videos` | read | 列表（分页/搜索） |
 | POST | `/ppt-videos` | manage | 上传 PPT + 可选讲稿；返回后自动后台生成初稿（响应结构不变） |
-| GET | `/ppt-videos/{id}` | read | 详情（slides/versions/latest_job/body_stale/script_ai） |
+| GET | `/ppt-videos/{id}` | read | 详情（slides/versions/latest_job/body_stale/script_ai/page_images） |
+| POST | `/ppt-videos/{id}/page-images` | manage | 重出页图（老项目回填 / 失败重试），**202 + job_id**；进度由前端轮下一个接口 |
+| GET | `/ppt-videos/{id}/page-images/status` | read | 页图生成状态（status/progress/done/total/error/job_id），左栏进度条 2s 轮询 |
 | POST | `/ppt-videos/{id}/script-ai?force=true` | manage | （重新）生成初稿，**只填空页**；`force` 默认 true（服务重启后强制重发），上传后的自动触发用 force=false 保证幂等，202 |
 | DELETE | `/ppt-videos/{id}` | manage | 软删除（已生成文件保留） |
-| PUT | `/ppt-videos/{id}/slides/{no}` | manage | 保存单页讲稿/语言/音色/语速 |
+| PUT | `/ppt-videos/{id}/slides/{no}` | manage | 保存单页讲稿/语言/音色/语速/高亮样式与颜色/区域级高亮配置 |
 | POST | `/ppt-videos/{id}/slides/{no}/preview` | manage | 单页试听（合成或命中缓存） |
 | GET | `/ppt-videos/{id}/slides/{no}/image` | read | 页面图片 |
+| GET | `/ppt-videos/{id}/slides/{no}/regions` | read | 区域设置面板数据：页面尺寸 + 可点选元素清单（id/类型/文本/EMU 坐标） |
 | GET | `/ppt-videos/{id}/slides/{no}/audio` | read | 页面旁白 wav（支持 Range） |
 | POST | `/ppt-videos/{id}/render` | manage | 提交渲染，**202 + job_id** |
 | GET | `/ppt-videos/{id}/job` | read | 最近任务状态（轮询） |
@@ -110,6 +113,96 @@ API 与渲染彻底分离：API 侧不做 ffmpeg/LibreOffice，任何请求都�
 | GET | `/ppt-videos/versions/{vid}/file` | read | 成片 MP4（支持 Range） |
 
 响应统一信封 `{code, data, message, meta}`，`code=200` 表示成功。
+
+### 页内视觉引导（讲到哪、亮到哪）
+
+画面是同一张页图，按时间轴切换「压暗整页 + 还原命中框 + 描边」的静帧。三段契约：
+
+**1）元素 id（`highlight.iter_elements`）**
+
+| id | 含义 |
+|---|---|
+| `s0`、`s1` … | `layout.shapes` 里第 i 个顶层形状（文本框/图片/图表/组合/表格整表） |
+| `s3.r2c1` | 第 3 个形状是表格时，其第 2 行第 1 列的单元格（行/列均从 1 起） |
+
+id 由 layout 内序号**确定性生成**，不落库、不迁移历史 layout。表格单元格的几何在解析时按行列宽高累加算出
+（python-pptx 的单元格没有 `left/top`），合并单元格只在合并起点出一条记录。组合形状按**整组外框**高亮——
+组内子形状的坐标是组内坐标系，直接当页面坐标用会亮错位置。
+
+**2）段级讲稿（`agent.ppt_video_slide.script_segments`）**
+
+```json
+[{"text": "本页讲的是发酵工艺流程", "targets": ["s2"]},
+ {"text": "收率从 82% 提升到 91%", "targets": ["s5.r3c2"]}]
+```
+
+- 硬约束：各段 `text` 拼起来必须等于 `script_text`。渲染前做一致性校验，不一致（用户手改、回滚、换源）
+  就整体作废、退回字面匹配，**不会按旧绑定亮错**。
+- `targets` 由讲稿生成阶段产出，只允许取自该页的元素清单；服务端按白名单二次校验，模型编的 id 直接丢弃。
+- `script_text` 仍是唯一真相：编辑器、缓存指纹、TTS 输入全部读它，段结构只是它的附加注记。
+
+**3）时间轴口径**
+
+- 段数 > 1 且 `AGENT_PPT_VIDEO_SEGMENT_TTS_ENABLED=true` 时逐段合成：页音频 = 各段音频按序拼接，
+  段间插入 `AGENT_PPT_VIDEO_SEGMENT_PAUSE_MS`；每段的 `start/end` 就是它在成片里的真实位置，
+  不再按字数估算（末段吃掉取整余数，保证 `sum(段) + head + tail == 页音频时长`）。
+- 单段高亮不足 `AGENT_PPT_VIDEO_HIGHLIGHT_MIN_DWELL_MS` 时并入相邻段（只合并帧时长与高亮框，不重合成音频）。
+
+**4）样式档位（`AGENT_PPT_VIDEO_HIGHLIGHT_STYLE`）**
+
+| 样式 | 效果 | 生效参数 |
+|---|---|---|
+| `text_recolor`（默认） | 命中**文字**染成主色、背景不压暗、**不画矩形框**；图片/图表/表格整表只叠淡色底，不染色也不描边 | `_COLOR` / `_FILL_ALPHA` / `_RECOLOR_STRENGTH` |
+| `dim_outline` | 整页压暗 + 命中框还原亮度 + 描边 | `_COLOR` / `_DIM_ALPHA` / `_OUTLINE_PX` |
+| `dim` | 仅压暗 | `_DIM_ALPHA` |
+| `outline` | 仅描边 | `_COLOR` / `_OUTLINE_PX` |
+
+文字染色在命中框内按亮度生成软遮罩，并以「占面积更小的一侧」判定前景，因此浅底深字与深底浅字都成立；
+对比度太低（纯色块、照片）时自动放弃染色，不会把整块染红（`text_recolor` 档也不再补描边）。
+分流依据是元素类型（`highlight.HighlightBox.kind`），所以同一段里「文字变红 + 图片淡色底」可以并存。页级可在编辑区覆盖样式与颜色
+（`agent.ppt_video_slide.highlight_style` / `highlight_color`，空 = 跟随模块设置），样式参数整体并入视觉指纹，
+改颜色或强度会让旧片段失效重出。
+
+**5）区域级配置（`agent.ppt_video_slide.highlight_regions`）**
+
+整页一套样式不够用时逐个区域指定，优先级 **句级/区域级 > 页级 > 模块设置**：
+
+```json
+{
+  "regions": [
+    {"id": "s2", "mode": "text"},
+    {"id": "s5.r3c2", "mode": "area", "color": "#FF3B30", "fill_alpha": 90},
+    {"id": "s7", "mode": "off"},
+    {"id": "rect:0", "mode": "area", "rect": {"x": 0.12, "y": 0.3, "w": 0.4, "h": 0.18}, "shape_sha": "9f3c…"}
+  ],
+  "sentences": [{"text": "本页讲的是发酵工艺流程", "targets": ["s2"], "mute": ["s7"]}]
+}
+```
+
+| mode | 效果 |
+|---|---|
+| `text` | 只给该区域的文字染色（`color` 可覆盖页级主色） |
+| `area` | 给整块区域铺底色，`fill_alpha`（0-255，默认 90）控制深浅，文字仍可读 |
+| `off` | 该区域**永不**高亮，自动绑定上了也不亮 |
+
+- 元素区域只存 id，坐标渲染时按 layout 现算，换分辨率不会偏；解析不出的地方用 `rect:N` 手绘矩形兜底，
+  坐标是**相对整页的比例**，并记录画框时的页图 `shape_sha` —— 页图变了这条框会被标「待复核」，不会静默套到错位置。
+- 手绘矩形默认整页常亮（画了就是希望它亮），某句 `mute` 里点名才跳过；它不参与「一段都命中不了就整页常亮」的兜底判定。
+- 句级微调按「去空白去标点」的文本匹配，手改讲稿只动了别的句子或标点时规则仍在；整句被改没则退回自动绑定。
+- 落库前按 layout 白名单校验：元素 id 查不到、mode 非法、矩形出界、颜色非 `#RRGGBB`、`fill_alpha` 越界，一律丢弃或夹紧。
+- 区域三态/颜色/底色透明度全部并入视觉指纹，改任何一项都会让旧片段失效重出。
+
+**降级矩阵**
+
+| 情况 | 行为 |
+|---|---|
+| 高亮关闭 / 逐段合成关闭 | 整页单段合成 + 旧的字数加权时间轴（与改造前完全一致） |
+| 讲稿被手改（段结构与文本不一致） | 按标点重切、无绑定，退回字面匹配（覆盖率阈值 `AGENT_PPT_VIDEO_HIGHLIGHT_TEXT_MATCH_COVERAGE`） |
+| 模型给了不存在的元素 id | 丢弃该 target；全部丢失时退回字面匹配 |
+| 区域配置里的元素 id 在 layout 里查不到 | 保存时丢弃该条；渲染时再查不到就跳过，不亮也不报错 |
+| 该页 layout 为空（纯图片页） | 只保留结构合法的配置，不因「校验不出」把人工设置清空 |
+| 某一段合成/拼接失败 | `logger.exception` 后整页单段重新合成，单页问题不影响整条视频 |
+| 一段都命中不了 | 该页整页常亮，不描边、不压暗 |
 
 ---
 
@@ -121,8 +214,9 @@ API 与渲染彻底分离：API 侧不做 ffmpeg/LibreOffice，任何请求都�
 |---|---|
 | `script_key` | `语言 + 规范化讲稿`（行尾空白/全角空格/连续空行归一） |
 | `voice_key` | `引擎@引擎版本 + 语言 + 音色 + 语速(2位小数)` |
-| `audio_key` | `script_key + voice_key` → wav 路径 |
-| `segment_key` | `页图 sha256 + audio_key + ENCODER_KEY` → 页片段 mp4 |
+| `audio_key` | `script_key + voice_key (+ 分段变体)` → wav 路径；分段变体 = 段边界 + 段间停顿，整页合成时为空（与改造前一致） |
+| `segment_audio_key` | `语言 + 规范化段文本 + voice_key` → 段级 wav 路径（改一句只重合成那一句） |
+| `segment_key` | `页图 sha256 + audio_key + ENCODER_KEY + 视觉指纹` → 页片段 mp4；视觉指纹含分段/时间轴/targets/高亮框/样式/表格行列几何 |
 | `head_key` | 第 1 页的 `segment_key` |
 | `body_key` | 第 2~N 页 `segment_key` 的**有序**哈希 |
 | `slide_input_key` / `body_input_key` | 仅讲稿+语音参数（不含页图），用于渲染前判断 `body_stale` |
@@ -175,17 +269,75 @@ API 与渲染彻底分离：API 侧不做 ffmpeg/LibreOffice，任何请求都�
 
 ## 4. 运行方法
 
-### 4.1 系统依赖（仅 worker 镜像需要）
+### 4.1 系统依赖（两个镜像都要，必须保持一致）
 
-`backend/Dockerfile.worker` 已装好，不要改用 `Dockerfile.dev`（**dev 镜像没有 LibreOffice/ffmpeg**，
-在 dev 容器里跑渲染必然失败）：
+页图（编辑态底图）由 **backend 进程**（`core.jobs`）生成，成片由 **worker** 渲染 —— 两边字体或
+转换参数不同，就会出现「预览和成片画面不一样」。所以 `backend/Dockerfile` 与 `backend/Dockerfile.worker`
+都要装同一套依赖，且都在构建期做 `fc-match` 自检（不通过直接构建失败）：
 
 | 依赖 | 用途 | 缺了会怎样 |
 |---|---|---|
 | `libreoffice-impress` + `libreoffice-core` | pptx → pdf | 上传后解析失败 |
 | `poppler-utils`（`pdf2image` 调用） | pdf → PNG | 同上 |
-| `ffmpeg` / `ffprobe` | 静帧+旁白 → mp4、拼接、探时长 | 渲染失败 |
+| `ffmpeg` / `ffprobe` | 静帧+旁白 → mp4、拼接、探时长 | 渲染失败（仅 worker） |
 | `fonts-noto-cjk` / `fonts-noto-cjk-extra` | 中文字体 | **整屏方块**（构建期 `fc-match` 自检会拦） |
+| `fonts-liberation` / `fonts-crosextra-carlito` / `fonts-crosextra-caladea` | Arial / Times New Roman / Calibri / Cambria 的**度量兼容**替身 | 拉丁文本提前折行压住下方元素（见下） |
+| `assets/fontconfig/69-ppt-font-alias.conf` | 把「微软雅黑 / 宋体 / 思源黑体」映射到 Noto | **文字重叠、表格跑位**（见下） |
+
+#### 字体别名（`69-ppt-font-alias.conf`）
+
+PPT 里声明的 `微软雅黑`、`宋体`、`思源黑体 CN` 等字体在容器里没有文件。不加别名时 fontconfig 会把它们
+判给 `DejaVuSans.ttf`（**无中文字形**），渲染时再逐字形回退到 Noto：同一个文本框里中文走 Noto、英文与
+数字走 DejaVu，两侧字宽度量不同 → 文字互相压住、表格列被挤跑。归因数据见
+[`ppt-video-font-attribution.md`](ppt-video-font-attribution.md)。
+
+- 只做**族名映射**，不 COPY 商业字体文件（雅黑/宋体授权不允许分发），Noto 为 SIL OFL 可再分发。
+- 规则统一用 `qual="first"`：`qual="any"` 会连带匹配 `45-latin.conf` 展开的弱别名链
+  （其中含 `Microsoft YaHei`），把 Arial / Calibri 也改写成 Noto，英文版式反而更差。
+- 拉丁侧不靠 fontconfig 硬改，靠**装度量兼容字体包**（Liberation / Carlito / Caladea），
+  fontconfig 自带的 `30-metric-aliases.conf` 会把 Arial→Liberation Sans、
+  Times New Roman→Liberation Serif、Calibri→Carlito 自动接上。
+- 构建期自检：中文族名必须命中 `Noto *`，且 `Arial`/`Times New Roman`/`Calibri` 必须分别命中
+  `Liberation Sans`/`Liberation Serif`/`Carlito`；不满足即构建失败。
+
+#### 渲染管线指纹与缓存失效
+
+改字体或拆图参数后，旧 PDF 与旧页图在画面上已经不对，必须判过期：
+
+- `app/modules/agent/render.py` 的 `RENDERER_KEY`（当前 `r2-noto-liberation-v1`）= 版本号 + 字体档位；
+  **改字体映射或拆图参数时必须递增**。
+- 中间 PDF 的 key 带有这个指纹：`ppt-video/pdf/{RENDERER_KEY}/{sha256}.pdf`，旧对象自然不再命中
+  （不删旧对象，MinIO 删除不可回滚，历史成片仍依赖旧页图尺寸）。
+- `ppt_video_project.page_images_renderer` 记录页图是哪个指纹渲染的；与 `RENDERER_KEY` 不一致即视为
+  过期。过期后的重出图入口有三个：换源/页内编辑（`apply_source_replace` 自动投递）、页图失败态里的
+  「重试」、渲染成片（worker 用同一个 `page_images_fresh` 判断，所以不会出现「预览旧字体、成片新字体」）。
+  单纯打开老项目不会自动重出图，左栏保持「待渲染」占位。
+- 页图任务与 worker 的 `_resolve_slide_images` 共用 `ensure_source_pdf` + `render_pdf_pages`，
+  字体与转换参数天然一致。
+
+#### 页图进度语义
+
+进度写在项目行上（`page_images_status/progress/done/total/error/job_id`），由页图任务用独立会话单条
+`UPDATE` 写入，不参与调用方事务：
+
+| 阶段 | `progress` | `done` |
+|---|---|---|
+| 投递（`mark_page_images_queued`，随请求事务提交） | 0 | 0 |
+| soffice 转 PDF | 0 → 40 | 0 |
+| 逐页拆图 | 40 → 85 | 1 → total |
+| 编码上传（PNG/preview/thumb） | 85 → 99 | 保持 total |
+| 落库收尾（`_commit`） | 100 | total |
+
+- `done` 只增不减。上传段只推进百分比、不回写计数：若按「已上传页数」写，前端会看到
+  `53 → 1` 的倒退（2026-11-03 真机实测 88% 时 `done` 从 53 掉到 11），已有用例
+  `test_progress_done_never_regresses_across_upload_phase` 守住。
+- `queued` 在**投递前**由请求自己的事务写（`mark_page_images_queued`）：上传返回的详情、换源/重试后的
+  首次状态查询都能看到「排队中」，前端据此立刻开始轮询。不能放到后台会话里写——那时调用方事务还没
+  提交，独立会话的 `UPDATE` 会命中 0 行。
+- `queued` 超过 2 分钟、`running` 超过 30 分钟没有推进，读接口按 `failed` 返回并提示重试
+  （`PAGE_IMAGES_QUEUE_STALE_SECONDS` / `PAGE_IMAGES_STALE_SECONDS`），避免进度条永远转。
+- 成片渲染自己产出一套页图时（`worker._resolve_slide_images`）会顺带把状态置为 `done/100`，
+  避免并发的页图任务被杀后左栏一直转。
 
 ### 4.2 启动 worker
 

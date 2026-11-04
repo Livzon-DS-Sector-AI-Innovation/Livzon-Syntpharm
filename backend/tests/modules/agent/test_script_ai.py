@@ -6,12 +6,13 @@
 
 import uuid
 from dataclasses import replace
+from typing import Any
 
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.llm import LLMProviderError
+from app.core.llm import LLMProviderError, llm_client
 from app.modules.agent import script_ai
 from app.modules.agent.config import DEFAULTS, MAX_SCRIPT_CHARS
 from app.modules.agent.models import (
@@ -66,6 +67,78 @@ def test_extract_batch_scripts_caps_length() -> None:
 def test_extract_batch_scripts_handles_non_list() -> None:
     assert script_ai.extract_batch_scripts({"slides": {"slide_no": 1}}, {1}) == {}
     assert script_ai.extract_batch_scripts({}, {1}) == {}
+
+
+# ── 段级讲稿与元素绑定 ─────────────────────────────────────────────────────
+
+
+def test_normalize_segments_drops_unknown_and_duplicate_targets() -> None:
+    segments = script_ai.normalize_segments(
+        [
+            {"text": " 收率提升 ", "targets": ["s0", "s0", "s99", "s1", "s2"]},
+            {"text": "   "},
+            "纯字符串段",
+        ],
+        {"s0", "s1"},
+    )
+
+    # 模型编出来的 id（s99）与非字符串一律丢弃；每段最多留两个目标
+    assert segments == [
+        {"text": "收率提升", "targets": ["s0", "s1"]},
+        {"text": "纯字符串段", "targets": []},
+    ]
+
+
+def test_normalize_segments_caps_total_length() -> None:
+    segments = script_ai.normalize_segments(
+        [{"text": "字" * (MAX_SCRIPT_CHARS + 40), "targets": []}],
+        set(),
+    )
+    assert len(segments_to_text(segments)) == MAX_SCRIPT_CHARS
+
+
+def segments_to_text(segments: list[dict[str, Any]]) -> str:
+    return "".join(segment["text"] for segment in segments)
+
+
+def test_segments_to_script_joins_chinese_and_spaces_english() -> None:
+    assert script_ai.segments_to_script([{"text": "第一句。"}, {"text": "第二句。"}]) == "第一句。第二句。"
+    assert script_ai.segments_to_script([{"text": "First."}, {"text": "Second."}], "en") == "First. Second."
+
+
+def test_extract_batch_segments_falls_back_to_legacy_script() -> None:
+    payload = {
+        "slides": [
+            {"slide_no": 1, "script": "整页一段的旧格式"},
+            {"slide_no": 2, "segments": [{"text": "新格式。", "targets": ["s0"]}]},
+            {"slide_no": 3, "segments": []},
+            {"slide_no": 99, "segments": [{"text": "越界", "targets": []}]},
+        ]
+    }
+
+    result = script_ai.extract_batch_segments(payload, {1, 2, 3}, {2: {"s0"}})
+
+    assert result[1] == [{"text": "整页一段的旧格式", "targets": []}]
+    assert result[2] == [{"text": "新格式。", "targets": ["s0"]}]
+    assert 3 not in result
+    assert 99 not in result
+
+
+def test_build_messages_lists_element_ids_for_targets() -> None:
+    messages = script_ai.build_messages(
+        "zh",
+        "测试项目",
+        [(1, "页面文字", None)],
+        max_page_text_chars=500,
+        element_catalogs={1: [{"id": "s0", "kind": "文本框", "text": "收率"}]},
+    )
+
+    prompt = messages[-1]["content"]
+    assert "s0 [文本框] 收率" in prompt
+    assert "targets" in prompt
+    # 没有元素清单的页不应出现空清单标题
+    empty = script_ai.build_messages("zh", "项目", [(1, "文字", None)], max_page_text_chars=500)
+    assert "页面元素（targets 只能从这里取 id）" not in empty[-1]["content"]
 
 
 def test_build_messages_truncates_and_marks_injection() -> None:
@@ -149,7 +222,7 @@ async def test_generate_only_fills_blank_pages(db_session: AsyncSession, monkeyp
 
     seen: list[set[int]] = []
 
-    async def fake_chat_json(messages: list[dict[str, str]], expected_keys: list[str] | None = None) -> dict:
+    async def fake_chat_json(messages: list[dict[str, str]], expected_keys: list[str] | None = None) -> dict[str, Any]:
         seen.append({1, 2})  # 记录调用次数用
         return {
             "slides": [
@@ -158,7 +231,7 @@ async def test_generate_only_fills_blank_pages(db_session: AsyncSession, monkeyp
             ]
         }
 
-    monkeypatch.setattr(script_ai.llm_client, "chat_json", fake_chat_json)
+    monkeypatch.setattr(llm_client, "chat_json", fake_chat_json)
 
     result = await script_ai.generate_for_project(db_session, project, replace(DEFAULTS, script_ai_batch_size=6))
 
@@ -194,10 +267,10 @@ async def test_generate_returns_done_when_nothing_to_do(
     _add_slide(db_session, project, 2, text=None, notes=None)
     await db_session.flush()
 
-    async def fail_if_called(*args: object, **kwargs: object) -> dict:
+    async def fail_if_called(*args: object, **kwargs: object) -> dict[str, Any]:
         raise AssertionError("没有待生成页时不应调用模型")
 
-    monkeypatch.setattr(script_ai.llm_client, "chat_json", fail_if_called)
+    monkeypatch.setattr(llm_client, "chat_json", fail_if_called)
 
     result = await script_ai.generate_for_project(db_session, project, DEFAULTS)
 
@@ -212,13 +285,13 @@ async def test_generate_partial_when_one_batch_fails(db_session: AsyncSession, m
     _add_slide(db_session, project, 2, text="第二页文字")
     await db_session.flush()
 
-    async def flaky_chat_json(messages: list[dict[str, str]], expected_keys: list[str] | None = None) -> dict:
+    async def flaky_chat_json(messages: list[dict[str, str]], expected_keys: list[str] | None = None) -> dict[str, Any]:
         # batch_size=1：第一次失败、第二次成功
         if "幻灯片 1" in messages[1]["content"]:
             raise LLMProviderError("上游 502")
         return {"slides": [{"slide_no": 2, "script": "第二页稿"}]}
 
-    monkeypatch.setattr(script_ai.llm_client, "chat_json", flaky_chat_json)
+    monkeypatch.setattr(llm_client, "chat_json", flaky_chat_json)
 
     result = await script_ai.generate_for_project(db_session, project, replace(DEFAULTS, script_ai_batch_size=1))
 
@@ -240,10 +313,12 @@ async def test_generate_failed_when_all_batches_fail(db_session: AsyncSession, m
     _add_slide(db_session, project, 1, text="第一页文字")
     await db_session.flush()
 
-    async def broken_chat_json(messages: list[dict[str, str]], expected_keys: list[str] | None = None) -> dict:
+    async def broken_chat_json(
+        messages: list[dict[str, str]], expected_keys: list[str] | None = None
+    ) -> dict[str, Any]:
         raise LLMProviderError("模型不可用")
 
-    monkeypatch.setattr(script_ai.llm_client, "chat_json", broken_chat_json)
+    monkeypatch.setattr(llm_client, "chat_json", broken_chat_json)
 
     result = await script_ai.generate_for_project(db_session, project, DEFAULTS)
 

@@ -6,6 +6,7 @@
 
 import uuid
 from types import SimpleNamespace
+from typing import Any
 
 import httpx
 import pytest
@@ -140,9 +141,7 @@ def _patch_lookup(monkeypatch: pytest.MonkeyPatch, rows: dict[str, LLMConfigMode
     monkeypatch.setattr(ai_config, "get_active_config", fake_active)
 
 
-async def test_resolve_prefers_project_config(
-    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_resolve_prefers_project_config(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch) -> None:
     project_cfg = _config_row("project-model")
     _patch_lookup(monkeypatch, {str(project_cfg.id): project_cfg}, active=_config_row("active-model"))
     project = await _make_project(db_session, llm_config_id=project_cfg.id)
@@ -153,9 +152,7 @@ async def test_resolve_prefers_project_config(
     assert resolved.config_id == project_cfg.id
 
 
-async def test_resolve_falls_back_to_global_setting(
-    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_resolve_falls_back_to_global_setting(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch) -> None:
     global_cfg = _config_row("global-model")
     _patch_lookup(monkeypatch, {str(global_cfg.id): global_cfg}, active=_config_row("active-model"))
     await ai_config.save_setting(db_session, ai_config.SETTING_GLOBAL_CONFIG_ID, str(global_cfg.id))
@@ -167,9 +164,7 @@ async def test_resolve_falls_back_to_global_setting(
     assert (resolved.model_name, resolved.source) == ("global-model", "global")
 
 
-async def test_resolve_falls_back_to_active_then_env(
-    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_resolve_falls_back_to_active_then_env(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch) -> None:
     active_cfg = _config_row("active-model")
     _patch_lookup(monkeypatch, {}, active=active_cfg)
     project = await _make_project(db_session)
@@ -185,9 +180,7 @@ async def test_resolve_falls_back_to_active_then_env(
     assert resolved.config_id is None
 
 
-async def test_resolve_raises_when_nothing_available(
-    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_resolve_raises_when_nothing_available(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_lookup(monkeypatch, {}, active=None)
 
     def boom():
@@ -199,11 +192,9 @@ async def test_resolve_raises_when_nothing_available(
         await ai_config.resolve(db_session, await _make_project(db_session), OWNER)
 
 
-async def test_resolve_passes_owner_for_personal_key(
-    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_resolve_passes_owner_for_personal_key(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch) -> None:
     """个人 Key 必须带 owner 去查，否则后端拿不到解密后的明文。"""
-    seen: dict = {}
+    seen: dict[str, Any] = {}
     personal = _config_row("personal-model", visibility="personal", owner_user_id=OWNER)
 
     async def fake_by_id(config_id, config_type="text", owner_user_id=None):
@@ -392,7 +383,7 @@ class _FakeClient:
 def _patch_http(monkeypatch: pytest.MonkeyPatch, *, status: int = 200, text: str = "", error=None) -> None:
     _FakeClient.response = _FakeResponse(status, text)
     _FakeClient.error = error
-    monkeypatch.setattr(ai_config.httpx, "AsyncClient", _FakeClient)
+    monkeypatch.setattr(httpx, "AsyncClient", _FakeClient)
 
 
 async def test_connection_reports_auth_failure(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -427,14 +418,14 @@ async def test_connection_maps_timeout_and_network_error(monkeypatch: pytest.Mon
 
 
 async def test_connection_appends_chat_completions(monkeypatch: pytest.MonkeyPatch) -> None:
-    seen: dict = {}
+    seen: dict[str, Any] = {}
 
     class _Recorder(_FakeClient):
         async def post(self, url, **_kwargs):
             seen["url"] = url
             return _FakeResponse(200)
 
-    monkeypatch.setattr(ai_config.httpx, "AsyncClient", _Recorder)
+    monkeypatch.setattr(httpx, "AsyncClient", _Recorder)
 
     await ai_config.test_connection("https://example.test/v1/", "qwen-plus", "sk-x")
     assert seen["url"] == "https://example.test/v1/chat/completions"

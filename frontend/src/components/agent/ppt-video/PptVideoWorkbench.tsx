@@ -1,11 +1,12 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { App, Button, Space, Tag, Typography } from 'antd'
 import { ArrowLeftOutlined, RobotOutlined, SwapOutlined } from '@ant-design/icons'
 
 import AiConfigDrawer from './AiConfigDrawer'
+import PageImagesProgress from './PageImagesProgress'
 import RenderProgress from './RenderProgress'
 import ScriptDraftBanner from './ScriptDraftBanner'
 import SlideEditor from './SlideEditor'
@@ -36,6 +37,7 @@ export default function PptVideoWorkbench({ initialDetail, voices }: Props) {
   const [sourceOpen, setSourceOpen] = useState(false)
   // 选中态跟 slide_uid 走：换源后 slide_no 会整体重排，用序号会选错页
   const [activeSlideUid, setActiveSlideUid] = useState<string>(initialDetail.slides?.[0]?.slide_uid ?? '')
+  const listRef = useRef<HTMLDivElement>(null)
 
   const slides = useMemo(() => detail.slides ?? [], [detail.slides])
 
@@ -43,6 +45,50 @@ export default function PptVideoWorkbench({ initialDetail, voices }: Props) {
     () => slides.find((slide) => slide.slide_uid === activeSlideUid) ?? slides[0],
     [slides, activeSlideUid],
   )
+
+  /**
+   * 切页后把选中项滚进左栏可视区：只移动左栏容器的 scrollTop，
+   * 不调 scrollIntoView，避免整页跟着跳。
+   */
+  useEffect(() => {
+    const container = listRef.current
+    if (!container || !activeSlideUid) return
+    const item = container.querySelector<HTMLElement>(`[data-slide-uid="${CSS.escape(activeSlideUid)}"]`)
+    if (!item) return
+    const top = item.offsetTop
+    const bottom = top + item.offsetHeight
+    if (top < container.scrollTop) {
+      container.scrollTop = top
+    } else if (bottom > container.scrollTop + container.clientHeight) {
+      container.scrollTop = bottom - container.clientHeight
+    }
+  }, [activeSlideUid])
+
+  /** ↑/↓ 切页：不让方向键去滚滚动条；输入框、下拉、弹窗里保持原生行为 */
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+      if (event.defaultPrevented || event.isComposing) return
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
+
+      const target = event.target as HTMLElement | null
+      const nativeZone =
+        'input, textarea, select, [contenteditable="true"], [role="listbox"], [role="dialog"], .ant-select, .ant-select-dropdown, .ant-modal, .ant-drawer, .ant-slider, .ant-dropdown, .ant-picker-dropdown'
+      if (target?.closest(nativeZone)) return
+      if (slides.length < 2) return
+
+      const currentIndex = slides.findIndex((slide) => slide.slide_uid === activeSlideUid)
+      const nextIndex = (currentIndex >= 0 ? currentIndex : -1) + (event.key === 'ArrowDown' ? 1 : -1)
+      // 到头/到尾就不拦，保留浏览器默认滚动
+      if (nextIndex < 0 || nextIndex >= slides.length) return
+
+      event.preventDefault()
+      setActiveSlideUid(slides[nextIndex].slide_uid)
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [slides, activeSlideUid])
 
   /** 换源后页序与 uid 都可能变，整份详情重取，选中态回到第一页 */
   const handleSourceApplied = async () => {
@@ -89,7 +135,8 @@ export default function PptVideoWorkbench({ initialDetail, voices }: Props) {
       <ScriptDraftBanner detail={detail} onDetailChange={setDetail} />
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-[224px_minmax(0,1fr)_320px]">
-        <section className="rounded-xl border border-[#E5E3DF] bg-white p-3">
+        {/* self-start：卡片高度贴合页数，不被中栏撑高后留出空白 */}
+        <section className="self-start rounded-xl border border-[#E5E3DF] bg-white p-3">
           <div className="mb-2 flex items-center justify-between">
             <Typography.Text strong className="text-[13px]">
               页面
@@ -98,7 +145,9 @@ export default function PptVideoWorkbench({ initialDetail, voices }: Props) {
               第 {activeSlide?.slide_no ?? 1} / {detail.slide_count} 页
             </Typography.Text>
           </div>
-          <div className="max-h-[calc(100vh-320px)] min-h-[320px] overflow-y-auto">
+          {/* 放在滚动区之外：进度条不跟着时间轴一起滚走 */}
+          <PageImagesProgress detail={detail} onDetailChange={setDetail} />
+          <div ref={listRef} className="relative max-h-[calc(100vh-320px)] overflow-y-auto pr-1">
             <SlideTimeline
               slides={slides}
               activeSlideUid={activeSlide?.slide_uid ?? ''}

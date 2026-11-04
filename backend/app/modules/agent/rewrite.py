@@ -34,6 +34,7 @@ from app.core.jobs import submit_job_safe
 from app.core.llm import LLMError, llm_client
 from app.modules.agent.ai_config import ResolvedModel, compose_guide_block, resolve, resolve_guide
 from app.modules.agent.config import MODULE_CODE, PptVideoSettings, load_settings
+from app.modules.agent.highlight import element_catalog
 from app.modules.agent.models import (
     REVISION_STATUS_FAILED,
     REVISION_STATUS_RUNNING,
@@ -58,9 +59,10 @@ from app.modules.agent.script_ai import (
     _set_status,
     batch_progress,
     build_messages,
-    extract_batch_scripts,
+    extract_batch_segments,
     is_blank_script,
     is_generatable,
+    segments_to_script,
 )
 
 logger = logging.getLogger(__name__)
@@ -189,8 +191,9 @@ async def _write_script(
     script: str,
     *,
     only_if_blank: bool,
+    segments: list[dict[str, Any]] | None = None,
 ) -> bool:
-    """写入讲稿；讲稿变了就清空音频指纹，强制重新 TTS。"""
+    """写入讲稿与段级绑定；讲稿变了就清空音频指纹，强制重新 TTS。"""
     conditions = [
         PptVideoSlide.project_id == project_id,
         PptVideoSlide.slide_uid == uuid.UUID(str(slide_uid)),
@@ -204,6 +207,7 @@ async def _write_script(
         .where(*conditions)
         .values(
             script_text=script,
+            script_segments=segments or None,
             script_source=SCRIPT_SOURCE_AI,
             script_stale=False,
             audio_object_key=None,
@@ -269,6 +273,8 @@ async def run(
         batch = targets[start : start + batch_size]
         items = [(slide.slide_no, slide.page_text, slide.page_notes) for slide in batch]
         allowed = {slide.slide_no for slide in batch}
+        catalogs = {slide.slide_no: element_catalog(slide.layout) for slide in batch}
+        targets_by_slide = {slide_no: {item["id"] for item in catalog} for slide_no, catalog in catalogs.items()}
         messages = build_messages(
             language,
             project.name,
@@ -277,6 +283,7 @@ async def run(
             guide_block=guide_block,
             current_scripts={slide.slide_no: slide.script_text or "" for slide in batch},
             task_hint=task_hint,
+            element_catalogs=catalogs,
         )
         batch_nos = sorted(allowed)
         logger.info("讲稿改写批次开始: project=%s slides=%s mode=%s", project.id, batch_nos, request.mode)
@@ -302,12 +309,21 @@ async def run(
             result.errors.append(f"第 {'、'.join(str(no) for no in batch_nos)} 页改写失败：{exc}")
             continue
 
-        scripts = extract_batch_scripts(payload, allowed)
+        segments_by_slide = extract_batch_segments(payload, allowed, targets_by_slide, language)
         by_no = {slide.slide_no: slide for slide in batch}
         written = 0
-        for slide_no, script in scripts.items():
+        for slide_no, segments in segments_by_slide.items():
             slide = by_no[slide_no]
-            if await _write_script(session, project.id, str(slide.slide_uid), script, only_if_blank=only_if_blank):
+            script = segments_to_script(segments, language)
+            wrote = await _write_script(
+                session,
+                project.id,
+                str(slide.slide_uid),
+                script,
+                only_if_blank=only_if_blank,
+                segments=segments,
+            )
+            if wrote:
                 after[str(slide.slide_uid)] = script
                 written += 1
         await session.commit()
@@ -336,9 +352,7 @@ async def run(
     else:
         result.status = SCRIPT_AI_STATUS_FAILED
 
-    revision_status = (
-        REVISION_STATUS_SUCCEEDED if result.status != SCRIPT_AI_STATUS_FAILED else REVISION_STATUS_FAILED
-    )
+    revision_status = REVISION_STATUS_SUCCEEDED if result.status != SCRIPT_AI_STATUS_FAILED else REVISION_STATUS_FAILED
     await _update_revision(
         session,
         revision.id,
@@ -465,6 +479,8 @@ async def rollback_revision(
             )
             .values(
                 script_text=script or "",
+                # 回滚可能连「上传讲稿」都要退回去，段级绑定与文本不再配套，一并清空
+                script_segments=None,
                 audio_object_key=None,
                 audio_sha256=None,
                 duration_ms=0,

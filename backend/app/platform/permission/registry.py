@@ -3096,6 +3096,13 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ),
     ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/render"),
     ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/script-ai"),
+    # 页图重生成与状态查询：重试属写操作，状态查询只读（左栏进度条轮询）
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/page-images"),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/page-images/status",
+    ),
     ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/job"),
     ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/versions"),
     # 智能体 - AI 配置（个人 Key 与全局默认模型；全局写入在函数内再校验平台管理员）
@@ -3117,6 +3124,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     # 智能体 - 换源
     ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/source"),
     ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/source/apply"),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/source/file"),
     # 智能体 - 页级轻量编辑
     ApiBindingDef(
         "agent:ppt-video:manage",

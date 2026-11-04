@@ -43,6 +43,67 @@ class JobState(BaseModel):
     finished_at: datetime | None = None
 
 
+class HighlightRect(BaseModel):
+    """手绘矩形：相对整页的比例坐标，按像素存会随分辨率/版式一起偏。"""
+
+    x: float = Field(ge=0.0, lt=1.0)
+    y: float = Field(ge=0.0, lt=1.0)
+    w: float = Field(gt=0.0, le=1.0)
+    h: float = Field(gt=0.0, le=1.0)
+
+
+class HighlightRegionItem(BaseModel):
+    """一个区域的人工配置；`id` 是 layout 元素 id（`s0`、`s3.r2c1`）或 `rect:N`。"""
+
+    id: str = Field(min_length=1, max_length=64)
+    #: off=不参与高亮，text=只给文字变色，area=整块铺底色
+    mode: Literal["off", "text", "area"]
+    color: str | None = Field(default=None, max_length=16)
+    fill_alpha: int | None = Field(default=None, ge=0, le=255)
+    rect: HighlightRect | None = None
+    shape_sha: str | None = Field(default=None, max_length=64)
+
+
+class HighlightSentenceItem(BaseModel):
+    """句级微调：这句讲哪些区域、这句哪些区域不亮。"""
+
+    text: str = Field(min_length=1, max_length=500)
+    targets: list[str] = Field(default_factory=list, max_length=12)
+    mute: list[str] = Field(default_factory=list, max_length=12)
+
+
+class HighlightRegionsPayload(BaseModel):
+    """一页的区域级配置；空对象等价于未配置（走自动判定）。"""
+
+    regions: list[HighlightRegionItem] = Field(default_factory=list, max_length=60)
+    sentences: list[HighlightSentenceItem] = Field(default_factory=list, max_length=40)
+
+
+class SlideRegionItem(BaseModel):
+    """可被人工点选的区域（坐标来自 layout 解析，换分辨率不会偏）。"""
+
+    element_id: str
+    kind: str = ""
+    label: str = ""
+    text: str = ""
+    left: int = 0
+    top: int = 0
+    width: int = 0
+    height: int = 0
+
+
+class SlideRegionsResponse(BaseModel):
+    """区域设置面板的数据：页面尺寸 + 元素清单 + 可逐句微调的句子。"""
+
+    page_width: int = 0
+    page_height: int = 0
+    items: list[SlideRegionItem] = Field(default_factory=list)
+    #: 服务端切好的句子，前端逐句配置时直接用这份文本，避免两边切法不一致导致规则匹配不上
+    sentences: list[str] = Field(default_factory=list)
+    #: 当前页图指纹：手绘框记录的 shape_sha 与它不一致就说明页图变了，坐标要复核
+    image_sha256: str | None = None
+
+
 class SlideItem(BaseModel):
     """一页幻灯片（工作台时间轴与编辑区共用）。"""
 
@@ -56,9 +117,16 @@ class SlideItem(BaseModel):
     language: LanguageCode | None = None
     voice_id: str | None = None
     speed: float | None = None
+    #: 本页高亮样式/主色覆盖；None 表示跟随模块设置
+    highlight_style: str | None = None
+    highlight_color: str | None = None
+    #: 区域级配置（区域三态 + 句级微调）；None 表示全部按讲稿自动判定
+    highlight_regions: HighlightRegionsPayload | None = None
     page_text: str | None = None
     page_notes: str | None = None
     image_url: str | None = None
+    #: 时间轴用的小图（宽 320 JPEG），没有时前端回退到 image_url
+    thumb_url: str | None = None
     audio_url: str | None = None
     audio_sha256: str | None = None
     duration_ms: int = 0
@@ -150,6 +218,28 @@ class ScriptAiState(BaseModel):
     failed: int = 0
 
 
+class PageImagesState(BaseModel):
+    """页图（编辑态底图）生成状态。
+
+    与 `ScriptAiState` 同构：状态与进度取自项目列，前端左栏进度条轮询
+    `GET /ppt-videos/{id}/page-images/status`，终态再回填一次整份详情。
+    """
+
+    status: Literal["idle", "queued", "running", "done", "failed"] = "idle"
+    error: str | None = None
+    progress: int = Field(default=0, ge=0, le=100)
+    done: int = 0
+    total: int = 0
+    job_id: UUID | None = None
+
+
+class PageImagesAccepted(BaseModel):
+    """页图重生成受理结果（202）：前端拿到 job_id 后开始轮询状态。"""
+
+    job_id: UUID
+    status: Literal["queued", "running"] = "queued"
+
+
 class ProjectDetail(BaseModel):
     id: UUID
     name: str
@@ -167,8 +257,10 @@ class ProjectDetail(BaseModel):
     versions: list[VersionItem] = Field(default_factory=list)
     latest_job: JobState | None = None
     script_ai: ScriptAiState = Field(default_factory=ScriptAiState)
+    page_images: PageImagesState = Field(default_factory=PageImagesState)
     script_runtime: ScriptRuntime | None = None
     source_version: int = 1
+    source_download_url: str = ""
     script_guide: str = ""
     llm_config_id: UUID | None = None
     updated_at: datetime | None = None
@@ -195,9 +287,17 @@ class SlideUpdateRequest(BaseModel):
     language: LanguageCode | None = None
     voice_id: str | None = None
     speed: float | None = Field(default=None, ge=0.5, le=2.0)
+    #: 本页高亮样式（text_recolor/dim_outline/dim/outline）与主色 #RRGGBB
+    highlight_style: str | None = Field(default=None, max_length=16)
+    highlight_color: str | None = Field(default=None, max_length=16)
+    #: 区域级配置：整份替换（不做增量合并，避免前后端各存一半对不上）
+    highlight_regions: HighlightRegionsPayload | None = None
     clear_language: bool = False
     clear_voice: bool = False
     clear_speed: bool = False
+    clear_highlight_style: bool = False
+    clear_highlight_color: bool = False
+    clear_highlight_regions: bool = False
 
 
 class PreviewResponse(BaseModel):

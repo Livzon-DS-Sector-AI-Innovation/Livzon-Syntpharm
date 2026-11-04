@@ -17,14 +17,16 @@ import signal
 import socket
 import tempfile
 import uuid
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import storage
 from app.core.database import async_session_factory, engine
-from app.modules.agent import highlight, queue, render, service, tts
+from app.modules.agent import highlight, page_images, queue, render, service
 from app.modules.agent.alignment import Layout
 from app.modules.agent.cache import (
     Manifest,
@@ -33,17 +35,26 @@ from app.modules.agent.cache import (
     version_file_name,
 )
 from app.modules.agent.cache import (
-    audio_key as build_audio_key,
-)
-from app.modules.agent.cache import (
     body_key as build_body_key,
 )
 from app.modules.agent.cache import (
     segment_key as build_segment_key,
 )
-from app.modules.agent.config import ENCODER_KEY, PptVideoSettings, load_settings
+from app.modules.agent.config import (
+    DEFAULTS,
+    ENCODER_KEY,
+    HIGHLIGHT_STYLE_DIM,
+    HIGHLIGHT_STYLE_OUTLINE,
+    HIGHLIGHT_STYLE_TEXT_RECOLOR,
+    HIGHLIGHT_STYLES,
+    PptVideoSettings,
+    load_settings,
+    normalize_hex_color,
+    parse_hex_color,
+)
 from app.modules.agent.models import (
     JOB_STATUS_SUCCEEDED,
+    PAGE_IMAGES_STATUS_DONE,
     PROJECT_STATUS_FAILED,
     PROJECT_STATUS_READY,
     PptVideoJob,
@@ -58,8 +69,13 @@ logger = logging.getLogger(__name__)
 WORKER_ID = f"{socket.gethostname()}-{os.getpid()}"
 POLL_INTERVAL_SECONDS = 3
 STALE_SECONDS = 600
+#: 阶段进度分段（与前端 `STAGE_LABEL` 一一对应）：解析 5 → 出图 10 → 逐页合成 10~85
+#: → 拼接 88 → 上传 92 → 完成由 `queue.mark_succeeded` 置 done/100。
 PROGRESS_START = 5
-PROGRESS_END = 90
+PROGRESS_RENDER = 10
+PROGRESS_TTS_END = 85
+PROGRESS_CONCAT = 88
+PROGRESS_UPLOAD = 92
 
 
 class JobFailedError(RuntimeError):
@@ -92,6 +108,30 @@ def _download(module: str, object_key: str, target: Path) -> Path:
     return target
 
 
+async def _resolve_slide_images(
+    project: PptVideoProject,
+    slides: list[PptVideoSlide],
+    source_path: Path,
+    work_dir: Path,
+    settings: PptVideoSettings,
+) -> list[Path]:
+    """取页图：已与当前源一致时直接下载，否则转一次 PDF 再拆图。
+
+    页图在上传后就会异步生成，正常情况这里一次转换都不做；
+    缓存缺页（老项目、对象丢失、指纹不符）时回退到重新转换，不能让渲染失败。
+    返回列表按「源 PPT 页序」排列，与 `pdf_to_pngs` 的输出一致。
+    """
+    if page_images.page_images_fresh(project, slides):
+        try:
+            return await asyncio.to_thread(page_images.download_slide_images, project.id, slides, work_dir / "png")
+        except Exception:  # noqa: BLE001 - 缓存不可用就重转，渲染不能因此失败
+            logger.warning("页图缓存不可用，回退到重新转换: project=%s", project.id, exc_info=True)
+    pdf_path = await asyncio.to_thread(page_images.ensure_source_pdf, project.source_sha256, source_path, work_dir)
+    # 与页图任务走同一个函数（逐页 pdftoppm），只是这里不需要进度回调：
+    # 两条路径的字体与转换参数必须完全一致，否则预览和成片会不一样。
+    return await asyncio.to_thread(render.render_pdf_pages, pdf_path, work_dir / "png", settings.render_dpi)
+
+
 async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVideoSettings) -> None:
     """执行一个渲染任务；异常一律向上抛，由调用方落库。"""
     render.ensure_tools()
@@ -107,8 +147,10 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
         await session.commit()
 
         source_path = _download(service.BUCKET_MODULE, project.source_object_key, work_dir / "source.pptx")
-        pdf_path = await asyncio.to_thread(render.pptx_to_pdf, source_path, work_dir / "pdf", work_dir / "lo-profile")
-        images = await asyncio.to_thread(render.pdf_to_pngs, pdf_path, work_dir / "png", settings.render_dpi)
+        await queue.heartbeat(session, job.id, "render", PROGRESS_RENDER)
+        await session.commit()
+
+        images = await _resolve_slide_images(project, slides, source_path, work_dir, settings)
         if len(images) != len(slides):
             raise JobFailedError(f"PPT 渲染出 {len(images)} 页，与讲稿页数 {len(slides)} 不一致")
 
@@ -130,36 +172,23 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
             if not effective.script:
                 raise JobFailedError(f"第 {slide.slide_no} 页讲稿为空")
 
-            audio_fp = build_audio_key(effective.script_sha256, effective.voice_fingerprint)
-            audio_path = work_dir / "audio" / f"{audio_fp}.wav"
-            audio_hit = storage.stat_object(service.BUCKET_MODULE, service.audio_object_key(audio_fp)) is not None
-            if audio_hit:
-                _download(service.BUCKET_MODULE, service.audio_object_key(audio_fp), audio_path)
-                # 库里记过同一音频指纹就直接复用，没有则现算，保证 audio_sha 一定是字符串
-                audio_sha = (slide.audio_sha256 if slide.audio_key == audio_fp else None) or sha256_file(audio_path)
-            else:
-                result = await asyncio.to_thread(
-                    tts.synthesize_to_wav,
-                    effective.script,
-                    effective.language,
-                    effective.voice_id,
-                    effective.speed,
-                    audio_path,
-                    engine_name,
-                )
-                audio_sha = result.sha256
-                storage.upload_file(
-                    service.BUCKET_MODULE, service.audio_object_key(audio_fp), str(audio_path), "audio/wav"
-                )
-
-            duration_ms = await asyncio.to_thread(_wav_duration_ms, audio_path)
-            plan = _build_highlight_plan(effective.script, slide.layout, duration_ms, settings)
+            page_audio = await service.prepare_page_audio(
+                slide, project, settings, engine_name, engine_version, work_dir
+            )
+            audio_fp = page_audio.audio_key
+            audio_path = page_audio.path
+            audio_sha = page_audio.sha256
+            duration_ms = page_audio.duration_ms
+            plan = _build_highlight_plan(
+                effective.script, slide.layout, page_audio, settings, getattr(slide, "highlight_regions", None)
+            )
             # 有高亮时画面是多段静帧序列，页图 sha256 无法代表画面，必须叠加视觉指纹
             # （分句映射 + 布局 + 样式）：只算分句会漏掉「改样式/挪版式但句子没变」的情况，
             # 旧片段被复用后高亮会静默失效。
-            visual_key = (
-                highlight.visual_fingerprint(plan, slide.layout, settings.highlight_style) if plan.has_boxes else ""
-            )
+            paint = _resolve_highlight_paint(settings, slide)
+            # 指纹必须带完整样式参数（样式/颜色/压暗/描边/染色强度），
+            # 只带样式名会让「改了颜色但句子没变」的旧片段被复用。
+            visual_key = highlight.visual_fingerprint(plan, slide.layout, paint.fingerprint) if plan.has_boxes else ""
             segment_fp = build_segment_key(image_sha, audio_fp, ENCODER_KEY, visual_key)
             cached = await session.scalar(
                 select(PptVideoSegment).where(
@@ -185,6 +214,7 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
                         plan,
                         slide.layout,
                         settings,
+                        paint,
                         work_dir,
                         segment_fp,
                     )
@@ -205,14 +235,9 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
                 await _upsert_segment(session, segment_fp, image_sha, audio_sha, segment_duration, segment_path)
 
             # 页图按「稳定页身份」落库：换源后 slide_no 会重排，用页码做 key 会互相覆盖
-            page_image_key = service.slide_image_key(project.id, slide.slide_uid)
-            storage.upload_file(
-                service.BUCKET_MODULE,
-                page_image_key,
-                str(image_path),
-                "image/png",
-            )
-            slide.image_object_key = page_image_key
+            if not await asyncio.to_thread(page_images.slide_assets_ready, project.id, slide, image_sha):
+                await asyncio.to_thread(page_images.publish_slide_images, project.id, slide, image_path, work_dir)
+            slide.image_object_key = service.slide_image_key(project.id, slide.slide_uid)
             slide.image_sha256 = image_sha
             slide.audio_key = audio_fp
             slide.audio_object_key = service.audio_object_key(audio_fp)
@@ -236,13 +261,29 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
             else:
                 body_keys.append(segment_fp)
 
-            progress = PROGRESS_START + int((index + 1) / total * (PROGRESS_END - PROGRESS_START))
+            progress = PROGRESS_RENDER + int((index + 1) / total * (PROGRESS_TTS_END - PROGRESS_RENDER))
             await queue.heartbeat(session, job.id, "tts", progress)
             await session.commit()
 
+        # 页图已随本次渲染对齐到当前源：下次重渲可直接跳过整本转换。
+        # 渲染管线指纹也要一起写，否则 `page_images_fresh` 会一直判过期、
+        # 每次渲染都白跑一遍 soffice。
+        project.page_images_version = project.source_version
+        project.page_images_renderer = render.RENDERER_KEY
+        # 本次渲染自己就产出了一整套页图，顺带把页图进度收尾成 done：
+        # 否则并发的页图任务被杀/重启后，左栏进度条会一直转到 30 分钟超时才变失败，
+        # 而画面其实早就能看了。
+        project.page_images_status = PAGE_IMAGES_STATUS_DONE
+        project.page_images_progress = 100
+        project.page_images_total = total
+        project.page_images_done = total
+        project.page_images_error = None
+
+        await queue.heartbeat(session, job.id, "concat", PROGRESS_CONCAT)
+        await session.commit()
         final_path = work_dir / "output.mp4"
         await asyncio.to_thread(render.concat_segments, segment_paths, final_path, work_dir / "concat.txt")
-        await queue.heartbeat(session, job.id, "upload", 95)
+        await queue.heartbeat(session, job.id, "upload", PROGRESS_UPLOAD)
         await session.commit()
 
         version = await _save_version(
@@ -267,27 +308,104 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
 def _build_highlight_plan(
     script: str,
     layout: Layout | None,
-    duration_ms: int,
+    page_audio: service.PageAudio,
     settings: PptVideoSettings,
+    regions: Any = None,
 ) -> highlight.HighlightPlan:
-    """按旁白时长与页面布局生成页内引导计划；未开启时返回空计划。"""
+    """按旁白音频与页面布局生成页内引导计划；未开启或失败时返回空计划。
+
+    逐段合成时段时间轴直接用各段音频实测时长；退回整页合成时才按字数估算。
+    `regions` 是落库的区域配置（区域三态 + 句级微调），坏配置只会退化成自动判定。
+    """
+    total_ms = page_audio.duration_ms
     if not settings.highlight_enabled or not layout:
-        return highlight.HighlightPlan(steps=[], total_ms=duration_ms)
+        return highlight.HighlightPlan(steps=[], total_ms=total_ms)
+    config = highlight.RegionConfig()
     try:
-        return highlight.build_plan(script, layout, duration_ms, settings.highlight_max_steps)
+        config = highlight.parse_region_config(regions, layout)
+        if page_audio.segmented:
+            return highlight.build_plan_for_segments(
+                highlight.apply_sentence_rules(page_audio.segments, config),
+                layout,
+                page_audio.segment_slots_ms,
+                total_ms,
+                min_dwell_ms=settings.highlight_min_dwell_ms,
+                coverage_threshold=settings.highlight_text_match_coverage,
+                config=config,
+            )
+        return highlight.build_plan(script, layout, total_ms, settings.highlight_max_steps, config)
     except Exception:  # noqa: BLE001 - 引导失败不能让整条视频渲不出来
         logger.exception("页内视觉引导计划生成失败，退化为整页常亮")
-        return highlight.HighlightPlan(steps=[], total_ms=duration_ms)
+        return highlight.HighlightPlan(steps=[], total_ms=total_ms)
 
 
-def _highlight_style_options(style: str) -> tuple[int, tuple[int, int, int], int]:
-    """样式 → (压暗透明度, 描边色, 描边像素)。"""
-    accent = (86, 69, 212)
-    if style == "dim":
-        return 150, accent, 0
-    if style == "outline":
-        return 0, accent, 4
-    return 150, accent, 4
+@dataclass(frozen=True)
+class _HighlightPaint:
+    """一次出帧真正用到的样式参数（已合并「页级覆盖 → 模块设置」）。"""
+
+    style: str
+    color: str
+    dim_alpha: int
+    accent: tuple[int, int, int]
+    outline_px: int
+    fill_alpha: int
+    recolor_strength: int
+
+    @property
+    def fingerprint(self) -> str:
+        """帧缓存指纹：颜色/强度变一点，画面就不同，旧片段必须失效。"""
+        return f"{self.style}:{self.color}:{self.dim_alpha}:{self.outline_px}:{self.fill_alpha}:{self.recolor_strength}"
+
+
+def _resolve_highlight_paint(settings: PptVideoSettings, slide: Any) -> _HighlightPaint:
+    """合并页级覆盖与模块设置；非法覆盖值一律回落模块设置，不让坏值进渲染。"""
+    style = str(getattr(slide, "highlight_style", None) or settings.highlight_style or "").strip()
+    if style not in HIGHLIGHT_STYLES:
+        style = settings.highlight_style
+    color = normalize_hex_color(
+        str(getattr(slide, "highlight_color", None) or settings.highlight_color), DEFAULTS.highlight_color
+    )
+    accent = parse_hex_color(color)
+    dim_alpha = settings.highlight_dim_alpha
+    outline_px = settings.highlight_outline_px
+    fill_alpha = settings.highlight_fill_alpha
+    recolor_strength = settings.highlight_recolor_strength
+    if style == HIGHLIGHT_STYLE_TEXT_RECOLOR:
+        # 文字染色：背景不压暗、不描边。
+        # 页内文字在解析阶段已经定位到框，命中框里的字直接换色即可；
+        # 再画一圈矩形描边会露出「机器标注」的痕迹，用户明确要求去掉。
+        # 图片/图表不是文字、无法染色，仍保留极淡主色底（0 可关）。
+        return _HighlightPaint(style, color, 0, accent, 0, fill_alpha, recolor_strength)
+    if style == HIGHLIGHT_STYLE_DIM:
+        return _HighlightPaint(style, color, dim_alpha, accent, 0, 0, 0)
+    if style == HIGHLIGHT_STYLE_OUTLINE:
+        return _HighlightPaint(style, color, 0, accent, outline_px, 0, 0)
+    return _HighlightPaint(style, color, dim_alpha, accent, outline_px, 0, 0)
+
+
+#: 区域 `text` 档在页级未配染色强度时的兜底强度（0-100）
+_REGION_TEXT_STRENGTH = 100
+
+
+def _box_paint(box: highlight.HighlightBox, base: _HighlightPaint) -> render.RegionPaint:
+    """把单个区域的画法折算成渲染层参数。
+
+    未配区域效果（`mode` 为空）时严格沿用改造前口径——文本染色 or 淡色底由 kind 决定，
+    保证没配过的页逐像素不变。
+    """
+    mode = box.mode or ""
+    if mode == highlight.REGION_MODE_AREA:
+        accent = parse_hex_color(box.color) if box.color else base.accent
+        alpha = box.fill_alpha if box.fill_alpha is not None else highlight.DEFAULT_REGION_FILL_ALPHA
+        return render.RegionPaint(accent, text=False, fill_alpha=alpha, recolor_strength=0)
+    if mode == highlight.REGION_MODE_TEXT:
+        accent = parse_hex_color(box.color) if box.color else base.accent
+        return render.RegionPaint(
+            accent, text=True, fill_alpha=0, recolor_strength=base.recolor_strength or _REGION_TEXT_STRENGTH
+        )
+    if base.recolor_strength > 0 and box.is_text:
+        return render.RegionPaint(base.accent, text=True, fill_alpha=0, recolor_strength=base.recolor_strength)
+    return render.RegionPaint(base.accent, text=False, fill_alpha=base.fill_alpha, recolor_strength=0)
 
 
 def _render_highlighted_segment(
@@ -297,6 +415,7 @@ def _render_highlighted_segment(
     plan: highlight.HighlightPlan,
     layout: Layout | None,
     settings: PptVideoSettings,
+    paint: _HighlightPaint,
     work_dir: Path,
     segment_fp: str,
 ) -> int:
@@ -305,7 +424,6 @@ def _render_highlighted_segment(
     `-c copy` 拼接链路对画面来源不敏感，只要时长与编码参数一致即可，
     所以这里不需要改动 concat 逻辑。
     """
-    dim_alpha, accent, outline_px = _highlight_style_options(settings.highlight_style)
     size = highlight.slide_size(layout)
     frame_dir = work_dir / "highlight" / segment_fp
     frame_dir.mkdir(parents=True, exist_ok=True)
@@ -313,14 +431,19 @@ def _render_highlighted_segment(
     frames: list[tuple[Path, int]] = []
     for index, step in enumerate(plan.steps):
         boxes = [(box.left, box.top, box.width, box.height) for box in step.boxes]
+        kinds = [box.kind for box in step.boxes]
+        # 逐框取画法：区域三态各自生效，未配过的框仍按页级样式走
+        paints = [_box_paint(box, paint) for box in step.boxes]
         frame_path = render.compose_highlight_frame(
             image_path,
             frame_dir / f"{index:02d}.png",
             boxes,
             size,
-            dim_alpha,
-            accent,
-            outline_px,
+            paint.dim_alpha,
+            paint.accent,
+            paint.outline_px,
+            kinds=kinds,
+            paints=paints,
         )
         frames.append((frame_path, step.duration_ms))
 
@@ -334,13 +457,6 @@ def _render_highlighted_segment(
         work_dir / "highlight" / f"{segment_fp}.txt",
         settings.ffmpeg_threads,
     )
-
-
-def _wav_duration_ms(path: Path) -> int:
-    import wave
-
-    with wave.open(str(path), "rb") as handle:
-        return int(handle.getnframes() / handle.getframerate() * 1000)
 
 
 async def _upsert_segment(

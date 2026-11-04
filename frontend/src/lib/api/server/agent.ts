@@ -12,6 +12,7 @@ import type {
   AiConfigListResponse,
   AiConfigTestResponse,
   EditableShapeList,
+  PageImagesAccepted,
   ProjectDetail,
   ProjectPage,
   ProjectSummary,
@@ -82,14 +83,6 @@ export async function fetchVersionList(projectId: string): Promise<VersionItem[]
   )
 }
 
-/** 上传 PPT + 可选讲稿：formData 直接透传，由后端做格式与大小校验 */
-export async function createPptVideoProjectRequest(formData: FormData): Promise<Envelope<ProjectDetail>> {
-  return apiFetch<Envelope<ProjectDetail>>(`${getApiBaseUrl()}${API}/ppt-videos`, {
-    method: 'POST',
-    body: formData,
-  })
-}
-
 export async function updateProjectRequest(
   projectId: string,
   payload: Record<string, unknown>,
@@ -131,6 +124,16 @@ export async function regenerateScriptAiRequest(projectId: string): Promise<Enve
 
 export async function requestRenderRequest(projectId: string): Promise<Envelope<{ job_id: string }>> {
   return apiFetch(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/render`, { method: 'POST' })
+}
+
+/**
+ * 页图重生成：后端返回 202 + job_id，前端拿它开始轮状态。
+ * `apiFetch` 已把非 2xx 转成异常，这里只解信封。
+ */
+export async function regeneratePageImagesRequest(projectId: string): Promise<Envelope<PageImagesAccepted>> {
+  return apiFetch<Envelope<PageImagesAccepted>>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/page-images`, {
+    method: 'POST',
+  })
 }
 
 export async function deleteProjectRequest(projectId: string): Promise<Envelope<{ message: string }>> {

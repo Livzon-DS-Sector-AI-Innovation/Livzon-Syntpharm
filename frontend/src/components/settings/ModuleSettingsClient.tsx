@@ -7,6 +7,7 @@ import {
   Button,
   Modal,
   Form,
+  ColorPicker,
   Input,
   Switch,
   InputNumber,
@@ -92,7 +93,23 @@ export default function ModuleSettingsClient({
     }
   }
 
+  // 颜色类配置（如 * _COLOR）：直接给取色器 + 色块，比让人手敲 #RRGGBB 靠谱
+  const isColorSetting = (setting: ModuleSetting) =>
+    setting.value_type === 'string' && setting.key.endsWith('_COLOR')
+
   const renderValue = (setting: ModuleSetting) => {
+    if (isColorSetting(setting)) {
+      const color = setting.value || '#FF3B30'
+      return (
+        <Space size={8}>
+          <span
+            className="inline-block h-4 w-4 rounded align-middle"
+            style={{ background: color, border: '1px solid #d9d9d9' }}
+          />
+          <Text code>{color}</Text>
+        </Space>
+      )
+    }
     switch (setting.value_type) {
       case 'bool':
         return (
@@ -116,6 +133,20 @@ export default function ModuleSettingsClient({
   }
 
   const renderEditInput = (setting: ModuleSetting) => {
+    if (isColorSetting(setting)) {
+      return (
+        <Form.Item
+          name="value"
+          getValueProps={(value?: string) => ({ value: value || '#FF3B30' })}
+          getValueFromEvent={(color: { toHexString: () => string }) =>
+            color.toHexString().toUpperCase()
+          }
+          rules={[{ required: true, message: '请选择颜色' }]}
+        >
+          <ColorPicker format="hex" showText />
+        </Form.Item>
+      )
+    }
     switch (setting.value_type) {
       case 'bool':
         return (

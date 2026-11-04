@@ -40,7 +40,7 @@ export default function SlideTimeline({ slides, activeSlideUid, onSelect }: Prop
   }
 
   return (
-    <div className="flex h-full flex-col gap-2 overflow-y-auto pr-1">
+    <div className="flex flex-col gap-2">
       {slides.map((slide) => {
         const active = slide.slide_uid === activeSlideUid
         const empty = !(slide.script_text || '').trim()
@@ -52,6 +52,7 @@ export default function SlideTimeline({ slides, activeSlideUid, onSelect }: Prop
           <button
             key={slide.slide_uid}
             type="button"
+            data-slide-uid={slide.slide_uid}
             onClick={() => onSelect(slide.slide_uid)}
             title={status?.title}
             className={[
@@ -71,9 +72,15 @@ export default function SlideTimeline({ slides, activeSlideUid, onSelect }: Prop
 
             <span className="relative block h-[54px] w-[96px] shrink-0 overflow-hidden rounded-md bg-[#1A1A1A]">
               {slide.image_url ? (
-                // 缩略图走后端代理，浏览器带 cookie 鉴权
+                // 缩略图走后端代理，浏览器带 cookie 鉴权；缺缩略图时回退大图，老项目不至于空着
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={slide.image_url} alt={`第 ${slide.slide_no} 页`} className="h-full w-full object-contain" />
+                <img
+                  src={slide.thumb_url || slide.image_url}
+                  alt={`第 ${slide.slide_no} 页`}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-contain"
+                />
               ) : (
                 <span className="flex h-full w-full items-center justify-center text-[11px] text-[#A4A097]">
                   待渲染

@@ -6,12 +6,16 @@
 - 非法格式与损坏文件必须抛 ParserError（message 直接给用户看）。
 """
 
+import io
 from pathlib import Path
 
 import pytest
+from PIL import Image
 from pptx import Presentation
+from pptx.util import Emu
 
 from app.modules.agent.parser import (
+    MAX_TABLE_CELLS,
     ParserError,
     parse_pptx,
     read_script_file,
@@ -129,3 +133,85 @@ def test_read_script_file_rejects_unknown_suffix(tmp_path: Path) -> None:
     path.write_bytes(b"%PDF-1.4")
     with pytest.raises(ParserError):
         read_script_file(path)
+
+
+# ── 可高亮元素：表格 / 组合 / 图片 ─────────────────────────────────────────
+
+
+def _png_bytes(width: int = 8, height: int = 8) -> bytes:
+    buffer = io.BytesIO()
+    Image.new("RGB", (width, height), (200, 30, 30)).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+def _make_rich_pptx(path: Path) -> Path:
+    """一页里同时放文本框、表格、组合形状与图片。"""
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+
+    title = slide.shapes.add_textbox(Emu(600000), Emu(300000), Emu(6000000), Emu(800000))
+    title.text_frame.text = "发酵工艺流程"
+
+    table_shape = slide.shapes.add_table(2, 2, Emu(1000000), Emu(1500000), Emu(4000000), Emu(1200000))
+    table = table_shape.table
+    table.cell(0, 0).text = "产线"
+    table.cell(0, 1).text = "收率"
+    table.cell(1, 0).text = "A线"
+    table.cell(1, 1).text = "91%"
+
+    group = slide.shapes.add_group_shape()
+    inner = group.shapes.add_textbox(Emu(100000), Emu(100000), Emu(1500000), Emu(500000))
+    inner.text_frame.text = "组内要点"
+    group.left = Emu(500000)
+    group.top = Emu(4000000)
+    group.width = Emu(3000000)
+    group.height = Emu(1000000)
+
+    slide.shapes.add_picture(io.BytesIO(_png_bytes()), Emu(6000000), Emu(4000000), Emu(800000), Emu(600000))
+
+    presentation.save(str(path))
+    return path
+
+
+def test_parse_pptx_extracts_table_cells_with_geometry(tmp_path: Path) -> None:
+    slides = parse_pptx(_make_rich_pptx(tmp_path / "rich.pptx"))
+    slide = slides[0]
+
+    table = next(shape for shape in slide.layout["shapes"] if shape.get("cells"))
+    cells = table["cells"]
+    assert len(cells) == 4
+    assert {(cell["row"], cell["col"]): cell["text"] for cell in cells}[(2, 2)] == "91%"
+    # 单元格几何由行列宽高累加得到：同一行往右递增、同一列往下递增
+    first, second = cells[0], cells[1]
+    assert second["left"] > first["left"]
+    assert second["top"] == first["top"]
+    assert cells[2]["top"] > first["top"]
+    # 表格文字以前完全丢失，现在必须进页面正文，讲稿才看得到数据
+    assert "91%" in slide.text
+    assert "收率" in slide.text
+
+
+def test_parse_pptx_extracts_group_text_and_frame(tmp_path: Path) -> None:
+    slides = parse_pptx(_make_rich_pptx(tmp_path / "rich.pptx"))
+    slide = slides[0]
+
+    group = next(shape for shape in slide.layout["shapes"] if "GROUP" in str(shape["kind"]))
+    assert "组内要点" in group["text"]
+    # 组合按整组外框亮，子形状的相对坐标不能直接当页面坐标用
+    assert group["left"] == 500000
+    assert group["width"] == 3000000
+    assert "组内要点" in slide.text
+
+
+def test_parse_pptx_keeps_picture_as_highlight_candidate(tmp_path: Path) -> None:
+    slides = parse_pptx(_make_rich_pptx(tmp_path / "rich.pptx"))
+
+    picture = next(shape for shape in slides[0].layout["shapes"] if str(shape["kind"]).startswith("PICTURE"))
+    assert picture["text"] == ""
+    assert picture["image_sha"]
+    assert picture["width"] > 0 and picture["height"] > 0
+
+
+def test_parse_pptx_table_cell_limit_is_finite() -> None:
+    # 上限只是防 prompt 预算被挤爆，这里守住常量语义即可
+    assert 0 < MAX_TABLE_CELLS <= 200

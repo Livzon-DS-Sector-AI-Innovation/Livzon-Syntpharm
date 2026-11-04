@@ -150,16 +150,19 @@ async def prepare(
         raise SourceReplaceError("PPT 中没有可识别的幻灯片")
 
     old_slides = await _load_slides(session, project.id)
-    diff = align(_snapshots(old_slides), [
-        PageSnapshot(
-            index=item.slide_no,
-            page_text=item.text,
-            notes=item.notes,
-            layout=item.layout,
-            fingerprint=item.fingerprint,
-        )
-        for item in parsed
-    ])
+    diff = align(
+        _snapshots(old_slides),
+        [
+            PageSnapshot(
+                index=item.slide_no,
+                page_text=item.text,
+                notes=item.notes,
+                layout=item.layout,
+                fingerprint=item.fingerprint,
+            )
+            for item in parsed
+        ],
+    )
 
     pending_key = pending_object_key(project.id, filename)
     storage.upload_object(
@@ -244,6 +247,8 @@ async def apply(
         slide.page_notes = (item.notes or "")[:5000] or None
         slide.layout = item.layout
         slide.page_fingerprint = item.fingerprint
+        # 版式变了，旧的元素 id 指向的东西可能已经不同，绑定必须作废（讲稿保留、改由字面兜底）
+        slide.script_segments = None
         slide.script_stale = True
         slide.image_object_key = None
         slide.image_sha256 = None
