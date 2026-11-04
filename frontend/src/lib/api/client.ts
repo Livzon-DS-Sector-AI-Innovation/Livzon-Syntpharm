@@ -103,7 +103,17 @@ export async function fetchApi<T>(
     }
 
     console.error('[API] HTTP error:', url, response.status, errorData)
-    throw new ApiError(response.status, response.statusText, message, errorData)
+    // 后端业务异常（AppException）会把具体原因放在 detail / message 里，
+    // 优先透出给用户，避免统一退化成「请求参数错误」这类泛化文案
+    const serverMessage = (() => {
+      if (!errorData || typeof errorData !== 'object') return undefined
+      const detail = (errorData as { detail?: unknown }).detail
+      if (typeof detail === 'string' && detail.trim()) return detail
+      const msg = (errorData as { message?: unknown }).message
+      if (typeof msg === 'string' && msg.trim()) return msg
+      return undefined
+    })()
+    throw new ApiError(response.status, response.statusText, serverMessage || message, errorData)
   }
 
   // 检查 Content-Type

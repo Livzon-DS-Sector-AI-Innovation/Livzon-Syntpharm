@@ -6,7 +6,7 @@ import { Modal, Form, Input, Upload, App, Image } from 'antd'
 import { InboxOutlined } from '@ant-design/icons'
 import { replyRectification, reworkRectification, uploadRectificationPhoto } from '@/actions/safety'
 import { fileProxyUrl } from '@/lib/file-url'
-import type { HazardReport } from '@/types/safety'
+import type { HazardReport, RectificationReplyRequest } from '@/types/safety'
 import type { UploadFile } from 'antd/es/upload'
 
 const { TextArea } = Input
@@ -85,7 +85,7 @@ export default function HazardRectificationReplyModal({
         setUploading(false)
       }
 
-      const data: { reply_content: string; rectification_photos?: string; capa_measures?: string } = {
+      const data: RectificationReplyRequest = {
         reply_content: values.reply_content,
       }
       if (values.capa_measures) {

@@ -11,6 +11,7 @@ type RegulationRevisionApiResponse = components['schemas']['RegulationRevisionAp
 type HazardVerifyNotifyData = components['schemas']['HazardVerifyNotifyData']
 type HazardRectificationNotifyData = components['schemas']['HazardRectificationNotifyData']
 type RegulationContentUpdateData = components['schemas']['RegulationContentUpdateData']
+type HazardAiRunData = components['schemas']['HazardAiRunData']
 import type {
   AccidentFormData,
   AccidentQueryParams,
@@ -264,11 +265,11 @@ export async function uploadRectificationPhoto(id: string, file: File): Promise<
   return safetyApi.uploadHazardPhoto(`/safety/hazards/${id}/upload-rectification-photo`, file, authHeaders) as Promise<ApiResponse<HazardReport>>
 }
 
-export async function runHazardAI(hazardId: string, scriptNumber: number): Promise<ApiResponse<unknown>> {
+export async function runHazardAI(hazardId: string, scriptNumber: number): Promise<ApiResponse<HazardAiRunData>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.runHazardAI(hazardId, scriptNumber, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<unknown>
+  return response as ApiResponse<HazardAiRunData>
 }
 
 // ============ Accident Actions ============

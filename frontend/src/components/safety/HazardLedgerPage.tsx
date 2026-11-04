@@ -57,6 +57,7 @@ import HazardRegistrationDrawer from './HazardRegistrationDrawer'
 import dayjs from 'dayjs'
 import { statusPill, actionLink } from '@/components/safety/sharedStyles'
 import { fileProxyUrl } from '@/lib/file-url'
+import { waitForHazardAiResult } from '@/lib/api/client/safety'
 
 const { Text } = Typography
 
@@ -404,8 +405,8 @@ export default function HazardLedgerPage() {
       } else {
         message.error(response.message || '开始整改失败')
       }
-    } catch {
-      message.error('开始整改失败，请检查网络')
+    } catch (err) {
+      message.error(err instanceof Error && err.message ? err.message : '开始整改失败，请检查网络')
     }
   }
 
@@ -487,22 +488,38 @@ export default function HazardLedgerPage() {
   const handleRerunAI = async (record: HazardReport) => {
     setRerunLoading(true)
     try {
+      // AI 端点现在只负责提交后台任务，结果需要轮询隐患详情获取
       const r1 = await runHazardAI(record.id, 1)
       if (r1.code !== 200) {
         msgApi.error('重新执行 AI 识别失败: ' + (r1.message || ''))
         return
       }
-      patchHazard(record.id, r1.data as HazardReport)
-      const r2 = await runHazardAI(record.id, 2)
-      if (r2.code === 200) {
-        msgApi.success('AI 已重新执行完成')
-        patchHazard(record.id, r2.data as HazardReport)
-        refreshStats()
-      } else {
-        msgApi.warning('AI 识别已完成，整改建议生成失败: ' + (r2.message || ''))
+      const after1 = await waitForHazardAiResult(record.id)
+      if (!after1) {
+        msgApi.warning('AI 识别超时，请稍后刷新查看结果')
+        return
       }
-    } catch {
-      msgApi.error('重新执行 AI 失败')
+      patchHazard(record.id, after1)
+      if (after1.ai_error_message) {
+        msgApi.error('AI 识别失败: ' + after1.ai_error_message)
+        return
+      }
+
+      const r2 = await runHazardAI(record.id, 2)
+      if (r2.code !== 200) {
+        msgApi.warning('AI 识别已完成，整改建议生成失败: ' + (r2.message || ''))
+        return
+      }
+      const after2 = await waitForHazardAiResult(record.id)
+      if (!after2) {
+        msgApi.warning('整改建议生成超时，请稍后刷新查看结果')
+        return
+      }
+      patchHazard(record.id, after2)
+      msgApi.success('AI 已重新执行完成')
+      refreshStats()
+    } catch (err) {
+      msgApi.error(err instanceof Error && err.message ? err.message : '重新执行 AI 失败')
     } finally {
       setRerunLoading(false)
     }

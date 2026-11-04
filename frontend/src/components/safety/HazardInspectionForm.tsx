@@ -31,6 +31,7 @@ import {
   DEPARTMENT_OPTIONS,
 } from '@/types/safety'
 import { getCurrentUser } from '@/actions/auth'
+import { searchPersonnel } from '@/lib/api/client/identity'
 import dayjs from 'dayjs'
 
 const { TextArea } = Input
@@ -93,20 +94,16 @@ export default function HazardInspectionForm({
     searchTimerRef.current = setTimeout(async () => {
       setUserSearchLoading(true)
       try {
-        const params = new URLSearchParams({ keyword, limit: '50' })
-        const resp = await fetch(`/api/v1/identity/personnel?${params}`)
-        if (resp.ok) {
-          const json = await resp.json()
-          const items = (json.data?.items ?? []) as Record<string, unknown>[]
-          setUserOptions(items.map((u) => {
-            const account = String(u.username ?? '')
-            return {
-              value: String(u.id),
-              // 统一「姓名（账号）」：重名时能区分
-              label: `${String(u.name)}${account ? `（${account}）` : ''} - ${String(u.department || '未知部门')}`,
-            }
-          }))
-        }
+        const items = await searchPersonnel(keyword, 50)
+        if (!mountedRef.current) return
+        setUserOptions(items.map((u) => {
+          const account = u.username ?? ''
+          return {
+            value: u.id,
+            // 统一「姓名（账号）」：重名时能区分
+            label: `${u.name}${account ? `（${account}）` : ''} - ${u.department || '未知部门'}`,
+          }
+        }))
       } catch {
         if (mountedRef.current) setUserOptions([])
       } finally {

@@ -83,8 +83,10 @@ export default function HazardVerifyModal({
       } else {
         message.error(response.message || '复核失败')
       }
-    } catch {
-      // validation error
+    } catch (err) {
+      // antd 校验失败抛的是 { errorFields } 对象（antd 自己已提示）；
+      // 业务异常是 Error，需要把后端返回的原因透出给用户
+      if (err instanceof Error && err.message) message.error(err.message)
     } finally {
       setSubmitting(false)
     }

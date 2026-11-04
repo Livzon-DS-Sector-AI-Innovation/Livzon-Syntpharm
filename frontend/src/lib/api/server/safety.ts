@@ -7,6 +7,7 @@ type HazardStatsApiResponse = components['schemas']['HazardStatsApiResponse']
 type DepartmentLeaderApiResponse = components['schemas']['DepartmentLeaderApiResponse']
 type DepartmentSafetyOfficerApiResponse = components['schemas']['DepartmentSafetyOfficerApiResponse']
 type HazardVerifyNotifyApiResponse = components['schemas']['HazardVerifyNotifyApiResponse']
+type HazardAiRunApiResponse = components['schemas']['HazardAiRunApiResponse']
 type HazardRectificationNotifyApiResponse = components['schemas']['HazardRectificationNotifyApiResponse']
 type RegulationContentUpdateApiResponse = components['schemas']['RegulationContentUpdateApiResponse']
 
@@ -240,7 +241,7 @@ export async function uploadHazardPhoto(endpoint: string, file: File, authHeader
 }
 
 export async function runHazardAI(hazardId: string, scriptNumber: number, authHeaders?: Record<string, string>) {
-  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazards/${hazardId}/ai/run/${scriptNumber}`, {
+  return apiFetch<HazardAiRunApiResponse>(`/api/v1/safety/hazards/${hazardId}/ai/run/${scriptNumber}`, {
     method: 'POST',
     headers: authHeaders,
     body: '{}',

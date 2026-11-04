@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter, useParams } from 'next/navigation'
 import {
@@ -448,12 +448,6 @@ export default function HazardLedgerDetailPage() {
   const [aiReviewTriggering, setAiReviewTriggering] = useState(false)
   const [notifyRectLoading, setNotifyRectLoading] = useState(false)
 
-  // ── 人员搜索状态 ──
-  interface UserOption { value: string; label: string }
-  const [_userOptions, setUserOptions] = useState<UserOption[]>([])
-  const [_userSearchLoading, setUserSearchLoading] = useState(false)
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-
   const queryClient = useQueryClient()
 
   const { data: record, isLoading: loading, refetch: _refetch } = useQuery({
@@ -486,39 +480,13 @@ export default function HazardLedgerDetailPage() {
     enabled: !!record?.department,
   })
 
-  // Handle error case and redirect
-  if (!loading && !record && id) {
-    message.error('加载失败')
-    router.push('/safety/hazard-ledger')
-  }
-
-  const _handleUserSearch = useCallback((keyword: string) => {
-    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
-    if (!keyword || keyword.length < 1) {
-      setUserOptions([])
-      return
+  // 加载失败时提示并退回台账（渲染期不能有副作用：message / router.push 必须在 effect 内）
+  useEffect(() => {
+    if (!loading && !record && id) {
+      message.error('加载失败')
+      router.push('/safety/hazard-ledger')
     }
-    searchTimerRef.current = setTimeout(async () => {
-      setUserSearchLoading(true)
-      try {
-        const API_BASE = '/api/v1'
-        const params = new URLSearchParams({ keyword, limit: '50' })
-        const resp = await fetch(`${API_BASE}/identity/personnel?${params}`)
-        if (resp.ok) {
-          const json = await resp.json()
-          const items = (json.data?.items ?? []) as Record<string, unknown>[]
-          setUserOptions(items.map((u) => ({
-            value: String(u.id),
-            label: `${String(u.name)} - ${String(u.department || '未知部门')}`,
-          })))
-        }
-      } catch { /* 静默失败 */ } finally {
-        setUserSearchLoading(false)
-      }
-    }, 300)
-  }, [])
-
-
+  }, [loading, record, id, router, message])
 
   const fieldVal = (field: string): string => {
     const rec = record as Record<string, unknown> | null
@@ -549,14 +517,6 @@ export default function HazardLedgerDetailPage() {
           rectification_responsible_person: leaderId || '',
           rectification_responsible_person_name: name,
         }))
-        // 预填负责人到选项列表，确保 Select 正确显示
-        if (leaderId) {
-          setUserOptions((prev) => {
-            const exists = prev.some((o) => o.value === leaderId)
-            if (exists) return prev
-            return [{ value: leaderId, label: `${name} - ${dept}` }, ...prev]
-          })
-        }
       }
       // 同步获取安全员
       try {
@@ -947,8 +907,8 @@ export default function HazardLedgerDetailPage() {
       } else {
         message.error(replyRes.message || '提交失败')
       }
-    } catch {
-      message.error('提交整改回复失败')
+    } catch (err) {
+      message.error(err instanceof Error && err.message ? err.message : '提交整改回复失败')
     } finally {
       setReplySubmitting(false)
     }
@@ -1046,8 +1006,8 @@ export default function HazardLedgerDetailPage() {
                     } else {
                       message.error(res.message || '触发失败')
                     }
-                  } catch {
-                    message.error('触发 AI 初审失败')
+                  } catch (err) {
+                    message.error(err instanceof Error && err.message ? err.message : '触发 AI 初审失败')
                   } finally {
                     setAiReviewTriggering(false)
                   }
@@ -1161,9 +1121,9 @@ export default function HazardLedgerDetailPage() {
 
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h2 style={{ fontSize: 22, fontWeight: 600, color: '#1a1a1a', margin: 0, lineHeight: 1.3 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 600, color: '#1a1a1a', margin: 0, lineHeight: 1.3 }}>
               隐患台账详情
-            </h2>
+            </h1>
             <p style={{ fontSize: 14, color: '#787671', margin: '4px 0 0', lineHeight: 1.5 }}>
               编号 {record.hazard_no}
               <span style={{ color: '#c8c4be', margin: '0 8px' }}>·</span>
@@ -1489,8 +1449,8 @@ export default function HazardLedgerDetailPage() {
                         } else {
                           message.error(res.message || '发送失败')
                         }
-                      } catch {
-                        message.error('发送失败，请稍后重试')
+                      } catch (err) {
+                        message.error(err instanceof Error && err.message ? err.message : '发送失败，请稍后重试')
                       } finally {
                         setNotifyRectLoading(false)
                       }
@@ -1742,8 +1702,8 @@ export default function HazardLedgerDetailPage() {
                           } else {
                             message.error(res.message || '发送失败')
                           }
-                        } catch {
-                          message.error('发送失败，请稍后重试')
+                        } catch (err) {
+                          message.error(err instanceof Error && err.message ? err.message : '发送失败，请稍后重试')
                         } finally {
                           setNotifyLoading(false)
                         }
