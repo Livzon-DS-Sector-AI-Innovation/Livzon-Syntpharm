@@ -9,13 +9,14 @@
 from __future__ import annotations
 
 import io
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from PIL import Image
 
 from app.core.image_utils import MAX_EDGE, compress_image
 from app.modules.safety.feishu import bitable_handler
+from app.modules.safety.feishu.bitable_client import SafetyBitableClient
 from app.modules.safety.service.hazard import resolve_rectification_reply
 
 
@@ -74,6 +75,18 @@ class _StubBitableClient:
         return self.fields
 
 
+def _as_client(stub: _StubBitableClient) -> SafetyBitableClient:
+    """测试桩只需要 list_fields，按结构当真实客户端用。"""
+    return cast(SafetyBitableClient, stub)
+
+
+def _expire_field_cache() -> None:
+    """把缓存时间推到 TTL 之外，模拟 Bitable 表结构已变化。"""
+    loaded_at = bitable_handler._field_cache_loaded_at
+    assert loaded_at is not None
+    bitable_handler._field_cache_loaded_at = loaded_at - (bitable_handler._FIELD_CACHE_TTL_SECONDS + 1)
+
+
 class TestBitableFieldCache:
     @pytest.fixture(autouse=True)
     def _reset_cache(self) -> Any:
@@ -98,27 +111,27 @@ class TestBitableFieldCache:
     async def test_cache_hit_within_ttl_and_refresh_after_ttl(self) -> None:
         client = _StubBitableClient([{"field_id": "f1", "field_name": "检查名称", "type": 1}])
 
-        await bitable_handler._get_field_definitions(client)
+        await bitable_handler._get_field_definitions(_as_client(client))
         assert client.calls == 1
         assert "检查名称" in (bitable_handler._field_type_cache or {})
 
         # TTL 内命中缓存，不再请求接口
-        await bitable_handler._get_field_definitions(client)
+        await bitable_handler._get_field_definitions(_as_client(client))
         assert client.calls == 1
 
         # 缓存过期后重新加载，Bitable 新建的列无需重启即可生效
-        bitable_handler._field_cache_loaded_at -= bitable_handler._FIELD_CACHE_TTL_SECONDS + 1
+        _expire_field_cache()
         client.fields = [
             {"field_id": "f1", "field_name": "检查名称", "type": 1},
             {"field_id": "f2", "field_name": "新列", "type": 1},
         ]
-        await bitable_handler._get_field_definitions(client)
+        await bitable_handler._get_field_definitions(_as_client(client))
         assert client.calls == 2
         assert "新列" in (bitable_handler._field_type_cache or {})
 
     async def test_refresh_failure_keeps_old_cache(self) -> None:
         client = _StubBitableClient([{"field_id": "f1", "field_name": "检查名称", "type": 1}])
-        await bitable_handler._get_field_definitions(client)
+        await bitable_handler._get_field_definitions(_as_client(client))
 
         class _FailingClient(_StubBitableClient):
             async def list_fields(self) -> list[dict[str, Any]]:
@@ -126,7 +139,7 @@ class TestBitableFieldCache:
                 raise RuntimeError("bitable unavailable")
 
         failing = _FailingClient([])
-        bitable_handler._field_cache_loaded_at -= bitable_handler._FIELD_CACHE_TTL_SECONDS + 1
-        await bitable_handler._get_field_definitions(failing)
+        _expire_field_cache()
+        await bitable_handler._get_field_definitions(_as_client(failing))
 
         assert "检查名称" in (bitable_handler._field_type_cache or {})

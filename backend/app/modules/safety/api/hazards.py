@@ -197,9 +197,7 @@ async def handler(  # noqa: F811
 
     content = await file.read()
     # Pillow 解码/重编码是 CPU 密集同步操作，放线程池避免阻塞事件循环
-    content, file_ext, content_type = await run_in_threadpool(
-        compress_image, content, file.filename, file.content_type
-    )
+    content, file_ext, content_type = await run_in_threadpool(compress_image, content, file.filename, file.content_type)
     # 时间戳仅到秒，同秒多图会互相覆盖，追加随机后缀保证对象名唯一
     safe_name = f"hazard_{hazard_id}_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}{file_ext}"
 
@@ -243,9 +241,7 @@ async def handler(  # noqa: F811
 
     content = await file.read()
     # Pillow 解码/重编码是 CPU 密集同步操作，放线程池避免阻塞事件循环
-    content, file_ext, content_type = await run_in_threadpool(
-        compress_image, content, file.filename, file.content_type
-    )
+    content, file_ext, content_type = await run_in_threadpool(compress_image, content, file.filename, file.content_type)
     # 时间戳仅到秒，同秒多图会互相覆盖，追加随机后缀保证对象名唯一
     safe_name = f"rectification_{hazard_id}_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}{file_ext}"
 
