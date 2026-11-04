@@ -692,9 +692,7 @@ class HazardReport(BaseModel):
         nullable=False,
         comment="关闭状态: open=未关闭 / closed=已关闭",
     )
-    closed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, comment="完成/关闭日期"
-    )
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="完成/关闭日期")
     check_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("safety.safety_checks.id"),

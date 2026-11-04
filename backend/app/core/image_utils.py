@@ -9,6 +9,10 @@ from __future__ import annotations
 import io
 import logging
 import os
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from PIL.Image import Image as PILImage
 
 logger = logging.getLogger(__name__)
 
@@ -32,17 +36,14 @@ def _is_image(filename: str | None, content_type: str | None) -> bool:
     return ext in IMAGE_EXTENSIONS or (content_type or "").lower() in IMAGE_CONTENT_TYPES
 
 
-def _has_alpha(img: "object") -> bool:
-    mode = getattr(img, "mode", "")
-    if mode in ("RGBA", "LA"):
+def _has_alpha(img: PILImage) -> bool:
+    if img.mode in ("RGBA", "LA"):
         return True
-    info = getattr(img, "info", {}) or {}
-    return mode == "P" and "transparency" in info
+    return img.mode == "P" and "transparency" in img.info
 
 
-def _encode_jpeg(img: "object") -> tuple[bytes, int]:
+def _encode_jpeg(img: PILImage) -> tuple[bytes, int]:
     """按质量阶梯编码 JPEG，返回 (data, quality)。"""
-    from PIL import Image
 
     data = b""
     used = QUALITY_STEPS[-1]
@@ -56,7 +57,7 @@ def _encode_jpeg(img: "object") -> tuple[bytes, int]:
     return data, used
 
 
-def _encode_png(img: "object") -> bytes:
+def _encode_png(img: PILImage) -> bytes:
     buf = io.BytesIO()
     img.save(buf, format="PNG", optimize=True)
     return buf.getvalue()
@@ -98,8 +99,8 @@ def compress_image(
         if max(width, height) <= MAX_EDGE and len(content) <= MAX_BYTES:
             return content, ext, fallback_type
 
-        with Image.open(io.BytesIO(content)) as img:
-            img = ImageOps.exif_transpose(img)
+        with Image.open(io.BytesIO(content)) as src:
+            img = ImageOps.exif_transpose(src)
             if max(img.size) > MAX_EDGE:
                 img.thumbnail((MAX_EDGE, MAX_EDGE), Image.Resampling.LANCZOS)
             new_size = img.size
@@ -119,9 +120,7 @@ def compress_image(
                 out_ext, out_type = ".jpg", "image/jpeg"
 
         if len(data) >= len(content):
-            logger.info(
-                "图片压缩未减小体积，保留原图: %s %dx%d %dB", filename, width, height, len(content)
-            )
+            logger.info("图片压缩未减小体积，保留原图: %s %dx%d %dB", filename, width, height, len(content))
             return content, ext, fallback_type
 
         logger.info(

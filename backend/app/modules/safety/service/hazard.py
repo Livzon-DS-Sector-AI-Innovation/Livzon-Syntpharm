@@ -896,10 +896,7 @@ class HazardService:
                         logger.warning("MinIO 读取失败: key=%s", p_str, exc_info=True)
                     if obj:
                         obj_data, obj_type = obj
-                        urls.append(
-                            f"data:{obj_type or 'image/jpeg'};base64,"
-                            f"{base64.b64encode(obj_data).decode()}"
-                        )
+                        urls.append(f"data:{obj_type or 'image/jpeg'};base64,{base64.b64encode(obj_data).decode()}")
                         logger.debug("从 MinIO 读取图片: %s (%s)", p_str, obj_type)
                         continue
                 # 仍未取到，记录警告以便排查（AI 审查缺少图片时可根据此日志定位）
