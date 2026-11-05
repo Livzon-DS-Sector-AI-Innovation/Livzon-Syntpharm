@@ -564,10 +564,7 @@ async def handler(  # noqa: F811
         raise NotFoundException(resource="隐患")
 
     if hazard.rectification_status not in ("replied",):
-        return build_response(
-            code=400,
-            message="当前整改状态不允许触发 AI 初审，仅「已回复」状态可触发",
-        )
+        raise BadRequestException(message="当前整改状态不允许触发 AI 初审，仅「已回复」状态可触发")
 
     # 异步执行，不阻塞 HTTP 响应
     await submit_job(
