@@ -1,90 +1,25 @@
 /**
  * Safety module domain model types (ViewModels).
- * These response types are not in the OpenAPI spec (backend uses dict responses).
- * API input types (Create/Update) use @/types/generated/schema.
+ * API 契约字段一律从 OpenAPI 生成类型派生（@/types/generated/schema），禁止手写，
+ * 避免后端新增字段后前端静默丢失。仅枚举展示类型、查询参数、统计等前端私有结构手写。
  */
 
 // ============ HazardReport Types ============
 
+import type { components } from "@/types/generated/schema"
 import { HazardType, HazardLevel, HazardCategory } from "./enums"
-export interface HazardReport {
-  id: string
-  hazard_no: string
-  inspection_category?: string
+
+type HazardReportApi = components["schemas"]["HazardReportResponse"]
+
+/** 隐患详情（响应契约来自 OpenAPI；枚举字段收窄为本地 enum 以便选项渲染） */
+export interface HazardReport extends Omit<HazardReportApi, "hazard_type" | "hazard_level" | "hazard_category"> {
   hazard_type: HazardType
   hazard_level: HazardLevel
   hazard_category?: HazardCategory
-  description: string
-  discovered_by?: string
-  discovered_by_name?: string
-  inspector_department?: string
-  discovered_at: string
-  department?: string
-  major_hazard_basis?: string
-  key_defect?: string
-  defect_photos?: string
-  rectification_responsible_person?: string
-  rectification_responsible_person_name?: string
-  corrective_preventive_measures?: string
-  rectification_reply?: string
-  deadline?: string
-  actual_completion_date?: string
-  rectification_photos?: string
-  rectification_status: string
-  // 三级复核（仅状态，审核人/时间由系统自动记录）
-  verify_level_1_status: string
-  verify_level_2_status: string
-  verify_level_3_status: string
-  status: string
-  check_id?: string
-  notes?: string
-  // ── AI 流程字段 ──
-  ai_node_progress: string
-  overall_status: string
-  ai_error_message?: string
-  ai_generated: boolean
-  script1_review_status: string
-  script2_review_status: string
-  // ── AI 整改初审 ──
-  ai_review_result?: Record<string, unknown> | null
-  ai_review_status: string
-  ai_review_completed_at?: string | null
-  created_at: string
-  updated_at: string
-  // ── 飞书通知追踪 ──
-  rectification_notified_at?: string | null
-  rectification_notify_status?: string | null
-  rectification_notify_error?: string | null
-  review_notified_at?: string | null
-  review_notified_level?: number | null
-  review_notify_status?: string | null
-  review_notify_error?: string | null
 }
 
-export interface HazardReportFormData {
-  hazard_no: string
-  inspection_category?: string
-  inspector_department?: string
-  hazard_type?: HazardType
-  hazard_level?: HazardLevel
-  hazard_category?: HazardCategory
-  description?: string
-  discovered_by?: string
-  discovered_by_name?: string
-  discovered_at?: string
-  department?: string
-  major_hazard_basis?: string
-  key_defect?: string
-  defect_photos?: string
-  rectification_responsible_person?: string
-  rectification_responsible_person_name?: string
-  corrective_preventive_measures?: string
-  rectification_reply?: string
-  deadline?: string
-  actual_completion_date?: string
-  rectification_photos?: string
-  check_id?: string
-  notes?: string
+/** 表单载荷（创建契约来自 OpenAPI，overall_status 为平台内部草稿态） */
+export type HazardReportFormData = Partial<components["schemas"]["HazardReportCreate"]> & {
   overall_status?: string
 }
 
@@ -100,6 +35,8 @@ export interface HazardReportQueryParams {
   inspection_category?: string
   department?: string
   keyword?: string
+  /** "pending" 时只返回人员待匹配记录（有姓名、未绑定系统用户） */
+  person_match?: 'pending'
 }
 
 export interface HazardStats {
@@ -114,13 +51,7 @@ export interface HazardStats {
   overdue: number
 }
 
-export interface RectificationReplyRequest {
-  reply_content: string
-  rectification_photos?: string
-  corrective_preventive_measures?: string
-  rectification_reply?: string
-  actual_completion_date?: string
-}
+export type RectificationReplyRequest = components["schemas"]["RectificationReplyRequest"]
 
 export interface VerifyLevelRequest {
   level: number

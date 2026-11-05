@@ -25342,6 +25342,25 @@
             }
           },
           {
+            "name": "person_match",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(pending)$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u4eba\u5458\u7ed1\u5b9a\u72b6\u6001\u7b5b\u9009\uff1a\"pending\" \u4ec5\u8fd4\u56de\u5f85\u5339\u914d\uff08\u6709\u59d3\u540d\u3001\u672a\u7ed1\u5b9a\u7cfb\u7edf\u7528\u6237\uff09",
+              "title": "Person Match"
+            },
+            "description": "\u4eba\u5458\u7ed1\u5b9a\u72b6\u6001\u7b5b\u9009\uff1a\"pending\" \u4ec5\u8fd4\u56de\u5f85\u5339\u914d\uff08\u6709\u59d3\u540d\u3001\u672a\u7ed1\u5b9a\u7cfb\u7edf\u7528\u6237\uff09"
+          },
+          {
             "name": "auth_token",
             "in": "cookie",
             "required": false,
@@ -26216,7 +26235,7 @@
           "\u5b89\u5168\u7ba1\u7406"
         ],
         "summary": "\u6267\u884c\u9690\u60a3AI\u5de5\u4f5c\u6d41",
-        "description": "\u6267\u884c\u9690\u60a3AI\u5de5\u4f5c\u6d41\u811a\u672c\u3002AI\u4ece\u5df2\u6709\u6570\u636e\u5e93\u6570\u636e\u8bfb\u53d6\u4e0a\u4e0b\u6587\uff0c\u65e0\u9700\u989d\u5916\u4f20\u5165\u53c2\u6570\u3002\n\n\u6ca1\u6709 body \u53c2\u6570\u2014\u2014FastAPI \u4e0d\u4f1a\u89e3\u6790\u8bf7\u6c42 body\uff0c\u907f\u514d\u7a7a body + JSON Content-Type \u89e6\u53d1 422\u3002",
+        "description": "\u63d0\u4ea4\u9690\u60a3AI\u5de5\u4f5c\u6d41\u811a\u672c\uff08\u540e\u53f0\u5f02\u6b65\u6267\u884c\uff09\u3002\n\nAI \u8c03\u7528\u8017\u65f6\u901a\u5e38\u8fdc\u8d85 HTTP \u8bf7\u6c42\u9884\u7b97\uff08AGENTS.md\uff1a\u8bf7\u6c42\u5185\u4e0d\u6267\u884c\u8d85\u8fc7 5 \u79d2\u7684\u64cd\u4f5c\uff09\uff0c\n\u6240\u4ee5\u8fd9\u91cc\u53ea\u505a\u5b58\u5728\u6027\u6821\u9a8c + \u7f6e\u300c\u6267\u884c\u4e2d\u300d\u6807\u8bb0\uff0c\u771f\u6b63\u7684 AI \u8c03\u7528\u4ea4\u7ed9\u540e\u53f0\u4efb\u52a1\uff1b\n\u524d\u7aef\u8f6e\u8be2\u9690\u60a3\u8be6\u60c5\uff0c\u8bfb `ai_node_progress` / `ai_error_message` \u53d6\u6700\u7ec8\u7ed3\u679c\u3002\n\n\u6ca1\u6709 body \u53c2\u6570\u2014\u2014FastAPI \u4e0d\u4f1a\u89e3\u6790\u8bf7\u6c42 body\uff0c\u907f\u514d\u7a7a body + JSON Content-Type \u89e6\u53d1 422\u3002",
         "operationId": "handler_api_v1_safety_hazards__hazard_id__ai_run__script_number__post",
         "parameters": [
           {
@@ -26261,7 +26280,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/HazardApiResponse"
+                  "$ref": "#/components/schemas/HazardAiRunApiResponse"
                 }
               }
             }
@@ -26321,7 +26340,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/HazardApiResponse"
+                  "$ref": "#/components/schemas/HazardVerifyNotifyApiResponse"
                 }
               }
             }
@@ -26441,7 +26460,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/HazardApiResponse"
+                  "$ref": "#/components/schemas/HazardRectificationNotifyApiResponse"
                 }
               }
             }
@@ -31153,7 +31172,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/OperationRegulationApiResponse"
+                  "$ref": "#/components/schemas/RegulationContentApiResponse"
                 }
               }
             }
@@ -31221,7 +31240,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/OperationRegulationApiResponse"
+                  "$ref": "#/components/schemas/RegulationContentUpdateApiResponse"
                 }
               }
             }
@@ -127442,6 +127461,60 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HazardAiRunApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HazardAiRunData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "HazardAiRunApiResponse",
+        "description": "AI \u5de5\u4f5c\u6d41\u63d0\u4ea4\u54cd\u5e94\u5305\u88c5"
+      },
+      "HazardAiRunData": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id",
+            "description": "\u540e\u53f0\u4efb\u52a1 ID"
+          },
+          "hazard_id": {
+            "type": "string",
+            "title": "Hazard Id",
+            "description": "\u9690\u60a3 ID"
+          },
+          "script_number": {
+            "type": "integer",
+            "title": "Script Number",
+            "description": "AI \u5de5\u4f5c\u6d41\u811a\u672c\u7f16\u53f7"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "hazard_id",
+          "script_number"
+        ],
+        "title": "HazardAiRunData",
+        "description": "AI \u5de5\u4f5c\u6d41\u63d0\u4ea4\u7ed3\u679c\uff08\u540e\u7aef\u5f02\u6b65\u6267\u884c\uff0c\u524d\u7aef\u8f6e\u8be2\u9690\u60a3\u8be6\u60c5\u53d6\u6700\u7ec8\u7ed3\u679c\uff09"
+      },
       "HazardApiResponse": {
         "properties": {
           "code": {
@@ -129162,6 +129235,48 @@
         "title": "HazardListApiResponse",
         "description": "Hazard list response wrapper"
       },
+      "HazardRectificationNotifyApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HazardRectificationNotifyData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "HazardRectificationNotifyApiResponse",
+        "description": "\u6574\u6539\u901a\u77e5\u54cd\u5e94\u5305\u88c5"
+      },
+      "HazardRectificationNotifyData": {
+        "properties": {
+          "target": {
+            "type": "string",
+            "title": "Target",
+            "description": "\u6574\u6539\u8d23\u4efb\u4eba\u59d3\u540d\uff0c\u672a\u77e5\u65f6\u4e3a\u300c\u672a\u77e5\u300d"
+          }
+        },
+        "type": "object",
+        "required": [
+          "target"
+        ],
+        "title": "HazardRectificationNotifyData",
+        "description": "\u6574\u6539\u901a\u77e5\u53d1\u9001\u7ed3\u679c"
+      },
       "HazardReportCreate": {
         "properties": {
           "hazard_no": {
@@ -129176,6 +129291,19 @@
             ],
             "title": "Hazard No",
             "description": "\u9690\u60a3\u7f16\u53f7\uff08\u7559\u7a7a\u81ea\u52a8\u751f\u6210\uff09"
+          },
+          "inspection_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Name",
+            "description": "\u68c0\u67e5\u540d\u79f0"
           },
           "inspection_category": {
             "anyOf": [
@@ -129386,6 +129514,18 @@
             "title": "Rectification Reply",
             "description": "\u6574\u6539\u56de\u590d\u5185\u5bb9"
           },
+          "capa_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capa Measures",
+            "description": "\u7ea0\u6b63\u9884\u9632\u63aa\u65bd\uff08\u4eba\u5de5\u586b\u5199\uff09"
+          },
           "deadline": {
             "anyOf": [
               {
@@ -129397,7 +129537,7 @@
               }
             ],
             "title": "Deadline",
-            "description": "\u6574\u6539\u671f\u9650"
+            "description": "\u76ee\u6807\u5b8c\u6210\u65e5\u671f"
           },
           "actual_completion_date": {
             "anyOf": [
@@ -129461,6 +129601,19 @@
             "maxLength": 64,
             "title": "Hazard No",
             "description": "\u9690\u60a3\u7f16\u53f7"
+          },
+          "inspection_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Name",
+            "description": "\u68c0\u67e5\u540d\u79f0"
           },
           "inspection_category": {
             "anyOf": [
@@ -129644,6 +129797,18 @@
             "title": "Rectification Reply",
             "description": "\u6574\u6539\u56de\u590d\u5185\u5bb9"
           },
+          "capa_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capa Measures",
+            "description": "\u7ea0\u6b63\u9884\u9632\u63aa\u65bd\uff08\u4eba\u5de5\u586b\u5199\uff09"
+          },
           "deadline": {
             "anyOf": [
               {
@@ -129655,7 +129820,7 @@
               }
             ],
             "title": "Deadline",
-            "description": "\u6574\u6539\u671f\u9650"
+            "description": "\u76ee\u6807\u5b8c\u6210\u65e5\u671f"
           },
           "actual_completion_date": {
             "anyOf": [
@@ -129720,6 +129885,18 @@
             "type": "string",
             "title": "Status"
           },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
           "verify_level_1_status": {
             "type": "string",
             "title": "Verify Level 1 Status",
@@ -129734,6 +129911,111 @@
             "type": "string",
             "title": "Verify Level 3 Status",
             "default": "pending"
+          },
+          "verify_level_1_reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 1 Reviewer Id"
+          },
+          "verify_level_1_reviewer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 1 Reviewer Name"
+          },
+          "verify_level_1_reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 1 Reviewed At"
+          },
+          "verify_level_2_reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 2 Reviewer Id"
+          },
+          "verify_level_2_reviewer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 2 Reviewer Name"
+          },
+          "verify_level_2_reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 2 Reviewed At"
+          },
+          "verify_level_3_reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 3 Reviewer Id"
+          },
+          "verify_level_3_reviewer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 3 Reviewer Name"
+          },
+          "verify_level_3_reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verify Level 3 Reviewed At"
           },
           "ai_node_progress": {
             "type": "string",
@@ -129919,6 +130201,19 @@
             ],
             "title": "Hazard No",
             "description": "\u9690\u60a3\u7f16\u53f7"
+          },
+          "inspection_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Name",
+            "description": "\u68c0\u67e5\u540d\u79f0"
           },
           "inspection_category": {
             "anyOf": [
@@ -130129,6 +130424,18 @@
             "title": "Rectification Reply",
             "description": "\u6574\u6539\u56de\u590d\u5185\u5bb9"
           },
+          "capa_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capa Measures",
+            "description": "\u7ea0\u6b63\u9884\u9632\u63aa\u65bd\uff08\u4eba\u5de5\u586b\u5199\uff09"
+          },
           "deadline": {
             "anyOf": [
               {
@@ -130140,7 +130447,7 @@
               }
             ],
             "title": "Deadline",
-            "description": "\u6574\u6539\u671f\u9650"
+            "description": "\u76ee\u6807\u5b8c\u6210\u65e5\u671f"
           },
           "actual_completion_date": {
             "anyOf": [
@@ -130359,6 +130666,54 @@
         ],
         "title": "HazardType",
         "description": "\u9690\u60a3\u7c7b\u578b\u679a\u4e3e"
+      },
+      "HazardVerifyNotifyApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HazardVerifyNotifyData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "HazardVerifyNotifyApiResponse",
+        "description": "\u590d\u6838\u901a\u77e5\u54cd\u5e94\u5305\u88c5"
+      },
+      "HazardVerifyNotifyData": {
+        "properties": {
+          "level": {
+            "type": "integer",
+            "title": "Level",
+            "description": "\u5f53\u524d\u590d\u6838\u7ea7\u522b\uff1a1 \u90e8\u95e8\u8d1f\u8d23\u4eba / 2 \u5206\u7ba1\u9886\u5bfc / 3 \u68c0\u67e5\u4eba\u5458"
+          },
+          "level_label": {
+            "type": "string",
+            "title": "Level Label",
+            "description": "\u590d\u6838\u7ea7\u522b\u540d\u79f0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level",
+          "level_label"
+        ],
+        "title": "HazardVerifyNotifyData",
+        "description": "\u590d\u6838\u901a\u77e5\u53d1\u9001\u7ed3\u679c"
       },
       "HeaderColorEnum": {
         "type": "string",
@@ -157137,6 +157492,18 @@
             "title": "Rectification Reply",
             "description": "\u6574\u6539\u56de\u590d\u5185\u5bb9\uff08\u65b0\u5b57\u6bb5\uff09"
           },
+          "capa_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capa Measures",
+            "description": "\u7ea0\u6b63\u9884\u9632\u63aa\u65bd\uff08\u4eba\u5de5\u586b\u5199\uff09"
+          },
           "actual_completion_date": {
             "anyOf": [
               {
@@ -157903,6 +158270,114 @@
         },
         "type": "object",
         "title": "ReferenceSubstanceUpdate"
+      },
+      "RegulationContentApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RegulationContentData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "RegulationContentApiResponse",
+        "description": "\u64cd\u89c4\u5185\u5bb9\u54cd\u5e94\u5305\u88c5"
+      },
+      "RegulationContentData": {
+        "properties": {
+          "regulation_id": {
+            "type": "string",
+            "title": "Regulation Id",
+            "description": "\u64cd\u89c4 UUID\uff08\u5b57\u7b26\u4e32\u5f62\u5f0f\uff09"
+          },
+          "regulation_name": {
+            "type": "string",
+            "title": "Regulation Name",
+            "description": "\u64cd\u89c4\u540d\u79f0"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "\u6807\u51c6\u5316 Markdown \u5185\u5bb9",
+            "default": ""
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "\u64cd\u89c4\u72b6\u6001",
+            "default": "draft"
+          }
+        },
+        "type": "object",
+        "required": [
+          "regulation_id",
+          "regulation_name"
+        ],
+        "title": "RegulationContentData",
+        "description": "\u64cd\u89c4 Markdown \u5185\u5bb9\uff08\u4f9b\u7f16\u8f91\u5668\u52a0\u8f7d\uff09"
+      },
+      "RegulationContentUpdateApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RegulationContentUpdateData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "RegulationContentUpdateApiResponse",
+        "description": "\u64cd\u89c4\u5185\u5bb9\u4fdd\u5b58\u54cd\u5e94\u5305\u88c5"
+      },
+      "RegulationContentUpdateData": {
+        "properties": {
+          "regulation_id": {
+            "type": "string",
+            "title": "Regulation Id",
+            "description": "\u64cd\u89c4 UUID\uff08\u5b57\u7b26\u4e32\u5f62\u5f0f\uff09"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "\u4fdd\u5b58\u540e\u7684\u64cd\u89c4\u72b6\u6001"
+          }
+        },
+        "type": "object",
+        "required": [
+          "regulation_id",
+          "status"
+        ],
+        "title": "RegulationContentUpdateData",
+        "description": "\u64cd\u89c4\u5185\u5bb9\u4fdd\u5b58\u7ed3\u679c"
       },
       "RegulationReviseRequest": {
         "properties": {

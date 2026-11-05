@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.jobs import JobRunner, submit_job, submit_job_safe
-from app.core.storage import delete_object
+from app.core.storage import delete_object, get_object
 from app.core.storage import is_enabled as minio_enabled
 from app.modules.safety.feishu.notification import send_user_card
 from app.modules.safety.models import HazardReport
@@ -245,6 +245,16 @@ def _bitable_sync_runner(
     return _run
 
 
+def resolve_rectification_reply(rectification_reply: str | None, capa_measures: str | None) -> str:
+    """AI 整改初审的整改回复输入。
+
+    飞书 Bitable 自 2026-11 起把「纠正预防措施」落在 capa_measures（不再写
+    rectification_reply），若只取 rectification_reply，Bitable 渠道的记录会拿到空串，
+    触发 RectificationReviewInput 的 min_length=1 校验失败，AI 初审必然判 failed。
+    """
+    return rectification_reply or capa_measures or ""
+
+
 class HazardService:
     """HazardReport CRUD, AI identification, rectification review, notifications."""
 
@@ -318,8 +328,9 @@ class HazardService:
         inspection_category: str | None = None,
         department: str | None = None,
         keyword: str | None = None,
+        person_match: str | None = None,
     ) -> tuple[list[HazardReport], int]:
-        """获取隐患列表"""
+        """获取隐患列表（person_match="pending" 仅返回人员待匹配记录）"""
         return await self.repo.get_hazards(
             skip,
             limit,
@@ -331,6 +342,7 @@ class HazardService:
             inspection_category,
             department,
             keyword,
+            person_match,
         )
 
     async def get_hazard_stats(self) -> dict[str, int]:
@@ -497,6 +509,7 @@ class HazardService:
         corrective_preventive_measures: str | None = None,
         rectification_reply: str | None = None,
         actual_completion_date: datetime | None = None,
+        capa_measures: str | None = None,
     ) -> HazardReport | None:
         """整改回复：in_progress → ai_reviewing（AI 初审作为复核阶段第一道关卡）。"""
         hazard = await self.repo.get_hazard_by_id(hazard_id)
@@ -505,6 +518,8 @@ class HazardService:
         update_data: dict[str, Any] = {
             "rectification_status": "ai_reviewing",
         }
+        if capa_measures is not None:
+            update_data["capa_measures"] = capa_measures
         # 整改完成时间：优先用传入值，其次保留已有值，最后 fallback 当前时间
         if actual_completion_date:
             update_data["actual_completion_date"] = actual_completion_date
@@ -574,10 +589,18 @@ class HazardService:
         ):
             return None
 
+        # 审批人留痕：每级只保留最后一次（同一级被驳回后重审会覆盖）
+        reviewer_data: dict[str, Any] = {
+            f"verify_level_{level}_reviewer_id": user_id,
+            f"verify_level_{level}_reviewer_name": user_name,
+            f"verify_level_{level}_reviewed_at": datetime.now(),
+        }
+
         if action == "rejected":
             update_data: dict[str, Any] = {
                 "rectification_status": "rejected",
                 f"verify_level_{level}_status": "rejected",
+                **reviewer_data,
             }
             return await self.repo.update_hazard(hazard_id, update_data)
 
@@ -586,13 +609,16 @@ class HazardService:
             update_data: dict[str, Any] = {  # type: ignore[no-redef]
                 "rectification_status": "closed",
                 "status": "closed",
+                "closed_at": datetime.now(),
                 "verify_level_3_status": "approved",
+                **reviewer_data,
             }
         else:
             next_status = f"level{level}_approved"
             update_data: dict[str, Any] = {  # type: ignore[no-redef]
                 "rectification_status": next_status,
                 f"verify_level_{level}_status": "approved",
+                **reviewer_data,
             }
         updated = await self.repo.update_hazard(hazard_id, update_data)
 
@@ -640,6 +666,7 @@ class HazardService:
         rectification_photos: str | None,
         user_id: uuid.UUID,
         user_name: str,
+        capa_measures: str | None = None,
     ) -> HazardReport | None:
         """重新整改：rejected → ai_reviewing，重置所有复核级别，AI 重新审查"""
         hazard = await self.repo.get_hazard_by_id(hazard_id)
@@ -651,6 +678,18 @@ class HazardService:
             "verify_level_1_status": "pending",
             "verify_level_2_status": "pending",
             "verify_level_3_status": "pending",
+            # 重置关闭状态与审批人留痕（驳回后重新走流程）
+            "status": "open",
+            "closed_at": None,
+            "verify_level_1_reviewer_id": None,
+            "verify_level_1_reviewer_name": None,
+            "verify_level_1_reviewed_at": None,
+            "verify_level_2_reviewer_id": None,
+            "verify_level_2_reviewer_name": None,
+            "verify_level_2_reviewed_at": None,
+            "verify_level_3_reviewer_id": None,
+            "verify_level_3_reviewer_name": None,
+            "verify_level_3_reviewed_at": None,
             # 重置 AI 初审状态，重新审查
             "ai_review_status": "pending",
             "ai_review_result": None,
@@ -658,6 +697,8 @@ class HazardService:
         }
         if rectification_photos is not None:
             update_data["rectification_photos"] = rectification_photos
+        if capa_measures is not None:
+            update_data["capa_measures"] = capa_measures
         updated = await self.repo.update_hazard(hazard_id, update_data)
 
         # 重新整改回复后，异步触发 AI 初审（非阻塞），AI 结果将决定后续通知路由
@@ -861,7 +902,19 @@ class HazardService:
                 except Exception as exc:
                     logger.warning("无法读取图片 %s: %s", found_path, exc)
             else:
-                # 文件不存在，记录警告以便排查（AI 审查缺少图片时可根据此日志定位）
+                # 本地文件不存在 → MinIO 模式下存的是 object_key，回落到对象存储读取
+                if minio_enabled():
+                    try:
+                        obj = get_object("safety", p_str)
+                    except Exception:
+                        obj = None
+                        logger.warning("MinIO 读取失败: key=%s", p_str, exc_info=True)
+                    if obj:
+                        obj_data, obj_type = obj
+                        urls.append(f"data:{obj_type or 'image/jpeg'};base64,{base64.b64encode(obj_data).decode()}")
+                        logger.debug("从 MinIO 读取图片: %s (%s)", p_str, obj_type)
+                        continue
+                # 仍未取到，记录警告以便排查（AI 审查缺少图片时可根据此日志定位）
                 logger.warning(
                     "defect_photos 本地文件不存在: path=%s (checked: %s)",
                     p_str,
@@ -898,12 +951,16 @@ class HazardService:
             self._parse_defect_photo_urls(item.rectification_photos) if item.rectification_photos else []
         )
 
+        # Bitable 入站自 2026-11 起把「纠正预防措施」落在 capa_measures，rectification_reply 可能为空；
+        # 取二者之一作为整改回复，避免 AI 初审因输入为空而必然校验失败。
+        rectification_reply_text = resolve_rectification_reply(item.rectification_reply, item.capa_measures)
+
         logger.info(
             "AI 整改初审插件启动: hazard_id=%s defect_photos=%d rectification_photos=%d reply_len=%d",
             item.id,
             len(defect_image_urls),
             len(rectification_image_urls),
-            len(item.rectification_reply or ""),
+            len(rectification_reply_text),
         )
 
         # 解析 AI 识别结果中的整改建议
@@ -927,7 +984,7 @@ class HazardService:
             hazard_category=item.hazard_category or "",
             hazard_level=item.hazard_level or "",
             ai_rectification_suggestion=ai_suggestion,
-            rectification_reply=item.rectification_reply or "",
+            rectification_reply=rectification_reply_text,
             rectification_photos=rectification_image_urls,
             department=item.department or "",
             defect_substance=item.defect_substance or "",

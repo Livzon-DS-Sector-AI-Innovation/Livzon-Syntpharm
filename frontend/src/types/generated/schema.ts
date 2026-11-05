@@ -5369,7 +5369,11 @@ export interface paths {
         put?: never;
         /**
          * 执行隐患AI工作流
-         * @description 执行隐患AI工作流脚本。AI从已有数据库数据读取上下文，无需额外传入参数。
+         * @description 提交隐患AI工作流脚本（后台异步执行）。
+         *
+         *     AI 调用耗时通常远超 HTTP 请求预算（AGENTS.md：请求内不执行超过 5 秒的操作），
+         *     所以这里只做存在性校验 + 置「执行中」标记，真正的 AI 调用交给后台任务；
+         *     前端轮询隐患详情，读 `ai_node_progress` / `ai_error_message` 取最终结果。
          *
          *     没有 body 参数——FastAPI 不会解析请求 body，避免空 body + JSON Content-Type 触发 422。
          */
@@ -33932,6 +33936,44 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
+         * HazardAiRunApiResponse
+         * @description AI 工作流提交响应包装
+         */
+        HazardAiRunApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["HazardAiRunData"] | null;
+        };
+        /**
+         * HazardAiRunData
+         * @description AI 工作流提交结果（后端异步执行，前端轮询隐患详情取最终结果）
+         */
+        HazardAiRunData: {
+            /**
+             * Job Id
+             * @description 后台任务 ID
+             */
+            job_id: string;
+            /**
+             * Hazard Id
+             * @description 隐患 ID
+             */
+            hazard_id: string;
+            /**
+             * Script Number
+             * @description AI 工作流脚本编号
+             */
+            script_number: number;
+        };
+        /**
          * HazardApiResponse
          * @description Single hazard response wrapper
          */
@@ -34556,6 +34598,34 @@ export interface components {
             } | null;
         };
         /**
+         * HazardRectificationNotifyApiResponse
+         * @description 整改通知响应包装
+         */
+        HazardRectificationNotifyApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["HazardRectificationNotifyData"] | null;
+        };
+        /**
+         * HazardRectificationNotifyData
+         * @description 整改通知发送结果
+         */
+        HazardRectificationNotifyData: {
+            /**
+             * Target
+             * @description 整改责任人姓名，未知时为「未知」
+             */
+            target: string;
+        };
+        /**
          * HazardReportCreate
          * @description 创建隐患报告
          */
@@ -34565,6 +34635,11 @@ export interface components {
              * @description 隐患编号（留空自动生成）
              */
             hazard_no?: string | null;
+            /**
+             * Inspection Name
+             * @description 检查名称
+             */
+            inspection_name?: string | null;
             /**
              * Inspection Category
              * @description 检查类别（日常检查/专项检查…）
@@ -34642,8 +34717,13 @@ export interface components {
              */
             rectification_reply?: string | null;
             /**
+             * Capa Measures
+             * @description 纠正预防措施（人工填写）
+             */
+            capa_measures?: string | null;
+            /**
              * Deadline
-             * @description 整改期限
+             * @description 目标完成日期
              */
             deadline?: string | null;
             /**
@@ -34677,6 +34757,11 @@ export interface components {
              * @description 隐患编号
              */
             hazard_no: string;
+            /**
+             * Inspection Name
+             * @description 检查名称
+             */
+            inspection_name?: string | null;
             /**
              * Inspection Category
              * @description 检查类别（日常检查/专项检查…）
@@ -34758,8 +34843,13 @@ export interface components {
              */
             rectification_reply?: string | null;
             /**
+             * Capa Measures
+             * @description 纠正预防措施（人工填写）
+             */
+            capa_measures?: string | null;
+            /**
              * Deadline
-             * @description 整改期限
+             * @description 目标完成日期
              */
             deadline?: string | null;
             /**
@@ -34791,6 +34881,8 @@ export interface components {
             rectification_status: string;
             /** Status */
             status: string;
+            /** Closed At */
+            closed_at?: string | null;
             /**
              * Verify Level 1 Status
              * @default pending
@@ -34806,6 +34898,24 @@ export interface components {
              * @default pending
              */
             verify_level_3_status: string;
+            /** Verify Level 1 Reviewer Id */
+            verify_level_1_reviewer_id?: string | null;
+            /** Verify Level 1 Reviewer Name */
+            verify_level_1_reviewer_name?: string | null;
+            /** Verify Level 1 Reviewed At */
+            verify_level_1_reviewed_at?: string | null;
+            /** Verify Level 2 Reviewer Id */
+            verify_level_2_reviewer_id?: string | null;
+            /** Verify Level 2 Reviewer Name */
+            verify_level_2_reviewer_name?: string | null;
+            /** Verify Level 2 Reviewed At */
+            verify_level_2_reviewed_at?: string | null;
+            /** Verify Level 3 Reviewer Id */
+            verify_level_3_reviewer_id?: string | null;
+            /** Verify Level 3 Reviewer Name */
+            verify_level_3_reviewer_name?: string | null;
+            /** Verify Level 3 Reviewed At */
+            verify_level_3_reviewed_at?: string | null;
             /**
              * Ai Node Progress
              * @default pending_input
@@ -34879,6 +34989,11 @@ export interface components {
              * @description 隐患编号
              */
             hazard_no?: string | null;
+            /**
+             * Inspection Name
+             * @description 检查名称
+             */
+            inspection_name?: string | null;
             /**
              * Inspection Category
              * @description 检查类别（日常检查/专项检查…）
@@ -34956,8 +35071,13 @@ export interface components {
              */
             rectification_reply?: string | null;
             /**
+             * Capa Measures
+             * @description 纠正预防措施（人工填写）
+             */
+            capa_measures?: string | null;
+            /**
              * Deadline
-             * @description 整改期限
+             * @description 目标完成日期
              */
             deadline?: string | null;
             /**
@@ -35085,6 +35205,39 @@ export interface components {
          * @enum {string}
          */
         HazardType: "unsafe_condition" | "unsafe_action" | "management_defect" | "environmental";
+        /**
+         * HazardVerifyNotifyApiResponse
+         * @description 复核通知响应包装
+         */
+        HazardVerifyNotifyApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["HazardVerifyNotifyData"] | null;
+        };
+        /**
+         * HazardVerifyNotifyData
+         * @description 复核通知发送结果
+         */
+        HazardVerifyNotifyData: {
+            /**
+             * Level
+             * @description 当前复核级别：1 部门负责人 / 2 分管领导 / 3 检查人员
+             */
+            level: number;
+            /**
+             * Level Label
+             * @description 复核级别名称
+             */
+            level_label: string;
+        };
         /**
          * HeaderColorEnum
          * @description 卡片头部颜色枚举
@@ -46327,6 +46480,11 @@ export interface components {
              */
             rectification_reply?: string | null;
             /**
+             * Capa Measures
+             * @description 纠正预防措施（人工填写）
+             */
+            capa_measures?: string | null;
+            /**
              * Actual Completion Date
              * @description 整改完成时间（默认当前时间）
              */
@@ -46570,6 +46728,84 @@ export interface components {
             usage_method?: string | null;
             /** Coa File Url */
             coa_file_url?: string | null;
+        };
+        /**
+         * RegulationContentApiResponse
+         * @description 操规内容响应包装
+         */
+        RegulationContentApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["RegulationContentData"] | null;
+        };
+        /**
+         * RegulationContentData
+         * @description 操规 Markdown 内容（供编辑器加载）
+         */
+        RegulationContentData: {
+            /**
+             * Regulation Id
+             * @description 操规 UUID（字符串形式）
+             */
+            regulation_id: string;
+            /**
+             * Regulation Name
+             * @description 操规名称
+             */
+            regulation_name: string;
+            /**
+             * Content
+             * @description 标准化 Markdown 内容
+             * @default
+             */
+            content: string;
+            /**
+             * Status
+             * @description 操规状态
+             * @default draft
+             */
+            status: string;
+        };
+        /**
+         * RegulationContentUpdateApiResponse
+         * @description 操规内容保存响应包装
+         */
+        RegulationContentUpdateApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["RegulationContentUpdateData"] | null;
+        };
+        /**
+         * RegulationContentUpdateData
+         * @description 操规内容保存结果
+         */
+        RegulationContentUpdateData: {
+            /**
+             * Regulation Id
+             * @description 操规 UUID（字符串形式）
+             */
+            regulation_id: string;
+            /**
+             * Status
+             * @description 保存后的操规状态
+             */
+            status: string;
         };
         /**
          * RegulationReviseRequest
@@ -69429,6 +69665,8 @@ export interface operations {
                 inspection_category?: string | null;
                 department?: string | null;
                 keyword?: string | null;
+                /** @description 人员绑定状态筛选："pending" 仅返回待匹配（有姓名、未绑定系统用户） */
+                person_match?: string | null;
             };
             header?: never;
             path?: never;
@@ -69933,7 +70171,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardAiRunApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69966,7 +70204,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardVerifyNotifyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70032,7 +70270,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardRectificationNotifyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -72302,7 +72540,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RegulationContentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -72339,7 +72577,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RegulationContentUpdateApiResponse"];
                 };
             };
             /** @description Validation Error */

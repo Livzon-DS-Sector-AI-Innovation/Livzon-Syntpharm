@@ -20,6 +20,7 @@ class RectificationReplyRequest(BaseModel):
     rectification_photos: str | None = Field(None, description="整改后图片JSON数组")
     corrective_preventive_measures: str | None = Field(None, description="AI整改建议（兼容旧字段）")
     rectification_reply: str | None = Field(None, description="整改回复内容（新字段）")
+    capa_measures: str | None = Field(None, description="纠正预防措施（人工填写）")
     actual_completion_date: datetime | None = Field(None, description="整改完成时间（默认当前时间）")
 
 
@@ -55,6 +56,7 @@ class HazardReportBase(BaseModel):
     """隐患报告基础模式"""
 
     hazard_no: str = Field(..., max_length=64, description="隐患编号")
+    inspection_name: str | None = Field(None, max_length=255, description="检查名称")
     inspection_category: str | None = Field(None, max_length=64, description="检查类别（日常检查/专项检查…）")
     hazard_type: HazardType = Field(..., description="隐患分类（人/物/环/管）")
     hazard_level: HazardLevel = Field(HazardLevel.GENERAL, description="隐患等级")
@@ -72,7 +74,8 @@ class HazardReportBase(BaseModel):
     rectification_responsible_person_name: str | None = Field(None, max_length=100, description="整改责任人姓名")
     corrective_preventive_measures: str | None = Field(None, description="AI整改建议")
     rectification_reply: str | None = Field(None, description="整改回复内容")
-    deadline: datetime | None = Field(None, description="整改期限")
+    capa_measures: str | None = Field(None, description="纠正预防措施（人工填写）")
+    deadline: datetime | None = Field(None, description="目标完成日期")
     actual_completion_date: datetime | None = Field(None, description="整改完成时间")
     rectification_photos: str | None = Field(None, description="整改后图片JSON数组")
     check_id: uuid.UUID | None = Field(None, description="关联检查ID")
@@ -96,6 +99,7 @@ class HazardReportUpdate(BaseModel):
     """更新隐患报告"""
 
     hazard_no: str | None = Field(None, max_length=64, description="隐患编号")
+    inspection_name: str | None = Field(None, max_length=255, description="检查名称")
     inspection_category: str | None = Field(None, max_length=64, description="检查类别（日常检查/专项检查…）")
     hazard_type: HazardType | None = Field(None, description="隐患分类")
     hazard_level: HazardLevel | None = Field(None, description="隐患等级")
@@ -113,7 +117,8 @@ class HazardReportUpdate(BaseModel):
     rectification_responsible_person_name: str | None = Field(None, max_length=100, description="整改责任人姓名")
     corrective_preventive_measures: str | None = Field(None, description="AI整改建议")
     rectification_reply: str | None = Field(None, description="整改回复内容")
-    deadline: datetime | None = Field(None, description="整改期限")
+    capa_measures: str | None = Field(None, description="纠正预防措施（人工填写）")
+    deadline: datetime | None = Field(None, description="目标完成日期")
     actual_completion_date: datetime | None = Field(None, description="整改完成时间")
     rectification_photos: str | None = Field(None, description="整改后图片JSON数组")
     rectification_status: str | None = Field(None, max_length=32, description="整改进度")
@@ -133,10 +138,21 @@ class HazardReportResponse(HazardReportBase):
     id: uuid.UUID
     rectification_status: str
     status: str
-    # ── 三级复核（仅状态，审核人/时间由系统自动记录）──
+    closed_at: datetime | None = None
+    # ── 三级复核 ──
     verify_level_1_status: str = "pending"
     verify_level_2_status: str = "pending"
     verify_level_3_status: str = "pending"
+    # ── 审批人留痕（每级只保留最后一次）──
+    verify_level_1_reviewer_id: uuid.UUID | None = None
+    verify_level_1_reviewer_name: str | None = None
+    verify_level_1_reviewed_at: datetime | None = None
+    verify_level_2_reviewer_id: uuid.UUID | None = None
+    verify_level_2_reviewer_name: str | None = None
+    verify_level_2_reviewed_at: datetime | None = None
+    verify_level_3_reviewer_id: uuid.UUID | None = None
+    verify_level_3_reviewer_name: str | None = None
+    verify_level_3_reviewed_at: datetime | None = None
     # ── AI 流程字段 ──
     ai_node_progress: str = "pending_input"
     overall_status: str = "draft"
@@ -227,3 +243,48 @@ class DepartmentSafetyOfficerApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: DepartmentSafetyOfficerResponse | None = None
+
+
+class HazardVerifyNotifyData(BaseModel):
+    """复核通知发送结果"""
+
+    level: int = Field(..., description="当前复核级别：1 部门负责人 / 2 分管领导 / 3 检查人员")
+    level_label: str = Field(..., description="复核级别名称")
+
+
+class HazardVerifyNotifyApiResponse(BaseModel):
+    """复核通知响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: HazardVerifyNotifyData | None = None
+
+
+class HazardRectificationNotifyData(BaseModel):
+    """整改通知发送结果"""
+
+    target: str = Field(..., description="整改责任人姓名，未知时为「未知」")
+
+
+class HazardRectificationNotifyApiResponse(BaseModel):
+    """整改通知响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: HazardRectificationNotifyData | None = None
+
+
+class HazardAiRunData(BaseModel):
+    """AI 工作流提交结果（后端异步执行，前端轮询隐患详情取最终结果）"""
+
+    job_id: str = Field(..., description="后台任务 ID")
+    hazard_id: str = Field(..., description="隐患 ID")
+    script_number: int = Field(..., description="AI 工作流脚本编号")
+
+
+class HazardAiRunApiResponse(BaseModel):
+    """AI 工作流提交响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: HazardAiRunData | None = None

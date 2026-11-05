@@ -39,6 +39,7 @@ import {
   deleteHazard,
 } from '@/actions/safety'
 import type { HazardReport, HazardReportFormData } from '@/types/safety'
+import { fetchHazard, waitForHazardAiResult } from '@/lib/api/client/safety'
 import dayjs from 'dayjs'
 
 const { Text, Title } = Typography
@@ -174,9 +175,6 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
   // ── 已完成状态 ──
   const [completedHazardNo, setCompletedHazardNo] = useState('')
 
-  // 通过 proxy.ts 转发，使用相对路径
-  const API_BASE = '/api/v1'
-
   // 加载草稿列表
   const loadDrafts = useCallback(async () => {
     setDraftsLoading(true)
@@ -203,6 +201,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
 
       if (currentHazard) {
         const updateRes = await updateHazard(currentHazard.id, {
+          inspection_name: values.inspection_name,
           inspection_category: values.inspection_category,
           discovered_by: values.discovered_by,
           discovered_by_name: values.discovered_by_name,
@@ -221,6 +220,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
       } else {
         const createRes = await createHazard({
           hazard_no: '',
+          inspection_name: values.inspection_name,
           inspection_category: values.inspection_category,
           discovered_by: values.discovered_by,
           discovered_by_name: values.discovered_by_name,
@@ -254,10 +254,10 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
       setCurrentStep('analyzing')
       setAiProgress('script1')
 
-      // 执行 AI Step 1
+      // 执行 AI Step 1（后端异步执行，这里轮询隐患详情等最终结果）
       const r1 = await runHazardAI(hazard.id, 1)
       if (r1.code !== 200) {
-        message.warning('AI 识别失败：' + (r1.message || '未知错误'))
+        message.warning('AI 识别提交失败：' + (r1.message || '未知错误'))
         setAiProgress('error')
         const updated = await refreshHazard(hazard.id)
         setCurrentHazard(updated)
@@ -266,20 +266,42 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
         return
       }
 
+      const after1 = await waitForHazardAiResult(hazard.id)
+      if (!after1) {
+        message.warning('AI 识别超时，请稍后在台账查看结果')
+        setAiProgress('error')
+        const updated = await refreshHazard(hazard.id)
+        setCurrentHazard(updated)
+        setCompletedHazardNo(updated?.hazard_no || hazard.hazard_no)
+        setCurrentStep('done')
+        return
+      }
+
+      if (after1.ai_error_message) {
+        message.warning('AI 识别失败：' + after1.ai_error_message)
+        setAiProgress('error')
+        setCurrentHazard(after1)
+        setCompletedHazardNo(after1.hazard_no || hazard.hazard_no)
+        setCurrentStep('done')
+        return
+      }
+
       setAiProgress('script2')
 
       // 执行 AI Step 2
       const r2 = await runHazardAI(hazard.id, 2)
+      let latest = after1
       if (r2.code !== 200) {
-        message.warning('AI 整改建议生成失败：' + (r2.message || '未知错误'))
+        message.warning('AI 整改建议提交失败：' + (r2.message || '未知错误'))
         setAiProgress('error')
       } else {
+        const after2 = await waitForHazardAiResult(hazard.id)
+        if (after2) latest = after2
         setAiProgress('done')
       }
 
-      const updated = await refreshHazard(hazard.id)
-      setCurrentHazard(updated)
-      setCompletedHazardNo(updated?.hazard_no || hazard.hazard_no)
+      setCurrentHazard(latest)
+      setCompletedHazardNo(latest.hazard_no || hazard.hazard_no)
       setCurrentStep('done')
     } catch (err) {
       const errMsg = err instanceof Error ? (err instanceof Error ? err.message : null) : '请重试'
@@ -297,6 +319,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
 
       if (currentHazard) {
         const updateRes = await updateHazard(currentHazard.id, {
+          inspection_name: values.inspection_name,
           inspection_category: values.inspection_category,
           discovered_by: values.discovered_by,
           discovered_by_name: values.discovered_by_name,
@@ -314,6 +337,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
       } else {
         const createRes = await createHazard({
           hazard_no: '',
+          inspection_name: values.inspection_name,
           inspection_category: values.inspection_category,
           discovered_by: values.discovered_by,
           discovered_by_name: values.discovered_by_name,
@@ -355,12 +379,11 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
 
   // ── 刷新隐患数据 ──
   const refreshHazard = async (id: string): Promise<HazardReport | null> => {
-    const res = await fetch(`${API_BASE}/safety/hazards/${id}`)
-    if (res.ok) {
-      const json = await res.json()
-      return json.data || json
+    try {
+      return await fetchHazard(id)
+    } catch {
+      return null
     }
-    return null
   }
 
   // ── 从草稿继续登记 ──
@@ -372,14 +395,14 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
         : draft.inspection_category
           ? draft.inspection_category.split(/[,，]/).filter(Boolean)
           : undefined,
-      discovered_by: draft.discovered_by,
-      discovered_by_name: draft.discovered_by_name,
+      discovered_by: draft.discovered_by ?? undefined,
+      discovered_by_name: draft.discovered_by_name ?? undefined,
       inspector_department: Array.isArray(draft.inspector_department)
         ? draft.inspector_department
         : draft.inspector_department
           ? draft.inspector_department.split(/[,，]/).filter(Boolean)
           : undefined,
-      department: draft.department,
+      department: draft.department ?? undefined,
       discovered_at: draft.discovered_at,
       description: draft.description,
     })

@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter, useParams } from 'next/navigation'
 import {
@@ -56,6 +56,8 @@ import {
   VERIFY_LEVEL_STATUS_OPTIONS,
 } from '@/types/safety'
 import dayjs from 'dayjs'
+import PersonnelSelect from '@/components/safety/PersonnelSelect'
+import { PersonNameWithBadge } from '@/components/safety/PersonMatchBadge'
 
 const { Text } = Typography
 const { TextArea } = Input
@@ -448,12 +450,6 @@ export default function HazardLedgerDetailPage() {
   const [aiReviewTriggering, setAiReviewTriggering] = useState(false)
   const [notifyRectLoading, setNotifyRectLoading] = useState(false)
 
-  // ── 人员搜索状态 ──
-  interface UserOption { value: string; label: string }
-  const [_userOptions, setUserOptions] = useState<UserOption[]>([])
-  const [_userSearchLoading, setUserSearchLoading] = useState(false)
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-
   const queryClient = useQueryClient()
 
   const { data: record, isLoading: loading, refetch: _refetch } = useQuery({
@@ -486,39 +482,13 @@ export default function HazardLedgerDetailPage() {
     enabled: !!record?.department,
   })
 
-  // Handle error case and redirect
-  if (!loading && !record && id) {
-    message.error('加载失败')
-    router.push('/safety/hazard-ledger')
-  }
-
-  const _handleUserSearch = useCallback((keyword: string) => {
-    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
-    if (!keyword || keyword.length < 1) {
-      setUserOptions([])
-      return
+  // 加载失败时提示并退回台账（渲染期不能有副作用：message / router.push 必须在 effect 内）
+  useEffect(() => {
+    if (!loading && !record && id) {
+      message.error('加载失败')
+      router.push('/safety/hazard-ledger')
     }
-    searchTimerRef.current = setTimeout(async () => {
-      setUserSearchLoading(true)
-      try {
-        const API_BASE = '/api/v1'
-        const params = new URLSearchParams({ keyword, limit: '50' })
-        const resp = await fetch(`${API_BASE}/identity/personnel?${params}`)
-        if (resp.ok) {
-          const json = await resp.json()
-          const items = (json.data?.items ?? []) as Record<string, unknown>[]
-          setUserOptions(items.map((u) => ({
-            value: String(u.id),
-            label: `${String(u.name)} - ${String(u.department || '未知部门')}`,
-          })))
-        }
-      } catch { /* 静默失败 */ } finally {
-        setUserSearchLoading(false)
-      }
-    }, 300)
-  }, [])
-
-
+  }, [loading, record, id, router, message])
 
   const fieldVal = (field: string): string => {
     const rec = record as Record<string, unknown> | null
@@ -549,14 +519,6 @@ export default function HazardLedgerDetailPage() {
           rectification_responsible_person: leaderId || '',
           rectification_responsible_person_name: name,
         }))
-        // 预填负责人到选项列表，确保 Select 正确显示
-        if (leaderId) {
-          setUserOptions((prev) => {
-            const exists = prev.some((o) => o.value === leaderId)
-            if (exists) return prev
-            return [{ value: leaderId, label: `${name} - ${dept}` }, ...prev]
-          })
-        }
       }
       // 同步获取安全员
       try {
@@ -927,9 +889,11 @@ export default function HazardLedgerDetailPage() {
 
       // 3. 根据状态调用 replyRectification 或 reworkRectification
       const replyContent = edits.rectification_reply || record.rectification_reply || fieldVal('rectification_reply')
+      const capaMeasures = edits.capa_measures ?? record.capa_measures
       const data = {
         reply_content: replyContent,
         rectification_photos: allPhotoPaths.length > 0 ? JSON.stringify(allPhotoPaths) : undefined,
+        capa_measures: capaMeasures || undefined,
       }
       const isRework = record.rectification_status === 'rejected'
       const replyRes = isRework
@@ -945,8 +909,8 @@ export default function HazardLedgerDetailPage() {
       } else {
         message.error(replyRes.message || '提交失败')
       }
-    } catch {
-      message.error('提交整改回复失败')
+    } catch (err) {
+      message.error(err instanceof Error && err.message ? err.message : '提交整改回复失败')
     } finally {
       setReplySubmitting(false)
     }
@@ -964,6 +928,19 @@ export default function HazardLedgerDetailPage() {
     return pillNeutral(label)
   }
   const rectificationPill = makeRectificationPill()
+
+  // ── 关闭状态（复用 status 字段：open / closed）──
+  const closeStatusPill =
+    record.status === 'closed'
+      ? pillSuccess(`已关闭${record.closed_at ? ` · ${fmtDate(record.closed_at, 'YYYY-MM-DD')}` : ''}`)
+      : pillNeutral('未关闭')
+
+  // ── 审批人留痕（每级只保留最后一次）──
+  const reviewerTrail: [string, string | null | undefined, string | null | undefined][] = [
+    ['一级复核', record.verify_level_1_reviewer_name, record.verify_level_1_reviewed_at],
+    ['二级复核', record.verify_level_2_reviewer_name, record.verify_level_2_reviewed_at],
+    ['三级复核', record.verify_level_3_reviewer_name, record.verify_level_3_reviewed_at],
+  ]
 
   // ── 阶段状态 pill ──
   const stage1Pill = pillSuccess('已完成')
@@ -1031,8 +1008,8 @@ export default function HazardLedgerDetailPage() {
                     } else {
                       message.error(res.message || '触发失败')
                     }
-                  } catch {
-                    message.error('触发 AI 初审失败')
+                  } catch (err) {
+                    message.error(err instanceof Error && err.message ? err.message : '触发 AI 初审失败')
                   } finally {
                     setAiReviewTriggering(false)
                   }
@@ -1146,9 +1123,9 @@ export default function HazardLedgerDetailPage() {
 
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h2 style={{ fontSize: 22, fontWeight: 600, color: '#1a1a1a', margin: 0, lineHeight: 1.3 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 600, color: '#1a1a1a', margin: 0, lineHeight: 1.3 }}>
               隐患台账详情
-            </h2>
+            </h1>
             <p style={{ fontSize: 14, color: '#787671', margin: '4px 0 0', lineHeight: 1.5 }}>
               编号 {record.hazard_no}
               <span style={{ color: '#c8c4be', margin: '0 8px' }}>·</span>
@@ -1162,6 +1139,7 @@ export default function HazardLedgerDetailPage() {
           <Space size={8}>
             {levelPill}
             {rectificationPill}
+            {closeStatusPill}
           </Space>
         </div>
       </div>
@@ -1194,21 +1172,43 @@ export default function HazardLedgerDetailPage() {
                 </Col>
                 <Col span={8}>
                   <FieldEditor label="检查人员">
-                    <Input
-                      placeholder="多维表格自动填入"
-                      value={fieldVal('discovered_by_name')}
-                      onChange={(e) => setEdits((p) => ({ ...p, discovered_by_name: e.target.value }))}
+                    <PersonnelSelect
+                      value={fieldVal('discovered_by') || null}
+                      label={fieldVal('discovered_by_name')}
+                      placeholder="搜索姓名/账号绑定系统用户"
+                      onChange={(p) => {
+                        if (!p) return
+                        setEdits((prev) => ({
+                          ...prev,
+                          discovered_by: p.id,
+                          discovered_by_name: p.name,
+                        }))
+                      }}
                     />
                   </FieldEditor>
+                  {!fieldVal('discovered_by') && fieldVal('discovered_by_name') ? (
+                    <Text style={{ fontSize: 12, color: '#b45309' }}>待确认：未匹配到唯一系统用户，请选择实际人员</Text>
+                  ) : null}
                 </Col>
                 <Col span={8}>
                   <FieldEditor label="责任人">
-                    <Input
-                      placeholder="多维表格自动填入"
-                      value={fieldVal('rectification_responsible_person_name')}
-                      onChange={(e) => setEdits((p) => ({ ...p, rectification_responsible_person_name: e.target.value }))}
+                    <PersonnelSelect
+                      value={fieldVal('rectification_responsible_person') || null}
+                      label={fieldVal('rectification_responsible_person_name')}
+                      placeholder="搜索姓名/账号绑定系统用户"
+                      onChange={(p) => {
+                        if (!p) return
+                        setEdits((prev) => ({
+                          ...prev,
+                          rectification_responsible_person: p.id,
+                          rectification_responsible_person_name: p.name,
+                        }))
+                      }}
                     />
                   </FieldEditor>
+                  {!fieldVal('rectification_responsible_person') && fieldVal('rectification_responsible_person_name') ? (
+                    <Text style={{ fontSize: 12, color: '#b45309' }}>待确认：未匹配到唯一系统用户，请选择实际人员</Text>
+                  ) : null}
                 </Col>
                 <Col span={8}>
                   <FieldEditor label="检查类别">
@@ -1235,7 +1235,7 @@ export default function HazardLedgerDetailPage() {
                   </FieldEditor>
                 </Col>
                 <Col span={24}>
-                  <FieldEditor label="隐患描述">
+                  <FieldEditor label="缺陷项描述">
                     <TextArea rows={3} value={fieldVal('description')}
                       onChange={(e) => setEdits((p) => ({ ...p, description: e.target.value }))} />
                   </FieldEditor>
@@ -1253,13 +1253,17 @@ export default function HazardLedgerDetailPage() {
                   <Col span={8}>
                     <FieldLabel>检查人员</FieldLabel>
                     <FieldTile>
-                      <Text style={{ fontSize: 14 }}>{record.discovered_by_name || '-'}</Text>
+                      <PersonNameWithBadge name={record.discovered_by_name} bound={record.discovered_by} fontSize={14} />
                     </FieldTile>
                   </Col>
                   <Col span={8}>
                     <FieldLabel>责任人</FieldLabel>
                     <FieldTile>
-                      <Text style={{ fontSize: 14 }}>{record.rectification_responsible_person_name || '-'}</Text>
+                      <PersonNameWithBadge
+                        name={record.rectification_responsible_person_name}
+                        bound={record.rectification_responsible_person}
+                        fontSize={14}
+                      />
                     </FieldTile>
                   </Col>
                   <Col span={8}>
@@ -1285,16 +1289,25 @@ export default function HazardLedgerDetailPage() {
                   </Col>
                 </Row>
 
+                {record.inspection_name && (
+                  <div style={{ marginTop: 16 }}>
+                    <FieldLabel>检查名称</FieldLabel>
+                    <FieldTile>
+                      <Text style={{ fontSize: 14 }}>{record.inspection_name}</Text>
+                    </FieldTile>
+                  </div>
+                )}
+
                 {record.description && (
                   <div style={{ marginTop: 16 }}>
-                    <FieldLabel>隐患描述</FieldLabel>
+                    <FieldLabel>缺陷项描述</FieldLabel>
                     <TextBlock>{record.description}</TextBlock>
                   </div>
                 )}
 
                 {photos.defect.length > 0 && (
                   <div style={{ marginTop: 16 }}>
-                    <FieldLabel><CameraOutlined style={{ marginRight: 4 }} />缺陷照片</FieldLabel>
+                    <FieldLabel><CameraOutlined style={{ marginRight: 4 }} />证据（整改前照片）</FieldLabel>
                     <PhotoGallery photos={photos.defect} />
                   </div>
                 )}
@@ -1464,8 +1477,8 @@ export default function HazardLedgerDetailPage() {
                         } else {
                           message.error(res.message || '发送失败')
                         }
-                      } catch {
-                        message.error('发送失败，请稍后重试')
+                      } catch (err) {
+                        message.error(err instanceof Error && err.message ? err.message : '发送失败，请稍后重试')
                       } finally {
                         setNotifyRectLoading(false)
                       }
@@ -1480,10 +1493,10 @@ export default function HazardLedgerDetailPage() {
 
             {editSection === 'rectification' ? (
               <>
-                {/* 整改期限 — 只读，自动计算 */}
+                {/* 目标完成日期 — 只读，自动计算 */}
                 <Row gutter={[16, 12]} style={{ marginBottom: 16 }}>
                   <Col span={12}>
-                    <FieldLabel>整改期限</FieldLabel>
+                    <FieldLabel>目标完成日期</FieldLabel>
                     <FieldTile>
                       <Text style={{ fontSize: 14, fontWeight: 500 }}>
                         {record.deadline
@@ -1504,11 +1517,18 @@ export default function HazardLedgerDetailPage() {
                   </Col>
                 </Row>
 
-                <FieldEditor label="纠正预防措施">
-                  <TextArea rows={5}
+                <FieldEditor label="整改回复">
+                  <TextArea rows={4}
                     value={fieldVal('rectification_reply')}
                     onChange={(e) => setEdits((p) => ({ ...p, rectification_reply: e.target.value }))}
-                    placeholder="请详细描述纠正预防措施，包括具体整改措施、实施过程、完成情况等" />
+                    placeholder="请详细描述整改过程、实施情况及完成情况" />
+                </FieldEditor>
+
+                <FieldEditor label="纠正预防措施（CAPA）">
+                  <TextArea rows={3}
+                    value={fieldVal('capa_measures')}
+                    onChange={(e) => setEdits((p) => ({ ...p, capa_measures: e.target.value }))}
+                    placeholder="针对该隐患制定的纠正与预防措施，如完善制度、增加巡检频次、加装防护设施等" />
                 </FieldEditor>
 
                 {/* 整改照片上传 */}
@@ -1548,7 +1568,7 @@ export default function HazardLedgerDetailPage() {
               <>
                 <Row gutter={[16, 12]}>
                   <Col span={12}>
-                    <FieldLabel>整改期限</FieldLabel>
+                    <FieldLabel>目标完成日期</FieldLabel>
                     <FieldTile>
                       {record.deadline ? (
                         <span>
@@ -1573,9 +1593,16 @@ export default function HazardLedgerDetailPage() {
                 </Row>
 
                 <div style={{ marginTop: 16 }}>
-                  <FieldLabel><EditOutlined style={{ marginRight: 4 }} />纠正预防措施</FieldLabel>
+                  <FieldLabel><EditOutlined style={{ marginRight: 4 }} />整改回复</FieldLabel>
                   <FieldTile>
                     <Text style={{ fontSize: 14 }}>{record.rectification_reply || '-'}</Text>
+                  </FieldTile>
+                </div>
+
+                <div style={{ marginTop: 16 }}>
+                  <FieldLabel><EditOutlined style={{ marginRight: 4 }} />纠正预防措施（CAPA）</FieldLabel>
+                  <FieldTile>
+                    <Text style={{ fontSize: 14 }}>{record.capa_measures || '-'}</Text>
                   </FieldTile>
                 </div>
 
@@ -1703,8 +1730,8 @@ export default function HazardLedgerDetailPage() {
                           } else {
                             message.error(res.message || '发送失败')
                           }
-                        } catch {
-                          message.error('发送失败，请稍后重试')
+                        } catch (err) {
+                          message.error(err instanceof Error && err.message ? err.message : '发送失败，请稍后重试')
                         } finally {
                           setNotifyLoading(false)
                         }
@@ -1722,6 +1749,23 @@ export default function HazardLedgerDetailPage() {
               items={buildReviewTimelineItems()}
               style={{ marginTop: 4 }}
             />
+
+            {/* 审批人留痕（每级只保留最后一次，无记录不展示） */}
+            {reviewerTrail.some(([, name]) => name) && (
+              <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #ede9e4' }}>
+                <FieldLabel>审批人</FieldLabel>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 }}>
+                  {reviewerTrail
+                    .filter(([, name]) => name)
+                    .map(([label, name, at]) => (
+                      <Text key={label} style={{ fontSize: 13 }}>
+                        {label}：{name}
+                        {at ? `（${fmtDate(at, 'YYYY-MM-DD HH:mm')}）` : ''}
+                      </Text>
+                    ))}
+                </div>
+              </div>
+            )}
 
             {/* 已关闭状态 */}
             {!currentLevel && (rStatus === 'completed' || rStatus === 'closed') && (

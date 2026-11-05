@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
-from app.core.exceptions import NotFoundException
+from app.core.exceptions import BadRequestException, NotFoundException
 from app.core.response import build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
@@ -23,6 +23,10 @@ from app.modules.safety.schemas import (
     OperationRegulationListApiResponse,
     OperationRegulationResponse,
     OperationRegulationUpdate,
+    RegulationContentApiResponse,
+    RegulationContentData,
+    RegulationContentUpdateApiResponse,
+    RegulationContentUpdateData,
     RegulationReviseRequest,
     RegulationRevisionApiResponse,
     RegulationRevisionCreate,
@@ -74,7 +78,7 @@ async def handler(  # noqa: F811
     service = RegulationService(db)
     item = await service.get_regulation(regulation_id)
     if not item:
-        return build_response(code=404, message="操规不存在")
+        raise NotFoundException(resource="操规")
     return OperationRegulationApiResponse(data=OperationRegulationResponse.model_validate(item))
 
 
@@ -106,7 +110,7 @@ async def handler(  # noqa: F811
     service = RegulationService(db)
     item = await service.update_regulation(regulation_id, data)
     if not item:
-        return build_response(code=404, message="操规不存在")
+        raise NotFoundException(resource="操规")
     await db.commit()
     return OperationRegulationApiResponse(data=OperationRegulationResponse.model_validate(item))
 
@@ -123,7 +127,7 @@ async def handler(  # noqa: F811
     service = RegulationService(db)
     result = await service.delete_regulation(regulation_id)
     if not result:
-        return build_response(code=404, message="操规不存在")
+        raise NotFoundException(resource="操规")
     await db.commit()
     return OperationRegulationApiResponse(code=200, message="删除成功", data=None)
 
@@ -163,7 +167,7 @@ async def handler(  # noqa: F811
     service = RegulationService(db)
     item = await service.upload_regulation_document(regulation_id, file.filename or "unknown", stored_path)
     if not item:
-        return build_response(code=404, message="操规不存在")
+        raise NotFoundException(resource="操规")
     await db.commit()
     return OperationRegulationApiResponse(data=OperationRegulationResponse.model_validate(item))
 
@@ -222,7 +226,7 @@ async def handler(  # noqa: F811
     service = RegulationService(db)
     item = await service.create_revision(data)
     if not item:
-        return build_response(code=404, message="关联的操规不存在")
+        raise NotFoundException(resource="关联的操规")
     await db.commit()
     return RegulationRevisionApiResponse(data=RegulationRevisionResponse.model_validate(item))
 
@@ -306,7 +310,7 @@ async def handler(  # noqa: F811
     service = RegulationService(db)
     item = await service.manual_revision_complete(revision_id, stored_path, file.filename)
     if not item:
-        return build_response(code=400, message="无法完成修订，当前状态不允许或修订类型不是人工修订")
+        raise BadRequestException(message="无法完成修订，当前状态不允许或修订类型不是人工修订")
     await db.commit()
     return RegulationRevisionApiResponse(data=RegulationRevisionResponse.model_validate(item))
 
@@ -326,7 +330,7 @@ async def handler(  # noqa: F811
     service = RegulationService(db)
     result = await service.ai_revision_generate(revision_id)
     if not result:
-        return build_response(code=400, message="无法生成，修订类型不是AI修订或修订记录不存在")
+        raise BadRequestException(message="无法生成，修订类型不是AI修订或修订记录不存在")
     return build_response(data=result)
 
 
@@ -346,7 +350,7 @@ async def handler(  # noqa: F811
     service = RegulationService(db)
     item = await service.ai_revision_confirm(revision_id, generated_content, document_name)
     if not item:
-        return build_response(code=400, message="无法确认，修订类型不是AI修订或修订记录不存在")
+        raise BadRequestException(message="无法确认，修订类型不是AI修订或修订记录不存在")
     await db.commit()
     return RegulationRevisionApiResponse(data=RegulationRevisionResponse.model_validate(item))
 
@@ -392,7 +396,7 @@ async def handler(  # noqa: F811
     前端进入编辑面板供用户审阅修改。
     """
     if not file.filename or not file.filename.endswith(".docx"):
-        return build_response(code=400, message="仅支持 .docx 格式的操规初稿")
+        raise BadRequestException(message="仅支持 .docx 格式的操规初稿")
 
     service = SopGeneratorService(db)
     result = await service.generate_from_draft(file)
@@ -403,7 +407,7 @@ async def handler(  # noqa: F811
 
 @regulations_router.get(  # type: ignore[no-redef]
     "/regulations/{regulation_id}/content",
-    response_model=OperationRegulationApiResponse,
+    response_model=RegulationContentApiResponse,
     summary="获取操规标准化内容",
 )
 async def handler(  # noqa: F811
@@ -413,14 +417,14 @@ async def handler(  # noqa: F811
     service = SopGeneratorService(db)
     result = await service.get_content(regulation_id)
     if not result:
-        return build_response(code=404, message="操规不存在")
+        raise NotFoundException(resource="操规")
 
-    return build_response(data=result)
+    return RegulationContentApiResponse(data=RegulationContentData(**result))
 
 
 @regulations_router.put(  # type: ignore[no-redef]
     "/regulations/{regulation_id}/content",
-    response_model=OperationRegulationApiResponse,
+    response_model=RegulationContentUpdateApiResponse,
     summary="保存编辑后的操规内容",
 )
 async def handler(  # noqa: F811
@@ -430,15 +434,15 @@ async def handler(  # noqa: F811
     service = SopGeneratorService(db)
     item = await service.update_content(regulation_id, data.content, data.status)
     if not item:
-        return build_response(code=404, message="操规不存在")
+        raise NotFoundException(resource="操规")
     await db.commit()
 
-    return build_response(
-        data={
-            "regulation_id": str(regulation_id),
-            "status": item.status if hasattr(item, "status") else "reviewed",
-        },
+    return RegulationContentUpdateApiResponse(
         message="内容保存成功",
+        data=RegulationContentUpdateData(
+            regulation_id=str(regulation_id),
+            status=item.status if hasattr(item, "status") else "reviewed",
+        ),
     )
 
 
@@ -468,7 +472,7 @@ async def handler(  # noqa: F811
         reviser_name=data.reviser_name,
     )
     if not result:
-        return build_response(code=404, message="操规不存在")
+        raise NotFoundException(resource="操规")
     await db.commit()
     return build_response(data=result, message="修订保存成功")
 
@@ -492,16 +496,16 @@ async def handler(  # noqa: F811
     pdf_path = await service.export_pdf(regulation_id)
 
     if not pdf_path:
-        return build_response(code=400, message="导出失败：操规不存在或内容为空")
+        raise BadRequestException(message="导出失败：操规不存在或内容为空")
 
     # Check path validity — MinIO mode: object_key; local mode: local path
     if _minio_enabled():
         result = minio_get("safety", pdf_path)
         if result is None:
-            return build_response(code=400, message="导出失败：PDF文件不存在")
+            raise BadRequestException(message="导出失败：PDF文件不存在")
     else:
         if not os.path.exists(pdf_path):
-            return build_response(code=400, message="导出失败：PDF文件不存在")
+            raise BadRequestException(message="导出失败：PDF文件不存在")
 
     await db.commit()
 

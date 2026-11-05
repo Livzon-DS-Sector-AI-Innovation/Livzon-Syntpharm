@@ -559,6 +559,9 @@ class HazardReport(BaseModel):
     )
 
     hazard_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="隐患编号")
+    inspection_name: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, comment="检查名称（Bitable「检查名称」）"
+    )
     inspection_category: Mapped[str | None] = mapped_column(
         String(128),
         nullable=True,
@@ -617,6 +620,9 @@ class HazardReport(BaseModel):
     )
     corrective_preventive_measures: Mapped[str | None] = mapped_column(Text, nullable=True, comment="AI整改建议")
     rectification_reply: Mapped[str | None] = mapped_column(Text, nullable=True, comment="整改回复内容")
+    capa_measures: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="纠正预防措施（人工填写，Bitable「纠正预防措施」）"
+    )
     deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="整改期限")
     actual_completion_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="整改完成时间"
@@ -651,13 +657,42 @@ class HazardReport(BaseModel):
         nullable=False,
         comment="检查人员复核状态 (Bitable「检查人员复核」): pending/approved/rejected",
     )
+    # ── 审批人留痕（轻量：每级只保留最后一次）──
+    verify_level_1_reviewer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="一级复核审批人"
+    )
+    verify_level_1_reviewer_name: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="一级复核审批人姓名"
+    )
+    verify_level_1_reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="一级复核时间"
+    )
+    verify_level_2_reviewer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="二级复核审批人"
+    )
+    verify_level_2_reviewer_name: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="二级复核审批人姓名"
+    )
+    verify_level_2_reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="二级复核时间"
+    )
+    verify_level_3_reviewer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="三级复核审批人"
+    )
+    verify_level_3_reviewer_name: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="三级复核审批人姓名"
+    )
+    verify_level_3_reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="三级复核时间"
+    )
     status: Mapped[str] = mapped_column(
         String(32),
         default="open",
         server_default="open",
         nullable=False,
-        comment="状态",
+        comment="关闭状态: open=未关闭 / closed=已关闭",
     )
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="完成/关闭日期")
     check_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("safety.safety_checks.id"),
