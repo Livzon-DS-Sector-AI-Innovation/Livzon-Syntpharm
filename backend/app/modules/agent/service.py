@@ -76,6 +76,7 @@ from app.modules.agent.models import (
     SCRIPT_SOURCE_UPLOAD,
     PptVideoJob,
     PptVideoProject,
+    PptVideoSegment,
     PptVideoSlide,
     PptVideoVersion,
 )
@@ -1149,6 +1150,38 @@ async def update_project_ai(
     return project
 
 
+async def invalidate_slide_segments(session: AsyncSession, slide: PptVideoSlide) -> int:
+    """作废某页的片段缓存，保证下次出片按这页「当前的」配置重渲。
+
+    页片段 key 只由「页图 + 音频 + 编码参数 + 视觉指纹」算出。只要指纹漏掉任何一项
+    影响画面的配置（历史上新增配置项时忘并进指纹就发生过），旧片段就会被原样复用，
+    用户看到的就是「配置保存成功了，成片却没变」，而且排起来毫无线索。
+    保存页配置属于低频动作，重渲一页的成本远低于这种静默失效，所以直接作废。
+
+    片段是可再生的中间产物，这里物理删除：留下 is_deleted=True 的行仍占着
+    uq_agent_ppt_video_segment_key，worker 重渲时插入同一个 key 会撞唯一约束。
+    """
+    if not slide.image_sha256:
+        return 0
+    rows = (
+        await session.scalars(
+            # 连软删的历史行一起清：它们仍占着 segment_key 的唯一约束，
+            # 只删有效行的话，worker 重渲插入同一个 key 会直接撞约束报错。
+            select(PptVideoSegment).where(PptVideoSegment.image_sha256 == slide.image_sha256)
+        )
+    ).all()
+    for row in rows:
+        try:
+            storage.delete_object(BUCKET_MODULE, row.object_key)
+        except Exception:  # noqa: BLE001 - 对象删不掉也不能挡住保存：索引行删掉后就不会再命中
+            logger.warning("作废页片段对象失败：%s", row.object_key, exc_info=True)
+        await session.delete(row)
+    if rows:
+        await session.flush()
+        logger.info("作废页片段缓存：image=%s 共 %d 条", slide.image_sha256[:12], len(rows))
+    return len(rows)
+
+
 async def update_slide(
     session: AsyncSession,
     project_id: uuid.UUID,
@@ -1171,6 +1204,8 @@ async def update_slide(
 ) -> PptVideoSlide:
     project = await get_project(session, project_id)
     slide = await get_slide_by_uid(session, project_id, slide_uid)
+    # 画面相关配置的旧值：保存完对比，动过就让这页的历史片段作废
+    prev_visual = (slide.highlight_style, slide.highlight_color, slide.highlight_regions)
 
     if script_text is not None:
         if len(script_text) > MAX_SCRIPT_CHARS:
@@ -1230,6 +1265,11 @@ async def update_slide(
     if clear_highlight_regions:
         slide.highlight_regions = None
     slide.updated_by = updated_by
+    if (slide.highlight_style, slide.highlight_color, slide.highlight_regions) != prev_visual:
+        # 「保存即生效」的落点：画面配置变了就作废该页片段，下次出片一定重渲这页。
+        # 不能只依赖缓存 key 变化——key 里的视觉指纹一旦漏项（或渲染器换了实现），
+        # 同样的 key 会把旧画面端回来，用户改完配置看着像没保存成功。
+        await invalidate_slide_segments(session, slide)
     await session.flush()
     return slide
 

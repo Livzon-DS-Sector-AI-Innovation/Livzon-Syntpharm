@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from app.modules.agent.config import ENCODER_KEY
+from app.modules.agent.config import ENCODER_KEY, RENDER_VERSION
 
 #: manifest 结构版本：字段增删时递增，旧版本 manifest 仍可读（只读不解析）
 MANIFEST_VERSION = 1
@@ -94,14 +94,19 @@ def segment_key(
     audio_fingerprint: str,
     encoder_key: str = ENCODER_KEY,
     visual_key: str = "",
+    render_version: int = RENDER_VERSION,
 ) -> str:
-    """页片段指纹：页图 + 音频 + 编码参数 + 视觉引导，任一变化都要重渲该页。
+    """页片段指纹：页图 + 音频 + 编码参数 + 视觉引导 + 渲染实现版本，任一变化都要重渲该页。
 
     `visual_key` 为空表示本页没有页内高亮（画面就是那张静帧）。
     开启高亮后画面变成多段静帧序列，页图 sha256 不再能代表画面内容，
     必须把分句/高亮框指纹一起进 key，否则旧片段会被原样复用、高亮永不生效。
+
+    `render_version` 见 `config.RENDER_VERSION`：它让「改了渲染实现但配置没变」也能自然失效，
+    不必依赖人工去清片段缓存——那种清法一旦漏做，症状是「保存成功、成片没变」，极难复盘。
     """
-    return sha256_bytes(f"segment\n{image_sha256}\n{audio_fingerprint}\n{encoder_key}\n{visual_key}".encode())
+    payload = f"segment\n{image_sha256}\n{audio_fingerprint}\n{encoder_key}\nr{render_version}\n{visual_key}"
+    return sha256_bytes(payload.encode())
 
 
 def body_key(segment_keys: Sequence[str]) -> str:
@@ -176,6 +181,8 @@ class Manifest:
     head_key: str
     body_key_value: str
     encoder_key: str = ENCODER_KEY
+    #: 出这版视频的渲染实现版本；排查「画面为什么没变」时先看这里
+    render_version: int = RENDER_VERSION
     version: int = MANIFEST_VERSION
     slides: list[ManifestSlide] = field(default_factory=list)
     total_duration_ms: int = 0
@@ -198,6 +205,7 @@ class Manifest:
             "version": self.version,
             "project_id": self.project_id,
             "encoder_key": self.encoder_key,
+            "render_version": self.render_version,
             "head_key": self.head_key,
             "body_key": self.body_key_value,
             "total_duration_ms": self.total_duration_ms,
@@ -215,6 +223,8 @@ class Manifest:
             head_key=str(data.get("head_key", "")),
             body_key_value=str(data.get("body_key", "")),
             encoder_key=str(data.get("encoder_key", ENCODER_KEY)),
+            # 老 manifest 没有该字段：按当前版本回落，仅用于取证展示，不参与复用判断
+            render_version=int(data.get("render_version", RENDER_VERSION)),
             version=int(data.get("version", MANIFEST_VERSION)),
             slides=[ManifestSlide.from_dict(item) for item in data.get("slides", [])],
             total_duration_ms=int(data.get("total_duration_ms", 0)),

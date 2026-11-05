@@ -8,6 +8,7 @@
 """
 
 from app.modules.agent import cache
+from app.modules.agent.config import RENDER_VERSION
 
 
 def _voice(language: str = "zh", voice_id: str = "zf_001", speed: float = 1.0) -> str:
@@ -129,3 +130,32 @@ def test_manifest_reuse_summary_without_head_reuse() -> None:
     assert summary["head_reused"] == 0
     assert summary["body_reused_slides"] == 1
     assert summary["rendered_slides"] == 1
+
+
+# ── 渲染实现版本 ────────────────────────────────────────────────────
+
+
+def test_segment_key_includes_render_version() -> None:
+    """改了渲染实现、但页图与讲稿没变时，旧片段也不能被复用。
+
+    以前只有 ENCODER_KEY 一个开关，靠人记得改；漏一次就是「保存成功、成片没变」，
+    命中日志还全都正常，所以版本必须自己进 key。
+    """
+    audio = cache.audio_key(cache.script_key("讲稿", "zh"), _voice())
+    assert cache.segment_key("img-hash", audio) == cache.segment_key("img-hash", audio, render_version=RENDER_VERSION)
+    assert cache.segment_key("img-hash", audio, render_version=RENDER_VERSION) != cache.segment_key(
+        "img-hash", audio, render_version=RENDER_VERSION + 1
+    )
+
+
+def test_manifest_records_render_version_and_reads_legacy() -> None:
+    manifest = cache.Manifest(project_id="p1", head_key="head", body_key_value="body")
+
+    assert manifest.as_dict()["render_version"] == RENDER_VERSION
+    assert cache.Manifest.from_dict(manifest.as_dict()).render_version == RENDER_VERSION
+
+    # 老 manifest 没这个字段，读出来回落当前版本，且不影响其它字段
+    legacy = {key: value for key, value in manifest.as_dict().items() if key != "render_version"}
+    restored = cache.Manifest.from_dict(legacy)
+    assert restored.render_version == RENDER_VERSION
+    assert restored.head_key == "head"
