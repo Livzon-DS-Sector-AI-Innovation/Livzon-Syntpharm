@@ -46,7 +46,6 @@ import type {
   HazardReportQueryParams,
 } from '@/types/safety'
 import {
-  HAZARD_TYPE_OPTIONS,
   HAZARD_LEVEL_OPTIONS,
   HAZARD_CATEGORY_OPTIONS,
   VERIFY_LEVEL_STATUS_OPTIONS,
@@ -138,11 +137,6 @@ const FILTER_FIELDS: FilterFieldConfig[] = [
     options: HAZARD_LEVEL_OPTIONS,
   },
   {
-    key: 'hazard_type',
-    label: '隐患类型',
-    options: HAZARD_TYPE_OPTIONS,
-  },
-  {
     key: 'hazard_category',
     label: '隐患类别',
     options: HAZARD_CATEGORY_OPTIONS,
@@ -195,14 +189,10 @@ export default function HazardLedgerPage() {
   const [searchKeyword, setSearchKeyword] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [levelFilter, setLevelFilter] = useState<string | undefined>()
-  const [typeFilter, setTypeFilter] = useState<string | undefined>()
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>()
   const [inspectionCategoryFilter, setInspectionCategoryFilter] = useState<string | undefined>()
   const [deptFilter, setDeptFilter] = useState<string | undefined>()
   const [personMatchFilter, setPersonMatchFilter] = useState<'pending' | undefined>()
-
-  // ── 全局统计（来自 API，不受分页/筛选影响）──
-  const [hazardStats, setHazardStats] = useState<HazardStats | null>(null)
 
   // ── 排序状态 ──
   const [sortField, setSortField] = useState<string | undefined>()
@@ -242,10 +232,6 @@ export default function HazardLedgerPage() {
       const opt = HAZARD_LEVEL_OPTIONS.find((o) => o.value === levelFilter)
       list.push({ key: 'hazard_level', fieldLabel: '等级', value: levelFilter, valueLabel: opt?.label || levelFilter })
     }
-    if (typeFilter) {
-      const opt = HAZARD_TYPE_OPTIONS.find((o) => o.value === typeFilter)
-      list.push({ key: 'hazard_type', fieldLabel: '类型', value: typeFilter, valueLabel: opt?.label || typeFilter })
-    }
     if (categoryFilter) {
       const opt = HAZARD_CATEGORY_OPTIONS.find((o) => o.value === categoryFilter)
       list.push({ key: 'hazard_category', fieldLabel: '类别', value: categoryFilter, valueLabel: opt?.label || categoryFilter })
@@ -261,14 +247,13 @@ export default function HazardLedgerPage() {
       list.push({ key: 'person_match', fieldLabel: '人员匹配', value: personMatchFilter, valueLabel: '待确认' })
     }
     return list
-  }, [levelFilter, typeFilter, categoryFilter, inspectionCategoryFilter, deptFilter, personMatchFilter])
+  }, [levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, personMatchFilter])
 
   // 移除单个筛选条件
   const removeFilter = useCallback((key: string) => {
     setHazardQueryParams({ page: 1 })
     switch (key) {
       case 'hazard_level': setLevelFilter(undefined); break
-      case 'hazard_type': setTypeFilter(undefined); break
       case 'hazard_category': setCategoryFilter(undefined); break
       case 'inspection_category': setInspectionCategoryFilter(undefined); break
       case 'department': setDeptFilter(undefined); break
@@ -280,7 +265,6 @@ export default function HazardLedgerPage() {
   const clearAllFilters = useCallback(() => {
     setSelectedRowKeys([])
     setLevelFilter(undefined)
-    setTypeFilter(undefined)
     setCategoryFilter(undefined)
     setInspectionCategoryFilter(undefined)
     setDeptFilter(undefined)
@@ -302,7 +286,6 @@ export default function HazardLedgerPage() {
     setSelectedRowKeys([])
     switch (fieldKey) {
       case 'hazard_level': setLevelFilter(value); break
-      case 'hazard_type': setTypeFilter(value); break
       case 'hazard_category': setCategoryFilter(value); break
       case 'inspection_category': setInspectionCategoryFilter(value); break
       case 'department': setDeptFilter(value); break
@@ -313,12 +296,11 @@ export default function HazardLedgerPage() {
   }
 
   const { data: queryData, isLoading: queryLoading } = useQuery({
-    queryKey: ['hazards', hazardQueryParams, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, personMatchFilter, searchKeyword, sortField, sortOrder],
+    queryKey: ['hazards', hazardQueryParams, statusFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, personMatchFilter, searchKeyword, sortField, sortOrder],
     queryFn: async () => {
       const response = await getHazards({
         ...hazardQueryParams,
         rectification_status: statusFilter,
-        hazard_type: typeFilter,
         hazard_level: levelFilter,
         hazard_category: categoryFilter,
         inspection_category: inspectionCategoryFilter,
@@ -367,19 +349,18 @@ export default function HazardLedgerPage() {
   // Use query loading state
   const loading = queryLoading
 
-  // ── 全局统计（挂载时 + 数据变更后刷新）──
-  const loadStats = async () => {
-    try {
-      const stats = await fetchHazardStats()
-      setHazardStats(stats.data || null)
-    } catch { /* 静默失败，统计数字保持上次值 */ }
-  }
-  const refreshStats = () => { loadStats() }
+  // ── 全局统计（挂载即取，数据变更后失效重取）──
+  const { data: hazardStats = null } = useQuery<HazardStats | null>({
+    queryKey: ['hazard-stats'],
+    queryFn: async () => {
+      const res = await fetchHazardStats()
+      return res.data ?? null
+    },
+  })
 
-
-
-
-  // 排序变化时重新加载
+  const refreshStats = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ['hazard-stats'] })
+  }, [queryClient])
 
   const handleSearch = () => {
     setSearchKeyword(searchText)
@@ -965,24 +946,6 @@ export default function HazardLedgerPage() {
       render: (category: string) => {
         const option = HAZARD_CATEGORY_OPTIONS.find((o) => o.value === category)
         return <span style={statusPill('#5d5b54', '#f0eeec')}>{option?.label || category || '-'}</span>
-      },
-    },
-    {
-      title: (
-        <span
-          onClick={() => handleSort('hazard_type')}
-          style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-        >
-          隐患类型{renderSortIcon('hazard_type')}
-        </span>
-      ),
-      dataIndex: 'hazard_type',
-      key: 'hazard_type',
-      width: 120,
-      sorter: false,
-      render: (type: string) => {
-        const option = HAZARD_TYPE_OPTIONS.find((o) => o.value === type)
-        return <span style={statusPill('#5d5b54', '#f0eeec')}>{option?.label || type}</span>
       },
     },
     {
