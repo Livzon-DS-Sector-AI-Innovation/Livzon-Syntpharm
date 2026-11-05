@@ -12,6 +12,7 @@ import pytest
 from httpx import AsyncClient
 from starlette.requests import Request as StarletteRequest
 
+from app.modules.agent import api as agent_api
 from app.modules.agent import service as agent_service
 from app.platform.permission.registry import ALL_PERMISSIONS, API_BINDINGS
 
@@ -200,3 +201,48 @@ def test_page_images_endpoints_are_bound_to_permissions() -> None:
         "GET",
         f"{API}/ppt-videos/{'{project_id}'}/page-images/status",
     ) in bindings
+
+
+# ── 媒体流：预览（inline）与下载（attachment）共用同一端点 ──────────────────
+
+
+def _request(range_header: str | None = None) -> StarletteRequest:
+    headers = [(b"range", range_header.encode())] if range_header else []
+    return StarletteRequest({"type": "http", "method": "GET", "path": "/", "headers": headers})
+
+
+def _fake_stat(total: int):
+    def _stat(_bucket: str, _key: str) -> int:
+        return total
+
+    return _stat
+
+
+def test_stream_object_inline_disposition(monkeypatch: pytest.MonkeyPatch) -> None:
+    # 预览必须用 inline，否则浏览器拿到 attachment 会直接下载
+    monkeypatch.setattr(agent_api, "stat_object", _fake_stat(1024))
+
+    response = agent_api._stream_object("k", "video/mp4", _request(), file_name="成片.mp4", inline=True)
+
+    assert response.headers["Content-Disposition"].startswith("inline;")
+    assert response.status_code == 200
+
+
+def test_stream_object_download_stays_attachment(monkeypatch: pytest.MonkeyPatch) -> None:
+    # 下载语义不变：不传 inline 时仍是 attachment
+    monkeypatch.setattr(agent_api, "stat_object", _fake_stat(1024))
+
+    response = agent_api._stream_object("k", "video/mp4", _request(), file_name="成片.mp4")
+
+    assert response.headers["Content-Disposition"].startswith("attachment;")
+
+
+def test_stream_object_inline_keeps_range_semantics(monkeypatch: pytest.MonkeyPatch) -> None:
+    # 播放器拖进度依赖 Range：切 inline 后 206 与 Content-Range 必须照旧
+    monkeypatch.setattr(agent_api, "stat_object", _fake_stat(1024))
+
+    response = agent_api._stream_object("k", "video/mp4", _request("bytes=0-99"), file_name="成片.mp4", inline=True)
+
+    assert response.status_code == 206
+    assert response.headers["Content-Range"] == "bytes 0-99/1024"
+    assert response.headers["Content-Length"] == "100"

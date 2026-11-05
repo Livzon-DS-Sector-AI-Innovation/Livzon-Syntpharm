@@ -38,6 +38,12 @@ _CLAUSE_RE = re.compile(r"(?<=[，,、：:])")
 LONG_SENTENCE_CHARS = 28
 #: 形状文字被判定为「被讲到」的最低字符覆盖率（默认值，可被运行时配置覆盖）
 SHAPE_HIT_COVERAGE = 0.6
+#: 兜底猜测的字面重合度门槛：低于它宁可整页淡底，也不乱点亮一个元素
+FALLBACK_GUESS_COVERAGE = 0.2
+#: 页面级兜底的底色透明度（0-255）：够看出画面变化，又不至于糊住整页
+PAGE_FALLBACK_FILL_ALPHA = 18
+#: 句级静音的保留标记：`mute=["*"]` 表示这句完全不亮（兜底也压不住）
+MUTE_WHOLE_SENTENCE = "*"
 #: 高亮框外扩上限（EMU）：避免描边压到文字，同时不让小元素被撑得离谱
 PAD_X_EMU = 60000
 PAD_Y_EMU = 40000
@@ -118,6 +124,8 @@ class HighlightStep:
     boxes: list[HighlightBox] = field(default_factory=list)
     #: 该段绑定的元素 id（来自讲稿生成阶段），空表示走字面兜底
     targets: tuple[str, ...] = ()
+    #: 框的来源：`target`/`text` 是正常命中，`guess`/`page` 是兜底（界面上要标出来）
+    fallback: str = ""
 
     @property
     def duration_ms(self) -> int:
@@ -606,6 +614,142 @@ def _dedupe_boxes(boxes: Sequence[HighlightBox]) -> list[HighlightBox]:
     return seen
 
 
+def _page_box(layout: Any) -> HighlightBox | None:
+    """整页框：页面里一个能用的元素都没有时的最后兜底，保证画面一定有变化。"""
+    size = slide_size(layout)
+    if size is None:
+        return None
+    width, height = size
+    if width <= 0 or height <= 0:
+        return None
+    return HighlightBox(
+        left=0,
+        top=0,
+        width=width,
+        height=height,
+        kind="PAGE",
+        mode=REGION_MODE_AREA,
+        fill_alpha=PAGE_FALLBACK_FILL_ALPHA,
+    )
+
+
+def _guess_box(
+    segment: ScriptSegment,
+    layout: Any,
+    rules: dict[str, RegionRule],
+    muted: set[str],
+) -> HighlightBox | None:
+    """兜底猜测：本页还没被关掉的元素里，与本句字面重合度最高的那一个。
+
+    门槛比正常字面匹配（`SHAPE_HIT_COVERAGE`）低一档：正常匹配是「讲到了就亮」，
+    这里是「一个都没命中时至少亮一个最像的」。允许亮错，但调用方会把来源标成
+    `guess`，用户能在区域面板里复核并改回不亮。
+    """
+    sentence_grams = _bigrams(segment.text)
+    if not sentence_grams:
+        return None
+    best: ElementRef | None = None
+    best_score = 0.0
+    for ref in iter_elements(layout):
+        if ref.element_id in muted:
+            continue
+        rule = rules.get(ref.element_id)
+        if rule is not None and rule.mode == REGION_MODE_OFF:
+            continue
+        text = normalize_text(ref.text or "")
+        if len(text) < 2:
+            continue
+        grams = _bigrams(text)
+        if not grams:
+            continue
+        score = len(grams & sentence_grams) / len(grams)
+        if score < FALLBACK_GUESS_COVERAGE:
+            continue
+        # 同分时取面积大的：标题/正文块通常比角落的小标签更可能是当前讲的内容
+        if score > best_score or (best is not None and score == best_score and ref.area > best.area):
+            best, best_score = ref, score
+    if best is None:
+        return None
+    return _with_rule(best.box, rules.get(best.element_id))
+
+
+def boxes_for_segment_with_source(
+    segment: ScriptSegment,
+    layout: Any,
+    coverage_threshold: float = SHAPE_HIT_COVERAGE,
+    config: RegionConfig | None = None,
+) -> tuple[list[HighlightBox], str]:
+    """返回 (框, 来源)。来源用于面板标注「兜底」，不进视觉指纹。
+
+    命中优先级：模型绑定元素 → 字面匹配 → 本页最像的元素（`guess`）→ 整页淡底（`page`）。
+    用户显式 `off` / 句级 `mute` 优先级最高：任何兜底都不覆盖它，所以收紧过的页
+    不会因为兜底又被点亮。
+    """
+    rules = config.rules if config is not None else {}
+    muted = set(segment.mute)
+    index = element_index(layout)
+    manual = _always_on_manual(segment, config, layout)
+    if MUTE_WHOLE_SENTENCE in muted:
+        # 句级全静音：整句一个字都不亮（面板上复核兜底结果后最常见的操作）
+        return manual, ""
+    # 用户显式关掉的区域一旦命中过，就不再往下兜底：否则「改回不亮」会被兜底又点亮，
+    # 或者照亮另一个他没提的元素，反而更错。
+    suppressed = False
+    boxes: list[HighlightBox] = []
+    if segment.targets:
+        for target in segment.targets:
+            if target in muted:
+                suppressed = True
+                continue
+            rule = rules.get(target)
+            if rule is not None and rule.mode == REGION_MODE_OFF:
+                suppressed = True
+                continue
+            ref = index.get(target)
+            if ref is None:
+                continue
+            boxes.append(_with_rule(ref.box, rule))
+        if boxes:
+            # 显式配过效果的框（如表格单元格）不能被外层大框「包含」掉，单独保留并画在上层
+            explicit = [box for box in boxes if box.mode]
+            auto = [box for box in boxes if not box.mode]
+            return _dedupe_boxes(auto) + explicit + manual, "target"
+
+    geometry = _geometry_keys(layout)
+    matched: list[HighlightBox] = []
+    for box in _dedupe_boxes(match_shapes(segment.text, layout, coverage_threshold)):
+        element_id = geometry.get((box.left, box.top, box.width, box.height))
+        if element_id and element_id in muted:
+            suppressed = True
+            continue
+        rule = rules.get(element_id) if element_id else None
+        if rule is not None and rule.mode == REGION_MODE_OFF:
+            suppressed = True
+            continue
+        matched.append(_with_rule(box, rule))
+    if matched:
+        return matched + manual, "text"
+
+    if muted:
+        # 句级微调（把这句的某个元素或整句关掉）是用户对这句的显式决定：不再兜底。
+        # 注意不能用「本页有任何 off 规则」来判断——那会让页内其它句子全部失去高亮，
+        # 与「每句必有高亮」冲突；页级 off 的元素已由 `_guess_box` 排除，不会猜中。
+        suppressed = True
+    if suppressed:
+        return manual, ""
+
+    guess = _guess_box(segment, layout, rules, muted)
+    if guess is not None:
+        return [guess] + manual, "guess"
+    if manual:
+        # 手绘框本来就常亮，画面已经有变化，不必再整页铺底
+        return manual, ""
+    page = _page_box(layout)
+    if page is not None:
+        return [page], "page"
+    return [], ""
+
+
 def boxes_for_segment(
     segment: ScriptSegment,
     layout: Any,
@@ -617,37 +761,8 @@ def boxes_for_segment(
     `off` 的区域一律不亮；`text`/`area` 把效果写进框本身，
     出帧时逐框取画法，不再由「是不是文本」硬判定。
     """
-    rules = config.rules if config is not None else {}
-    muted = set(segment.mute)
-    index = element_index(layout)
-    boxes: list[HighlightBox] = []
-    if segment.targets:
-        for target in segment.targets:
-            if target in muted:
-                continue
-            rule = rules.get(target)
-            if rule is not None and rule.mode == REGION_MODE_OFF:
-                continue
-            ref = index.get(target)
-            if ref is None:
-                continue
-            boxes.append(_with_rule(ref.box, rule))
-        if boxes:
-            # 显式配过效果的框（如表格单元格）不能被外层大框「包含」掉，单独保留并画在上层
-            explicit = [box for box in boxes if box.mode]
-            auto = [box for box in boxes if not box.mode]
-            return _dedupe_boxes(auto) + explicit + _always_on_manual(segment, config, layout)
-
-    geometry = _geometry_keys(layout)
-    for box in _dedupe_boxes(match_shapes(segment.text, layout, coverage_threshold)):
-        element_id = geometry.get((box.left, box.top, box.width, box.height))
-        if element_id and element_id in muted:
-            continue
-        rule = rules.get(element_id) if element_id else None
-        if rule is not None and rule.mode == REGION_MODE_OFF:
-            continue
-        boxes.append(_with_rule(box, rule))
-    return boxes + _always_on_manual(segment, config, layout)
+    boxes, _source = boxes_for_segment_with_source(segment, layout, coverage_threshold, config)
+    return boxes
 
 
 def build_plan(
@@ -677,12 +792,16 @@ def build_plan(
             end = duration_ms
         else:
             end = cursor + int(duration_ms * weights[index] / total_weight)
+        sentence_boxes, fallback = boxes_for_segment_with_source(
+            ScriptSegment(text=sentence), layout, SHAPE_HIT_COVERAGE, config
+        )
         steps.append(
             HighlightStep(
                 text=sentence,
                 start_ms=cursor,
                 end_ms=max(cursor, end),
-                boxes=boxes_for_segment(ScriptSegment(text=sentence), layout, SHAPE_HIT_COVERAGE, config),
+                boxes=sentence_boxes,
+                fallback=fallback,
             )
         )
         cursor = end
@@ -825,6 +944,8 @@ def merge_short_steps(steps: list[HighlightStep], min_dwell_ms: int) -> list[Hig
                 end_ms=step.end_ms,
                 boxes=_dedupe_boxes(list(previous.boxes) + list(step.boxes)),
                 targets=tuple(dict.fromkeys(previous.targets + step.targets)),
+                # 任一段是兜底就保留标记：合并后画面里仍然有猜出来的框
+                fallback=previous.fallback or step.fallback,
             )
         else:
             merged.append(step)
@@ -854,13 +975,15 @@ def build_plan_for_segments(
         else:
             duration = max(0, int(segment_durations_ms[index]) if index < len(segment_durations_ms) else 0)
             end = min(total_ms, cursor + duration)
+        segment_boxes, fallback = boxes_for_segment_with_source(segment, layout, coverage_threshold, config)
         steps.append(
             HighlightStep(
                 text=segment.text,
                 start_ms=cursor,
                 end_ms=max(cursor, end),
-                boxes=boxes_for_segment(segment, layout, coverage_threshold, config),
+                boxes=segment_boxes,
                 targets=segment.targets,
+                fallback=fallback,
             )
         )
         cursor = end

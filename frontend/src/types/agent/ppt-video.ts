@@ -38,6 +38,8 @@ export type HighlightSentenceItem = components['schemas']['HighlightSentenceItem
 export type HighlightRegionsPayload = components['schemas']['HighlightRegionsPayload']
 export type SlideRegionItem = components['schemas']['SlideRegionItem']
 export type SlideRegionsResponse = components['schemas']['SlideRegionsResponse']
+/** 后端算出的「这句会亮什么」，含兜底来源标记；仅用于面板标注，不参与渲染 */
+export type SlideSentenceHint = components['schemas']['SlideSentenceHint']
 
 /** 区域三态：不亮 / 只给文字变色 / 整块铺底色（与后端 REGION_MODES 对齐） */
 export type RegionMode = 'off' | 'text' | 'area'

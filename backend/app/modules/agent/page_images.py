@@ -21,6 +21,7 @@ import shutil
 import tempfile
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -153,31 +154,47 @@ def publish_slide_images(
 
     成片仍读原始 PNG（保证画质，也不让已缓存的视频片段失效），
     预览大图与缩略图是派生 JPEG，体积只有原图的 1/10 左右。
+
+    三份产物的编码与上传彼此独立，串起来做纯属排队等待：并发提交后
+    单页耗时从「3 次上传 + 2 次编码之和」降到「最慢的那一份」。
+    minio-py 基于 urllib3 连接池，线程安全，可以直接并发。
     """
     from app.modules.agent import service as agent_service
 
     bucket = agent_service.BUCKET_MODULE
-    storage.upload_file(
-        bucket, agent_service.slide_image_key(project_id, slide.slide_uid), str(image_path), "image/png"
-    )
-    preview_path = render.encode_jpeg(
-        image_path,
-        work_dir / "preview" / f"{slide.slide_uid}.jpg",
-        render.PREVIEW_MAX_WIDTH,
-        render.PREVIEW_JPEG_QUALITY,
-    )
-    storage.upload_file(
-        bucket, agent_service.slide_preview_key(project_id, slide.slide_uid), str(preview_path), "image/jpeg"
-    )
-    thumb_path = render.encode_jpeg(
-        image_path,
-        work_dir / "thumb" / f"{slide.slide_uid}.jpg",
-        render.THUMB_WIDTH,
-        render.THUMB_JPEG_QUALITY,
-    )
-    storage.upload_file(
-        bucket, agent_service.slide_thumb_key(project_id, slide.slide_uid), str(thumb_path), "image/jpeg"
-    )
+
+    def _upload_preview() -> None:
+        preview_path = render.encode_jpeg(
+            image_path,
+            work_dir / "preview" / f"{slide.slide_uid}.jpg",
+            render.PREVIEW_MAX_WIDTH,
+            render.PREVIEW_JPEG_QUALITY,
+        )
+        storage.upload_file(
+            bucket, agent_service.slide_preview_key(project_id, slide.slide_uid), str(preview_path), "image/jpeg"
+        )
+
+    def _upload_thumb() -> None:
+        thumb_path = render.encode_jpeg(
+            image_path,
+            work_dir / "thumb" / f"{slide.slide_uid}.jpg",
+            render.THUMB_WIDTH,
+            render.THUMB_JPEG_QUALITY,
+        )
+        storage.upload_file(
+            bucket, agent_service.slide_thumb_key(project_id, slide.slide_uid), str(thumb_path), "image/jpeg"
+        )
+
+    def _upload_original() -> None:
+        storage.upload_file(
+            bucket, agent_service.slide_image_key(project_id, slide.slide_uid), str(image_path), "image/png"
+        )
+
+    with ThreadPoolExecutor(max_workers=3, thread_name_prefix="ppt-page-upload") as pool:
+        futures = [pool.submit(_upload_original), pool.submit(_upload_preview), pool.submit(_upload_thumb)]
+        for future in futures:
+            # 任一产物失败都算这一页失败：缺缩略图会让列表空白，缺原图会让成片读不到
+            future.result()
 
 
 def download_slide_images(project_id: uuid.UUID, slides: list[PptVideoSlide], target_dir: Path) -> list[Path]:
@@ -458,20 +475,25 @@ async def run_for_project(
             pdf_path = await asyncio.to_thread(ensure_source_pdf, source_sha256, source_path, work_dir)
             await _set_state(project_id, job_id, page_images_progress=PROGRESS_CONVERT_END)
 
-            # 逐页拆图：每出完一页就报一次进度，用户能看见「正在拆第 n 页」
+            # 分批拆图：一批一次 pdftoppm，每批结束报一次进度，
+            # 用户仍能看见「正在拆第 n 页」，而进程次数从「每页一次」降到「每批一次」
             pdf_pages = await asyncio.to_thread(render.pdf_page_count, pdf_path)
             images: list[Path] = []
-            for index in range(1, pdf_pages + 1):
-                images.append(
+            batch_size = max(1, settings.pdf_split_batch)
+            for start in range(1, pdf_pages + 1, batch_size):
+                end = min(pdf_pages, start + batch_size - 1)
+                images.extend(
                     await asyncio.to_thread(
-                        render.render_pdf_page, pdf_path, work_dir / "png", index, settings.render_dpi
+                        render.render_pdf_page_batch, pdf_path, work_dir / "png", start, end, settings.render_dpi
                     )
                 )
                 await _set_state(
                     project_id,
                     job_id,
-                    page_images_progress=_lerp_progress(index, pdf_pages, PROGRESS_SPLIT_START, PROGRESS_SPLIT_END),
-                    page_images_done=min(index, slide_total),
+                    page_images_progress=_lerp_progress(
+                        len(images), pdf_pages, PROGRESS_SPLIT_START, PROGRESS_SPLIT_END
+                    ),
+                    page_images_done=min(len(images), slide_total),
                 )
         if len(images) != slide_total:
             logger.warning(
@@ -490,23 +512,36 @@ async def run_for_project(
 
         published: list[tuple[uuid.UUID, str]] = []
         processed = 0
-        for slide, image_path in zip(slides, images, strict=True):
+        # 上传是网络等待：并发出去，但进度仍按原顺序逐页推进，保证百分比单调
+        upload_concurrency = max(1, min(settings.page_concurrency, 3))
+
+        async def _publish_one(slide: PptVideoSlide, image_path: Path) -> tuple[str, bool]:
             image_sha = await asyncio.to_thread(sha256_file, image_path)
-            if not (
-                slide.image_sha256 == image_sha
-                and await asyncio.to_thread(slide_assets_ready, project_id, slide, image_sha)
+            if slide.image_sha256 == image_sha and await asyncio.to_thread(
+                slide_assets_ready, project_id, slide, image_sha
             ):
-                await asyncio.to_thread(publish_slide_images, project_id, slide, image_path, work_dir)
-                published.append((slide.slide_uid, image_sha))
-            processed += 1
-            # 只推进百分比、不回写 `page_images_done`：done 表示「已拆出的页数」，
-            # 在拆图段就走到 total；上传段若改成「已上传页数」，前端会看到 53 → 1 的倒退
-            # （实测 88% 时 done 从 53 掉到 11）。计数只增不减，收尾由 `_commit` 落 total。
-            await _set_state(
-                project_id,
-                job_id,
-                page_images_progress=_lerp_progress(processed, slide_total, PROGRESS_UPLOAD_START, PROGRESS_UPLOAD_END),
-            )
+                return image_sha, False
+            await asyncio.to_thread(publish_slide_images, project_id, slide, image_path, work_dir)
+            return image_sha, True
+
+        pairs = list(zip(slides, images, strict=True))
+        for start in range(0, len(pairs), upload_concurrency):
+            chunk = pairs[start : start + upload_concurrency]
+            outcomes = await asyncio.gather(*(_publish_one(slide, path) for slide, path in chunk))
+            for (slide, _path), (image_sha, did_publish) in zip(chunk, outcomes, strict=True):
+                if did_publish:
+                    published.append((slide.slide_uid, image_sha))
+                processed += 1
+                # 只推进百分比、不回写 `page_images_done`：done 表示「已拆出的页数」，
+                # 在拆图段就走到 total；上传段若改成「已上传页数」，前端会看到 53 → 1 的倒退
+                # （实测 88% 时 done 从 53 掉到 11）。计数只增不减，收尾由 `_commit` 落 total。
+                await _set_state(
+                    project_id,
+                    job_id,
+                    page_images_progress=_lerp_progress(
+                        processed, slide_total, PROGRESS_UPLOAD_START, PROGRESS_UPLOAD_END
+                    ),
+                )
     finally:
         await asyncio.to_thread(shutil.rmtree, work_dir, True)
 

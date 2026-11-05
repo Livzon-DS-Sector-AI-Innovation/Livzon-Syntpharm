@@ -182,7 +182,15 @@ def _stream_object(
     request: Request,
     file_name: str | None = None,
     cache_control: str = "private, max-age=3600",
+    *,
+    inline: bool = False,
 ) -> StreamingResponse:
+    """按需流式输出对象。
+
+    `inline=True` 时 `Content-Disposition` 用 `inline`，浏览器直接交给 `<video>` 播放；
+    默认仍是 `attachment`，下载语义与老前端完全一致。Range / 206 逻辑两者共用，
+    播放器拖进度不需要额外分支。
+    """
     total = stat_object(BUCKET, object_key)
     if total is None or total <= 0:
         raise NotFoundException("媒体文件")
@@ -195,7 +203,8 @@ def _stream_object(
     if partial:
         headers["Content-Range"] = f"bytes {offset}-{offset + length - 1}/{total}"
     if file_name:
-        headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(file_name)}"
+        disposition = "inline" if inline else "attachment"
+        headers["Content-Disposition"] = f"{disposition}; filename*=UTF-8''{quote(file_name)}"
     return StreamingResponse(
         _iter_object(object_key, offset, length),
         status_code=206 if partial else 200,
@@ -341,10 +350,11 @@ async def download_version(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(PERM_READ)),
     db: AsyncSession = Depends(get_db),
+    inline: bool = Query(False, description="true 时 Content-Disposition 用 inline，供页面内 <video> 直接播放"),
 ) -> StreamingResponse:
     with _translate_errors():
         version = await agent_service.get_version(db, version_id)
-    return _stream_object(version.object_key, "video/mp4", request, file_name=version.file_name)
+    return _stream_object(version.object_key, "video/mp4", request, file_name=version.file_name, inline=inline)
 
 
 @router.get("/ppt-videos/{project_id}/source/file", summary="下载当前源 PPT（含页内编辑结果）")

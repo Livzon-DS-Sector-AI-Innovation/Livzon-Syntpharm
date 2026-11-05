@@ -174,6 +174,88 @@ def test_compose_highlight_keeps_picture_unpainted(tmp_path: Path) -> None:
     assert _pixel(target, 100, 50) == (0, 0, 0)  # 前景保持原色
 
 
+def _make_tiny_text_slide(
+    path: Path,
+    *,
+    background: tuple[int, int, int] = (255, 255, 255),
+    text: tuple[int, int, int] = (0, 0, 0),
+) -> Path:
+    """整页底色 + 极小一块字：文字只占 0.4% 像素，模拟「文本框远大于实际文字」。
+
+    真机上这种版面最常见（标题框拉满整行、字只占几个字符），也是
+    「部分页能染红、部分页一点不变」的成因。
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    image = Image.new("RGB", (200, 100), background)
+    for x in range(40, 60):
+        for y in range(50, 54):
+            image.putpixel((x, y), text)
+    image.save(path, "PNG")
+    return path
+
+
+def test_compose_highlight_recolors_text_when_text_area_is_tiny(tmp_path: Path) -> None:
+    """文字占整页不足 1% 也必须染上色：区域分位数会把这种字判成「没有对比度」。"""
+    source = _make_tiny_text_slide(tmp_path / "page.png")
+
+    target = render.compose_highlight_frame(
+        source,
+        tmp_path / "frame.png",
+        [(0, 0, 200, 100)],
+        (200, 100),
+        0,
+        (255, 0, 0),
+        0,
+        kinds=["TEXT_BOX (17)"],
+        recolor_strength=100,
+    )
+
+    assert _pixel(target, 45, 50) == (255, 0, 0)  # 字变主色
+    assert _pixel(target, 150, 20) == (255, 255, 255)  # 底色不动
+
+
+def test_compose_highlight_recolors_light_text_on_dark_background(tmp_path: Path) -> None:
+    """深底浅字同样成立：极性不能靠「哪侧像素少」来猜，深底时背景才是多数。"""
+    source = _make_tiny_text_slide(tmp_path / "page.png", background=(12, 12, 12), text=(240, 240, 240))
+
+    target = render.compose_highlight_frame(
+        source,
+        tmp_path / "frame.png",
+        [(0, 0, 200, 100)],
+        (200, 100),
+        0,
+        (255, 0, 0),
+        0,
+        kinds=["TEXT_BOX (17)"],
+        recolor_strength=100,
+    )
+
+    assert _pixel(target, 45, 50) == (255, 0, 0)
+    assert _pixel(target, 150, 20) == (12, 12, 12)
+
+
+def test_compose_highlight_degrades_to_tint_when_region_has_no_text(tmp_path: Path) -> None:
+    """纯色块识别不出文字时必须退化为淡底，不能再出现「整帧等于原图」。"""
+    source = tmp_path / "page.png"
+    Image.new("RGB", (200, 100), (255, 255, 255)).save(source, "PNG")
+
+    target = render.compose_highlight_frame(
+        source,
+        tmp_path / "frame.png",
+        [(0, 0, 200, 100)],
+        (200, 100),
+        0,
+        (255, 0, 0),
+        0,
+        kinds=["TEXT_BOX (17)"],
+        recolor_strength=100,
+    )
+
+    red, green, _blue = _pixel(target, 100, 50)
+    assert (red, green) != (255, 255)  # 画面有可见变化
+    assert (red, green) != (255, 0)  # 但不是整块染成红色剪影
+
+
 def test_compose_highlight_tints_visual_region_without_recoloring(tmp_path: Path) -> None:
     """视觉元素可加淡色底：颜色偏红但底色不被整块替换。"""
     source = _make_text_slide(tmp_path / "page.png")

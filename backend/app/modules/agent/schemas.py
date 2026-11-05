@@ -92,6 +92,20 @@ class SlideRegionItem(BaseModel):
     height: int = 0
 
 
+class SlideSentenceHint(BaseModel):
+    """逐句微调用的句子 + 当前自动命中来源。
+
+    `fallback` 为 `guess`/`page` 时说明这句是自己猜出来的（不是模型绑定，也不是字面命中），
+    前端要标「兜底」，用户可复核后把它设为不亮。
+    """
+
+    text: str
+    targets: list[str] = Field(default_factory=list, max_length=12)
+    fallback: str = ""
+    #: 这句实际会点亮的元素 id；`fallback` 为 `page` 时为空（整页淡底，没有具体元素）
+    elements: list[str] = Field(default_factory=list, max_length=12)
+
+
 class SlideRegionsResponse(BaseModel):
     """区域设置面板的数据：页面尺寸 + 元素清单 + 可逐句微调的句子。"""
 
@@ -100,6 +114,8 @@ class SlideRegionsResponse(BaseModel):
     items: list[SlideRegionItem] = Field(default_factory=list)
     #: 服务端切好的句子，前端逐句配置时直接用这份文本，避免两边切法不一致导致规则匹配不上
     sentences: list[str] = Field(default_factory=list)
+    #: 与 sentences 一一对应的命中来源（含兜底标记）；顺序一致，前端按索引合并
+    sentence_hints: list[SlideSentenceHint] = Field(default_factory=list)
     #: 当前页图指纹：手绘框记录的 shape_sha 与它不一致就说明页图变了，坐标要复核
     image_sha256: str | None = None
 
@@ -155,6 +171,8 @@ class VersionItem(BaseModel):
     body_key: str
     reuse: ReuseSummary
     download_url: str
+    #: 页面内播放地址（Content-Disposition: inline）；与 download_url 同一端点，只差这个参数
+    preview_url: str = ""
     created_at: datetime | None = None
 
 
@@ -169,6 +187,8 @@ class ProjectSummary(BaseModel):
     status: Literal["draft", "rendering", "ready", "failed"]
     version_count: int = 0
     latest_version_id: UUID | None = None
+    #: 最新版本的页面内播放地址；没有成片时为空串（前端据此隐藏预览入口）
+    preview_url: str = ""
     latest_error: str | None = None
     thumbnail_url: str | None = None
     updated_at: datetime | None = None

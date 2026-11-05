@@ -98,6 +98,7 @@ from app.modules.agent.schemas import (
     SlideItem,
     SlideRegionItem,
     SlideRegionsResponse,
+    SlideSentenceHint,
     SourceApplyResult,
     SourceDiffSummary,
     VersionItem,
@@ -188,6 +189,15 @@ def audio_url(project_id: uuid.UUID, slide_no: int, version_token: str | None = 
 
 def download_url(version_id: uuid.UUID) -> str:
     return f"/api/v1/agent/ppt-videos/versions/{version_id}/file"
+
+
+def preview_url(version_id: uuid.UUID) -> str:
+    """页面内预览地址：同一个媒体端点，只把 Disposition 切成 inline。
+
+    播放器要用 src 直接播，attachment 会让浏览器走下载；两者共用 Range 实现，
+    所以不加新端点，避免两处流式逻辑各自演化。
+    """
+    return f"{download_url(version_id)}?inline=1"
 
 
 def source_download_url(project_id: uuid.UUID) -> str:
@@ -407,13 +417,22 @@ async def _synthesize_by_segments(
     audio_path: Path,
     work_dir: Path,
 ) -> PageAudio:
-    """逐段合成（段级缓存）→ 拼接页面音频 → 落库 + 写段时长元数据。"""
-    part_paths: list[Path] = []
-    durations: list[int] = []
-    for index, segment in enumerate(segments):
-        part_path = work_dir / "audio-seg" / f"{audio_fingerprint}-{index:02d}.wav"
+    """逐段合成（段级缓存）→ 拼接页面音频 → 落库 + 写段时长元数据。
+
+    同一页的多段语音并发合成（上限 `tts_concurrency`）：TTS 是网络等待，
+    并发不占本机 CPU；任一段失败就整体抛错，由调用方回退到整页单段合成。
+    """
+    semaphore = asyncio.Semaphore(max(1, settings.tts_concurrency))
+    part_paths: list[Path] = [
+        work_dir / "audio-seg" / f"{audio_fingerprint}-{index:02d}.wav" for index, _ in enumerate(segments)
+    ]
+
+    async def _synthesize_one(index: int, segment: highlight.ScriptSegment) -> int:
+        part_path = part_paths[index]
         key = segment_audio_key(segment.text, effective.language, effective.voice_fingerprint)
-        if not _download_object(segment_audio_object_key(key), part_path):
+        async with semaphore:
+            if _download_object(segment_audio_object_key(key), part_path):
+                return await asyncio.to_thread(tts.wav_duration_ms, part_path)
             result = await asyncio.to_thread(
                 tts.synthesize_to_wav,
                 segment.text,
@@ -432,10 +451,17 @@ async def _synthesize_by_segments(
                 len(part_bytes),
                 "audio/wav",
             )
-            durations.append(result.duration_ms)
-        else:
-            durations.append(await asyncio.to_thread(tts.wav_duration_ms, part_path))
-        part_paths.append(part_path)
+            return result.duration_ms
+
+    gathered = await asyncio.gather(
+        *(_synthesize_one(index, segment) for index, segment in enumerate(segments)),
+        return_exceptions=True,
+    )
+    durations: list[int] = []
+    for item in gathered:
+        if isinstance(item, BaseException):
+            raise item
+        durations.append(int(item))
 
     merged_path, _joined_ms = await asyncio.to_thread(tts.concat_wavs, part_paths, audio_path, pause_ms)
     duration = await asyncio.to_thread(tts.wav_duration_ms, merged_path)
@@ -766,6 +792,7 @@ def version_item(version: PptVideoVersion) -> VersionItem:
         body_key=version.body_key,
         reuse=reuse,
         download_url=download_url(version.id),
+        preview_url=preview_url(version.id),
         created_at=version.created_at,
     )
 
@@ -1045,6 +1072,7 @@ async def list_projects(
                 status=project.status,
                 version_count=version_count or 0,
                 latest_version_id=latest.id if latest else None,
+                preview_url=preview_url(latest.id) if latest else "",
                 latest_error=project.last_error,
                 thumbnail_url=thumb_url(project.id, 1),
                 updated_at=project.updated_at,
@@ -1231,12 +1259,47 @@ async def slide_regions(
         )
         for ref in highlight.iter_elements(slide.layout)
     ]
+    sentences = highlight.split_sentences(slide.script_text or "", max_steps=_SENTENCE_PREVIEW_STEPS)
+    config = highlight.parse_region_config(slide.highlight_regions, slide.layout)
+    # 句级目标沿用出帧时的同一份解析结果，面板上显示的「这句亮什么」才不会和成片不一致
+    stored_targets = {
+        "".join(segment.text.split()): list(segment.targets)
+        for segment in highlight.resolve_segments(
+            slide.script_text or "",
+            slide.layout,
+            slide.script_segments,
+            _SENTENCE_PREVIEW_STEPS,
+            config,
+        )
+    }
+    hints: list[SlideSentenceHint] = []
+    # 框 → 元素 id：面板上要能列出「这句实际亮了哪几块」，才好一键改回不亮
+    id_by_box = {
+        (ref.box.left, ref.box.top, ref.box.width, ref.box.height): ref.element_id
+        for ref in highlight.element_index(slide.layout).values()
+    }
+    for sentence in sentences:
+        targets = stored_targets.get("".join(sentence.split()), [])
+        boxes, fallback = highlight.boxes_for_segment_with_source(
+            highlight.ScriptSegment(text=sentence, targets=tuple(targets)),
+            slide.layout,
+            config=config,
+        )
+        elements = [
+            id_by_box[(box.left, box.top, box.width, box.height)]
+            for box in boxes
+            if (box.left, box.top, box.width, box.height) in id_by_box
+        ]
+        hints.append(
+            SlideSentenceHint(text=sentence, targets=targets, fallback=fallback, elements=sorted(set(elements)))
+        )
     return SlideRegionsResponse(
         page_width=page_width,
         page_height=page_height,
         items=items,
         # 逐句微调用的句子必须与渲染时切法一致，所以由服务端切好回给前端
-        sentences=highlight.split_sentences(slide.script_text or "", max_steps=_SENTENCE_PREVIEW_STEPS),
+        sentences=sentences,
+        sentence_hints=hints,
         image_sha256=slide.image_sha256,
     )
 

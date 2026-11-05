@@ -110,9 +110,19 @@ API 与渲染彻底分离：API 侧不做 ffmpeg/LibreOffice，任何请求都�
 | GET | `/ppt-videos/{id}/job` | read | 最近任务状态（轮询） |
 | GET | `/ppt-videos/{id}/versions` | read | 版本列表 |
 | GET | `/ppt-videos/versions/{vid}/manifest` | read | 复用记录 |
-| GET | `/ppt-videos/versions/{vid}/file` | read | 成片 MP4（支持 Range） |
+| GET | `/ppt-videos/versions/{vid}/file` | read | 成片 MP4（支持 Range）；`?inline=true` 供浏览器在线预览，默认仍是下载 |
 
 响应统一信封 `{code, data, message, meta}`，`code=200` 表示成功。
+
+### 在线预览
+
+预览与下载**共用同一个端点**，只切换 `Content-Disposition`：`inline=true` 时 `inline; filename=...`，
+否则 `attachment; filename=...`。Range/206/`Content-Range` 行为完全一致，播放器拖进度不受影响。
+
+- 版本对象与项目摘要都带 `preview_url`（相对路径，经 `proxy.ts` 转发并带 cookie），前端不自己拼字符串。
+- 列表页「预览」与工作台右栏常驻播放器都走这个 URL；弹窗用 `destroyOnHidden`，关闭即卸载 `<video>`、停掉请求。
+- 「下载」按钮保留原 `download` 属性，语义不变（预览不会触发落盘）。
+- 鉴权与下载同源，都是 `agent:ppt-video:read`。
 
 ### 页内视觉引导（讲到哪、亮到哪）
 
@@ -187,10 +197,28 @@ id 由 layout 内序号**确定性生成**，不落库、不迁移历史 layout�
 
 - 元素区域只存 id，坐标渲染时按 layout 现算，换分辨率不会偏；解析不出的地方用 `rect:N` 手绘矩形兜底，
   坐标是**相对整页的比例**，并记录画框时的页图 `shape_sha` —— 页图变了这条框会被标「待复核」，不会静默套到错位置。
-- 手绘矩形默认整页常亮（画了就是希望它亮），某句 `mute` 里点名才跳过；它不参与「一段都命中不了就整页常亮」的兜底判定。
+- 手绘矩形默认整页常亮（画了就是希望它亮），某句 `mute` 里点名才跳过；它属于「人工指定」，不参与下面的自动兜底。
 - 句级微调按「去空白去标点」的文本匹配，手改讲稿只动了别的句子或标点时规则仍在；整句被改没则退回自动绑定。
 - 落库前按 layout 白名单校验：元素 id 查不到、mode 非法、矩形出界、颜色非 `#RRGGBB`、`fill_alpha` 越界，一律丢弃或夹紧。
 - 区域三态/颜色/底色透明度全部并入视觉指纹，改任何一项都会让旧片段失效重出。
+
+**兜底链（每句必有高亮）**
+
+`highlight.boxes_for_segment_with_source()` 按顺序取第一个非空结果，并把来源写进
+`HighlightStep.fallback`（只做标注与日志，**不进视觉指纹**，避免无意义的缓存失效）：
+
+| 顺序 | 来源 | `fallback` | 说明 |
+|---|---|---|---|
+| 1 | 模型/人工绑定的元素 | `target` | 白名单校验，查不到的 id 直接丢弃 |
+| 2 | 字面 bigram 覆盖率 ≥ 阈值 | `text` | 阈值 `AGENT_PPT_VIDEO_HIGHLIGHT_TEXT_MATCH_COVERAGE`（默认 0.6） |
+| 3 | 本页未关闭元素中字面得分最高者（≥ 0.2） | `guess` | 允许猜错，但必须在面板里标「兜底」 |
+| 4 | 整页框 + 极低透明度铺底（`fill_alpha=18`） | `page` | 纯图片页也能看到变化 |
+| — | 句级 `mute` / 区域 `off` | 空 | 用户显式决定优先级最高，任何兜底不得覆盖 |
+
+- `off` 只作用于被关掉的那个元素，**不会**让本页其它句子失去高亮；`guess` 候选也已排除 `off` 元素。
+- 句级面板对 `guess` / `page` 打「兜底」标签，并提供「这句不亮」把整句写入 `mute: ["*"]` 立刻退出兜底。
+- 讲稿生成后用 `script_ai._backfill_targets()` 本地补 targets（不额外调 LLM）；worker 出帧后按页记录兜底段数
+  （`fallback usage` 日志），便于验收「兜底比例」。
 
 **降级矩阵**
 
@@ -198,11 +226,11 @@ id 由 layout 内序号**确定性生成**，不落库、不迁移历史 layout�
 |---|---|
 | 高亮关闭 / 逐段合成关闭 | 整页单段合成 + 旧的字数加权时间轴（与改造前完全一致） |
 | 讲稿被手改（段结构与文本不一致） | 按标点重切、无绑定，退回字面匹配（覆盖率阈值 `AGENT_PPT_VIDEO_HIGHLIGHT_TEXT_MATCH_COVERAGE`） |
-| 模型给了不存在的元素 id | 丢弃该 target；全部丢失时退回字面匹配 |
+| 模型给了不存在的元素 id | 丢弃该 target；回落到字面匹配 → guess → page |
 | 区域配置里的元素 id 在 layout 里查不到 | 保存时丢弃该条；渲染时再查不到就跳过，不亮也不报错 |
 | 该页 layout 为空（纯图片页） | 只保留结构合法的配置，不因「校验不出」把人工设置清空 |
 | 某一段合成/拼接失败 | `logger.exception` 后整页单段重新合成，单页问题不影响整条视频 |
-| 一段都命中不了 | 该页整页常亮，不描边、不压暗 |
+| 一段都命中不了 | 该句走整页淡底（`fallback=page`），不再出现「读到却没反应」 |
 
 ---
 
@@ -382,6 +410,9 @@ uv run alembic upgrade head   # 至少到 0096（agent schema + AI 初稿字段�
 | `AGENT_PPT_VIDEO_SCRIPT_AI_BATCH_SIZE` | `6` | 每批页数（一次 LLM 调用），夹在 1~20 |
 | `AGENT_PPT_VIDEO_SCRIPT_AI_TIMEOUT_SECONDS` | `90` | 单批硬超时（`asyncio.wait_for`），最小 10 |
 | `AGENT_PPT_VIDEO_SCRIPT_AI_MAX_PAGE_TEXT_CHARS` | `2000` | 喂给模型的单页文字截断长度，最小 200 |
+| `AGENT_PPT_VIDEO_PAGE_CONCURRENCY` | `2` | 渲染时同时处理的页数，夹在 1~3（共用服务器，别超过 3） |
+| `AGENT_PPT_VIDEO_TTS_CONCURRENCY` | `2` | 同页内并发合成的段数，夹在 1~4；任一段失败仍回退整页合成 |
+| `AGENT_PPT_VIDEO_PDF_SPLIT_BATCH` | `8` | 页图拆图每批页数，夹在 1~32；越大进程越少、内存越高 |
 
 种子脚本：`backend/scripts/seed/seed_module_settings.py`。
 
@@ -400,6 +431,37 @@ Kokoro 的英文 G2P 依赖 spaCy 的 `en_core_web_sm`，它**不在 PyPI 上**�
 `scripts/ci/install_spacy_en_model.py` 装好：优先 GitHub Release 的 3.8.0 wheel（sha256 钉死），
 失败回退 hf-mirror 上的 3.7.1 wheel（sha256 钉死）。两条都失败 → **构建失败**，
 不会产出「英文配音静默不可用」的镜像。
+
+### 4.6 并发与耗时
+
+共用服务器，峰值按 **2-3 核** 设计，所有并发度都可回退到 1（等价于改造前的串行路径）。
+
+| 位置 | 做法 | 控制项 |
+|---|---|---|
+| 成片渲染 | 页级流水线：并发做「合成音频 + 出帧编码 + 上传」（纯计算/网络，不碰 DB），回到主协程串行查缓存、落库 | `AGENT_PPT_VIDEO_PAGE_CONCURRENCY` |
+| 页内旁白 | 段级并发合成，任一段失败回退整页单段合成 | `AGENT_PPT_VIDEO_TTS_CONCURRENCY` |
+| 帧编码 | 高亮帧 PNG `compress_level=1`（原来是 `optimize=True` 的 zlib 9），concat 只认 `duration` 指令，与帧格式无关 | 常量 `FRAME_PNG_COMPRESS_LEVEL` |
+| 底图 | 同页多帧只解码一次（`compose_highlight_frame(base_image=...)`） | — |
+| 页图拆图 | `pdftoppm` 分批调用（53 页从 53 个进程降到约 7 个），每批上报一次进度 | `AGENT_PPT_VIDEO_PDF_SPLIT_BATCH` |
+| 页图产物 | 原图 PNG `compress_level=3`（无损）；预览 JPEG 关 `optimize/progressive`；三份产物 + 多页上传并发 | `AGENT_PPT_VIDEO_PAGE_CONCURRENCY` |
+
+**并发安全**：`AsyncSession` 严禁并发使用 —— 所有 DB 读写留在主协程串行，并发只包住纯计算与存储 IO；
+MinIO 客户端线程安全，上传走线程池。任一页并发任务异常即回退串行重跑该页，不让整条视频失败。
+
+**缓存口径不变**：`ENCODER_KEY` / `RENDERER_KEY` 均不改动 —— PNG 压缩级别不改变像素，不构成画面变化；
+只有字体或拆图参数变了才需要递增。
+
+**耗时怎么量**（同一份 53 页样本，`AGENT_PPT_VIDEO_PAGE_CONCURRENCY=1` 与 `2` 各跑一次）：
+
+```bash
+# 1) 页图阶段：上传后到 page-images/status=done 的墙钟时间，并采样峰值 CPU
+docker stats --no-stream erp-ppt-video-worker
+# 2) 成片阶段：render 提交到 job=success 的墙钟时间，按页看耗时与兜底统计
+docker logs -f erp-ppt-video-worker 2>&1 | grep -E "页渲染完成|高亮兜底命中"
+```
+
+对比时只看**同一台机、同一份样本、同一 DPI** 的墙钟时间与 `docker stats` 的 CPU% 峰值；
+并发 2 的墙钟应明显低于并发 1，CPU 峰值不得持续超过 3 核。
 
 ---
 

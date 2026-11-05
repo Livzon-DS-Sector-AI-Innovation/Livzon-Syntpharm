@@ -260,7 +260,9 @@ async def test_prepare_page_audio_falls_back_when_segment_synthesis_fails(
 
     audio = await service.prepare_page_audio(slide, _page_project(), DEFAULTS, "kokoro", "test", tmp_path)
 
-    assert calls["synth"] == 2  # 段级失败一次 + 整页兜底一次
+    # 段级并发后不再保证「失败即停」：另一段可能已经发出去（次数随并发度变化），
+    # 只要求至少跑过段级一次、并且整页兜底确实又合成了一次
+    assert calls["synth"] >= 2
     assert audio.segmented is False
     assert audio.segments == []
     assert audio.duration_ms == 900

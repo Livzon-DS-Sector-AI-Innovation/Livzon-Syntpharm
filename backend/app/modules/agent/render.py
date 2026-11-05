@@ -183,6 +183,12 @@ def pdf_page_count(pdf_path: str | Path) -> int:
 #: 逐页拆图回调：`(页码, 总页数)`，页码从 1 开始
 PageCallback = Callable[[int, int], None]
 
+#: 页图 PNG 压缩级别：无损，只影响压缩率与耗时。3 比 optimize=True（zlib 9）快数倍，
+#: 体积大约多 10-20%，而这份 PNG 只在服务端内部（成片/预览/缩略图）流转。
+PAGE_PNG_COMPRESS_LEVEL = 3
+#: 中间高亮帧的 PNG 压缩级别：帧编码完就被 ffmpeg 读走并删除，用最低档换速度
+FRAME_PNG_COMPRESS_LEVEL = 1
+
 
 def render_pdf_page(pdf_path: str | Path, out_dir: str | Path, page: int, dpi: int = 150) -> Path:
     """渲染单页 PDF 为 PNG（页码从 1 开始）。
@@ -202,8 +208,43 @@ def render_pdf_page(pdf_path: str | Path, out_dir: str | Path, page: int, dpi: i
     if not pages:
         raise RenderError(f"PPT 第 {page} 页渲染为空")
     path = target_dir / f"slide-{page:03d}.png"
-    pages[0].save(path, "PNG", optimize=True)
+    pages[0].save(path, "PNG", compress_level=PAGE_PNG_COMPRESS_LEVEL)
     return path
+
+
+def render_pdf_page_batch(
+    pdf_path: str | Path,
+    out_dir: str | Path,
+    first_page: int,
+    last_page: int,
+    dpi: int = 150,
+) -> list[Path]:
+    """一次 pdftoppm 出 [first_page, last_page] 的区间页图。
+
+    为什么成批而不是逐页：每页一次 `pdftoppm` 都要重新解析一遍 PDF 与启动进程，
+    53 页就是 53 次固定开销；一次出整本又把上百 MB 位图同时留在内存里。
+    取 8 页一批，进程数降到 1/8，峰值内存 = 批大小页数。
+    """
+    from pdf2image import convert_from_path
+
+    target_dir = Path(out_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        pages = convert_from_path(str(pdf_path), dpi=dpi, fmt="png", first_page=first_page, last_page=last_page)
+    except Exception as exc:  # noqa: BLE001 - pdf2image 抛多种底层异常
+        logger.exception("render_pdf_page_batch failed: %s-%s", first_page, last_page)
+        raise RenderError(f"PPT 转图片失败（第 {first_page}-{last_page} 页）：{exc}") from exc
+    expected = last_page - first_page + 1
+    if len(pages) != expected:
+        raise RenderError(f"PPT 第 {first_page}-{last_page} 页渲染数量不符（{len(pages)}/{expected}）")
+
+    paths: list[Path] = []
+    for offset, page_image in enumerate(pages):
+        path = target_dir / f"slide-{first_page + offset:03d}.png"
+        page_image.save(path, "PNG", compress_level=PAGE_PNG_COMPRESS_LEVEL)
+        page_image.close()
+        paths.append(path)
+    return paths
 
 
 def render_pdf_pages(
@@ -262,7 +303,9 @@ def encode_jpeg(source: str | Path, out_path: str | Path, max_width: int, qualit
         if frame.width > max_width:
             height = max(1, round(frame.height * max_width / frame.width))
             frame = frame.resize((max_width, height), Image.Resampling.LANCZOS)
-        frame.save(target, "JPEG", quality=quality, optimize=True, progressive=True)
+        # 关掉 optimize/progressive：两者都是纯 CPU 换体积，而这两张图只发给浏览器做预览，
+        # 换来的几 KB 不值得每次出图多花一倍编码时间
+        frame.save(target, "JPEG", quality=quality)
     return target
 
 
@@ -346,36 +389,61 @@ def _is_text_kind(kind: str | None) -> bool:
     return prefix in _TEXT_KIND_PREFIXES or prefix.startswith("TEXT")
 
 
-def _quantile(histogram: Sequence[int], total: int, ratio: float) -> int:
-    target = total * ratio
-    seen = 0
-    for value, count in enumerate(histogram):
-        seen += count
-        if seen >= target:
-            return value
-    return 255
+#: 文字遮罩：背景主峰至少要占这么多像素，否则认为区域不是「平底色 + 文字」
+TEXT_MASK_BG_MIN_RATIO = 0.02
+#: 前景峰（文字）最低占比；文字面积再小也是一个独立灰度峰，只它比背景峰矮得多
+TEXT_MASK_FG_MIN_RATIO = 0.001
+#: 前景峰与背景峰的最小灰度距离，低于它视为没有对比度
+TEXT_MASK_MIN_CONTRAST = 24
+#: 识别不出文字时的兜底铺底透明度（0-255）：保证「选了文字变色」一定有可见变化
+TEXT_MASK_FALLBACK_ALPHA = 24
+
+
+def _smooth_histogram(histogram: Sequence[int]) -> list[int]:
+    """±1 三点平滑：抗锯齿会把同一个字摊到相邻灰度级上，不平滑容易漏峰。"""
+    size = len(histogram)
+    return [
+        histogram[max(0, value - 1)] + histogram[value] + histogram[min(size - 1, value + 1)] for value in range(size)
+    ]
 
 
 def _text_mask(region: Any, strength: float) -> Any:
     """区域内「文字像素」的软遮罩。
 
-    文字在文本框里总是占面积更小的一侧：浅底深字取暗侧、深底浅字取亮侧，
-    所以按两侧像素数比较来定极性，比固定「暗=文字」更稳。
-    对比度太低（纯色块、照片、渐变）时返回 None，调用方退化为只描边，不硬染。
+    用直方图峰检测找「背景主峰 + 文字次峰」，而不是按分位数取明暗极值：
+    前者在文字面积占比不到 5%（标题框拉满整行、一行只有几个字）时依然能定位文字，
+    后者会让 5% 分位落在背景上，直接判成「没有对比度」——这正是
+    「选了文字变色、部分页却一点没变」的成因。
+
+    纯色块 / 照片 / 渐变没有清晰的第二峰，返回 None，由 `compose_highlight_frame`
+    退化为淡底（保证有可见变化，又不把整块染成主色剪影）。
     """
     gray = region.convert("L")
-    histogram = gray.histogram()
+    histogram = _smooth_histogram(gray.histogram())
     total = sum(histogram)
     if total <= 0:
         return None
-    low = _quantile(histogram, total, 0.05)
-    high = _quantile(histogram, total, 0.95)
-    if high - low < 32:
+
+    background = max(range(256), key=lambda value: histogram[value])
+    if histogram[background] < total * TEXT_MASK_BG_MIN_RATIO:
+        # 没有任何一个灰度占绝对多数：照片、渐变、噪点底，不做文字染色
         return None
-    threshold = (low + high) / 2.0
-    band = max(6.0, (high - low) / 4.0)
-    dark_count = sum(histogram[: int(threshold)])
-    dark_is_foreground = dark_count <= total - dark_count
+
+    foreground = -1
+    for value in range(256):
+        if abs(value - background) < TEXT_MASK_MIN_CONTRAST:
+            continue
+        if histogram[value] < total * TEXT_MASK_FG_MIN_RATIO:
+            continue
+        if foreground < 0 or histogram[value] > histogram[foreground]:
+            foreground = value
+    if foreground < 0:
+        return None
+
+    threshold = (background + foreground) / 2.0
+    band = max(6.0, abs(foreground - background) / 4.0)
+    # 极性直接由两个峰的位置决定：文字比底色暗就取暗侧，反之取亮侧
+    dark_is_foreground = foreground < background
     table: list[int] = []
     for value in range(256):
         ratio = (threshold - value) / band if dark_is_foreground else (value - threshold) / band
@@ -414,6 +482,7 @@ def compose_highlight_frame(
     fill_alpha: int = 0,
     recolor_strength: int = 0,
     paints: Sequence[RegionPaint] | None = None,
+    base_image: Any | None = None,
 ) -> Path:
     """生成一段高亮静帧：整页压暗，命中区域还原亮度并描边。
 
@@ -433,8 +502,12 @@ def compose_highlight_frame(
 
     target = Path(out_path)
     target.parent.mkdir(parents=True, exist_ok=True)
-    with Image.open(source_path) as handle:
-        base = handle.convert("RGB")
+    if base_image is not None:
+        # 同一页要出多帧：调用方解一次、传进来，省掉每帧一次 PNG 解码
+        base = base_image
+    else:
+        with Image.open(source_path) as handle:
+            base = handle.convert("RGB")
 
     width_px, height_px = base.size
     regions: list[tuple[tuple[int, int, int, int], RegionPaint]] = []
@@ -452,7 +525,7 @@ def compose_highlight_frame(
                 regions.append(((x0, y0, x1, y1), paint))
 
     if not regions:
-        base.save(target, "PNG", optimize=True)
+        base.save(target, "PNG", compress_level=FRAME_PNG_COMPRESS_LEVEL)
         return target
 
     alpha = max(0, min(255, dim_alpha)) / 255.0
@@ -465,6 +538,11 @@ def compose_highlight_frame(
             mask = _text_mask(region, strength)
             if mask is not None:
                 painted = Image.composite(Image.new("RGB", region.size, paint.accent), region, mask)
+            else:
+                # 认不出文字也不能原样贴回：那样用户选了「文字变色」却看到画面没动。
+                # 退化为低强度铺底，既留出可见反馈，又不至于染成整块剪影。
+                fallback = max(paint.fill_alpha, TEXT_MASK_FALLBACK_ALPHA) / 255.0
+                painted = Image.blend(region, Image.new("RGB", region.size, paint.accent), min(1.0, fallback))
         else:
             fill = max(0, min(255, paint.fill_alpha)) / 255.0
             if fill > 0:
@@ -476,7 +554,7 @@ def compose_highlight_frame(
         for box, paint in regions:
             draw.rectangle([box[0], box[1], box[2] - 1, box[3] - 1], outline=paint.accent, width=outline_px)
 
-    result.save(target, "PNG", optimize=True)
+    result.save(target, "PNG", compress_level=FRAME_PNG_COMPRESS_LEVEL)
     return target
 
 

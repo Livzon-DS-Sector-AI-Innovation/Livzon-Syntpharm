@@ -88,6 +88,12 @@ class PptVideoSettings:
     tts_engine: str
     ffmpeg_threads: int
     render_dpi: int
+    #: 页级流水线并发（1-3）：本页出帧时先备好下一页的语音。默认 2，按「共用机器只吃 2-3 核」定
+    page_concurrency: int
+    #: 同页内多段语音合成并发（1-4）：TTS 是网络等待，不占本机 CPU
+    tts_concurrency: int
+    #: 拆图每批页数：一次 pdftoppm 出 N 页，兼顾进程次数与峰值内存
+    pdf_split_batch: int
     max_attempts: int
     script_ai_enabled: bool
     script_ai_batch_size: int
@@ -130,6 +136,9 @@ DEFAULTS = PptVideoSettings(
     tts_engine="kokoro",
     ffmpeg_threads=2,
     render_dpi=150,
+    page_concurrency=2,
+    tts_concurrency=2,
+    pdf_split_batch=8,
     max_attempts=3,
     script_ai_enabled=True,
     # 单批 6 页 + 风格指南容易撞 90 秒硬超时，默认降到 3 页，失败面也更小
@@ -195,6 +204,10 @@ async def load_settings() -> PptVideoSettings:
         tts_engine=await _text("AGENT_PPT_VIDEO_TTS_ENGINE", DEFAULTS.tts_engine),
         ffmpeg_threads=await _number("AGENT_PPT_VIDEO_FFMPEG_THREADS", DEFAULTS.ffmpeg_threads),
         render_dpi=await _number("AGENT_PPT_VIDEO_RENDER_DPI", DEFAULTS.render_dpi),
+        # 上限夹到 3：本机是共用服务器，页级并发再高会抢掉别人的核
+        page_concurrency=max(1, min(await _number("AGENT_PPT_VIDEO_PAGE_CONCURRENCY", DEFAULTS.page_concurrency), 3)),
+        tts_concurrency=max(1, min(await _number("AGENT_PPT_VIDEO_TTS_CONCURRENCY", DEFAULTS.tts_concurrency), 4)),
+        pdf_split_batch=max(1, min(await _number("AGENT_PPT_VIDEO_PDF_SPLIT_BATCH", DEFAULTS.pdf_split_batch), 32)),
         max_attempts=await _number("AGENT_PPT_VIDEO_MAX_ATTEMPTS", DEFAULTS.max_attempts),
         script_ai_enabled=await _flag("AGENT_PPT_VIDEO_SCRIPT_AI_ENABLED", DEFAULTS.script_ai_enabled),
         script_ai_batch_size=max(

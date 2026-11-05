@@ -291,7 +291,7 @@ async def test_progress_done_never_regresses_across_upload_phase(
         return slides
 
     async def _fake_settings() -> Any:
-        return SimpleNamespace(render_dpi=150)
+        return SimpleNamespace(render_dpi=150, pdf_split_batch=2, page_concurrency=2)
 
     async def _fake_commit(
         project_id: uuid.UUID,
@@ -310,7 +310,11 @@ async def test_progress_done_never_regresses_across_upload_phase(
     monkeypatch.setattr(page_images, "_download_source", lambda key, work_dir: tmp_path / "source.pptx")
     monkeypatch.setattr(page_images, "ensure_source_pdf", lambda sha, path, work_dir: tmp_path / "source.pdf")
     monkeypatch.setattr(render, "pdf_page_count", lambda path: 3)
-    monkeypatch.setattr(render, "render_pdf_page", lambda pdf, out_dir, page, dpi=150: tmp_path / f"p{page}.png")
+    monkeypatch.setattr(
+        render,
+        "render_pdf_page_batch",
+        lambda pdf, out_dir, first, last, dpi=150: [tmp_path / f"p{page}.png" for page in range(first, last + 1)],
+    )
     monkeypatch.setattr(page_images, "sha256_file", lambda path: f"sha-{Path(path).stem}")
     monkeypatch.setattr(page_images, "slide_assets_ready", lambda project_id, slide, sha: False)
     monkeypatch.setattr(page_images, "publish_slide_images", lambda *args, **kwargs: None)

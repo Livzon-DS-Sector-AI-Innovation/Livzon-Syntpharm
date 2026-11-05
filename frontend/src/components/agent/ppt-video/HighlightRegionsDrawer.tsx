@@ -259,6 +259,20 @@ export default function HighlightRegionsDrawer({ open, projectId, slide, value, 
     commit(regions, usable ? [...rest, merged] : rest)
   }
 
+  /** 后端算出的「这句会亮什么」：兜底命中的句子要标出来，方便复核后关掉 */
+  const hintOf = (text: string) => (data?.sentence_hints ?? []).find((hint) => hint.text === text)
+
+  const FALLBACK_LABEL: Record<string, string> = {
+    guess: '兜底：本页最相近的元素',
+    page: '兜底：整页淡底',
+  }
+
+  /** 这句彻底不亮：`mute=["*"]` 是后端约定的整句静音标记，连兜底也不压 */
+  const muteSentence = (text: string) => {
+    const rest = sentences.filter((item) => item.text !== text)
+    commit(regions, [...rest, { text, targets: [], mute: ['*'] }])
+  }
+
   /** 手绘框绑定了画框时的页图指纹；页图变了（重出/换版）就提示人工复核坐标 */
   const isStaleRect = (item: HighlightRegionItem) =>
     Boolean(item.shape_sha && data?.image_sha256 && item.shape_sha !== data.image_sha256)
@@ -432,6 +446,7 @@ export default function HighlightRegionsDrawer({ open, projectId, slide, value, 
     <div className="flex flex-col gap-2">
       <Text className="!text-[12px] text-[#A4A097]">
         逐句微调只改「这句讲哪些区域 / 这句哪些区域不亮」，不改颜色；留空即按讲稿自动判定。
+        标「兜底」的句子是系统自己猜的，确认不对就点「这句不亮」。
       </Text>
       {(data?.sentences ?? []).length === 0 ? (
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="本页还没有讲稿，先写讲稿再逐句微调" />
@@ -439,9 +454,27 @@ export default function HighlightRegionsDrawer({ open, projectId, slide, value, 
         <div className="flex max-h-[520px] flex-col gap-2 overflow-y-auto">
           {(data?.sentences ?? []).map((sentence) => {
             const rule = sentences.find((item) => item.text === sentence)
+            const hint = hintOf(sentence)
+            const isFallback = hint?.fallback === 'guess' || hint?.fallback === 'page'
+            const mutedWhole = (rule?.mute ?? []).includes('*')
             return (
               <div key={sentence} className="rounded-lg border border-[#E5E3DF] bg-white p-2">
-                <Text className="!text-[12px]">{sentence}</Text>
+                <Space size={6} wrap>
+                  <Text className="!text-[12px]">{sentence}</Text>
+                  {isFallback && (
+                    <Tag color="warning" className="!m-0 !text-[11px]">
+                      {FALLBACK_LABEL[hint?.fallback ?? ''] ?? '兜底'}
+                    </Tag>
+                  )}
+                  {mutedWhole && (
+                    <Tag className="!m-0 !text-[11px]">这句已设为不亮</Tag>
+                  )}
+                  {isFallback && !mutedWhole && (
+                    <Button size="small" type="link" onClick={() => muteSentence(sentence)}>
+                      这句不亮
+                    </Button>
+                  )}
+                </Space>
                 <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
                   <Select
                     mode="multiple"
@@ -459,7 +492,7 @@ export default function HighlightRegionsDrawer({ open, projectId, slide, value, 
                     allowClear
                     maxTagCount="responsive"
                     placeholder="这句哪些区域不亮"
-                    value={rule?.mute ?? []}
+                    value={(rule?.mute ?? []).filter((id) => id !== '*')}
                     options={regionOptions}
                     onChange={(next) => updateSentence(sentence, 'mute', next)}
                   />

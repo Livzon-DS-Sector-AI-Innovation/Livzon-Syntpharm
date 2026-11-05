@@ -170,7 +170,11 @@ def test_build_plan_has_boxes_tracks_hits() -> None:
     miss = build_plan("本页介绍含量测定方法。", _layout(), duration_ms=4000)
 
     assert hit.has_boxes is True
-    assert miss.has_boxes is False
+    assert hit.steps[0].fallback == "text"
+    # 一个元素都没命中时退化为整页淡底：每句必须有可见变化，不再是「这句不亮」
+    assert miss.has_boxes is True
+    assert miss.steps[0].fallback == "page"
+    assert [box.kind for box in miss.steps[0].boxes] == ["PAGE"]
 
 
 # ── 缓存指纹 ──────────────────────────────────────────────────────────────
@@ -375,8 +379,10 @@ def test_build_plan_for_segments_uses_measured_durations() -> None:
     assert sum(step.duration_ms for step in plan.steps) == 2200
     # 目标元素直取坐标，与句子文字无关
     assert plan.steps[0].boxes == [element_index(layout)["s0"].box]
-    # 第二段既没绑定、文字也不重合，就不该亮（宁可不亮）
-    assert plan.steps[1].boxes == []
+    assert plan.steps[0].fallback == "target"
+    # 第二段既没绑定、文字也不重合：退化为整页淡底，保证这句在画面上仍有变化
+    assert plan.steps[1].fallback == "page"
+    assert [box.kind for box in plan.steps[1].boxes] == ["PAGE"]
 
 
 def test_build_plan_for_segments_last_step_eats_rounding() -> None:

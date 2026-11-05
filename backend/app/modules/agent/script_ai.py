@@ -31,7 +31,7 @@ from app.modules.agent.config import (
     PptVideoSettings,
     load_settings,
 )
-from app.modules.agent.highlight import element_catalog
+from app.modules.agent.highlight import element_catalog, element_index, match_shapes
 from app.modules.agent.models import (
     SCRIPT_AI_STATUS_DISABLED,
     SCRIPT_AI_STATUS_DONE,
@@ -283,11 +283,37 @@ def segments_to_script(segments: list[dict[str, Any]], language: str = "zh") -> 
     return text.strip()[:MAX_SCRIPT_CHARS]
 
 
+def _backfill_targets(segments: list[dict[str, Any]], layout: Any) -> None:
+    """模型没给 targets 的段，用本页字面匹配补一个最像的元素。
+
+    这只是把渲染期本来也要做的字面兜底提前固化成绑定：不额外调 LLM，
+    失败就保持空（渲染时还有 `guess`/`page` 两层兜底），不会因为补不上就整段不亮。
+    """
+    if not layout:
+        return
+    empty = [segment for segment in segments if not segment.get("targets")]
+    if not empty:
+        return
+    geometry = {
+        (ref.box.left, ref.box.top, ref.box.width, ref.box.height): ref.element_id
+        for ref in element_index(layout).values()
+    }
+    for segment in empty:
+        boxes = match_shapes(str(segment.get("text") or ""), layout)
+        if not boxes:
+            continue
+        best = max(boxes, key=lambda box: box.width * box.height)
+        element_id = geometry.get((best.left, best.top, best.width, best.height))
+        if element_id:
+            segment["targets"] = [element_id]
+
+
 def extract_batch_segments(
     payload: dict[str, Any],
     allowed_slide_nos: set[int],
     targets_by_slide: dict[int, set[str]] | None = None,
     language: str = "zh",
+    layouts_by_slide: dict[int, Any] | None = None,
 ) -> dict[int, list[dict[str, Any]]]:
     """从模型返回里抽出 `{slide_no: segments}`，兼容旧的 `script` 字段。
 
@@ -317,6 +343,8 @@ def extract_batch_segments(
             if isinstance(script, str) and script.strip():
                 segments = [{"text": script.strip()[:MAX_SCRIPT_CHARS], "targets": []}]
         if segments:
+            if layouts_by_slide and slide_no in layouts_by_slide:
+                _backfill_targets(segments, layouts_by_slide[slide_no])
             result[slide_no] = segments
     return result
 
@@ -433,7 +461,13 @@ async def generate_for_project(
             result.errors.append(f"第 {'、'.join(str(no) for no in batch_nos)} 页生成失败：{exc}")
             continue
 
-        segments_by_slide = extract_batch_segments(payload, allowed, targets_by_slide, language)
+        segments_by_slide = extract_batch_segments(
+            payload,
+            allowed,
+            targets_by_slide,
+            language,
+            layouts_by_slide={slide.slide_no: slide.layout for slide in batch},
+        )
         written = 0
         for slide_no, segments in segments_by_slide.items():
             script = segments_to_script(segments, language)

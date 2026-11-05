@@ -326,6 +326,27 @@ DEFAULT_SETTINGS = [
         "string",
         "讲稿未绑定元素时，文字重合度达到多少才高亮（0.2~1.0）",
     ),
+    (
+        "agent",
+        "AGENT_PPT_VIDEO_PAGE_CONCURRENCY",
+        "2",
+        "int",
+        "渲染时同时处理的页数（1~3）；上调提速但会占用更多 CPU",
+    ),
+    (
+        "agent",
+        "AGENT_PPT_VIDEO_TTS_CONCURRENCY",
+        "2",
+        "int",
+        "同一页内并发合成的旁白段数（1~4）；失败会自动回退整页合成",
+    ),
+    (
+        "agent",
+        "AGENT_PPT_VIDEO_PDF_SPLIT_BATCH",
+        "8",
+        "int",
+        "页图拆图每批页数（1~32）；越大进程越少、内存占用越高",
+    ),
     # Platform-level AI settings
     (
         "core",

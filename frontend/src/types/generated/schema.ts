@@ -45046,6 +45046,11 @@ export interface components {
             version_count: number;
             /** Latest Version Id */
             latest_version_id?: string | null;
+            /**
+             * Preview Url
+             * @default
+             */
+            preview_url: string;
             /** Latest Error */
             latest_error?: string | null;
             /** Thumbnail Url */
@@ -51758,8 +51763,30 @@ export interface components {
             items?: components["schemas"]["SlideRegionItem"][];
             /** Sentences */
             sentences?: string[];
+            /** Sentence Hints */
+            sentence_hints?: components["schemas"]["SlideSentenceHint"][];
             /** Image Sha256 */
             image_sha256?: string | null;
+        };
+        /**
+         * SlideSentenceHint
+         * @description 逐句微调用的句子 + 当前自动命中来源。
+         *
+         *     `fallback` 为 `guess`/`page` 时说明这句是自己猜出来的（不是模型绑定，也不是字面命中），
+         *     前端要标「兜底」，用户可复核后把它设为不亮。
+         */
+        SlideSentenceHint: {
+            /** Text */
+            text: string;
+            /** Targets */
+            targets?: string[];
+            /**
+             * Fallback
+             * @default
+             */
+            fallback: string;
+            /** Elements */
+            elements?: string[];
         };
         /** SlideUpdateRequest */
         SlideUpdateRequest: {
@@ -57500,6 +57527,11 @@ export interface components {
             reuse: components["schemas"]["ReuseSummary"];
             /** Download Url */
             download_url: string;
+            /**
+             * Preview Url
+             * @default
+             */
+            preview_url: string;
             /** Created At */
             created_at?: string | null;
         };
@@ -104227,7 +104259,10 @@ export interface operations {
     };
     download_version_api_v1_agent_ppt_videos_versions__version_id__file_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description true 时 Content-Disposition 用 inline，供页面内 <video> 直接播放 */
+                inline?: boolean;
+            };
             header?: never;
             path: {
                 version_id: string;

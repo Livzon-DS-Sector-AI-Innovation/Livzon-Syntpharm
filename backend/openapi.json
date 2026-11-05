@@ -91593,6 +91593,18 @@
             }
           },
           {
+            "name": "inline",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "true \u65f6 Content-Disposition \u7528 inline\uff0c\u4f9b\u9875\u9762\u5185 <video> \u76f4\u63a5\u64ad\u653e",
+              "default": false,
+              "title": "Inline"
+            },
+            "description": "true \u65f6 Content-Disposition \u7528 inline\uff0c\u4f9b\u9875\u9762\u5185 <video> \u76f4\u63a5\u64ad\u653e"
+          },
+          {
             "name": "auth_token",
             "in": "cookie",
             "required": false,
@@ -154221,6 +154233,11 @@
             ],
             "title": "Latest Version Id"
           },
+          "preview_url": {
+            "type": "string",
+            "title": "Preview Url",
+            "default": ""
+          },
           "latest_error": {
             "anyOf": [
               {
@@ -170398,6 +170415,13 @@
             "type": "array",
             "title": "Sentences"
           },
+          "sentence_hints": {
+            "items": {
+              "$ref": "#/components/schemas/SlideSentenceHint"
+            },
+            "type": "array",
+            "title": "Sentence Hints"
+          },
           "image_sha256": {
             "anyOf": [
               {
@@ -170413,6 +170437,41 @@
         "type": "object",
         "title": "SlideRegionsResponse",
         "description": "\u533a\u57df\u8bbe\u7f6e\u9762\u677f\u7684\u6570\u636e\uff1a\u9875\u9762\u5c3a\u5bf8 + \u5143\u7d20\u6e05\u5355 + \u53ef\u9010\u53e5\u5fae\u8c03\u7684\u53e5\u5b50\u3002"
+      },
+      "SlideSentenceHint": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "targets": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Targets"
+          },
+          "fallback": {
+            "type": "string",
+            "title": "Fallback",
+            "default": ""
+          },
+          "elements": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Elements"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "SlideSentenceHint",
+        "description": "\u9010\u53e5\u5fae\u8c03\u7528\u7684\u53e5\u5b50 + \u5f53\u524d\u81ea\u52a8\u547d\u4e2d\u6765\u6e90\u3002\n\n`fallback` \u4e3a `guess`/`page` \u65f6\u8bf4\u660e\u8fd9\u53e5\u662f\u81ea\u5df1\u731c\u51fa\u6765\u7684\uff08\u4e0d\u662f\u6a21\u578b\u7ed1\u5b9a\uff0c\u4e5f\u4e0d\u662f\u5b57\u9762\u547d\u4e2d\uff09\uff0c\n\u524d\u7aef\u8981\u6807\u300c\u515c\u5e95\u300d\uff0c\u7528\u6237\u53ef\u590d\u6838\u540e\u628a\u5b83\u8bbe\u4e3a\u4e0d\u4eae\u3002"
       },
       "SlideUpdateRequest": {
         "properties": {
@@ -184082,6 +184141,11 @@
           "download_url": {
             "type": "string",
             "title": "Download Url"
+          },
+          "preview_url": {
+            "type": "string",
+            "title": "Preview Url",
+            "default": ""
           },
           "created_at": {
             "anyOf": [

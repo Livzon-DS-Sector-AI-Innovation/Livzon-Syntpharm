@@ -7,6 +7,7 @@ import type { ColumnsType } from 'antd/es/table'
 import {
   CloudDownloadOutlined,
   DeleteOutlined,
+  PlayCircleOutlined,
   PlusOutlined,
   ReloadOutlined,
   RobotOutlined,
@@ -15,6 +16,7 @@ import {
 
 import AiConfigDrawer from './AiConfigDrawer'
 import PptUploadModal from './PptUploadModal'
+import VideoPreviewModal from './VideoPreviewModal'
 import { deletePptVideoProject } from '@/actions/agent/ppt-video'
 import { fetchPptVideoProjects } from '@/lib/api/client/agent'
 import { PermissionGate } from '@/components/auth/PermissionGate'
@@ -92,6 +94,8 @@ export default function PptVideoTable({
   const [uploadOpen, setUploadOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
   const [aiConfigs, setAiConfigs] = useState<AiConfigListResponse | null>(initialAiConfigs ?? null)
+  // 列表页只播最新版本：`preview_url` 由后端按 latest_version 派生，前端不拼路径
+  const [preview, setPreview] = useState<{ src: string; title: string } | null>(null)
 
   const load = useCallback(
     async (nextPage = page, nextPageSize = pageSize) => {
@@ -202,12 +206,22 @@ export default function PptVideoTable({
     {
       title: '操作',
       key: 'actions',
-      width: 190,
+      width: 240,
       render: (_value, record) => (
         <Space size={0}>
           <Button type="link" size="small" onClick={() => router.push(`/agent/ppt-videos/${record.id}`)}>
             工作台
           </Button>
+          {record.preview_url && (
+            <Button
+              type="link"
+              size="small"
+              icon={<PlayCircleOutlined />}
+              onClick={() => setPreview({ src: record.preview_url, title: record.name })}
+            >
+              预览
+            </Button>
+          )}
           {record.latest_version_id && (
             <Button
               type="link"
@@ -348,6 +362,14 @@ export default function PptVideoTable({
         mode="global"
         configs={aiConfigs}
         onConfigsChange={setAiConfigs}
+      />
+
+      <VideoPreviewModal
+        open={preview !== null}
+        src={preview?.src}
+        title={preview?.title}
+        fileName={preview?.title}
+        onClose={() => setPreview(null)}
       />
     </div>
   )

@@ -16,11 +16,13 @@ import shutil
 import signal
 import socket
 import tempfile
+import time
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from PIL import Image
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -160,28 +162,20 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
         head_rendered_key = ""
         body_keys: list[str] = []
 
-        for index, slide in enumerate(slides):
-            # 页图按「当前源 PPT 页序」取，而不是按展示顺序取：
-            # 换源后 slide_no 会被重排，source_index 才是这张图真正的位置。
-            image_index = slide.source_index or slide.slide_no
-            if image_index < 1 or image_index > len(images):
-                raise JobFailedError(f"第 {slide.slide_no} 页在源 PPT 中找不到对应的第 {image_index} 页")
-            image_path = images[image_index - 1]
+        async def _prepare_page(slide: Any, image_path: Path) -> _PreparedPage:
+            """本页的语音 + 分镜 + 指纹：纯计算与网络 IO，不碰 session，可以并发。"""
+            started = time.perf_counter()
             image_sha = sha256_file(image_path)
             effective = service.resolve_effective(slide, project, engine_name, engine_version)
             if not effective.script:
                 raise JobFailedError(f"第 {slide.slide_no} 页讲稿为空")
-
             page_audio = await service.prepare_page_audio(
                 slide, project, settings, engine_name, engine_version, work_dir
             )
-            audio_fp = page_audio.audio_key
-            audio_path = page_audio.path
-            audio_sha = page_audio.sha256
-            duration_ms = page_audio.duration_ms
             plan = _build_highlight_plan(
                 effective.script, slide.layout, page_audio, settings, getattr(slide, "highlight_regions", None)
             )
+            _log_fallback_usage(project.id, slide.slide_no, plan)
             # 有高亮时画面是多段静帧序列，页图 sha256 无法代表画面，必须叠加视觉指纹
             # （分句映射 + 布局 + 样式）：只算分句会漏掉「改样式/挪版式但句子没变」的情况，
             # 旧片段被复用后高亮会静默失效。
@@ -189,7 +183,58 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
             # 指纹必须带完整样式参数（样式/颜色/压暗/描边/染色强度），
             # 只带样式名会让「改了颜色但句子没变」的旧片段被复用。
             visual_key = highlight.visual_fingerprint(plan, slide.layout, paint.fingerprint) if plan.has_boxes else ""
-            segment_fp = build_segment_key(image_sha, audio_fp, ENCODER_KEY, visual_key)
+            return _PreparedPage(
+                slide=slide,
+                image_path=image_path,
+                image_sha=image_sha,
+                page_audio=page_audio,
+                plan=plan,
+                paint=paint,
+                segment_fp=build_segment_key(image_sha, page_audio.audio_key, ENCODER_KEY, visual_key),
+                prepare_ms=int((time.perf_counter() - started) * 1000),
+            )
+
+        # 页级流水线：一次备好一批（默认 2 页）的语音与分镜，再串行出帧落库。
+        # 语音是网络等待、出帧是 CPU 密集，两者错开跑既压时长又不抢核；
+        # 串行段保证 AsyncSession 始终单协程使用。
+        concurrency = max(1, min(settings.page_concurrency, 3))
+        prepared: list[_PreparedPage] = []
+        prepared_from = 0
+
+        for index, slide in enumerate(slides):
+            if index >= prepared_from + len(prepared):
+                end = min(total, index + concurrency)
+                batch = slides[index:end]
+                batch_images: list[Path] = []
+                for batch_slide in batch:
+                    # 页图按「当前源 PPT 页序」取，而不是按展示顺序取：
+                    # 换源后 slide_no 会被重排，source_index 才是这张图真正的位置。
+                    image_index = batch_slide.source_index or batch_slide.slide_no
+                    if image_index < 1 or image_index > len(images):
+                        raise JobFailedError(f"第 {batch_slide.slide_no} 页在源 PPT 中找不到对应的第 {image_index} 页")
+                    batch_images.append(images[image_index - 1])
+                prepared = list(
+                    await asyncio.gather(
+                        *(
+                            _prepare_page(batch_slide, batch_image)
+                            for batch_slide, batch_image in zip(batch, batch_images, strict=True)
+                        )
+                    )
+                )
+                prepared_from = index
+
+            item = prepared[index - prepared_from]
+            page_started = time.perf_counter()
+            image_path = item.image_path
+            image_sha = item.image_sha
+            page_audio = item.page_audio
+            audio_fp = page_audio.audio_key
+            audio_path = page_audio.path
+            audio_sha = page_audio.sha256
+            duration_ms = page_audio.duration_ms
+            plan = item.plan
+            paint = item.paint
+            segment_fp = item.segment_fp
             cached = await session.scalar(
                 select(PptVideoSegment).where(
                     PptVideoSegment.segment_key == segment_fp, PptVideoSegment.is_deleted.is_(False)
@@ -261,6 +306,15 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
             else:
                 body_keys.append(segment_fp)
 
+            logger.info(
+                "页渲染完成: project=%s slide=%s prepare_ms=%s render_ms=%s cache_hit=%s",
+                project.id,
+                slide.slide_no,
+                item.prepare_ms,
+                int((time.perf_counter() - page_started) * 1000),
+                segment_hit,
+            )
+
             progress = PROGRESS_RENDER + int((index + 1) / total * (PROGRESS_TTS_END - PROGRESS_RENDER))
             await queue.heartbeat(session, job.id, "tts", progress)
             await session.commit()
@@ -305,6 +359,21 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
         shutil.rmtree(work_dir, ignore_errors=True)
 
 
+def _log_fallback_usage(project_id: Any, slide_no: int, plan: highlight.HighlightPlan) -> None:
+    """记录每页兜底命中数：验收「讲到的地方一定有高亮」时看这个比例是否在下降。"""
+    sources = [step.fallback for step in plan.steps if step.fallback in ("guess", "page")]
+    if not sources:
+        return
+    logger.info(
+        "高亮兜底命中: project=%s slide=%s guess=%s page=%s steps=%s",
+        project_id,
+        slide_no,
+        sources.count("guess"),
+        sources.count("page"),
+        len(plan.steps),
+    )
+
+
 def _build_highlight_plan(
     script: str,
     layout: Layout | None,
@@ -337,6 +406,20 @@ def _build_highlight_plan(
     except Exception:  # noqa: BLE001 - 引导失败不能让整条视频渲不出来
         logger.exception("页内视觉引导计划生成失败，退化为整页常亮")
         return highlight.HighlightPlan(steps=[], total_ms=total_ms)
+
+
+@dataclass
+class _PreparedPage:
+    """一页的「输入侧」产物：语音、分镜、指纹。全部不依赖 session，可并发准备。"""
+
+    slide: Any
+    image_path: Path
+    image_sha: str
+    page_audio: service.PageAudio
+    plan: highlight.HighlightPlan
+    paint: "_HighlightPaint"
+    segment_fp: str
+    prepare_ms: int = 0
 
 
 @dataclass(frozen=True)
@@ -427,6 +510,9 @@ def _render_highlighted_segment(
     size = highlight.slide_size(layout)
     frame_dir = work_dir / "highlight" / segment_fp
     frame_dir.mkdir(parents=True, exist_ok=True)
+    # 一页要出多帧：整页图只解码一次，省掉每帧一次 PNG 解码（页数越多越明显）
+    with Image.open(image_path) as handle:
+        base_image = handle.convert("RGB")
 
     frames: list[tuple[Path, int]] = []
     for index, step in enumerate(plan.steps):
@@ -444,6 +530,7 @@ def _render_highlighted_segment(
             paint.outline_px,
             kinds=kinds,
             paints=paints,
+            base_image=base_image,
         )
         frames.append((frame_path, step.duration_ms))
 

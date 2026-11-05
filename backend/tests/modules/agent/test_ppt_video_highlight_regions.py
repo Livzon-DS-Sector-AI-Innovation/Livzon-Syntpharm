@@ -17,6 +17,7 @@ from app.modules.agent.highlight import (
     REGION_MODE_TEXT,
     ScriptSegment,
     boxes_for_segment,
+    boxes_for_segment_with_source,
     build_plan_for_segments,
     dump_region_config,
     element_index,
@@ -227,6 +228,59 @@ def test_sentence_mute_removes_region() -> None:
     boxes = boxes_for_segment(segments[0], layout, config=config)
 
     assert [box.top for box in boxes] == [element_index(layout)[first].box.top]
+
+
+# ── 兜底链：每句必须有高亮 ──────────────────────────────────────────────────
+
+
+def test_segment_without_direct_hit_falls_back_to_guess() -> None:
+    # 模型没绑元素、字面重合度也不够：仍要挑本页最像的一个，并标成 guess 供用户复核
+    layout = _layout(_shape("发酵工艺参数"), _shape("质量标准", top=1200000))
+    boxes, source = boxes_for_segment_with_source(ScriptSegment(text="发酵温度如何控制"), layout)
+
+    assert source == "guess"
+    assert [box.top for box in boxes] == [element_index(layout)["s0"].box.top]
+
+
+def test_segment_without_any_text_falls_back_to_whole_page() -> None:
+    # 纯图片页：没有可猜的元素，也要铺一层整页淡底，不能整段和原图一样
+    layout = _layout({"name": "pic", "kind": "image", "left": 0, "top": 0, "width": 1000000, "height": 800000})
+    boxes, source = boxes_for_segment_with_source(ScriptSegment(text="这张图是车间平面图"), layout)
+
+    assert source == "page"
+    assert [(box.left, box.top, box.width, box.height) for box in boxes] == [(0, 0, _PAGE_WIDTH, _PAGE_HEIGHT)]
+    assert boxes[0].fill_alpha == highlight.PAGE_FALLBACK_FILL_ALPHA
+
+
+def test_bound_target_is_marked_as_target() -> None:
+    layout = _layout(_shape("发酵工艺"))
+    element_id = _ids(layout)[0]
+
+    boxes, source = boxes_for_segment_with_source(ScriptSegment(text="发酵工艺", targets=(element_id,)), layout)
+
+    assert source == "target"
+    assert boxes
+
+
+def test_muted_sentence_never_falls_back() -> None:
+    # 用户把这一句设成不亮：任何兜底都不许再点亮它
+    layout = _layout(_shape("发酵工艺"))
+
+    boxes, source = boxes_for_segment_with_source(ScriptSegment(text="随便一句", mute=("rect:0",)), layout)
+
+    assert (boxes, source) == ([], "")
+
+
+def test_off_region_does_not_silence_other_sentences() -> None:
+    # 把某个元素设为不亮，只影响这个元素；本页其它句子必须照常高亮
+    layout = _layout(_shape("发酵工艺"), _shape("质量标准", top=1200000))
+    first = _ids(layout)[0]
+    config = parse_region_config({"regions": [{"id": first, "mode": REGION_MODE_OFF}]}, layout)
+
+    boxes, source = boxes_for_segment_with_source(ScriptSegment(text="质量标准要求"), layout, config=config)
+
+    assert source == "text"
+    assert [box.top for box in boxes] == [element_index(layout)[_ids(layout)[1]].box.top]
 
 
 # ── 缓存指纹 ────────────────────────────────────────────────────────────────
