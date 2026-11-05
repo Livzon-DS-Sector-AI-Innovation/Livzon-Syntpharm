@@ -66,6 +66,11 @@ async def get(
     inspection_category: str | None = None,
     department: str | None = None,
     keyword: str | None = None,
+    person_match: str | None = Query(
+        None,
+        pattern="^(pending)$",
+        description='人员绑定状态筛选："pending" 仅返回待匹配（有姓名、未绑定系统用户）',
+    ),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取隐患列表"""
@@ -82,6 +87,7 @@ async def get(
         inspection_category,
         department,
         keyword,
+        person_match,
     )
     return HazardListApiResponse(
         data=[HazardReportResponse.model_validate(h) for h in items],

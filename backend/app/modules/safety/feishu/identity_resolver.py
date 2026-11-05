@@ -17,8 +17,8 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Literal
 
 from sqlalchemy import or_, select
 
@@ -59,6 +59,31 @@ class ResolvedPerson:
 
     def __repr__(self) -> str:
         return f"ResolvedPerson(open_id={self.open_id!r}, user_id={self.user_id!r}, name={self.name!r})"
+
+
+NameMatchStatus = Literal["matched", "not_found", "ambiguous"]
+
+
+@dataclass
+class NameMatch:
+    """严格姓名匹配结果（三态）。
+
+    status:
+      - matched    唯一命中，person 可用
+      - not_found  查无此人（含姓名为空），person 为 None
+      - ambiguous  同名多人且无法唯一消歧，person 为 None，candidates 供人工核对
+
+    strict 语义：宁可留空交给人工，也不"取第一个"造成静默错配。
+    """
+
+    status: NameMatchStatus
+    name: str = ""
+    person: ResolvedPerson | None = None
+    candidates: list[ResolvedPerson] = field(default_factory=list)
+
+    @property
+    def is_matched(self) -> bool:
+        return self.status == "matched" and self.person is not None
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -106,6 +131,52 @@ class IdentityResolver:
             return None
 
         return self._user_to_person(user)
+
+    async def resolve_by_name_strict(
+        self,
+        name: str,
+        department_hint: str | None = None,
+    ) -> NameMatch:
+        """严格按姓名匹配，用于写入业务外键（隐患检查人员 / 整改责任人）。
+
+        与 resolve_by_name 的差异：同名多人且部门无法唯一消歧时不再"取第一个"，
+        而是返回 ambiguous（person 为空），由调用方留空并转人工指定。
+        """
+        raw = (name or "").strip()
+        if not raw:
+            return NameMatch(status="not_found", name="")
+
+        users = await self._find_users_by_name(raw)
+        if not users:
+            logger.warning("resolve_by_name_strict: 未找到用户 name=%r", raw)
+            return NameMatch(status="not_found", name=raw)
+
+        if len(users) == 1:
+            return NameMatch(status="matched", person=self._user_to_person(users[0]), name=raw)
+
+        if department_hint:
+            filtered = [u for u in users if u.department and department_hint in u.department]
+            if len(filtered) == 1:
+                logger.info(
+                    "resolve_by_name_strict: %r 同名 %d 人，部门消歧 → %r",
+                    raw,
+                    len(users),
+                    filtered[0].name,
+                )
+                return NameMatch(status="matched", person=self._user_to_person(filtered[0]), name=raw)
+            if filtered:
+                users = filtered
+
+        logger.warning(
+            "resolve_by_name_strict: %r 同名 %d 人无法唯一消歧，拒绝绑定（待人工指定）",
+            raw,
+            len(users),
+        )
+        return NameMatch(
+            status="ambiguous",
+            name=raw,
+            candidates=[self._user_to_person(u) for u in users],
+        )
 
     async def resolve_department_leader(
         self,
@@ -353,19 +424,8 @@ class IdentityResolver:
             id=str(user.id) if user.id else "",
         )
 
-    async def _find_user_by_name(
-        self,
-        name: str,
-        department_hint: str | None = None,
-    ) -> User | None:
-        """在 identity.users 中按姓名查找用户。
-
-        策略：
-          1. 精确匹配 name
-          2. 命中 1 个 → 直接返回
-          3. 命中 > 1 个且有 department_hint → 用部门消歧
-          4. 命中 0 个 → 返回 None
-        """
+    async def _find_users_by_name(self, name: str) -> list[User]:
+        """在 identity.users 中按姓名精确匹配，返回全部命中（含同名）。"""
         from app.platform.identity.models import User as IdentityUser
 
         stmt = select(IdentityUser).where(
@@ -373,7 +433,22 @@ class IdentityResolver:
             IdentityUser.is_deleted == False,  # noqa: E712
         )
         result = await self._session.execute(stmt)
-        users = list(result.scalars().all())
+        return list(result.scalars().all())
+
+    async def _find_user_by_name(
+        self,
+        name: str,
+        department_hint: str | None = None,
+    ) -> User | None:
+        """在 identity.users 中按姓名查找用户（宽松：多命中时取第一个）。
+
+        策略：
+          1. 精确匹配 name
+          2. 命中 1 个 → 直接返回
+          3. 命中 > 1 个且有 department_hint → 用部门消歧
+          4. 命中 0 个 → 返回 None
+        """
+        users = await self._find_users_by_name(name)
 
         if not users:
             return None

@@ -328,8 +328,9 @@ class HazardService:
         inspection_category: str | None = None,
         department: str | None = None,
         keyword: str | None = None,
+        person_match: str | None = None,
     ) -> tuple[list[HazardReport], int]:
-        """获取隐患列表"""
+        """获取隐患列表（person_match="pending" 仅返回人员待匹配记录）"""
         return await self.repo.get_hazards(
             skip,
             limit,
@@ -341,6 +342,7 @@ class HazardService:
             inspection_category,
             department,
             keyword,
+            person_match,
         )
 
     async def get_hazard_stats(self) -> dict[str, int]:

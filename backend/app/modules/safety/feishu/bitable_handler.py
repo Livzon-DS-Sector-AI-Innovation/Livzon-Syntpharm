@@ -221,6 +221,8 @@ async def _resolve_person(  # type: ignore[no-untyped-def]
     *,
     bt_field_label: str = "person",
     existing_name: str | None = None,
+    strict_name: bool = False,
+    department_hint: str | None = None,
 ) -> tuple[str | None, str | None, str]:
     """将 Bitable person 字段值解析为 (db_uuid, open_id, display_name)。
 
@@ -232,6 +234,11 @@ async def _resolve_person(  # type: ignore[no-untyped-def]
       5. Bitable id 本身（避免数据显示为空）
       6. existing_name（已有值，更新时不覆盖）
       7. "飞书用户"（最终 fallback）
+
+    Args:
+        strict_name: 姓名匹配走严格模式（同名多人不绑定，返回 uuid=None）。
+            隐患的检查人员 / 整改责任人必须为 True，避免"取第一个"造成错绑。
+        department_hint: 姓名同名时的部门消歧提示（如隐患责任部门）。
 
     Returns:
         (uuid_str | None, open_id_str, display_name_str)
@@ -305,20 +312,43 @@ async def _resolve_person(  # type: ignore[no-untyped-def]
             logger.exception("_resolve_person[%s] 按 email 查询异常", bt_field_label)
 
     # ── 策略 4：按 Bitable name 查 identity.users ──
+    strict_person = None
     if not user and usable_bt_name:
         try:
-            user = await resolver._find_user_by_name(person_name)
-            if user:
-                logger.info(
-                    "_resolve_person[%s] name 回退成功: name=%s → %s",
-                    bt_field_label,
-                    person_name,
-                    user.name,
-                )
+            if strict_name:
+                # 严格模式：同名多人 / 查无此人时不绑定，只保留姓名（进待匹配清单）
+                match = await resolver.resolve_by_name_strict(person_name, department_hint)
+                if match.is_matched and match.person:
+                    strict_person = match.person
+                    logger.info(
+                        "_resolve_person[%s] name 严格匹配成功: name=%s → %s",
+                        bt_field_label,
+                        person_name,
+                        strict_person.name,
+                    )
+                else:
+                    logger.warning(
+                        "_resolve_person[%s] name 未绑定（%s）: name=%r candidates=%s",
+                        bt_field_label,
+                        match.status,
+                        person_name,
+                        [f"{c.name}/{c.department or '-'}" for c in match.candidates],
+                    )
+            else:
+                user = await resolver._find_user_by_name(person_name, department_hint)
+                if user:
+                    logger.info(
+                        "_resolve_person[%s] name 回退成功: name=%s → %s",
+                        bt_field_label,
+                        person_name,
+                        user.name,
+                    )
         except Exception:
             logger.exception("_resolve_person[%s] 按 name 查询异常", bt_field_label)
 
     # ── 确定最终返回值 ──
+    if strict_person is not None:
+        return (strict_person.id or None, strict_person.open_id or person_id, strict_person.name)
     if user:
         return (str(user.id), user.feishu_open_id or person_id, user.name)
 
@@ -960,6 +990,7 @@ async def _create_hazard_from_bitable(
             inspector_raw,
             bt_field_label="检查人员",
             existing_name=mapped.get("discovered_by_name"),
+            strict_name=True,
         )
         _debug_log(
             f"CREATE_INSPECTOR_RESOLVED: record_id={record_id} "
@@ -982,6 +1013,8 @@ async def _create_hazard_from_bitable(
             bitable_fields.get("整改责任人"),
             bt_field_label="整改责任人",
             existing_name=mapped.get("rectification_responsible_person_name"),
+            strict_name=True,
+            department_hint=mapped.get("department"),
         )
         if resp_name and resp_name != "飞书用户":
             mapped["rectification_responsible_person_name"] = resp_name
@@ -1514,6 +1547,7 @@ async def _update_hazard_from_bitable(
             bitable_fields.get("检查人员"),
             bt_field_label="检查人员",
             existing_name=getattr(hazard, "discovered_by_name", None),
+            strict_name=True,
         )
         if inspector_uuid:
             update_data["discovered_by"] = inspector_uuid
@@ -1530,6 +1564,8 @@ async def _update_hazard_from_bitable(
             bitable_fields.get("整改责任人"),
             bt_field_label="整改责任人",
             existing_name=getattr(hazard, "rectification_responsible_person_name", None),
+            strict_name=True,
+            department_hint=update_data.get("department") or getattr(hazard, "department", None),
         )
         if resp_uuid:
             update_data["rectification_responsible_person"] = resp_uuid

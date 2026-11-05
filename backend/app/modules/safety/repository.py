@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import case, func, or_, select, update
+from sqlalchemy import and_, case, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -126,9 +126,30 @@ class SafetyRepository:
         inspection_category: str | None = None,
         department: str | None = None,
         keyword: str | None = None,
+        person_match: str | None = None,
     ) -> tuple[list[HazardReport], int]:
-        """获取隐患列表"""
+        """获取隐患列表
+
+        person_match="pending" 时只返回「有姓名但未绑定系统用户」的记录，
+        即待匹配清单（姓名来自 Bitable，user_id 留空待人工指定）。
+        """
         query = select(HazardReport).where(~HazardReport.is_deleted)
+
+        person_pending = None
+        if person_match == "pending":
+            person_pending = or_(
+                and_(
+                    HazardReport.discovered_by.is_(None),
+                    HazardReport.discovered_by_name.is_not(None),
+                    HazardReport.discovered_by_name != "",
+                ),
+                and_(
+                    HazardReport.rectification_responsible_person.is_(None),
+                    HazardReport.rectification_responsible_person_name.is_not(None),
+                    HazardReport.rectification_responsible_person_name != "",
+                ),
+            )
+            query = query.where(person_pending)
 
         if status:
             query = query.where(HazardReport.status == status)
@@ -149,6 +170,8 @@ class SafetyRepository:
             query = query.where(HazardReport.description.ilike(like) | HazardReport.hazard_no.ilike(like))
 
         count_query = select(func.count(HazardReport.id)).where(~HazardReport.is_deleted)
+        if person_pending is not None:
+            count_query = count_query.where(person_pending)
         if status:
             count_query = count_query.where(HazardReport.status == status)
         if rectification_status:

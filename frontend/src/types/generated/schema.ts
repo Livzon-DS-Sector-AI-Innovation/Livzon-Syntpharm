@@ -69665,6 +69665,8 @@ export interface operations {
                 inspection_category?: string | null;
                 department?: string | null;
                 keyword?: string | null;
+                /** @description 人员绑定状态筛选："pending" 仅返回待匹配（有姓名、未绑定系统用户） */
+                person_match?: string | null;
             };
             header?: never;
             path?: never;

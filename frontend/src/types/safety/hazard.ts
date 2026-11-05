@@ -35,6 +35,8 @@ export interface HazardReportQueryParams {
   inspection_category?: string
   department?: string
   keyword?: string
+  /** "pending" 时只返回人员待匹配记录（有姓名、未绑定系统用户） */
+  person_match?: 'pending'
 }
 
 export interface HazardStats {

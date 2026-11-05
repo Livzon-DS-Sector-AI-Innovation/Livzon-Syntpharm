@@ -56,6 +56,7 @@ import {
   VERIFY_LEVEL_STATUS_OPTIONS,
 } from '@/types/safety'
 import dayjs from 'dayjs'
+import PersonnelSelect from '@/components/safety/PersonnelSelect'
 
 const { Text } = Typography
 const { TextArea } = Input
@@ -1170,21 +1171,43 @@ export default function HazardLedgerDetailPage() {
                 </Col>
                 <Col span={8}>
                   <FieldEditor label="检查人员">
-                    <Input
-                      placeholder="多维表格自动填入"
-                      value={fieldVal('discovered_by_name')}
-                      onChange={(e) => setEdits((p) => ({ ...p, discovered_by_name: e.target.value }))}
+                    <PersonnelSelect
+                      value={fieldVal('discovered_by') || null}
+                      label={fieldVal('discovered_by_name')}
+                      placeholder="搜索姓名/账号绑定系统用户"
+                      onChange={(p) => {
+                        if (!p) return
+                        setEdits((prev) => ({
+                          ...prev,
+                          discovered_by: p.id,
+                          discovered_by_name: p.name,
+                        }))
+                      }}
                     />
                   </FieldEditor>
+                  {!fieldVal('discovered_by') && fieldVal('discovered_by_name') ? (
+                    <Text style={{ fontSize: 12, color: '#b45309' }}>未绑定系统用户，请选择以完成匹配</Text>
+                  ) : null}
                 </Col>
                 <Col span={8}>
                   <FieldEditor label="责任人">
-                    <Input
-                      placeholder="多维表格自动填入"
-                      value={fieldVal('rectification_responsible_person_name')}
-                      onChange={(e) => setEdits((p) => ({ ...p, rectification_responsible_person_name: e.target.value }))}
+                    <PersonnelSelect
+                      value={fieldVal('rectification_responsible_person') || null}
+                      label={fieldVal('rectification_responsible_person_name')}
+                      placeholder="搜索姓名/账号绑定系统用户"
+                      onChange={(p) => {
+                        if (!p) return
+                        setEdits((prev) => ({
+                          ...prev,
+                          rectification_responsible_person: p.id,
+                          rectification_responsible_person_name: p.name,
+                        }))
+                      }}
                     />
                   </FieldEditor>
+                  {!fieldVal('rectification_responsible_person') && fieldVal('rectification_responsible_person_name') ? (
+                    <Text style={{ fontSize: 12, color: '#b45309' }}>未绑定系统用户，请选择以完成匹配</Text>
+                  ) : null}
                 </Col>
                 <Col span={8}>
                   <FieldEditor label="检查类别">

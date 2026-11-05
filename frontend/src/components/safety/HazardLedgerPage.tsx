@@ -164,6 +164,11 @@ const FILTER_FIELDS: FilterFieldConfig[] = [
     type: 'text' as const,
     options: [],
   },
+  {
+    key: 'person_match',
+    label: '人员匹配',
+    options: [{ value: 'pending', label: '待匹配（有姓名、未绑定系统用户）' }],
+  },
 ]
 
 // ── AI 输出字段标签 ──
@@ -193,6 +198,7 @@ export default function HazardLedgerPage() {
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>()
   const [inspectionCategoryFilter, setInspectionCategoryFilter] = useState<string | undefined>()
   const [deptFilter, setDeptFilter] = useState<string | undefined>()
+  const [personMatchFilter, setPersonMatchFilter] = useState<'pending' | undefined>()
 
   // ── 全局统计（来自 API，不受分页/筛选影响）──
   const [hazardStats, setHazardStats] = useState<HazardStats | null>(null)
@@ -250,8 +256,11 @@ export default function HazardLedgerPage() {
     if (deptFilter) {
       list.push({ key: 'department', fieldLabel: '责任部门', value: deptFilter, valueLabel: deptFilter })
     }
+    if (personMatchFilter) {
+      list.push({ key: 'person_match', fieldLabel: '人员匹配', value: personMatchFilter, valueLabel: '待匹配' })
+    }
     return list
-  }, [levelFilter, typeFilter, categoryFilter, inspectionCategoryFilter, deptFilter])
+  }, [levelFilter, typeFilter, categoryFilter, inspectionCategoryFilter, deptFilter, personMatchFilter])
 
   // 移除单个筛选条件
   const removeFilter = useCallback((key: string) => {
@@ -262,6 +271,7 @@ export default function HazardLedgerPage() {
       case 'hazard_category': setCategoryFilter(undefined); break
       case 'inspection_category': setInspectionCategoryFilter(undefined); break
       case 'department': setDeptFilter(undefined); break
+      case 'person_match': setPersonMatchFilter(undefined); break
     }
   }, [setHazardQueryParams])
 
@@ -273,6 +283,7 @@ export default function HazardLedgerPage() {
     setCategoryFilter(undefined)
     setInspectionCategoryFilter(undefined)
     setDeptFilter(undefined)
+    setPersonMatchFilter(undefined)
     setStatusFilter(undefined)
     setSearchText('')
     setSearchApplied(false)
@@ -294,13 +305,14 @@ export default function HazardLedgerPage() {
       case 'hazard_category': setCategoryFilter(value); break
       case 'inspection_category': setInspectionCategoryFilter(value); break
       case 'department': setDeptFilter(value); break
+      case 'person_match': setPersonMatchFilter(value as 'pending'); break
     }
     setPendingFilterField(null)
     setFilterPopoverOpen(false)
   }
 
   const { data: queryData, isLoading: queryLoading } = useQuery({
-    queryKey: ['hazards', hazardQueryParams, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, searchKeyword, sortField, sortOrder],
+    queryKey: ['hazards', hazardQueryParams, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, personMatchFilter, searchKeyword, sortField, sortOrder],
     queryFn: async () => {
       const response = await getHazards({
         ...hazardQueryParams,
@@ -310,6 +322,7 @@ export default function HazardLedgerPage() {
         hazard_category: categoryFilter,
         inspection_category: inspectionCategoryFilter,
         department: deptFilter,
+        person_match: personMatchFilter,
         keyword: searchKeyword || undefined,
       } as HazardReportQueryParams)
       if (response.code === 200) {

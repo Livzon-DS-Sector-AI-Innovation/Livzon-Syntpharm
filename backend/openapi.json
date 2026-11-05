@@ -25342,6 +25342,25 @@
             }
           },
           {
+            "name": "person_match",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(pending)$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u4eba\u5458\u7ed1\u5b9a\u72b6\u6001\u7b5b\u9009\uff1a\"pending\" \u4ec5\u8fd4\u56de\u5f85\u5339\u914d\uff08\u6709\u59d3\u540d\u3001\u672a\u7ed1\u5b9a\u7cfb\u7edf\u7528\u6237\uff09",
+              "title": "Person Match"
+            },
+            "description": "\u4eba\u5458\u7ed1\u5b9a\u72b6\u6001\u7b5b\u9009\uff1a\"pending\" \u4ec5\u8fd4\u56de\u5f85\u5339\u914d\uff08\u6709\u59d3\u540d\u3001\u672a\u7ed1\u5b9a\u7cfb\u7edf\u7528\u6237\uff09"
+          },
+          {
             "name": "auth_token",
             "in": "cookie",
             "required": false,
