@@ -244,7 +244,11 @@ class UserRepository:
             count_stmt = count_stmt.where(User.must_change_password == must_change_password)
 
         total = int((await session.execute(count_stmt)).scalar_one())
-        result = await session.execute(base.order_by(User.created_at.desc()).offset(offset).limit(limit))
+        # created_at 由 server_default=func.now() 生成，同事务批量插入（飞书通讯录同步）
+        # 会得到完全相同的时间戳；没有唯一键兜底时，offset 分页会出现同一行跨页重复 / 漏行。
+        result = await session.execute(
+            base.order_by(User.created_at.desc(), User.id.desc()).offset(offset).limit(limit)
+        )
         return list(result.scalars().all()), total
 
     async def get_roles_for_users(

@@ -1010,6 +1010,20 @@ class HazardIdentification(BaseModel):
         comment="该工段对应的 Chapter 7 节选 Markdown（供Script 1使用）",
     )
 
+    # ── 历史台账原始字段（Excel/CSV 清单导入） ──
+    checklist_no: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="检查表编号")
+    risk_point_no: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="风险点编号")
+    risk_point_type: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="风险点类型")
+    risk_point_name: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="风险点名称")
+    work_unit: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="作业单元/区域")
+    location_tag: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="位号/部位")
+    work_step: Mapped[str | None] = mapped_column(Text, nullable=True, comment="作业步骤/检查项目")
+    check_standard: Mapped[str | None] = mapped_column(Text, nullable=True, comment="检查标准")
+    risk_method: Mapped[str | None] = mapped_column(String(10), nullable=True, comment="风险评价方法（LEC/LS）")
+    severity_s: Mapped[float | None] = mapped_column(nullable=True, comment="严重性S（LS法）")
+    control_unit: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="管控单位")
+    training_measures: Mapped[str | None] = mapped_column(Text, nullable=True, comment="现有培训教育措施")
+
     # ── 脚本1 输出：附件解析（AI → 人工审核） ──
     specific_activity: Mapped[str | None] = mapped_column(Text, nullable=True, comment="具体作业活动")
     equipment_facilities: Mapped[str | None] = mapped_column(Text, nullable=True, comment="设备设施")

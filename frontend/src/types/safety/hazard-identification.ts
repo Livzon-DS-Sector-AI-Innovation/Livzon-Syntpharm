@@ -1,122 +1,30 @@
 /**
  * Safety module domain model types (ViewModels).
- * These response types are not in the OpenAPI spec (backend uses dict responses).
- * API input types (Create/Update) use @/types/generated/schema.
+ * API 契约字段一律从 OpenAPI 生成类型派生（@/types/generated/schema），禁止手写，
+ * 避免后端新增字段后前端静默丢失。仅枚举展示类型、查询参数等前端私有结构手写。
  */
 
+import type { components } from '@/types/generated/schema'
 
-export interface HazardIdentification {
-  id: string
-  hazard_id_no: string
-  department: string
-  position: string
-  production_step: string
-  attachment_path?: string
-  attachment_original_name?: string
-  // Script 1
-  specific_activity?: string
-  equipment_facilities?: string
-  raw_auxiliary_materials?: string
-  operation_frequency?: string
-  operator_count?: number
-  // Script 2
-  hazard_type?: string
-  possible_accident?: string
-  unsafe_behavior?: string
-  // Script 3
-  l_inherent?: number
-  e_inherent?: number
-  c_inherent?: number
-  d_inherent?: number
-  inherent_risk_level?: string
-  inherent_risk_label?: string
-  // Script 4
-  existing_engineering_controls?: string
-  existing_management_controls?: string
-  existing_ppe?: string
-  existing_emergency_measures?: string
-  // Script 5
-  l_residual?: number
-  e_residual?: number
-  c_residual?: number
-  d_residual?: number
-  residual_risk_level?: string
-  residual_risk_label?: string
-  // Script 6
-  needs_recommendation?: string
-  recommendation_type?: string
-  recommendation_content?: string
-  recommendation_priority?: string
-  // Script 7
-  l_post?: number
-  e_post?: number
-  c_post?: number
-  d_post?: number
-  post_risk_level?: string
-  post_risk_label?: string
-  // Control info
-  control_level?: string
-  responsible_person?: string
-  // Workflow status
-  ai_node_progress: string
-  ai_error_message?: string
-  overall_status: string
-  script1_review_status: string
-  script2_review_status: string
-  script3_review_status: string
-  script4_review_status: string
-  script5_review_status: string
-  script6_review_status: string
-  script7_review_status: string
-  // Meta
-  notes?: string
-  batch_id?: string
-  stage_name?: string
-  regulation_name?: string
-  created_at: string
-  updated_at: string
-}
+/** 危险源辨识台账记录（响应契约来自 OpenAPI） */
+export type HazardIdentification = components['schemas']['HazardIdentificationResponse']
 
-export interface HazardIdentificationFormData {
-  hazard_id_no?: string  // 留空时后端自动生成 HI-YYYYMMDD-NNN
-  department: string
-  position: string
-  production_step?: string  // 已取消输入
-  regulation_id?: string  // 引用的安全操作规程 ID
-  notes?: string
-}
+/** 创建入参（请求契约来自 OpenAPI；留空 hazard_id_no 时后端自动生成 HI-YYYYMMDD-NNN） */
+export type HazardIdentificationFormData = components['schemas']['HazardIdentificationCreate']
 
 // ── 批量辨识 ──
 
-export interface RegulationStageInfo {
-  stage_name: string
-  safety_count: number
-  operation_count: number
-}
+/** 工艺阶段条目（响应契约来自 OpenAPI） */
+export type RegulationStageInfo = components['schemas']['RegulationStageInfo']
 
-export interface RegulationStagesResponse {
-  regulation_id: string
-  regulation_name?: string
-  stages: RegulationStageInfo[]
-}
+/** 操规工艺阶段列表（响应契约来自 OpenAPI） */
+export type RegulationStagesResponse = components['schemas']['RegulationStagesResponse']
 
-export interface HazardIdentificationBatchCreateInput {
-  regulation_id: string
-  department: string
-  position: string
-  stage_names: string[]
-  notes?: string
-  auto_submit?: boolean
-}
+/** 批量创建入参（请求契约来自 OpenAPI） */
+export type HazardIdentificationBatchCreateInput = components['schemas']['HazardIdentificationBatchCreate']
 
-export interface HazardIdentificationBatchResponse {
-  batch_id: string
-  regulation_id: string
-  regulation_name?: string
-  records: HazardIdentification[]
-  total_stages: number
-  created_count: number
-}
+/** 批量创建结果（响应契约来自 OpenAPI） */
+export type HazardIdentificationBatchResponse = components['schemas']['HazardIdentificationBatchResponse']
 
 export interface HazardIdentificationQueryParams {
   page?: number
@@ -132,20 +40,11 @@ export interface HazardIdentificationQueryParams {
   batch_id?: string
 }
 
-export interface HazardIdentificationStats {
-  total_draft: number
-  total_in_progress: number
-  total_pending_review: number
-  total_completed: number
-}
+/** 工作台状态计数（响应契约来自 OpenAPI） */
+export type HazardIdentificationStats = components['schemas']['HazardIdentificationStatsData']
 
-export interface HazardLedgerStats {
-  total: number
-  level_1: number
-  level_2: number
-  level_3: number
-  level_4: number
-}
+/** 台账风险等级分布（响应契约来自 OpenAPI） */
+export type HazardLedgerStats = components['schemas']['HazardIdentificationLedgerStatsData']
 
 export const AI_NODE_PROGRESS_OPTIONS = [
   { value: 'pending_input', label: '待填写基础信息', color: 'default' },
@@ -161,15 +60,8 @@ export const AI_NODE_PROGRESS_OPTIONS = [
 
 // ============ Hazard Identification Export Types ============
 
-export interface HazardLedgerExportRequest {
-  natural_query?: string
-  department?: string
-  position?: string
-  risk_level?: string
-  date_from?: string
-  date_to?: string
-  keyword?: string
-}
+/** 台账 PDF 导出请求（请求契约来自 OpenAPI） */
+export type HazardLedgerExportRequest = components['schemas']['HazardLedgerExportRequest']
 
 export interface HazardLedgerExportParsedFilters {
   department?: string

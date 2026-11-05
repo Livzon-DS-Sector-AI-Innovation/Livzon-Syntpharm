@@ -34254,6 +34254,30 @@ export interface components {
             stage_name?: string | null;
             /** Regulation Name */
             regulation_name?: string | null;
+            /** Checklist No */
+            checklist_no?: string | null;
+            /** Risk Point No */
+            risk_point_no?: string | null;
+            /** Risk Point Type */
+            risk_point_type?: string | null;
+            /** Risk Point Name */
+            risk_point_name?: string | null;
+            /** Work Unit */
+            work_unit?: string | null;
+            /** Location Tag */
+            location_tag?: string | null;
+            /** Work Step */
+            work_step?: string | null;
+            /** Check Standard */
+            check_standard?: string | null;
+            /** Risk Method */
+            risk_method?: string | null;
+            /** Severity S */
+            severity_s?: number | null;
+            /** Control Unit */
+            control_unit?: string | null;
+            /** Training Measures */
+            training_measures?: string | null;
             /** Specific Activity */
             specific_activity?: string | null;
             /** Equipment Facilities */
@@ -34459,6 +34483,30 @@ export interface components {
             stage_name?: string | null;
             /** Notes */
             notes?: string | null;
+            /** Checklist No */
+            checklist_no?: string | null;
+            /** Risk Point No */
+            risk_point_no?: string | null;
+            /** Risk Point Type */
+            risk_point_type?: string | null;
+            /** Risk Point Name */
+            risk_point_name?: string | null;
+            /** Work Unit */
+            work_unit?: string | null;
+            /** Location Tag */
+            location_tag?: string | null;
+            /** Work Step */
+            work_step?: string | null;
+            /** Check Standard */
+            check_standard?: string | null;
+            /** Risk Method */
+            risk_method?: string | null;
+            /** Severity S */
+            severity_s?: number | null;
+            /** Control Unit */
+            control_unit?: string | null;
+            /** Training Measures */
+            training_measures?: string | null;
             /** Specific Activity */
             specific_activity?: string | null;
             /** Equipment Facilities */

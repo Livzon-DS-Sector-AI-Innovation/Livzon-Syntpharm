@@ -113,6 +113,19 @@ class HazardIdentificationUpdate(BaseModel):
     batch_id: uuid.UUID | None = None
     stage_name: str | None = None
     notes: str | None = None
+    # 历史台账原始字段
+    checklist_no: str | None = None
+    risk_point_no: str | None = None
+    risk_point_type: str | None = None
+    risk_point_name: str | None = None
+    work_unit: str | None = None
+    location_tag: str | None = None
+    work_step: str | None = None
+    check_standard: str | None = None
+    risk_method: str | None = None
+    severity_s: float | None = None
+    control_unit: str | None = None
+    training_measures: str | None = None
     specific_activity: str | None = None
     equipment_facilities: str | None = None
     raw_auxiliary_materials: str | None = None
@@ -173,6 +186,19 @@ class HazardIdentificationResponse(HazardIdentificationBase):
     batch_id: uuid.UUID | None = None
     stage_name: str | None = None
     regulation_name: str | None = None
+    # 历史台账原始字段
+    checklist_no: str | None = None
+    risk_point_no: str | None = None
+    risk_point_type: str | None = None
+    risk_point_name: str | None = None
+    work_unit: str | None = None
+    location_tag: str | None = None
+    work_step: str | None = None
+    check_standard: str | None = None
+    risk_method: str | None = None
+    severity_s: float | None = None
+    control_unit: str | None = None
+    training_measures: str | None = None
     specific_activity: str | None = None
     equipment_facilities: str | None = None
     raw_auxiliary_materials: str | None = None
