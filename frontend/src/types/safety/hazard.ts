@@ -44,13 +44,14 @@ export type HazardStats = components['schemas']['HazardStatsResponse']
 
 export type RectificationReplyRequest = components["schemas"]["RectificationReplyRequest"]
 
-export interface VerifyLevelRequest {
-  level: number
-  action: 'approved' | 'rejected'
-  opinion?: string
-}
+/**
+ * 分级审批请求：字段来自 OpenAPI 生成类型，仅把 action 收窄为字面量联合
+ * （后端 schema 未用 Literal，生成类型是 string）。
+ */
+export type VerifyLevelRequest =
+  Omit<components['schemas']['VerifyLevelRequest'], 'action'> & { action: 'approved' | 'rejected' }
 
-export interface ConfirmCheckRequest {
-  role: 'inspector' | 'safety_officer'
-}
+/** 确认检查请求：字段来自 OpenAPI 生成类型，仅把 role 收窄为字面量联合。 */
+export type ConfirmCheckRequest =
+  Omit<components['schemas']['ConfirmCheckRequest'], 'role'> & { role: 'inspector' | 'safety_officer' }
 

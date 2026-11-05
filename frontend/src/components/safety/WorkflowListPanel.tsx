@@ -109,13 +109,7 @@ export default function WorkflowListPanel() {
   // ── 状态计数：随组件挂载即加载，删除/新建后失效重取 ──
   const { data: stats = EMPTY_STATS } = useQuery({
     queryKey: ['hazard-identifications-stats'],
-    queryFn: async () => {
-      const res = await getHIStats()
-      if (res.code === 200 && res.data) {
-        return res.data as unknown as HazardIdentificationStats
-      }
-      return EMPTY_STATS
-    },
+    queryFn: async () => (await getHIStats()) ?? EMPTY_STATS,
   })
   const [queryParams, setQueryParams] = useState({ page: 1, page_size: 20 })
   const [keyword, setKeyword] = useState('')

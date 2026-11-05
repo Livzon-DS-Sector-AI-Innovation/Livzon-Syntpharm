@@ -85,6 +85,7 @@ import type {
   SyncKnowledgeResponse,
   HazardIdentification,
   HazardIdentificationBatchResponse,
+  HazardIdentificationStats,
   RegulationStagesResponse,
   HazardRiskOption,
   DailyRiskReport,
@@ -555,9 +556,10 @@ export async function getHazardIdentifications(
   return safetyApi.getHazardIdentifications(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<HazardIdentification[]>>
 }
 
-export async function getHIStats() {
+export async function getHIStats(): Promise<HazardIdentificationStats | null> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHIStats(authHeaders) as Promise<HazardIdentificationApiResponse>
+  const res = await safetyApi.getHIStats(authHeaders)
+  return unwrapResponse<HazardIdentificationStats | null>({ code: res.code, message: res.message, data: res.data ?? null })
 }
 
 export async function getHILedgerStats(

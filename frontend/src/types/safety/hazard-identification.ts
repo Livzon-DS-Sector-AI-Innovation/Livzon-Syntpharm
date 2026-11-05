@@ -9,46 +9,22 @@ import type { components } from '@/types/generated/schema'
 /** 危险源辨识台账记录（响应契约来自 OpenAPI） */
 export type HazardIdentification = components['schemas']['HazardIdentificationResponse']
 
-export interface HazardIdentificationFormData {
-  hazard_id_no?: string  // 留空时后端自动生成 HI-YYYYMMDD-NNN
-  department: string
-  position: string
-  production_step?: string  // 已取消输入
-  regulation_id?: string  // 引用的安全操作规程 ID
-  notes?: string
-}
+/** 创建入参（请求契约来自 OpenAPI；留空 hazard_id_no 时后端自动生成 HI-YYYYMMDD-NNN） */
+export type HazardIdentificationFormData = components['schemas']['HazardIdentificationCreate']
 
 // ── 批量辨识 ──
 
-export interface RegulationStageInfo {
-  stage_name: string
-  safety_count: number
-  operation_count: number
-}
+/** 工艺阶段条目（响应契约来自 OpenAPI） */
+export type RegulationStageInfo = components['schemas']['RegulationStageInfo']
 
-export interface RegulationStagesResponse {
-  regulation_id: string
-  regulation_name?: string
-  stages: RegulationStageInfo[]
-}
+/** 操规工艺阶段列表（响应契约来自 OpenAPI） */
+export type RegulationStagesResponse = components['schemas']['RegulationStagesResponse']
 
-export interface HazardIdentificationBatchCreateInput {
-  regulation_id: string
-  department: string
-  position: string
-  stage_names: string[]
-  notes?: string
-  auto_submit?: boolean
-}
+/** 批量创建入参（请求契约来自 OpenAPI） */
+export type HazardIdentificationBatchCreateInput = components['schemas']['HazardIdentificationBatchCreate']
 
-export interface HazardIdentificationBatchResponse {
-  batch_id: string
-  regulation_id: string
-  regulation_name?: string
-  records: HazardIdentification[]
-  total_stages: number
-  created_count: number
-}
+/** 批量创建结果（响应契约来自 OpenAPI） */
+export type HazardIdentificationBatchResponse = components['schemas']['HazardIdentificationBatchResponse']
 
 export interface HazardIdentificationQueryParams {
   page?: number
@@ -64,12 +40,8 @@ export interface HazardIdentificationQueryParams {
   batch_id?: string
 }
 
-export interface HazardIdentificationStats {
-  total_draft: number
-  total_in_progress: number
-  total_pending_review: number
-  total_completed: number
-}
+/** 工作台状态计数（响应契约来自 OpenAPI） */
+export type HazardIdentificationStats = components['schemas']['HazardIdentificationStatsData']
 
 /** 台账风险等级分布（响应契约来自 OpenAPI） */
 export type HazardLedgerStats = components['schemas']['HazardIdentificationLedgerStatsData']
@@ -88,15 +60,8 @@ export const AI_NODE_PROGRESS_OPTIONS = [
 
 // ============ Hazard Identification Export Types ============
 
-export interface HazardLedgerExportRequest {
-  natural_query?: string
-  department?: string
-  position?: string
-  risk_level?: string
-  date_from?: string
-  date_to?: string
-  keyword?: string
-}
+/** 台账 PDF 导出请求（请求契约来自 OpenAPI） */
+export type HazardLedgerExportRequest = components['schemas']['HazardLedgerExportRequest']
 
 export interface HazardLedgerExportParsedFilters {
   department?: string

@@ -50,6 +50,7 @@ type AIWorkflowConfigApiResponse = components['schemas']['AIWorkflowConfigApiRes
 type AIWorkflowConfigListApiResponse = components['schemas']['AIWorkflowConfigListApiResponse']
 
 type HazardIdentificationApiResponse = components['schemas']['HazardIdentificationApiResponse']
+type HazardIdentificationStatsApiResponse = components['schemas']['HazardIdentificationStatsApiResponse']
 type HazardIdentificationLedgerStatsApiResponse = components['schemas']['HazardIdentificationLedgerStatsApiResponse']
 type HazardIdentificationBatchApiResponse = components['schemas']['HazardIdentificationBatchApiResponse']
 type RegulationStagesApiResponse = components['schemas']['RegulationStagesApiResponse']
@@ -499,7 +500,7 @@ export async function getHazardIdentifications(params: Record<string, unknown> =
 }
 
 export async function getHIStats(authHeaders?: Record<string, string>) {
-  return apiFetch<HazardIdentificationApiResponse>('/api/v1/safety/hazard-identifications/stats', { headers: authHeaders })
+  return apiFetch<HazardIdentificationStatsApiResponse>('/api/v1/safety/hazard-identifications/stats', { headers: authHeaders })
 }
 
 export async function getHILedgerStats(params: Record<string, unknown> = {}, authHeaders?: Record<string, string>) {
