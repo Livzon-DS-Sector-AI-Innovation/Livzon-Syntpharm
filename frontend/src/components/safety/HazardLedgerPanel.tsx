@@ -210,18 +210,13 @@ export default function HazardLedgerPanel() {
   // 不传 risk_level：否则统计被收窄为单一等级，其余药丸归零
   const { data: stats = EMPTY_LEDGER_STATS } = useQuery({
     queryKey: ['hazard-identifications-ledger-stats', department, position, dateRange],
-    queryFn: async () => {
-      const res = await getHILedgerStats({
+    queryFn: async () =>
+      (await getHILedgerStats({
         department,
         position,
         date_from: dateRange?.[0],
         date_to: dateRange?.[1],
-      })
-      if (res.code === 200 && res.data) {
-        return res.data as unknown as HazardLedgerStats
-      }
-      return EMPTY_LEDGER_STATS
-    },
+      })) ?? EMPTY_LEDGER_STATS,
   })
 
   const refreshStats = useCallback(() => {
@@ -413,13 +408,13 @@ export default function HazardLedgerPanel() {
     setQueryParams({ page: 1, page_size: queryParams.page_size })
   }
 
-  const getRiskTag = (level?: string, label?: string) => {
+  const getRiskTag = (level?: string | null, label?: string | null) => {
     if (!level) return '-'
     const opt = RISK_LEVEL_OPTIONS.find((o) => o.value === level)
     return <Tag color={opt?.color}>{label || level}</Tag>
   }
 
-  const getRiskPill = (level?: string, label?: string) => {
+  const getRiskPill = (level?: string | null, label?: string | null) => {
     if (!level) return <span style={{ color: '#a4a097' }}>-</span>
     const cfg = LEVEL_CONFIG[level]
     if (!cfg) return <Tag>{label || level}</Tag>
@@ -661,7 +656,7 @@ export default function HazardLedgerPanel() {
 
   // ── 展开行渲染 ──
   const expandedRowRender = (record: HazardIdentification) => {
-    const lecRow = (label: string, l?: number, e?: number, c?: number, d?: number, level?: string, levelLabel?: string) => (
+    const lecRow = (label: string, l?: number | null, e?: number | null, c?: number | null, d?: number | null, level?: string | null, levelLabel?: string | null) => (
       <Descriptions
         size="small"
         column={6}

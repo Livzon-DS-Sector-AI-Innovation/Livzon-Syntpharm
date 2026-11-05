@@ -39,17 +39,8 @@ export interface HazardReportQueryParams {
   person_match?: 'pending'
 }
 
-export interface HazardStats {
-  total: number
-  pending_review: number
-  pending: number
-  in_progress: number
-  replied: number
-  verifying: number
-  rejected: number
-  closed: number
-  overdue: number
-}
+/** 隐患统计（响应契约来自 OpenAPI 生成类型，禁止手写） */
+export type HazardStats = components['schemas']['HazardStatsResponse']
 
 export type RectificationReplyRequest = components["schemas"]["RectificationReplyRequest"]
 

@@ -352,10 +352,7 @@ export default function HazardLedgerPage() {
   // ── 全局统计（挂载即取，数据变更后失效重取）──
   const { data: hazardStats = null } = useQuery<HazardStats | null>({
     queryKey: ['hazard-stats'],
-    queryFn: async () => {
-      const res = await fetchHazardStats()
-      return res.data ?? null
-    },
+    queryFn: fetchHazardStats,
   })
 
   const refreshStats = useCallback(() => {

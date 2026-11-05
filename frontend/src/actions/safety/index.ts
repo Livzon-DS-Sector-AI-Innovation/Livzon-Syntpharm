@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getAuthHeaders } from '@/lib/auth'
 import * as safetyApi from '@/lib/api/server/safety'
+import { unwrapResponse } from '@/lib/api/server/base'
 import type { components } from '@/types/generated/schema'
 
 // Response type aliases for safety module
@@ -94,6 +95,7 @@ import type {
   FeishuChat,
   HazardRevisionRecord,
   HazardRevisionArchive,
+  HazardLedgerStats,
 } from '@/types/safety'
 
 // ============ SafetyCheck Actions ============
@@ -146,9 +148,9 @@ export async function deleteCheck(id: string): Promise<ApiResponse<null>> {
 
 // ============ HazardReport Actions ============
 
-export async function fetchHazardStats(): Promise<ApiResponse<HazardStats>> {
+export async function fetchHazardStats(): Promise<HazardStats> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.fetchHazardStats(authHeaders) as Promise<ApiResponse<HazardStats>>
+  return unwrapResponse(await safetyApi.fetchHazardStats(authHeaders))
 }
 
 export async function getHazards(params: HazardReportQueryParams = {}): Promise<ApiResponse<HazardReport[]>> {
@@ -566,9 +568,10 @@ export async function getHILedgerStats(
     date_from?: string
     date_to?: string
   } = {}
-) {
+): Promise<HazardLedgerStats | null> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHILedgerStats(params, authHeaders) as Promise<HazardIdentificationApiResponse>
+  const res = await safetyApi.getHILedgerStats(params, authHeaders)
+  return unwrapResponse<HazardLedgerStats | null>({ code: res.code, message: res.message, data: res.data ?? null })
 }
 
 export async function getHazardIdentification(id: string) {

@@ -762,10 +762,10 @@ function getScriptOutputFields(
 function renderLecCard(
   title: string,
   subtitle: string,
-  l?: number, e?: number, c?: number,
-  d?: number, levelKey?: string, levelLabel?: string,
+  l?: number | null, e?: number | null, c?: number | null,
+  d?: number | null, levelKey?: string | null, levelLabel?: string | null,
 ) {
-  if (!levelKey && d === undefined && l === undefined) return null
+  if (!levelKey && d == null && l == null) return null
 
   const colors = levelKey ? RISK_COLORS[levelKey] : undefined
   const opt = levelKey ? RISK_LEVEL_OPTIONS.find((o) => o.value === levelKey) : undefined

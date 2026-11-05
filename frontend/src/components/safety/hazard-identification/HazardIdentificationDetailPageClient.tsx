@@ -544,7 +544,7 @@ function getScriptOutputFields(scriptNum: number, record: HazardIdentification):
   return result
 }
 
-function renderRiskCard(label: string, levelKey?: string, levelLabel?: string, dValue?: number) {
+function renderRiskCard(label: string, levelKey?: string | null, levelLabel?: string | null, dValue?: number | null) {
   if (!levelKey) return null
   const opt = RISK_LEVEL_OPTIONS.find((o) => o.value === levelKey)
   return (
