@@ -426,6 +426,14 @@ export interface RdDeliverableTemplate {
   template_content: string | null
   template_structure: Record<string, unknown> | null
   is_active: boolean
+  file_object_key: string | null
+  file_name: string | null
+  file_ext: string | null
+  template_code: string | null
+  /** 当前生效版本号：由列表接口按版本表汇总填充（非数据库列），无母本时为 null */
+  current_version_no?: number | null
+  /** 版本总数：由列表接口汇总填充（非数据库列） */
+  version_count?: number
   creator_id: string | null
   created_at: string
   updated_at: string

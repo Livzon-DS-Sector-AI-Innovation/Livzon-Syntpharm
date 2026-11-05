@@ -1,7 +1,7 @@
 """safety hazard identification ledger fields
 
-Revision ID: 0095_safety_hazard_identification_ledger_fields
-Revises: 0094_safety_hazard_ledger_fields
+Revision ID: 0111_safety_hazard_identification_ledger_fields
+Revises: 0110_safety_hazard_ledger_fields
 Create Date: 2026-11-05
 
 危险源辨识台账字段扩展：
@@ -16,8 +16,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0095_safety_hazard_identification_ledger_fields"
-down_revision: str = "0094_safety_hazard_ledger_fields"
+revision: str = "0111_safety_hazard_identification_ledger_fields"
+down_revision: str = "0110_safety_hazard_ledger_fields"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

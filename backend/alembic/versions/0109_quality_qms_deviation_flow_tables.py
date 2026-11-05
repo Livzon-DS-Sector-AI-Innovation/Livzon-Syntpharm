@@ -1,6 +1,6 @@
 """quality qms deviation flow tables
 
-Revision ID: 0093_quality_qms_deviation_flow_tables
+Revision ID: 0109_quality_qms_deviation_flow_tables
 Revises: 0092_identity_revoked_sessions_comments_fks
 Create Date: 2026-11-01
 
@@ -25,7 +25,7 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0093_quality_qms_deviation_flow_tables"
+revision: str = "0109_quality_qms_deviation_flow_tables"
 down_revision: str = "0092_identity_revoked_sessions_comments_fks"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

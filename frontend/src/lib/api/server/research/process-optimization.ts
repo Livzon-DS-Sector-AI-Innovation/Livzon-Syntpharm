@@ -1,4 +1,5 @@
-import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
+import { apiFetchPaginated, getApiBaseUrl } from '@/lib/api/server/base'
+import type { ProcessOptimization } from '@/types/research'
 
 interface OptimizationFilters {
   project_id?: string
@@ -14,5 +15,7 @@ export async function fetchOptimizations(filters: OptimizationFilters = {}) {
   if (filters.page) params.set('page', String(filters.page))
   if (filters.page_size) params.set('page_size', String(filters.page_size))
   const qs = params.toString()
-  return apiFetch(`${getApiBaseUrl()}/api/v1/research/optimizations${qs ? `?${qs}` : ''}`)
+  return apiFetchPaginated<ProcessOptimization>(
+    `${getApiBaseUrl()}/api/v1/research/optimizations${qs ? `?${qs}` : ''}`,
+  )
 }
