@@ -74,6 +74,13 @@ const STATS_PILLS = [
   { key: 'completed',   label: '已完成', dotColor: '#1aae39', filterable: true  },
 ]
 
+const EMPTY_STATS: HazardIdentificationStats = {
+  total_draft: 0,
+  total_in_progress: 0,
+  total_pending_review: 0,
+  total_completed: 0,
+}
+
 // ── 可筛选字段配置 ──
 interface FilterFieldConfig {
   key: string
@@ -99,11 +106,16 @@ export default function WorkflowListPanel() {
   const queryClient = useQueryClient()
   const router = useRouter()
   const { message: msgApi } = App.useApp()
-  const [stats, setStats] = useState<HazardIdentificationStats>({
-    total_draft: 0,
-    total_in_progress: 0,
-    total_pending_review: 0,
-    total_completed: 0,
+  // ── 状态计数：随组件挂载即加载，删除/新建后失效重取 ──
+  const { data: stats = EMPTY_STATS } = useQuery({
+    queryKey: ['hazard-identifications-stats'],
+    queryFn: async () => {
+      const res = await getHIStats()
+      if (res.code === 200 && res.data) {
+        return res.data as unknown as HazardIdentificationStats
+      }
+      return EMPTY_STATS
+    },
   })
   const [queryParams, setQueryParams] = useState({ page: 1, page_size: 20 })
   const [keyword, setKeyword] = useState('')
@@ -229,14 +241,9 @@ export default function WorkflowListPanel() {
   const total = queryData?.total || 0
   const loading = queryLoading
 
-  const loadStats = async () => {
-    try {
-      const res = await getHIStats()
-      if (res.code === 200 && res.data) {
-        setStats(res.data as unknown as HazardIdentificationStats)
-      }
-    } catch { /* 静默失败 */ }
-  }
+  const refreshStats = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ['hazard-identifications-stats'] })
+  }, [queryClient])
 
 
 
@@ -266,7 +273,7 @@ export default function WorkflowListPanel() {
         if (res.code === 200) {
           msgApi.success('删除成功')
           queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
-          loadStats()
+          refreshStats()
         } else {
           msgApi.error(res.message || '删除失败')
         }
@@ -300,7 +307,7 @@ export default function WorkflowListPanel() {
         }
         setSelectedRowKeys([])
         await queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
-        loadStats()
+        refreshStats()
         setDeleting(false)
       },
     })
@@ -340,7 +347,8 @@ export default function WorkflowListPanel() {
   // ── 统计药丸计数 ──
   const getPillCount = (key: string): number => {
     switch (key) {
-      case '': return stats.total_draft + stats.total_in_progress + stats.total_pending_review + stats.total_completed
+      // total_pending_review 是 in_progress 的子集，不能叠加
+      case '': return stats.total_draft + stats.total_in_progress + stats.total_completed
       case 'draft': return stats.total_draft
       case 'in_progress': return stats.total_in_progress
       case 'completed': return stats.total_completed
@@ -1056,7 +1064,7 @@ export default function WorkflowListPanel() {
         onDone={() => {
           setDrawerOpen(false)
           queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
-          loadStats()
+          refreshStats()
         }}
       />
 
@@ -1067,7 +1075,7 @@ export default function WorkflowListPanel() {
         onDone={() => {
           setBatchDrawerOpen(false)
           queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
-          loadStats()
+          refreshStats()
         }}
       />
     </div>
