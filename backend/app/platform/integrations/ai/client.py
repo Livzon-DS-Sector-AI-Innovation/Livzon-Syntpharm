@@ -1,9 +1,21 @@
-"""OpenAI-compatible LLM HTTP client."""
+"""业务侧 AI 适配层。
 
-import json
+历史包袱：这里曾用 `httpx` 自建一套 OpenAI 兼容客户端（自带 api_key/base_url/model），
+与 `app/core/llm/` 的全局单例 `llm_client` 形成两套 LLM 调用栈 —— 配置来源、密钥加密、
+日志与重试都不一致。现在只保留**薄适配层**：所有请求都转给 `llm_client`，
+本文件不再持有任何 API Key 与 HTTP 客户端。
+
+保留 `chat_parsed` / `chat_vision_parsed` 两个方法是为了不打断 safety 插件的既有契约；
+它们内部走 `llm_client.chat_json` / `chat_vision_json`，并把 `LLMOutputError`
+翻译成插件约定的 `AIOutputError`。
+"""
+
+from __future__ import annotations
+
 from typing import Any
 
-import httpx
+from app.core.llm import llm_client
+from app.core.llm.exceptions import LLMOutputError
 
 
 class AIOutputError(Exception):
@@ -21,28 +33,15 @@ class AIOutputError(Exception):
 
 
 class AIService:
-    """OpenAI-compatible LLM client.
+    """全局 `llm_client` 的业务侧适配器（不持有配置，不新建 HTTP 客户端）。"""
 
-    Uses httpx.AsyncClient to call any OpenAI-compatible chat completions API
-    (OpenAI, DeepSeek, Qwen, etc.).
-    """
+    async def close(self) -> None:
+        """兼容历史的 `finally: await ai.close()` 调用。
 
-    def __init__(
-        self,
-        api_key: str,
-        base_url: str = "https://api.openai.com/v1",
-        model: str = "gpt-4o",
-        timeout: int = 120,
-    ):
-        self.model = model
-        self._client = httpx.AsyncClient(
-            base_url=base_url.rstrip("/"),
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            timeout=timeout,
-        )
+        底层是全局单例 `llm_client`，由应用生命周期管理，这里不能真关，
+        否则后续所有模块的 LLM 调用都会失败。
+        """
+        return None
 
     async def chat(
         self,
@@ -51,26 +50,13 @@ class AIService:
         temperature: float = 0.1,
         max_tokens: int = 16384,
     ) -> str:
-        """Send a chat completion request and return the response text."""
-        # 使用 json_object 格式时，prompt 中必须出现 "json" 字样（DeepSeek/OpenAI 要求）
-        msgs = [dict(m) for m in messages]  # shallow copy
-        if response_format == "json_object":
-            last = msgs[-1]
-            if isinstance(last.get("content"), str) and "json" not in last["content"].lower():
-                last["content"] = last["content"] + "\n\n请以 JSON 格式返回结果。"
-        body: dict[str, Any] = {
-            "model": self.model,
-            "messages": msgs,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-        }
-        if response_format:
-            body["response_format"] = {"type": response_format}
-
-        resp = await self._client.post("/chat/completions", json=body)
-        resp.raise_for_status()
-        data = resp.json()
-        return data["choices"][0]["message"]["content"]  # type: ignore[no-any-return]
+        """发送对话请求，返回文本响应。"""
+        return await llm_client.chat(
+            messages,
+            response_format=response_format,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
 
     async def chat_parsed(
         self,
@@ -78,38 +64,15 @@ class AIService:
         expected_keys: list[str],
         temperature: float = 0.1,
     ) -> dict[str, Any]:
-        """Chat + parse JSON response, validating expected keys exist."""
-        raw = await self.chat(messages, temperature=temperature)
+        """对话 + 解析 JSON，并校验必需字段。"""
         try:
-            parsed = json.loads(raw)
-        except json.JSONDecodeError as e:
-            raise AIOutputError("AI response is not valid JSON", raw) from e
-
-        # 兼容 AI 返回数组的情况：合并数组中的对象
-        if isinstance(parsed, list):
-            if len(parsed) == 0:
-                raise AIOutputError("AI returned empty list", raw)
-            if isinstance(parsed[0], dict):
-                merged: dict[str, Any] = {}
-                for item in parsed:
-                    for k, v in item.items():
-                        if k in merged and isinstance(v, str):
-                            merged[k] = merged[k] + "；" + v
-                        else:
-                            merged[k] = v
-                parsed = merged
-            else:
-                parsed = {"_raw": raw}
-
-        # coerce boolean-like strings
-        for k, v in parsed.items():
-            if isinstance(v, str) and v.lower() in ("true", "false"):
-                parsed[k] = v.lower() == "true"
-
-        missing = [k for k in expected_keys if k not in parsed]
-        if missing:
-            raise AIOutputError(f"AI response missing keys: {missing}", raw)
-        return parsed  # type: ignore[no-any-return]
+            return await llm_client.chat_json(
+                messages,
+                expected_keys=expected_keys,
+                temperature=temperature,
+            )
+        except LLMOutputError as exc:
+            raise AIOutputError(str(exc)) from exc
 
     async def chat_vision(
         self,
@@ -118,35 +81,13 @@ class AIService:
         temperature: float = 0.1,
         max_tokens: int = 16384,
     ) -> str:
-        """Send a multimodal chat request with images (vision-capable model).
-
-        Uses OpenAI-compatible vision format:
-        messages = [{"role":"user", "content":[{"type":"text",...}, {"type":"image_url",...}]}]
-        """
-        content_parts: list[dict[str, Any]] = [
-            {"type": "text", "text": text_prompt},
-        ]
-        for url in image_urls:
-            content_parts.append(
-                {
-                    "type": "image_url",
-                    "image_url": {"url": url},
-                }
-            )
-
-        body: dict[str, Any] = {
-            "model": self.model,
-            "messages": [
-                {"role": "user", "content": content_parts},
-            ],
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-        }
-
-        resp = await self._client.post("/chat/completions", json=body)
-        resp.raise_for_status()
-        data = resp.json()
-        return data["choices"][0]["message"]["content"]  # type: ignore[no-any-return]
+        """发送多模态（视觉）对话请求，返回文本响应。"""
+        return await llm_client.chat_vision(
+            text_prompt,
+            image_urls,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
 
     async def chat_vision_parsed(
         self,
@@ -155,45 +96,16 @@ class AIService:
         expected_keys: list[str],
         temperature: float = 0.1,
     ) -> dict[str, Any]:
-        """Vision chat + parse JSON response, validating expected keys."""
-        raw = await self.chat_vision(text_prompt, image_urls, temperature=temperature)
+        """视觉对话 + 解析 JSON，并校验必需字段。"""
         try:
-            # Strip markdown code fences if present
-            cleaned = raw.strip()
-            if cleaned.startswith("```"):
-                lines = cleaned.split("\n")
-                # Find first line that doesn't start with ```
-                for i, line in enumerate(lines):
-                    if not line.strip().startswith("```"):
-                        cleaned = "\n".join(lines[i:])
-                        break
-                # Remove trailing ```
-                if cleaned.endswith("```"):
-                    cleaned = cleaned[:-3].strip()
-            parsed = json.loads(cleaned)
-        except json.JSONDecodeError as e:
-            raise AIOutputError("Vision AI response is not valid JSON", raw) from e
+            return await llm_client.chat_vision_json(
+                text_prompt,
+                image_urls,
+                expected_keys=expected_keys,
+                temperature=temperature,
+            )
+        except LLMOutputError as exc:
+            raise AIOutputError(str(exc)) from exc
 
-        # coerce boolean strings
-        for k, v in parsed.items():
-            if isinstance(v, str) and v.lower() in ("true", "false"):
-                parsed[k] = v.lower() == "true"
 
-        missing = [k for k in expected_keys if k not in parsed]
-        if missing:
-            raise AIOutputError(f"Vision AI response missing keys: {missing}", raw)
-        return parsed  # type: ignore[no-any-return]
-
-    async def health_check(self) -> dict[str, Any]:
-        """Check connectivity by listing models (lightweight endpoint)."""
-        try:
-            resp = await self._client.get("/models", timeout=5)
-            return {
-                "status": "ok" if resp.is_success else "error",
-                "detail": str(resp.status_code),
-            }
-        except Exception as e:
-            return {"status": "error", "detail": str(e)}
-
-    async def close(self) -> None:
-        await self._client.aclose()
+__all__ = ["AIOutputError", "AIService"]

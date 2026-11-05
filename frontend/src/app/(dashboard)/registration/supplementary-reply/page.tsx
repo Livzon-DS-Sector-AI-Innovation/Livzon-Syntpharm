@@ -8,8 +8,8 @@ export default async function SupplementaryReplyPage() {
 
   return (
     <SupplementaryReplyClient
-      initialReplies={repliesRes?.data || []}
-      initialTotal={repliesRes?.meta?.total || 0}
+      initialReplies={repliesRes.items}
+      initialTotal={repliesRes.total}
     />
   )
 }

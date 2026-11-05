@@ -13,6 +13,7 @@ import {
   Space,
   Checkbox,
   Popover,
+  Image,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
@@ -45,7 +46,6 @@ import type {
   HazardReportQueryParams,
 } from '@/types/safety'
 import {
-  HAZARD_TYPE_OPTIONS,
   HAZARD_LEVEL_OPTIONS,
   HAZARD_CATEGORY_OPTIONS,
   VERIFY_LEVEL_STATUS_OPTIONS,
@@ -53,10 +53,46 @@ import {
 import HazardRectificationReplyModal from './HazardRectificationReplyModal'
 import HazardVerifyModal from './HazardVerifyModal'
 import HazardRegistrationDrawer from './HazardRegistrationDrawer'
+import { PersonNameWithBadge } from './PersonMatchBadge'
 import dayjs from 'dayjs'
 import { statusPill, actionLink } from '@/components/safety/sharedStyles'
+import { fileProxyUrl } from '@/lib/file-url'
+import { waitForHazardAiResult } from '@/lib/api/client/safety'
 
 const { Text } = Typography
+
+// ── 照片 JSON 数组 → 可访问 URL ──
+// 本地路径/object_key 走 /api/v1/safety/files 代理（与详情页 parsePhotos 保持一致），
+// Bitable attachment 用预签名 url
+function parsePhotoUrls(photos?: string | null): string[] {
+  if (!photos) return []
+  let arr: unknown[] = []
+  try {
+    const parsed: unknown = JSON.parse(photos)
+    arr = Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+  return arr
+    .map((item): string | null => {
+      if (typeof item === 'string') {
+        return item.startsWith('http') ? item : fileProxyUrl(item)
+      }
+      if (typeof item === 'object' && item !== null) {
+        const att = item as Record<string, unknown>
+        if (typeof att.url === 'string' && att.url) return att.url
+        if (typeof att.tmp_url === 'string' && att.tmp_url) return att.tmp_url
+      }
+      return null
+    })
+    .filter((url): url is string => url !== null)
+}
+
+// ── 关闭状态（复用 status 字段）──
+function renderCloseStatus(status?: string | null) {
+  if (status === 'closed') return <span style={statusPill('#1f7a45', '#d9f3e1')}>已关闭</span>
+  return <span style={statusPill('#5d5b54', '#f0eeec')}>未关闭</span>
+}
 
 // ── 整改状态语义色配置 ──
 const RECTIFICATION_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -101,11 +137,6 @@ const FILTER_FIELDS: FilterFieldConfig[] = [
     options: HAZARD_LEVEL_OPTIONS,
   },
   {
-    key: 'hazard_type',
-    label: '隐患类型',
-    options: HAZARD_TYPE_OPTIONS,
-  },
-  {
     key: 'hazard_category',
     label: '隐患类别',
     options: HAZARD_CATEGORY_OPTIONS,
@@ -128,6 +159,11 @@ const FILTER_FIELDS: FilterFieldConfig[] = [
     type: 'text' as const,
     options: [],
   },
+  {
+    key: 'person_match',
+    label: '人员匹配',
+    options: [{ value: 'pending', label: '待确认（有姓名、未绑定系统用户）' }],
+  },
 ]
 
 // ── AI 输出字段标签 ──
@@ -135,7 +171,7 @@ const _AI_FIELD_LABELS: Record<string, string> = {
   hazard_type: '隐患分类',
   hazard_level: '隐患等级',
   hazard_category: '隐患类别',
-  description: '隐患描述',
+  description: '缺陷项描述',
   key_defect: '重点缺陷',
   major_hazard_basis: '判定依据',
   corrective_preventive_measures: '纠正预防措施',
@@ -153,13 +189,10 @@ export default function HazardLedgerPage() {
   const [searchKeyword, setSearchKeyword] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [levelFilter, setLevelFilter] = useState<string | undefined>()
-  const [typeFilter, setTypeFilter] = useState<string | undefined>()
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>()
   const [inspectionCategoryFilter, setInspectionCategoryFilter] = useState<string | undefined>()
   const [deptFilter, setDeptFilter] = useState<string | undefined>()
-
-  // ── 全局统计（来自 API，不受分页/筛选影响）──
-  const [hazardStats, setHazardStats] = useState<HazardStats | null>(null)
+  const [personMatchFilter, setPersonMatchFilter] = useState<'pending' | undefined>()
 
   // ── 排序状态 ──
   const [sortField, setSortField] = useState<string | undefined>()
@@ -199,10 +232,6 @@ export default function HazardLedgerPage() {
       const opt = HAZARD_LEVEL_OPTIONS.find((o) => o.value === levelFilter)
       list.push({ key: 'hazard_level', fieldLabel: '等级', value: levelFilter, valueLabel: opt?.label || levelFilter })
     }
-    if (typeFilter) {
-      const opt = HAZARD_TYPE_OPTIONS.find((o) => o.value === typeFilter)
-      list.push({ key: 'hazard_type', fieldLabel: '类型', value: typeFilter, valueLabel: opt?.label || typeFilter })
-    }
     if (categoryFilter) {
       const opt = HAZARD_CATEGORY_OPTIONS.find((o) => o.value === categoryFilter)
       list.push({ key: 'hazard_category', fieldLabel: '类别', value: categoryFilter, valueLabel: opt?.label || categoryFilter })
@@ -214,18 +243,21 @@ export default function HazardLedgerPage() {
     if (deptFilter) {
       list.push({ key: 'department', fieldLabel: '责任部门', value: deptFilter, valueLabel: deptFilter })
     }
+    if (personMatchFilter) {
+      list.push({ key: 'person_match', fieldLabel: '人员匹配', value: personMatchFilter, valueLabel: '待确认' })
+    }
     return list
-  }, [levelFilter, typeFilter, categoryFilter, inspectionCategoryFilter, deptFilter])
+  }, [levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, personMatchFilter])
 
   // 移除单个筛选条件
   const removeFilter = useCallback((key: string) => {
     setHazardQueryParams({ page: 1 })
     switch (key) {
       case 'hazard_level': setLevelFilter(undefined); break
-      case 'hazard_type': setTypeFilter(undefined); break
       case 'hazard_category': setCategoryFilter(undefined); break
       case 'inspection_category': setInspectionCategoryFilter(undefined); break
       case 'department': setDeptFilter(undefined); break
+      case 'person_match': setPersonMatchFilter(undefined); break
     }
   }, [setHazardQueryParams])
 
@@ -233,10 +265,10 @@ export default function HazardLedgerPage() {
   const clearAllFilters = useCallback(() => {
     setSelectedRowKeys([])
     setLevelFilter(undefined)
-    setTypeFilter(undefined)
     setCategoryFilter(undefined)
     setInspectionCategoryFilter(undefined)
     setDeptFilter(undefined)
+    setPersonMatchFilter(undefined)
     setStatusFilter(undefined)
     setSearchText('')
     setSearchApplied(false)
@@ -254,26 +286,26 @@ export default function HazardLedgerPage() {
     setSelectedRowKeys([])
     switch (fieldKey) {
       case 'hazard_level': setLevelFilter(value); break
-      case 'hazard_type': setTypeFilter(value); break
       case 'hazard_category': setCategoryFilter(value); break
       case 'inspection_category': setInspectionCategoryFilter(value); break
       case 'department': setDeptFilter(value); break
+      case 'person_match': setPersonMatchFilter(value as 'pending'); break
     }
     setPendingFilterField(null)
     setFilterPopoverOpen(false)
   }
 
   const { data: queryData, isLoading: queryLoading } = useQuery({
-    queryKey: ['hazards', hazardQueryParams, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, searchKeyword, sortField, sortOrder],
+    queryKey: ['hazards', hazardQueryParams, statusFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, personMatchFilter, searchKeyword, sortField, sortOrder],
     queryFn: async () => {
       const response = await getHazards({
         ...hazardQueryParams,
         rectification_status: statusFilter,
-        hazard_type: typeFilter,
         hazard_level: levelFilter,
         hazard_category: categoryFilter,
         inspection_category: inspectionCategoryFilter,
         department: deptFilter,
+        person_match: personMatchFilter,
         keyword: searchKeyword || undefined,
       } as HazardReportQueryParams)
       if (response.code === 200) {
@@ -317,19 +349,15 @@ export default function HazardLedgerPage() {
   // Use query loading state
   const loading = queryLoading
 
-  // ── 全局统计（挂载时 + 数据变更后刷新）──
-  const loadStats = async () => {
-    try {
-      const stats = await fetchHazardStats()
-      setHazardStats(stats.data || null)
-    } catch { /* 静默失败，统计数字保持上次值 */ }
-  }
-  const refreshStats = () => { loadStats() }
+  // ── 全局统计（挂载即取，数据变更后失效重取）──
+  const { data: hazardStats = null } = useQuery<HazardStats | null>({
+    queryKey: ['hazard-stats'],
+    queryFn: fetchHazardStats,
+  })
 
-
-
-
-  // 排序变化时重新加载
+  const refreshStats = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ['hazard-stats'] })
+  }, [queryClient])
 
   const handleSearch = () => {
     setSearchKeyword(searchText)
@@ -369,8 +397,8 @@ export default function HazardLedgerPage() {
       } else {
         message.error(response.message || '开始整改失败')
       }
-    } catch {
-      message.error('开始整改失败，请检查网络')
+    } catch (err) {
+      message.error(err instanceof Error && err.message ? err.message : '开始整改失败，请检查网络')
     }
   }
 
@@ -452,22 +480,38 @@ export default function HazardLedgerPage() {
   const handleRerunAI = async (record: HazardReport) => {
     setRerunLoading(true)
     try {
+      // AI 端点现在只负责提交后台任务，结果需要轮询隐患详情获取
       const r1 = await runHazardAI(record.id, 1)
       if (r1.code !== 200) {
         msgApi.error('重新执行 AI 识别失败: ' + (r1.message || ''))
         return
       }
-      patchHazard(record.id, r1.data as HazardReport)
-      const r2 = await runHazardAI(record.id, 2)
-      if (r2.code === 200) {
-        msgApi.success('AI 已重新执行完成')
-        patchHazard(record.id, r2.data as HazardReport)
-        refreshStats()
-      } else {
-        msgApi.warning('AI 识别已完成，整改建议生成失败: ' + (r2.message || ''))
+      const after1 = await waitForHazardAiResult(record.id)
+      if (!after1) {
+        msgApi.warning('AI 识别超时，请稍后刷新查看结果')
+        return
       }
-    } catch {
-      msgApi.error('重新执行 AI 失败')
+      patchHazard(record.id, after1)
+      if (after1.ai_error_message) {
+        msgApi.error('AI 识别失败: ' + after1.ai_error_message)
+        return
+      }
+
+      const r2 = await runHazardAI(record.id, 2)
+      if (r2.code !== 200) {
+        msgApi.warning('AI 识别已完成，整改建议生成失败: ' + (r2.message || ''))
+        return
+      }
+      const after2 = await waitForHazardAiResult(record.id)
+      if (!after2) {
+        msgApi.warning('整改建议生成超时，请稍后刷新查看结果')
+        return
+      }
+      patchHazard(record.id, after2)
+      msgApi.success('AI 已重新执行完成')
+      refreshStats()
+    } catch (err) {
+      msgApi.error(err instanceof Error && err.message ? err.message : '重新执行 AI 失败')
     } finally {
       setRerunLoading(false)
     }
@@ -845,6 +889,14 @@ export default function HazardLedgerPage() {
       ),
     },
     {
+      title: '检查名称',
+      dataIndex: 'inspection_name',
+      key: 'inspection_name',
+      width: 140,
+      ellipsis: true,
+      render: (text: string) => text || <span style={{ color: '#a4a097' }}>-</span>,
+    },
+    {
       title: '检查类别',
       dataIndex: 'inspection_category',
       key: 'inspection_category',
@@ -894,29 +946,19 @@ export default function HazardLedgerPage() {
       },
     },
     {
-      title: (
-        <span
-          onClick={() => handleSort('hazard_type')}
-          style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-        >
-          隐患类型{renderSortIcon('hazard_type')}
-        </span>
-      ),
-      dataIndex: 'hazard_type',
-      key: 'hazard_type',
-      width: 120,
-      sorter: false,
-      render: (type: string) => {
-        const option = HAZARD_TYPE_OPTIONS.find((o) => o.value === type)
-        return <span style={statusPill('#5d5b54', '#f0eeec')}>{option?.label || type}</span>
-      },
-    },
-    {
-      title: '隐患描述',
+      title: '缺陷项描述',
       dataIndex: 'description',
       key: 'description',
       width: 150,
       ellipsis: true,
+    },
+    {
+      title: '纠正预防措施',
+      dataIndex: 'capa_measures',
+      key: 'capa_measures',
+      width: 150,
+      ellipsis: true,
+      render: (text: string) => text || <span style={{ color: '#a4a097' }}>-</span>,
     },
     {
       title: (
@@ -933,12 +975,25 @@ export default function HazardLedgerPage() {
       sorter: false,
     },
     {
+      title: '整改负责人',
+      dataIndex: 'rectification_responsible_person_name',
+      key: 'rectification_responsible_person_name',
+      width: 118,
+      render: (_text: string, record: HazardReport) => (
+        <PersonNameWithBadge
+          name={record.rectification_responsible_person_name}
+          bound={record.rectification_responsible_person}
+        />
+      ),
+    },
+    {
       title: '检查人员',
       dataIndex: 'discovered_by_name',
       key: 'discovered_by_name',
-      width: 90,
-      ellipsis: true,
-      render: (text: string) => text || <span style={{ color: '#a4a097' }}>-</span>,
+      width: 118,
+      render: (_text: string, record: HazardReport) => (
+        <PersonNameWithBadge name={record.discovered_by_name} bound={record.discovered_by} />
+      ),
     },
     {
       title: (
@@ -959,15 +1014,22 @@ export default function HazardLedgerPage() {
       },
     },
     {
-      title: '整改状态',
+      title: '整改进度',
       dataIndex: 'rectification_status',
       key: 'rectification_status',
-      width: 80,
+      width: 90,
       render: (status: string) => {
         const cfg = RECTIFICATION_STATUS_CONFIG[status]
         if (!cfg) return <span style={statusPill('#5d5b54', '#f0eeec')}>{status}</span>
         return <span style={statusPill(cfg.color, cfg.bg)}>{cfg.label}</span>
       },
+    },
+    {
+      title: '关闭状态',
+      dataIndex: 'status',
+      key: 'status',
+      width: 90,
+      render: (status: string) => renderCloseStatus(status),
     },
     {
       title: '复核进度',
@@ -1021,12 +1083,12 @@ export default function HazardLedgerPage() {
           onClick={() => handleSort('deadline')}
           style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
         >
-          整改期限{renderSortIcon('deadline')}
+          目标完成日期{renderSortIcon('deadline')}
         </span>
       ),
       dataIndex: 'deadline',
       key: 'deadline',
-      width: 100,
+      width: 110,
       sorter: false,
       render: (date: string) => {
         if (!date) return '-'
@@ -1035,6 +1097,54 @@ export default function HazardLedgerPage() {
           <span style={{ color: isOverdue ? '#e03131' : '#1a1a1a', fontWeight: isOverdue ? 600 : 400, fontSize: 13 }}>
             {dayjs(date).format('YYYY-MM-DD')}
           </span>
+        )
+      },
+    },
+    {
+      title: '完成/关闭日期',
+      dataIndex: 'closed_at',
+      key: 'closed_at',
+      width: 110,
+      render: (date?: string | null) =>
+        date ? (
+          <span style={{ fontSize: 13 }}>{dayjs(date).format('YYYY-MM-DD')}</span>
+        ) : (
+          <span style={{ color: '#a4a097' }}>-</span>
+        ),
+    },
+    {
+      title: '证据（整改前）',
+      dataIndex: 'defect_photos',
+      key: 'defect_photos',
+      width: 100,
+      render: (json: string) => {
+        const urls = parsePhotoUrls(json)
+        if (urls.length === 0) return <span style={{ color: '#a4a097' }}>-</span>
+        return (
+          <Space size={4}>
+            <Image.PreviewGroup items={urls}>
+              <Image src={urls[0]} alt="整改前证据" width={32} height={32} style={{ objectFit: 'cover', borderRadius: 4 }} />
+            </Image.PreviewGroup>
+            {urls.length > 1 && <span style={{ fontSize: 11, color: '#787671' }}>+{urls.length - 1}</span>}
+          </Space>
+        )
+      },
+    },
+    {
+      title: '整改后照片',
+      dataIndex: 'rectification_photos',
+      key: 'rectification_photos',
+      width: 100,
+      render: (json: string) => {
+        const urls = parsePhotoUrls(json)
+        if (urls.length === 0) return <span style={{ color: '#a4a097' }}>-</span>
+        return (
+          <Space size={4}>
+            <Image.PreviewGroup items={urls}>
+              <Image src={urls[0]} alt="整改后照片" width={32} height={32} style={{ objectFit: 'cover', borderRadius: 4 }} />
+            </Image.PreviewGroup>
+            {urls.length > 1 && <span style={{ fontSize: 11, color: '#787671' }}>+{urls.length - 1}</span>}
+          </Space>
         )
       },
     },

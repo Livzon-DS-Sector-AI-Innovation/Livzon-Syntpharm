@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import { DataUnavailable } from '@/components/common/DataUnavailable'
 import { UploadFile, Table, Input, Button, Space, App, Card, Modal, Form, Upload, Row, Col, Spin, Alert } from 'antd'
 import {DownloadOutlined, DeleteOutlined, FileSearchOutlined} from '@ant-design/icons'
 import { ReferenceStandardListItem } from '@/types/registration'
@@ -19,12 +21,13 @@ export default function ReferenceStandardClient({
   initialTotal,
 }: ReferenceStandardClientProps) {
   const { message } = App.useApp()
-  const [records, setRecords] = useState<ReferenceStandardListItem[]>(initialRecords)
-  const [total, setTotal] = useState(initialTotal)
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
-  const [loading, setLoading] = useState(false)
   const [drugName, setDrugName] = useState('')
+  // 已提交的查询条件：输入框内容不直接触发请求，点「搜索」才提交
+  const [query, setQuery] = useState<{ page: number; pageSize: number; drugName: string }>({
+    page: 1,
+    pageSize: 20,
+    drugName: '',
+  })
   const [generateModalOpen, setGenerateModalOpen] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [parsing, setParsing] = useState(false)
@@ -32,26 +35,36 @@ export default function ReferenceStandardClient({
   const [form] = Form.useForm()
   const [coaFileList, setCoaFileList] = useState<UploadFile[]>([])
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await fetchReferenceStandards({
-        drug_name: drugName || undefined,
-        page,
-        page_size: pageSize,
-      })
-      setRecords(res.data)
-      setTotal(res.meta?.total || 0)
-    } catch (err: unknown) {
-      message.error((err instanceof Error ? err.message : null) || '加载数据失败')
-    } finally {
-      setLoading(false)
+  const isInitialQuery = query.page === 1 && query.pageSize === 20 && !query.drugName
+
+  const recordsQuery = useQuery({
+    queryKey: ['reference-standards', query],
+    queryFn: () =>
+      fetchReferenceStandards({
+        drug_name: query.drugName || undefined,
+        page: query.page,
+        page_size: query.pageSize,
+      }),
+    placeholderData: keepPreviousData,
+    // 首屏首页直接用服务端已取好的数据，避免闪一次 loading；其余页码必须真取
+    initialData: isInitialQuery ? { items: initialRecords, total: initialTotal } : undefined,
+  })
+
+  const records = recordsQuery.data?.items ?? []
+  const total = recordsQuery.data?.total ?? 0
+
+  // 搜索：条件与当前一致时强制重取，否则提交新条件（页码回到 1）
+  const handleSearch = () => {
+    const nextDrugName = drugName.trim()
+    if (nextDrugName === query.drugName && query.page === 1) {
+      void recordsQuery.refetch()
+      return
     }
-  }, [drugName, page, pageSize, message])
+    setQuery({ page: 1, pageSize: query.pageSize, drugName: nextDrugName })
+  }
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
-    setPage(newPage)
-    setPageSize(newPageSize)
+    setQuery(prev => ({ ...prev, page: newPage, pageSize: newPageSize }))
   }
 
   // 上传COA后自动解析
@@ -134,7 +147,7 @@ export default function ReferenceStandardClient({
         form.resetFields()
         setCoaFileList([])
         setParsedInfo('')
-        loadData()
+        void recordsQuery.refetch()
       } else {
         message.error(result.message)
       }
@@ -149,7 +162,7 @@ export default function ReferenceStandardClient({
     try {
       await deleteReferenceStandardAction(id)
       message.success('删除成功')
-      loadData()
+      void recordsQuery.refetch()
     } catch (err: unknown) {
       message.error((err instanceof Error ? err.message : null) || '删除失败')
     }
@@ -239,7 +252,7 @@ export default function ReferenceStandardClient({
             style={{ width: 200 }}
             allowClear
           />
-          <Button onClick={() => { setPage(1); loadData() }}>搜索</Button>
+          <Button onClick={handleSearch}>搜索</Button>
           <Button type="primary" onClick={() => setGenerateModalOpen(true)}>
             生成说明表
           </Button>
@@ -249,16 +262,24 @@ export default function ReferenceStandardClient({
           columns={columns}
           dataSource={records}
           rowKey="id"
-          loading={loading}
+          loading={recordsQuery.isPending}
           pagination={{
-            current: page,
-            pageSize: pageSize,
+            current: query.page,
+            pageSize: query.pageSize,
             total: total,
             showSizeChanger: true,
+            // 后端 PageParams 为 le=200，选项不得超过该上限否则 422
+            pageSizeOptions: [10, 20, 50, 100],
             showTotal: (total) => `共 ${total} 条`,
             onChange: handlePageChange,
           }}
           scroll={{ x: 1400 }}
+          locale={{
+            // 取数失败时在表格内嵌降级区块，与「确实没有记录」的空态区分开
+            emptyText: recordsQuery.isError ? (
+              <DataUnavailable compact onRetry={() => void recordsQuery.refetch()} />
+            ) : undefined,
+          }}
         />
       </Card>
 

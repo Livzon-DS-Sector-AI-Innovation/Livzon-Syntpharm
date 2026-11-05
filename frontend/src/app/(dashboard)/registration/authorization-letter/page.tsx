@@ -13,9 +13,9 @@ export default async function AuthorizationLetterPage() {
     <>
       <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)] mb-4">授权书</h1>
       <AuthorizationLetterClient
-        initialLetters={lettersRes?.data || []}
-        initialTotal={lettersRes?.meta?.total || 0}
-        products={productsRes?.data || []}
+        initialLetters={lettersRes.items}
+        initialTotal={lettersRes.total}
+        products={productsRes}
       />
     </>
   )

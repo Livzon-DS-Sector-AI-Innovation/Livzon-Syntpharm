@@ -8,8 +8,8 @@ export default async function ReferenceStandardPage() {
 
   return (
     <ReferenceStandardClient
-      initialRecords={recordsRes?.data || []}
-      initialTotal={recordsRes?.meta?.total || 0}
+      initialRecords={recordsRes.items}
+      initialTotal={recordsRes.total}
     />
   )
 }

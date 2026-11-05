@@ -31,6 +31,8 @@ import {
   CheckConfig,
   FILE_TYPE_OPTIONS,
 } from '@/types/doc-check'
+import { uploadDocCheckFile } from '@/lib/api/client/quality-doc-check'
+import { startDocCheck } from '@/actions/quality'
 
 const { Dragger } = Upload
 
@@ -121,15 +123,7 @@ export default function DocCheckNewPage() {
 
       message.loading({ content: '正在上传文件...', key: 'upload' })
 
-      const response = await fetch(
-        `/api/v1/quality/upload`,
-        {
-          method: 'POST',
-          body: formData,
-        }
-      )
-
-      const data = await response.json()
+      const data = await uploadDocCheckFile<UploadResponse>(formData)
 
       if (data.code === 200) {
         message.success({ content: '文件上传成功', key: 'upload' })
@@ -160,19 +154,7 @@ export default function DocCheckNewPage() {
     try {
       message.loading({ content: '正在启动AI预审...', key: 'check' })
 
-      const response = await fetch(
-        `/api/v1/quality/check`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            file_id: uploadedFile.file_id,
-            check_config: checkConfig,
-          }),
-        }
-      )
-
-      const data = await response.json()
+      const data = await startDocCheck(uploadedFile.file_id, checkConfig)
 
       if (data.code === 200) {
         const tid = data.data.task_id
@@ -249,6 +231,7 @@ export default function DocCheckNewPage() {
 
   return (
     <div style={{ padding: 24 }}>
+      <h1 className="sr-only">新建文件审查</h1>
       <div style={{ marginBottom: 16 }}>
         <Button
           icon={<ArrowLeftOutlined />}

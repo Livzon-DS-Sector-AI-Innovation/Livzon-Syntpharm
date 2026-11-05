@@ -137,13 +137,11 @@ export const PROCUREMENT_PERM = {
   procurementContractCreate: 'procurement:contract:create',
 } as const
 
-/** 行政管理（administration）接口级权限码，与后端 ADMINISTRATION_PERMISSIONS 一一对应 */
-export const ADMINISTRATION_PERM = {
-  administrationVehicleRead: 'administration:vehicle:read',
-  administrationVehicleCreate: 'administration:vehicle:create',
-  administrationVehicleUpdate: 'administration:vehicle:update',
-  administrationVehicleDelete: 'administration:vehicle:delete',
-} as const
+/**
+ * 行政管理（administration）接口级权限码，与后端 ADMINISTRATION_PERMISSIONS 一一对应。
+ * 车辆管理已下线，后端对应权限码已移除，此处保持为空对象直到该功能恢复。
+ */
+export const ADMINISTRATION_PERM = {} as const
 
 /** 能耗管理（energy）接口级权限码，与后端 ENERGY_PERMISSIONS 一一对应 */
 export const ENERGY_PERM = {
@@ -324,6 +322,7 @@ export const REGISTRATION_PERM = {
 
 /** 质量管理（quality）接口级权限码，与后端 QUALITY_PERMISSIONS 一一对应 */
 export const QUALITY_PERM = {
+  aiLogRead: 'quality:ai-log:read',
   cpvCreate: 'quality:cpv:create',
   cpvDelete: 'quality:cpv:delete',
   cpvImport: 'quality:cpv:import',

@@ -279,9 +279,9 @@ export default function HazardIdentificationDetailPage() {
             onClick={() => router.push('/safety/hazard-identification')}
           />
           <div>
-            <h2 style={{ fontSize: 22, fontWeight: 600, color: '#1a1a1a', margin: 0, lineHeight: 1.3 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 600, color: '#1a1a1a', margin: 0, lineHeight: 1.3 }}>
               危险源辨识详情
-            </h2>
+            </h1>
             <Text style={{ color: '#787671', fontSize: 13 }}>
               {record.hazard_id_no} · {record.department} · {record.position}
             </Text>
@@ -762,10 +762,10 @@ function getScriptOutputFields(
 function renderLecCard(
   title: string,
   subtitle: string,
-  l?: number, e?: number, c?: number,
-  d?: number, levelKey?: string, levelLabel?: string,
+  l?: number | null, e?: number | null, c?: number | null,
+  d?: number | null, levelKey?: string | null, levelLabel?: string | null,
 ) {
-  if (!levelKey && d === undefined && l === undefined) return null
+  if (!levelKey && d == null && l == null) return null
 
   const colors = levelKey ? RISK_COLORS[levelKey] : undefined
   const opt = levelKey ? RISK_LEVEL_OPTIONS.find((o) => o.value === levelKey) : undefined

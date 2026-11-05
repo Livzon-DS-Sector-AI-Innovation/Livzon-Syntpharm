@@ -3,12 +3,17 @@
 import { revalidatePath } from 'next/cache'
 import {
   AuthorizationLetterCreateInput,
-  AuthorizationLetterListResponse,
-  ProductListResponse,
-  ReferenceStandardListResponse,
-  SupplementaryReplyListResponse,
+  AuthorizationLetterListItem,
+  ParseCOAResponse,
+  ProductInfo,
+  ReferenceStandardListItem,
+  RegistrationProject,
+  SupplementaryReplyListItem,
 } from '@/types/registration'
 import type { components } from '@/types/generated/schema'
+import type { ApiResponse, MessageResponse } from '@/types/common'
+import type { PageResult } from '@/lib/api/page'
+
 import {
   generateAuthorizationLetter as generateAuthorizationLetterApi,
   deleteAuthorizationLetter as deleteAuthorizationLetterApi,
@@ -18,6 +23,7 @@ import {
   deleteReferenceStandard as deleteReferenceStandardApi,
   fetchAuthorizationLetters as fetchAuthorizationLettersApi,
   fetchRegistrationProducts as fetchRegistrationProductsApi,
+  fetchRegistrationProjects as fetchRegistrationProjectsApi,
   fetchReferenceStandards as fetchReferenceStandardsApi,
   fetchSupplementaryReplies as fetchSupplementaryRepliesApi,
   createDrug as createDrugApi,
@@ -31,29 +37,16 @@ import {
 
 type DrugCreate = components['schemas']['DrugCreate']
 type DrugUpdate = components['schemas']['DrugUpdate']
-
-interface ParseCOAResponse {
-  metadata: {
-    drug_name?: string
-    reference_substance_name?: string
-    batch_number?: string
-    manufacturer?: string
-    english_name?: string
-    molecular_formula?: string
-    molecular_weight?: string
-    cas_number?: string
-    content?: string
-    moisture?: string
-    rsd?: string
-    expiration_date?: string
-    storage_condition?: string
-  }
-}
+type AuthorizationLetterData = components['schemas']['AuthorizationLetterResponse']
+type SupplementaryReplyData = components['schemas']['SupplementaryReplyResponse']
+type ReferenceStandardData = components['schemas']['ReferenceStandardResponse']
+type DrugData = components['schemas']['DrugWithNodesResponse']
+type ProjectData = components['schemas']['ProjectResponse']
 
 export async function generateAuthorizationLetter(
   formData: FormData,
   data: AuthorizationLetterCreateInput
-): Promise<{ success: boolean; message: string; data?: Record<string, unknown> }> {
+): Promise<{ success: boolean; message: string; data?: AuthorizationLetterData }> {
   try {
     const submitData = new FormData()
     submitData.append('template', formData.get('template') as File)
@@ -70,10 +63,7 @@ export async function generateAuthorizationLetter(
       submitData.append('replacements', replacements as string)
     }
 
-    const json = (await generateAuthorizationLetterApi(submitData)) as {
-      message?: string
-      data?: Record<string, unknown>
-    }
+    const json = (await generateAuthorizationLetterApi(submitData)) as ApiResponse<AuthorizationLetterData>
     revalidatePath('/registration')
     return {
       success: true,
@@ -88,10 +78,8 @@ export async function generateAuthorizationLetter(
   }
 }
 
-export async function deleteAuthorizationLetter(
-  id: string
-): Promise<Record<string, unknown>> {
-  const result = (await deleteAuthorizationLetterApi(id)) as Record<string, unknown>
+export async function deleteAuthorizationLetter(id: string): Promise<MessageResponse> {
+  const result = (await deleteAuthorizationLetterApi(id)) as MessageResponse
   revalidatePath('/registration')
   return result
 }
@@ -105,7 +93,7 @@ export async function generateSupplementaryReply(
     company_name?: string
     remarks?: string
   }
-): Promise<{ success: boolean; message: string; data?: Record<string, unknown> }> {
+): Promise<{ success: boolean; message: string; data?: SupplementaryReplyData }> {
   try {
     const submitData = new FormData()
     submitData.append('notice', formData.get('notice') as File)
@@ -121,10 +109,7 @@ export async function generateSupplementaryReply(
     if (data.company_name) submitData.append('company_name', data.company_name)
     if (data.remarks) submitData.append('remarks', data.remarks)
 
-    const json = (await generateSupplementaryReplyApi(submitData)) as {
-      message?: string
-      data?: Record<string, unknown>
-    }
+    const json = (await generateSupplementaryReplyApi(submitData)) as ApiResponse<SupplementaryReplyData>
     revalidatePath('/registration')
     return {
       success: true,
@@ -139,10 +124,8 @@ export async function generateSupplementaryReply(
   }
 }
 
-export async function deleteSupplementaryReplyAction(
-  id: string
-): Promise<Record<string, unknown>> {
-  const result = (await deleteSupplementaryReplyApi(id)) as Record<string, unknown>
+export async function deleteSupplementaryReplyAction(id: string): Promise<MessageResponse> {
+  const result = (await deleteSupplementaryReplyApi(id)) as MessageResponse
   revalidatePath('/registration')
   return result
 }
@@ -165,7 +148,7 @@ export async function generateReferenceStandard(
     storage_condition?: string
     remarks?: string
   }
-): Promise<{ success: boolean; message: string; data?: Record<string, unknown> }> {
+): Promise<{ success: boolean; message: string; data?: ReferenceStandardData }> {
   try {
     const submitData = new FormData()
     submitData.append('coa', formData.get('coa') as File)
@@ -185,10 +168,7 @@ export async function generateReferenceStandard(
     if (data.storage_condition) submitData.append('storage_condition', data.storage_condition)
     if (data.remarks) submitData.append('remarks', data.remarks)
 
-    const json = (await generateReferenceStandardApi(submitData)) as {
-      message?: string
-      data?: Record<string, unknown>
-    }
+    const json = (await generateReferenceStandardApi(submitData)) as ApiResponse<ReferenceStandardData>
     revalidatePath('/registration')
     return {
       success: true,
@@ -203,69 +183,64 @@ export async function generateReferenceStandard(
   }
 }
 
-export async function deleteReferenceStandardAction(
-  id: string
-): Promise<Record<string, unknown>> {
-  const result = (await deleteReferenceStandardApi(id)) as Record<string, unknown>
+export async function deleteReferenceStandardAction(id: string): Promise<MessageResponse> {
+  const result = (await deleteReferenceStandardApi(id)) as MessageResponse
   revalidatePath('/registration')
   return result
 }
 
 export async function fetchAuthorizationLettersServer(
   params: { page: number; page_size: number }
-): Promise<AuthorizationLetterListResponse> {
-  return fetchAuthorizationLettersApi(params) as unknown as AuthorizationLetterListResponse
+): Promise<PageResult<AuthorizationLetterListItem>> {
+  return fetchAuthorizationLettersApi(params)
 }
 
-export async function fetchProductsServer(): Promise<ProductListResponse> {
-  return fetchRegistrationProductsApi() as unknown as ProductListResponse
+export async function fetchProductsServer(): Promise<ProductInfo[]> {
+  return fetchRegistrationProductsApi()
+}
+
+export async function fetchRegistrationProjectsServer(): Promise<RegistrationProject[]> {
+  return fetchRegistrationProjectsApi()
 }
 
 export async function fetchReferenceStandardsServer(
   params: { page: number; page_size: number }
-): Promise<ReferenceStandardListResponse> {
-  return fetchReferenceStandardsApi(params) as unknown as ReferenceStandardListResponse
+): Promise<PageResult<ReferenceStandardListItem>> {
+  return fetchReferenceStandardsApi(params)
 }
 
 export async function fetchSupplementaryRepliesServer(
   params: { page: number; page_size: number }
-): Promise<SupplementaryReplyListResponse> {
-  return fetchSupplementaryRepliesApi(params) as unknown as SupplementaryReplyListResponse
+): Promise<PageResult<SupplementaryReplyListItem>> {
+  return fetchSupplementaryRepliesApi(params)
 }
 
-export async function createDrug(
-  data: DrugCreate
-): Promise<Record<string, unknown>> {
-  const result = (await createDrugApi(data)) as Record<string, unknown>
+export async function createDrug(data: DrugCreate): Promise<ApiResponse<DrugData>> {
+  const result = (await createDrugApi(data)) as ApiResponse<DrugData>
   revalidatePath('/registration/review')
   return result
 }
 
-export async function updateDrug(
-  id: string,
-  data: DrugUpdate
-): Promise<Record<string, unknown>> {
-  const result = (await updateDrugApi(id, data)) as Record<string, unknown>
+export async function updateDrug(id: string, data: DrugUpdate): Promise<ApiResponse<DrugData>> {
+  const result = (await updateDrugApi(id, data)) as ApiResponse<DrugData>
   revalidatePath('/registration/review')
   return result
 }
 
-export async function deleteDrug(
-  id: string
-): Promise<Record<string, unknown>> {
-  const result = (await deleteDrugApi(id)) as Record<string, unknown>
+export async function deleteDrug(id: string): Promise<MessageResponse> {
+  const result = (await deleteDrugApi(id)) as MessageResponse
   revalidatePath('/registration/review')
   return result
 }
 
 export async function parseCOA(file: File): Promise<ParseCOAResponse> {
-  return parseCOAApi(file) as unknown as ParseCOAResponse
+  return parseCOAApi(file)
 }
 
 export async function createRegistrationProject(
   data: components['schemas']['ProjectCreate']
-): Promise<Record<string, unknown>> {
-  const result = (await createRegistrationProjectApi(data)) as Record<string, unknown>
+): Promise<ApiResponse<ProjectData>> {
+  const result = (await createRegistrationProjectApi(data)) as ApiResponse<ProjectData>
   revalidatePath('/registration')
   return result
 }
@@ -273,16 +248,14 @@ export async function createRegistrationProject(
 export async function updateRegistrationProject(
   id: string,
   data: components['schemas']['ProjectUpdate']
-): Promise<Record<string, unknown>> {
-  const result = (await updateRegistrationProjectApi(id, data)) as Record<string, unknown>
+): Promise<ApiResponse<ProjectData>> {
+  const result = (await updateRegistrationProjectApi(id, data)) as ApiResponse<ProjectData>
   revalidatePath('/registration')
   return result
 }
 
-export async function deleteRegistrationProject(
-  id: string
-): Promise<Record<string, unknown>> {
-  const result = (await deleteRegistrationProjectApi(id)) as Record<string, unknown>
+export async function deleteRegistrationProject(id: string): Promise<MessageResponse> {
+  const result = (await deleteRegistrationProjectApi(id)) as MessageResponse
   revalidatePath('/registration')
   return result
 }

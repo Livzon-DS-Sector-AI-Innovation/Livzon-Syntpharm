@@ -11,12 +11,13 @@ Bitable → 平台：用户填表 → 自动创建隐患 + AI识别 + 回写结�
 import json
 import logging
 import os
+import time
 import uuid as _uuid
 from datetime import UTC, datetime
 from typing import Any
 
 from app.core.config import get_settings
-from app.core.jobs import spawn_task
+from app.core.jobs import submit_job, submit_job_safe
 from app.core.redis import redis_client
 from app.modules.safety.feishu.bitable_client import SafetyBitableClient
 from app.modules.safety.feishu.dept_config import DEPARTMENT_CONFIG
@@ -52,6 +53,7 @@ def _debug_log(msg: str) -> None:
 BITABLE_TO_MODEL: dict[str, str] = {
     # ── 基本信息 ──
     "检查日期": "discovered_at",
+    "检查名称": "inspection_name",  # text
     "检查人员": "discovered_by_name",  # person 类型 → 取 name
     "检查人员.部门": "inspector_department",  # multi_select → 逗号拼接（60 部门选项）
     "检查类别": "inspection_category",  # multi_select → 逗号拼接
@@ -68,9 +70,12 @@ BITABLE_TO_MODEL: dict[str, str] = {
     "缺陷图片": "defect_photos",  # attachment → JSON 路径数组
     "整改后图片": "rectification_photos",
     # ── 整改相关（整改状态为平台→Bitable 单向，不在此映射）──
-    "纠正预防措施": "rectification_reply",
+    # 「纠正预防措施」自 2026-11 起落 capa_measures（人工填写），不再写 rectification_reply
+    "纠正预防措施": "capa_measures",
     "整改期限": "deadline",
     "整改完成时间": "actual_completion_date",
+    # 未映射（Bitable 侧列未确认，建列后再加）：
+    #   关闭状态 → status、完成/关闭日期 → closed_at、审批人 → verify_level_3_reviewer_name
     # ── 三级复核（Bitable 审批字段）──
     "部门负责人复核": "verify_level_1_status",  # single_select: 已同意→approved / 未同意→rejected
     "分管领导复核": "verify_level_2_status",  # single_select: 已同意→approved / 未同意→rejected
@@ -216,6 +221,8 @@ async def _resolve_person(  # type: ignore[no-untyped-def]
     *,
     bt_field_label: str = "person",
     existing_name: str | None = None,
+    strict_name: bool = False,
+    department_hint: str | None = None,
 ) -> tuple[str | None, str | None, str]:
     """将 Bitable person 字段值解析为 (db_uuid, open_id, display_name)。
 
@@ -227,6 +234,11 @@ async def _resolve_person(  # type: ignore[no-untyped-def]
       5. Bitable id 本身（避免数据显示为空）
       6. existing_name（已有值，更新时不覆盖）
       7. "飞书用户"（最终 fallback）
+
+    Args:
+        strict_name: 姓名匹配走严格模式（同名多人不绑定，返回 uuid=None）。
+            隐患的检查人员 / 整改责任人必须为 True，避免"取第一个"造成错绑。
+        department_hint: 姓名同名时的部门消歧提示（如隐患责任部门）。
 
     Returns:
         (uuid_str | None, open_id_str, display_name_str)
@@ -300,20 +312,43 @@ async def _resolve_person(  # type: ignore[no-untyped-def]
             logger.exception("_resolve_person[%s] 按 email 查询异常", bt_field_label)
 
     # ── 策略 4：按 Bitable name 查 identity.users ──
+    strict_person = None
     if not user and usable_bt_name:
         try:
-            user = await resolver._find_user_by_name(person_name)
-            if user:
-                logger.info(
-                    "_resolve_person[%s] name 回退成功: name=%s → %s",
-                    bt_field_label,
-                    person_name,
-                    user.name,
-                )
+            if strict_name:
+                # 严格模式：同名多人 / 查无此人时不绑定，只保留姓名（进待匹配清单）
+                match = await resolver.resolve_by_name_strict(person_name, department_hint)
+                if match.is_matched and match.person:
+                    strict_person = match.person
+                    logger.info(
+                        "_resolve_person[%s] name 严格匹配成功: name=%s → %s",
+                        bt_field_label,
+                        person_name,
+                        strict_person.name,
+                    )
+                else:
+                    logger.warning(
+                        "_resolve_person[%s] name 未绑定（%s）: name=%r candidates=%s",
+                        bt_field_label,
+                        match.status,
+                        person_name,
+                        [f"{c.name}/{c.department or '-'}" for c in match.candidates],
+                    )
+            else:
+                user = await resolver._find_user_by_name(person_name, department_hint)
+                if user:
+                    logger.info(
+                        "_resolve_person[%s] name 回退成功: name=%s → %s",
+                        bt_field_label,
+                        person_name,
+                        user.name,
+                    )
         except Exception:
             logger.exception("_resolve_person[%s] 按 name 查询异常", bt_field_label)
 
     # ── 确定最终返回值 ──
+    if strict_person is not None:
+        return (strict_person.id or None, strict_person.open_id or person_id, strict_person.name)
     if user:
         return (str(user.id), user.feishu_open_id or person_id, user.name)
 
@@ -382,7 +417,7 @@ def _ms_to_datetime(value: Any) -> datetime | None:
         try:
             return datetime.fromtimestamp(int(value) / 1000, tz=UTC)
         except (ValueError, OSError):
-            pass
+            logger.warning("忽略异常 @ %s", "_ms_to_datetime", exc_info=True)
     return None
 
 
@@ -955,6 +990,7 @@ async def _create_hazard_from_bitable(
             inspector_raw,
             bt_field_label="检查人员",
             existing_name=mapped.get("discovered_by_name"),
+            strict_name=True,
         )
         _debug_log(
             f"CREATE_INSPECTOR_RESOLVED: record_id={record_id} "
@@ -977,6 +1013,8 @@ async def _create_hazard_from_bitable(
             bitable_fields.get("整改责任人"),
             bt_field_label="整改责任人",
             existing_name=mapped.get("rectification_responsible_person_name"),
+            strict_name=True,
+            department_hint=mapped.get("department"),
         )
         if resp_name and resp_name != "飞书用户":
             mapped["rectification_responsible_person_name"] = resp_name
@@ -1287,7 +1325,10 @@ async def _create_hazard_from_bitable(
             f"CREATE_DISPATCH_RECTIFY: record_id={record_id} hazard_no={item.hazard_no} "
             f"resp_name={item.rectification_responsible_person_name} dept={item.department}"
         )
-        spawn_task(_send_rectification_notification(item))
+        await submit_job_safe(
+            "safety.hazard-rectification-notify",
+            lambda _job_id: _send_rectification_notification(item),
+        )
 
         _debug_log(
             f"CREATE_DONE: record_id={record_id} hazard_no={item.hazard_no} "
@@ -1375,7 +1416,7 @@ async def _update_hazard_from_bitable(
         list(mapped.keys()),
         list(update_data.keys()),
     )
-    if "rectification_reply" in bitable_fields:
+    if "纠正预防措施" in bitable_fields:
         logger.info(
             "📝 整改回复内容: record_id=%s raw_type=%s raw_preview=%s",
             record_id,
@@ -1506,6 +1547,7 @@ async def _update_hazard_from_bitable(
             bitable_fields.get("检查人员"),
             bt_field_label="检查人员",
             existing_name=getattr(hazard, "discovered_by_name", None),
+            strict_name=True,
         )
         if inspector_uuid:
             update_data["discovered_by"] = inspector_uuid
@@ -1522,6 +1564,8 @@ async def _update_hazard_from_bitable(
             bitable_fields.get("整改责任人"),
             bt_field_label="整改责任人",
             existing_name=getattr(hazard, "rectification_responsible_person_name", None),
+            strict_name=True,
+            department_hint=update_data.get("department") or getattr(hazard, "department", None),
         )
         if resp_uuid:
             update_data["rectification_responsible_person"] = resp_uuid
@@ -1701,21 +1745,37 @@ async def _update_hazard_from_bitable(
                     f"UPDATE_NOTIFY_DISPATCH: record_id={record_id} hazard_no={getattr(hazard, 'hazard_no', '?')} "
                     f"→ run_rectification_review(hazard)"
                 )
-                spawn_task(service.hazard.run_rectification_review(hazard.id))
+                await submit_job(
+                    "safety.rectification-review",
+                    lambda _job_id: service.hazard.run_rectification_review(hazard.id),
+                )
             elif new_status == "replied":
                 _debug_log(
                     f"UPDATE_NOTIFY_DISPATCH: record_id={record_id} hazard_no={getattr(hazard, 'hazard_no', '?')} "
                     f"→ run_rectification_review(hazard)"
                 )
-                spawn_task(service.hazard.run_rectification_review(hazard.id))
+                await submit_job(
+                    "safety.rectification-review",
+                    lambda _job_id: service.hazard.run_rectification_review(hazard.id),
+                )
             elif new_status == "level1_approved":
                 # 一般隐患：L2（分管领导）无需复核，自动设为「无需复核」并跳至 L3
                 if getattr(hazard, "hazard_level", None) == "general":
-                    spawn_task(_auto_skip_level2_for_general_hazard(hazard, record_id))
+                    # DB + Bitable 双写，登记失败也不能打断 Bitable 事件处理（submit_job_safe 降级）
+                    await submit_job_safe(
+                        "safety.auto-skip-level2",
+                        lambda _job_id: _auto_skip_level2_for_general_hazard(hazard, record_id),
+                    )
                 else:
-                    spawn_task(_send_verify_notification(hazard, 2))
+                    await submit_job_safe(
+                        "safety.hazard-verify-notify",
+                        lambda _job_id: _send_verify_notification(hazard, 2),
+                    )
             elif new_status == "level2_approved":
-                spawn_task(_send_verify_notification(hazard, 3))
+                await submit_job_safe(
+                    "safety.hazard-verify-notify",
+                    lambda _job_id: _send_verify_notification(hazard, 3),
+                )
 
             # ── 回写整改状态到 Bitable（跳过 ai_reviewing 中间态，AI 完成后会同步最终状态）──
             if new_status != "ai_reviewing":
@@ -1779,6 +1839,16 @@ async def push_hazard_to_bitable(hazard: Any) -> bool:
     if not fields:
         return True
 
+    # 过滤 Bitable 表中不存在的列：update_record 遇到未知字段名会整次 400，
+    # 新增映射（如「检查名称」）必须先建列，未建时只跳过该列而不是让整次回写失败。
+    if _field_type_cache:
+        missing = [cn for cn in fields if cn not in _field_type_cache]
+        if missing:
+            logger.warning("Bitable 表缺少字段，跳过回写: %s", missing)
+            fields = {cn: v for cn, v in fields.items() if cn in _field_type_cache}
+        if not fields:
+            return True
+
     bitable = SafetyBitableClient()
     await _set_sync_ignore(hazard.feishu_record_id, ttl=30)
     ok = await bitable.update_record(hazard.feishu_record_id, fields)
@@ -1816,6 +1886,9 @@ _field_name_cache: dict[str, str] | None = None
 _option_map_cache: dict[str, dict[str, str]] | None = None
 # field_name → field_type 缓存
 _field_type_cache: dict[str, int] | None = None
+# 字段定义缓存加载时间（monotonic），用于 TTL 刷新；Bitable 新建列后无需重启即可生效
+_field_cache_loaded_at: float | None = None
+_FIELD_CACHE_TTL_SECONDS = 600
 
 # 飞书 action_list action 映射
 _ACTION_MAP: dict[str, str] = {
@@ -1825,12 +1898,31 @@ _ACTION_MAP: dict[str, str] = {
 }
 
 
-async def _get_field_definitions(bitable: SafetyBitableClient) -> None:
-    """加载字段定义（ID映射 + 类型 + 选项映射），惰性缓存。"""
-    global _field_name_cache, _option_map_cache, _field_type_cache
-    if _option_map_cache is not None and _field_type_cache is not None:
+async def _get_field_definitions(bitable: SafetyBitableClient, *, force: bool = False) -> None:
+    """加载字段定义（ID映射 + 类型 + 选项映射），带 TTL 的惰性缓存。
+
+    Bitable 表结构会变（新增「检查名称」「纠正预防措施」等列），永久缓存会导致
+    新列被当成缺失字段跳过回写，必须重启进程才恢复。这里按 TTL 定期刷新；
+    刷新失败时沿用旧缓存，避免回写链路因一次接口抖动整体失败。
+    """
+    global _field_name_cache, _option_map_cache, _field_type_cache, _field_cache_loaded_at
+    now = time.monotonic()
+    if (
+        not force
+        and _option_map_cache is not None
+        and _field_type_cache is not None
+        and _field_cache_loaded_at is not None
+        and now - _field_cache_loaded_at < _FIELD_CACHE_TTL_SECONDS
+    ):
         return
-    fields = await bitable.list_fields()
+    try:
+        fields = await bitable.list_fields()
+    except Exception:
+        if _field_type_cache is not None:
+            logger.warning("Bitable 字段定义刷新失败，继续使用旧缓存", exc_info=True)
+            _field_cache_loaded_at = now
+            return
+        raise
     _field_name_cache = {}
     _option_map_cache = {}
     _field_type_cache = {}
@@ -1852,6 +1944,7 @@ async def _get_field_definitions(bitable: SafetyBitableClient) -> None:
                     opts[oid] = oname
             if opts:
                 _option_map_cache[fname] = opts
+    _field_cache_loaded_at = now
     logger.info(
         "Bitable 字段定义已缓存: %d 个字段, %d 个有选项映射",
         len(_field_name_cache),
@@ -1916,7 +2009,7 @@ def _convert_after_value_to_fields(
                 if isinstance(parsed, (list, dict)):
                     raw = parsed
             except (json.JSONDecodeError, TypeError):
-                pass
+                logger.warning("忽略异常 @ %s", "_convert_after_value_to_fields", exc_info=True)
         # 将选项 ID 解析为显示名称
         raw = _resolve_option_ids(raw, opt_map_cache.get(fname, {}), type_cache.get(fname, 0))
         result[fname] = raw
@@ -1953,7 +2046,7 @@ def _extract_field_value(
             if isinstance(parsed, (list, dict)):
                 raw = parsed
         except (json.JSONDecodeError, TypeError):
-            pass
+            logger.warning("忽略异常 @ %s", "_extract_field_value", exc_info=True)
 
     # 将选项 ID 解析为显示名称
     opt_map_cache = _option_map_cache or {}
@@ -2455,7 +2548,10 @@ async def _auto_skip_level2_for_general_hazard(hazard: Any, record_id: str) -> N
     # 更新内存对象以便通知使用最新状态
     hazard.verify_level_2_status = "no_review_needed"
     hazard.rectification_status = "level2_approved"
-    spawn_task(_send_verify_notification(hazard, 3))
+    await submit_job_safe(
+        "safety.hazard-verify-notify",
+        lambda _job_id: _send_verify_notification(hazard, 3),
+    )
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -2550,8 +2646,11 @@ async def handle_card_action(event: dict[str, Any]) -> dict[str, Any] | None:  #
     # ── 第二步：Bitable 更新 + PATCH 卡片放入后台异步执行 ──
     open_message_id = event.get("context", {}).get("open_message_id", "")
     hazard_no = getattr(hazard, "hazard_no", "") if hazard else ""
-    spawn_task(
-        _handle_approve_background(
+    # Bitable 更新 + 卡片 PATCH 是有状态写操作：落 core.background_jobs 便于事后追查；
+    # 用 submit_job_safe 保证登记失败时仍能走到第三步 ACK（否则卡片超时会回滚）。
+    await submit_job_safe(
+        "safety.approve-card-background",
+        lambda _job_id: _handle_approve_background(
             record_id=record_id,
             bt_field=bt_field,
             bt_value=bt_value,
@@ -2560,7 +2659,7 @@ async def handle_card_action(event: dict[str, Any]) -> dict[str, Any] | None:  #
             open_message_id=open_message_id,
             updated_card=updated_card,
             hazard_no=hazard_no,
-        )
+        ),
     )
 
     # ── 第三步：ACK 立即返回卡片更新（防止超时回滚）──

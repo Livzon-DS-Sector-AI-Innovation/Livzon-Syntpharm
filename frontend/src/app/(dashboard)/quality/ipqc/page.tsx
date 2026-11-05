@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import { toPageResult } from '@/lib/api/page'
 import {
   Table,
   Button,
@@ -61,6 +63,7 @@ import {
   lockIPQCBatch,
   unlockIPQCBatch,
 } from '@/actions/quality'
+import { DataUnavailable } from '@/components/common/DataUnavailable'
 
 const { RangePicker } = DatePicker
 const { Text: _Text } = Typography
@@ -82,12 +85,10 @@ const initialFilters: IPQCInspectionFilter = {
 
 export default function IPQCPage() {
   // 状态
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<IPQCInspectionListItem[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [filters, setFilters] = useState<IPQCInspectionFilter>(initialFilters)
+  const [appliedFilters, setAppliedFilters] = useState<IPQCInspectionFilter>(initialFilters)
 
   // 弹窗状态
   const [modalVisible, setModalVisible] = useState(false)
@@ -102,42 +103,35 @@ export default function IPQCPage() {
   const [items, setItems] = useState<IPQCInspectionItemCreate[]>([])
   const [submitLoading, setSubmitLoading] = useState(false)
 
-  // 加载数据
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
+  // 打开即加载：已提交的筛选条件 / 翻页变化 → queryKey 变化 → 自动重取。
+  // filters 是输入中的草稿态，appliedFilters 才是真正发请求的条件，避免每敲一个字都请求。
+  const inspectionsQuery = useQuery({
+    queryKey: ['ipqc-inspections', appliedFilters, page, pageSize],
+    queryFn: async () => {
       const response = await getIPQCInspections({
-        ...filters,
+        ...appliedFilters,
         page,
         page_size: pageSize,
-      }) as { items?: IPQCInspectionListItem[]; total?: number; code?: number; message?: string; data?: { items?: IPQCInspectionListItem[]; total?: number } }
-      if (response.items !== undefined) {
-        setData(response.items || [])
-        setTotal(response.total || 0)
-      } else if (response.code === 200 || response.code === 0) {
-        setData(response.data?.items || [])
-        setTotal(response.data?.total || 0)
-      } else {
-        message.error(response.message || '加载失败')
-      }
-    } catch (_error) {
-      message.error('加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [filters, page, pageSize])
+      })
+      return toPageResult<IPQCInspectionListItem>(response)
+    },
+    placeholderData: keepPreviousData,
+  })
 
-  // 筛选
+  const data = inspectionsQuery.data?.items ?? []
+  const total = inspectionsQuery.data?.total ?? 0
+
+  // 筛选：只更新「已提交条件」与页码，由 queryKey 触发取数（条件未变则不重复请求）
   const handleSearch = () => {
+    setAppliedFilters(filters)
     setPage(1)
-    loadData()
   }
 
   // 重置筛选
   const handleReset = () => {
     setFilters(initialFilters)
+    setAppliedFilters(initialFilters)
     setPage(1)
-    loadData()
   }
 
   // 新建
@@ -152,7 +146,7 @@ export default function IPQCPage() {
   // 编辑
   const handleEdit = async (record: IPQCInspectionListItem) => {
     try {
-      const response = await getIPQCInspection(record.id) as { code?: number; message?: string; data?: IPQCInspection }
+      const response = await getIPQCInspection(record.id)
       if (response.code === 200 || response.code === 0) {
         setEditingRecord(response.data!)
         setModalTitle('编辑IPQC检验单')
@@ -189,7 +183,7 @@ export default function IPQCPage() {
   // 查看详情
   const handleView = async (record: IPQCInspectionListItem) => {
     try {
-      const response = await getIPQCInspection(record.id) as { code?: number; message?: string; data?: IPQCInspection }
+      const response = await getIPQCInspection(record.id)
       if (response.code === 200 || response.code === 0) {
         setViewRecord(response.data!)
         setViewModalVisible(true)
@@ -204,10 +198,10 @@ export default function IPQCPage() {
   // 删除
   const handleDelete = async (id: string) => {
     try {
-      const response = await deleteIPQCInspection(id) as { code?: number; message?: string }
+      const response = await deleteIPQCInspection(id)
       if (response.code === 200 || response.code === 0 || response.message?.includes('成功')) {
         message.success('删除成功')
-        loadData()
+        void inspectionsQuery.refetch()
       } else {
         message.error(response.message || '删除失败')
       }
@@ -219,10 +213,10 @@ export default function IPQCPage() {
   // 提交审批
   const handleSubmit = async (id: string) => {
     try {
-      const response = await submitIPQCInspectionForApproval(id) as { code?: number; message?: string; data?: { status?: string } }
+      const response = await submitIPQCInspectionForApproval(id)
       if (response.code === 200 || response.code === 0 || response.data?.status) {
         message.success('提交成功')
-        loadData()
+        void inspectionsQuery.refetch()
       } else {
         message.error(response.message || '提交失败')
       }
@@ -236,10 +230,10 @@ export default function IPQCPage() {
     try {
       const response = await approveIPQCInspection(id, {
         approval_status: approved ? 'approved' : 'rejected',
-      }) as { code?: number; message?: string; data?: { status?: string } }
+      })
       if (response.code === 200 || response.code === 0 || response.data?.status) {
         message.success(approved ? '审批通过' : '已驳回')
-        loadData()
+        void inspectionsQuery.refetch()
       } else {
         message.error(response.message || '操作失败')
       }
@@ -251,10 +245,10 @@ export default function IPQCPage() {
   // 锁定批次
   const handleLockBatch = async (id: string) => {
     try {
-      const response = await lockIPQCBatch(id, 'IPQC检验不合格，批次锁定') as { code?: number; message?: string }
+      const response = await lockIPQCBatch(id, 'IPQC检验不合格，批次锁定')
       if (response.code === 200 || response.code === 0) {
         message.success('批次已锁定')
-        loadData()
+        void inspectionsQuery.refetch()
       } else {
         message.error(response.message || '锁定失败')
       }
@@ -266,10 +260,10 @@ export default function IPQCPage() {
   // 解锁批次
   const handleUnlockBatch = async (id: string) => {
     try {
-      const response = await unlockIPQCBatch(id) as { code?: number; message?: string }
+      const response = await unlockIPQCBatch(id)
       if (response.code === 200 || response.code === 0) {
         message.success('批次已解锁')
-        loadData()
+        void inspectionsQuery.refetch()
       } else {
         message.error(response.message || '解锁失败')
       }
@@ -306,7 +300,7 @@ export default function IPQCPage() {
       if (response.code === 200 || response.code === 0 || response.data?.inspection_no) {
         message.success(editingRecord ? '更新成功' : '创建成功')
         setModalVisible(false)
-        loadData()
+        void inspectionsQuery.refetch()
       } else {
         message.error(response.message || '操作失败')
       }
@@ -355,7 +349,7 @@ export default function IPQCPage() {
         }
 
         setSubmitLoading(true)
-        const createResponse = await createIPQCInspection(submitData) as { code?: number; message?: string; data?: { id?: string } }
+        const createResponse = await createIPQCInspection(submitData)
         if (createResponse.code !== 200 && createResponse.code !== 0) {
           message.error(createResponse.message || '保存失败')
           setSubmitLoading(false)
@@ -376,7 +370,7 @@ export default function IPQCPage() {
         }
 
         setSubmitLoading(true)
-        const updateResponse = await updateIPQCInspection(recordId, submitData) as { code?: number; message?: string }
+        const updateResponse = await updateIPQCInspection(recordId, submitData)
         if (updateResponse.code !== 200 && updateResponse.code !== 0) {
           message.error(updateResponse.message || '保存失败')
           setSubmitLoading(false)
@@ -385,11 +379,11 @@ export default function IPQCPage() {
       }
 
       // 提交审批
-      const submitResponse = await submitIPQCInspectionForApproval(recordId!) as { code?: number; message?: string }
+      const submitResponse = await submitIPQCInspectionForApproval(recordId!)
       if (submitResponse.code === 200 || submitResponse.code === 0) {
         message.success('保存并提交成功')
         setModalVisible(false)
-        loadData()
+        void inspectionsQuery.refetch()
       } else {
         message.error(submitResponse.message || '提交失败')
       }
@@ -709,8 +703,14 @@ export default function IPQCPage() {
           columns={columns}
           dataSource={data}
           rowKey="id"
-          loading={loading}
+          loading={inspectionsQuery.isPending}
           scroll={{ x: 2000 }}
+          locale={{
+            // 取数失败时在表格内嵌降级区块，与「确实没有记录」的空态区分开
+            emptyText: inspectionsQuery.isError ? (
+              <DataUnavailable compact onRetry={() => void inspectionsQuery.refetch()} />
+            ) : undefined,
+          }}
           pagination={{
             current: page,
             pageSize: pageSize,

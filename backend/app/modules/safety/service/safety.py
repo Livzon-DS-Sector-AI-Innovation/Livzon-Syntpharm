@@ -204,7 +204,7 @@ class SafetyService:
                 if os.path.exists(abs_path):
                     os.remove(abs_path)
         except OSError:
-            pass
+            logger.debug("忽略异常 @ %s", "SafetyService._cleanup_file")
 
     @staticmethod
     def _cleanup_json_array_files(json_str: str | None) -> None:
@@ -218,7 +218,7 @@ class SafetyService:
                     if isinstance(p, str):
                         SafetyService._cleanup_file(p)
         except (json.JSONDecodeError, TypeError):
-            pass
+            logger.debug("忽略异常 @ %s", "SafetyService._cleanup_json_array_files")
 
     # ==================== SafetyCheck Operations ====================
 
@@ -1589,11 +1589,24 @@ class SafetyService:
             "hazard_id_no": item.hazard_id_no,
             "department": item.department,
             "position": item.position,
-            "production_step": item.production_step,
+            # 历史导入数据无生产步骤，回退作业步骤，避免导出空列
+            "production_step": item.production_step or item.work_step,
             "specific_activity": item.specific_activity,
             "equipment_facilities": item.equipment_facilities,
             "hazard_type": item.hazard_type,
             "possible_accident": item.possible_accident,
+            "checklist_no": item.checklist_no,
+            "risk_point_no": item.risk_point_no,
+            "risk_point_type": item.risk_point_type,
+            "risk_point_name": item.risk_point_name,
+            "work_unit": item.work_unit,
+            "location_tag": item.location_tag,
+            "work_step": item.work_step,
+            "check_standard": item.check_standard,
+            "risk_method": item.risk_method,
+            "severity_s": item.severity_s,
+            "control_unit": item.control_unit,
+            "training_measures": item.training_measures,
             "inherent_risk_level": item.inherent_risk_level,
             "inherent_risk_label": item.inherent_risk_label,
             "l_inherent": int(item.l_inherent) if item.l_inherent else None,

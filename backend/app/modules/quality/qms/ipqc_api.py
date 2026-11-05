@@ -5,11 +5,12 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import AppException, BadRequestException
 from app.modules.quality.qms.ipqc_schemas import (
     IPQCApprovalCreate,
     IPQCApprovalRecordResponse,
@@ -46,7 +47,7 @@ async def post(
             data=IPQCInspectionResponse.model_validate(inspection),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.get("/inspections", response_model=IPQCInspectionPageResponse)
@@ -101,7 +102,7 @@ async def get(  # noqa: F811
         inspection = await service.get_inspection(inspection_id)
         return IPQCInspectionApiResponse(data=IPQCInspectionResponse.model_validate(inspection))
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise AppException(status_code=404, message=str(e))
 
 
 @router.put("/inspections/{inspection_id}", response_model=IPQCInspectionApiResponse)
@@ -121,7 +122,7 @@ async def put(
             data=IPQCInspectionResponse.model_validate(inspection),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.delete("/inspections/{inspection_id}")
@@ -137,7 +138,7 @@ async def delete(
         await service.delete_inspection(inspection_id, user_id)
         return IPQCInspectionApiResponse(code=200, message="操作成功", data=None)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/inspections/{inspection_id}/submit", response_model=IPQCInspectionApiResponse)  # type: ignore[no-redef]
@@ -156,7 +157,7 @@ async def post(  # noqa: F811
             data=IPQCInspectionResponse.model_validate(inspection),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/inspections/{inspection_id}/approve", response_model=IPQCInspectionApiResponse)  # type: ignore[no-redef]
@@ -178,7 +179,7 @@ async def post(  # noqa: F811
             data=IPQCInspectionResponse.model_validate(inspection),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.get(
@@ -212,7 +213,7 @@ async def post(  # noqa: F811
             data=IPQCInspectionResponse.model_validate(inspection),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.post("/inspections/{inspection_id}/unlock-batch", response_model=IPQCInspectionApiResponse)  # type: ignore[no-redef]
@@ -231,4 +232,4 @@ async def post(  # noqa: F811
             data=IPQCInspectionResponse.model_validate(inspection),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))

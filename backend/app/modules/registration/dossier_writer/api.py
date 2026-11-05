@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,16 +13,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.database import async_session_factory, get_db
 from app.core.deps import RequiredUser, require_route_permission
+from app.core.exceptions import AppException, BadRequestException, NotFoundException
 from app.core.job_store import JobStore, get_job_state_or_404, start_job
-from app.core.response import ApiResponse, build_response, error_response
+from app.core.response import build_response, error_response
 from app.shared.schemas import AsyncJobAccepted, AsyncJobAcceptedResponse, AsyncJobStateResponse
 
 from .field_models import FieldFillResult, FieldMapping
 from .models import ChapterAsset, DossierChapter, ProductDossier
 from .schemas import (
+    AIConfirmData,
     AIConfirmRequest,
     AIConfirmResponse,
     AssetCategoryListApiResponse,
+    AssetCategoryUpdateData,
     AssetCategoryUpdateRequest,
     AssetCategoryUpdateResponse,
     AssetListApiResponse,
@@ -30,6 +33,7 @@ from .schemas import (
     AssetResponse,
     AssetUploadBatchApiResponse,
     AssetUploadResponse,
+    AssetUsageToggleData,
     AssetUsageToggleRequest,
     AssetUsageToggleResponse,
     AvailableAssetListApiResponse,
@@ -51,8 +55,10 @@ from .schemas import (
     ProductDossierListResponse,
     ProductDossierResponse,
     ProductDossierUpdate,
+    SplitConfirmData,
     SplitConfirmRequest,
     SplitConfirmResponse,
+    SplitPreviewData,
     SplitPreviewRequest,
     SplitPreviewResponse,
     StringListApiResponse,
@@ -142,7 +148,7 @@ async def get_product_dossier(
     service = DossierService(db)
     dossier = await service.get_product_dossier(dossier_id)
     if not dossier:
-        raise HTTPException(status_code=404, detail="品种资料不存在")
+        raise NotFoundException("品种资料")
     return build_response(data=ProductDossierResponse.model_validate(dossier), message="获取成功")
 
 
@@ -157,7 +163,7 @@ async def update_product_dossier(
     service = DossierService(db)
     dossier = await service.update_product_dossier(dossier_id, data)
     if not dossier:
-        raise HTTPException(status_code=404, detail="品种资料不存在")
+        raise NotFoundException("品种资料")
     return build_response(data=ProductDossierResponse.model_validate(dossier), message="更新成功")
 
 
@@ -171,7 +177,7 @@ async def delete_product_dossier(
     service = DossierService(db)
     success = await service.delete_product_dossier(dossier_id)
     if not success:
-        raise HTTPException(status_code=404, detail="品种资料不存在")
+        raise NotFoundException("品种资料")
     return build_response(message="删除成功")
 
 
@@ -289,7 +295,7 @@ async def get_chapter_detail(
     service = DossierService(db)
     chapter = await service.get_chapter_detail(chapter_id)
     if not chapter:
-        raise HTTPException(status_code=404, detail="章节不存在")
+        raise NotFoundException("章节")
     return build_response(data=chapter, message="获取成功")
 
 
@@ -358,7 +364,7 @@ async def delete_asset(
     service = DossierService(db)
     success = await service.delete_asset(asset_id)
     if not success:
-        raise HTTPException(status_code=404, detail="素材不存在")
+        raise NotFoundException("素材")
     return build_response(message="删除成功")
 
 
@@ -368,11 +374,11 @@ async def update_asset_category(
     asset_id: UUID,
     body: AssetCategoryUpdateRequest,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> AssetCategoryUpdateResponse:
     """更新素材的分类"""
     asset = await db.get(ChapterAsset, asset_id)
     if not asset:
-        raise HTTPException(status_code=404, detail="素材不存在")
+        raise NotFoundException("素材")
 
     category_id = body.category_id
     asset.category_id = category_id if category_id else None
@@ -380,11 +386,12 @@ async def update_asset_category(
     result = await db.execute(select(ChapterAsset).where(ChapterAsset.id == asset_id))
     asset = result.scalar_one()
 
-    return build_response(
-        data={
-            "id": str(asset.id),
-            "category_id": str(asset.category_id) if asset.category_id else None,
-        },
+    return AssetCategoryUpdateResponse(
+        code=200,
+        data=AssetCategoryUpdateData(
+            id=str(asset.id),
+            category_id=str(asset.category_id) if asset.category_id else None,
+        ),
         message="分类已更新",
     )
 
@@ -469,11 +476,11 @@ async def download_exported_file(
     service = DossierService(db)
     dossier = await service.repo.get_product_dossier(dossier_id)
     if not dossier:
-        raise HTTPException(status_code=404, detail="品种资料不存在")
+        raise NotFoundException("品种资料")
 
     file_path = _resolve_export_file(dossier.outputs_path, filename)
     if file_path is None:
-        raise HTTPException(status_code=404, detail="文件不存在")
+        raise NotFoundException("文件")
 
     return FileResponse(
         path=str(file_path),
@@ -509,18 +516,18 @@ async def get_chapter_docx_file(
 
     chapter = await db.get(DossierChapter, chapter_id)
     if not chapter:
-        raise HTTPException(status_code=404, detail="章节不存在")
+        raise NotFoundException("章节")
 
     dossier = await db.get(ProductDossier, chapter.product_dossier_id)
     if not dossier:
-        raise HTTPException(status_code=404, detail="品种资料不存在")
+        raise NotFoundException("品种资料")
 
     if not chapter.working_file:
-        raise HTTPException(status_code=404, detail="该章节尚无工作副本文件")
+        raise AppException(status_code=404, message="该章节尚无工作副本文件")
 
     file_path = Path(dossier.working_path or "") / chapter.working_file
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="工作副本文件不存在")
+        raise NotFoundException("工作副本文件")
 
     return FileResponse(
         path=str(file_path),
@@ -566,12 +573,12 @@ async def fill_chapter_fields(
     # 获取章节信息
     chapter = await service.get_chapter_detail(chapter_id)
     if not chapter:
-        raise HTTPException(status_code=404, detail="章节不存在")
+        raise NotFoundException("章节")
 
     # 获取品种信息
     dossier = await service.get_product_dossier(chapter.product_dossier_id)
     if not dossier:
-        raise HTTPException(status_code=404, detail="品种资料不存在")
+        raise NotFoundException("品种资料")
 
     # 获取章节素材
     assets = await service.list_chapter_assets(chapter_id)
@@ -579,7 +586,7 @@ async def fill_chapter_fields(
     # 获取章节模型用于填充
     ch_model = await db.get(DossierChapter, chapter_id)
     if not ch_model:
-        raise HTTPException(status_code=404, detail="章节不存在")
+        raise NotFoundException("章节")
 
     # 执行填充
     result = await fill_service.fill_chapter_fields(dossier, ch_model, assets)
@@ -758,7 +765,7 @@ async def ai_confirm_and_fill(
     chapter_id: UUID,
     data: AIConfirmRequest,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> AIConfirmResponse:
     """AI 填充确认：用户确认后写入文档"""
     from .ai_fill_service import AIFillService
     from .models import DossierChapter, ProductDossier
@@ -769,21 +776,25 @@ async def ai_confirm_and_fill(
     chapter = ch_result.scalar_one_or_none()
 
     if not chapter:
-        raise HTTPException(status_code=404, detail="章节不存在")
+        raise NotFoundException("章节")
 
     pd_stmt = select(ProductDossier).where(ProductDossier.id == chapter.product_dossier_id)
     pd_result = await db.execute(pd_stmt)
     dossier = pd_result.scalar_one_or_none()
 
     if not dossier:
-        raise HTTPException(status_code=404, detail="品种资料不存在")
+        raise NotFoundException("品种资料")
 
     user_confirmed_fields = data.fields
 
     service = AIFillService(db)
     result = await service.confirm_and_fill(dossier, chapter, user_confirmed_fields)
 
-    return build_response(data=result, message=result.get("message", "完成"))
+    return AIConfirmResponse(
+        code=200,
+        data=AIConfirmData.model_validate(result),
+        message=result.get("message", "完成"),
+    )
 
 
 @router.get("/chapters/{chapter_code}/asset-categories", response_model=AssetCategoryListApiResponse)
@@ -807,7 +818,7 @@ async def split_preview(
     asset_id: UUID,
     data: SplitPreviewRequest,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> SplitPreviewResponse:
     """AI 拆分预览：识别多页 PDF 每页的类型"""
     from .ai_fill_service import AIFillService
     from .models import ChapterAsset
@@ -817,7 +828,7 @@ async def split_preview(
     asset = db_result.scalar_one_or_none()
 
     if not asset:
-        raise HTTPException(status_code=404, detail="素材不存在")
+        raise NotFoundException("素材")
 
     available_appendix_slots = data.available_appendix_slots
 
@@ -825,9 +836,13 @@ async def split_preview(
     result = await service.preview_page_splits(asset, available_appendix_slots)
 
     if not result["success"]:
-        raise HTTPException(status_code=500, detail=result["message"])
+        raise AppException(status_code=500, message=result["message"])
 
-    return build_response(data=result, message=result["message"])
+    return SplitPreviewResponse(
+        code=200,
+        data=SplitPreviewData.model_validate(result),
+        message=result["message"],
+    )
 
 
 @router.post("/chapters/{chapter_id}/split-confirm", response_model=SplitConfirmResponse)
@@ -836,7 +851,7 @@ async def split_confirm_and_insert(
     chapter_id: UUID,
     data: SplitConfirmRequest,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> SplitConfirmResponse:
     """AI 拆分确认：将各页转为图片插入模板"""
     from .ai_fill_service import AIFillService
     from .models import DossierChapter, ProductDossier
@@ -846,14 +861,14 @@ async def split_confirm_and_insert(
     chapter = ch_result.scalar_one_or_none()
 
     if not chapter:
-        raise HTTPException(status_code=404, detail="章节不存在")
+        raise NotFoundException("章节")
 
     pd_stmt = select(ProductDossier).where(ProductDossier.id == chapter.product_dossier_id)
     pd_result = await db.execute(pd_stmt)
     dossier = pd_result.scalar_one_or_none()
 
     if not dossier:
-        raise HTTPException(status_code=404, detail="品种资料不存在")
+        raise NotFoundException("品种资料")
 
     splits = data.splits
 
@@ -861,9 +876,13 @@ async def split_confirm_and_insert(
     result = await service.confirm_page_splits_and_insert(dossier, chapter, splits)
 
     if not result["success"]:
-        raise HTTPException(status_code=500, detail=result["message"])
+        raise AppException(status_code=500, message=result["message"])
 
-    return build_response(data=result, message=result["message"])
+    return SplitConfirmResponse(
+        code=200,
+        data=SplitConfirmData.model_validate(result),
+        message=result["message"],
+    )
 
 
 @router.get("/chapters/{chapter_code}/appendix-slots", response_model=StringListApiResponse)
@@ -938,7 +957,7 @@ async def toggle_asset_usage(
     asset_id: UUID,
     body: AssetUsageToggleRequest,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> AssetUsageToggleResponse:
     """切换素材的使用状态（勾选/取消勾选）
 
     body: {"is_selected": true/false}
@@ -946,9 +965,13 @@ async def toggle_asset_usage(
     service = DossierService(db)
     try:
         result = await service.toggle_asset_usage(chapter_id, asset_id, body.is_selected)
-        return build_response(data=result, message="更新成功")
+        return AssetUsageToggleResponse(
+            code=200,
+            data=AssetUsageToggleData.model_validate(result),
+            message="更新成功",
+        )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestException(str(e))
 
 
 @router.get("/chapters/{chapter_id}/selected-assets", response_model=AssetListApiResponse)

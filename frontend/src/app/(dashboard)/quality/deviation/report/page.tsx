@@ -29,20 +29,33 @@ import { TableRow } from '@tiptap/extension-table-row'
 import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
 import styles from './page.module.css'
+import { downloadDeviationReport, saveDeviationReport } from '@/lib/api/client/quality-deviation-report'
+import { getDeviationReportOptimizeJob, startDeviationReportOptimize, uploadDeviationReportTemplate } from '@/actions/quality'
+import type { DeviationReportOptimizeType, DeviationReportUploadResult } from '@/types/quality'
 
-const API_BASE = '/api/v1'
+const OPTIMIZE_POLL_INTERVAL_MS = 1500
+const OPTIMIZE_POLL_TIMEOUT_MS = 90_000
 
-interface UploadResult {
-  file_id: string
-  file_name: string
-  html_content: string
-  file_path: string
-  warnings?: string[]
+/** 轮询 AI 优化任务，直到 done / failed / 超时。每次调用都是一次短请求。 */
+async function waitForOptimizeResult(jobId: string): Promise<string> {
+  const deadline = Date.now() + OPTIMIZE_POLL_TIMEOUT_MS
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, OPTIMIZE_POLL_INTERVAL_MS))
+    const job = await getDeviationReportOptimizeJob(jobId)
+    if (job.status === 'done') {
+      if (!job.optimized_text) throw new Error('AI 优化返回为空，请重试')
+      return job.optimized_text
+    }
+    if (job.status === 'failed') {
+      throw new Error(job.error || 'AI 优化失败，请稍后重试')
+    }
+  }
+  throw new Error('AI 优化超时，请稍后重试')
 }
 
 export default function DeviationReportPage() {
   const [loading, setLoading] = useState(false)
-  const [fileInfo, setFileInfo] = useState<UploadResult | null>(null)
+  const [fileInfo, setFileInfo] = useState<DeviationReportUploadResult | null>(null)
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
 
@@ -51,7 +64,7 @@ export default function DeviationReportPage() {
   const [optimizeModalVisible, setOptimizeModalVisible] = useState(false)
   const [selectedText, setSelectedText] = useState('')
   const [optimizedText, setOptimizedText] = useState('')
-  const [optimizeType, setOptimizeType] = useState('polish')
+  const [optimizeType, setOptimizeType] = useState<DeviationReportOptimizeType>('polish')
 
   // 右键菜单位置
   const [contextMenuVisible, setContextMenuVisible] = useState(false)
@@ -135,35 +148,21 @@ export default function DeviationReportPage() {
   ] as const
 
   // 处理 AI 优化
-  const handleAIOptimize = async (type: string) => {
+  const handleAIOptimize = async (type: DeviationReportOptimizeType) => {
     setContextMenuVisible(false)
     setOptimizeType(type)
     setOptimizing(true)
     setOptimizedText('')
 
     try {
-      const response = await fetch(`${API_BASE}/quality/deviation-report/ai/optimize`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text: selectedText,
-          optimize_type: type,
-        }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.detail || '优化失败')
-      }
-
-      const result = await response.json()
-      setOptimizedText(result.data.optimized_text)
+      // 后端只入队，LLM 在后台跑；这里轮询任务状态（单次请求都在 5 秒内）
+      const job = await startDeviationReportOptimize(selectedText, type)
+      const optimized = await waitForOptimizeResult(job.job_id)
+      setOptimizedText(optimized)
       setOptimizeModalVisible(true)
       message.success('优化完成')
     } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : 'AI优化失败'))
+      message.error(error instanceof Error ? error.message : 'AI优化失败')
       console.error('Optimize error:', error)
     } finally {
       setOptimizing(false)
@@ -194,28 +193,15 @@ export default function DeviationReportPage() {
   const handleUpload = useCallback(async (file: File) => {
     setLoading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-
-      const response = await fetch(`${API_BASE}/quality/deviation-report/upload`, {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.detail || '上传失败')
-      }
-
-      const result = await response.json()
-      setFileInfo(result.data)
+      const data = await uploadDeviationReportTemplate(file)
+      setFileInfo(data)
 
       if (editor) {
-        editor.commands.setContent(result.data.html_content)
+        editor.commands.setContent(data.html_content)
       }
 
-      if (result.data.warnings?.length > 0) {
-        message.warning(`文档解析完成，有 ${result.data.warnings.length} 个警告`)
+      if (data.warnings?.length) {
+        message.warning(`文档解析完成，有 ${data.warnings.length} 个警告`)
       } else {
         message.success('文档解析成功')
       }
@@ -235,33 +221,7 @@ export default function DeviationReportPage() {
 
     setSaving(true)
     try {
-      const htmlContent = editor.getHTML()
-
-      const response = await fetch(`${API_BASE}/quality/deviation-report/save`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          file_id: fileInfo.file_id,
-          html_content: htmlContent,
-        }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.detail || '保存失败')
-      }
-
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `偏差报告_${Date.now()}.docx`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
+      await saveDeviationReport(fileInfo.file_id, editor.getHTML())
 
       message.success('文档保存成功')
       setHasChanges(false)
@@ -274,15 +234,14 @@ export default function DeviationReportPage() {
   }, [fileInfo, editor])
 
   // 直接下载原文档
-  const handleDownloadOriginal = useCallback(() => {
+  const handleDownloadOriginal = useCallback(async () => {
     if (!fileInfo) return
 
-    const link = document.createElement('a')
-    link.href = `${API_BASE}/quality/deviation-report/download?file_id=${fileInfo.file_id}`
-    link.download = fileInfo.file_name
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    try {
+      await downloadDeviationReport(fileInfo.file_id, fileInfo.file_name)
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '下载失败')
+    }
   }, [fileInfo])
 
   // 重新加载
@@ -307,6 +266,7 @@ export default function DeviationReportPage() {
 
   return (
     <div style={{ padding: 24 }}>
+      <h1 className="sr-only">偏差报告编辑器</h1>
       <Card
         title="偏差报告编辑器"
         extra={
@@ -492,7 +452,7 @@ export default function DeviationReportPage() {
                   <div
                     key={item?.key}
                     className={styles.contextMenuItem}
-                    onClick={() => handleAIOptimize(item?.key as string)}
+                    onClick={() => handleAIOptimize(item.key as DeviationReportOptimizeType)}
                   >
                     {item?.icon}
                     <span style={{ marginLeft: 8 }}>{item?.label}</span>

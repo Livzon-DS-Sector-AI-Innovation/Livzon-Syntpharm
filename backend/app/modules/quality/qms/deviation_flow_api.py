@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 """偏差流程管理 API
 
 提供偏差的创建、编辑、提交、查询等完整流程管理功能。
@@ -7,16 +6,31 @@
 import logging
 import uuid
 from datetime import datetime, timedelta
+from io import BytesIO
+from pathlib import Path
+from urllib.parse import quote
 
 from dateutil import parser as date_parser  # type: ignore[import-untyped]
 from fastapi import APIRouter, Depends, File, Query, UploadFile
+from fastapi.responses import StreamingResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import storage
 from app.core.config import get_settings
+from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import AppException, BadRequestException, NotFoundException
 from app.modules.quality.qms.deviation_flow_schemas import (
+    DeviationAttachmentListResponse,
     DeviationCreateRequest,
+    DeviationCreateResponse,
+    DeviationDetailResponse,
+    DeviationEmptyResponse,
+    DeviationListResponse,
+    DeviationOptionsResponse,
+    DeviationSubmitResponse,
     DeviationUpdateRequest,
+    DeviationUploadResponse,
 )
 from app.platform.database import get_db_session
 from app.platform.notification.feishu_client_config import FeishuClient
@@ -26,6 +40,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/deviation-flow", tags=["偏差流程管理"])
 
 settings = get_settings()
+
+# 附件统一存对象存储（与 deviation_report 一致），file_path 字段存 object_key
+_STORAGE_MODULE = "quality"
+_ATTACHMENT_PREFIX = "deviation_attachments"
 
 # ============ SQL 常量 ============
 
@@ -152,6 +170,18 @@ STATUS_OPTIONS = [
     {"value": "detail_completed", "label": "详情完成"},
     {"value": "completed", "label": "已完成"},
 ]
+
+
+def as_text(value: object) -> str | None:
+    """把 UUID / 日期等非字符串列值转成字符串，供响应模型使用（None 原样透传）。
+
+    原生 SQL 返回的是 `uuid.UUID` / `date` / `datetime` 对象，而 schema 声明的字段是
+    `str | None`；Pydantic v2 不做 UUID -> str 的隐式转换，直接透传会触发响应校验
+    错误（HTTP 500），所以在构造响应体时统一转换。
+    """
+    if value is None or isinstance(value, str):
+        return value
+    return str(value)
 
 
 def get_type_label(deviation_type: str) -> str:
@@ -346,8 +376,11 @@ async def send_feishu_notification(  # type: ignore[no-untyped-def]
 # ============ API 接口 ============
 
 
-@router.get("/options", summary="获取选项列表")
-async def get_options():  # type: ignore[no-untyped-def]
+@router.get("/options", summary="获取选项列表", response_model=DeviationOptionsResponse)
+async def get_options(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:read")),
+):
     """获取偏差类型、紧急等级、状态等选项"""
     return {
         "code": 200,
@@ -360,9 +393,11 @@ async def get_options():  # type: ignore[no-untyped-def]
     }
 
 
-@router.post("", summary="创建偏差")
+@router.post("", summary="创建偏差", response_model=DeviationCreateResponse)
 async def create_deviation(  # type: ignore[no-untyped-def]
     request: DeviationCreateRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:create")),
     session: AsyncSession = Depends(get_db_session),
 ):
     """创建新偏差（草稿状态）"""
@@ -449,9 +484,11 @@ async def create_deviation(  # type: ignore[no-untyped-def]
     }
 
 
-@router.get("/{deviation_id}", summary="获取偏差详情")
+@router.get("/{deviation_id}", summary="获取偏差详情", response_model=DeviationDetailResponse)
 async def get_deviation(  # type: ignore[no-untyped-def]
     deviation_id: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:read")),
     session: AsyncSession = Depends(get_db_session),
 ):
     """获取偏差详情"""
@@ -462,7 +499,7 @@ async def get_deviation(  # type: ignore[no-untyped-def]
     row = result.fetchone()
 
     if not row:
-        return {"code": 404, "message": "偏差不存在", "data": None}
+        raise NotFoundException("偏差")
 
     columns = result.keys()
     deviation = dict(zip(columns, row))
@@ -479,18 +516,21 @@ async def get_deviation(  # type: ignore[no-untyped-def]
         "message": "success",
         "data": {
             **deviation,
+            "id": as_text(deviation.get("id")),
             "deviation_type_label": get_type_label(deviation.get("deviation_type")),  # type: ignore[arg-type]
             "urgency_level_label": get_level_label(deviation.get("urgency_level")),  # type: ignore[arg-type]
             "status_label": get_status_label(deviation.get("status")),  # type: ignore[arg-type]
-            "occurred_date": str(deviation.get("occurred_date")) if deviation.get("occurred_date") else None,
-            "discovered_date": str(deviation.get("discovered_date")) if deviation.get("discovered_date") else None,
-            "report_time": str(deviation.get("report_time")) if deviation.get("report_time") else None,
-            "created_at": str(deviation.get("created_at")) if deviation.get("created_at") else None,
-            "updated_at": str(deviation.get("updated_at")) if deviation.get("updated_at") else None,
+            "occurred_date": as_text(deviation.get("occurred_date")),
+            "discovered_date": as_text(deviation.get("discovered_date")),
+            "report_time": as_text(deviation.get("report_time")),
+            "created_at": as_text(deviation.get("created_at")),
+            "updated_at": as_text(deviation.get("updated_at")),
             "attachments": [
                 {
                     **a,
-                    "uploaded_at": str(a.get("uploaded_at")) if a.get("uploaded_at") else None,
+                    "id": as_text(a.get("id")),
+                    "deviation_id": as_text(a.get("deviation_id")),
+                    "uploaded_at": as_text(a.get("uploaded_at")),
                 }
                 for a in attachments
             ],
@@ -498,10 +538,12 @@ async def get_deviation(  # type: ignore[no-untyped-def]
     }
 
 
-@router.put("/{deviation_id}", summary="更新偏差")
+@router.put("/{deviation_id}", summary="更新偏差", response_model=DeviationEmptyResponse)
 async def update_deviation(  # type: ignore[no-untyped-def]
     deviation_id: str,
     request: DeviationUpdateRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:update")),
     session: AsyncSession = Depends(get_db_session),
 ):
     """更新偏差（草稿状态和基础完成状态可编辑）"""
@@ -513,12 +555,12 @@ async def update_deviation(  # type: ignore[no-untyped-def]
     row = result.fetchone()
 
     if not row:
-        return {"code": 404, "message": "偏差不存在", "data": None}
+        raise NotFoundException("偏差")
 
     # 允许草稿状态和基础完成状态编辑
     editable_statuses = ["draft", "basic_completed", "detail_completed"]
     if row[0] not in editable_statuses:
-        return {"code": 400, "message": "当前状态不允许编辑", "data": None}
+        raise BadRequestException("当前状态不允许编辑")
 
     # 构建更新参数（仅白名单字段，SQL 语句保持静态，未提交字段传 NULL 由 COALESCE 保留原值）
     params: dict[str, object] = {field: None for field in _DEVIATION_UPDATABLE_FIELDS}
@@ -547,9 +589,11 @@ async def update_deviation(  # type: ignore[no-untyped-def]
     return {"code": 200, "message": "更新成功", "data": None}
 
 
-@router.delete("/{deviation_id}", summary="删除偏差")
+@router.delete("/{deviation_id}", summary="删除偏差", response_model=DeviationEmptyResponse)
 async def delete_deviation(  # type: ignore[no-untyped-def]
     deviation_id: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:delete")),
     session: AsyncSession = Depends(get_db_session),
 ):
     """删除偏差（仅草稿状态可删除）"""
@@ -560,10 +604,10 @@ async def delete_deviation(  # type: ignore[no-untyped-def]
     row = result.fetchone()
 
     if not row:
-        return {"code": 404, "message": "偏差不存在", "data": None}
+        raise NotFoundException("偏差")
 
     if row[0] != "draft":
-        return {"code": 400, "message": "只有草稿状态可以删除", "data": None}
+        raise BadRequestException("只有草稿状态可以删除")
 
     await session.execute(
         text("UPDATE qms.qms_deviation SET is_deleted = TRUE WHERE id = :id"),
@@ -574,9 +618,11 @@ async def delete_deviation(  # type: ignore[no-untyped-def]
     return {"code": 200, "message": "删除成功", "data": None}
 
 
-@router.post("/{deviation_id}/submit", summary="提交偏差（分阶段）")
+@router.post("/{deviation_id}/submit", summary="提交偏差（分阶段）", response_model=DeviationSubmitResponse)
 async def submit_deviation(  # type: ignore[no-untyped-def]
     deviation_id: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:submit")),
     target_status: str = Query(..., description="目标状态: basic_completed/detail_completed/completed"),
     session: AsyncSession = Depends(get_db_session),
 ):
@@ -596,7 +642,7 @@ async def submit_deviation(  # type: ignore[no-untyped-def]
     row = result.fetchone()
 
     if not row:
-        return {"code": 404, "message": "偏差不存在", "data": None}
+        raise NotFoundException("偏差")
 
     (
         deviation_no,
@@ -626,14 +672,10 @@ async def submit_deviation(  # type: ignore[no-untyped-def]
     }
 
     if current_status not in valid_transitions:
-        return {"code": 400, "message": "当前状态不允许提交", "data": None}
+        raise BadRequestException("当前状态不允许提交")
 
     if target_status not in valid_transitions.get(current_status, []):
-        return {
-            "code": 400,
-            "message": f"状态流转无效: {current_status} -> {target_status}",
-            "data": None,
-        }
+        raise BadRequestException(f"状态流转无效: {current_status} -> {target_status}")
 
     # 检查各阶段必填字段
     # draft -> basic_completed: 需要基础信息（theme等已在表单验证）
@@ -641,15 +683,15 @@ async def submit_deviation(  # type: ignore[no-untyped-def]
     # detail_completed -> completed: 需要辅助信息
     if target_status == "detail_completed":
         if not deviation_description:
-            return {"code": 400, "message": "请先填写偏差详情", "data": None}
+            raise BadRequestException("请先填写偏差详情")
     elif target_status == "completed":
         if not temp_measures or not related_capa:
-            return {"code": 400, "message": "请先填写辅助信息", "data": None}
+            raise BadRequestException("请先填写辅助信息")
 
     # 更新状态
     await session.execute(
         text("UPDATE qms.qms_deviation SET status = :status, updated_at = :updated_at WHERE id = :id"),
-        {"id": deviation_id, "status": target_status, "updated_at": datetime.now()},  # noqa: F823
+        {"id": deviation_id, "status": target_status, "updated_at": datetime.now()},
     )
 
     status_labels = {
@@ -684,8 +726,6 @@ async def submit_deviation(  # type: ignore[no-untyped-def]
             status_label = status_labels.get(target_status, target_status)
 
             # 计算剩余完成天数
-            from datetime import datetime, timedelta
-
             now = datetime.now()
             deadline_days = 30
             remaining_days = 0
@@ -813,7 +853,7 @@ async def submit_deviation(  # type: ignore[no-untyped-def]
                 send_completion_notification,
             )
 
-            send_completion_notification(session, reporter_open_id, deviation_no, theme or "")
+            await send_completion_notification(session, reporter_open_id, deviation_no, theme or "")
             logger.info(f"已触发完成通知发送给填报人: {reporter_open_id}")
         except Exception as e:
             logger.error(f"发送完成通知失败: {e}")
@@ -825,8 +865,10 @@ async def submit_deviation(  # type: ignore[no-untyped-def]
     }
 
 
-@router.get("", summary="偏差列表")
+@router.get("", summary="偏差列表", response_model=DeviationListResponse)
 async def list_deviations(  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     keyword: str = Query(None, description="搜索关键词"),
@@ -858,8 +900,6 @@ async def list_deviations(  # type: ignore[no-untyped-def]
     )
 
     items = []
-    from datetime import datetime
-
     now = datetime.now()
     deadline_days = 30  # 倒计时天数
 
@@ -894,10 +934,13 @@ async def list_deviations(  # type: ignore[no-untyped-def]
         items.append(
             {
                 **item,
+                "id": as_text(item.get("id")),
                 "deviation_type_label": get_type_label(item.get("deviation_type")),  # type: ignore[arg-type]
                 "urgency_level_label": get_level_label(item.get("urgency_level")),  # type: ignore[arg-type]
                 "status_label": get_status_label(item.get("status")),  # type: ignore[arg-type]
-                "occurred_date": str(item.get("occurred_date"))[:10] if item.get("occurred_date") else None,
+                "occurred_date": as_text(item.get("occurred_date")),
+                "discovered_date": as_text(item.get("discovered_date")),
+                "report_time": as_text(item.get("report_time")),
                 "created_at": str(item.get("created_at"))[:19] if item.get("created_at") else None,
                 "remaining_days": remaining_days,
                 "completed_days": completed_days,
@@ -920,9 +963,11 @@ async def list_deviations(  # type: ignore[no-untyped-def]
 # ============ 附件管理 API ============
 
 
-@router.get("/{deviation_id}/attachments", summary="获取偏差附件列表")
+@router.get("/{deviation_id}/attachments", summary="获取偏差附件列表", response_model=DeviationAttachmentListResponse)
 async def list_attachments(  # type: ignore[no-untyped-def]
     deviation_id: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:read")),
     session: AsyncSession = Depends(get_db_session),
 ):
     """获取偏差的附件列表"""
@@ -932,7 +977,7 @@ async def list_attachments(  # type: ignore[no-untyped-def]
         {"id": deviation_id},
     )
     if not result.fetchone():
-        return {"code": 404, "message": "偏差不存在", "data": []}
+        raise NotFoundException("偏差")
 
     # 获取附件列表
     result = await session.execute(
@@ -950,22 +995,24 @@ async def list_attachments(  # type: ignore[no-untyped-def]
     for row in rows:
         attachments.append(
             {
-                "id": row[0],
+                "id": as_text(row[0]),
                 "file_name": row[1],
                 "file_path": row[2],
                 "file_type": row[3],
                 "file_size": row[4],
                 "is_report": row[5],
-                "uploaded_at": str(row[6]) if row[6] else None,
+                "uploaded_at": as_text(row[6]),
             }
         )
 
     return {"code": 200, "message": "success", "data": attachments}
 
 
-@router.post("/{deviation_id}/attachments", summary="上传偏差附件")
+@router.post("/{deviation_id}/attachments", summary="上传偏差附件", response_model=DeviationUploadResponse)
 async def upload_attachment(  # type: ignore[no-untyped-def]
     deviation_id: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:update")),
     file: UploadFile = File(...),
     session: AsyncSession = Depends(get_db_session),
 ):
@@ -978,34 +1025,25 @@ async def upload_attachment(  # type: ignore[no-untyped-def]
     row = result.fetchone()
 
     if not row:
-        return {"code": 404, "message": "偏差不存在", "data": None}
+        raise NotFoundException("偏差")
 
     if row[0] != "detail_completed":
-        return {"code": 400, "message": "当前状态不允许上传附件", "data": None}
+        raise BadRequestException("当前状态不允许上传附件")
 
-    # 保存文件
-    import os
-    import uuid
-    from datetime import datetime
-
-    upload_dir = os.path.join(settings.UPLOAD_DIR, "deviation_attachments", deviation_id)
-    os.makedirs(upload_dir, exist_ok=True)
-
-    # 获取文件扩展名
-    file_ext = os.path.splitext(file.filename)[1] if file.filename else ""
+    # 保存文件（对象存储，不落容器本地磁盘）
+    file_ext = Path(file.filename).suffix if file.filename else ""
     stored_filename = f"{uuid.uuid4()}{file_ext}"
-    file_path = os.path.join(upload_dir, stored_filename)
+    file_path = f"{_ATTACHMENT_PREFIX}/{deviation_id}/{stored_filename}"
 
-    # 保存文件
     content = await file.read()
-    with open(file_path, "wb") as f:
-        f.write(content)
+    file_type = file.content_type or "application/octet-stream"
+    if not storage.is_enabled():
+        raise AppException(status_code=503, message="对象存储未启用，无法保存附件")
+
+    storage.upload_object(_STORAGE_MODULE, file_path, content, len(content), file_type)
 
     # 获取文件大小
     file_size = len(content)
-
-    # 获取文件类型
-    file_type = file.content_type or "application/octet-stream"
 
     # 判断是否为报告类型（根据文件名或类型判断）
     is_report = "report" in (file.filename or "").lower() or "报告" in (file.filename or "")
@@ -1047,9 +1085,18 @@ async def upload_attachment(  # type: ignore[no-untyped-def]
     }
 
 
-@router.get("/attachments/{attachment_id}/download", summary="下载偏差附件")
+@router.get(
+    "/attachments/{attachment_id}/download",
+    summary="下载偏差附件",
+    # 成功路径返回二进制流，显式声明响应体，避免 OpenAPI 把它描述成 JSON object
+    responses={
+        200: {"content": {"application/octet-stream": {"schema": {"type": "string", "format": "binary"}}}},
+    },
+)
 async def download_attachment(  # type: ignore[no-untyped-def]
     attachment_id: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:read")),
     session: AsyncSession = Depends(get_db_session),
 ):
     """下载偏差附件"""
@@ -1065,27 +1112,26 @@ async def download_attachment(  # type: ignore[no-untyped-def]
     row = result.fetchone()
 
     if not row:
-        return {"code": 404, "message": "附件不存在", "data": None}
+        raise NotFoundException("附件")
 
     file_name, file_path, file_type, file_size = row
 
-    # 检查文件是否存在
-    if not os.path.exists(file_path):  # noqa: F821  # type: ignore[name-defined]
-        return {"code": 404, "message": "文件不存在", "data": None}
+    # 从对象存储读取（file_path 存的是 object_key）
+    found = storage.get_object(_STORAGE_MODULE, file_path)
+    if found is None:
+        raise NotFoundException("文件")
 
-    # 读取文件
-    with open(file_path, "rb") as f:
-        file_content = f.read()
+    file_content, stored_content_type = found
 
-    from io import BytesIO
-
-    from fastapi.responses import StreamingResponse
-
+    # 中文文件名不能直接进响应头：Starlette 按 latin-1 编码 header，非 ASCII 会
+    # UnicodeEncodeError -> 500。改用 RFC 5987 的 filename*，与 deviation_report_api 一致。
+    safe_name = file_name or "attachment"
     return StreamingResponse(
         BytesIO(file_content),
-        media_type=file_type or "application/octet-stream",
+        media_type=file_type or stored_content_type or "application/octet-stream",
         headers={
-            "Content-Disposition": f'attachment; filename="{file_name}"',
-            "Content-Length": str(file_size),
+            "Content-Disposition": f"attachment; filename*=UTF-8''{quote(safe_name)}",
+            # 用实际字节数：DB 里的 file_size 与对象存储内容不一致时，按旧值会被截断
+            "Content-Length": str(len(file_content)),
         },
     )

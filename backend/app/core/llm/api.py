@@ -4,13 +4,14 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import AppException
 
 from .config import LLMConfigModel
 from .encryption import encrypt_api_key, mask_api_key
@@ -170,7 +171,7 @@ async def get(  # type: ignore[no-untyped-def]
     config = result.scalar_one_or_none()
 
     if not config:
-        raise HTTPException(status_code=404, detail="Config not found")
+        raise AppException(status_code=404, message="Config not found")
 
     return LLMConfigResponse(
         id=str(config.id),
@@ -206,7 +207,7 @@ async def put(  # type: ignore[no-untyped-def]
     config = result.scalar_one_or_none()
 
     if not config:
-        raise HTTPException(status_code=404, detail="Config not found")
+        raise AppException(status_code=404, message="Config not found")
 
     # If activating this config, deactivate others of same type
     if data.is_active and not config.is_active:
@@ -268,7 +269,7 @@ async def delete(  # type: ignore[no-untyped-def]
     config = result.scalar_one_or_none()
 
     if not config:
-        raise HTTPException(status_code=404, detail="Config not found")
+        raise AppException(status_code=404, message="Config not found")
 
     config.is_deleted = True
     config.updated_by = current_user.id
