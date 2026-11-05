@@ -510,6 +510,21 @@ export default function HazardLedgerPanel() {
       ),
     },
     {
+      title: '风险点',
+      dataIndex: 'risk_point_name',
+      key: 'risk_point_name',
+      width: 150,
+      ellipsis: true,
+      render: (v: string | undefined, r: HazardIdentification) => {
+        if (!v) return <span style={{ color: '#a4a097' }}>-</span>
+        return (
+          <span style={{ fontSize: 13 }} title={r.risk_point_no || v}>
+            {v}
+          </span>
+        )
+      },
+    },
+    {
       title: (
         <span
           onClick={() => handleSort('department')}
@@ -538,9 +553,11 @@ export default function HazardLedgerPanel() {
       key: 'production_step',
       width: 140,
       ellipsis: true,
-      render: (text: string) => {
-        if (!text) return <span style={{ color: '#a4a097' }}>-</span>
-        return <span style={{ fontSize: 13 }}>{text}</span>
+      render: (text: string, r: HazardIdentification) => {
+        // 历史导入数据无生产步骤，回退作业步骤
+        const step = text || r.work_step
+        if (!step) return <span style={{ color: '#a4a097' }}>-</span>
+        return <span style={{ fontSize: 13 }}>{step}</span>
       },
     },
     {
@@ -659,6 +676,25 @@ export default function HazardLedgerPanel() {
     return (
       <div style={{ padding: '12px 24px', background: '#fafafa', borderRadius: 8 }}>
         <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+          {(record.risk_point_no || record.risk_point_name || record.work_unit || record.location_tag || record.work_step || record.check_standard || record.control_unit || record.training_measures) && (
+            <Descriptions size="small" column={2} colon={false} title={<Text strong style={{ fontSize: 13 }}>辨识清单信息</Text>}>
+              {record.checklist_no && <Descriptions.Item label="检查表编号">{record.checklist_no}</Descriptions.Item>}
+              {record.risk_point_no && <Descriptions.Item label="风险点编号">{record.risk_point_no}</Descriptions.Item>}
+              {record.risk_point_type && <Descriptions.Item label="风险点类型">{record.risk_point_type}</Descriptions.Item>}
+              {record.risk_point_name && <Descriptions.Item label="风险点名称">{record.risk_point_name}</Descriptions.Item>}
+              {record.work_unit && <Descriptions.Item label="作业单元/区域">{record.work_unit}</Descriptions.Item>}
+              {record.location_tag && <Descriptions.Item label="位号/部位">{record.location_tag}</Descriptions.Item>}
+              {record.work_step && <Descriptions.Item label="作业步骤/检查项目">{record.work_step}</Descriptions.Item>}
+              {record.check_standard && <Descriptions.Item label="检查标准">{record.check_standard}</Descriptions.Item>}
+              {record.risk_method && <Descriptions.Item label="风险评价方法">{record.risk_method}</Descriptions.Item>}
+              {record.severity_s != null && <Descriptions.Item label="严重性S">{record.severity_s}</Descriptions.Item>}
+              {record.control_unit && <Descriptions.Item label="管控单位">{record.control_unit}</Descriptions.Item>}
+              {record.training_measures && (
+                <Descriptions.Item label="培训教育措施" span={2}>{record.training_measures}</Descriptions.Item>
+              )}
+            </Descriptions>
+          )}
+
           {lecRow('固有风险评价', record.l_inherent, record.e_inherent, record.c_inherent, record.d_inherent, record.inherent_risk_level, record.inherent_risk_label)}
 
           {(record.existing_engineering_controls || record.existing_management_controls || record.existing_ppe || record.existing_emergency_measures) && (

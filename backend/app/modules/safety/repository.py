@@ -665,18 +665,17 @@ class SafetyRepository:
             count_query = count_query.where(HazardIdentification.ai_node_progress == ai_node_progress)
         if keyword:
             like = f"%{keyword}%"
-            query = query.where(
+            keyword_filter = (
                 HazardIdentification.hazard_id_no.ilike(like)
                 | HazardIdentification.department.ilike(like)
                 | HazardIdentification.position.ilike(like)
                 | HazardIdentification.production_step.ilike(like)
+                | HazardIdentification.risk_point_name.ilike(like)
+                | HazardIdentification.work_step.ilike(like)
+                | HazardIdentification.possible_accident.ilike(like)
             )
-            count_query = count_query.where(
-                HazardIdentification.hazard_id_no.ilike(like)
-                | HazardIdentification.department.ilike(like)
-                | HazardIdentification.position.ilike(like)
-                | HazardIdentification.production_step.ilike(like)
-            )
+            query = query.where(keyword_filter)
+            count_query = count_query.where(keyword_filter)
 
         total = await self.session.scalar(count_query)
         query = query.offset(skip).limit(limit).order_by(HazardIdentification.created_at.desc())

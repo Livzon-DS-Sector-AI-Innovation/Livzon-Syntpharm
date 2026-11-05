@@ -13,6 +13,19 @@ export interface HazardIdentification {
   production_step: string
   attachment_path?: string
   attachment_original_name?: string
+  // 历史台账原始字段（Excel/CSV 导入）
+  checklist_no?: string
+  risk_point_no?: string
+  risk_point_type?: string
+  risk_point_name?: string
+  work_unit?: string
+  location_tag?: string
+  work_step?: string
+  check_standard?: string
+  risk_method?: string
+  severity_s?: number
+  control_unit?: string
+  training_measures?: string
   // Script 1
   specific_activity?: string
   equipment_facilities?: string
