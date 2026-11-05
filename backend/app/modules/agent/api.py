@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException, BadRequestException, ForbiddenException, NotFoundException
-from app.core.llm.config import LLMConfigModel, get_config_by_id
+from app.core.llm.config import LLMConfigModel, get_config_by_id, parse_available_models
 from app.core.llm.exceptions import LLMConfigError
 from app.core.response import DataResponse
 from app.core.storage import delete_object, get_object_range, stat_object
@@ -36,6 +36,8 @@ from app.modules.agent.schemas import (
     AiConfigTestRequest,
     AiConfigTestResponse,
     AiConfigUpdateRequest,
+    AiModelsDiscoverRequest,
+    AiModelsDiscoverResponse,
     EditableShapeList,
     GlobalAiSettingsRequest,
     JobState,
@@ -383,7 +385,7 @@ async def get_project_detail(
     return DataResponse[ProjectDetail](data=detail)
 
 
-@router.patch("/ppt-videos/{project_id}", summary="更新项目默认语言/音色/语速")
+@router.patch("/ppt-videos/{project_id}", summary="更新项目全局设置（语言/音色/语速/文稿高亮）")
 async def update_project(
     project_id: uuid.UUID,
     payload: ProjectUpdateRequest,
@@ -400,6 +402,11 @@ async def update_project(
             default_language=payload.default_language,
             default_voice_id=payload.default_voice_id,
             speed=payload.speed,
+            highlight_style=payload.highlight_style,
+            highlight_color=payload.highlight_color,
+            highlight_override_enabled=payload.highlight_override_enabled,
+            clear_highlight_style=payload.clear_highlight_style,
+            clear_highlight_color=payload.clear_highlight_color,
             updated_by=current_user.id,
         )
         detail = await agent_service.get_detail(db, project_id, settings, user_id=current_user.id)
@@ -441,6 +448,7 @@ async def update_slide(
             speed=payload.speed,
             highlight_style=payload.highlight_style,
             highlight_color=payload.highlight_color,
+            highlight_override_enabled=payload.highlight_override_enabled,
             highlight_regions=(
                 payload.highlight_regions.model_dump() if payload.highlight_regions is not None else None
             ),
@@ -689,10 +697,15 @@ async def _require_global_manage(db: AsyncSession, user: User) -> None:
 
 def _ai_config_item(row: LLMConfigModel, owner_id: uuid.UUID | None) -> AiConfigItem:
     visibility = (row.visibility or "system").strip() or "system"
+    # 系统预置保持一配置一模型；只有个人 Key 才可能勾选多个
+    models = (
+        [row.model_name] if visibility == "system" else parse_available_models(row.available_models, row.model_name)
+    )
     return AiConfigItem(
         id=row.id,
         config_name=row.config_name,
         model_name=row.model_name,
+        available_models=models,
         api_base_url=row.api_base_url,
         visibility=visibility,
         is_active=bool(row.is_active),
@@ -706,7 +719,7 @@ def _ai_config_item(row: LLMConfigModel, owner_id: uuid.UUID | None) -> AiConfig
 async def _ai_config_payload(db: AsyncSession, user: User) -> AiConfigListResponse:
     settings = await agent_config.load_settings()
     rows = await ai_config.visible_configs(db, user.id)
-    global_id, global_guide = await ai_config.read_global_settings(db)
+    global_id, global_model, global_guide = await ai_config.read_global_settings(db)
     parsed_global_id: uuid.UUID | None = None
     if global_id:
         try:
@@ -716,13 +729,14 @@ async def _ai_config_payload(db: AsyncSession, user: User) -> AiConfigListRespon
     return AiConfigListResponse(
         items=[_ai_config_item(row, user.id) for row in rows],
         global_default_id=parsed_global_id,
+        global_default_model=global_model,
         can_manage_global=await _can_manage_global(db, user),
         global_guide=global_guide,
         script_guide_max_chars=settings.script_guide_max_chars,
     )
 
 
-@router.get("/ai-configs", summary="AI 配置：系统预置模型 + 我的 Key + 全局讲稿规范")
+@router.get("/ai-configs", summary="AI 配置：系统预置模型 + 自定义模型 + 全局提示词指南")
 async def list_ai_configs(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(PERM_READ)),
@@ -731,7 +745,7 @@ async def list_ai_configs(
     return DataResponse[AiConfigListResponse](data=await _ai_config_payload(db, current_user))
 
 
-@router.post("/ai-configs", summary="新增个人 API Key（仅本人可见可用）")
+@router.post("/ai-configs", summary="新增自定义模型（一个 Key 可勾选多个模型，仅本人可见可用）")
 async def create_ai_config(
     payload: AiConfigCreateRequest,
     current_user: RequiredUser,
@@ -740,11 +754,16 @@ async def create_ai_config(
 ) -> DataResponse[AiConfigListResponse]:
     row = await ai_config.create_personal(db, current_user.id, payload)
     await db.commit()
-    logger.info("新增个人模型配置: user=%s config=%s", current_user.id, row.id)
+    logger.info(
+        "新增个人模型配置: user=%s config=%s models=%s",
+        current_user.id,
+        row.id,
+        len(row.available_models or []),
+    )
     return DataResponse[AiConfigListResponse](data=await _ai_config_payload(db, current_user))
 
 
-@router.put("/ai-configs/global", summary="设置全局默认模型与全局讲稿规范（需平台管理员）")
+@router.put("/ai-configs/global", summary="设置全局默认模型与全局提示词指南（需平台管理员）")
 async def update_global_ai_settings(
     payload: GlobalAiSettingsRequest,
     current_user: RequiredUser,
@@ -753,28 +772,62 @@ async def update_global_ai_settings(
 ) -> DataResponse[AiConfigListResponse]:
     await _require_global_manage(db, current_user)
     settings = await agent_config.load_settings()
-    global_id, global_guide = await ai_config.read_global_settings(db)
+    global_id, global_model, global_guide = await ai_config.read_global_settings(db)
 
     if payload.clear_global_config:
         global_id = ""
+        global_model = ""
     elif payload.global_config_id is not None:
         config = await get_config_by_id(str(payload.global_config_id), "text", str(current_user.id))
         if not config:
             raise NotFoundException("模型配置")
+        # 换了 Key 就必须重新指定模型，否则会残留上一个 Key 的模型名
+        if str(config.id) != global_id:
+            global_model = ""
         global_id = str(config.id)
+        if payload.global_model_name is not None:
+            selected = payload.global_model_name.strip()
+            if selected and selected not in config.available_models:
+                raise BadRequestException(f"该模型不在配置的可用列表中，可选：{'、'.join(config.available_models)}")
+            global_model = selected
 
     if payload.clear_global_guide:
         global_guide = ""
     elif payload.global_guide is not None:
         guide = payload.global_guide.strip()
         if len(guide) > settings.script_guide_max_chars:
-            raise BadRequestException(f"讲稿规范最多 {settings.script_guide_max_chars} 字")
+            raise BadRequestException(f"提示词指南最多 {settings.script_guide_max_chars} 字")
         global_guide = guide
 
     await ai_config.save_setting(db, ai_config.SETTING_GLOBAL_CONFIG_ID, global_id, "全局默认讲稿模型配置 id")
-    await ai_config.save_setting(db, ai_config.SETTING_GLOBAL_GUIDE, global_guide, "全局讲稿风格指南")
+    await ai_config.save_setting(db, ai_config.SETTING_GLOBAL_MODEL, global_model, "全局默认讲稿模型名")
+    await ai_config.save_setting(db, ai_config.SETTING_GLOBAL_GUIDE, global_guide, "全局文稿提示词指南")
     await db.commit()
     return DataResponse[AiConfigListResponse](data=await _ai_config_payload(db, current_user))
+
+
+@router.post("/ai-configs/models", summary="按接口地址与 API Key 拉取可用模型（服务端代理）")
+async def discover_ai_config_models(
+    payload: AiModelsDiscoverRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(PERM_MANAGE)),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[AiModelsDiscoverResponse]:
+    if payload.config_id is not None:
+        config = await get_config_by_id(str(payload.config_id), "text", str(current_user.id))
+        if not config:
+            raise NotFoundException("模型配置")
+        # 表单里显式填写的地址/Key 优先，便于「改了地址但没重输 Key」时直接探测
+        api_base_url = (payload.api_base_url or "").strip() or config.api_base_url
+        api_key = (payload.api_key or "").strip() or (config.api_key or "")
+    else:
+        if not (payload.api_base_url and payload.api_key):
+            raise BadRequestException("请先填写接口地址与 API Key")
+        api_base_url = payload.api_base_url
+        api_key = payload.api_key
+
+    ok, message, models = await ai_config.discover_models(api_base_url, api_key)
+    return DataResponse[AiModelsDiscoverResponse](data=AiModelsDiscoverResponse(ok=ok, message=message, models=models))
 
 
 @router.post("/ai-configs/test", summary="连通性测试（测表单值或已保存的个人配置）")
@@ -831,7 +884,7 @@ async def delete_ai_config(
     return DataResponse[AiConfigListResponse](data=await _ai_config_payload(db, current_user))
 
 
-@router.put("/ppt-videos/{project_id}/ai", summary="项目级模型覆盖与讲稿规范（留空即继承全局）")
+@router.put("/ppt-videos/{project_id}/ai", summary="项目级模型覆盖与提示词指南（留空即继承全局）")
 async def update_project_ai_settings(
     project_id: uuid.UUID,
     payload: ProjectAiSettingsRequest,
@@ -841,10 +894,18 @@ async def update_project_ai_settings(
 ) -> DataResponse[ProjectDetail]:
     settings = await agent_config.load_settings()
     with _translate_errors():
+        if not payload.clear_config and payload.llm_config_id is not None and payload.llm_model_name:
+            config = await get_config_by_id(str(payload.llm_config_id), "text", str(current_user.id))
+            if not config:
+                raise NotFoundException("模型配置")
+            selected = payload.llm_model_name.strip()
+            if selected not in config.available_models:
+                raise BadRequestException(f"该模型不在配置的可用列表中，可选：{'、'.join(config.available_models)}")
         await agent_service.update_project_ai(
             db,
             project_id,
             llm_config_id=str(payload.llm_config_id) if payload.llm_config_id else None,
+            llm_model_name=payload.llm_model_name,
             script_guide=payload.script_guide,
             clear_config=payload.clear_config,
             clear_guide=payload.clear_guide,

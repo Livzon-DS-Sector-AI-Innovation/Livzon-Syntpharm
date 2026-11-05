@@ -23,6 +23,7 @@ export type VersionManifest = components['schemas']['ManifestResponse']
 export type AiConfigItem = components['schemas']['AiConfigItem']
 export type AiConfigListResponse = components['schemas']['AiConfigListResponse']
 export type AiConfigTestResponse = components['schemas']['AiConfigTestResponse']
+export type AiModelsDiscoverResponse = components['schemas']['AiModelsDiscoverResponse']
 export type ScriptRuntime = components['schemas']['ScriptRuntime']
 export type ScriptRewriteResult = components['schemas']['ScriptRewriteResult']
 export type RevisionItem = components['schemas']['RevisionItem']
@@ -113,11 +114,14 @@ export const REVISION_STATUS_LABEL: Record<string, string> = {
   failed: '失败',
 }
 
-/** AI 配置抽屉里的模型表单（新建/编辑共用） */
+/** AI 配置抽屉里的自定义模型表单（新建/编辑共用） */
 export interface AiConfigFormValue {
   config_name: string
   api_base_url: string
-  model_name: string
+  /** 勾选后的模型清单，首项作为默认模型 */
+  available_models: string[]
+  /** 兼容旧调用：只传单个模型名时后端会并入清单 */
+  model_name?: string
   api_key?: string
   temperature?: number
   timeout_seconds?: number
@@ -133,6 +137,31 @@ export interface ScriptRewritePayload {
 
 /** 项目默认语言；页级可覆盖，同一项目允许中英混排 */
 export type LanguageCode = 'zh' | 'en'
+
+export const LANGUAGE_LABEL: Record<LanguageCode, string> = { zh: '中文', en: '英文' }
+
+/** 性别统一说「女声 / 男声」，不要露 female/male */
+export function genderLabel(gender?: string | null): string {
+  return gender === 'male' ? '男声' : '女声'
+}
+
+/** 音色展示名：后端已给纯中文名，这里只兜底空值，绝不回退到 voice_id */
+export function voiceLabel(displayName?: string | null): string {
+  return displayName?.trim() || '未选择'
+}
+
+/** 高亮样式中文名：列表、摘要、页签预览共用同一套说法 */
+export const HIGHLIGHT_STYLE_LABEL: Record<string, string> = {
+  text_recolor: '文字变色',
+  dim_outline: '压暗 + 描边',
+  dim: '仅压暗',
+  outline: '仅描边',
+}
+
+export function highlightStyleLabel(value?: string | null): string {
+  if (!value) return '跟随系统默认'
+  return HIGHLIGHT_STYLE_LABEL[value] ?? '跟随系统默认'
+}
 
 /** 项目列表接口返回：items 在 data 内，total 在 meta 内 */
 export interface ProjectPage {
@@ -153,10 +182,12 @@ export interface SlideUpdatePayload {
   language?: LanguageCode | null
   voice_id?: string | null
   speed?: number | null
-  /** 本页高亮样式覆盖；null 表示跟随模块设置 */
+  /** 本页高亮样式覆盖；null 表示跟随项目设置 */
   highlight_style?: string | null
-  /** 本页高亮主色 #RRGGBB；null 表示跟随模块设置 */
+  /** 本页高亮主色 #RRGGBB；null 表示跟随项目设置 */
   highlight_color?: string | null
+  /** 本页自定义高亮是否启用；关闭只让上面两项不生效，不清值 */
+  highlight_override_enabled?: boolean | null
   /** 区域级配置；整份替换语义，传空数组对象即清空（后端不区分「未传」和「传空」） */
   highlight_regions?: HighlightRegionsPayload | null
   clear_language?: boolean
@@ -175,12 +206,20 @@ export const HIGHLIGHT_STYLE_OPTIONS: { value: string; label: string }[] = [
   { value: 'outline', label: '仅描边' },
 ]
 
-/** 项目默认设置提交体（与后端 ProjectUpdateRequest 对齐） */
+/** 项目全局设置提交体（与后端 ProjectUpdateRequest 对齐） */
 export interface ProjectUpdatePayload {
   name?: string
   default_language?: LanguageCode
   default_voice_id?: string
   speed?: number
+  /** 项目高亮样式；空串表示清除覆盖、回到跟随模块默认 */
+  highlight_style?: string
+  /** 项目高亮主色 #RRGGBB；空串表示清除覆盖 */
+  highlight_color?: string
+  /** 项目级自定义高亮是否启用；关闭只让上面两项不生效，不清值 */
+  highlight_override_enabled?: boolean
+  clear_highlight_style?: boolean
+  clear_highlight_color?: boolean
 }
 
 /** 渲染阶段文案：后端返回机器码，界面显示中文 */

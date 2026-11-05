@@ -18676,7 +18676,7 @@ export interface paths {
         delete: operations["delete_project_api_v1_agent_ppt_videos__project_id__delete"];
         options?: never;
         head?: never;
-        /** 更新项目默认语言/音色/语速 */
+        /** 更新项目全局设置（语言/音色/语速/文稿高亮） */
         patch: operations["update_project_api_v1_agent_ppt_videos__project_id__patch"];
         trace?: never;
     };
@@ -18897,10 +18897,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** AI 配置：系统预置模型 + 我的 Key + 全局讲稿规范 */
+        /** AI 配置：系统预置模型 + 自定义模型 + 全局提示词指南 */
         get: operations["list_ai_configs_api_v1_agent_ai_configs_get"];
         put?: never;
-        /** 新增个人 API Key（仅本人可见可用） */
+        /** 新增自定义模型（一个 Key 可勾选多个模型，仅本人可见可用） */
         post: operations["create_ai_config_api_v1_agent_ai_configs_post"];
         delete?: never;
         options?: never;
@@ -18916,9 +18916,26 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** 设置全局默认模型与全局讲稿规范（需平台管理员） */
+        /** 设置全局默认模型与全局提示词指南（需平台管理员） */
         put: operations["update_global_ai_settings_api_v1_agent_ai_configs_global_put"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ai-configs/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 按接口地址与 API Key 拉取可用模型（服务端代理） */
+        post: operations["discover_ai_config_models_api_v1_agent_ai_configs_models_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -18968,7 +18985,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** 项目级模型覆盖与讲稿规范（留空即继承全局） */
+        /** 项目级模型覆盖与提示词指南（留空即继承全局） */
         put: operations["update_project_ai_settings_api_v1_agent_ppt_videos__project_id__ai_put"];
         post?: never;
         delete?: never;
@@ -20096,10 +20113,12 @@ export interface components {
             config_name: string;
             /** Api Base Url */
             api_base_url: string;
-            /** Model Name */
-            model_name: string;
             /** Api Key */
             api_key: string;
+            /** Available Models */
+            available_models?: string[];
+            /** Model Name */
+            model_name?: string | null;
             /**
              * Temperature
              * @default 0.7
@@ -20127,6 +20146,8 @@ export interface components {
             config_name: string;
             /** Model Name */
             model_name: string;
+            /** Available Models */
+            available_models?: string[];
             /** Api Base Url */
             api_base_url: string;
             /**
@@ -20166,6 +20187,11 @@ export interface components {
             items?: components["schemas"]["AiConfigItem"][];
             /** Global Default Id */
             global_default_id?: string | null;
+            /**
+             * Global Default Model
+             * @default
+             */
+            global_default_model: string;
             /**
              * Can Manage Global
              * @default false
@@ -20209,6 +20235,8 @@ export interface components {
             config_name?: string | null;
             /** Api Base Url */
             api_base_url?: string | null;
+            /** Available Models */
+            available_models?: string[] | null;
             /** Model Name */
             model_name?: string | null;
             /** Api Key */
@@ -20343,6 +20371,27 @@ export interface components {
              * @default 20
              */
             page_size: number;
+        };
+        /**
+         * AiModelsDiscoverRequest
+         * @description 按 Key 拉取可用模型清单：编辑态可只传 config_id 复用已保存的 Key。
+         */
+        AiModelsDiscoverRequest: {
+            /** Config Id */
+            config_id?: string | null;
+            /** Api Base Url */
+            api_base_url?: string | null;
+            /** Api Key */
+            api_key?: string | null;
+        };
+        /** AiModelsDiscoverResponse */
+        AiModelsDiscoverResponse: {
+            /** Ok */
+            ok: boolean;
+            /** Message */
+            message: string;
+            /** Models */
+            models?: string[];
         };
         /** AlertRecordProcessRequest */
         AlertRecordProcessRequest: {
@@ -26855,6 +26904,21 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["AiConfigTestResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[AiModelsDiscoverResponse] */
+        DataResponse_AiModelsDiscoverResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["AiModelsDiscoverResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[AuthorizationLetterResponse] */
@@ -34896,11 +34960,13 @@ export interface components {
         };
         /**
          * GlobalAiSettingsRequest
-         * @description 全局默认模型与全局风格指南（需模块配置管理权限）。
+         * @description 全局默认模型与全局提示词指南（需模块配置管理权限）。
          */
         GlobalAiSettingsRequest: {
             /** Global Config Id */
             global_config_id?: string | null;
+            /** Global Model Name */
+            global_model_name?: string | null;
             /**
              * Clear Global Config
              * @default false
@@ -44818,6 +44884,8 @@ export interface components {
         ProjectAiSettingsRequest: {
             /** Llm Config Id */
             llm_config_id?: string | null;
+            /** Llm Model Name */
+            llm_model_name?: string | null;
             /**
              * Clear Config
              * @default false
@@ -44924,6 +44992,27 @@ export interface components {
             script_guide: string;
             /** Llm Config Id */
             llm_config_id?: string | null;
+            /** Llm Model Name */
+            llm_model_name?: string | null;
+            /** Highlight Style */
+            highlight_style?: string | null;
+            /** Highlight Color */
+            highlight_color?: string | null;
+            /**
+             * Highlight Override Enabled
+             * @default false
+             */
+            highlight_override_enabled: boolean;
+            /**
+             * Module Highlight Style
+             * @default
+             */
+            module_highlight_style: string;
+            /**
+             * Module Highlight Color
+             * @default
+             */
+            module_highlight_color: string;
             /** Updated At */
             updated_at?: string | null;
         };
@@ -45091,6 +45180,22 @@ export interface components {
             default_voice_id?: string | null;
             /** Speed */
             speed?: number | null;
+            /** Highlight Style */
+            highlight_style?: string | null;
+            /** Highlight Color */
+            highlight_color?: string | null;
+            /** Highlight Override Enabled */
+            highlight_override_enabled?: boolean | null;
+            /**
+             * Clear Highlight Style
+             * @default false
+             */
+            clear_highlight_style: boolean;
+            /**
+             * Clear Highlight Color
+             * @default false
+             */
+            clear_highlight_color: boolean;
         };
         /** PurchaseApprovalRecordResponse */
         PurchaseApprovalRecordResponse: {
@@ -51677,6 +51782,11 @@ export interface components {
             highlight_style?: string | null;
             /** Highlight Color */
             highlight_color?: string | null;
+            /**
+             * Highlight Override Enabled
+             * @default false
+             */
+            highlight_override_enabled: boolean;
             highlight_regions?: components["schemas"]["HighlightRegionsPayload"] | null;
             /** Page Text */
             page_text?: string | null;
@@ -51802,6 +51912,8 @@ export interface components {
             highlight_style?: string | null;
             /** Highlight Color */
             highlight_color?: string | null;
+            /** Highlight Override Enabled */
+            highlight_override_enabled?: boolean | null;
             highlight_regions?: components["schemas"]["HighlightRegionsPayload"] | null;
             /**
              * Clear Language
@@ -57556,6 +57668,11 @@ export interface components {
             display_name: string;
             /** Gender */
             gender: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
             /** License */
             license: string;
             /** Version */
@@ -104926,6 +105043,41 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DataResponse_AiConfigListResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discover_ai_config_models_api_v1_agent_ai_configs_models_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiModelsDiscoverRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_AiModelsDiscoverResponse_"];
                 };
             };
             /** @description Validation Error */

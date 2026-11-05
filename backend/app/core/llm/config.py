@@ -1,11 +1,12 @@
 """LLM configuration management."""
 
+import json
 import logging
 import os
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
-from sqlalchemy import Boolean, Float, Integer, String, Text, select
+from sqlalchemy import JSON, Boolean, Float, Integer, String, Text, select
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -28,6 +29,38 @@ __all__ = [
 ]
 
 
+def parse_available_models(raw: object, default_model: str) -> list[str]:
+    """把库里的模型清单解析成去重保序的字符串列表。
+
+    兼容三种历史/异常形态：NULL、JSON 数组、逗号分隔字符串。
+    `model_name` 是默认模型，必须出现在清单里（旧数据只有它是常态）。
+    """
+    items: list[str] = []
+    if isinstance(raw, list):
+        items = [str(item).strip() for item in raw if str(item).strip()]
+    elif isinstance(raw, str) and raw.strip():
+        try:
+            parsed = json.loads(raw)
+        except ValueError:
+            parsed = None
+        if isinstance(parsed, list):
+            items = [str(item).strip() for item in parsed if str(item).strip()]
+        else:
+            items = [part.strip() for part in raw.split(",") if part.strip()]
+
+    seen: set[str] = set()
+    models: list[str] = []
+    for item in items:
+        if item not in seen:
+            seen.add(item)
+            models.append(item)
+
+    default = (default_model or "").strip()
+    if default and default not in seen:
+        models.insert(0, default)
+    return models
+
+
 @dataclass
 class LLMConfigData:
     """LLM configuration data."""
@@ -44,6 +77,8 @@ class LLMConfigData:
     # system=平台预置（所有人可选）；personal=个人私有（仅 owner 可见可用）
     visibility: str = "system"
     owner_user_id: str | None = None
+    #: 该配置可选的模型清单；`model_name` 恒为默认模型（清单内）
+    available_models: list[str] = field(default_factory=list)
 
 
 class LLMConfigModel(BaseModel):
@@ -63,6 +98,11 @@ class LLMConfigModel(BaseModel):
     api_base_url: Mapped[str] = mapped_column(String(500), nullable=False, comment="API base URL")
     encrypted_api_key: Mapped[str] = mapped_column(String(1000), nullable=False, comment="Encrypted API key")
     model_name: Mapped[str] = mapped_column(String(128), nullable=False, comment="Model name")
+    available_models: Mapped[list[str] | None] = mapped_column(
+        JSON,
+        nullable=True,
+        comment="该配置可选的模型清单；空=只有 model_name（兼容一配置一模型）",
+    )
     temperature: Mapped[float] = mapped_column(
         Float, default=0.1, server_default="0.1", nullable=False, comment="Temperature"
     )
@@ -106,6 +146,7 @@ class LLMConfigModel(BaseModel):
             is_active=self.is_active,
             visibility=self.visibility,
             owner_user_id=str(self.owner_user_id) if self.owner_user_id else None,
+            available_models=parse_available_models(self.available_models, self.model_name),
         )
 
     @property
@@ -211,6 +252,7 @@ def get_env_config() -> LLMConfigData | None:
         temperature=0.1,
         timeout_seconds=120,
         is_active=True,
+        available_models=[model],
     )
 
 

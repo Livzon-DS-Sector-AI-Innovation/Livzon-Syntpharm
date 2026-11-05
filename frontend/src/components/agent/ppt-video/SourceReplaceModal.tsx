@@ -31,8 +31,8 @@ const STATUS_COLOR: Record<DiffStatus, string> = {
 const GROUPS: DiffStatus[] = ['unchanged', 'changed', 'added', 'removed']
 
 const GROUP_HINT: Record<DiffStatus, string> = {
-  unchanged: '讲稿与音频原样保留，不重新合成',
-  changed: '页内容变了，旧讲稿标记待重写',
+  unchanged: '讲稿和配音原样保留，不用重新生成',
+  changed: '页面内容变了，旧讲稿会标成待重写',
   added: '新页，需要补讲稿',
   removed: '这些页会从项目中移除',
 }
@@ -101,14 +101,14 @@ export default function SourceReplaceModal({ open, projectId, onClose, onApplied
   return (
     <Modal
       open={open}
-      title="更换 PPT 源文件"
+      title="更换 PPT"
       width={720}
       onCancel={handleClose}
       destroyOnHidden
       footer={
         <Space className="w-full justify-between">
           <Typography.Text type="secondary" className="text-[12px]">
-            未变页的讲稿与音频会保留
+            没有变化的页，讲稿和配音都会保留
           </Typography.Text>
           <Space>
             <Button onClick={handleClose}>取消</Button>
@@ -118,7 +118,7 @@ export default function SourceReplaceModal({ open, projectId, onClose, onApplied
               disabled={!diff?.has_changes || busy}
               onClick={handleApply}
             >
-              应用并重写变更页
+              应用并重写有改动的页
             </Button>
           </Space>
         </Space>
@@ -141,7 +141,7 @@ export default function SourceReplaceModal({ open, projectId, onClose, onApplied
               <InboxOutlined className="!text-[#5645D4]" />
             </p>
             <p className="ant-upload-text">点击或拖入新的 PPT 文件</p>
-            <p className="ant-upload-hint">只做比对，不会改动现有讲稿与成片</p>
+            <p className="ant-upload-hint">只做比对，不会改动现有讲稿和视频</p>
           </Upload.Dragger>
         ) : (
           <>

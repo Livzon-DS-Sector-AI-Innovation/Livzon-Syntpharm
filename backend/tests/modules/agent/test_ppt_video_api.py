@@ -55,6 +55,10 @@ async def test_list_voices_returns_bilingual_catalog(client: AsyncClient) -> Non
     for item in items:
         assert item["license"]
         assert item["version"]
+        # 界面只露中文音色名与一句中文说明，不允许出现 voice_id / English · Bella 这类内部标识
+        assert item["description"]
+        assert item["voice_id"] not in item["display_name"]
+        assert not any(char.isascii() and char.isalpha() for char in item["display_name"])
 
 
 async def test_list_voices_filters_by_language(client: AsyncClient) -> None:

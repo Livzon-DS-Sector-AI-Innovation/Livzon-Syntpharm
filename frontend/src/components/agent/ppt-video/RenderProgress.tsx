@@ -48,7 +48,7 @@ export default function RenderProgress({ detail, onDetailChange }: Props) {
         if (next && TERMINAL.has(next.status)) {
           await refreshDetail()
           if (next.status === 'succeeded') message.success('视频已生成，可在右侧版本列表下载')
-          if (next.status === 'failed') message.error(next.error_message || '渲染失败')
+          if (next.status === 'failed') message.error(next.error_message || '生成失败')
           return
         }
       } catch (error) {
@@ -93,8 +93,8 @@ export default function RenderProgress({ detail, onDetailChange }: Props) {
           <Tag color={detail.default_language === 'zh' ? 'blue' : 'geekblue'}>
             {detail.default_language === 'zh' ? '中文旁白' : '英文旁白'}
           </Tag>
-          <Tag>语速 {detail.speed.toFixed(2)}x</Tag>
-          {running && <Tag color="processing">渲染中</Tag>}
+          <Tag>语速 {detail.speed.toFixed(2)} 倍</Tag>
+          {running && <Tag color="processing">生成中</Tag>}
         </Space>
         <Space>
           {job && (
@@ -129,8 +129,8 @@ export default function RenderProgress({ detail, onDetailChange }: Props) {
           type="warning"
           showIcon
           className="!mt-3"
-          message="正文已变更，需重新生成"
-          description="正文各页讲稿、语言、音色或语速与上一版不同，旧版本无法复用；重新生成只会重算改动页，其余页命中缓存。"
+          message="内容有改动，需要重新生成"
+          description="各页讲稿、语言、音色或语速与上一版不同，旧的成片不能沿用；重新生成只重做有改动的页，其余页直接沿用。"
         />
       )}
 
@@ -139,7 +139,7 @@ export default function RenderProgress({ detail, onDetailChange }: Props) {
           type="error"
           showIcon
           className="!mt-3"
-          message={`渲染失败：${job.error_message || '未知原因'}`}
+          message={`生成失败：${job.error_message || '未知原因'}`}
           action={
             <Button size="small" icon={<ReloadOutlined />} onClick={handleRender}>
               重试

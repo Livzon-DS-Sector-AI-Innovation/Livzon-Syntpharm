@@ -94,7 +94,7 @@ export default function RevisionDrawer({ open, projectId, onClose, onRolledBack 
           <Spin />
         </div>
       ) : items.length === 0 ? (
-        <Empty description="还没有改写记录；每次 AI 改写都会在这里留一条可回滚的快照" />
+        <Empty description="还没有改写记录；每次智能改写都会留一条可以恢复的版本" />
       ) : (
         <div className="flex flex-col gap-2">
           {items.map((item) => {
@@ -114,7 +114,7 @@ export default function RevisionDrawer({ open, projectId, onClose, onRolledBack 
                         {REVISION_STATUS_LABEL[item.status] ?? item.status}
                       </Tag>
                       {!item.applied && (
-                        <Tag className="!m-0 !text-[11px]">已回滚</Tag>
+                        <Tag className="!m-0 !text-[11px]">已恢复</Tag>
                       )}
                     </div>
                     <div className="mt-1 text-[12px] text-[#5D5B54]">
@@ -134,9 +134,9 @@ export default function RevisionDrawer({ open, projectId, onClose, onRolledBack 
 
                   {rollbackable ? (
                     <Popconfirm
-                      title="回滚到这次改写之前？"
-                      description="只恢复讲稿文字，已生成的音频需要重新渲染"
-                      okText="回滚"
+                      title="恢复到这次改写之前？"
+                      description="只恢复讲稿文字，已生成的配音需要重新生成"
+                      okText="恢复"
                       cancelText="取消"
                       onConfirm={() => handleRollback(item)}
                     >
@@ -147,13 +147,13 @@ export default function RevisionDrawer({ open, projectId, onClose, onRolledBack 
                         loading={busyId === item.id}
                         className="!text-[#5645D4]"
                       >
-                        回滚
+                        恢复
                       </Button>
                     </Popconfirm>
                   ) : (
                     <Space size={2}>
                       <Typography.Text type="secondary" className="text-[11px]">
-                        {item.applied ? '不可回滚' : '已回滚'}
+                        {item.applied ? '不可恢复' : '已恢复'}
                       </Typography.Text>
                     </Space>
                   )}

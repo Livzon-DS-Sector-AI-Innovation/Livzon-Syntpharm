@@ -150,7 +150,23 @@ class PptVideoProject(BaseModel):
     llm_config_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True, comment="项目级模型覆盖（core.llm_configs.id）；空=跟随全局默认"
     )
+    llm_model_name: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, comment="项目级模型名（该配置清单内）；空=用配置默认模型"
+    )
     script_guide: Mapped[str | None] = mapped_column(Text, nullable=True, comment="项目级讲稿风格指南；空=继承全局")
+    highlight_style: Mapped[str | None] = mapped_column(
+        String(16), nullable=True, comment="项目级高亮样式覆盖；空=用模块设置"
+    )
+    highlight_color: Mapped[str | None] = mapped_column(
+        String(16), nullable=True, comment="项目级高亮主色 #RRGGBB；空=用模块设置"
+    )
+    highlight_override_enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        server_default="false",
+        nullable=False,
+        comment="项目级高亮是否启用；关闭=样式/颜色保留但不生效，回落到模块设置",
+    )
     source_version: Mapped[int] = mapped_column(
         Integer, default=1, server_default="1", nullable=False, comment="源 PPT 版本号，对象 key 为 source-v{n}.pptx"
     )
@@ -234,10 +250,17 @@ class PptVideoSlide(BaseModel):
     voice_id: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="覆盖音色；空=用项目默认")
     speed: Mapped[float | None] = mapped_column(Float, nullable=True, comment="覆盖语速；空=用项目默认")
     highlight_style: Mapped[str | None] = mapped_column(
-        String(16), nullable=True, comment="覆盖本页视觉引导样式；空=用模块设置"
+        String(16), nullable=True, comment="覆盖本页视觉引导样式；空=用项目设置"
     )
     highlight_color: Mapped[str | None] = mapped_column(
-        String(16), nullable=True, comment="覆盖本页高亮主色 #RRGGBB；空=用模块设置"
+        String(16), nullable=True, comment="覆盖本页高亮主色 #RRGGBB；空=用项目设置"
+    )
+    highlight_override_enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        server_default="false",
+        nullable=False,
+        comment="本页高亮是否启用；关闭=样式/颜色保留但不生效，回落到项目设置",
     )
     #: none_as_null=True：清空配置要落成 SQL NULL，否则会存成 JSON 'null'，
     #: 「已配置的页」按 is not null 统计就会多算，读回来也得再判一次

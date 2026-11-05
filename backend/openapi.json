@@ -91762,7 +91762,7 @@
         "tags": [
           "\u667a\u80fd\u4f53"
         ],
-        "summary": "\u66f4\u65b0\u9879\u76ee\u9ed8\u8ba4\u8bed\u8a00/\u97f3\u8272/\u8bed\u901f",
+        "summary": "\u66f4\u65b0\u9879\u76ee\u5168\u5c40\u8bbe\u7f6e\uff08\u8bed\u8a00/\u97f3\u8272/\u8bed\u901f/\u6587\u7a3f\u9ad8\u4eae\uff09",
         "operationId": "update_project_api_v1_agent_ppt_videos__project_id__patch",
         "parameters": [
           {
@@ -92667,7 +92667,7 @@
         "tags": [
           "\u667a\u80fd\u4f53"
         ],
-        "summary": "AI \u914d\u7f6e\uff1a\u7cfb\u7edf\u9884\u7f6e\u6a21\u578b + \u6211\u7684 Key + \u5168\u5c40\u8bb2\u7a3f\u89c4\u8303",
+        "summary": "AI \u914d\u7f6e\uff1a\u7cfb\u7edf\u9884\u7f6e\u6a21\u578b + \u81ea\u5b9a\u4e49\u6a21\u578b + \u5168\u5c40\u63d0\u793a\u8bcd\u6307\u5357",
         "operationId": "list_ai_configs_api_v1_agent_ai_configs_get",
         "parameters": [
           {
@@ -92714,7 +92714,7 @@
         "tags": [
           "\u667a\u80fd\u4f53"
         ],
-        "summary": "\u65b0\u589e\u4e2a\u4eba API Key\uff08\u4ec5\u672c\u4eba\u53ef\u89c1\u53ef\u7528\uff09",
+        "summary": "\u65b0\u589e\u81ea\u5b9a\u4e49\u6a21\u578b\uff08\u4e00\u4e2a Key \u53ef\u52fe\u9009\u591a\u4e2a\u6a21\u578b\uff0c\u4ec5\u672c\u4eba\u53ef\u89c1\u53ef\u7528\uff09",
         "operationId": "create_ai_config_api_v1_agent_ai_configs_post",
         "parameters": [
           {
@@ -92773,7 +92773,7 @@
         "tags": [
           "\u667a\u80fd\u4f53"
         ],
-        "summary": "\u8bbe\u7f6e\u5168\u5c40\u9ed8\u8ba4\u6a21\u578b\u4e0e\u5168\u5c40\u8bb2\u7a3f\u89c4\u8303\uff08\u9700\u5e73\u53f0\u7ba1\u7406\u5458\uff09",
+        "summary": "\u8bbe\u7f6e\u5168\u5c40\u9ed8\u8ba4\u6a21\u578b\u4e0e\u5168\u5c40\u63d0\u793a\u8bcd\u6307\u5357\uff08\u9700\u5e73\u53f0\u7ba1\u7406\u5458\uff09",
         "operationId": "update_global_ai_settings_api_v1_agent_ai_configs_global_put",
         "parameters": [
           {
@@ -92810,6 +92810,65 @@
               "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/DataResponse_AiConfigListResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ai-configs/models": {
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u6309\u63a5\u53e3\u5730\u5740\u4e0e API Key \u62c9\u53d6\u53ef\u7528\u6a21\u578b\uff08\u670d\u52a1\u7aef\u4ee3\u7406\uff09",
+        "operationId": "discover_ai_config_models_api_v1_agent_ai_configs_models_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiModelsDiscoverRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_AiModelsDiscoverResponse_"
                 }
               }
             }
@@ -93017,7 +93076,7 @@
         "tags": [
           "\u667a\u80fd\u4f53"
         ],
-        "summary": "\u9879\u76ee\u7ea7\u6a21\u578b\u8986\u76d6\u4e0e\u8bb2\u7a3f\u89c4\u8303\uff08\u7559\u7a7a\u5373\u7ee7\u627f\u5168\u5c40\uff09",
+        "summary": "\u9879\u76ee\u7ea7\u6a21\u578b\u8986\u76d6\u4e0e\u63d0\u793a\u8bcd\u6307\u5357\uff08\u7559\u7a7a\u5373\u7ee7\u627f\u5168\u5c40\uff09",
         "operationId": "update_project_ai_settings_api_v1_agent_ppt_videos__project_id__ai_put",
         "parameters": [
           {
@@ -96125,17 +96184,32 @@
             "minLength": 1,
             "title": "Api Base Url"
           },
-          "model_name": {
-            "type": "string",
-            "maxLength": 128,
-            "minLength": 1,
-            "title": "Model Name"
-          },
           "api_key": {
             "type": "string",
             "maxLength": 500,
             "minLength": 1,
             "title": "Api Key"
+          },
+          "available_models": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Available Models"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
           },
           "temperature": {
             "type": "number",
@@ -96168,7 +96242,6 @@
         "required": [
           "config_name",
           "api_base_url",
-          "model_name",
           "api_key"
         ],
         "title": "AiConfigCreateRequest"
@@ -96187,6 +96260,13 @@
           "model_name": {
             "type": "string",
             "title": "Model Name"
+          },
+          "available_models": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Available Models"
           },
           "api_base_url": {
             "type": "string",
@@ -96257,6 +96337,11 @@
               }
             ],
             "title": "Global Default Id"
+          },
+          "global_default_model": {
+            "type": "string",
+            "title": "Global Default Model",
+            "default": ""
           },
           "can_manage_global": {
             "type": "boolean",
@@ -96377,6 +96462,21 @@
               }
             ],
             "title": "Api Base Url"
+          },
+          "available_models": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Models"
           },
           "model_name": {
             "anyOf": [
@@ -96648,6 +96748,74 @@
         "type": "object",
         "title": "AiLogPaginatedListResponse",
         "description": "AI \u4ea4\u4e92\u65e5\u5fd7\u5206\u9875\u6570\u636e"
+      },
+      "AiModelsDiscoverRequest": {
+        "properties": {
+          "config_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Id"
+          },
+          "api_base_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Base Url"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          }
+        },
+        "type": "object",
+        "title": "AiModelsDiscoverRequest",
+        "description": "\u6309 Key \u62c9\u53d6\u53ef\u7528\u6a21\u578b\u6e05\u5355\uff1a\u7f16\u8f91\u6001\u53ef\u53ea\u4f20 config_id \u590d\u7528\u5df2\u4fdd\u5b58\u7684 Key\u3002"
+      },
+      "AiModelsDiscoverResponse": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "models": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Models"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "message"
+        ],
+        "title": "AiModelsDiscoverResponse"
       },
       "AlertRecordProcessRequest": {
         "properties": {
@@ -111175,6 +111343,42 @@
         },
         "type": "object",
         "title": "DataResponse[AiConfigTestResponse]"
+      },
+      "DataResponse_AiModelsDiscoverResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AiModelsDiscoverResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[AiModelsDiscoverResponse]"
       },
       "DataResponse_AuthorizationLetterResponse_": {
         "properties": {
@@ -130854,6 +131058,18 @@
             ],
             "title": "Global Config Id"
           },
+          "global_model_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Global Model Name"
+          },
           "clear_global_config": {
             "type": "boolean",
             "title": "Clear Global Config",
@@ -130879,7 +131095,7 @@
         },
         "type": "object",
         "title": "GlobalAiSettingsRequest",
-        "description": "\u5168\u5c40\u9ed8\u8ba4\u6a21\u578b\u4e0e\u5168\u5c40\u98ce\u683c\u6307\u5357\uff08\u9700\u6a21\u5757\u914d\u7f6e\u7ba1\u7406\u6743\u9650\uff09\u3002"
+        "description": "\u5168\u5c40\u9ed8\u8ba4\u6a21\u578b\u4e0e\u5168\u5c40\u63d0\u793a\u8bcd\u6307\u5357\uff08\u9700\u6a21\u5757\u914d\u7f6e\u7ba1\u7406\u6743\u9650\uff09\u3002"
       },
       "GrantCreate": {
         "properties": {
@@ -153628,6 +153844,18 @@
             ],
             "title": "Llm Config Id"
           },
+          "llm_model_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Model Name"
+          },
           "clear_config": {
             "type": "boolean",
             "title": "Clear Config",
@@ -153918,6 +154146,54 @@
               }
             ],
             "title": "Llm Config Id"
+          },
+          "llm_model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Model Name"
+          },
+          "highlight_style": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Style"
+          },
+          "highlight_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Color"
+          },
+          "highlight_override_enabled": {
+            "type": "boolean",
+            "title": "Highlight Override Enabled",
+            "default": false
+          },
+          "module_highlight_style": {
+            "type": "string",
+            "title": "Module Highlight Style",
+            "default": ""
+          },
+          "module_highlight_color": {
+            "type": "string",
+            "title": "Module Highlight Color",
+            "default": ""
           },
           "updated_at": {
             "anyOf": [
@@ -154476,6 +154752,51 @@
               }
             ],
             "title": "Speed"
+          },
+          "highlight_style": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Style"
+          },
+          "highlight_color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Color"
+          },
+          "highlight_override_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Override Enabled"
+          },
+          "clear_highlight_style": {
+            "type": "boolean",
+            "title": "Clear Highlight Style",
+            "default": false
+          },
+          "clear_highlight_color": {
+            "type": "boolean",
+            "title": "Clear Highlight Color",
+            "default": false
           }
         },
         "type": "object",
@@ -170245,6 +170566,11 @@
             ],
             "title": "Highlight Color"
           },
+          "highlight_override_enabled": {
+            "type": "boolean",
+            "title": "Highlight Override Enabled",
+            "default": false
+          },
           "highlight_regions": {
             "anyOf": [
               {
@@ -170549,6 +170875,17 @@
               }
             ],
             "title": "Highlight Color"
+          },
+          "highlight_override_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Override Enabled"
           },
           "highlight_regions": {
             "anyOf": [
@@ -184213,6 +184550,11 @@
           "gender": {
             "type": "string",
             "title": "Gender"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
           },
           "license": {
             "type": "string",

@@ -530,8 +530,8 @@ export default function HighlightRegionsDrawer({ open, projectId, slide, value, 
         type="info"
         showIcon
         className="!mb-3"
-        message="这里的改动是草案，回到编辑区点「保存本页」才生效"
-        description="渲染时按元素 id 现算坐标；页面图变了不影响已配置的元素，手绘框可能偏，需要复核。"
+        message="改完记得保存"
+        description="这里只是草稿，回到编辑区点「保存本页」才会生效。系统按页面上的实际位置计算高亮；换过页面图的页，手画的框可能偏，需要再核一次。"
       />
       <Spin spinning={loading}>
         <Tabs

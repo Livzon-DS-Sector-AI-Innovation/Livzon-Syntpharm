@@ -11,11 +11,13 @@ import type {
   AiConfigFormValue,
   AiConfigListResponse,
   AiConfigTestResponse,
+  AiModelsDiscoverResponse,
   EditableShapeList,
   PageImagesAccepted,
   ProjectDetail,
   ProjectPage,
   ProjectSummary,
+  ProjectUpdatePayload,
   RevisionItem,
   ScriptRewritePayload,
   ScriptRewriteResult,
@@ -85,7 +87,7 @@ export async function fetchVersionList(projectId: string): Promise<VersionItem[]
 
 export async function updateProjectRequest(
   projectId: string,
-  payload: Record<string, unknown>,
+  payload: ProjectUpdatePayload,
 ): Promise<Envelope<ProjectDetail>> {
   return apiFetch<Envelope<ProjectDetail>>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}`, {
     method: 'PATCH',
@@ -176,7 +178,7 @@ export async function deleteAiConfigRequest(configId: string): Promise<Envelope<
 
 /** 连通性测试：传 config_id 测已保存配置，或传表单值直接测 */
 export async function testAiConfigRequest(
-  payload: AiConfigFormValue & { config_id?: string },
+  payload: Partial<AiConfigFormValue> & { config_id?: string },
 ): Promise<Envelope<AiConfigTestResponse>> {
   return apiFetch<Envelope<AiConfigTestResponse>>(`${getApiBaseUrl()}${API}/ai-configs/test`, {
     method: 'POST',
@@ -185,8 +187,22 @@ export async function testAiConfigRequest(
   })
 }
 
+/** 拉取某个 Key 可用的模型清单：编辑态传 config_id 复用已保存的 Key */
+export async function discoverAiModelsRequest(payload: {
+  config_id?: string
+  api_base_url?: string
+  api_key?: string
+}): Promise<Envelope<AiModelsDiscoverResponse>> {
+  return apiFetch<Envelope<AiModelsDiscoverResponse>>(`${getApiBaseUrl()}${API}/ai-configs/models`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
 export async function updateGlobalAiSettingsRequest(payload: {
   global_config_id?: string | null
+  global_model_name?: string | null
   clear_global_config?: boolean
   global_guide?: string | null
   clear_global_guide?: boolean
@@ -202,6 +218,7 @@ export async function updateProjectAiSettingsRequest(
   projectId: string,
   payload: {
     llm_config_id?: string | null
+    llm_model_name?: string | null
     clear_config?: boolean
     script_guide?: string | null
     clear_guide?: boolean

@@ -2,21 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { App, Button, Space, Tag, Typography } from 'antd'
-import { ArrowLeftOutlined, RobotOutlined, SwapOutlined } from '@ant-design/icons'
+import { App, Space, Tag, Typography } from 'antd'
+import { ArrowLeftOutlined } from '@ant-design/icons'
 
 import AiConfigDrawer from './AiConfigDrawer'
 import PageImagesProgress from './PageImagesProgress'
+import ProjectSettingsCard from './ProjectSettingsCard'
 import RenderProgress from './RenderProgress'
 import ScriptDraftBanner from './ScriptDraftBanner'
 import SlideEditor from './SlideEditor'
 import SlideTimeline from './SlideTimeline'
 import SourceReplaceModal from './SourceReplaceModal'
 import VersionPanel from './VersionPanel'
-import VoiceSettings from './VoiceSettings'
 import { reloadPptVideoProject } from '@/actions/agent/ppt-video'
-import { PermissionGate } from '@/components/auth/PermissionGate'
-import { PERM } from '@/lib/permissions/codes'
 import type { ProjectDetail, VoiceOption } from '@/types/agent/ppt-video'
 
 interface Props {
@@ -103,7 +101,7 @@ export default function PptVideoWorkbench({ initialDetail, voices }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Space size={8} wrap>
           <Link
             href="/agent/ppt-videos"
@@ -117,17 +115,6 @@ export default function PptVideoWorkbench({ initialDetail, voices }: Props) {
           </Typography.Text>
           <Tag className="!m-0 !text-[11px]">源文件第 {detail.source_version} 版</Tag>
         </Space>
-
-        <PermissionGate code={PERM.pptVideoManage}>
-          <Space size={8} wrap>
-            <Button size="small" icon={<RobotOutlined />} onClick={() => setAiOpen(true)}>
-              项目 AI 设置
-            </Button>
-            <Button size="small" icon={<SwapOutlined />} onClick={() => setSourceOpen(true)}>
-              更换 PPT
-            </Button>
-          </Space>
-        </PermissionGate>
       </div>
 
       <RenderProgress detail={detail} onDetailChange={setDetail} />
@@ -174,7 +161,13 @@ export default function PptVideoWorkbench({ initialDetail, voices }: Props) {
         </section>
 
         <aside className="flex flex-col gap-3">
-          <VoiceSettings key={detail.id} detail={detail} voices={voices} onDetailChange={setDetail} />
+          <ProjectSettingsCard
+            key={detail.id}
+            detail={detail}
+            voices={voices}
+            onOpenSettings={() => setAiOpen(true)}
+            onOpenSource={() => setSourceOpen(true)}
+          />
           <VersionPanel detail={detail} />
         </aside>
       </div>
@@ -185,6 +178,7 @@ export default function PptVideoWorkbench({ initialDetail, voices }: Props) {
         mode="project"
         configs={null}
         detail={detail}
+        voices={voices}
         onDetailChange={setDetail}
       />
 

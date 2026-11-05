@@ -13,7 +13,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.llm.config import LLMConfigModel
+from app.core.llm.config import LLMConfigModel, parse_available_models
 from app.core.llm.encryption import encrypt_api_key
 from app.core.llm.exceptions import LLMConfigError
 from app.modules.agent import ai_config
@@ -337,6 +337,250 @@ async def test_update_personal_reencrypts_new_key(db_session: AsyncSession, user
 
     assert updated.encrypted_api_key != before
     assert updated.encrypted_api_key != "sk-new-key-0987654321"
+
+
+# ── 一 Key 多模型：清单归一化与选择 ─────────────────────────────────────
+
+
+def test_normalize_models_dedupes_and_keeps_default_first() -> None:
+    models = ai_config.normalize_models([" qwen-max ", "qwen-plus", "qwen-max", ""], default="qwen-plus")
+    # 默认模型（原 model_name）即使没勾选也必须留在清单里；已在清单内则保持勾选顺序
+    assert models == ["qwen-max", "qwen-plus"]
+
+
+def test_normalize_models_caps_count_and_length() -> None:
+    models = ai_config.normalize_models([f"m{i}" for i in range(80)])
+    assert len(models) == ai_config.MAX_AVAILABLE_MODELS
+    long_name = ai_config.normalize_models(["x" * 300])
+    assert len(long_name[0]) == ai_config.MAX_MODEL_NAME_CHARS
+
+
+def test_pick_model_falls_back_when_not_in_list() -> None:
+    assert ai_config.pick_model("m2", ["m1", "m2"], "m1") == "m2"
+    # 脏数据（模型名不在清单）不能让讲稿任务直接失败
+    assert ai_config.pick_model("gone", ["m1"], "m1") == "m1"
+    assert ai_config.pick_model(None, ["m1"], "m1") == "m1"
+
+
+def test_parse_available_models_handles_legacy_shapes() -> None:
+    assert parse_available_models(None, "only") == ["only"]
+    assert parse_available_models('["a", "b"]', "a") == ["a", "b"]
+    assert parse_available_models("a,b", "b") == ["a", "b"]
+    assert parse_available_models("   ", "a") == ["a"]
+
+
+async def test_resolve_uses_project_selected_model(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch) -> None:
+    config = _config_row("m1", available_models=["m1", "m2"])
+    _patch_lookup(monkeypatch, {str(config.id): config})
+    project = await _make_project(db_session, llm_config_id=config.id)
+    project.llm_model_name = "m2"
+
+    resolved = await ai_config.resolve(db_session, project, OWNER)
+
+    assert (resolved.model_name, resolved.source) == ("m2", "project")
+
+
+async def test_resolve_ignores_project_model_outside_list(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _config_row("m1", available_models=["m1", "m2"])
+    _patch_lookup(monkeypatch, {str(config.id): config})
+    project = await _make_project(db_session, llm_config_id=config.id)
+    project.llm_model_name = "stale-model"
+
+    resolved = await ai_config.resolve(db_session, project, OWNER)
+
+    assert resolved.model_name == "m1"
+
+
+async def test_create_personal_saves_all_selected_models(db_session: AsyncSession, users) -> None:
+    owner, _ = users
+    created = await ai_config.create_personal(
+        db_session,
+        owner.id,
+        SimpleNamespace(
+            config_name="多模型 Key",
+            api_base_url="https://example.test/v1",
+            api_key="sk-abcdefghijklmnop",
+            available_models=["qwen-max", "qwen-plus", "qwen-max"],
+            model_name=None,
+            temperature=0.2,
+            timeout_seconds=60,
+            notes=None,
+        ),
+    )
+
+    assert created.available_models == ["qwen-max", "qwen-plus"]
+    assert created.model_name == "qwen-max"
+
+
+async def test_update_personal_replaces_model_list(db_session: AsyncSession, users) -> None:
+    owner, _ = users
+    config = await _add_config(db_session, "replace", owner_id=owner.id, model_name="old")
+
+    updated = await ai_config.update_personal(
+        db_session,
+        config,
+        SimpleNamespace(
+            config_name=None,
+            api_base_url=None,
+            api_key=None,
+            available_models=["new-1", "new-2"],
+            model_name=None,
+            temperature=None,
+            timeout_seconds=None,
+            notes=None,
+        ),
+        owner.id,
+    )
+
+    assert updated.available_models == ["new-1", "new-2"]
+    assert updated.model_name == "new-1"
+
+
+async def test_update_personal_legacy_model_name_keeps_other_models(
+    db_session: AsyncSession, users
+) -> None:
+    owner, _ = users
+    config = await _add_config(
+        db_session, "legacy", owner_id=owner.id, model_name="old", available_models=["old", "keep"]
+    )
+
+    updated = await ai_config.update_personal(
+        db_session,
+        config,
+        SimpleNamespace(
+            config_name=None,
+            api_base_url=None,
+            api_key=None,
+            model_name="fresh",
+            temperature=None,
+            timeout_seconds=None,
+            notes=None,
+        ),
+        owner.id,
+    )
+
+    assert updated.model_name == "fresh"
+    assert set(updated.available_models) == {"fresh", "old", "keep"}
+
+
+async def test_delete_personal_clears_global_model(db_session: AsyncSession, users) -> None:
+    owner, _ = users
+    config = await _add_config(db_session, "to-delete", owner_id=owner.id)
+    await ai_config.save_setting(db_session, ai_config.SETTING_GLOBAL_CONFIG_ID, str(config.id))
+    await ai_config.save_setting(db_session, ai_config.SETTING_GLOBAL_MODEL, config.model_name)
+
+    await ai_config.delete_personal(db_session, config, owner.id)
+
+    global_id, global_model, _ = await ai_config.read_global_settings(db_session)
+    assert global_id == ""
+    assert global_model == ""
+
+
+# ── 模型探测（/models 代理） ─────────────────────────────────────────────
+
+
+class _ModelsResponse:
+    def __init__(self, status_code: int, payload: Any = None, text: str = "") -> None:
+        self.status_code = status_code
+        self._payload = payload
+        self.text = text or str(payload)
+
+    def json(self) -> Any:
+        if self._payload is None:
+            raise ValueError("no json")
+        return self._payload
+
+
+def _patch_discover_http(monkeypatch: pytest.MonkeyPatch, handler) -> None:
+    class _FakeClient:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        async def __aenter__(self) -> "_FakeClient":
+            return self
+
+        async def __aexit__(self, *args: Any) -> bool:
+            return False
+
+        async def get(self, url: str, headers: dict[str, str] | None = None) -> _FakeResponse:
+            return await handler(url, headers)
+
+    monkeypatch.setattr(ai_config.httpx, "AsyncClient", _FakeClient)
+
+
+async def test_discover_models_reads_openai_style_list(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def handler(url: str, headers: dict[str, str] | None):
+        assert url == "https://example.test/v1/models"
+        assert headers and headers["Authorization"].startswith("Bearer ")
+        return _ModelsResponse(200, {"data": [{"id": "qwen-max"}, {"id": "qwen-plus"}, {"id": "qwen-max"}]})
+
+    _patch_discover_http(monkeypatch, handler)
+
+    ok, message, models = await ai_config.discover_models("https://example.test/v1/", "sk-test")
+
+    assert ok is True
+    assert models == ["qwen-max", "qwen-plus"]
+    assert "2" in message
+
+
+async def test_discover_models_strips_chat_completions_suffix(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: dict[str, str] = {}
+
+    async def handler(url: str, headers: dict[str, str] | None):
+        seen["url"] = url
+        return _ModelsResponse(200, {"models": [{"name": "a"}]})
+
+    _patch_discover_http(monkeypatch, handler)
+
+    ok, _, models = await ai_config.discover_models("https://example.test/v1/chat/completions", "sk-test")
+
+    assert ok is True
+    assert seen["url"] == "https://example.test/v1/models"
+    assert models == ["a"]
+
+
+async def test_discover_models_reports_auth_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def handler(url: str, headers: dict[str, str] | None):
+        return _ModelsResponse(401, {})
+
+    _patch_discover_http(monkeypatch, handler)
+
+    ok, message, models = await ai_config.discover_models("https://example.test/v1", "sk-bad")
+
+    assert (ok, models) == (False, [])
+    assert "鉴权失败" in message
+
+
+async def test_discover_models_reports_unsupported_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def handler(url: str, headers: dict[str, str] | None):
+        return _ModelsResponse(404, None, "not found")
+
+    _patch_discover_http(monkeypatch, handler)
+
+    ok, message, _ = await ai_config.discover_models("https://example.test/v1", "sk-test")
+
+    assert ok is False
+    assert "手动填写" in message
+
+
+async def test_discover_models_reports_network_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def handler(url: str, headers: dict[str, str] | None):
+        raise httpx.ConnectError("boom")
+
+    _patch_discover_http(monkeypatch, handler)
+
+    ok, message, models = await ai_config.discover_models("https://example.test/v1", "sk-test")
+
+    assert (ok, models) == (False, [])
+    assert "网络错误" in message
+
+
+async def test_discover_models_requires_base_url() -> None:
+    ok, message, models = await ai_config.discover_models("  ", "sk-test")
+    assert (ok, models) == (False, [])
+    assert "接口地址" in message
 
 
 async def test_delete_personal_clears_global_default(db_session: AsyncSession, users) -> None:

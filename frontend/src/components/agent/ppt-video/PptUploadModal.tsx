@@ -8,7 +8,7 @@ import { InboxOutlined } from '@ant-design/icons'
 
 import UploadWaitingView, { type UploadPhase } from './UploadWaitingView'
 import { UploadCanceledError, uploadPptVideoProject } from '@/lib/api/client/ppt-video-upload'
-import type { LanguageCode, ProjectDetail, VoiceOption } from '@/types/agent/ppt-video'
+import { LANGUAGE_LABEL, type LanguageCode, type ProjectDetail, type VoiceOption } from '@/types/agent/ppt-video'
 
 interface Props {
   open: boolean
@@ -141,7 +141,7 @@ export default function PptUploadModal({ open, voices, onClose }: Props) {
       open={open}
       onCancel={waiting ? undefined : onClose}
       onOk={handleSubmit}
-      okText="上传并打开工作台"
+      okText="上传并开始制作"
       cancelText="取消"
       width={620}
       destroyOnHidden
@@ -195,14 +195,14 @@ export default function PptUploadModal({ open, voices, onClose }: Props) {
               </p>
               <p className="ant-upload-text">点击或拖拽 PPT 到此处</p>
               <p className="ant-upload-hint">
-                第 1 页自动作为片头，正文从第 2 页开始；页面按 1920×1080 等比留边渲染
+                第 1 页自动作为片头，正文从第 2 页开始；画面按 1920×1080 等比缩放，四周留边
               </p>
             </Upload.Dragger>
           </Form.Item>
 
           <Form.Item
             label="逐页讲稿（可选，.txt / .md / .docx）"
-            extra="每页一段，用空行或「---」分隔；不上传也没关系，系统会读取每页文字自动生成初稿，已有讲稿的页面不会被覆盖"
+            extra="每页一段，用空行或「---」分隔。不上传也行：系统会读取每页文字自动生成初稿，已有讲稿的页面不会被覆盖。"
           >
             <Upload
               accept=".txt,.md,.docx"
@@ -230,8 +230,8 @@ export default function PptUploadModal({ open, voices, onClose }: Props) {
                 style={{ width: 140 }}
                 onChange={handleLanguage}
                 options={[
-                  { value: 'zh', label: '中文' },
-                  { value: 'en', label: '英文' },
+                  { value: 'zh', label: LANGUAGE_LABEL.zh },
+                  { value: 'en', label: LANGUAGE_LABEL.en },
                 ]}
               />
             </Form.Item>
@@ -239,27 +239,28 @@ export default function PptUploadModal({ open, voices, onClose }: Props) {
               <Select
                 style={{ width: 260 }}
                 allowClear
-                placeholder="跟随系统默认"
+                placeholder="用系统推荐音色"
                 options={languageVoices.map((voice) => ({
                   value: voice.voice_id,
-                  label: `${voice.display_name}（${voice.gender === 'female' ? '女' : '男'}）`,
+                  label: voice.display_name,
+                  title: voice.description,
                 }))}
               />
             </Form.Item>
           </Space>
 
           <Form.Item label="默认语速" name="speed" className="!mt-4 !mb-0">
-            <Slider min={0.5} max={2} step={0.05} tooltip={{ formatter: (value) => `${value?.toFixed(2)}x` }} />
+            <Slider min={0.5} max={2} step={0.05} tooltip={{ formatter: (value) => `${value?.toFixed(2)} 倍` }} />
           </Form.Item>
 
           <Alert
             className="!mt-3"
             type="info"
             showIcon
-            message="上传后先出页面图，AI 自动生成逐页讲稿初稿"
+            message="上传后自动转成页面图，并逐页生成讲稿初稿"
             description={
               <Typography.Text className="text-[12px]">
-                上传期间请勿关闭页面；解析完成后自动进入工作台。初稿在后台按页生成，进工作台可直接改，改完逐页试听，不用等整片渲染。
+                上传期间请不要关闭页面，完成后会自动进入工作台。初稿按页在后台生成，进工作台就能改，改完可以逐页试听，不必等整片做好。
                 纯图片页没有可识别的文字，需要手工填写。
               </Typography.Text>
             }

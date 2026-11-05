@@ -818,6 +818,7 @@ def slide_item(slide: PptVideoSlide, project_id: uuid.UUID) -> SlideItem:
         speed=slide.speed,
         highlight_style=slide.highlight_style,
         highlight_color=slide.highlight_color,
+        highlight_override_enabled=bool(slide.highlight_override_enabled),
         highlight_regions=_highlight_regions_payload(slide),
         page_text=slide.page_text,
         page_notes=slide.page_notes,
@@ -949,7 +950,7 @@ async def script_runtime_state(
     解析失败不抛错：页面详情不该因为 Key 配错了整页打不开，
     失败时用空模型名 + env 来源表示「待配置」。
     """
-    global_config_id, global_guide = await ai_config.read_global_settings(session)
+    global_config_id, _global_model, global_guide = await ai_config.read_global_settings(session)
     try:
         model = await ai_config.resolve(session, project, user_id)
         model_name = model.model_name
@@ -1012,6 +1013,13 @@ async def get_detail(
         source_download_url=source_download_url(project.id),
         script_guide=project.script_guide or "",
         llm_config_id=project.llm_config_id,
+        llm_model_name=project.llm_model_name,
+        highlight_style=project.highlight_style,
+        highlight_color=project.highlight_color,
+        highlight_override_enabled=bool(project.highlight_override_enabled),
+        # 模块默认值只用于「跟随默认」时的回显与色板预览，前端不据此落库
+        module_highlight_style=settings.highlight_style,
+        module_highlight_color=settings.highlight_color,
         updated_at=project.updated_at,
     )
 
@@ -1090,6 +1098,11 @@ async def update_project(
     default_language: str | None,
     default_voice_id: str | None,
     speed: float | None,
+    highlight_style: str | None = None,
+    highlight_color: str | None = None,
+    highlight_override_enabled: bool | None = None,
+    clear_highlight_style: bool = False,
+    clear_highlight_color: bool = False,
     updated_by: uuid.UUID | None,
 ) -> PptVideoProject:
     project = await get_project(session, project_id)
@@ -1110,7 +1123,42 @@ async def update_project(
         if not 0.5 <= speed <= 2.0:
             raise ServiceError("语速需在 0.5~2.0 之间")
         project.speed = speed
+    prev_highlight = (
+        project.highlight_style,
+        project.highlight_color,
+        bool(project.highlight_override_enabled),
+    )
+    if highlight_override_enabled is not None:
+        # 关闭只是「本级不生效」，样式/颜色照旧留在库里：再次勾选立刻恢复上次选择
+        project.highlight_override_enabled = highlight_override_enabled
+    if clear_highlight_style:
+        project.highlight_style = None
+    elif highlight_style is not None:
+        # 空串等同于清除覆盖：前端「恢复默认」用它，避免多一个布尔字段
+        style = highlight_style.strip()
+        if style and style not in HIGHLIGHT_STYLES:
+            raise ServiceError(f"高亮样式仅支持 {'/'.join(HIGHLIGHT_STYLES)}")
+        project.highlight_style = style or None
+    if clear_highlight_color:
+        project.highlight_color = None
+    elif highlight_color is not None:
+        # 空串同样表示清除；非空则必须是合法 #RRGGBB，坏颜色进了渲染只会把画面染脏
+        raw_color = highlight_color.strip()
+        if not raw_color:
+            project.highlight_color = None
+        else:
+            normalized = normalize_hex_color(raw_color, "")
+            if not normalized:
+                raise ServiceError("高亮颜色需为 #RRGGBB 格式")
+            project.highlight_color = normalized
     project.updated_by = updated_by
+    if (project.highlight_style, project.highlight_color, bool(project.highlight_override_enabled)) != prev_highlight:
+        # 「保存即生效」：画面配置变了就作废全部页片段（含未单独覆盖的页），
+        # 并把上一次出片的正文指纹清掉，避免界面显示「已出片」而画面还是旧配置。
+        for slide in await list_slides(session, project_id):
+            await invalidate_slide_segments(session, slide)
+        project.body_key = None
+        project.body_input_key = None
     await session.flush()
     return project
 
@@ -1124,12 +1172,15 @@ async def update_project_ai(
     clear_config: bool,
     clear_guide: bool,
     updated_by: uuid.UUID | None,
+    llm_model_name: str | None = None,
 ) -> PptVideoProject:
-    """项目级 AI 设置：模型覆盖与风格指南。
+    """项目级 AI 设置：模型覆盖（配置 + 模型）与提示词指南。
 
     `llm_config_id` 传空字符串表示清除覆盖（回到全局默认），传 None 表示不修改。
+    清除或更换配置时，项目级模型名一并清空，避免残留指向别的 Key 的模型。
     """
     project = await get_project(session, project_id)
+    previous_config_id = project.llm_config_id
     if clear_config:
         project.llm_config_id = None
     elif llm_config_id is not None:
@@ -1140,6 +1191,15 @@ async def update_project_ai(
                 raise ServiceError("模型配置标识不正确") from exc
         else:
             project.llm_config_id = None
+
+    if project.llm_config_id is None:
+        project.llm_model_name = None
+    elif llm_model_name is not None:
+        project.llm_model_name = llm_model_name.strip() or None
+    elif project.llm_config_id != previous_config_id:
+        # 换了配置但没指定模型：交给该配置的默认模型，别沿用旧 Key 的模型名
+        project.llm_model_name = None
+
     if clear_guide:
         project.script_guide = None
     elif script_guide is not None:
@@ -1193,6 +1253,7 @@ async def update_slide(
     speed: float | None,
     highlight_style: str | None = None,
     highlight_color: str | None = None,
+    highlight_override_enabled: bool | None = None,
     highlight_regions: dict[str, Any] | None = None,
     clear_language: bool,
     clear_voice: bool,
@@ -1205,7 +1266,12 @@ async def update_slide(
     project = await get_project(session, project_id)
     slide = await get_slide_by_uid(session, project_id, slide_uid)
     # 画面相关配置的旧值：保存完对比，动过就让这页的历史片段作废
-    prev_visual = (slide.highlight_style, slide.highlight_color, slide.highlight_regions)
+    prev_visual = (
+        slide.highlight_style,
+        slide.highlight_color,
+        bool(slide.highlight_override_enabled),
+        slide.highlight_regions,
+    )
 
     if script_text is not None:
         if len(script_text) > MAX_SCRIPT_CHARS:
@@ -1257,6 +1323,9 @@ async def update_slide(
         slide.highlight_style = None
     if clear_highlight_color:
         slide.highlight_color = None
+    if highlight_override_enabled is not None:
+        # 关闭只是「本级不生效」，样式/颜色照旧留在库里：再次勾选立刻恢复上次选择
+        slide.highlight_override_enabled = highlight_override_enabled
     if highlight_regions is not None:
         # 整份替换而不是增量合并：前后端各存一半会对不上，渲染时更难排查。
         # 元素 id 必须能在本页 layout 里找到，否则存进去也亮不出来，直接丢掉。
@@ -1265,7 +1334,12 @@ async def update_slide(
     if clear_highlight_regions:
         slide.highlight_regions = None
     slide.updated_by = updated_by
-    if (slide.highlight_style, slide.highlight_color, slide.highlight_regions) != prev_visual:
+    if (
+        slide.highlight_style,
+        slide.highlight_color,
+        bool(slide.highlight_override_enabled),
+        slide.highlight_regions,
+    ) != prev_visual:
         # 「保存即生效」的落点：画面配置变了就作废该页片段，下次出片一定重渲这页。
         # 不能只依赖缓存 key 变化——key 里的视觉指纹一旦漏项（或渲染器换了实现），
         # 同样的 key 会把旧画面端回来，用户改完配置看着像没保存成功。
@@ -1444,6 +1518,7 @@ def voice_options() -> list[dict[str, Any]]:
             "language": voice.language,
             "display_name": voice.display_name,
             "gender": voice.gender,
+            "description": voice.description,
             "license": voice.license,
             "version": voice.version,
             "source": voice.source,

@@ -28,7 +28,7 @@ export default async function PptVideoListPage() {
     total = listResult.value.total
   } else {
     error =
-      listResult.reason instanceof Error ? listResult.reason.message : '后端接口暂时不可用'
+      listResult.reason instanceof Error ? listResult.reason.message : '数据暂时取不到，请稍后重试'
   }
 
   if (voiceResult.status === 'fulfilled') voices = voiceResult.value

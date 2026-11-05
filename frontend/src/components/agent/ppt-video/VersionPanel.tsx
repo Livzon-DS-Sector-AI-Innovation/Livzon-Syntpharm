@@ -59,7 +59,7 @@ export default function VersionPanel({ detail }: Props) {
       {!versions.length && (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description={<span className="text-[12px] text-[#A4A097]">还没有成片，点上方「生成视频」</span>}
+          description={<span className="text-[12px] text-[#A4A097]">还没有生成视频，点上面的「生成视频」</span>}
         />
       )}
 
@@ -134,9 +134,9 @@ export default function VersionPanel({ detail }: Props) {
 
               <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[#A4A097]">
                 <span title={versionHint(version, isLatest)}>
-                  正文复用 {version.reuse.body_reused_slides}/{version.reuse.total_slides} 页
+                  正文沿用 {version.reuse.body_reused_slides}/{version.reuse.total_slides} 页
                 </span>
-                {version.reuse.head_reused > 0 && <Tag className="!m-0 !px-1 !text-[10px]">片头复用</Tag>}
+                {version.reuse.head_reused > 0 && <Tag className="!m-0 !px-1 !text-[10px]">片头沿用</Tag>}
                 <span>{version.created_at ? new Date(version.created_at).toLocaleString('zh-CN') : '-'}</span>
               </div>
 
@@ -164,7 +164,7 @@ export default function VersionPanel({ detail }: Props) {
                     openManifest(version)
                   }}
                 >
-                  复用记录
+                  沿用记录
                 </Button>
               </Space>
             </div>

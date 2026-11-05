@@ -22,7 +22,9 @@ import { fetchPptVideoProjects } from '@/lib/api/client/agent'
 import { PermissionGate } from '@/components/auth/PermissionGate'
 import { PERM } from '@/lib/permissions/codes'
 import {
+  LANGUAGE_LABEL,
   PROJECT_STATUS_LABEL,
+  voiceLabel,
   type AiConfigListResponse,
   type ProjectSummary,
   type VoiceOption,
@@ -43,8 +45,6 @@ const STATUS_COLOR: Record<string, string> = {
   ready: 'green',
   failed: 'red',
 }
-
-const LANGUAGE_LABEL: Record<string, string> = { zh: '中文', en: '英文' }
 
 /** 缩略图只在页面图已渲染时存在；未出图时后端返回的是同一条图片 URL（404），用 placehoder 兜住 */
 function Thumb({ src, alt }: { src?: string | null; alt: string }) {
@@ -123,7 +123,7 @@ export default function PptVideoTable({
   const handleDelete = (record: ProjectSummary) => {
     modal.confirm({
       title: '删除项目',
-      content: `将删除「${record.name}」及其讲稿设置；已生成的成片文件保留在对象存储中。是否继续？`,
+      content: `将删除「${record.name}」以及它的讲稿和设置，已生成的视频文件会保留。是否继续？`,
       okText: '删除',
       okButtonProps: { danger: true },
       cancelText: '取消',
@@ -168,9 +168,10 @@ export default function PptVideoTable({
       width: 150,
       render: (_value, record) => (
         <Space size={4} wrap>
-          <Tag className="!m-0">{LANGUAGE_LABEL[record.default_language] ?? record.default_language}</Tag>
+          <Tag className="!m-0">{LANGUAGE_LABEL[record.default_language]}</Tag>
           <Typography.Text type="secondary" className="text-[12px]">
-            {record.default_voice_id} · {record.speed.toFixed(2)}x
+            {voiceLabel(voices.find((voice) => voice.voice_id === record.default_voice_id)?.display_name)} ·{' '}
+            {record.speed.toFixed(2)} 倍
           </Typography.Text>
         </Space>
       ),
@@ -210,7 +211,7 @@ export default function PptVideoTable({
       render: (_value, record) => (
         <Space size={0}>
           <Button type="link" size="small" onClick={() => router.push(`/agent/ppt-videos/${record.id}`)}>
-            工作台
+            继续制作
           </Button>
           {record.preview_url && (
             <Button
@@ -300,7 +301,7 @@ export default function PptVideoTable({
         <PermissionGate code={PERM.pptVideoManage}>
           <Space size={8}>
             <Button icon={<RobotOutlined />} onClick={() => setAiOpen(true)}>
-              AI 配置
+              模型配置
             </Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setUploadOpen(true)}>
               新建配音视频

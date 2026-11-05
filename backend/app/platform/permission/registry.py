@@ -3105,11 +3105,12 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ),
     ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/job"),
     ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/versions"),
-    # 智能体 - AI 配置（个人 Key 与全局默认模型；全局写入在函数内再校验平台管理员）
+    # 智能体 - AI 配置（自定义模型与全局默认模型；全局写入在函数内再校验平台管理员）
     ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ai-configs"),
     ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ai-configs"),
     ApiBindingDef("agent:ppt-video:read", "PUT", "/api/v1/agent/ai-configs/global"),
     ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ai-configs/test"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ai-configs/models"),
     ApiBindingDef("agent:ppt-video:manage", "PATCH", "/api/v1/agent/ai-configs/{config_id}"),
     ApiBindingDef("agent:ppt-video:manage", "DELETE", "/api/v1/agent/ai-configs/{config_id}"),
     # 智能体 - 项目级 AI 设置、讲稿改写与修订回滚

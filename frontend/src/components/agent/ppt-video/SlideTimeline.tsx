@@ -83,7 +83,7 @@ export default function SlideTimeline({ slides, activeSlideUid, onSelect }: Prop
                 />
               ) : (
                 <span className="flex h-full w-full items-center justify-center text-[11px] text-[#A4A097]">
-                  待渲染
+                  暂无预览
                 </span>
               )}
               <span className="absolute left-1 top-1 rounded bg-black/65 px-1 text-[11px] font-medium text-white">

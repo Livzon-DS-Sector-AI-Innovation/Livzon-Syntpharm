@@ -179,7 +179,7 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
             # 有高亮时画面是多段静帧序列，页图 sha256 无法代表画面，必须叠加视觉指纹
             # （分句映射 + 布局 + 样式）：只算分句会漏掉「改样式/挪版式但句子没变」的情况，
             # 旧片段被复用后高亮会静默失效。
-            paint = _resolve_highlight_paint(settings, slide)
+            paint = _resolve_highlight_paint(settings, slide, project)
             # 指纹必须带完整样式参数（样式/颜色/压暗/描边/染色强度），
             # 只带样式名会让「改了颜色但句子没变」的旧片段被复用。
             visual_key = highlight.visual_fingerprint(plan, slide.layout, paint.fingerprint) if plan.has_boxes else ""
@@ -424,7 +424,7 @@ class _PreparedPage:
 
 @dataclass(frozen=True)
 class _HighlightPaint:
-    """一次出帧真正用到的样式参数（已合并「页级覆盖 → 模块设置」）。"""
+    """一次出帧真正用到的样式参数（已合并「页级 → 项目级 → 模块设置」）。"""
 
     style: str
     color: str
@@ -440,14 +440,34 @@ class _HighlightPaint:
         return f"{self.style}:{self.color}:{self.dim_alpha}:{self.outline_px}:{self.fill_alpha}:{self.recolor_strength}"
 
 
-def _resolve_highlight_paint(settings: PptVideoSettings, slide: Any) -> _HighlightPaint:
-    """合并页级覆盖与模块设置；非法覆盖值一律回落模块设置，不让坏值进渲染。"""
-    style = str(getattr(slide, "highlight_style", None) or settings.highlight_style or "").strip()
+def _resolve_highlight_paint(settings: PptVideoSettings, slide: Any, project: Any) -> _HighlightPaint:
+    """合并页级 > 项目级 > 模块设置；本级未启用则整级跳过，非法覆盖值逐级回落。
+
+    「本级是否启用」看 `highlight_override_enabled`，不能看样式/颜色是否为空：
+    用户关掉开关时刻意保留了已选的值，只按空值判断会把关闭的层级又算回来。
+
+    某一级写了非法值时也必须继续往下一级找，而不是把坏值当成空——否则坏颜色
+    会被当成「没配」而回落，坏样式却会顶掉上一级的合法值。
+    """
+    levels: list[Any] = []
+    if bool(getattr(slide, "highlight_override_enabled", False)):
+        levels.append(slide)
+    if bool(getattr(project, "highlight_override_enabled", False)):
+        levels.append(project)
+    style = ""
+    for level in levels:
+        style = str(getattr(level, "highlight_style", None) or "").strip()
+        if style in HIGHLIGHT_STYLES:
+            break
     if style not in HIGHLIGHT_STYLES:
         style = settings.highlight_style
-    color = normalize_hex_color(
-        str(getattr(slide, "highlight_color", None) or settings.highlight_color), DEFAULTS.highlight_color
-    )
+    color = ""
+    for candidate in [*(getattr(level, "highlight_color", None) for level in levels), settings.highlight_color]:
+        color = normalize_hex_color(str(candidate or ""), "")
+        if color:
+            break
+    if not color:
+        color = DEFAULTS.highlight_color
     accent = parse_hex_color(color)
     dim_alpha = settings.highlight_dim_alpha
     outline_px = settings.highlight_outline_px

@@ -41,10 +41,10 @@ const columns: ColumnsType<ManifestSlideItem> = [
     dataIndex: 'cache_hit',
     width: 96,
     render: (hit: boolean) =>
-      hit ? <Tag color="green">复用</Tag> : <Tag color="orange">本次重算</Tag>,
+      hit ? <Tag color="green">沿用</Tag> : <Tag color="orange">本次重做</Tag>,
   },
   {
-    title: '图片 sha256',
+    title: '图片校验码',
     dataIndex: 'image_sha256',
     render: (value: string) => (
       <Typography.Text copyable={{ text: value }} className="font-mono text-[12px]">
@@ -53,7 +53,7 @@ const columns: ColumnsType<ManifestSlideItem> = [
     ),
   },
   {
-    title: '旁白 sha256',
+    title: '配音校验码',
     dataIndex: 'audio_sha256',
     render: (value: string) => (
       <Typography.Text copyable={{ text: value }} className="font-mono text-[12px]">
@@ -62,7 +62,7 @@ const columns: ColumnsType<ManifestSlideItem> = [
     ),
   },
   {
-    title: '分段 sha256',
+    title: '合成校验码',
     dataIndex: 'segment_sha256',
     render: (value: string) => (
       <Typography.Text copyable={{ text: value }} className="font-mono text-[12px]">
@@ -89,7 +89,7 @@ export default function ManifestDrawer({ open, versionId, versionNo, onClose }: 
         if (alive) setManifest(data)
       })
       .catch((err) => {
-        if (alive) setError(err instanceof Error ? err.message : '复用记录加载失败')
+        if (alive) setError(err instanceof Error ? err.message : '沿用记录加载失败')
       })
     return () => {
       alive = false
@@ -102,7 +102,7 @@ export default function ManifestDrawer({ open, versionId, versionNo, onClose }: 
 
   return (
     <Drawer
-      title={versionNo ? `v${versionNo} 复用记录` : '版本复用记录'}
+      title={versionNo ? `第 ${versionNo} 版沿用记录` : '版本沿用记录'}
       width={860}
       open={open}
       onClose={onClose}
@@ -111,7 +111,7 @@ export default function ManifestDrawer({ open, versionId, versionNo, onClose }: 
       {loading && (
         <div className="flex h-40 items-center justify-center gap-2">
           <Spin />
-          <Typography.Text type="secondary">读取 manifest…</Typography.Text>
+          <Typography.Text type="secondary">正在读取沿用记录…</Typography.Text>
         </div>
       )}
 
@@ -139,36 +139,36 @@ export default function ManifestDrawer({ open, versionId, versionNo, onClose }: 
       {manifest && (
         <Space direction="vertical" size={16} className="w-full">
           <Descriptions size="small" column={2} bordered>
-            <Descriptions.Item label="版本 ID" span={2}>
+            <Descriptions.Item label="版本号" span={2}>
               <Typography.Text copyable className="font-mono text-[12px]">
                 {manifest.version_id}
               </Typography.Text>
             </Descriptions.Item>
-            <Descriptions.Item label="head_key" span={2}>
+            <Descriptions.Item label="片头内容码" span={2}>
               <Typography.Text copyable className="font-mono text-[12px]">
                 {manifest.head_key}
               </Typography.Text>
             </Descriptions.Item>
-            <Descriptions.Item label="body_key" span={2}>
+            <Descriptions.Item label="正文内容码" span={2}>
               <Typography.Text copyable className="font-mono text-[12px]">
                 {manifest.body_key}
               </Typography.Text>
             </Descriptions.Item>
-            <Descriptions.Item label="encoder_key" span={2}>
+            <Descriptions.Item label="视频编码" span={2}>
               <span className="font-mono text-[12px]">{manifest.encoder_key}</span>
             </Descriptions.Item>
             <Descriptions.Item label="成片时长">{formatDuration(manifest.total_duration_ms)}</Descriptions.Item>
-            <Descriptions.Item label="共 N 页">{manifest.slides.length}</Descriptions.Item>
+            <Descriptions.Item label="总页数">{manifest.slides.length} 页</Descriptions.Item>
             {reuse && (
               <>
-                <Descriptions.Item label="正文命中">
+                <Descriptions.Item label="正文沿用">
                   {reuse.body_reused_slides} / {reuse.total_slides} 页
                 </Descriptions.Item>
-                <Descriptions.Item label="正文重算">
+                <Descriptions.Item label="正文重做">
                   {reuse.body_rendered_slides} / {reuse.total_slides} 页
                 </Descriptions.Item>
-                <Descriptions.Item label="片头复用">{reuse.head_reused ? '是' : '否'}</Descriptions.Item>
-                <Descriptions.Item label="整体命中">
+                <Descriptions.Item label="片头沿用">{reuse.head_reused ? '是' : '否'}</Descriptions.Item>
+                <Descriptions.Item label="整片沿用">
                   {reuse.reused_slides} / {reuse.total_slides} 页
                 </Descriptions.Item>
               </>
@@ -178,8 +178,8 @@ export default function ManifestDrawer({ open, versionId, versionNo, onClose }: 
           <Alert
             type="info"
             showIcon
-            message="怎么读这份记录"
-            description="同一页的图片、旁白、分段三个 sha256 都相同才会被判为「复用」；任一项变化只重算该页，其余页仍走缓存。片头单独一份，改正文不影响它。"
+            message="这份记录说明什么"
+            description="同一页的图片、配音和合成好的画面都没变，这一页才会标成「沿用」；任何一项变了只重做这一页，其余页继续沿用。片头单独计算，改正文不影响片头。"
           />
 
           <Table<ManifestSlideItem>

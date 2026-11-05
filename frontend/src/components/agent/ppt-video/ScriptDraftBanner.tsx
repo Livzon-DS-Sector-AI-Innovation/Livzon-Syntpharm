@@ -186,7 +186,7 @@ export default function ScriptDraftBanner({ detail, onDetailChange }: Props) {
       type="info"
       showIcon
       message="自动生成初稿已关闭"
-      description="后台已关闭 AI 讲稿生成，请手工填写讲稿，或联系管理员打开 AGENT_PPT_VIDEO_SCRIPT_AI_ENABLED。"
+      description="管理员暂时关闭了自动生成讲稿，可以手工填写，或联系管理员在后台重新打开。"
     />
   ) : status === 'failed' || status === 'partial' ? (
     <Alert
@@ -273,7 +273,7 @@ export default function ScriptDraftBanner({ detail, onDetailChange }: Props) {
           )}
           {mode === 'rewrite_all' && (
             <Tag color="orange" className="!m-0 !text-[11px]">
-              覆盖前自动存快照，可回滚
+              改写前会自动存一份原文，随时可恢复
             </Tag>
           )}
         </div>
@@ -283,7 +283,7 @@ export default function ScriptDraftBanner({ detail, onDetailChange }: Props) {
             <Progress percent={100} status="active" showInfo={false} strokeWidth={2} strokeColor="#5645D4" />
             <Space size={6} className="mt-1">
               <Typography.Text type="secondary" className="text-[11px]">
-                改写任务进行中（{elapsed}s）· 完成后自动刷新，可在修订记录里回滚
+                改写任务进行中（{elapsed}s）· 完成后自动刷新，可在修订记录里恢复
               </Typography.Text>
             </Space>
           </div>

@@ -68,7 +68,7 @@ export default function PageImagesProgress({ detail, onDetailChange }: Props) {
         if (TERMINAL.has(next.status)) {
           // 终态回填一次详情：页图 version / 缩略图 url 都在详情里
           await refreshDetail()
-          if (next.status === 'failed') message.error(next.error || '页图生成失败')
+          if (next.status === 'failed') message.error(next.error || '页面图生成失败')
           return
         }
       } catch (error) {
@@ -112,7 +112,7 @@ export default function PageImagesProgress({ detail, onDetailChange }: Props) {
       <div className="flex items-center justify-between gap-2">
         {state.status === 'failed' ? (
           <Typography.Text type="danger" className="text-[12px]">
-            页图生成失败
+            页面图生成失败
           </Typography.Text>
         ) : (
           <Typography.Text type="secondary" className="text-[12px]">

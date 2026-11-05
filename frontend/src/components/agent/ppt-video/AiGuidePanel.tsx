@@ -22,7 +22,7 @@ const EXAMPLES = [
 ]
 
 /**
- * 风格指南：一段自然语言规则，会拼进每次讲稿生成的提示词。
+ * 文稿提示词指南：一段自然语言规则，会拼进每次讲稿生成的提示词。
  *
  * 优先级：单次指令 > 项目 script_guide > 全局指南，所以项目视图要提示可覆盖。
  */
@@ -38,8 +38,8 @@ export default function AiGuidePanel({ value, onChange, maxChars, readOnly, inhe
     <div className="flex flex-col gap-3">
       <Typography.Paragraph className="!mb-0 !text-[12px] !text-[#5D5B54]">
         {isProject
-          ? '本项目专属的讲稿写法，留空则跟随全局指南。单次改写时输入的指令优先级最高。'
-          : '这里的写法会拼进每次讲稿生成的提示词；项目里可以单独覆盖，单次改写指令优先级最高。'}
+          ? '这些要求只对这个项目生效，生成讲稿时会一起交给 AI；留空则沿用全局要求。单次改写时输入的指令优先级最高。'
+          : '这里写的要求会用在每次生成讲稿时；具体项目可以单独覆盖，单次改写指令优先级最高。'}
       </Typography.Paragraph>
 
       <div className="relative">
@@ -52,7 +52,7 @@ export default function AiGuidePanel({ value, onChange, maxChars, readOnly, inhe
           showCount
           placeholder={
             isProject
-              ? '留空即继承全局指南。例如：本项目面向审评专家，术语按药典写法，句子短。'
+              ? '留空就沿用全局要求。例如：本项目面向审评专家，术语按药典写法，句子短。'
               : '例如：面向客户汇报，术语首次出现给出全称，每页讲稿 150 字以内。'
           }
           className={readOnly ? '!bg-[#FAFAF9]' : undefined}
@@ -76,16 +76,16 @@ export default function AiGuidePanel({ value, onChange, maxChars, readOnly, inhe
 
       {isProject && (
         <div className="rounded-lg bg-[#FAFAF9] px-3 py-2 text-[11px] leading-relaxed text-[#5D5B54]">
-          项目内可单独覆盖全局指南；留空则跟随全局。
+          项目可以单独覆盖全局要求；留空就沿用全局。
           {inherited ? (
             <>
               <br />
-              当前全局指南：{inherited.length > 80 ? `${inherited.slice(0, 80)}…` : inherited}
+              当前全局要求：{inherited.length > 80 ? `${inherited.slice(0, 80)}…` : inherited}
             </>
           ) : (
             <>
               <br />
-              当前没有全局指南。
+              当前还没有全局要求。
             </>
           )}
         </div>
@@ -93,7 +93,7 @@ export default function AiGuidePanel({ value, onChange, maxChars, readOnly, inhe
 
       {readOnly && (
         <Button size="small" disabled block>
-          没有管理权限，请联系管理员修改
+          没有修改权限，请联系管理员
         </Button>
       )}
     </div>

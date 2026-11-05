@@ -1,11 +1,12 @@
 """讲稿 AI 配置解析与个人 Key 管理。
 
-对外只有四个入口：
+对外只有五个入口：
 
 - `resolve(session, project, user_id)`：算出「这次到底用哪个模型」以及来源
 - `resolve_guide(session, project)`：算出「这次讲稿要遵守什么风格」
 - `create/update/delete_personal(...)`：个人私有 Key 的增删改
 - `test_connection(...)`：保存前一键自测连通性
+- `discover_models(...)`：按接口地址远程拉取该 Key 可用的模型清单
 
 隐藏的实现是四级模型回落：
 
@@ -19,6 +20,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -28,10 +30,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config_model import ModuleSetting
 from app.core.llm.config import (
+    LLMConfigData,
     LLMConfigModel,
     get_active_config,
     get_config_by_id,
     get_env_config,
+    parse_available_models,
 )
 from app.core.llm.encryption import encrypt_api_key
 from app.core.llm.exceptions import LLMConfigError
@@ -42,19 +46,30 @@ logger = logging.getLogger(__name__)
 
 MODULE = "agent"
 SETTING_GLOBAL_CONFIG_ID = "AGENT_PPT_VIDEO_SCRIPT_AI_CONFIG_ID"
+#: 全局默认模型名；与 SETTING_GLOBAL_CONFIG_ID 配对，空表示用配置自带的 model_name
+SETTING_GLOBAL_MODEL = "AGENT_PPT_VIDEO_SCRIPT_AI_MODEL"
 SETTING_GLOBAL_GUIDE = "AGENT_PPT_VIDEO_SCRIPT_AI_GUIDE"
 
+#: 单个 Key 最多勾选的模型数，防止网关返回几千条把界面撑爆
+MAX_AVAILABLE_MODELS = 50
+MAX_MODEL_NAME_CHARS = 128
+
 __all__ = [
+    "MAX_AVAILABLE_MODELS",
+    "MAX_MODEL_NAME_CHARS",
     "MODULE",
     "SETTING_GLOBAL_CONFIG_ID",
     "SETTING_GLOBAL_GUIDE",
+    "SETTING_GLOBAL_MODEL",
     "ResolvedGuide",
     "ResolvedModel",
     "compose_guide_block",
     "create_personal",
     "delete_personal",
+    "discover_models",
     "get_personal",
     "masked_key",
+    "normalize_models",
     "read_global_settings",
     "resolve",
     "resolve_guide",
@@ -98,6 +113,33 @@ class ResolvedGuide:
         return self.project_guide.strip() or self.global_guide.strip()
 
 
+def normalize_models(models: Iterable[str] | None, default: str = "") -> list[str]:
+    """把前端勾选的模型名归一化：去空、去重、限长、限数量。
+
+    `model_name`（默认模型）必须留在清单里，旧数据只有它一个。
+    """
+    cleaned: list[str] = []
+    for raw in models or ():
+        name = str(raw or "").strip()[:MAX_MODEL_NAME_CHARS]
+        if name and name not in cleaned:
+            cleaned.append(name)
+        if len(cleaned) >= MAX_AVAILABLE_MODELS:
+            break
+
+    fallback = (default or "").strip()[:MAX_MODEL_NAME_CHARS]
+    if fallback and fallback not in cleaned:
+        cleaned.insert(0, fallback)
+    return cleaned[:MAX_AVAILABLE_MODELS]
+
+
+def pick_model(selected: str | None, models: Iterable[str], default: str) -> str:
+    """选中模型落在清单内才用，否则回落默认模型（脏数据不让调用失败）。"""
+    choice = (selected or "").strip()
+    if choice and choice in set(models):
+        return choice
+    return (default or "").strip()
+
+
 async def _read_setting(session: AsyncSession, key: str) -> str:
     result = await session.execute(
         select(ModuleSetting).where(
@@ -110,10 +152,11 @@ async def _read_setting(session: AsyncSession, key: str) -> str:
     return (row.value or "").strip() if row else ""
 
 
-async def read_global_settings(session: AsyncSession) -> tuple[str, str]:
-    """返回 (全局默认模型配置 id, 全局风格指南)。"""
+async def read_global_settings(session: AsyncSession) -> tuple[str, str, str]:
+    """返回 (全局默认模型配置 id, 全局默认模型名, 全局提示词指南)。"""
     return (
         await _read_setting(session, SETTING_GLOBAL_CONFIG_ID),
+        await _read_setting(session, SETTING_GLOBAL_MODEL),
         await _read_setting(session, SETTING_GLOBAL_GUIDE),
     )
 
@@ -144,6 +187,20 @@ async def save_setting(session: AsyncSession, key: str, value: str, description:
     )
 
 
+def _resolve_from_config(
+    config: LLMConfigData,
+    *,
+    selected_model: str | None,
+    source: ModelSource,
+) -> ResolvedModel:
+    return ResolvedModel(
+        config_id=config.id,
+        model_name=pick_model(selected_model, config.available_models, config.model_name),
+        provider=config.api_base_url,
+        source=source,
+    )
+
+
 async def resolve(session: AsyncSession, project: PptVideoProject, user_id: uuid.UUID | None) -> ResolvedModel:
     """四级回落，返回本次应使用的模型。"""
     owner = str(user_id) if user_id else None
@@ -151,34 +208,23 @@ async def resolve(session: AsyncSession, project: PptVideoProject, user_id: uuid
     if project.llm_config_id:
         config = await get_config_by_id(str(project.llm_config_id), "text", owner)
         if config:
-            return ResolvedModel(
-                config_id=config.id,
-                model_name=config.model_name,
-                provider=config.api_base_url,
+            return _resolve_from_config(
+                config,
+                selected_model=getattr(project, "llm_model_name", None),
                 source="project",
             )
         logger.warning("项目级模型配置不可用，回落到全局: project=%s config=%s", project.id, project.llm_config_id)
 
-    global_id = await _read_setting(session, SETTING_GLOBAL_CONFIG_ID)
+    global_id, global_model, _global_guide = await read_global_settings(session)
     if global_id:
         config = await get_config_by_id(global_id, "text", owner)
         if config:
-            return ResolvedModel(
-                config_id=config.id,
-                model_name=config.model_name,
-                provider=config.api_base_url,
-                source="global",
-            )
+            return _resolve_from_config(config, selected_model=global_model, source="global")
         logger.warning("全局默认模型配置不可用，回落到平台活跃配置: config=%s", global_id)
 
     active = await get_active_config("text")
     if active:
-        return ResolvedModel(
-            config_id=active.id,
-            model_name=active.model_name,
-            provider=active.api_base_url,
-            source="active",
-        )
+        return _resolve_from_config(active, selected_model=None, source="active")
 
     try:
         env = get_env_config()
@@ -189,16 +235,17 @@ async def resolve(session: AsyncSession, project: PptVideoProject, user_id: uuid
 
     return ResolvedModel(
         config_id=None,
-        model_name=env.model_name,
+        model_name=pick_model(None, env.available_models, env.model_name),
         provider=env.api_base_url,
         source="env",
     )
 
 
 async def resolve_guide(session: AsyncSession, project: PptVideoProject) -> ResolvedGuide:
-    """全局风格指南 + 项目覆盖。项目级为空表示继承。"""
+    """全局提示词指南 + 项目覆盖。项目级为空表示继承。"""
+    _global_id, _global_model, global_guide = await read_global_settings(session)
     return ResolvedGuide(
-        global_guide=await _read_setting(session, SETTING_GLOBAL_GUIDE),
+        global_guide=global_guide,
         project_guide=(project.script_guide or "").strip(),
     )
 
@@ -262,6 +309,7 @@ async def delete_personal(session: AsyncSession, config: LLMConfigModel, user_id
     config.updated_by = user_id
     if await _read_setting(session, SETTING_GLOBAL_CONFIG_ID) == str(config.id):
         await save_setting(session, SETTING_GLOBAL_CONFIG_ID, "", "全局默认讲稿模型配置 id")
+        await save_setting(session, SETTING_GLOBAL_MODEL, "", "全局默认讲稿模型名")
     await session.flush()
 
 
@@ -283,13 +331,25 @@ async def get_personal(session: AsyncSession, config_id: str, user_id: uuid.UUID
 
 
 async def create_personal(session: AsyncSession, user_id: uuid.UUID, data: Any) -> LLMConfigModel:
-    """新增个人私有配置。强制 visibility=personal、is_active=False。"""
+    """新增个人私有配置。强制 visibility=personal、is_active=False。
+
+    前端提交勾选后的模型清单，`model_name` 取清单首项作为默认模型。
+    """
+    requested = [str(item).strip() for item in (getattr(data, "available_models", None) or []) if str(item).strip()]
+    if not requested:
+        # 兼容旧客户端：只传了单个 model_name
+        legacy = (getattr(data, "model_name", "") or "").strip()
+        requested = [legacy] if legacy else []
+    models = normalize_models(requested)
+    model_name = models[0] if models else (getattr(data, "model_name", "") or "").strip()
+
     config = LLMConfigModel(
         config_name=data.config_name.strip(),
         config_type="text",
         api_base_url=data.api_base_url.strip(),
         encrypted_api_key=encrypt_api_key(data.api_key.strip()),
-        model_name=data.model_name.strip(),
+        model_name=model_name,
+        available_models=models,
         temperature=data.temperature,
         timeout_seconds=data.timeout_seconds,
         is_active=False,
@@ -312,8 +372,21 @@ async def update_personal(
         config.config_name = data.config_name.strip()
     if data.api_base_url is not None:
         config.api_base_url = data.api_base_url.strip()
-    if data.model_name is not None:
-        config.model_name = data.model_name.strip()
+
+    available = getattr(data, "available_models", None)
+    if available is not None:
+        models = normalize_models(available)
+        if models:
+            config.available_models = models
+            config.model_name = models[0]
+    elif data.model_name is not None:
+        # 旧客户端只传单个模型名：并入现有清单并设为默认，不丢其它已勾选模型
+        model = data.model_name.strip()
+        if model:
+            existing = parse_available_models(config.available_models, config.model_name)
+            config.available_models = normalize_models([model, *(m for m in existing if m != model)], default=model)
+            config.model_name = model
+
     if data.api_key:
         config.encrypted_api_key = encrypt_api_key(data.api_key.strip())
     if data.temperature is not None:
@@ -362,3 +435,83 @@ async def test_connection(
         detail = response.text[:200].replace("\n", " ")
         return False, f"服务返回 {response.status_code}：{detail}"
     return True, "连接成功"
+
+
+def _extract_models(payload: object) -> list[str]:
+    """从各家 OpenAI 兼容的 /models 响应里抽出模型名。
+
+    常见形态：`{"data": [{"id": "qwen-max"}]}`、`{"models": [{"name": ...}]}`、`["a","b"]`。
+    抽不出来就返回空列表，由调用方给出手填兜底提示。
+    """
+    raw_items: list[object] = []
+    if isinstance(payload, dict):
+        for key in ("data", "models"):
+            value = payload.get(key)
+            if isinstance(value, list):
+                raw_items = value
+                break
+    elif isinstance(payload, list):
+        raw_items = payload
+
+    models: list[str] = []
+    for item in raw_items:
+        name: object = None
+        if isinstance(item, str):
+            name = item
+        elif isinstance(item, dict):
+            name = item.get("id") or item.get("name") or item.get("model")
+        if isinstance(name, str):
+            cleaned = name.strip()[:MAX_MODEL_NAME_CHARS]
+            if cleaned and cleaned not in models:
+                models.append(cleaned)
+        if len(models) >= 200:
+            break
+    return models
+
+
+async def discover_models(
+    api_base_url: str,
+    api_key: str,
+    timeout_seconds: int = 20,
+) -> tuple[bool, str, list[str]]:
+    """按接口地址拉取模型清单（服务端代理，避免 Key 暴露给浏览器）。
+
+    失败一律返回可读中文原因 + 空列表，让前端退化为手动填模型名。
+    """
+    base = api_base_url.strip().rstrip("/")
+    if not base:
+        return False, "请先填写接口地址", []
+    if base.endswith("/chat/completions"):
+        base = base[: -len("/chat/completions")]
+    url = base if base.endswith("/models") else f"{base}/models"
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout_seconds) as client:
+            response = await client.get(
+                url,
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            )
+    except httpx.TimeoutException:
+        return False, "连接超时，请检查接口地址或网络", []
+    except httpx.HTTPError as exc:
+        return False, f"网络错误：{exc.__class__.__name__}", []
+
+    if response.status_code in (401, 403):
+        return False, "鉴权失败，请检查 API Key", []
+    if response.status_code == 404:
+        return False, "该接口不支持获取模型列表，可手动填写模型名", []
+    if response.status_code >= 400:
+        detail = response.text[:200].replace("\n", " ")
+        return False, f"服务返回 {response.status_code}：{detail}", []
+
+    try:
+        payload = response.json()
+    except ValueError:
+        return False, "接口返回内容无法解析，可手动填写模型名", []
+
+    models = _extract_models(payload)
+    if not models:
+        return False, "没有获取到可用模型，可手动填写模型名", []
+
+    logger.info("模型清单获取成功: base=%s count=%s", base.split("/v1")[0], len(models))
+    return True, f"获取到 {len(models)} 个模型", models

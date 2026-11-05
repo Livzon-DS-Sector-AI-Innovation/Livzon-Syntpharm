@@ -15,6 +15,7 @@ import {
   createAiConfigRequest,
   deleteAiConfigRequest,
   deleteProjectRequest,
+  discoverAiModelsRequest,
   editSlideImageRequest,
   editSlideTextRequest,
   fetchAiConfigs,
@@ -40,10 +41,12 @@ import type {
   AiConfigFormValue,
   AiConfigListResponse,
   AiConfigTestResponse,
+  AiModelsDiscoverResponse,
   EditableShapeList,
   PageImagesAccepted,
   PreviewResult,
   ProjectDetail,
+  ProjectUpdatePayload,
   RenderAccepted,
   RevisionItem,
   ScriptRewritePayload,
@@ -62,7 +65,7 @@ function toMessage(error: unknown, fallback: string): string {
 
 export async function updateProjectSettings(
   projectId: string,
-  payload: Record<string, unknown>,
+  payload: ProjectUpdatePayload,
 ): Promise<ActionResult<ProjectDetail>> {
   try {
     const raw = await updateProjectRequest(projectId, payload)
@@ -173,9 +176,27 @@ export async function createAiConfig(payload: AiConfigFormValue): Promise<Action
   try {
     const raw = await createAiConfigRequest(payload)
     revalidatePath(LIST_PATH)
-    return { success: true, message: 'API Key 已保存，仅本人可见', data: raw.data }
+    return { success: true, message: '自定义模型已保存，仅本人可见', data: raw.data }
   } catch (error) {
-    return { success: false, message: toMessage(error, '保存 API Key 失败') }
+    return { success: false, message: toMessage(error, '保存自定义模型失败') }
+  }
+}
+
+/** 按接口地址与 Key 拉取可用模型；失败时前端允许手动填写模型名 */
+export async function discoverAiModels(payload: {
+  config_id?: string
+  api_base_url?: string
+  api_key?: string
+}): Promise<ActionResult<AiModelsDiscoverResponse>> {
+  try {
+    const raw = await discoverAiModelsRequest(payload)
+    return { success: raw.data.ok, message: raw.data.message, data: raw.data }
+  } catch (error) {
+    return {
+      success: false,
+      message: toMessage(error, '获取模型失败，可手动填写模型名'),
+      data: { ok: false, message: '', models: [] },
+    }
   }
 }
 
@@ -203,7 +224,7 @@ export async function deleteAiConfig(configId: string): Promise<ActionResult<AiC
 }
 
 export async function testAiConfig(
-  payload: AiConfigFormValue & { config_id?: string },
+  payload: Partial<AiConfigFormValue> & { config_id?: string },
 ): Promise<ActionResult<AiConfigTestResponse>> {
   try {
     const raw = await testAiConfigRequest(payload)
@@ -213,9 +234,10 @@ export async function testAiConfig(
   }
 }
 
-/** 全局默认模型与全局讲稿规范（需平台管理员） */
+/** 全局默认模型与全局提示词指南（需平台管理员） */
 export async function saveGlobalAiSettings(payload: {
   global_config_id?: string | null
+  global_model_name?: string | null
   clear_global_config?: boolean
   global_guide?: string | null
   clear_global_guide?: boolean
@@ -229,11 +251,12 @@ export async function saveGlobalAiSettings(payload: {
   }
 }
 
-/** 项目级覆盖：模型与讲稿规范留空即继承全局 */
+/** 项目级覆盖：模型与提示词指南留空即继承全局 */
 export async function saveProjectAiSettings(
   projectId: string,
   payload: {
     llm_config_id?: string | null
+    llm_model_name?: string | null
     clear_config?: boolean
     script_guide?: string | null
     clear_guide?: boolean

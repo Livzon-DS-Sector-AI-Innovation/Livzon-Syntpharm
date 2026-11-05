@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Alert, App, Button, ColorPicker, Input, Modal, Select, Slider, Space, Tag, Typography } from 'antd'
+import { Alert, App, Button, Checkbox, ColorPicker, Input, Modal, Select, Slider, Space, Tag, Typography } from 'antd'
 import {
   DownloadOutlined,
   EditOutlined,
@@ -20,6 +20,8 @@ import { PERM } from '@/lib/permissions/codes'
 import {
   HIGHLIGHT_STYLE_OPTIONS,
   formatDuration,
+  genderLabel,
+  voiceLabel,
   type HighlightRegionsPayload,
   type LanguageCode,
   type ProjectDetail,
@@ -56,7 +58,8 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
   const [language, setLanguage] = useState<LanguageCode | undefined>(slide.language ?? undefined)
   const [voiceId, setVoiceId] = useState<string | undefined>(slide.voice_id ?? undefined)
   const [speed, setSpeed] = useState<number | undefined>(slide.speed ?? undefined)
-  // 页级高亮覆盖：留空 = 跟随设置页的模块默认（含颜色）
+  // 页级高亮覆盖：勾选后才生效，留空则逐项跟随项目设置（项目再空则跟随模块默认）
+  const [highlightEnabled, setHighlightEnabled] = useState(slide.highlight_override_enabled)
   const [highlightStyle, setHighlightStyle] = useState<string | undefined>(slide.highlight_style ?? undefined)
   const [highlightColor, setHighlightColor] = useState<string | undefined>(slide.highlight_color ?? undefined)
   // 区域级配置：同样只在本页草案里改，随「保存本页」整份提交（后端是整份替换语义）
@@ -85,6 +88,12 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
     () => voices.filter((voice) => voice.language === effectiveLanguage),
     [voices, effectiveLanguage],
   )
+  const projectVoice = voices.find((voice) => voice.voice_id === detail.default_voice_id)
+  // 本页未启用高亮时，控件上要显示「实际会用的那一档」，避免误以为改不了就没配置
+  const inheritedHighlightColor =
+    detail.highlight_override_enabled && detail.highlight_color
+      ? detail.highlight_color
+      : detail.module_highlight_color
 
   const handleSave = async () => {
     setSaving(true)
@@ -96,6 +105,7 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
         language: language ?? null,
         voice_id: voiceId ?? null,
         speed: speed ?? null,
+        highlight_override_enabled: highlightEnabled,
         highlight_style: highlightStyle ?? null,
         highlight_color: highlightColor ?? null,
         // 总是整份回写：空配置写成空数组对象，后端据此清空；不传会让库里旧配置留着
@@ -209,7 +219,7 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
             </div>
           ) : (
             <Typography.Text className="!text-[#A4A097]">
-              页面图尚未生成（渲染任务完成后可见）
+              页面图还没生成，生成进度完成后就能看到
             </Typography.Text>
           )}
         </div>
@@ -276,7 +286,7 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
             <Tag className="!m-0">{slide.script_text.length} 字</Tag>
             {slide.audio_sha256 && (
               <Tag color="green" className="!m-0">
-                配音 sha {slide.audio_sha256.slice(0, 8)}
+                已配音
               </Tag>
             )}
           </Space>
@@ -352,18 +362,18 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
             <Select
               allowClear
               className="mt-1 w-full"
-              placeholder={`跟随项目默认 ${detail.default_voice_id}`}
+              placeholder={`跟随项目默认：${voiceLabel(projectVoice?.display_name)}`}
               value={voiceId}
               onChange={setVoiceId}
               options={languageVoices.map((voice) => ({
                 value: voice.voice_id,
-                label: `${voice.display_name}（${voice.gender === 'female' ? '女' : '男'}）`,
+                label: `${voice.display_name}（${genderLabel(voice.gender)}）`,
               }))}
             />
           </div>
           <div>
             <Typography.Text type="secondary" className="text-[12px]">
-              语速 {speed ? speed.toFixed(2) : detail.speed.toFixed(2)}x
+              语速 {(speed ?? detail.speed).toFixed(2)} 倍
             </Typography.Text>
             <Slider
               className="!mt-2"
@@ -372,39 +382,59 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
               step={0.05}
               value={speed ?? detail.speed}
               onChange={(value) => setSpeed(value)}
-              tooltip={{ formatter: (value) => `${value?.toFixed(2)}x` }}
+              tooltip={{ formatter: (value) => `${value?.toFixed(2)} 倍` }}
             />
           </div>
+        </div>
+
+        <div className="mt-3 rounded-lg bg-[#FAFAF9] px-3 py-2">
+          <Checkbox checked={highlightEnabled} onChange={(event) => setHighlightEnabled(event.target.checked)}>
+            <span className="text-[12px] text-[#37352F]">高亮效果</span>
+          </Checkbox>
+          <Typography.Text type="secondary" className="!ml-1 !text-[11px]">
+            {highlightEnabled
+              ? '本页按下面的样式与颜色高亮。'
+              : '未勾选时本页跟随项目设置；已选的样式与颜色会保留，勾选后立即恢复。'}
+          </Typography.Text>
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
             <Typography.Text type="secondary" className="text-[12px]">
-              本页高亮样式（留空跟随设置页）
+              本页高亮样式（留空跟随项目设置）
             </Typography.Text>
             <Select<string>
               allowClear
               className="mt-1 w-full"
-              placeholder="跟随模块设置"
+              placeholder="跟随项目设置"
               value={highlightStyle}
+              disabled={!highlightEnabled}
               onChange={(value) => setHighlightStyle(value)}
               options={HIGHLIGHT_STYLE_OPTIONS}
             />
           </div>
           <div>
             <Typography.Text type="secondary" className="text-[12px]">
-              本页高亮颜色（留空跟随设置页）
+              本页高亮颜色（留空跟随项目设置）
             </Typography.Text>
             <div className="mt-1 flex items-center gap-2">
               <ColorPicker
-                value={highlightColor ?? '#FF3B30'}
+                value={highlightColor ?? inheritedHighlightColor}
+                disabled={!highlightEnabled}
                 onChange={(color) => setHighlightColor(color.toHexString().toUpperCase())}
               />
               <Typography.Text type="secondary" className="text-[12px]">
-                {highlightColor ?? '未覆盖，用设置页的默认色'}
+                {highlightEnabled
+                  ? (highlightColor ?? '未单独设置，使用项目的高亮颜色')
+                  : '未勾选，本页跟随项目设置'}
               </Typography.Text>
               {highlightColor && (
-                <Button type="link" size="small" onClick={() => setHighlightColor(undefined)}>
+                <Button
+                  type="link"
+                  size="small"
+                  disabled={!highlightEnabled}
+                  onClick={() => setHighlightColor(undefined)}
+                >
                   清除
                 </Button>
               )}
@@ -418,12 +448,12 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
           </Button>
           <Typography.Text type="secondary" className="!text-[12px]">
             {regionCount
-              ? `已配 ${regionCount} 个区域${sentenceRuleCount ? `、${sentenceRuleCount} 条句级规则` : ''}`
+              ? `已配 ${regionCount} 个区域${sentenceRuleCount ? `、${sentenceRuleCount} 句单独设定` : ''}`
               : '默认按讲稿自动定位；可逐区域指定效果，或手绘一块区域兜底'}
           </Typography.Text>
           {regionCount + sentenceRuleCount > 0 && (
             <Button type="link" size="small" onClick={() => setHighlightRegions(null)}>
-              清空区域配置
+              清空区域设置
             </Button>
           )}
         </div>
@@ -441,6 +471,7 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
           {(language ||
             voiceId ||
             speed !== undefined ||
+            highlightEnabled ||
             highlightStyle ||
             highlightColor ||
             regionCount + sentenceRuleCount > 0) && (
@@ -450,12 +481,12 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
                 setLanguage(undefined)
                 setVoiceId(undefined)
                 setSpeed(undefined)
-                setHighlightStyle(undefined)
-                setHighlightColor(undefined)
+                // 高亮只关开关、样式与颜色原样保留：清空交给各控件自己的「清除」
+                setHighlightEnabled(false)
                 setHighlightRegions(null)
               }}
             >
-              全部跟随默认
+              全部跟随项目设置
             </Button>
           )}
         </Space>
