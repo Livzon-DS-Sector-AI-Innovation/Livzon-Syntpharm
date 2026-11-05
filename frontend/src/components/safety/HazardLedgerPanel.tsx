@@ -109,13 +109,14 @@ const _HI_FIELD_LABELS: Record<string, string> = {
   recommendation_priority: '建议措施优先级',
 }
 
+const EMPTY_LEDGER_STATS: HazardLedgerStats = {
+  total: 0, level_1: 0, level_2: 0, level_3: 0, level_4: 0,
+}
+
 export default function HazardLedgerPanel() {
   const queryClient = useQueryClient()
   const router = useRouter()
   const { message: msgApi } = App.useApp()
-  const [stats, setStats] = useState<HazardLedgerStats>({
-    total: 0, level_1: 0, level_2: 0, level_3: 0, level_4: 0,
-  })
   const [queryParams, setQueryParams] = useState({ page: 1, page_size: 20 })
   const [keyword, setKeyword] = useState('')
   const [searchApplied, setSearchApplied] = useState(false)
@@ -205,20 +206,27 @@ export default function HazardLedgerPanel() {
     setFilterPopoverOpen(false)
   }
 
-  const loadStats = useCallback(async () => {
-    try {
+  // ── 风险等级分布计数：随筛选加载，删除后失效重取 ──
+  // 不传 risk_level：否则统计被收窄为单一等级，其余药丸归零
+  const { data: stats = EMPTY_LEDGER_STATS } = useQuery({
+    queryKey: ['hazard-identifications-ledger-stats', department, position, dateRange],
+    queryFn: async () => {
       const res = await getHILedgerStats({
         department,
         position,
-        risk_level: riskLevel,
         date_from: dateRange?.[0],
         date_to: dateRange?.[1],
       })
       if (res.code === 200 && res.data) {
-        setStats(res.data as unknown as HazardLedgerStats)
+        return res.data as unknown as HazardLedgerStats
       }
-    } catch { /* non-critical */ }
-  }, [department, position, riskLevel, dateRange])
+      return EMPTY_LEDGER_STATS
+    },
+  })
+
+  const refreshStats = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ['hazard-identifications-ledger-stats'] })
+  }, [queryClient])
 
   const { data: queryData, isLoading: queryLoading } = useQuery({
     queryKey: ['hazard-identifications-panel', queryParams, department, position, riskLevel, dateRange, searchKeyword, sortField, sortOrder],
@@ -264,7 +272,6 @@ export default function HazardLedgerPanel() {
     setSelectedRowKeys([])
     setQueryParams({ page: 1, page_size: queryParams.page_size })
     queryClient.invalidateQueries({ queryKey: ['hazard-identifications-panel'] })
-    loadStats()
   }
 
   const handleSearchBack = () => {
@@ -272,7 +279,6 @@ export default function HazardLedgerPanel() {
     setKeyword('')
     setSearchApplied(false)
     queryClient.invalidateQueries({ queryKey: ['hazard-identifications-panel'] })
-    loadStats()
   }
 
   // ── 排序切换 ──
@@ -332,7 +338,7 @@ export default function HazardLedgerPanel() {
         }
         setSelectedRowKeys([])
         await queryClient.invalidateQueries({ queryKey: ['hazard-identifications-panel'] })
-        loadStats()
+        refreshStats()
         setDeleting(false)
       },
     })
