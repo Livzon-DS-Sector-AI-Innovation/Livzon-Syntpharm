@@ -22,6 +22,8 @@ export interface UserListQuery {
   auth_source?: string
   unbound_only?: boolean
   must_change_password?: boolean
+  // 分页沿用后端既有的 offset/limit 契约（不是 page/page_size）
+  offset?: number
   limit?: number
 }
 
@@ -34,7 +36,9 @@ export async function getUsers(params?: UserListQuery, token?: string) {
   if (params?.must_change_password !== undefined) {
     search.set('must_change_password', String(params.must_change_password))
   }
-  if (params?.limit) search.set('limit', String(params.limit))
+  // 用 !== undefined 判断：offset=0 是合法值，按 falsy 判断会把它吞掉
+  if (params?.offset !== undefined) search.set('offset', String(params.offset))
+  if (params?.limit !== undefined) search.set('limit', String(params.limit))
   const query = search.toString()
   return apiFetch<Schemas['UserManagementListApiResponse']>(U(`/users${query ? `?${query}` : ''}`), {
     headers: auth(token),

@@ -53,6 +53,9 @@ export async function getUsers(params?: {
   auth_source?: 'local' | 'feishu'
   unbound_only?: boolean
   must_change_password?: boolean
+  // 服务端分页：offset/limit 直接透传给后端（后端 limit 上限 100）
+  offset?: number
+  limit?: number
 }): Promise<UserManagementListResponse> {
   const token = await getAuthToken()
   const data = unwrapResponse(await getUsersServer(params, token))
