@@ -57,6 +57,7 @@ import {
 } from '@/types/safety'
 import dayjs from 'dayjs'
 import PersonnelSelect from '@/components/safety/PersonnelSelect'
+import { PersonNameWithBadge } from '@/components/safety/PersonMatchBadge'
 
 const { Text } = Typography
 const { TextArea } = Input
@@ -1186,7 +1187,7 @@ export default function HazardLedgerDetailPage() {
                     />
                   </FieldEditor>
                   {!fieldVal('discovered_by') && fieldVal('discovered_by_name') ? (
-                    <Text style={{ fontSize: 12, color: '#b45309' }}>未绑定系统用户，请选择以完成匹配</Text>
+                    <Text style={{ fontSize: 12, color: '#b45309' }}>待确认：未匹配到唯一系统用户，请选择实际人员</Text>
                   ) : null}
                 </Col>
                 <Col span={8}>
@@ -1206,7 +1207,7 @@ export default function HazardLedgerDetailPage() {
                     />
                   </FieldEditor>
                   {!fieldVal('rectification_responsible_person') && fieldVal('rectification_responsible_person_name') ? (
-                    <Text style={{ fontSize: 12, color: '#b45309' }}>未绑定系统用户，请选择以完成匹配</Text>
+                    <Text style={{ fontSize: 12, color: '#b45309' }}>待确认：未匹配到唯一系统用户，请选择实际人员</Text>
                   ) : null}
                 </Col>
                 <Col span={8}>
@@ -1252,13 +1253,17 @@ export default function HazardLedgerDetailPage() {
                   <Col span={8}>
                     <FieldLabel>检查人员</FieldLabel>
                     <FieldTile>
-                      <Text style={{ fontSize: 14 }}>{record.discovered_by_name || '-'}</Text>
+                      <PersonNameWithBadge name={record.discovered_by_name} bound={record.discovered_by} fontSize={14} />
                     </FieldTile>
                   </Col>
                   <Col span={8}>
                     <FieldLabel>责任人</FieldLabel>
                     <FieldTile>
-                      <Text style={{ fontSize: 14 }}>{record.rectification_responsible_person_name || '-'}</Text>
+                      <PersonNameWithBadge
+                        name={record.rectification_responsible_person_name}
+                        bound={record.rectification_responsible_person}
+                        fontSize={14}
+                      />
                     </FieldTile>
                   </Col>
                   <Col span={8}>

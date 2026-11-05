@@ -54,6 +54,7 @@ import {
 import HazardRectificationReplyModal from './HazardRectificationReplyModal'
 import HazardVerifyModal from './HazardVerifyModal'
 import HazardRegistrationDrawer from './HazardRegistrationDrawer'
+import { PersonNameWithBadge } from './PersonMatchBadge'
 import dayjs from 'dayjs'
 import { statusPill, actionLink } from '@/components/safety/sharedStyles'
 import { fileProxyUrl } from '@/lib/file-url'
@@ -167,7 +168,7 @@ const FILTER_FIELDS: FilterFieldConfig[] = [
   {
     key: 'person_match',
     label: '人员匹配',
-    options: [{ value: 'pending', label: '待匹配（有姓名、未绑定系统用户）' }],
+    options: [{ value: 'pending', label: '待确认（有姓名、未绑定系统用户）' }],
   },
 ]
 
@@ -257,7 +258,7 @@ export default function HazardLedgerPage() {
       list.push({ key: 'department', fieldLabel: '责任部门', value: deptFilter, valueLabel: deptFilter })
     }
     if (personMatchFilter) {
-      list.push({ key: 'person_match', fieldLabel: '人员匹配', value: personMatchFilter, valueLabel: '待匹配' })
+      list.push({ key: 'person_match', fieldLabel: '人员匹配', value: personMatchFilter, valueLabel: '待确认' })
     }
     return list
   }, [levelFilter, typeFilter, categoryFilter, inspectionCategoryFilter, deptFilter, personMatchFilter])
@@ -1017,17 +1018,22 @@ export default function HazardLedgerPage() {
       title: '整改负责人',
       dataIndex: 'rectification_responsible_person_name',
       key: 'rectification_responsible_person_name',
-      width: 90,
-      ellipsis: true,
-      render: (text: string) => text || <span style={{ color: '#a4a097' }}>-</span>,
+      width: 118,
+      render: (_text: string, record: HazardReport) => (
+        <PersonNameWithBadge
+          name={record.rectification_responsible_person_name}
+          bound={record.rectification_responsible_person}
+        />
+      ),
     },
     {
       title: '检查人员',
       dataIndex: 'discovered_by_name',
       key: 'discovered_by_name',
-      width: 90,
-      ellipsis: true,
-      render: (text: string) => text || <span style={{ color: '#a4a097' }}>-</span>,
+      width: 118,
+      render: (_text: string, record: HazardReport) => (
+        <PersonNameWithBadge name={record.discovered_by_name} bound={record.discovered_by} />
+      ),
     },
     {
       title: (
