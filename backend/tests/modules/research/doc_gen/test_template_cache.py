@@ -5,13 +5,13 @@ from __future__ import annotations
 from app.modules.research.doc_gen import template_cache
 from app.modules.research.doc_gen.template_analyzer import SlotGuide, TemplateAnalysisResult
 from app.modules.research.doc_gen.template_spec import TemplateSpec
-from app.modules.research.doc_gen.templates import get_template_spec
+from tests.modules.research.doc_gen.fixture_spec import builtin_spec
 
 SPEC_CODE = "tech_research_report"
 
 
 def _spec() -> TemplateSpec:
-    return get_template_spec(SPEC_CODE).model_copy(deep=True)
+    return builtin_spec().model_copy(deep=True)
 
 
 def _analysis() -> TemplateAnalysisResult:

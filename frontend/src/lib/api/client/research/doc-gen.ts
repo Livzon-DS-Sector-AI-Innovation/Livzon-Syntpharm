@@ -12,7 +12,6 @@ import { apiGet } from '@/lib/api/client'
 import { saveResponse } from '@/lib/utils/download'
 import type { components } from '@/types/generated/schema'
 
-export type DocGenTemplateSummary = components['schemas']['DocGenTemplateSummary']
 export type DocGenLimits = components['schemas']['DocGenLimits']
 export type DocGenJobResponse = components['schemas']['DocGenJobResponse']
 export type DocGenJobDetail = components['schemas']['DocGenJobDetail']
@@ -66,12 +65,7 @@ async function postMultipart<T>(path: string, formData: FormData, fallback: stri
   return (await response.json()) as T
 }
 
-export async function fetchDocGenTemplates(): Promise<DocGenTemplateSummary[]> {
-  const data = await apiGet<NonNullable<components['schemas']['DocGenTemplateListResponse']['data']>>(
-    `${DOC_GEN_BASE}/templates`,
-  )
-  return data ?? []
-}
+
 
 export async function fetchDocGenLimits(): Promise<DocGenLimits> {
   return apiGet<components['schemas']['DocGenLimitsResponse']['data']>(`${DOC_GEN_BASE}/limits`)
@@ -116,7 +110,7 @@ export async function fetchDocGenJobsForReport(reportId: string): Promise<DocGen
 }
 
 export interface CreateDocGenJobInput {
-  /** 交付物模板 ID（Word 母本 + 填充项配置） */
+  /** 交付物模板 ID（Word 母本 + 填充项） */
   templateId: string
   files: File[]
   /** 与 files 同序的角色标记，缺省按 material 处理 */
@@ -328,19 +322,10 @@ export async function downloadDeliverableTemplateVersion(templateId: string, ver
   return response.blob()
 }
 
-/** 内置填充项配置（上传 Word 模板原件时选择）——类型来自 OpenAPI 生成结果 */
-export type DocGenSlotProfile = components['schemas']['DocGenSlotProfile']
-
 /** 可用于 AI 生成的交付物模板——类型来自 OpenAPI 生成结果 */
 export type DocGenUsableTemplate = components['schemas']['DocGenUsableTemplate']
 
-/** 拉取内置填充项配置清单 */
-export async function fetchDocGenSlotProfiles(): Promise<DocGenSlotProfile[]> {
-  const data = await apiGet<DocGenSlotProfile[]>('/api/v1/research/doc-gen/slot-profiles')
-  return data ?? []
-}
-
-/** 拉取可用于 AI 生成的模板（必须有 Word 模板原件与合法填充项配置） */
+/** 拉取可用于 AI 生成的模板（必须有 Word 模板原件与可用的填充项结构） */
 export async function fetchUsableDocGenTemplates(): Promise<DocGenUsableTemplate[]> {
   const data = await apiGet<DocGenUsableTemplate[]>('/api/v1/research/doc-gen/templates')
   return data ?? []
@@ -367,39 +352,3 @@ export async function fetchDocGenKbCoverage(
   return apiGet<DocGenKbCoverage>(`${DOC_GEN_BASE}/kb-coverage?${params.toString()}`)
 }
 
-/** 单个候选锚点位置（人工新增填写项时点选；定位由规则产出，前端不手写锚点） */
-export type DocGenAnchorCandidate = components['schemas']['DocGenAnchorCandidate']
-
-/**
- * 模板全内容 Markdown（优先母本规则解析，其次骨架回退）。
- *
- * source 为后端新增契约字段：schema.ts 再生成前手工补齐，避免整库重生成引入跨 PR 漂移。
- */
-export type DocGenTemplateMarkdown = components['schemas']['DocGenTemplateMarkdownData'] & {
-  /** docx=母本全文转换；spec=填写项骨架回退 */
-  source?: 'docx' | 'spec'
-}
-
-/**
- * 拉取「模板 Markdown」弹窗数据：优先把 Word 母本解析为全内容 Markdown（标题/段落/
- * 列表/表格按文档流顺序）；母本不可用时回退 template_structure 骨架渲染。只读 GET。
- */
-export async function fetchDeliverableTemplateMarkdown(templateId: string): Promise<DocGenTemplateMarkdown> {
-  return apiGet<DocGenTemplateMarkdown>(`${DOC_GEN_BASE}/deliverable-templates/${templateId}/markdown`)
-}
-
-/**
- * 枚举母本里「还能挂」的候选锚点位置（人工新增填写项时点选）。
- *
- * 只读 GET：已被现有槽位占用的位置会被过滤；模板尚无规格时枚举全部位置。
- * 表格类候选（kind==='table'）自带 ``columns``/``header_rows``（列定义来自真实表头），
- * 点选后原样回传即可整表成槽；草拟漏识别的表格与占位符单元格也会补扫进候选。
- */
-export async function fetchDeliverableTemplateAnchorCandidates(
-  templateId: string,
-): Promise<DocGenAnchorCandidate[]> {
-  const data = await apiGet<NonNullable<components['schemas']['DocGenAnchorCandidateListResponse']['data']>>(
-    `${DOC_GEN_BASE}/deliverable-templates/${templateId}/anchor-candidates`,
-  )
-  return data ?? []
-}

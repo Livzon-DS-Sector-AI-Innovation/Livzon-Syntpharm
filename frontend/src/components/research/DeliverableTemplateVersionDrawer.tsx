@@ -125,13 +125,6 @@ export function DeliverableTemplateVersionDrawer({
       ),
     },
     {
-      title: '填充项配置',
-      key: 'template_code',
-      width: 180,
-      render: (_: unknown, record: DocGenTemplateVersion) =>
-        record.template_code ? <Tag color="blue">{record.template_code}</Tag> : <span style={{ color: '#999' }}>—</span>,
-    },
-    {
       title: '版本说明',
       key: 'change_note',
       width: 220,

@@ -83,7 +83,6 @@ from app.modules.research.doc_gen.renderer import RenderReport, SectionPlan, Slo
 from app.modules.research.doc_gen.report import build_report_markdown, summarize_states
 from app.modules.research.doc_gen.runtime_config import ModelChoice, RuntimeConfig, load_runtime_config, resolve_model
 from app.modules.research.doc_gen.sections import SectionInstance, build_trigger_context, instantiate
-from app.modules.research.doc_gen.spec_enrich import enrich_search_terms, enrich_targets
 from app.modules.research.doc_gen.spec_source import resolve_for_job
 from app.modules.research.doc_gen.template_analyzer import (
     TemplateAnalysisResult,
@@ -484,8 +483,6 @@ async def run_job(
         supplement = _supplement_block(job.supplement_text)
         if supplement is not None:
             ctx.blocks.append(supplement)
-        # AI 辅助标注：自动识别模板的槽位缺检索词时补同义词（失败静默降级）
-        await _enrich_spec(ctx, config)
         # 文件分析：异步逐文件读取，用 LLM 提取与模板匹配的结构化摘要（失败静默降级）
         await _file_analysis_stage(session, ctx, config, handle)
         # 知识库摸底 + 事实抽取：先把全库切片榨成结构化事实，填充项优先从这里匹配
@@ -920,24 +917,6 @@ async def _project_database_blocks(session: AsyncSession, job: DocGenJob) -> lis
     )
     text = "【项目登记数据】\n" + "\n".join(lines)
     return [TextBlock(file_id=f"db:{project.id}", page=1, index=0, text=text, kind="paragraph")]
-
-
-async def _enrich_spec(ctx: JobContext, config: RuntimeConfig) -> None:
-    """AI 辅助标注：为自动识别模板里缺检索词的槽位补同义词（失败静默降级）。
-
-    读模板结构属于「模板模型」的职责，与提取/成文分走不同配置。模板分析（含缓存命中）
-    已把能补的检索词补上，这里只剩少数漏网槽位——没有目标就不必解析模型配置。
-    """
-    if not enrich_targets(ctx.spec):
-        return
-    choice = await resolve_model(config.template_model_name)
-    enriched = await enrich_search_terms(
-        ctx.spec,
-        timeout_seconds=config.llm_call_timeout_seconds,
-        llm_kwargs={"model_override": choice.model_override, "config_name": choice.config_name},
-    )
-    if enriched:
-        logger.info("槽位检索词 AI 标注完成", extra={"job_id": str(ctx.job.id), "slots": enriched})
 
 
 async def _template_analysis_stage(

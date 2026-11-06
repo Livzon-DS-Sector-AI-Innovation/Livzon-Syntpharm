@@ -23,7 +23,7 @@ from app.modules.research.doc_gen.conversation import (
 )
 from app.modules.research.doc_gen.models import DocGenConversation, DocGenMessage, DocGenSlotValue
 from app.modules.research.doc_gen.runtime_config import RuntimeConfig
-from app.modules.research.doc_gen.templates import get_template_spec
+from tests.modules.research.doc_gen.fixture_spec import builtin_spec
 
 
 class FakeLLM:
@@ -92,7 +92,7 @@ class FakeSession:
 
 
 def _spec() -> Any:
-    return get_template_spec("tech_research_report").model_copy(deep=True)
+    return builtin_spec().model_copy(deep=True)
 
 
 def _row(job_id: Any, key: str, text: str, state: str) -> DocGenSlotValue:

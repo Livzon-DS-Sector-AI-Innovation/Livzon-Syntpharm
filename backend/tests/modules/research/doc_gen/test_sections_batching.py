@@ -10,7 +10,7 @@ from app.modules.research.doc_gen.template_analyzer import (
     TemplateAnalysisResult,
     apply_sections_to_spec,
 )
-from app.modules.research.doc_gen.templates import get_template_spec
+from tests.modules.research.doc_gen.fixture_spec import builtin_spec
 
 BLOCKS = [TextBlock(file_id="m1", page=1, index=0, text="资料", kind="paragraph")]
 
@@ -24,7 +24,7 @@ class _NullLLM:
 
 def _slots(sections: list[str]) -> list[Any]:
     """按给定章节序列造一组同来源的槽位（沿用真实模板槽位定义）。"""
-    base = get_template_spec("tech_research_report").slots[0]
+    base = builtin_spec().slots[0]
     return [
         base.model_copy(update={"key": f"s{index}", "label": f"槽{index}", "section": section})
         for index, section in enumerate(sections)
@@ -32,7 +32,7 @@ def _slots(sections: list[str]) -> list[Any]:
 
 
 def _batches(sections: list[str], batch_size: int) -> list[list[str]]:
-    spec = get_template_spec("tech_research_report")
+    spec = builtin_spec()
     slots = _slots(sections)
     extractor = SlotExtractor(
         spec.model_copy(update={"slots": slots}),
@@ -66,7 +66,7 @@ def test_without_section_falls_back_to_plain_chunking() -> None:
 
 def test_apply_sections_only_fills_empty() -> None:
     """章节回写只补空值：人工/识别流程已写入的章节不被 AI 覆盖。"""
-    spec = get_template_spec("tech_research_report").model_copy(deep=True)
+    spec = builtin_spec().model_copy(deep=True)
     first, second = spec.slots[0], spec.slots[1]
     first.section = "人工章节"
     analysis = TemplateAnalysisResult(sections={first.key: "AI章节", second.key: "工艺研究"})

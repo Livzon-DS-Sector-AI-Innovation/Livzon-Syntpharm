@@ -8,7 +8,7 @@ from app.modules.research.doc_gen import gap, status
 from app.modules.research.doc_gen.extraction import RETRIEVAL_DEFAULT, RETRIEVAL_RECALL, SlotExtractor, SlotResult
 from app.modules.research.doc_gen.parsing import TextBlock
 from app.modules.research.doc_gen.prompts import build_extract_prompt
-from app.modules.research.doc_gen.templates import get_template_spec
+from tests.modules.research.doc_gen.fixture_spec import builtin_spec
 
 BLOCKS = [
     TextBlock(file_id="m1", page=2, index=0, text="原研企业：AstraZeneca AB", kind="paragraph"),
@@ -24,7 +24,7 @@ BLOCKS = [
     ),
 ]
 
-ALL_SLOTS = {s.key: s for s in get_template_spec("tech_research_report").slots}
+ALL_SLOTS = {s.key: s for s in builtin_spec().slots}
 
 # 需求描述（template_structure v2）校验专用语料：覆盖量纲与枚举两类取值
 REQ_BLOCKS = [
@@ -52,7 +52,7 @@ class FakeLLM:
 
 
 def _extractor(llm: Any, slots: list[str], **kwargs: Any) -> SlotExtractor:
-    spec = get_template_spec("tech_research_report").model_copy(update={"slots": [ALL_SLOTS[k] for k in slots]})
+    spec = builtin_spec().model_copy(update={"slots": [ALL_SLOTS[k] for k in slots]})
     return SlotExtractor(spec, BLOCKS, roles_by_file={"m1": ["material"], "l1": ["literature"]}, llm=llm, **kwargs)
 
 
@@ -156,7 +156,7 @@ async def test_wide_retrieval_recovers_zero_hit_slot() -> None:
     base = ALL_SLOTS["originator"].model_copy(
         update={"key": "custom", "label": "物料供应商清单", "required": False, "search_terms": []}
     )
-    spec = get_template_spec("tech_research_report").model_copy(update={"slots": [base]})
+    spec = builtin_spec().model_copy(update={"slots": [base]})
     extractor = SlotExtractor(spec, BLOCKS, roles_by_file={"m1": ["material"], "l1": ["literature"]}, llm=llm)
     results = await extractor.run()
     assert llm.calls == 1
@@ -170,7 +170,7 @@ async def test_retrieval_misses_are_counted() -> None:
     base = ALL_SLOTS["originator"].model_copy(
         update={"key": "custom", "label": "地球化学勘探数据", "required": False, "search_terms": []}
     )
-    spec = get_template_spec("tech_research_report").model_copy(update={"slots": [base]})
+    spec = builtin_spec().model_copy(update={"slots": [base]})
     extractor = SlotExtractor(spec, BLOCKS, roles_by_file={"m1": ["material"], "l1": ["literature"]}, llm=llm)
     results = await extractor.run()
     assert llm.calls == 0
@@ -376,7 +376,7 @@ def _single_slot_extractor(llm: Any, **slot_update: Any) -> Any:
         update={"key": "custom", "label": "含量", "required": False, "search_terms": ["含量"]}
     )
     slot = slot.model_copy(update=slot_update)
-    spec = get_template_spec("tech_research_report").model_copy(update={"slots": [slot]})
+    spec = builtin_spec().model_copy(update={"slots": [slot]})
     return SlotExtractor(spec, REQ_BLOCKS, roles_by_file={"m1": ["material"], "l1": ["literature"]}, llm=llm)
 
 
@@ -469,7 +469,7 @@ def _recall_extractor(profile: str, kb: Any, llm: Any) -> SlotExtractor:
     base = ALL_SLOTS["originator"].model_copy(
         update={"key": "custom", "label": "催化体系筛选数据", "required": False, "search_terms": []}
     )
-    spec = get_template_spec("tech_research_report").model_copy(update={"slots": [base]})
+    spec = builtin_spec().model_copy(update={"slots": [base]})
     return SlotExtractor(
         spec,
         BLOCKS,
@@ -695,7 +695,7 @@ async def test_table_row_refs_can_verify_row() -> None:
 async def test_probe_ignores_manual_only_slots() -> None:
     """人工填写项不进补问：一个模型调用都不该发生。"""
     llm = FakeLLM([{"slots": []}])
-    spec = get_template_spec("tech_research_report")
+    spec = builtin_spec()
     manual = [slot for slot in spec.slots if slot.manual_only]
     assert manual  # 模板自带人工填写项，测试前提成立
     extractor = SlotExtractor(spec.model_copy(update={"slots": manual}), BLOCKS, llm=llm)

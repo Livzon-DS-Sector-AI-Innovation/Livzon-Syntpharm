@@ -1127,9 +1127,9 @@ async def get_deliverable_templates(  # type: ignore[no-untyped-def]
 def _ensure_template_enableable(  # type: ignore[no-untyped-def]
     template, update_data: dict[str, Any] | None = None
 ) -> None:
-    """启用前的校验：必须有 Word 母本，且槽位定义可解析。
+    """启用前的校验：必须有 Word 母本，且填充项结构可解析。
 
-    可用模板列表同时要求「is_active 为真 + 母本存在 + 槽位配置能解析出 spec」，
+    可用模板列表同时要求「is_active 为真 + 母本存在 + 结构能解析出 spec」，
     缺任何一条都会表现为「显示已启用、实际选不到」的假状态，所以在启用时就拦下来。
     """
     patch = update_data or {}
@@ -1141,12 +1141,10 @@ def _ensure_template_enableable(  # type: ignore[no-untyped-def]
 
     template_code = patch.get("template_code") or getattr(template, "template_code", None) or ""
     template_structure = patch.get("template_structure", getattr(template, "template_structure", None))
-    # structure 优先：与 spec_source.resolve_spec 一致，人工编辑/脱钩结构生效，其次代码内置
-    spec = spec_source.spec_from_structure(template_structure, code_hint=template_code) or spec_source.spec_from_code(
-        template_code
-    )
+    # 填充项只有落库结构这一处来源（内置模板的结构已在 0113 迁移里回填）
+    spec = spec_source.spec_from_structure(template_structure, code_hint=template_code)
     if spec is None:
-        raise BadRequestException("该模板的填充项配置无法识别，请重新上传 Word 母本后再启用")
+        raise BadRequestException("该模板的填充项无法识别，请重新上传 Word 母本后再启用")
 
 
 async def create_deliverable_template(  # type: ignore[no-untyped-def]

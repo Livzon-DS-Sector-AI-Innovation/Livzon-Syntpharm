@@ -9,7 +9,7 @@ from typing import Any
 from app.modules.research.doc_gen import repository, service, store
 from app.modules.research.doc_gen.extraction import SlotExtractor
 from app.modules.research.doc_gen.parsing import TextBlock
-from app.modules.research.doc_gen.templates import get_template_spec
+from tests.modules.research.doc_gen.fixture_spec import builtin_spec
 
 
 def _report(**kwargs: Any) -> Any:
@@ -88,7 +88,7 @@ def test_report_draft_visible_to_material_slot() -> None:
         TextBlock(file_id="m1", page=1, index=0, text="商品名：洛赛克", kind="paragraph"),
         TextBlock(file_id="report-abc", page=1, index=0, text="【结论与建议】建议放大至 500L", kind="paragraph"),
     ]
-    spec = get_template_spec("tech_research_report")
+    spec = builtin_spec()
     slot = spec.slot("originator")
     assert slot is not None
     extractor = SlotExtractor(

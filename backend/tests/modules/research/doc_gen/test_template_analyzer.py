@@ -11,7 +11,7 @@ from app.modules.research.doc_gen.template_analyzer import (
     apply_requirements_to_spec,
 )
 from app.modules.research.doc_gen.template_spec import TemplateSpec
-from app.modules.research.doc_gen.templates import get_template_spec
+from tests.modules.research.doc_gen.fixture_spec import builtin_spec
 
 
 class FakeLLM:
@@ -26,7 +26,7 @@ class FakeLLM:
 
 def _spec() -> TemplateSpec:
     """取一份独立副本：模板 registry 里是单例，直接改槽位会污染其它测试。"""
-    return get_template_spec("tech_research_report").model_copy(deep=True)
+    return builtin_spec().model_copy(deep=True)
 
 
 def _analysis(requirements: dict[str, dict[str, Any]]) -> TemplateAnalysisResult:

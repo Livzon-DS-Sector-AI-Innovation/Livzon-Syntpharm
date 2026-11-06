@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import io
 
+import pytest
 from docx import Document
 
 from app.modules.research.doc_gen import spec_source
 from app.modules.research.doc_gen.anchors import AnchorUnresolvedError, resolve_slot
 from app.modules.research.doc_gen.renderer import open_document
-from app.modules.research.doc_gen.service import MIN_ANCHOR_HIT_RATIO, probe_template_match
 from app.modules.research.doc_gen.spec_draft import draft_spec_from_bytes, summarize_spec
 from app.modules.research.doc_gen.template_spec import TEMPLATE_DIR, Slot, TemplateSpec
+from tests.modules.research.doc_gen.fixture_spec import builtin_spec
 
 ASSET = TEMPLATE_DIR / "tech_research_report.dotx"
 
@@ -83,32 +84,6 @@ def test_draft_uses_conservative_defaults() -> None:
             assert slot.draft_allowed is False
 
 
-def test_reexport_matches_its_own_draft() -> None:
-    """同一份母本再次上传时应命中已生成的配置，而不是又新建一套。"""
-    data, spec = _draft()
-    probe = probe_template_match(data, [spec])
-    assert probe["matched"] == spec.code
-    best = probe["best"]
-    assert best is not None
-    assert best["hit"] / best["total"] >= MIN_ANCHOR_HIT_RATIO
-
-
-def test_unrelated_doc_is_not_matched() -> None:
-    """结构完全不同的 Word 不应被硬套到既有配置上（此时应由调用方转自动识别）。"""
-    import io
-
-    from docx import Document
-
-    buffer = io.BytesIO()
-    doc = Document()
-    doc.add_paragraph("这是一份与任何模板都无关的文档")
-    doc.save(buffer)
-
-    probe = probe_template_match(buffer.getvalue())
-    assert probe["matched"] is None
-    assert MIN_ANCHOR_HIT_RATIO == 0.5
-
-
 def test_structure_round_trip() -> None:
     """落库的 template_structure 必须能还原成等价规格（生成侧依赖这条）。"""
     _data, spec = _draft()
@@ -121,18 +96,15 @@ def test_structure_round_trip() -> None:
     assert spec_source.spec_from_structure(None) is None
 
 
-def test_structure_priority_over_code() -> None:
-    """合法落库结构优先于代码内置规格（脱钩编辑生效）；非法/空结构回退代码内置。"""
-    from app.modules.research.doc_gen.templates import get_template_spec
-
-    spec = get_template_spec("tech_research_report")
-    # 合法但被改名的 structure：structure 优先，应取到改后的名字（脱钩编辑生效）
+def test_edited_structure_wins_and_broken_structure_raises() -> None:
+    """落库结构是唯一来源：合法结构（含人工编辑）生效，非法/空结构直接报错。"""
+    spec = builtin_spec()
     edited = spec.model_copy(update={"name": "人工编辑后的名字"}).model_dump(mode="json")
     assert spec_source.resolve_spec("tech_research_report", edited).name == "人工编辑后的名字"
-    # 非法 structure（无 slots）：spec_from_structure 返回 None，回退代码内置
-    assert spec_source.resolve_spec("tech_research_report", {"slots": []}).name == spec.name
-    # 空 structure：回退代码内置
-    assert spec_source.resolve_spec("tech_research_report", None).name == spec.name
+    # 不再回退「代码内置规格」：结构坏了就该让人重新上传母本，而不是悄悄换一套定义
+    for broken in ({"slots": []}, None, {"foo": 1}):
+        with pytest.raises(KeyError):
+            spec_source.resolve_spec("tech_research_report", broken)
 
 
 def test_drafted_spec_renders_document() -> None:

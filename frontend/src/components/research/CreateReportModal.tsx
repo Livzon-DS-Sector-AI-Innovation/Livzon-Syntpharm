@@ -882,7 +882,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
               optionFilterProp="label"
               options={templates.map((t) => ({
                 value: t.id,
-                label: `${t.name}（${t.slot_count} 处可自动填充）`,
+                label: t.name,
               }))}
             />
           </Form.Item>
@@ -899,7 +899,6 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
                     <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>{selectedTpl.description}</div>
                   )}
                   <div style={{ display: 'flex', gap: 12, fontSize: 12, color: '#8c8c8c' }}>
-                    <span>共 {selectedTpl.slot_count} 个填充项</span>
                     <span>必填 {selectedTpl.required_count} 个</span>
                     {selectedTpl.unfilled_notes && selectedTpl.unfilled_notes.length > 0 && (
                       <span style={{ color: '#faad14' }}>⚠ {selectedTpl.unfilled_notes.length} 项需人工补充</span>
@@ -1159,7 +1158,6 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
                     <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#8c8c8c' }}>
                       {tpl && (
                         <>
-                          <span>填充项 {tpl.slot_count} 个</span>
                           <span>必填 {tpl.required_count} 个</span>
                         </>
                       )}
@@ -1285,7 +1283,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
           {coverageChecked > 0 && (
             <div style={{ marginBottom: 16, fontSize: 13, color: '#595959' }}>
               <div>
-                生成前逐项预检：<b>{coverageChecked}</b> 个填充项中，可填 {coverageFillable} 项、部分可填{' '}
+                生成前逐项预检：共 <b>{coverageChecked}</b> 项，可填 {coverageFillable} 项、部分可填{' '}
                 {coveragePartial} 项
                 {coverageMissing > 0 ? `、知识库中无资料 ${coverageMissing} 项` : ''}
                 （加权覆盖率 {Math.round(coverageRatio * 100)}%）。

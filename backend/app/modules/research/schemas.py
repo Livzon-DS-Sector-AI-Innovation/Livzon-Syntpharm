@@ -794,7 +794,7 @@ class RdDeliverableTemplateBase(BaseModel):
 
 
 class RdDeliverableTemplateCreate(RdDeliverableTemplateBase):
-    # 关联的填充项配置 code（可留空，上传 Word 母本时由后端自动匹配）
+    # 关联的填充项 code（可留空，上传 Word 母本时由后端自动识别）
     template_code: str | None = Field(None, max_length=100)
 
 
@@ -815,7 +815,7 @@ class RdDeliverableTemplateResponse(RdDeliverableTemplateBase):
     id: UUID
     creator_id: UUID | None = None
     # 这几列由模板上传/自动匹配写入，必须在响应中回传：
-    # 否则前端列表拿不到 template_code/file_object_key，会误判为「尚未关联填充项配置」
+    # 否则前端列表拿不到 template_code/file_object_key，会误判为「尚未关联填充项」
     # 并始终显示上传入口（而非预览/下载）。
     template_code: str | None = None
     file_object_key: str | None = None

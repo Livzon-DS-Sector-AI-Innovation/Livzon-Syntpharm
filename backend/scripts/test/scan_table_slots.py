@@ -28,7 +28,6 @@ from app.modules.research.doc_gen.anchors import (  # noqa: E402
     resolve_slot,
     run_color,
 )
-from app.modules.research.doc_gen.docx_markdown import render_docx_markdown  # noqa: E402
 from app.modules.research.doc_gen.grid import cell_text, distinct_row_cells, normalize  # noqa: E402
 from app.modules.research.doc_gen.renderer import open_document  # noqa: E402
 from app.modules.research.doc_gen.spec_draft import (  # noqa: E402
@@ -82,7 +81,7 @@ def _dump_table(table: Table, limit: int = 8) -> None:
         print(f"    行{r_idx}（{len(parts)}格）: " + " | ".join(parts))
 
 
-def _report(path: Path, *, show: int | None, as_markdown: bool) -> None:
+def _report(path: Path, *, show: int | None) -> None:
     data = path.read_bytes()
     try:
         doc = open_document(data)
@@ -160,17 +159,12 @@ def _report(path: Path, *, show: int | None, as_markdown: bool) -> None:
         rows = len(list(table.rows))
         first = [cell_text(c) for c in distinct_row_cells(list(table.rows)[0])] if rows else []
         print(f"  ⚠️ {name}: 未参与扫描（嵌套表；{rows} 行，首行去重 {len(first)} 格）")
-    if as_markdown:
-        print("\n  ---- 模板 Markdown（前 60 行）----")
-        for line in render_docx_markdown(data).splitlines()[:60]:
-            print(f"  {line}")
 
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="表格槽位识别诊断")
     parser.add_argument("files", nargs="*", type=Path, help="母本文件（缺省=uploads/doc-gen 全部模板）")
     parser.add_argument("--show", type=int, default=None, help="额外打印第 N 张表的逐格文本")
-    parser.add_argument("--md", action="store_true", help="额外打印该母本的模板 Markdown 前 60 行")
     args = parser.parse_args(argv)
 
     paths = args.files or sorted(Path(match) for match in glob.glob(str(_ROOT.parent / "uploads/doc-gen/*/template.*")))
@@ -181,7 +175,7 @@ def main(argv: list[str]) -> int:
         if not path.exists():
             print(f"\n### {path}\n  文件不存在")
             continue
-        _report(path, show=args.show, as_markdown=args.md)
+        _report(path, show=args.show)
     print(
         "\n说明：❌ 的表格目前只能靠「新增填写项 → 候选位置」人工点选补上；"
         "⚠️ 嵌套表连候选补扫也覆盖不到（补扫同样只遍历 doc.tables）。"

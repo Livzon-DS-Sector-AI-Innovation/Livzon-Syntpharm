@@ -1419,27 +1419,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef(
         "research:deliverable-template:read",
         "GET",
-        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/anchor-candidates",
-    ),
-    ApiBindingDef(
-        "research:deliverable-template:read",
-        "GET",
         "/api/v1/research/doc-gen/deliverable-templates/{template_id}/download",
-    ),
-    ApiBindingDef(
-        "research:deliverable-template:update",
-        "POST",
-        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/enrich-semantics",
-    ),
-    ApiBindingDef(
-        "research:deliverable-template:read",
-        "GET",
-        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/markdown",
-    ),
-    ApiBindingDef(
-        "research:deliverable-template:update",
-        "POST",
-        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots",
     ),
     ApiBindingDef(
         "research:deliverable-template:update",

@@ -15,7 +15,7 @@ from app.modules.research.doc_gen import gap, kb_coverage, pipeline, status
 from app.modules.research.doc_gen.extraction import ExtractionAbortError, ExtractStats, SlotResult
 from app.modules.research.doc_gen.models import DocGenJob
 from app.modules.research.doc_gen.runtime_config import ModelChoice, RuntimeConfig
-from app.modules.research.doc_gen.templates import get_template_spec
+from tests.modules.research.doc_gen.fixture_spec import builtin_spec
 
 # 模板里的真实槽位：originator 是普通槽位，tech_opinion 是人工填写项
 SLOT_KEY = "originator"
@@ -88,7 +88,7 @@ def _patch(monkeypatch: pytest.MonkeyPatch, extractor: Any) -> None:
 def _ctx(results: dict[str, SlotResult]) -> pipeline.JobContext:
     return pipeline.JobContext(
         job=DocGenJob(id=uuid.uuid4(), status="extracting", step=""),
-        spec=get_template_spec("tech_research_report"),
+        spec=builtin_spec(),
         files=[],
         results=results,
     )

@@ -12,22 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.modules.research.doc_gen.template_spec import Anchor
-
 FileRole = Literal["material", "literature", "report_draft", "supplement"]
-
-
-class DocGenTemplateSummary(BaseModel):
-    """模板摘要（供前端下拉选择）。"""
-
-    code: str
-    name: str
-    version: str
-    stage: str = ""
-    description: str = ""
-    slot_count: int = 0
-    required_count: int = 0
-    unfilled_notes: list[str] = Field(default_factory=list)
 
 
 class DocGenSupportedFormat(BaseModel):
@@ -53,29 +38,8 @@ class DocGenLimits(BaseModel):
     supported_formats: list[DocGenSupportedFormat] = Field(default_factory=list)
 
 
-class DocGenSlotProfile(BaseModel):
-    """内置填充项配置（上传 Word 模板时选择用）。"""
-
-    code: str
-    name: str
-    version: str
-    stage: str = ""
-    description: str = ""
-    slot_count: int = 0
-    required_count: int = 0
-    unfilled_notes: list[str] = Field(default_factory=list)
-
-
-class DocGenSlotProfileListResponse(BaseModel):
-    """GET /doc-gen/slot-profiles 响应。"""
-
-    code: int = 200
-    message: str = "success"
-    data: list[DocGenSlotProfile] = Field(default_factory=list)
-
-
 class DocGenUsableTemplate(BaseModel):
-    """可用于 AI 生成的交付物模板（必须有 Word 模板原件 + 合法填充项配置）。"""
+    """可用于 AI 生成的交付物模板（必须有 Word 模板原件 + 可用的填充项结构）。"""
 
     id: UUID
     name: str
@@ -96,14 +60,6 @@ class DocGenUsableTemplateListResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: list[DocGenUsableTemplate] = Field(default_factory=list)
-
-
-class DocGenTemplateListResponse(BaseModel):
-    """GET /doc-gen/builtin-templates 响应（内置模板，排错用）。"""
-
-    code: int = 200
-    message: str = "success"
-    data: list[DocGenTemplateSummary] = Field(default_factory=list)
 
 
 class DocGenTemplateFileData(BaseModel):
@@ -172,141 +128,14 @@ class DocGenOperationResponse(BaseModel):
     message: str = "success"
 
 
-class DocGenAnchorCandidate(BaseModel):
-    """母本里一个尚未被占用、可锚定的候选位置（人工「新增填写项」时点选）。
-
-    ``anchor`` 可被前端原样回传用于建槽位，无需用户手写锚点；``context`` 给出
-    章节/表头/段落标签等线索帮助用户辨认。``kind="table"`` 的整表候选额外携带
-    ``columns``（表头列名）与 ``header_rows``（双行表头=2），回传即可整表成槽。
-    """
-
-    label: str
-    kind: Literal["field", "paragraph", "table", "image"]
-    context: str = ""
-    anchor: Anchor
-    columns: list[str] = Field(default_factory=list)
-    header_rows: int = 1
-
-
-class DocGenAnchorCandidateListResponse(BaseModel):
-    """GET /doc-gen/deliverable-templates/{id}/anchor-candidates 响应。"""
-
-    code: int = 200
-    message: str = "success"
-    data: list[DocGenAnchorCandidate] = Field(default_factory=list)
-
-
-class DocGenEnrichSemanticsData(BaseModel):
-    """AI 语义增强结果摘要。
-
-    ``enriched_slots`` 是**实际发生字段变更**的槽位数（增强前后逐槽对比得出），
-    与 ``total_slots``（槽位总数）区分：AI 无新增语义或调用降级时为 0，
-    前端据此如实反馈，不再把"总数"谎报成"已增强数"。
-    """
-
-    template_id: str
-    total_slots: int = 0
-    enriched_slots: int = 0
-    needs_review: int = 0
-    needs_review_added: int = 0
-
-
-class DocGenEnrichSemanticsResponse(BaseModel):
-    """POST /doc-gen/deliverable-templates/{id}/enrich-semantics 响应。"""
-
-    code: int = 200
-    message: str = "success"
-    data: DocGenEnrichSemanticsData
-
-
-class DocGenAddSlotRequest(BaseModel):
-    """POST /doc-gen/deliverable-templates/{id}/slots 请求体（人工新增填写项）。
-
-    ``anchor``/``kind`` 由候选位置原样回传——定位是安全敏感操作，由规则扫描器产出，
-    前端不手写锚点；用户只补 ``label`` 与检索语义（``query_hint``/``search_terms``/
-    ``expects``/``required``）。``kind="table"`` 需同时回传整表候选携带的 ``columns``
-    （表头列名）与 ``header_rows``（双行表头=2），列定义由服务端按顺序生成。
-    """
-
-    anchor: Anchor
-    label: str = Field(min_length=1, max_length=120)
-    kind: Literal["field", "paragraph", "table", "image"] = "field"
-    expects: Literal["text", "number", "date", "percent"] = "text"
-    required: bool = False
-    query_hint: str = Field(default="", max_length=500)
-    search_terms: list[str] = Field(default_factory=list)
-    columns: list[str] = Field(default_factory=list, max_length=40)
-    header_rows: int = Field(default=1, ge=1, le=3)
-
-
-class DocGenAddSlotData(BaseModel):
-    """人工新增填写项结果摘要。"""
-
-    template_id: str
-    slot_key: str
-    total_slots: int = 0
-
-
-class DocGenAddSlotResponse(BaseModel):
-    """POST /doc-gen/deliverable-templates/{id}/slots 响应。"""
-
-    code: int = 200
-    message: str = "success"
-    data: DocGenAddSlotData
-
-
-class DocGenTemplateSlotSemantics(BaseModel):
-    """填写项语义摘要（「模板 Markdown」弹窗「填写项语义」视图数据源）。
-
-    只读展示 template_structure 里的语义字段——AI 增强/人工维护的成果在此肉眼
-    可见；渲染安全字段（anchors/kind 定位）不展示定位细节。
-    """
-
-    key: str
-    label: str
-    kind: str = "field"
-    required: bool = False
-    expects: str = "text"
-    unit: str = ""
-    enum_values: list[str] = Field(default_factory=list)
-    cardinality: str = "single"
-    source_scope: str = "any"
-    query_hint: str = ""
-    search_terms: list[str] = Field(default_factory=list)
-    review_state: str = "auto"
-
-
-class DocGenTemplateMarkdownData(BaseModel):
-    """模板全内容 Markdown（优先母本规则解析，其次骨架回退）。"""
-
-    template_id: str
-    name: str = ""
-    code: str = ""
-    markdown: str
-    # docx=母本全文规则解析；spec=填写项骨架回退
-    source: str = "spec"
-    slot_count: int = 0
-    needs_review: int = 0
-    # 填写项语义清单（检索词/期望/必填/核对状态），供「填写项语义」视图展示
-    slots: list[DocGenTemplateSlotSemantics] = Field(default_factory=list)
-
-
-class DocGenTemplateMarkdownResponse(BaseModel):
-    """GET /doc-gen/deliverable-templates/{id}/markdown 响应。"""
-
-    code: int = 200
-    message: str = "success"
-    data: DocGenTemplateMarkdownData
-
-
 class DocGenBatchUploadResult(BaseModel):
     """批量上传结果。
 
     同名文件不再计入 skipped，而是作为该模板的新版本计入 versioned。
     """
 
-    created: list[dict[str, str]] = Field(default_factory=list)
-    versioned: list[dict[str, str]] = Field(default_factory=list)
+    created: list[dict[str, str | int]] = Field(default_factory=list)
+    versioned: list[dict[str, str | int]] = Field(default_factory=list)
     skipped: list[str] = Field(default_factory=list)
 
 
@@ -636,16 +465,12 @@ __all__ = [
     "DocGenSectionResponse",
     "DocGenSendMessageRequest",
     "DocGenSendMessageResponse",
-    "DocGenSlotProfile",
-    "DocGenTemplateFileData",
-    "DocGenTemplateFileResponse",
-    "DocGenSlotProfileListResponse",
     "DocGenSlotValueResponse",
     "DocGenSupersededItem",
     "DocGenSupersededList",
     "DocGenSupersededResponse",
-    "DocGenTemplateListResponse",
-    "DocGenTemplateSummary",
+    "DocGenTemplateFileData",
+    "DocGenTemplateFileResponse",
     "DocGenUsableTemplate",
     "DocGenUsableTemplateListResponse",
 ]

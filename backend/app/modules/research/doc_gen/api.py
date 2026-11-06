@@ -22,15 +22,11 @@ from app.core.response import build_response
 from app.modules.research.doc_gen import conversation as conversation_mod
 from app.modules.research.doc_gen import service, spec_source
 from app.modules.research.doc_gen.schemas import (
-    DocGenAddSlotRequest,
-    DocGenAddSlotResponse,
-    DocGenAnchorCandidateListResponse,
     DocGenBatchUploadResponse,
     DocGenConfirmRequest,
     DocGenConversationData,
     DocGenConversationDataResponse,
     DocGenConversationResponse,
-    DocGenEnrichSemanticsResponse,
     DocGenExtractedInfoResponse,
     DocGenJobDataResponse,
     DocGenJobDetailResponse,
@@ -43,12 +39,9 @@ from app.modules.research.doc_gen.schemas import (
     DocGenOutlineResponse,
     DocGenSendMessageRequest,
     DocGenSendMessageResponse,
-    DocGenSlotProfileListResponse,
     DocGenSupersededList,
     DocGenSupersededResponse,
     DocGenTemplateFileResponse,
-    DocGenTemplateListResponse,
-    DocGenTemplateMarkdownResponse,
     DocGenTemplateVersionListResponse,
     DocGenTemplateVersionRestoreResponse,
     DocGenUsableTemplateListResponse,
@@ -90,7 +83,7 @@ async def read_kb_coverage(
 @router.post("/jobs", summary="新建报告（任务 + 资料一次提交）", response_model=DocGenJobDataResponse, status_code=201)
 async def create_job(
     current_user: RequiredUser,
-    deliverable_template_id: UUID = Form(..., description="交付物模板 ID（Word 母本 + 填充项配置）"),
+    deliverable_template_id: UUID = Form(..., description="交付物模板 ID（Word 母本）"),
     files: list[UploadFile] | None = File(default=None, description="资料文件（可多个，非必填）"),
     file_roles: list[str] = Form(default_factory=list, description="与 files 顺序对应的角色：material/literature"),
     report_id: UUID | None = Form(None, description="关联研发报告"),
@@ -365,7 +358,7 @@ async def send_message(
     try:
         spec = await spec_source.resolve_for_job(db, job)
     except KeyError as exc:
-        raise BadRequestException("该任务的填充项配置已失效，无法进行对话补全") from exc
+        raise BadRequestException("该任务的填充项已失效，请重新上传 Word 母本后再试") from exc
     try:
         await conversation_mod.send_user_message(db, job_id, spec, payload.content)
     except conversation_mod.ConversationError as exc:
@@ -410,25 +403,13 @@ async def skip_conversation(
     return build_response(data=await _conversation_data(db, conversation), message="已跳过对话")
 
 
-@router.get("/slot-profiles", summary="内置填充项配置清单", response_model=DocGenSlotProfileListResponse)
-async def read_slot_profiles(current_user: RequiredUser) -> Any:
-    """上传 Word 模板原件时，用它选择这份模板对应哪套填充项配置。"""
-    return build_response(data=await service.slot_profiles())
-
-
 @router.get("/templates", summary="可用于 AI 生成的模板", response_model=DocGenUsableTemplateListResponse)
 async def read_usable_templates(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """只返回「有 Word 模板原件 + 填充项配置有效」的交付物模板，避免选了必然失败。"""
+    """只返回「有 Word 模板原件 + 填充项结构可用」的交付物模板，避免选了必然失败。"""
     return build_response(data=await service.usable_templates(db))
-
-
-@router.get("/builtin-templates", summary="内置模板定义（排错用）", response_model=DocGenTemplateListResponse)
-async def read_builtin_templates(current_user: RequiredUser) -> Any:
-    """代码内置的填充项配置视图，供排查与对账。"""
-    return build_response(data=service.template_summaries())
 
 
 @router.post(
@@ -574,93 +555,6 @@ async def delete_template_version(
     await service.delete_template_version(db, template_id, version_id, current_user.id if current_user else None)
     await db.commit()
     return build_response(message="已删除该版本")
-
-
-@router.get(
-    "/deliverable-templates/{template_id}/anchor-candidates",
-    summary="枚举母本可锚定位置（人工新增填写项）",
-    response_model=DocGenAnchorCandidateListResponse,
-)
-async def list_template_anchor_candidates(
-    template_id: UUID,
-    current_user: RequiredUser,
-    db: AsyncSession = Depends(get_db),
-) -> Any:
-    """列出母本里尚未被现有槽位占用的可锚定位置，供人工「新增填写项」时点选。
-
-    纯规则扫描（不调模型、快）；每个候选的 anchor 可原样回传用于建槽位，
-    避免用户手写锚点出错。AI 不参与定位（锚点错则渲染失败），只由规则产出。
-    草拟丢弃的待填表格会补扫成整表候选（带 columns/header_rows，回传即可整表
-    成槽）与占位符单元格候选，漏识别的位置从此有的人工补录出口。
-    """
-    return build_response(data=await service.template_anchor_candidates(db, template_id))
-
-
-@router.get(
-    "/deliverable-templates/{template_id}/markdown",
-    summary="模板全内容 Markdown（Word 母本解析）",
-    response_model=DocGenTemplateMarkdownResponse,
-)
-async def read_template_markdown(
-    template_id: UUID,
-    current_user: RequiredUser,
-    db: AsyncSession = Depends(get_db),
-) -> Any:
-    """把 Word 模板母本解析为全内容 Markdown，供交付物模板页「模板 Markdown」弹窗展示。
-
-    视图就是模板内容本身（标题/段落/列表/表格按文档流顺序）；母本不可用时回退
-    template_structure 骨架渲染（source=spec）。不参与 docx 成文（成文仍走锚点回填母本）。
-    """
-    return build_response(data=await service.template_markdown(db, template_id))
-
-
-@router.post(
-    "/deliverable-templates/{template_id}/enrich-semantics",
-    summary="AI 增强槽位语义",
-    response_model=DocGenEnrichSemanticsResponse,
-)
-async def enrich_template_semantics(
-    template_id: UUID,
-    current_user: RequiredUser,
-    db: AsyncSession = Depends(get_db),
-) -> Any:
-    """用 AI 为模板槽位补全「可被检索/提取命中」的语义（label/检索词/期望/必填/置信度）。
-
-    结果回写 template_structure，该模板以后每次生成都受益（越用越准）。只改语义字段，
-    绝不动锚点/类型（渲染安全）；低置信槽位标「需人工核对」。同步执行，槽位多时可能
-    耗时数十秒（与覆盖预检同档）。
-    """
-    result = await service.enrich_template_semantics(db, template_id)
-    await db.commit()
-    return build_response(
-        data=result,
-        message=(
-            f"AI 语义增强完成：{result['enriched_slots']}/{result['total_slots']} 个槽位更新了语义，"
-            f"{result['needs_review_added']} 个新增需人工核对"
-        ),
-    )
-
-
-@router.post(
-    "/deliverable-templates/{template_id}/slots",
-    summary="人工新增填写项（从候选位置点选）",
-    response_model=DocGenAddSlotResponse,
-)
-async def add_template_slot(
-    template_id: UUID,
-    payload: DocGenAddSlotRequest,
-    current_user: RequiredUser,
-    db: AsyncSession = Depends(get_db),
-) -> Any:
-    """从候选锚点位置人工新增一个「填写项」（槽位），回写 template_structure 持久化。
-
-    定位由规则产出的候选 anchor 原样回传（AI/人工都不手写锚点，渲染安全）；用户只补
-    名称与检索语义。名称为空、表格类、位置已被占用或 key 冲突均返回 400。与语义增强
-    一致：不留版本记录（只有母本文件变更才算版本）。
-    """
-    result = await service.add_template_slot(db, template_id, payload)
-    await db.commit()
-    return build_response(data=result, message=f"已新增填写项（共 {result['total_slots']} 个）")
 
 
 @router.post("/jobs/{job_id}/extract", summary="AI 提取信息", response_model=DocGenJobDataResponse)

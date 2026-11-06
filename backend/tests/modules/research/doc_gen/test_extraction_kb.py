@@ -11,7 +11,7 @@ from typing import Any
 from app.modules.research.doc_gen import status
 from app.modules.research.doc_gen.extraction import SlotExtractor
 from app.modules.research.doc_gen.parsing import TextBlock
-from app.modules.research.doc_gen.templates import get_template_spec
+from tests.modules.research.doc_gen.fixture_spec import builtin_spec
 
 KB_DOC_NAME = "米诺地尔项目调研报告.docx"
 KB_QUOTE = "原研企业为 Kaken Pharmaceutical Co., Ltd."
@@ -22,7 +22,7 @@ LOCAL_BLOCKS = [
     # 命中 originator 槽位关键词，保证「不接知识库」的对照组仍会调用模型
     TextBlock(file_id="m1", page=2, index=1, text="原研企业：AstraZeneca AB，商品名洛赛克", kind="paragraph"),
 ]
-ALL_SLOTS = {s.key: s for s in get_template_spec("tech_research_report").slots}
+ALL_SLOTS = {s.key: s for s in builtin_spec().slots}
 
 
 class FakeLLM:
@@ -81,7 +81,7 @@ class FakeFactRetriever:
 
 
 def _extractor(kb_retriever: Any = None, fact_retriever: Any = None) -> SlotExtractor:
-    spec = get_template_spec("tech_research_report").model_copy(update={"slots": [ALL_SLOTS["originator"]]})
+    spec = builtin_spec().model_copy(update={"slots": [ALL_SLOTS["originator"]]})
     return SlotExtractor(
         spec,
         LOCAL_BLOCKS,

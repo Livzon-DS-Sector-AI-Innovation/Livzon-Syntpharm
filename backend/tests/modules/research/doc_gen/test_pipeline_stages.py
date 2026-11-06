@@ -18,8 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.research.doc_gen import pipeline
 from app.modules.research.doc_gen.models import DocGenJob
 from app.modules.research.doc_gen.runtime_config import ModelChoice, RuntimeConfig
-from app.modules.research.doc_gen.templates import get_template_spec
 from app.modules.research.knowledge_base.facts import FactStats
+from tests.modules.research.doc_gen.fixture_spec import builtin_spec
 
 
 class FakeSession:
@@ -39,7 +39,7 @@ class FakeSession:
 def _ctx() -> pipeline.JobContext:
     return pipeline.JobContext(
         job=DocGenJob(id=uuid.uuid4(), status="extracting", step=""),
-        spec=get_template_spec("tech_research_report"),
+        spec=builtin_spec(),
         files=[],
     )
 

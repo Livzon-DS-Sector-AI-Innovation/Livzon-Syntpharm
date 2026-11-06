@@ -11669,26 +11669,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/research/doc-gen/slot-profiles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 内置填充项配置清单
-         * @description 上传 Word 模板原件时，用它选择这份模板对应哪套填充项配置。
-         */
-        get: operations["read_slot_profiles_api_v1_research_doc_gen_slot_profiles_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/research/doc-gen/templates": {
         parameters: {
             query?: never;
@@ -11698,29 +11678,9 @@ export interface paths {
         };
         /**
          * 可用于 AI 生成的模板
-         * @description 只返回「有 Word 模板原件 + 填充项配置有效」的交付物模板，避免选了必然失败。
+         * @description 只返回「有 Word 模板原件 + 填充项结构可用」的交付物模板，避免选了必然失败。
          */
         get: operations["read_usable_templates_api_v1_research_doc_gen_templates_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/research/doc-gen/builtin-templates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 内置模板定义（排错用）
-         * @description 代码内置的填充项配置视图，供排查与对账。
-         */
-        get: operations["read_builtin_templates_api_v1_research_doc_gen_builtin_templates_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -11868,102 +11828,6 @@ export interface paths {
          * @description 软删一个历史版本；当前生效版本与唯一版本不允许删除。
          */
         delete: operations["delete_template_version_api_v1_research_doc_gen_deliverable_templates__template_id__versions__version_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/anchor-candidates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 枚举母本可锚定位置（人工新增填写项）
-         * @description 列出母本里尚未被现有槽位占用的可锚定位置，供人工「新增填写项」时点选。
-         *
-         *     纯规则扫描（不调模型、快）；每个候选的 anchor 可原样回传用于建槽位，
-         *     避免用户手写锚点出错。AI 不参与定位（锚点错则渲染失败），只由规则产出。
-         *     草拟丢弃的待填表格会补扫成整表候选（带 columns/header_rows，回传即可整表
-         *     成槽）与占位符单元格候选，漏识别的位置从此有的人工补录出口。
-         */
-        get: operations["list_template_anchor_candidates_api_v1_research_doc_gen_deliverable_templates__template_id__anchor_candidates_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/markdown": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 模板全内容 Markdown（Word 母本解析）
-         * @description 把 Word 模板母本解析为全内容 Markdown，供交付物模板页「模板 Markdown」弹窗展示。
-         *
-         *     视图就是模板内容本身（标题/段落/列表/表格按文档流顺序）；母本不可用时回退
-         *     template_structure 骨架渲染（source=spec）。不参与 docx 成文（成文仍走锚点回填母本）。
-         */
-        get: operations["read_template_markdown_api_v1_research_doc_gen_deliverable_templates__template_id__markdown_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/enrich-semantics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * AI 增强槽位语义
-         * @description 用 AI 为模板槽位补全「可被检索/提取命中」的语义（label/检索词/期望/必填/置信度）。
-         *
-         *     结果回写 template_structure，该模板以后每次生成都受益（越用越准）。只改语义字段，
-         *     绝不动锚点/类型（渲染安全）；低置信槽位标「需人工核对」。同步执行，槽位多时可能
-         *     耗时数十秒（与覆盖预检同档）。
-         */
-        post: operations["enrich_template_semantics_api_v1_research_doc_gen_deliverable_templates__template_id__enrich_semantics_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 人工新增填写项（从候选位置点选）
-         * @description 从候选锚点位置人工新增一个「填写项」（槽位），回写 template_structure 持久化。
-         *
-         *     定位由规则产出的候选 anchor 原样回传（AI/人工都不手写锚点，渲染安全）；用户只补
-         *     名称与检索语义。名称为空、表格类、位置已被占用或 key 冲突均返回 400。与语义增强
-         *     一致：不留版本记录（只有母本文件变更才算版本）。
-         */
-        post: operations["add_template_slot_api_v1_research_doc_gen_deliverable_templates__template_id__slots_post"];
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -20679,58 +20543,6 @@ export interface components {
             process_note?: string | null;
         };
         /**
-         * Anchor
-         * @description 一个槽位在母本中的定位规则。解析失败必须显式报错，不允许退化为「猜位置」。
-         */
-        Anchor: {
-            /**
-             * Type
-             * @enum {string}
-             */
-            type: "global_variable" | "table_cell" | "table_rows" | "paragraph_after_label" | "replace_paragraph" | "section_body" | "section_relative" | "header_field" | "image_placeholder";
-            /** Table Header */
-            table_header?: string[];
-            /** Row Label */
-            row_label?: string | null;
-            /**
-             * Row Match
-             * @default contains
-             * @enum {string}
-             */
-            row_match: "exact" | "contains";
-            /** Column Header */
-            column_header?: string | null;
-            /** Row Index */
-            row_index?: number | null;
-            /** Col Index */
-            col_index?: number | null;
-            /** Guard */
-            guard?: string | null;
-            /** Paragraph Label */
-            paragraph_label?: string | null;
-            /**
-             * Paragraph Match
-             * @default exact
-             * @enum {string}
-             */
-            paragraph_match: "exact" | "prefix" | "contains";
-            /** Heading */
-            heading?: string | null;
-            /** Heading Level */
-            heading_level?: number | null;
-            /**
-             * After Heading
-             * @default 0
-             */
-            after_heading: number;
-            /** Keyword */
-            keyword?: string | null;
-            /** Header Contains */
-            header_contains?: string | null;
-            /** Color */
-            color?: string | null;
-        };
-        /**
          * AnnualOverview
          * @description 年度概览
          */
@@ -22592,7 +22404,7 @@ export interface components {
             /**
              * Deliverable Template Id
              * Format: uuid
-             * @description 交付物模板 ID（Word 母本 + 填充项配置）
+             * @description 交付物模板 ID（Word 母本）
              */
             deliverable_template_id: string;
             /**
@@ -30955,131 +30767,6 @@ export interface components {
             content_type: string;
         };
         /**
-         * DocGenAddSlotData
-         * @description 人工新增填写项结果摘要。
-         */
-        DocGenAddSlotData: {
-            /** Template Id */
-            template_id: string;
-            /** Slot Key */
-            slot_key: string;
-            /**
-             * Total Slots
-             * @default 0
-             */
-            total_slots: number;
-        };
-        /**
-         * DocGenAddSlotRequest
-         * @description POST /doc-gen/deliverable-templates/{id}/slots 请求体（人工新增填写项）。
-         *
-         *     ``anchor``/``kind`` 由候选位置原样回传——定位是安全敏感操作，由规则扫描器产出，
-         *     前端不手写锚点；用户只补 ``label`` 与检索语义（``query_hint``/``search_terms``/
-         *     ``expects``/``required``）。``kind="table"`` 需同时回传整表候选携带的 ``columns``
-         *     （表头列名）与 ``header_rows``（双行表头=2），列定义由服务端按顺序生成。
-         */
-        DocGenAddSlotRequest: {
-            anchor: components["schemas"]["Anchor"];
-            /** Label */
-            label: string;
-            /**
-             * Kind
-             * @default field
-             * @enum {string}
-             */
-            kind: "field" | "paragraph" | "table" | "image";
-            /**
-             * Expects
-             * @default text
-             * @enum {string}
-             */
-            expects: "text" | "number" | "date" | "percent";
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Query Hint
-             * @default
-             */
-            query_hint: string;
-            /** Search Terms */
-            search_terms?: string[];
-            /** Columns */
-            columns?: string[];
-            /**
-             * Header Rows
-             * @default 1
-             */
-            header_rows: number;
-        };
-        /**
-         * DocGenAddSlotResponse
-         * @description POST /doc-gen/deliverable-templates/{id}/slots 响应。
-         */
-        DocGenAddSlotResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data: components["schemas"]["DocGenAddSlotData"];
-        };
-        /**
-         * DocGenAnchorCandidate
-         * @description 母本里一个尚未被占用、可锚定的候选位置（人工「新增填写项」时点选）。
-         *
-         *     ``anchor`` 可被前端原样回传用于建槽位，无需用户手写锚点；``context`` 给出
-         *     章节/表头/段落标签等线索帮助用户辨认。``kind="table"`` 的整表候选额外携带
-         *     ``columns``（表头列名）与 ``header_rows``（双行表头=2），回传即可整表成槽。
-         */
-        DocGenAnchorCandidate: {
-            /** Label */
-            label: string;
-            /**
-             * Kind
-             * @enum {string}
-             */
-            kind: "field" | "paragraph" | "table" | "image";
-            /**
-             * Context
-             * @default
-             */
-            context: string;
-            anchor: components["schemas"]["Anchor"];
-            /** Columns */
-            columns?: string[];
-            /**
-             * Header Rows
-             * @default 1
-             */
-            header_rows: number;
-        };
-        /**
-         * DocGenAnchorCandidateListResponse
-         * @description GET /doc-gen/deliverable-templates/{id}/anchor-candidates 响应。
-         */
-        DocGenAnchorCandidateListResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            /** Data */
-            data?: components["schemas"]["DocGenAnchorCandidate"][];
-        };
-        /**
          * DocGenBatchUploadResponse
          * @description POST /doc-gen/deliverable-templates/batch-upload 响应。
          */
@@ -31105,11 +30792,11 @@ export interface components {
         DocGenBatchUploadResult: {
             /** Created */
             created?: {
-                [key: string]: string;
+                [key: string]: string | number;
             }[];
             /** Versioned */
             versioned?: {
-                [key: string]: string;
+                [key: string]: string | number;
             }[];
             /** Skipped */
             skipped?: string[];
@@ -31184,55 +30871,6 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
-        };
-        /**
-         * DocGenEnrichSemanticsData
-         * @description AI 语义增强结果摘要。
-         *
-         *     ``enriched_slots`` 是**实际发生字段变更**的槽位数（增强前后逐槽对比得出），
-         *     与 ``total_slots``（槽位总数）区分：AI 无新增语义或调用降级时为 0，
-         *     前端据此如实反馈，不再把"总数"谎报成"已增强数"。
-         */
-        DocGenEnrichSemanticsData: {
-            /** Template Id */
-            template_id: string;
-            /**
-             * Total Slots
-             * @default 0
-             */
-            total_slots: number;
-            /**
-             * Enriched Slots
-             * @default 0
-             */
-            enriched_slots: number;
-            /**
-             * Needs Review
-             * @default 0
-             */
-            needs_review: number;
-            /**
-             * Needs Review Added
-             * @default 0
-             */
-            needs_review_added: number;
-        };
-        /**
-         * DocGenEnrichSemanticsResponse
-         * @description POST /doc-gen/deliverable-templates/{id}/enrich-semantics 响应。
-         */
-        DocGenEnrichSemanticsResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data: components["schemas"]["DocGenEnrichSemanticsData"];
         };
         /**
          * DocGenEvidenceItem
@@ -31800,58 +31438,6 @@ export interface components {
             data?: components["schemas"]["DocGenConversationData"] | null;
         };
         /**
-         * DocGenSlotProfile
-         * @description 内置填充项配置（上传 Word 模板时选择用）。
-         */
-        DocGenSlotProfile: {
-            /** Code */
-            code: string;
-            /** Name */
-            name: string;
-            /** Version */
-            version: string;
-            /**
-             * Stage
-             * @default
-             */
-            stage: string;
-            /**
-             * Description
-             * @default
-             */
-            description: string;
-            /**
-             * Slot Count
-             * @default 0
-             */
-            slot_count: number;
-            /**
-             * Required Count
-             * @default 0
-             */
-            required_count: number;
-            /** Unfilled Notes */
-            unfilled_notes?: string[];
-        };
-        /**
-         * DocGenSlotProfileListResponse
-         * @description GET /doc-gen/slot-profiles 响应。
-         */
-        DocGenSlotProfileListResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            /** Data */
-            data?: components["schemas"]["DocGenSlotProfile"][];
-        };
-        /**
          * DocGenSlotValueResponse
          * @description 填充项结果条目。
          */
@@ -31989,169 +31575,6 @@ export interface components {
             data: components["schemas"]["DocGenTemplateFileData"];
         };
         /**
-         * DocGenTemplateListResponse
-         * @description GET /doc-gen/builtin-templates 响应（内置模板，排错用）。
-         */
-        DocGenTemplateListResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            /** Data */
-            data?: components["schemas"]["DocGenTemplateSummary"][];
-        };
-        /**
-         * DocGenTemplateMarkdownData
-         * @description 模板全内容 Markdown（优先母本规则解析，其次骨架回退）。
-         */
-        DocGenTemplateMarkdownData: {
-            /** Template Id */
-            template_id: string;
-            /**
-             * Name
-             * @default
-             */
-            name: string;
-            /**
-             * Code
-             * @default
-             */
-            code: string;
-            /** Markdown */
-            markdown: string;
-            /**
-             * Source
-             * @default spec
-             */
-            source: string;
-            /**
-             * Slot Count
-             * @default 0
-             */
-            slot_count: number;
-            /**
-             * Needs Review
-             * @default 0
-             */
-            needs_review: number;
-            /** Slots */
-            slots?: components["schemas"]["DocGenTemplateSlotSemantics"][];
-        };
-        /**
-         * DocGenTemplateMarkdownResponse
-         * @description GET /doc-gen/deliverable-templates/{id}/markdown 响应。
-         */
-        DocGenTemplateMarkdownResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data: components["schemas"]["DocGenTemplateMarkdownData"];
-        };
-        /**
-         * DocGenTemplateSlotSemantics
-         * @description 填写项语义摘要（「模板 Markdown」弹窗「填写项语义」视图数据源）。
-         *
-         *     只读展示 template_structure 里的语义字段——AI 增强/人工维护的成果在此肉眼
-         *     可见；渲染安全字段（anchors/kind 定位）不展示定位细节。
-         */
-        DocGenTemplateSlotSemantics: {
-            /** Key */
-            key: string;
-            /** Label */
-            label: string;
-            /**
-             * Kind
-             * @default field
-             */
-            kind: string;
-            /**
-             * Required
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Expects
-             * @default text
-             */
-            expects: string;
-            /**
-             * Unit
-             * @default
-             */
-            unit: string;
-            /** Enum Values */
-            enum_values?: string[];
-            /**
-             * Cardinality
-             * @default single
-             */
-            cardinality: string;
-            /**
-             * Source Scope
-             * @default any
-             */
-            source_scope: string;
-            /**
-             * Query Hint
-             * @default
-             */
-            query_hint: string;
-            /** Search Terms */
-            search_terms?: string[];
-            /**
-             * Review State
-             * @default auto
-             */
-            review_state: string;
-        };
-        /**
-         * DocGenTemplateSummary
-         * @description 模板摘要（供前端下拉选择）。
-         */
-        DocGenTemplateSummary: {
-            /** Code */
-            code: string;
-            /** Name */
-            name: string;
-            /** Version */
-            version: string;
-            /**
-             * Stage
-             * @default
-             */
-            stage: string;
-            /**
-             * Description
-             * @default
-             */
-            description: string;
-            /**
-             * Slot Count
-             * @default 0
-             */
-            slot_count: number;
-            /**
-             * Required Count
-             * @default 0
-             */
-            required_count: number;
-            /** Unfilled Notes */
-            unfilled_notes?: string[];
-        };
-        /**
          * DocGenTemplateVersionItem
          * @description 模板的一个历史版本。
          */
@@ -32243,7 +31666,7 @@ export interface components {
         };
         /**
          * DocGenUsableTemplate
-         * @description 可用于 AI 生成的交付物模板（必须有 Word 模板原件 + 合法填充项配置）。
+         * @description 可用于 AI 生成的交付物模板（必须有 Word 模板原件 + 可用的填充项结构）。
          */
         DocGenUsableTemplate: {
             /**
@@ -88819,37 +88242,6 @@ export interface operations {
             };
         };
     };
-    read_slot_profiles_api_v1_research_doc_gen_slot_profiles_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocGenSlotProfileListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     read_usable_templates_api_v1_research_doc_gen_templates_get: {
         parameters: {
             query?: never;
@@ -88868,37 +88260,6 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DocGenUsableTemplateListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    read_builtin_templates_api_v1_research_doc_gen_builtin_templates_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocGenTemplateListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -89139,142 +88500,6 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DocGenOperationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_template_anchor_candidates_api_v1_research_doc_gen_deliverable_templates__template_id__anchor_candidates_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                template_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocGenAnchorCandidateListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    read_template_markdown_api_v1_research_doc_gen_deliverable_templates__template_id__markdown_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                template_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocGenTemplateMarkdownResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    enrich_template_semantics_api_v1_research_doc_gen_deliverable_templates__template_id__enrich_semantics_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                template_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocGenEnrichSemanticsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_template_slot_api_v1_research_doc_gen_deliverable_templates__template_id__slots_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                template_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocGenAddSlotRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocGenAddSlotResponse"];
                 };
             };
             /** @description Validation Error */

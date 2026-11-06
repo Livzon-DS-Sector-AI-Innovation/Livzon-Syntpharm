@@ -9,7 +9,7 @@ import pytest
 
 from app.modules.research.doc_gen import anchors, grid, renderer, retrieval, status
 from app.modules.research.doc_gen.parsing import TextBlock
-from app.modules.research.doc_gen.templates import get_template_spec
+from tests.modules.research.doc_gen.fixture_spec import builtin_spec
 
 MASTER = Path(__file__).resolve().parents[4] / "app/modules/research/doc_gen/assets/templates/tech_research_report.dotx"
 
@@ -27,7 +27,7 @@ def doc(master_bytes: bytes) -> Any:
 
 
 def _spec() -> Any:
-    return get_template_spec("tech_research_report")
+    return builtin_spec()
 
 
 def _table(doc: Any, *keys: str) -> Any:
