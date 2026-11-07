@@ -10,24 +10,24 @@
  */
 import { apiGet } from '@/lib/api/client'
 import { saveResponse } from '@/lib/utils/download'
-import type { components } from '@/types/generated/schema'
+import type * as DocGenSchema from '@/types/research/doc-gen-schema'
 
-export type DocGenLimits = components['schemas']['DocGenLimits']
-export type DocGenJobResponse = components['schemas']['DocGenJobResponse']
-export type DocGenJobDetail = components['schemas']['DocGenJobDetail']
-export type DocGenInputFileResponse = components['schemas']['DocGenInputFileResponse']
-export type DocGenSlotValueResponse = components['schemas']['DocGenSlotValueResponse']
-export type DocGenJobDetailResponse = components['schemas']['DocGenJobDetailResponse']
+export type DocGenLimits = DocGenSchema.DocGenLimits
+export type DocGenJobResponse = DocGenSchema.DocGenJobResponse
+export type DocGenJobDetail = DocGenSchema.DocGenJobDetail
+export type DocGenInputFileResponse = DocGenSchema.DocGenInputFileResponse
+export type DocGenSlotValueResponse = DocGenSchema.DocGenSlotValueResponse
+export type DocGenJobDetailResponse = DocGenSchema.DocGenJobDetailResponse
 /** 结构化提取信息：单个填充项结果（键名为后端 slot_key） */
 export type DocGenExtractedSlot = DocGenSlotValueResponse
 /** 结构化提取信息响应体（后端返回 {"slots": [...]}） */
-export type DocGenExtractedInfo = components['schemas']['DocGenExtractedInfoResponse']['data']
+export type DocGenExtractedInfo = DocGenSchema.DocGenExtractedInfoResponse['data']
 /** 资料角色：material=研究资料，literature=文献 */
 export type DocGenFileRole = DocGenInputFileResponse['role']
 /** 对话消息条目（assistant=盘点卡/追问，user=用户补充的原文） */
-export type DocGenConversationMessage = components['schemas']['DocGenMessageResponse']
+export type DocGenConversationMessage = DocGenSchema.DocGenMessageResponse
 /** 会话与消息列表（任务未创建会话时后端返回 data=null） */
-export type DocGenConversationData = components['schemas']['DocGenConversationData']
+export type DocGenConversationData = DocGenSchema.DocGenConversationData
 
 const API_BASE = '/api/v1'
 const DOC_GEN_BASE = `${API_BASE}/research/doc-gen`
@@ -68,11 +68,11 @@ async function postMultipart<T>(path: string, formData: FormData, fallback: stri
 
 
 export async function fetchDocGenLimits(): Promise<DocGenLimits> {
-  return apiGet<components['schemas']['DocGenLimitsResponse']['data']>(`${DOC_GEN_BASE}/limits`)
+  return apiGet<DocGenSchema.DocGenLimitsResponse['data']>(`${DOC_GEN_BASE}/limits`)
 }
 
 export async function fetchDocGenJob(jobId: string): Promise<DocGenJobDetail> {
-  return apiGet<components['schemas']['DocGenJobDetailResponse']['data']>(`${DOC_GEN_BASE}/jobs/${jobId}`)
+  return apiGet<DocGenSchema.DocGenJobDetailResponse['data']>(`${DOC_GEN_BASE}/jobs/${jobId}`)
 }
 
 /** 查询任务的结构化提取信息（仅填充项结果），用于前端预览与编辑 */
@@ -88,7 +88,7 @@ export async function fetchDocGenExtractedInfo(jobId: string): Promise<{ slots: 
  * 只读 GET，写操作（发消息/完成/跳过）一律走 Server Actions。
  */
 export async function fetchDocGenConversation(jobId: string): Promise<DocGenConversationData | null> {
-  const data = await apiGet<components['schemas']['DocGenConversationDataResponse']['data']>(
+  const data = await apiGet<DocGenSchema.DocGenConversationDataResponse['data']>(
     `${DOC_GEN_BASE}/jobs/${jobId}/conversation`,
   )
   return data ?? null
@@ -96,14 +96,14 @@ export async function fetchDocGenConversation(jobId: string): Promise<DocGenConv
 
 /** 按项目一次取回全部生成任务（列表页用它避免逐报告请求） */
 export async function fetchDocGenJobsByProject(projectId: string): Promise<DocGenJobResponse[]> {
-  const data = await apiGet<NonNullable<components['schemas']['DocGenJobListResponse']['data']>>(
+  const data = await apiGet<NonNullable<DocGenSchema.DocGenJobListResponse['data']>>(
     `${DOC_GEN_BASE}/jobs?project_id=${encodeURIComponent(projectId)}`,
   )
   return data ?? []
 }
 
 export async function fetchDocGenJobsForReport(reportId: string): Promise<DocGenJobResponse[]> {
-  const data = await apiGet<NonNullable<components['schemas']['DocGenJobListResponse']['data']>>(
+  const data = await apiGet<NonNullable<DocGenSchema.DocGenJobListResponse['data']>>(
     `${DOC_GEN_BASE}/reports/${reportId}/jobs`,
   )
   return data ?? []
@@ -158,7 +158,7 @@ export async function createDocGenJob(input: CreateDocGenJobInput): Promise<DocG
   })
 
   // 不设置 Content-Type，交给浏览器自动生成 multipart boundary
-  const body = await postMultipart<components['schemas']['DocGenJobDataResponse']>(
+  const body = await postMultipart<DocGenSchema.DocGenJobDataResponse>(
     `${DOC_GEN_BASE}/jobs`,
     formData,
     '创建生成任务失败',
@@ -181,7 +181,7 @@ export async function uploadJobFiles(
     formData.append('files', file)
     formData.append('file_roles', fileRoles[index] ?? 'material')
   })
-  const body = await postMultipart<components['schemas']['DocGenJobDetailResponse']>(
+  const body = await postMultipart<DocGenSchema.DocGenJobDetailResponse>(
     `${DOC_GEN_BASE}/jobs/${jobId}/files`,
     formData,
     '上传资料文件失败',
@@ -244,11 +244,11 @@ export async function uploadDeliverableTemplateFile(
   templateId: string,
   file: File,
   changeNote?: string,
-): Promise<components['schemas']['DocGenTemplateFileData']> {
+): Promise<DocGenSchema.DocGenTemplateFileData> {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('change_note', changeNote ?? '')
-  const result = await postMultipart<components['schemas']['DocGenTemplateFileResponse']>(
+  const result = await postMultipart<DocGenSchema.DocGenTemplateFileResponse>(
     `${DOC_GEN_BASE}/deliverable-templates/${templateId}/upload`,
     formData,
     '上传失败',
@@ -275,7 +275,7 @@ export async function downloadDeliverableTemplate(id: string): Promise<Blob> {
  * 例外原因：multipart 文件上传，Server Actions 受请求体大小限制
  */
 /** 批量上传结果：字段派生自 OpenAPI 生成类型，后端有默认值故在此收窄为必填 */
-type BatchUploadRaw = components['schemas']['DocGenBatchUploadResult']
+type BatchUploadRaw = DocGenSchema.DocGenBatchUploadResult
 export type DocGenBatchUploadResult = Required<Pick<BatchUploadRaw, 'created' | 'versioned' | 'skipped'>>
 
 export async function uploadDeliverableTemplates(files: File[]): Promise<DocGenBatchUploadResult> {
@@ -294,11 +294,11 @@ export async function uploadDeliverableTemplates(files: File[]): Promise<DocGenB
 }
 
 /** 模板的历史版本（含上传人与版本说明，用于版本历史展示） */
-export type DocGenTemplateVersion = components['schemas']['DocGenTemplateVersionItem']
+export type DocGenTemplateVersion = DocGenSchema.DocGenTemplateVersionItem
 
 /** 拉取模板的版本历史（新版本在前） */
 export async function fetchDeliverableTemplateVersions(templateId: string): Promise<DocGenTemplateVersion[]> {
-  const data = await apiGet<NonNullable<components['schemas']['DocGenTemplateVersionListResponse']['data']>>(
+  const data = await apiGet<NonNullable<DocGenSchema.DocGenTemplateVersionListResponse['data']>>(
     `${DOC_GEN_BASE}/deliverable-templates/${templateId}/versions`,
   )
   return data ?? []
@@ -323,7 +323,7 @@ export async function downloadDeliverableTemplateVersion(templateId: string, ver
 }
 
 /** 可用于 AI 生成的交付物模板——类型来自 OpenAPI 生成结果 */
-export type DocGenUsableTemplate = components['schemas']['DocGenUsableTemplate']
+export type DocGenUsableTemplate = DocGenSchema.DocGenUsableTemplate
 
 /** 拉取可用于 AI 生成的模板（必须有 Word 模板原件与可用的填充项结构） */
 export async function fetchUsableDocGenTemplates(): Promise<DocGenUsableTemplate[]> {
@@ -332,9 +332,9 @@ export async function fetchUsableDocGenTemplates(): Promise<DocGenUsableTemplate
 }
 
 /** 知识库覆盖预检结果 —— 逐填充项判断「可填 / 部分可填 / 无资料」 */
-export type DocGenKbCoverage = components['schemas']['DocGenKbCoverage']
+export type DocGenKbCoverage = DocGenSchema.DocGenKbCoverage
 /** 单个填充项的覆盖预检结果 */
-export type DocGenKbCoverageSlot = components['schemas']['DocGenKbCoverageSlot']
+export type DocGenKbCoverageSlot = DocGenSchema.DocGenKbCoverageSlot
 
 /**
  * 生成前预检：按模板填充项逐项判断项目知识库「有没有料」。

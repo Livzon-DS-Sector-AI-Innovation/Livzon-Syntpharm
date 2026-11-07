@@ -3,38 +3,38 @@
  * 风格照同层 research.ts：通过 API_BASE_URL 访问后端，返回统一响应包裹中的 data。
  */
 import { apiFetch, getApiBaseUrl, safeApiFetch } from '@/lib/api/server/base'
-import type { components } from '@/types/generated/schema'
+import type * as DocGenSchema from '@/types/research/doc-gen-schema'
 
-type DocGenJobResponse = components['schemas']['DocGenJobResponse']
-type DocGenJobDetail = components['schemas']['DocGenJobDetail']
-type DocGenLimits = components['schemas']['DocGenLimits']
-type DocGenConversationData = components['schemas']['DocGenConversationData']
+type DocGenJobResponse = DocGenSchema.DocGenJobResponse
+type DocGenJobDetail = DocGenSchema.DocGenJobDetail
+type DocGenLimits = DocGenSchema.DocGenLimits
+type DocGenConversationData = DocGenSchema.DocGenConversationData
 
 const DOC_GEN_BASE = '/api/v1/research/doc-gen'
 
 export async function fetchDocGenLimits(): Promise<DocGenLimits> {
-  const result = await apiFetch<components['schemas']['DocGenLimitsResponse']>(
+  const result = await apiFetch<DocGenSchema.DocGenLimitsResponse>(
     `${getApiBaseUrl()}${DOC_GEN_BASE}/limits`,
   )
   return result.data
 }
 
 export async function fetchDocGenJob(jobId: string): Promise<DocGenJobDetail> {
-  const result = await apiFetch<components['schemas']['DocGenJobDetailResponse']>(
+  const result = await apiFetch<DocGenSchema.DocGenJobDetailResponse>(
     `${getApiBaseUrl()}${DOC_GEN_BASE}/jobs/${jobId}`,
   )
   return result.data
 }
 
 export async function fetchDocGenJobsForReport(reportId: string): Promise<DocGenJobResponse[]> {
-  const result = await apiFetch<components['schemas']['DocGenJobListResponse']>(
+  const result = await apiFetch<DocGenSchema.DocGenJobListResponse>(
     `${getApiBaseUrl()}${DOC_GEN_BASE}/reports/${reportId}/jobs`,
   )
   return result.data ?? []
 }
 
 export async function cancelDocGenJob(jobId: string): Promise<DocGenJobResponse> {
-  const result = await apiFetch<components['schemas']['DocGenJobDataResponse']>(
+  const result = await apiFetch<DocGenSchema.DocGenJobDataResponse>(
     `${getApiBaseUrl()}${DOC_GEN_BASE}/jobs/${jobId}/cancel`,
     { method: 'POST' },
   )
@@ -43,7 +43,7 @@ export async function cancelDocGenJob(jobId: string): Promise<DocGenJobResponse>
 
 /** 人工确认提取结果并续跑渲染；slots 只含被改过的填充项（key → 修正后的文本） */
 export async function confirmDocGenJob(jobId: string, slots: Record<string, string>): Promise<DocGenJobResponse> {
-  const result = await apiFetch<components['schemas']['DocGenJobDataResponse']>(
+  const result = await apiFetch<DocGenSchema.DocGenJobDataResponse>(
     `${getApiBaseUrl()}${DOC_GEN_BASE}/jobs/${jobId}/confirm`,
     { method: 'POST', body: JSON.stringify({ slots }) },
   )
@@ -52,7 +52,7 @@ export async function confirmDocGenJob(jobId: string, slots: Record<string, stri
 
 /** 两步流程第一步：触发 AI 提取信息（对话模式停在草稿时由用户手动开始） */
 export async function extractDocGenJob(jobId: string): Promise<DocGenJobResponse> {
-  const result = await apiFetch<components['schemas']['DocGenJobDataResponse']>(
+  const result = await apiFetch<DocGenSchema.DocGenJobDataResponse>(
     `${getApiBaseUrl()}${DOC_GEN_BASE}/jobs/${jobId}/extract`,
     { method: 'POST' },
   )
@@ -105,14 +105,14 @@ export async function updateDocGenJob(
     template_code?: string | null
   },
 ): Promise<DocGenJobResponse> {
-  const result = await apiFetch<components['schemas']['DocGenJobDataResponse']>(
+  const result = await apiFetch<DocGenSchema.DocGenJobDataResponse>(
     `${getApiBaseUrl()}${DOC_GEN_BASE}/jobs/${jobId}`,
     { method: 'PATCH', body: JSON.stringify(payload) },
   )
   return result.data
 }
 
-type DocGenTemplateVersionRestoreData = components['schemas']['DocGenTemplateVersionRestoreData']
+type DocGenTemplateVersionRestoreData = DocGenSchema.DocGenTemplateVersionRestoreData
 
 /**
  * 回滚交付物模板到指定历史版本。
@@ -124,7 +124,7 @@ export async function restoreDeliverableTemplateVersion(
   templateId: string,
   versionId: string,
 ): Promise<DocGenTemplateVersionRestoreData> {
-  const result = await apiFetch<components['schemas']['DocGenTemplateVersionRestoreResponse']>(
+  const result = await apiFetch<DocGenSchema.DocGenTemplateVersionRestoreResponse>(
     `${getApiBaseUrl()}${DOC_GEN_BASE}/deliverable-templates/${templateId}/versions/${versionId}/restore`,
     { method: 'POST' },
   )
@@ -133,7 +133,7 @@ export async function restoreDeliverableTemplateVersion(
 
 /** 删除模板的一个历史版本；当前生效版本与唯一版本后端会拒绝并返回业务提示 */
 export async function deleteDeliverableTemplateVersion(templateId: string, versionId: string): Promise<void> {
-  await apiFetch<components['schemas']['DocGenOperationResponse']>(
+  await apiFetch<DocGenSchema.DocGenOperationResponse>(
     `${getApiBaseUrl()}${DOC_GEN_BASE}/deliverable-templates/${templateId}/versions/${versionId}`,
     { method: 'DELETE' },
   )

@@ -15,19 +15,15 @@ import type { RdProject } from '@/types/research/rd-project'
 import { KnowledgeBaseManager } from './KnowledgeBaseManager'
 
 interface Props {
-  /** 从新建报告页 / 项目详情页跳转过来时带的项目 id，直接定位到该项目 */
+  /** 从项目详情页跳转过来时带的项目 id，直接定位到该项目 */
   initialProjectId?: string
-  /** true 表示入口是新建报告页，页面顶部给出返回入口 */
-  fromReport?: boolean
   /** true 表示入口是「研发项目详情 → 知识库 tab」，页面顶部给出返回项目详情的入口 */
   fromProjectDetail?: boolean
 }
 
-const NEW_REPORT_PATH = '/research/reports'
 
 export function KnowledgeBasePage({
   initialProjectId = '',
-  fromReport = false,
   fromProjectDetail = false,
 }: Props) {
   const { message: msgApi } = App.useApp()
@@ -52,16 +48,11 @@ export function KnowledgeBasePage({
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>项目知识库</h1>
           <p style={{ color: '#666', margin: '4px 0 0 0' }}>
-            每个研发项目一个知识库：上传项目资料后自动解析，AI 生成报告时会从中检索并填入模板
+            每个研发项目一个知识库：上传项目资料后自动解析，供项目内检索与资料查阅
           </p>
         </div>
-        {fromReport || (fromProjectDetail && (projectId || initialProjectId)) ? (
+        {fromProjectDetail && (projectId || initialProjectId) ? (
           <Space>
-            {fromReport ? (
-              <Link href={NEW_REPORT_PATH}>
-                <Button icon={<RollbackOutlined />}>返回新建报告</Button>
-              </Link>
-            ) : null}
             {fromProjectDetail && (projectId || initialProjectId) ? (
               <Link href={`/research/projects/${projectId || initialProjectId}`}>
                 <Button icon={<RollbackOutlined />}>返回项目详情</Button>

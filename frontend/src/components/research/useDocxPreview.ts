@@ -16,7 +16,7 @@ interface UseDocxPreviewReturn {
 
 /**
  * docx 预览 hook：封装 docx-preview 的加载与渲染逻辑。
- * 供 ReportPage、DeliverableTemplatePage、CreateReportModal 等组件复用。
+ * 供 DeliverableTemplatePage 等需要在线预览 Word 的组件复用。
  */
 export function useDocxPreview(): UseDocxPreviewReturn {
   const [loading, setLoading] = useState(false)

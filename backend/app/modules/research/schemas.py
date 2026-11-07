@@ -829,22 +829,6 @@ class RdDeliverableTemplateResponse(RdDeliverableTemplateBase):
     model_config = {"from_attributes": True}
 
 
-# ===== AI 报告生成 Schemas =====
-
-
-class RdReportGenerateRequest(BaseModel):
-    project_id: UUID
-    deliverable_type: str
-    template_id: UUID | None = None
-    additional_context: str | None = None
-
-
-class RdReportGenerateResponse(BaseModel):
-    content: str
-    structure: dict[str, Any] | None = None
-    data_sources: list[str] = []
-
-
 # ===== API Response Wrappers =====
 
 

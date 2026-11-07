@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import type { components } from '@/types/generated/schema'
+import type * as DocGenSchema from '@/types/research/doc-gen-schema'
 import {
   cancelDocGenJob as cancelDocGenJobApi,
   completeDocGenConversation as completeDocGenConversationApi,
@@ -14,9 +14,9 @@ import {
   updateDocGenJob as updateDocGenJobApi,
 } from '@/lib/api/server/research/doc-gen'
 
-type DocGenJobResponse = components['schemas']['DocGenJobResponse']
-type DocGenConversationData = components['schemas']['DocGenConversationData']
-type DocGenTemplateVersionRestoreData = components['schemas']['DocGenTemplateVersionRestoreData']
+type DocGenJobResponse = DocGenSchema.DocGenJobResponse
+type DocGenConversationData = DocGenSchema.DocGenConversationData
+type DocGenTemplateVersionRestoreData = DocGenSchema.DocGenTemplateVersionRestoreData
 
 /** 交付物模板页路由，写操作后据此失效缓存 */
 const DELIVERABLE_TEMPLATES_PATH = '/research/deliverable-templates'

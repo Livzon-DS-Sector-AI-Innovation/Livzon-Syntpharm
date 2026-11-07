@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchKbDocuments, fetchKnowledgeBasesByProject } from '@/lib/api/client/research/knowledge-base'
 import { hasPendingKbDocument, type KbDocumentItem } from '@/types/research/knowledge-base'
 
-/** 知识库文档盘点：AI 生成报告只能用到 parsed 的那部分 */
+/** 知识库文档盘点：只有 parsed 的文档才能被检索到 */
 export interface KbSummary {
   total: number
   parsed: number

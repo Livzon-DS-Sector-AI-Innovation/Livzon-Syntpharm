@@ -3,7 +3,6 @@
 import logging
 import os
 import uuid
-from typing import Any
 from uuid import UUID
 
 from fastapi import Body, Depends, File, Query, UploadFile
@@ -12,10 +11,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.database import async_session_factory, get_db
+from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException, BadRequestException, NotFoundException
-from app.core.job_store import JobStore, get_job_state_or_404, start_job
 from app.core.response import DataResponse
 from app.modules.research import service
 from app.modules.research.schemas import (
@@ -63,7 +61,6 @@ from app.modules.research.schemas import (
     RdRegistrationFilingResponse,
     RdRegistrationFilingUpdate,
     RdReportCreate,
-    RdReportGenerateRequest,
     RdReportResponse,
     RdReportUpdate,
     RdResearchFindingCreate,
@@ -94,7 +91,7 @@ from app.modules.research.schemas import (
 )
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
-from app.shared.schemas import AsyncJobAccepted, AsyncJobAcceptedResponse, AsyncJobStateResponse, PaginationMeta
+from app.shared.schemas import PaginationMeta
 
 logger = logging.getLogger(__name__)
 
@@ -3520,63 +3517,11 @@ async def delete_deliverable_template(
     return DataResponse[None](message="删除成功")
 
 
-# ===== AI 报告生成 API =====
+# ===== 交付物模板（Word 母本上传 / 版本留档 / 下载回滚）=====
 
-# AI 报告生成后台任务状态表（进程内）
-_research_job_store = JobStore()
+from app.modules.research.doc_template.api import router as doc_template_router  # noqa: E402
 
-
-@router.post(
-    "/generate-report",
-    response_model=AsyncJobAcceptedResponse,
-    summary="提交 AI 报告生成任务",
-)
-async def generate_report(
-    data: RdReportGenerateRequest,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:report:create")),
-) -> AsyncJobAcceptedResponse:
-    """提交报告生成后台任务（多轮 LLM 调用 >5s）；轮询 GET /research/jobs/{job_id}。
-
-    `result` 即原响应体：`{content, structure, data_sources}`。
-    """
-    project_id = data.project_id
-    deliverable_type = data.deliverable_type
-    template_id = data.template_id
-    additional_context = data.additional_context
-
-    async def _run(_job: str) -> dict[str, Any]:
-        async with async_session_factory() as job_db:
-            return await service.generate_report_with_ai(
-                job_db,
-                project_id,
-                deliverable_type,
-                template_id,
-                additional_context,
-            )
-
-    job_id = start_job(_research_job_store, "research-report", _run)
-    return AsyncJobAcceptedResponse(data=AsyncJobAccepted(job_id=job_id))
-
-
-@router.get(
-    "/jobs/{job_id}",
-    response_model=AsyncJobStateResponse,
-    summary="查询 AI 报告生成任务状态",
-)
-async def get_research_job_status(
-    job_id: str,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:report:read")),
-) -> AsyncJobStateResponse:
-    return AsyncJobStateResponse(data=get_job_state_or_404(_research_job_store, job_id))
-
-
-# ===== 文档生成（资料 → 模板 → 初版文档）=====
-
-from app.modules.research.doc_gen.api import router as doc_gen_router  # noqa: E402
-
-router.include_router(doc_gen_router, prefix="/doc-gen", tags=["研发管理-文档生成"])
+router.include_router(doc_template_router, prefix="/doc-gen", tags=["研发管理-交付物模板"])
 
 # ===== 项目知识库（资料入库 → RAGFlow 解析 → 供文档生成检索）=====
 

@@ -11,8 +11,6 @@ import {
 import { fetchDeliverables } from '@/lib/api/client/research/rd-project'
 import { createDeliverable, updateDeliverable, deleteDeliverable, uploadDeliverableFile } from '@/actions/research/deliverables'
 import { VersionHistoryDrawer } from './VersionHistoryDrawer'
-import { fetchDeliverableTemplates } from '@/lib/api/client/research/rd-project'
-import { fetchResearchReportJob, submitReportJob } from '@/actions/research/rd-project'
 import { PermissionGate } from '@/components/auth/PermissionGate'
 import { PERM } from '@/lib/permissions/codes'
 
@@ -69,28 +67,6 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
   const [uploadingId, setUploadingId] = useState<string | null>(null)
   const [versionDrawerOpen, setVersionDrawerOpen] = useState(false)
   const [versionDrawerData, setVersionDrawerData] = useState<{stage: string; type: string; title: string; versions: RdStageDeliverable[]} | null>(null)
-  const [aiGenerateModalOpen, setAiGenerateModalOpen] = useState(false)
-  const [aiGenerating, setAiGenerating] = useState(false)
-  const [savingAi, setSavingAi] = useState(false)
-  const [aiGenerateTarget, setAiGenerateTarget] = useState<{stage: string; type: string; title: string} | null>(null)
-  const [aiResult, setAiResult] = useState<string>('')
-  const [templateFilter, setTemplateFilter] = useState<{stage: string; type: string} | null>(null)
-
-  const { data: templates = [] } = useQuery({
-    queryKey: ['deliverable-templates', templateFilter?.stage, templateFilter?.type],
-    queryFn: async () => {
-      if (!templateFilter) return []
-      const allTemplates = await fetchDeliverableTemplates({ 
-        stage: templateFilter.stage, 
-        deliverable_type: templateFilter.type, 
-        is_active: true 
-      })
-      return allTemplates || []
-    },
-    enabled: !!templateFilter,
-  })
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
-  const [additionalContext, setAdditionalContext] = useState('')
   const [form] = Form.useForm()
 
 
@@ -202,103 +178,6 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
       setUploadingId(null)
     }
     return false
-  }
-
-  const handleAiGenerate = async (stage: string, type: string, title: string) => {
-    setAiGenerateTarget({ stage, type, title })
-    setAiResult('')
-    setSelectedTemplateId(null)
-    setAdditionalContext('')
-    setAiGenerateModalOpen(true)
-    
-    // 加载可用模板
-    setTemplateFilter({ stage, type })
-  }
-
-
-  const handleExportAiResult = () => {
-    if (!aiResult || !aiGenerateTarget) return
-    const blob = new Blob([aiResult], { type: 'text/markdown;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${aiGenerateTarget.title || aiGenerateTarget.type}.md`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    msgApi.success('导出成功')
-  }
-
-  const handleSaveAsDeliverable = async () => {
-    if (!aiGenerateTarget || !aiResult || savingAi) return
-    setSavingAi(true)
-    try {
-      await createDeliverable({
-        project_id: projectId,
-        stage: aiGenerateTarget.stage,
-        deliverable_type: aiGenerateTarget.type,
-        title: aiGenerateTarget.title,
-        status: 'draft',
-        version: 'v1.0',
-        content: aiResult,
-      })
-      msgApi.success('已保存为交付物')
-      setAiGenerateModalOpen(false)
-      invalidateDeliverables()
-    } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : '保存失败')
-    } finally {
-      setSavingAi(false)
-    }
-  }
-
-  const doAiGenerate = async () => {
-    if (!aiGenerateTarget) return
-    setAiGenerating(true)
-    try {
-      // 生成是后台任务：提交拿 job_id 后轮询（多轮 LLM 调用 >5s）
-      const jobId = await submitReportJob({
-        project_id: projectId,
-        deliverable_type: aiGenerateTarget.type,
-        template_id: selectedTemplateId || undefined,
-        additional_context: additionalContext || undefined,
-      })
-      const POLL_MS = 3000
-      const TIMEOUT_MS = 10 * 60_000
-      const startedAt = Date.now()
-      for (;;) {
-        if (Date.now() - startedAt > TIMEOUT_MS) {
-          msgApi.error('报告生成超时，请重试')
-          return
-        }
-        await new Promise((resolve) => setTimeout(resolve, POLL_MS))
-        let state
-        try {
-          state = await fetchResearchReportJob(jobId)
-        } catch {
-          msgApi.error('查询生成任务失败（服务可能已重启），请重试')
-          return
-        }
-        if (state.status === 'failed') {
-          msgApi.error(state.error || 'AI 生成失败')
-          return
-        }
-        if (state.status === 'done') {
-          if (state.result?.content) {
-            setAiResult(state.result.content)
-            msgApi.success('报告生成成功')
-          } else {
-            msgApi.error('AI 服务返回为空，请稍后重试')
-          }
-          return
-        }
-      }
-    } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : 'AI 生成失败')
-    } finally {
-      setAiGenerating(false)
-    }
   }
 
   const handleShowVersions = (stage: string, deliverableType: string, title: string) => {
@@ -431,7 +310,7 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
                           type="link"
                           size="small"
                           icon={<RobotOutlined />}
-                          onClick={() => handleAiGenerate(stage as string, row.type, row.label)}
+                          onClick={() => msgApi.info('AI 生成报告功能已下线')}
                         >
                           AI生成
                         </Button>
@@ -549,58 +428,6 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
         />
       )}
 
-      {/* AI 报告生成模态框 */}
-      <Modal
-        title={`AI 生成报告 - ${aiGenerateTarget?.title || ''}`}
-        open={aiGenerateModalOpen}
-        onCancel={() => setAiGenerateModalOpen(false)}
-        width={800}
-        footer={[
-          <Button key="cancel" onClick={() => setAiGenerateModalOpen(false)}>取消</Button>,
-          <Button key="export" disabled={!aiResult} onClick={handleExportAiResult} icon={<DownloadOutlined />}>导出文件</Button>,
-          <PermissionGate key="save" code={PERM.researchStageDeliverableCreate}>
-            <Button disabled={!aiResult} loading={savingAi} onClick={handleSaveAsDeliverable} icon={<FileTextOutlined />}>保存为交付物</Button>
-          </PermissionGate>,
-          <PermissionGate key="generate" code={PERM.researchReportCreate}>
-            <Button type="primary" loading={aiGenerating} onClick={doAiGenerate} icon={<RobotOutlined />}>
-              {aiResult ? '重新生成' : '生成报告'}
-            </Button>
-          </PermissionGate>,
-        ]}
-      >
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ marginBottom: 8 }}>
-            <strong>选择模板（可选）：</strong>
-            <Select
-              style={{ width: '100%', marginTop: 8 }}
-              placeholder="选择报告模板（可选）"
-              value={selectedTemplateId}
-              onChange={setSelectedTemplateId}
-              allowClear
-              options={[
-                ...templates.map(t => ({ value: t.id, label: t.name })),
-              ]}
-            />
-          </div>
-          <div style={{ marginBottom: 8 }}>
-            <strong>额外要求（可选）：</strong>
-            <Input.TextArea
-              rows={3}
-              placeholder="输入额外的生成要求..."
-              value={additionalContext}
-              onChange={(e) => setAdditionalContext(e.target.value)}
-            />
-          </div>
-        </div>
-        {aiResult && (
-          <div>
-            <strong>生成结果：</strong>
-            <div style={{ marginTop: 8, padding: 16, background: '#f5f5f5', borderRadius: 4, maxHeight: 400, overflow: 'auto' }}>
-              <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>{aiResult}</pre>
-            </div>
-          </div>
-        )}
-      </Modal>
     </div>
   )
 }

@@ -2,10 +2,8 @@
  * 研发报告 AI 文档生成 —— UI 层类型与中文文案映射。
  * API 契约类型一律从 @/types/generated/schema 派生，不得手写。
  */
-import type { components } from '@/types/generated/schema'
-
-/** 资料角色：material=研究资料，literature=文献 */
-export type DocGenFileRole = components['schemas']['DocGenInputFileResponse']['role']
+/** 资料角色：material=研究资料，literature=文献（接口已下线，类型手写） */
+export type DocGenFileRole = 'material' | 'literature'
 
 /** 面板内单个待上传文件的表单状态（UI 类型） */
 export interface DocGenFormItem {

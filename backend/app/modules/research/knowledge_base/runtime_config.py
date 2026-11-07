@@ -1,4 +1,8 @@
-"""运行时配置：运营参数走 core.module_settings（Web UI 可改），代码里只留默认值。"""
+"""运行时配置：运营参数走 core.module_settings（Web UI 可改），代码里只留默认值。
+
+从原 doc_gen 迁入，现在只服务知识库富化（切片摸底、事实抽取、模型选择）。
+配置键沿用 ``DOC_GEN_`` 前缀：库中已按该前缀存过值，改名会让存量配置全部失效。
+"""
 
 from __future__ import annotations
 

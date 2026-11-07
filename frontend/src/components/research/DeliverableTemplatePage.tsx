@@ -40,7 +40,7 @@ import {
   uploadDeliverableTemplateFile,
   uploadDeliverableTemplates,
   type DocGenTemplateVersion,
-} from '@/lib/api/client/research/doc-gen'
+} from '@/lib/api/client/research/deliverable-template'
 import {
   DELIVERABLE_TYPES,
   STAGE_LABELS,

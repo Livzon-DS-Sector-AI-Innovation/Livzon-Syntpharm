@@ -159,7 +159,7 @@ export function ProjectDetailPage({ project }: Props) {
           <Card size="small" style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <Typography.Text type="secondary">
-                项目知识库是 AI 生成报告的资料来源：资料上传后自动解析，生成报告时按模板填充项逐项检索取值
+                项目知识库是项目资料的统一入口：资料上传后自动解析，可在项目内检索查阅
               </Typography.Text>
               <Link href={`/research/knowledge-bases?projectId=${project.id}&from=project-detail`}>
                 <Button type="primary" icon={<ArrowRightOutlined />}>

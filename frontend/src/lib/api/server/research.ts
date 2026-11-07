@@ -583,24 +583,6 @@ export async function publishConclusionVersion(
   })
 }
 
-// ===== rd-project.ts - AI Report Generation =====
-
-export async function submitReportJob(data: {
-  project_id: string
-  deliverable_type: string
-  template_id?: string
-  additional_context?: string
-}) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/research/generate-report`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function fetchResearchJob(jobId: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/research/jobs/${jobId}`)
-}
-
 // ===== research.ts - Projects =====
 
 export async function createResearchProject(data: unknown) {

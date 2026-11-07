@@ -9,7 +9,6 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (
-    AppException,
     BadRequestException,
     DuplicateException,
     NotFoundException,
@@ -18,7 +17,6 @@ from app.core.exceptions import (
 logger = logging.getLogger(__name__)
 from app.modules.research import repository as repo  # noqa: E402
 from app.modules.research.models import (  # noqa: E402
-    RdExperimentLog,
     RdMilestone,
     RdPilotStudy,
     RdProcessValidation,
@@ -1016,19 +1014,7 @@ async def update_report(  # type: ignore[no-untyped-def]
 
 
 async def delete_report(db: AsyncSession, report_id: uuid.UUID, user_id: uuid.UUID | None = None) -> None:
-    """删除研发报告（软删），并联动终止其下未结束的文档生成任务。
-
-    不联动取消时，已排队的任务会在报告删除后继续消耗模型资源，产物也无人可见。
-    """
-    # 延迟导入：doc_gen 依赖 research.models，模块级导入会形成循环
-    from app.modules.research.doc_gen import service as doc_gen_service
-
-    cancelled = await doc_gen_service.cancel_jobs_of_report(db, report_id)
-    if cancelled:
-        logger.info(
-            "删除报告联动终止生成任务",
-            extra={"report_id": str(report_id), "cancelled_jobs": cancelled, "module_name": "research"},
-        )
+    """删除研发报告（软删）。"""
     await repo.delete_report(db, report_id, user_id)
     await db.commit()
 
@@ -1127,24 +1113,14 @@ async def get_deliverable_templates(  # type: ignore[no-untyped-def]
 def _ensure_template_enableable(  # type: ignore[no-untyped-def]
     template, update_data: dict[str, Any] | None = None
 ) -> None:
-    """启用前的校验：必须有 Word 母本，且填充项结构可解析。
+    """启用前的校验：必须有 Word 母本。
 
-    可用模板列表同时要求「is_active 为真 + 母本存在 + 结构能解析出 spec」，
-    缺任何一条都会表现为「显示已启用、实际选不到」的假状态，所以在启用时就拦下来。
+    没有母本的模板启用后也没有可下载的原件，属明确的假状态，因此在启用时就拦下来。
     """
     patch = update_data or {}
     file_object_key = patch.get("file_object_key", getattr(template, "file_object_key", None))
     if not file_object_key:
         raise BadRequestException("请先上传 Word 模板原件，再启用该模板")
-    # 延迟导入：doc_gen 依赖 research.models，模块级导入会形成循环
-    from app.modules.research.doc_gen import spec_source
-
-    template_code = patch.get("template_code") or getattr(template, "template_code", None) or ""
-    template_structure = patch.get("template_structure", getattr(template, "template_structure", None))
-    # 填充项只有落库结构这一处来源（内置模板的结构已在 0113 迁移里回填）
-    spec = spec_source.spec_from_structure(template_structure, code_hint=template_code)
-    if spec is None:
-        raise BadRequestException("该模板的填充项无法识别，请重新上传 Word 母本后再启用")
 
 
 async def create_deliverable_template(  # type: ignore[no-untyped-def]
@@ -1181,179 +1157,3 @@ async def delete_deliverable_template(
     """删除交付物模板"""
     await repo.delete_deliverable_template(db, template_id, user_id)
     await db.commit()
-
-
-# ===== AI 报告生成 Service =====
-
-
-async def generate_report_with_ai(
-    db: AsyncSession,
-    project_id: uuid.UUID,
-    deliverable_type: str,
-    template_id: uuid.UUID | None = None,
-    additional_context: str | None = None,
-) -> dict:  # type: ignore[type-arg]
-    """使用 AI 生成报告"""
-    from app.core.llm import llm_client
-    from app.core.llm.exceptions import LLMOutputError, LLMProviderError, LLMRateLimitError
-    from app.modules.research.models import (
-        RdProject,
-        RdResearchFinding,
-        RdResearchTrack,
-    )
-
-    # 1. 获取项目信息
-    project_result = await db.execute(select(RdProject).where(RdProject.id == project_id, ~RdProject.is_deleted))
-    project = project_result.scalar_one_or_none()
-    if not project:
-        raise NotFoundException("项目")
-
-    # 2. 获取模板（如果有）
-    template_content = ""
-    if template_id:
-        template = await repo.get_deliverable_template_by_id(db, template_id)
-        if template and template.template_content:
-            template_content = template.template_content
-
-    # 3. 收集项目数据
-    data_sources = []
-
-    # 获取研究项
-    tracks_result = await db.execute(
-        select(RdResearchTrack).where(
-            RdResearchTrack.project_id == project_id,
-            ~RdResearchTrack.is_deleted,
-        )
-    )
-    tracks = tracks_result.scalars().all()
-
-    track_summaries = []
-    for track in tracks:
-        # 获取研究发现
-        findings_result = await db.execute(
-            select(RdResearchFinding).where(
-                RdResearchFinding.track_id == track.id,
-                ~RdResearchFinding.is_deleted,
-            )
-        )
-        findings = findings_result.scalars().all()
-
-        findings_text = "\n".join(
-            [f"- {f.finding_type}: {f.conclusion or '无结论'} (置信度: {f.confidence})" for f in findings]
-        )
-
-        track_summaries.append(f"""
-研究项: {track.name}
-类型: {track.type}
-状态: {track.status}
-当前结论: {track.current_conclusion or "暂无"}
-研究发现:
-{findings_text}
-""")
-        data_sources.append(f"研究项: {track.name}")
-
-    # 获取实验记录
-    experiments_result = await db.execute(
-        select(RdExperimentLog).where(
-            RdExperimentLog.project_id == project_id,
-            ~RdExperimentLog.is_deleted,
-        )
-    )
-    experiments = experiments_result.scalars().all()
-
-    experiment_summaries = []
-    for exp in experiments:
-        experiment_summaries.append(f"""
-实验: {exp.title}
-类型: {exp.experiment_type}
-日期: {exp.experiment_date}
-操作人: {exp.operator}
-目的: {exp.objective or "无"}
-步骤: {exp.procedure or "无"}
-现象: {exp.observations or "无"}
-结论: {exp.conclusion or "无"}
-""")
-        data_sources.append(f"实验: {exp.title}")
-
-    # 4. 构建提示词
-    deliverable_type_names = {
-        "literature_review": "技术调研报告",
-        "development_plan": "研发总方案",
-        "route_confirmation": "工艺路线确认报告",
-        "safety_assessment": "工艺安全评估报告",
-        "impurity_analysis": "理论杂质分析",
-        "optimization_plan": "小试工艺优化方案",
-        "optimization_report": "小试工艺优化报告",
-        "scale_up_summary": "公斤级放大总结报告",
-        "pilot_plan": "中试方案",
-        "pilot_report": "中试报告",
-        "supplier_development": "供应商开发报告",
-        "validation_plan": "工艺验证方案",
-        "validation_report": "工艺验证报告",
-        "cleaning_procedure": "清洁操作规程和记录",
-        "cleaning_validation": "清洁验证总结报告",
-        "structure_confirmation": "原料药结构确证报告",
-        "crystal_form_study": "晶型和粒度研究报告",
-        "impurity_study": "杂质研究报告",
-    }
-
-    deliverable_name = deliverable_type_names.get(deliverable_type, deliverable_type)
-
-    prompt = f"""你是一位专业的原料药研发专家。请根据以下项目信息，生成一份{deliverable_name}。
-
-项目信息:
-- 项目名称: {project.name}
-- API 名称: {project.api_name}
-- CAS 号: {project.cas_number or "无"}
-- 分子式: {project.molecular_formula or "无"}
-- 分子量: {project.molecular_weight or "无"}
-- 适应症: {project.indication or "无"}
-- 当前阶段: {project.current_stage}
-
-研究项数据:
-{"".join(track_summaries) if track_summaries else "暂无研究项数据"}
-
-实验记录数据:
-{"".join(experiment_summaries) if experiment_summaries else "暂无实验记录数据"}
-
-{f"模板参考:\n{template_content}" if template_content else ""}
-
-{f"额外要求:\n{additional_context}" if additional_context else ""}
-
-请生成一份专业、完整的{deliverable_name}，包含以下部分:
-1. 概述
-2. 项目背景
-3. 研究内容与方法
-4. 主要发现与结果
-5. 分析与讨论
-6. 结论与建议
-
-请使用 Markdown 格式输出。"""
-
-    # 5. 调用 LLM
-    try:
-        result = await llm_client.chat(
-            [
-                {
-                    "role": "system",
-                    "content": "你是一位专业的原料药研发专家，擅长撰写各类研发报告。",
-                },
-                {"role": "user", "content": prompt},
-            ]
-        )
-
-        return {
-            "content": result,
-            "structure": None,
-            "data_sources": data_sources,
-        }
-    except (LLMOutputError, LLMProviderError, LLMRateLimitError):
-        logger.exception("LLM call failed")
-        return {
-            "content": "AI 分析暂时不可用，请人工审核",
-            "structure": None,
-            "data_sources": data_sources,
-        }
-    except Exception as e:
-        logger.exception("LLM call failed")
-        raise AppException(status_code=500, message=f"AI 生成失败: {str(e)}")

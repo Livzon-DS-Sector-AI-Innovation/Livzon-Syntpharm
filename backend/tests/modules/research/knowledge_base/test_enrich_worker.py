@@ -7,9 +7,9 @@ from typing import Any
 
 import pytest
 
-from app.modules.research.doc_gen.runtime_config import ModelChoice, RuntimeConfig
 from app.modules.research.knowledge_base import enrich_worker
 from app.modules.research.knowledge_base.facts import FactStats, IndexStats
+from app.modules.research.knowledge_base.runtime_config import RuntimeConfig
 
 
 class _FakeSession:
@@ -33,18 +33,12 @@ def _patch(
     *,
     enabled: bool = True,
     pending: int = 0,
-    busy: bool = False,
     extract_stats: FactStats | None = None,
     index_stats: IndexStats | None = None,
 ) -> dict[str, list[Any]]:
     """把 session 工厂、配置、知识库扫描与两轮执行全替换成离线替身。"""
     calls: dict[str, list[Any]] = {"active_kbs": [], "extract": [], "index": []}
     kb = types.SimpleNamespace(id="kb-1")
-
-    async def _busy_with_generation(_session: Any) -> bool:
-        return busy
-
-    monkeypatch.setattr(enrich_worker, "_busy_with_generation", _busy_with_generation)
 
     async def _config() -> RuntimeConfig:
         return RuntimeConfig(kb_background_enrich_enabled=enabled)
@@ -100,30 +94,3 @@ async def test_idle_returns_false(monkeypatch: pytest.MonkeyPatch) -> None:
     """既没有待抽切片、摸底也没有任何变化时，返回 False 让循环去休眠。"""
     _patch(monkeypatch)
     assert await enrich_worker.run_once() is False
-
-
-async def test_extract_round_yields_when_generation_is_running(monkeypatch: pytest.MonkeyPatch) -> None:
-    """有生成任务在跑：后台事实抽取降到让路额度与并发 1；空闲时恢复完整额度。"""
-    captured: dict[str, Any] = {}
-
-    async def _fake_extract(_session: Any, _kb: Any, **kwargs: Any) -> FactStats:
-        captured.update(kwargs)
-        return FactStats()
-
-    async def _resolve(_name: str, purpose: str = "text") -> ModelChoice:
-        return ModelChoice()
-
-    monkeypatch.setattr("app.modules.research.knowledge_base.facts.extract_facts", _fake_extract)
-    monkeypatch.setattr(enrich_worker, "resolve_model", _resolve)
-
-    kb = types.SimpleNamespace(id="kb-1")
-    config = RuntimeConfig(kb_background_enrich_max_chunks=200, fact_extract_concurrency=4)
-
-    await enrich_worker._extract_round(_FakeSession(), kb, config, busy=True)
-    assert captured["max_chunks"] == enrich_worker.BUSY_EXTRACT_LIMIT
-    assert captured["concurrency"] == 1
-
-    await enrich_worker._extract_round(_FakeSession(), kb, config, busy=False)
-    assert captured["max_chunks"] == 200
-    # 空闲时并发 = min(代码硬顶, 配置)：这里配置 4 小于硬顶，故取配置值
-    assert captured["concurrency"] == min(enrich_worker.MAX_CONCURRENCY, config.fact_extract_concurrency)

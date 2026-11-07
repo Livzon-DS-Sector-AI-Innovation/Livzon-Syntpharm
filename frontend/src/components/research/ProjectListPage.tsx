@@ -304,7 +304,7 @@ export function ProjectListPage({ initialProjects, initialTotal }: Props) {
           <Form.Item name="notes" label="备注">
             <Input.TextArea rows={2} />
           </Form.Item>
-          {/* 项目知识库：与项目同期建立，后续上传的项目资料由 AI 生成报告时自动检索 */}
+          {/* 项目知识库：与项目同期建立，后续上传的项目资料在此归档与检索 */}
           <Form.Item name="with_knowledge_base" valuePropName="checked" initialValue={false}>
             <Checkbox>同时创建项目知识库（可上传项目资料，AI 生成报告时自动检索填入模板）</Checkbox>
           </Form.Item>

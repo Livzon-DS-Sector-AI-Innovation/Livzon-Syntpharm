@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { Alert, App, Button, Drawer, Popconfirm, Space, Table, Tag, Tooltip } from 'antd'
 import { DeleteOutlined, DownloadOutlined, EyeOutlined, UndoOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
-import { fetchDeliverableTemplateVersions, type DocGenTemplateVersion } from '@/lib/api/client/research/doc-gen'
-import { deleteDeliverableTemplateVersion, restoreDeliverableTemplateVersion } from '@/actions/research/doc-gen'
+import { fetchDeliverableTemplateVersions, type DocGenTemplateVersion } from '@/lib/api/client/research/deliverable-template'
+import { deleteDeliverableTemplateVersion, restoreDeliverableTemplateVersion } from '@/actions/research/deliverable-template'
 
 interface Props {
   open: boolean

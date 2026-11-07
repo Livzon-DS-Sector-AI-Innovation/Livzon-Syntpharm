@@ -37,16 +37,15 @@ import {
   fetchDocGenDocumentBlob,
   fetchDocGenExtractedInfo,
   fetchDocGenJob,
-  fetchDocGenJobsForReport,
   fetchDocGenKbCoverage,
-  fetchUsableDocGenTemplates,
   type DocGenExtractedSlot,
   type DocGenJobResponse,
   type DocGenKbCoverage,
   type DocGenUsableTemplate,
 } from '@/lib/api/client/research/doc-gen'
 import { updateReport } from '@/lib/api/client/research/rd-project'
-import { cancelDocGenJob, confirmDocGenJob, extractDocGenJob, updateDocGenJob } from '@/actions/research/doc-gen'
+import { createReport as createReportAction } from '@/actions/research/rd-project'
+import { cancelDocGenJob, confirmDocGenJob, extractDocGenJob } from '@/actions/research/doc-gen'
 import {
   DOC_GEN_STATUS_COLORS,
   DOC_GEN_STATUS_LABELS,
@@ -105,7 +104,8 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
   const isEditMode = !!editingReport
 
   const [phase, setPhase] = useState<Phase>('form')
-  const [templates, setTemplates] = useState<DocGenUsableTemplate[]>([])
+  // 模板来源接口已下线，模板列表恒为空（select 保留但无可选项）
+  const [templates] = useState<DocGenUsableTemplate[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [job, setJob] = useState<DocGenJobResponse | null>(null)
   const jobIdRef = useRef<string | null>(null)
@@ -127,7 +127,8 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
   const [prevOpen, setPrevOpen] = useState(open)
   if (open !== prevOpen) {
     setPrevOpen(open)
-    setFormReady(!isEditMode)
+    // 生成模板/任务接口已下线，不再有异步加载，表单直接可见
+    setFormReady(true)
   }
 
   // 提取结果统计（从 extractedSlots 计算）
@@ -285,72 +286,18 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
   const tplPreviewRef = useRef<HTMLDivElement | null>(null)
   const tplPreviewUrlRef = useRef<string | null>(null)
 
-  // ─── 加载模板与限制 ───
+  // ─── 打开弹窗：只回填表单，不请求生成相关接口（AI 生成已下线）───
   useEffect(() => {
-    if (!open) return
-    let cancelled = false
-    ;(async () => {
-      try {
-        const tpl = await fetchUsableDocGenTemplates()
-        if (cancelled) return
-        setTemplates(tpl)
-        // 编辑模式：预填充表单 + 加载关联的 DocGenJob
-        if (editingReport) {
-          form.setFieldsValue({
-            title: editingReport.title,
-            report_type: editingReport.report_type,
-            stage: editingReport.stage || undefined,
-            version: editingReport.version,
-            doc_code: editingReport.doc_code || '',
-            drug_name: editingReport.drug_name || '',
-            summary: editingReport.summary || '',
-          })
-          // 加载该报告关联的 job（取最新一条）
-          const jobs = await fetchDocGenJobsForReport(editingReport.id)
-          if (cancelled) return
-          if (jobs.length > 0) {
-            const latestJob = jobs[0]
-            // 获取完整 job 详情（返回 { job, files, slots, sections }）
-            const jobDetailResp = await fetchDocGenJob(latestJob.id)
-            if (cancelled) return
-            const jobData = jobDetailResp.job
-            setJob(jobData)
-            jobIdRef.current = jobData.id
-            // 预填充 job 中的字段
-            form.setFieldsValue({
-              doc_code: jobData.meta?.doc_code || editingReport.doc_code || '',
-              drug_name: jobData.meta?.drug_name || editingReport.drug_name || '',
-              version: jobData.meta?.doc_version || editingReport.version,
-              supplement: jobData.supplement_text || '',
-              // 使用 deliverable_template_id（UUID）而非 template_code（字符串代码）
-              template_id: (jobData.meta?.deliverable_template_id as string) || undefined,
-            })
-            // 根据 job 状态设置 phase（如果还在进行中，显示进度页）
-            if (!cancelled) {
-              if (jobData.status === 'awaiting_review') {
-                setPhase('review')
-              } else if (isDocGenCompleted(jobData.status)) {
-                setPhase('completed')
-              } else if (!isDocGenTerminal(jobData.status)) {
-                // 进行中状态（pending/processing 等）→ 显示提取进度页
-                setPhase('extracting')
-              } else {
-                // failed/cancelled → 也显示 extracting 阶段（会显示错误/取消状态）
-                setPhase('extracting')
-              }
-            }
-          }
-          // 数据加载完毕，显示表单
-          if (!cancelled) setFormReady(true)
-        }
-      } catch {
-        if (!cancelled) {
-          msgApi.error('加载模板配置失败')
-          setFormReady(true) // 出错也要显示表单
-        }
-      }
-    })()
-    return () => { cancelled = true }
+    if (!open || !editingReport) return
+    form.setFieldsValue({
+      title: editingReport.title,
+      report_type: editingReport.report_type,
+      stage: editingReport.stage || undefined,
+      version: editingReport.version,
+      doc_code: editingReport.doc_code || '',
+      drug_name: editingReport.drug_name || '',
+      summary: editingReport.summary || '',
+    })
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── 轮询任务状态 ───
@@ -523,7 +470,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
     }
   }
 
-  // ─── 保存/创建（新建报告时创建 job + RdReport，编辑报告时更新 job + RdReport） ───
+  // ─── 保存/创建（AI 生成已下线，这里只维护报告记录本身） ───
   const handleSave = async () => {
     if (saving) return
     let values: ReportFormValues
@@ -534,7 +481,6 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
     }
     setSaving(true)
     try {
-      // 编辑模式：先更新 RdReport（包含摘要）
       if (editingReport) {
         await updateReport(editingReport.id, {
           title: values.title,
@@ -543,70 +489,23 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
           version: values.version,
           summary: values.summary?.trim() || null,
         })
-      }
-
-      if (job) {
-        // 编辑模式且有 job：更新 job 信息（包含模板）
-        await updateDocGenJob(job.id, {
-          doc_code: values.doc_code || null,
-          doc_version: values.version || null,
-          drug_name: values.drug_name || null,
-          supplement_text: values.supplement || null,
-          template_code: values.template_id || null,
-        })
         msgApi.success('已保存')
-        onCreated?.() // 刷新列表
-        handleClose() // 关闭弹窗
-      } else if (editingReport) {
-        // 编辑模式但无 job：如果选择了模板则创建 job，否则只保存报告
-        if (values.template_id) {
-          const created = await createDocGenJob({
-            templateId: values.template_id,
-            docCode: values.doc_code || values.title,
-            docVersion: values.version || 'v1.0',
-            drugName: values.drug_name || values.title,
-            supplementText: values.supplement?.trim() || undefined,
-            // 资料统一进项目知识库：不再携带任务级文件
-            files: [],
-            fileRoles: [],
-            projectId,
-            reportId: editingReport.id, // 关联已有报告
-            reportTitle: values.title,
-            reportType: values.report_type,
-            reportStage: values.stage || undefined,
-            reportSummary: values.summary?.trim() || undefined,
-          })
-          setJob(created)
-          jobIdRef.current = created.id
-        }
-        msgApi.success('已保存')
-        onCreated?.() // 刷新列表
-        handleClose() // 关闭弹窗
       } else {
-        // 新建模式：创建 job（后端同步创建 RdReport，使报告列表可见）
-        const created = await createDocGenJob({
-          templateId: values.template_id,
-          docCode: values.doc_code || values.title,
-          docVersion: values.version || 'v1.0',
-          drugName: values.drug_name || values.title,
-          supplementText: values.supplement?.trim() || undefined,
-          // 资料统一进项目知识库：不再携带任务级文件
-          files: [],
-          fileRoles: [],
-          projectId,
-          reportTitle: values.title,
-          reportType: values.report_type,
-          reportStage: values.stage || undefined,
-          reportSummary: values.summary?.trim() || undefined,
+        // 新建模式：只创建报告记录，不再创建生成任务
+        await createReportAction(projectId, {
+          title: values.title,
+          report_type: values.report_type,
+          stage: values.stage || null,
+          status: 'draft',
+          version: values.version || 'v1.0',
+          summary: values.summary?.trim() || null,
         })
-        setJob(created)
-        jobIdRef.current = created.id
         msgApi.success('已创建')
-        onCreated?.()
-        handleClose()
       }
+      onCreated?.() // 刷新列表
+      handleClose() // 关闭弹窗
     } catch (e) {
-      msgApi.error(e instanceof Error ? e.message : (job ? '保存失败' : '创建失败'))
+      msgApi.error(e instanceof Error ? e.message : (editingReport ? '保存失败' : '创建失败'))
     } finally { setSaving(false) }
   }
 
@@ -733,8 +632,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
               key="generate"
               type="primary"
               icon={<ThunderboltOutlined />}
-              onClick={handleCreateAndGenerate}
-              loading={submitting}
+              onClick={() => msgApi.info('AI 生成报告功能已下线')}
             >
               AI 生成报告
             </Button>,
@@ -748,8 +646,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
             key="ai-generate"
             type="primary"
             icon={<ThunderboltOutlined />}
-            onClick={handleCreateAndGenerate}
-            loading={submitting}
+            onClick={() => msgApi.info('AI 生成报告功能已下线')}
           >
             AI 生成报告
           </Button>,

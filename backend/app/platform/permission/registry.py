@@ -115,7 +115,6 @@ RESOURCE_LABELS: dict[str, str] = {
     "ich": "ICH 分析",
     "literature": "文献分析",
     "report": "研发报告",
-    "doc-gen": "研发文档生成",
     "knowledge-base": "研发知识库",
     # ── warehouse（仓储管理）资源 ──
     "raw-material": "原辅料库存",
@@ -517,12 +516,6 @@ RESEARCH_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("research:deliverable-template:read", "查看交付物模板", "research", "deliverable-template", "read"),
     PermissionDef(
         "research:deliverable-template:update", "更新交付物模板", "research", "deliverable-template", "update"
-    ),
-    PermissionDef("research:doc-gen:create", "创建文档生成任务", "research", "doc-gen", "create"),
-    PermissionDef("research:doc-gen:delete", "删除文档生成任务", "research", "doc-gen", "delete"),
-    PermissionDef("research:doc-gen:read", "查看文档生成任务", "research", "doc-gen", "read"),
-    PermissionDef(
-        "research:doc-gen:update", "操作文档生成任务（提取/成文/对话/上传资料）", "research", "doc-gen", "update"
     ),
     PermissionDef("research:experiment-log:create", "创建实验日志", "research", "experiment-log", "create"),
     PermissionDef("research:experiment-log:delete", "删除实验日志", "research", "experiment-log", "delete"),
@@ -1276,7 +1269,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     # create_module_router 注册的是 GET "/" → 实际路径带尾斜杠；中间件在路由重定向前执行，两种写法都要登记
     ApiBindingDef("research:module:read", "GET", "/api/v1/research"),
     ApiBindingDef("research:module:read", "GET", "/api/v1/research/"),
-    ApiBindingDef("research:report:read", "GET", "/api/v1/research/jobs/{job_id}"),
+
     ApiBindingDef(
         "research:deliverable-template:delete", "DELETE", "/api/v1/research/deliverable-templates/{template_id}"
     ),
@@ -1350,7 +1343,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("research:optimization:create", "POST", "/api/v1/research/edbo/generate-scope"),
     ApiBindingDef("research:optimization:create", "POST", "/api/v1/research/edbo/optimize"),
     ApiBindingDef("research:experiment-log:create", "POST", "/api/v1/research/experiment-logs"),
-    ApiBindingDef("research:report:create", "POST", "/api/v1/research/generate-report"),
+
     ApiBindingDef("research:ich:create", "POST", "/api/v1/research/ich/analyze"),
     ApiBindingDef("research:ich:create", "POST", "/api/v1/research/ich/q3c/analyze"),
     ApiBindingDef("research:initiation:create", "POST", "/api/v1/research/initiations"),
@@ -1408,11 +1401,10 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("research:registration-filing:update", "PUT", "/api/v1/research/registration-filings/{filing_id}"),
     ApiBindingDef("research:report:update", "PUT", "/api/v1/research/reports/{report_id}"),
     ApiBindingDef("research:route:update", "PUT", "/api/v1/research/routes/{route_id}"),
-    # ── research 文档生成（doc-gen）与知识库（knowledge-base）──
+    # ── research 交付物模板文件管理与知识库（knowledge-base）──
     # 说明：这批接口当前只声明了登录态（require_user），绑定登记用于满足
     # 中间件 fail-closed 兜底与 CI 完整性门禁；接口级鉴权码已就绪，待逐个
     # 补 require_permission 后即生效。
-    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/builtin-templates"),
     ApiBindingDef(
         "research:deliverable-template:create", "POST", "/api/v1/research/doc-gen/deliverable-templates/batch-upload"
     ),
@@ -1446,37 +1438,6 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "POST",
         "/api/v1/research/doc-gen/deliverable-templates/{template_id}/versions/{version_id}/restore",
     ),
-    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs"),
-    ApiBindingDef("research:doc-gen:create", "POST", "/api/v1/research/doc-gen/jobs"),
-    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}"),
-    ApiBindingDef("research:doc-gen:update", "PATCH", "/api/v1/research/doc-gen/jobs/{job_id}"),
-    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/cancel"),
-    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/confirm"),
-    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}/conversation"),
-    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/conversation/complete"),
-    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/conversation/skip"),
-    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}/document"),
-    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/extract"),
-    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}/extracted-info"),
-    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/files"),
-    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/generate"),
-    ApiBindingDef(
-        "research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}/input-files/{file_id}/download"
-    ),
-    ApiBindingDef(
-        "research:doc-gen:update", "DELETE", "/api/v1/research/doc-gen/jobs/{job_id}/input-files/{file_row_id}"
-    ),
-    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/messages"),
-    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}/outline"),
-    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/regenerate"),
-    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}/report"),
-    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}/slots"),
-    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}/superseded"),
-    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/kb-coverage"),
-    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/limits"),
-    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/reports/{report_id}/jobs"),
-    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/slot-profiles"),
-    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/templates"),
     ApiBindingDef("research:knowledge-base:read", "GET", "/api/v1/research/knowledge-bases"),
     ApiBindingDef("research:knowledge-base:create", "POST", "/api/v1/research/knowledge-bases"),
     ApiBindingDef("research:knowledge-base:read", "GET", "/api/v1/research/knowledge-bases/limits"),

@@ -1,6 +1,6 @@
 """项目知识库的请求/响应模型。
 
-约定与 doc_gen.schemas 一致：结构化响应的模型完整描述 code/message/data 实际返回体，
+约定：结构化响应的模型完整描述 code/message/data 实际返回体，
 不使用 response_model=dict 或通用 ApiResponse。
 """
 

@@ -4,8 +4,8 @@
 大库首次全量（几千切片）放在任务里跑会把生成任务拖到小时级。这里用长运行 worker
 在空闲时持续补齐——任务运行时通常已经是「索引与事实基本就绪」，只需读索引。
 
-与 ``doc_gen/worker.py`` 的分工：那个负责生成任务（有租约、有硬超时、可取消）；
-这个只做知识库富化（无租约，同环境单实例内串行推进，多实例下可能重复但幂等）。
+职责边界：只做知识库富化（无租约，同环境单实例内串行推进，多实例下可能重复但幂等），
+不参与任何文档生成。
 
 四条稳定性约束：
 1. 单轮只推进一个知识库的一小步（可配置上限），长时间占用模型配额的风险可控；
@@ -20,7 +20,7 @@ import asyncio
 import logging
 from typing import Any
 
-from app.modules.research.doc_gen.runtime_config import load_runtime_config, resolve_model
+from app.modules.research.knowledge_base.runtime_config import load_runtime_config, resolve_model
 from app.shared.lifecycle import register_background_worker
 
 logger = logging.getLogger(__name__)
@@ -28,11 +28,8 @@ logger = logging.getLogger(__name__)
 WORKER_NAME = "research.kb_enrich_worker"
 # 单轮镜像切片的硬上限：每轮只推进一小步，多轮累计覆盖全库
 INDEX_CHUNKS_PER_ROUND = 500
-# 有生成任务在跑时的让路额度：模型配额优先给生成，后台只做小步推进（不完全停）
-BUSY_INDEX_LIMIT = 100
-BUSY_EXTRACT_LIMIT = 40
-# 后台并发上限：空闲时用来快速补齐积压（生成任务在跑时走 busy 分支、只开 1 并发让路，
-# 配额优先级不变）。上限受网关承受力约束：实测 8 并发小批事实抽取稳定（8/8 成功）。
+# 后台并发上限：用来快速补齐积压。上限受网关承受力约束：
+# 实测 8 并发小批事实抽取稳定（8/8 成功）。
 MAX_CONCURRENCY = 8
 # 空闲休眠的兜底间隔（配置读取失败时用）
 _FALLBACK_INTERVAL_SECONDS = 30.0
@@ -90,32 +87,8 @@ async def _safe_rollback(session: Any) -> None:
         logger.exception("知识库富化回滚失败")
 
 
-async def _busy_with_generation(session: Any) -> bool:
-    """是否有正在执行的生成任务（租约未过期，与领取闸门同一判定口径）。"""
-    from datetime import UTC, datetime
-
-    from sqlalchemy import func, select
-
-    from app.modules.research.doc_gen.models import DocGenJob
-
-    count = await session.scalar(
-        select(func.count())
-        .select_from(DocGenJob)
-        .where(
-            DocGenJob.is_deleted.is_(False),
-            DocGenJob.lease_expires_at.is_not(None),
-            DocGenJob.lease_expires_at > datetime.now(UTC),
-        )
-    )
-    return bool(count)
-
-
-async def _index_round(session: Any, kb: Any, config: Any, *, busy: bool = False) -> Any:
-    """一轮摸底：镜像远端切片（限额），返回 IndexStats（失败返回空统计）。
-
-    ``busy``（有生成任务在跑）时降到让路额度：摸底是纯远端读取，但也要给生成任务
-    留出网络与写库带宽，任务空闲后再全速推进。
-    """
+async def _index_round(session: Any, kb: Any, config: Any) -> Any:
+    """一轮摸底：镜像远端切片（限额），返回 IndexStats（失败返回空统计）。"""
     from app.modules.research.knowledge_base import facts as facts_mod
     from app.modules.research.knowledge_base.ragflow import RagflowClient
 
@@ -127,8 +100,8 @@ async def _index_round(session: Any, kb: Any, config: Any, *, busy: bool = False
             session,
             kb,
             client=client,
-            max_chunks=BUSY_INDEX_LIMIT if busy else INDEX_CHUNKS_PER_ROUND,
-            concurrency=1 if busy else config.kb_survey_concurrency,
+            max_chunks=INDEX_CHUNKS_PER_ROUND,
+            concurrency=config.kb_survey_concurrency,
         )
         await session.commit()
         return stats
@@ -138,18 +111,12 @@ async def _index_round(session: Any, kb: Any, config: Any, *, busy: bool = False
         return facts_mod.IndexStats()
 
 
-async def _extract_round(session: Any, kb: Any, config: Any, *, busy: bool = False) -> Any:
-    """一轮事实抽取（限额），返回 FactStats（失败返回空统计）。
-
-    ``busy``（有生成任务在跑）时降到让路额度、并发 1：模型配额优先给生成任务，
-    后台只要小步推进、别把 GPU 占满。
-    """
+async def _extract_round(session: Any, kb: Any, config: Any) -> Any:
+    """一轮事实抽取（限额），返回 FactStats（失败返回空统计）。"""
     from app.modules.research.knowledge_base import facts as facts_mod
 
     limit = config.kb_background_enrich_max_chunks
-    if busy:  # 0=不限时也要给让路额度，否则「不限」会变成最大占用
-        limit = BUSY_EXTRACT_LIMIT if limit <= 0 else min(BUSY_EXTRACT_LIMIT, limit)
-    concurrency = 1 if busy else min(MAX_CONCURRENCY, config.fact_extract_concurrency)
+    concurrency = min(MAX_CONCURRENCY, config.fact_extract_concurrency)
     choice = await resolve_model(config.extract_model_name)
     try:
         stats = await facts_mod.extract_facts(
@@ -188,8 +155,6 @@ async def run_once() -> bool:
         kbs = await _active_kbs(session)
         if not kbs:
             return False
-        # 有生成任务在跑时让路：模型配额优先给生成，后台只做小步推进（不完全停）
-        busy = await _busy_with_generation(session)
         start = _cursor % len(kbs)
         order = kbs[start:] + kbs[:start]
 
@@ -198,7 +163,7 @@ async def run_once() -> bool:
             if await _pending_fact_chunks(session, kb.id) <= 0:
                 continue
             _cursor = (start + offset + 1) % len(kbs)
-            stats = await _extract_round(session, kb, config, busy=busy)
+            stats = await _extract_round(session, kb, config)
             # _extract_round 的统计经函数内局部 import 返回，收敛成 bool 便于类型检查与判定
             progressed = bool(stats.chunks_done > 0 or stats.facts_added > 0)
             _stalled_rounds = 0 if progressed else _stalled_rounds + 1
@@ -210,7 +175,6 @@ async def run_once() -> bool:
                     "facts_added": stats.facts_added,
                     "failures": stats.failures,
                     "stalled_rounds": _stalled_rounds,
-                    "yielded": busy,
                     "module_name": "research",
                 },
             )
@@ -220,7 +184,7 @@ async def run_once() -> bool:
         # 发现新文档 / 内容变更的切片后下一轮就会进入事实抽取
         kb = order[0]
         _cursor = (start + 1) % len(kbs)
-        stats = await _index_round(session, kb, config, busy=busy)
+        stats = await _index_round(session, kb, config)
         if stats.chunks_added or stats.chunks_updated or stats.chunks_removed or stats.pending_facts:
             logger.info(
                 "知识库后台摸底发现增量",

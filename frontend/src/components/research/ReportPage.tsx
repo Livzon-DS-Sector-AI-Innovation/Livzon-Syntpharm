@@ -7,7 +7,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, DownloadOutlin
 import { fetchReports } from '@/lib/api/client/research/rd-project'
 import { useDocxPreview } from './useDocxPreview'
 import {
-  fetchDocGenJobsByProject, fetchDocGenDocumentBlob, downloadDocGenDocument,
+  fetchDocGenDocumentBlob, downloadDocGenDocument,
   type DocGenJobResponse,
 } from '@/lib/api/client/research/doc-gen'
 import {
@@ -59,31 +59,10 @@ export function ReportPage({ projectId }: Props) {
 
   /**
    * 各报告最新一次文档生成任务，key = reportId。
-   * 一次请求覆盖整个列表，避免逐报告查询造成 N+1；
-   * 存在进行中任务时每 3 秒轮询，全部到达终态后自动停止。
+   * AI 文档生成能力已下线：状态列/预览/下载的界面保留，但不再请求任务数据，
+   * 因此列表恒显示「未生成」、预览与下载按钮不出现。
    */
-  const { data: docGenMap = {} } = useQuery({
-    queryKey: ['doc-gen-jobs', projectId],
-    queryFn: async () => {
-      try {
-        const jobs = await fetchDocGenJobsByProject(projectId)
-        const map: Record<string, DocGenJobResponse> = {}
-        ;(jobs || []).forEach((job) => {
-          if (job.report_id && !map[job.report_id]) map[job.report_id] = job
-        })
-        return map
-      } catch {
-        // 状态列属于附加信息，取不到时不影响报告列表本身
-        return {}
-      }
-    },
-    enabled: !!projectId,
-    refetchInterval: (query) => {
-      const map = query.state.data
-      if (!map) return false
-      return Object.values(map).some((j) => !isDocGenTerminal(j.status)) ? 3000 : false
-    },
-  })
+  const docGenMap: Record<string, DocGenJobResponse> = {}
 
   // 报告预览弹窗
   const [previewOpen, setPreviewOpen] = useState(false)
