@@ -34,21 +34,33 @@ NOW = datetime.now(UTC)
 
 
 class _FakeResult:
-    def __init__(self, row: object) -> None:
+    def __init__(self, row: object, *, many: bool = False) -> None:
         self._row = row
+        self._many = many
 
     def one(self) -> object:
         return self._row
 
+    def all(self) -> list[object]:
+        return list(self._row) if self._many else []  # type: ignore[call-overload]
+
+
+_EMPTY_FEEDBACK = SimpleNamespace(total=0, open=0, applied=0, ignored=0)
+
 
 class _FakeSession:
-    """只实现 execute().one()，用于把聚合结果喂给 agent_metrics。"""
+    """按调用顺序喂三种聚合结果：任务行 → 意见计数行 → 意见槽位榜。
 
-    def __init__(self, row: object) -> None:
-        self._row = row
+    agent_metrics 现在要跑三次查询，顺序固定：任务聚合、意见按状态计数、
+    意见按槽位分组。第二次/第三次不给就用「窗口内没有意见」兜底。
+    """
+
+    def __init__(self, row: object, feedback: object | None = None, slots: list[object] | None = None) -> None:
+        self._rows: list[object] = [row, feedback or _EMPTY_FEEDBACK, slots or []]
 
     async def execute(self, statement: object) -> _FakeResult:  # noqa: ANN401 - 只透传
-        return _FakeResult(self._row)
+        row = self._rows.pop(0)
+        return _FakeResult(row, many=isinstance(row, list))
 
 
 def _row(**overrides: object) -> SimpleNamespace:
@@ -136,6 +148,36 @@ async def test_metrics_return_none_when_window_is_empty() -> None:
     assert metrics.avg_duration_seconds is None
     assert metrics.gap_rate is None
     assert metrics.fallback_rate is None
+
+
+async def test_metrics_include_feedback_adoption() -> None:
+    feedback = SimpleNamespace(total=7, open=2, applied=3, ignored=2)
+    slots = [
+        SimpleNamespace(slot_key="study_conclusion", slot_count=4),
+        SimpleNamespace(slot_key="results", slot_count=1),
+    ]
+
+    metrics = await service_module.agent_metrics(_FakeSession(_row(), feedback, slots), days=30)  # type: ignore[arg-type]
+
+    assert (metrics.feedback_total, metrics.feedback_open) == (7, 2)
+    assert (metrics.feedback_applied, metrics.feedback_ignored) == (3, 2)
+    # 分母只算「有人处置过」的（applied + ignored）：还挂着的 open 既不算采纳也不算否决
+    assert metrics.feedback_adoption_rate == 0.6
+    assert [(item.slot_key, item.count) for item in metrics.feedback_slot_top] == [
+        ("study_conclusion", 4),
+        ("results", 1),
+    ]
+
+
+async def test_metrics_feedback_rate_none_when_nothing_disposed() -> None:
+    feedback = SimpleNamespace(total=5, open=5, applied=0, ignored=0)
+
+    metrics = await service_module.agent_metrics(_FakeSession(_row(), feedback), days=30)  # type: ignore[arg-type]
+
+    assert metrics.feedback_open == 5
+    # 全都没处置过时采纳率无意义，返回 None 让前端显示「—」
+    assert metrics.feedback_adoption_rate is None
+    assert metrics.feedback_slot_top == []
 
 
 @pytest.mark.parametrize(("days", "expected"), [(500, 90), (0, 1), (30, 30)])

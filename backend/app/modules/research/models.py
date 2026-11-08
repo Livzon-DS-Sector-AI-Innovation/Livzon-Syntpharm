@@ -937,7 +937,7 @@ class RdReportGenExample(BaseModel):
         UniqueConstraint("template_id", "slot_key", name="uq_research_rd_report_gen_examples_slot"),
         Index("ix_research_rd_report_gen_examples_template", "template_id", "is_active"),
         CheckConstraint(
-            "source IN ('manual_edit', 'agent_filled')",
+            "source IN ('manual_edit', 'agent_filled', 'feedback_promoted')",
             name="ck_research_rd_report_gen_examples_source",
         ),
         {"schema": "research"},
@@ -952,7 +952,9 @@ class RdReportGenExample(BaseModel):
     slot_key: Mapped[str] = mapped_column(String(100), comment="槽位稳定标识")
     slot_label: Mapped[str] = mapped_column(String(200), default="", comment="槽位名称")
     source: Mapped[str] = mapped_column(
-        String(20), default="manual_edit", comment="manual_edit=人工修正 / agent_filled=模型填充"
+        String(20),
+        default="manual_edit",
+        comment="manual_edit=人工修正 / agent_filled=模型填充 / feedback_promoted=评审意见沉淀",
     )
     value: Mapped[str] = mapped_column(Text, comment="该槽位的正确写法")
     evidence_text: Mapped[str | None] = mapped_column(Text, nullable=True, comment="当时引用的原文证据")

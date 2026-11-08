@@ -40,7 +40,8 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
 
   const metrics = data ?? null
   const unavailable = metrics === null
-  const empty = !unavailable && metrics.total === 0
+  const empty = !unavailable && metrics.total === 0 && metrics.feedback_total === 0
+  const slotTop = metrics?.feedback_slot_top ?? []
 
   const stats = metrics
     ? [
@@ -58,6 +59,16 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
         { label: '平均耗时', value: formatSeconds(metrics.avg_duration_seconds), hint: '起止时间差，仅已完成' },
         { label: '缺口率', value: formatRate(metrics.gap_rate), hint: '缺口槽位 ÷ 槽位总数' },
         { label: '降级率', value: formatRate(metrics.fallback_rate), hint: '已完成任务里触发兜底的比例' },
+        {
+          label: '意见采纳率',
+          value: formatRate(metrics.feedback_adoption_rate),
+          hint: `已落实 ${metrics.feedback_applied} · 不采纳 ${metrics.feedback_ignored}`,
+        },
+        {
+          label: '待落实意见',
+          value: String(metrics.feedback_open),
+          hint: `窗口内共提 ${metrics.feedback_total} 条`,
+        },
       ]
     : []
 
@@ -104,7 +115,7 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
           type="info"
           showIcon
           message={`近 ${metrics.window_days} 天还没有已结束的任务`}
-          description="跑一次生成后，这里会显示成功率、平均轮次、平均耗时与缺口率。"
+          description="跑一次生成后，这里会显示成功率、平均轮次、平均耗时、缺口率与评审意见的采纳情况。"
         />
       )}
 
@@ -131,6 +142,22 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
             </Col>
           ))}
         </Row>
+      )}
+
+      {!unavailable && slotTop.length > 0 && (
+        <Space size={6} wrap style={{ marginTop: 12 }}>
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+            意见集中槽位
+          </Typography.Text>
+          {slotTop.map((item) => (
+            <Tag key={item.slot_key}>
+              {item.slot_key} × {item.count}
+            </Tag>
+          ))}
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+            同一槽位反复被提，说明该改提示词或补示例，而不是逐篇改
+          </Typography.Text>
+        </Space>
       )}
 
       <Typography.Paragraph type="secondary" style={{ fontSize: 12, margin: '12px 0 0' }}>

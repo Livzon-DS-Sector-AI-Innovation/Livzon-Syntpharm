@@ -23,6 +23,7 @@ from app.modules.research.doc_template import store
 from app.modules.research.models import (
     RdDeliverableTemplate,
     RdReport,
+    RdReportGenExample,
     RdReportGenFeedback,
     RdReportGenJob,
     RdReportGenSlot,
@@ -36,9 +37,11 @@ from app.modules.research.report_gen.feedback import mark_applied as _mark_feedb
 from app.modules.research.report_gen.feedback import merge_supplement as _merge_feedback
 from app.modules.research.report_gen.prompts_version import agent_prompt_version, structure_prompt_version
 from app.modules.research.report_gen.schemas import (
+    ReportGenExamplePromoteData,
     ReportGenFeedbackCreateRequest,
     ReportGenFeedbackData,
     ReportGenFeedbackListData,
+    ReportGenFeedbackSlotStat,
     ReportGenFeedbackUpdateRequest,
     ReportGenJobCreateRequest,
     ReportGenJobData,
@@ -427,6 +430,9 @@ _PROBE_TIMEOUT_SECONDS = 20
 # 统计窗口上限：超过 90 天样本混杂多轮提示词与模型调整，对比意义不大
 _METRICS_MAX_DAYS = 90
 
+# 意见集中在哪些槽位：只给前几个，多了就不是「集中」而是把全部槽位列一遍
+_METRICS_FEEDBACK_SLOTS = 5
+
 
 def _ratio(numerator: int, denominator: int) -> float | None:
     """比率：分母为 0 返回 None，让前端显示占位而不是假的 0%。"""
@@ -480,12 +486,46 @@ async def agent_metrics(session: AsyncSession, days: int = 30) -> ReportGenMetri
     )
     row = (await session.execute(statement)).one()
 
+    # 意见按「提出时间」落窗口：它衡量的是人对成品的判断，不跟任务是否在窗口内开跑绑定
+    feedback_row = (
+        await session.execute(
+            select(
+                func.count().label("total"),
+                func.coalesce(func.sum(case((RdReportGenFeedback.status == "open", 1), else_=0)), 0).label("open"),
+                func.coalesce(func.sum(case((RdReportGenFeedback.status == "applied", 1), else_=0)), 0).label(
+                    "applied"
+                ),
+                func.coalesce(func.sum(case((RdReportGenFeedback.status == "ignored", 1), else_=0)), 0).label(
+                    "ignored"
+                ),
+            ).where(
+                RdReportGenFeedback.is_deleted.is_(False),
+                RdReportGenFeedback.created_at >= since,
+            )
+        )
+    ).one()
+    slot_rows = (
+        await session.execute(
+            select(RdReportGenFeedback.slot_key, func.count().label("slot_count"))
+            .where(
+                RdReportGenFeedback.is_deleted.is_(False),
+                RdReportGenFeedback.created_at >= since,
+                RdReportGenFeedback.slot_key.is_not(None),
+            )
+            .group_by(RdReportGenFeedback.slot_key)
+            .order_by(func.count().desc())
+            .limit(_METRICS_FEEDBACK_SLOTS)
+        )
+    ).all()
+
     total = int(row.total or 0)
     completed = int(row.completed or 0)
     slot_total = int(row.slot_total or 0)
     slot_gap = int(row.slot_gap or 0)
     avg_rounds = row.avg_rounds
     avg_duration = row.avg_duration_seconds
+    feedback_applied = int(feedback_row.applied or 0)
+    feedback_ignored = int(feedback_row.ignored or 0)
 
     return ReportGenMetricsData(
         window_days=window,
@@ -498,6 +538,16 @@ async def agent_metrics(session: AsyncSession, days: int = 30) -> ReportGenMetri
         avg_duration_seconds=None if avg_duration is None else round(float(avg_duration), 1),
         gap_rate=_ratio(slot_gap, slot_total),
         fallback_rate=_ratio(int(row.fallback_completed or 0), completed),
+        feedback_total=int(feedback_row.total or 0),
+        feedback_open=int(feedback_row.open or 0),
+        feedback_applied=feedback_applied,
+        feedback_ignored=feedback_ignored,
+        # 分母只算「有人处置过」的意见：还挂着的 open 既不算采纳也不算否决
+        feedback_adoption_rate=_ratio(feedback_applied, feedback_applied + feedback_ignored),
+        feedback_slot_top=[
+            ReportGenFeedbackSlotStat(slot_key=str(item.slot_key), count=int(item.slot_count or 0))
+            for item in slot_rows
+        ],
         agent_prompt_version=agent_prompt_version(config.agent_prompt),
         structure_prompt_version=structure_prompt_version(config.structure_prompt),
         generated_at=_now(),
@@ -635,6 +685,78 @@ async def update_feedback(
     return _to_feedback_data(row)
 
 
+async def promote_feedback(
+    session: AsyncSession,
+    feedback_id: UUID,
+    user_id: UUID | None,
+) -> ReportGenExamplePromoteData:
+    """把一条已落实的意见沉淀成槽位示例：下次同模板生成照这个写法填。
+
+    只接受「已落实 + 槽位级」的意见：整篇意见没有可对齐的槽位，未落实的意见也还没被
+    Agent 消化过，拿旧值当正确答案只会把原来的错法固化进示例库。
+    """
+    row = await session.get(RdReportGenFeedback, feedback_id)
+    if row is None or row.is_deleted:
+        raise NotFoundException("修改意见不存在")
+    if not row.slot_key:
+        raise BadRequestException("整篇意见没有对应槽位，无法沉淀为示例")
+    if row.status != "applied" or row.applied_job_id is None:
+        raise BadRequestException("该意见还没被生成落实，先重新生成一次再沉淀")
+
+    slot_result = await session.execute(
+        select(RdReportGenSlot).where(
+            RdReportGenSlot.job_id == row.applied_job_id,
+            RdReportGenSlot.slot_key == row.slot_key,
+            RdReportGenSlot.is_deleted.is_(False),
+        )
+    )
+    slot = slot_result.scalars().first()
+    if slot is None:
+        raise BadRequestException("落实该意见的任务里找不到这个槽位")
+    value = (slot.value or "").strip()
+    if not value:
+        raise BadRequestException("该槽位这次没有内容，没有可沉淀的写法")
+
+    job = await session.get(RdReportGenJob, row.applied_job_id)
+    if job is None:
+        raise BadRequestException("落实该意见的任务已不存在")
+
+    template_id = job.deliverable_template_id
+    existing = await session.execute(
+        select(RdReportGenExample.id).where(
+            RdReportGenExample.template_id == template_id,
+            RdReportGenExample.slot_key == row.slot_key,
+            RdReportGenExample.is_deleted.is_(False),
+        )
+    )
+    created = existing.first() is None
+
+    # 意见原文存进 evidence：示例库要回答「为什么这里该这么写」，值本身答不了
+    await record_manual_example(
+        session,
+        template_id=template_id,
+        slot_key=row.slot_key,
+        slot_label=slot.slot_label,
+        value=value,
+        evidence=row.content,
+        source="feedback_promoted",
+    )
+    row.updated_by = user_id
+    await session.commit()
+    logger.info(
+        "report-gen feedback promoted",
+        extra={"feedback_id": str(row.id), "slot_key": row.slot_key, "created": created},
+    )
+    return ReportGenExamplePromoteData(
+        feedback_id=str(row.id),
+        slot_key=row.slot_key,
+        slot_label=slot.slot_label or "",
+        value=value,
+        source="feedback_promoted",
+        created=created,
+    )
+
+
 async def test_model(slot: str) -> ReportGenModelTestData:
     """按档位解析绑定后发一次极短对话，供配置页「测试连通」使用。
 
@@ -710,12 +832,16 @@ __all__ = [
     "agent_metrics",
     "cancel_job",
     "comparison_payload",
+    "create_feedback",
     "create_job",
     "document_payload",
     "get_job",
+    "list_feedback",
     "list_jobs",
     "list_slots",
     "list_steps",
+    "promote_feedback",
     "test_model",
+    "update_feedback",
     "update_slot",
 ]

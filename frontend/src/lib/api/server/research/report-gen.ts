@@ -57,6 +57,11 @@ export async function updateReportGenFeedback(feedbackId: string, status: 'open'
   })
 }
 
+/** 把已落实的意见沉淀成槽位示例：后端取那次生成的实际写法，前端不传值。 */
+export async function promoteReportGenFeedback(feedbackId: string) {
+  return apiFetch(`${getApiBaseUrl()}${API_BASE}/feedback/${feedbackId}/promote`, { method: 'POST' })
+}
+
 /** 配置页首屏指标：服务端取一次，避免面板白屏；失败由页面 try/catch 兜成空态。 */
 export async function fetchReportGenMetricsServer(
   days: number = REPORT_GEN_METRIC_DEFAULT_WINDOW

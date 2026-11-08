@@ -3,7 +3,11 @@
 import { useState } from 'react'
 import { App, Button, Card, Empty, Flex, Input, Select, Space, Tag, Typography } from 'antd'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { createReportGenFeedback, updateReportGenFeedback } from '@/actions/research/report-gen'
+import {
+  createReportGenFeedback,
+  promoteReportGenFeedback,
+  updateReportGenFeedback,
+} from '@/actions/research/report-gen'
 import { fetchReportGenFeedback } from '@/lib/api/client/research/report-gen'
 import type { ReportGenFeedback, ReportGenSlot } from '@/types/research/report-gen'
 
@@ -36,6 +40,7 @@ export function ReportGenFeedbackPanel({ jobId, slots, disabled }: Props) {
   const [scope, setScope] = useState<string>(WHOLE)
   const [submitting, setSubmitting] = useState(false)
   const [updating, setUpdating] = useState('')
+  const [promoting, setPromoting] = useState('')
 
   const { data, isLoading } = useQuery({
     queryKey: ['report-gen-feedback', jobId],
@@ -83,6 +88,18 @@ export function ReportGenFeedbackPanel({ jobId, slots, disabled }: Props) {
     }
   }
 
+  const handlePromote = async (item: ReportGenFeedback) => {
+    setPromoting(item.id)
+    try {
+      await promoteReportGenFeedback(item.id)
+      msgApi.success('已沉淀为示例，下次同模板生成会参考这个写法')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '沉淀失败')
+    } finally {
+      setPromoting('')
+    }
+  }
+
   return (
     <Card
       title="修改意见"
@@ -96,7 +113,7 @@ export function ReportGenFeedbackPanel({ jobId, slots, disabled }: Props) {
       <Flex vertical gap={12}>
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>
           意见写成「哪里不对 + 要改成什么」最有效。未落实的意见会在下次生成（含右上角「重新生成」）时自动带给
-          Agent，并在缺口说明里逐条交代。
+          Agent，并在缺口说明里逐条交代；被落实且认可的槽位级意见可以「沉淀为示例」，下次同模板生成直接照这个写法填。
         </Typography.Text>
 
         <Flex gap={8} wrap>
@@ -155,23 +172,36 @@ export function ReportGenFeedbackPanel({ jobId, slots, disabled }: Props) {
                       </Typography.Text>
                     )}
                   </Space>
-                  {item.status === 'open' ? (
-                    <Button
-                      size="small"
-                      loading={updating === item.id}
-                      onClick={() => handleStatus(item, 'ignored')}
-                    >
-                      不采纳
-                    </Button>
-                  ) : (
-                    <Button
-                      size="small"
-                      loading={updating === item.id}
-                      onClick={() => handleStatus(item, 'open')}
-                    >
-                      重新打开
-                    </Button>
-                  )}
+                  <Space size={6}>
+                    {item.status === 'applied' && item.slot_key && (
+                      <Button
+                        size="small"
+                        type="link"
+                        style={{ paddingInline: 0 }}
+                        loading={promoting === item.id}
+                        onClick={() => handlePromote(item)}
+                      >
+                        沉淀为示例
+                      </Button>
+                    )}
+                    {item.status === 'open' ? (
+                      <Button
+                        size="small"
+                        loading={updating === item.id}
+                        onClick={() => handleStatus(item, 'ignored')}
+                      >
+                        不采纳
+                      </Button>
+                    ) : (
+                      <Button
+                        size="small"
+                        loading={updating === item.id}
+                        onClick={() => handleStatus(item, 'open')}
+                      >
+                        重新打开
+                      </Button>
+                    )}
+                  </Space>
                 </Flex>
                 <div style={{ marginTop: 6, fontSize: 13, color: '#1F2329', whiteSpace: 'pre-wrap' }}>
                   {item.content}

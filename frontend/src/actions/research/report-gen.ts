@@ -6,6 +6,7 @@ import {
   cancelReportGenJob as cancelReportGenJobApi,
   createReportGenFeedback as createReportGenFeedbackApi,
   createReportGenJob as createReportGenJobApi,
+  promoteReportGenFeedback as promoteReportGenFeedbackApi,
   testReportGenModel as testReportGenModelApi,
   updateReportGenFeedback as updateReportGenFeedbackApi,
   updateReportGenSlot as updateReportGenSlotApi,
@@ -52,6 +53,14 @@ export async function createReportGenFeedback(jobId: string, payload: ReportGenF
 /** 处置意见：标不采纳后不再带入下一次生成，重新打开则恢复带入。 */
 export async function updateReportGenFeedback(feedbackId: string, status: 'open' | 'ignored') {
   return updateReportGenFeedbackApi(feedbackId, status)
+}
+
+/**
+ * 把已落实的意见沉淀成槽位示例：值取自那次生成的实际写法，所以只传意见 id。
+ * 落库后同模板的下一次生成会把它当 few-shot 参照，等于把「评审一次」变成「永久学会」。
+ */
+export async function promoteReportGenFeedback(feedbackId: string) {
+  return promoteReportGenFeedbackApi(feedbackId)
 }
 
 /**

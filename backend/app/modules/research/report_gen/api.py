@@ -19,6 +19,7 @@ from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import DataResponse
 from app.modules.research.report_gen import service
 from app.modules.research.report_gen.schemas import (
+    ReportGenExamplePromoteData,
     ReportGenFeedbackCreateRequest,
     ReportGenFeedbackData,
     ReportGenFeedbackListData,
@@ -205,6 +206,22 @@ async def update_report_gen_feedback(
     """标为不采纳后不再带入下一次生成；重新打开则恢复带入。"""
     data = await service.update_feedback(db, feedback_id, payload, current_user.id if current_user else None)
     return DataResponse[ReportGenFeedbackData](data=data, message="已更新")
+
+
+@router.post(
+    "/feedback/{feedback_id}/promote",
+    summary="把已落实的意见沉淀成槽位示例",
+    response_model=DataResponse[ReportGenExamplePromoteData],
+)
+async def promote_report_gen_feedback(
+    feedback_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:report:update")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[ReportGenExamplePromoteData]:
+    """把这次被采纳的写法收进示例库，下次同模板生成直接当 few-shot 参照。"""
+    data = await service.promote_feedback(db, feedback_id, current_user.id if current_user else None)
+    return DataResponse[ReportGenExamplePromoteData](data=data, message="已沉淀为示例")
 
 
 @router.get("/jobs/{job_id}/document", summary="下载生成的 Word 文档")

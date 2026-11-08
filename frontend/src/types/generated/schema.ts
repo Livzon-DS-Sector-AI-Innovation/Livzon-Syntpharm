@@ -11812,6 +11812,26 @@ export interface paths {
         patch: operations["update_report_gen_feedback_api_v1_research_report_gen_feedback__feedback_id__patch"];
         trace?: never;
     };
+    "/api/v1/research/report-gen/feedback/{feedback_id}/promote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 把已落实的意见沉淀成槽位示例
+         * @description 把这次被采纳的写法收进示例库，下次同模板生成直接当 few-shot 参照。
+         */
+        post: operations["promote_report_gen_feedback_api_v1_research_report_gen_feedback__feedback_id__promote_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/research/report-gen/jobs/{job_id}/document": {
         parameters: {
             query?: never;
@@ -27503,6 +27523,21 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["ReferenceStandardResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ReportGenExamplePromoteData] */
+        DataResponse_ReportGenExamplePromoteData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenExamplePromoteData"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[ReportGenFeedbackData] */
@@ -49010,6 +49045,36 @@ export interface components {
             } | null;
         };
         /**
+         * ReportGenExamplePromoteData
+         * @description 把一条已落实意见沉淀成槽位示例的结果：下次同模板生成会把它当 few-shot 参照。
+         */
+        ReportGenExamplePromoteData: {
+            /** Feedback Id */
+            feedback_id: string;
+            /** Slot Key */
+            slot_key: string;
+            /**
+             * Slot Label
+             * @default
+             */
+            slot_label: string;
+            /**
+             * Value
+             * @description 被采纳的槽位写法（来自落实该意见的那次生成）
+             */
+            value: string;
+            /**
+             * Source
+             * @description 示例来源，沉淀路径固定为 feedback_promoted
+             */
+            source: string;
+            /**
+             * Created
+             * @description true=新建示例 / false=覆盖了该槽位原有示例
+             */
+            created: boolean;
+        };
+        /**
          * ReportGenFeedbackCreateRequest
          * @description 提一条评审意见：要么针对整篇，要么针对某个槽位。
          */
@@ -49069,6 +49134,22 @@ export interface components {
             open_count: number;
             /** Items */
             items?: components["schemas"]["ReportGenFeedbackData"][];
+        };
+        /**
+         * ReportGenFeedbackSlotStat
+         * @description 意见集中在哪些槽位：同一槽位反复被提，说明这里需要的不是改一次，而是改提示词或加示例。
+         */
+        ReportGenFeedbackSlotStat: {
+            /**
+             * Slot Key
+             * @description 槽位标识
+             */
+            slot_key: string;
+            /**
+             * Count
+             * @description 窗口内该槽位被提意见的条数
+             */
+            count: number;
         };
         /**
          * ReportGenFeedbackUpdateRequest
@@ -49220,6 +49301,8 @@ export interface components {
          *
          *     比率类字段在样本为 0 时返回 ``None``，前端显示「—」而不是假的 0%，
          *     避免「刚上线没跑过任务」被误读成「成功率 0%」。
+         *     评审意见部分按意见的提出时间落窗口，与任务窗口各算各的：意见是人对成品的判断，
+         *     不依赖任务是否在窗口内开始。
          */
         ReportGenMetricsData: {
             /**
@@ -49273,6 +49356,40 @@ export interface components {
              * @description completed 中触发兜底降级的比例
              */
             fallback_rate?: number | null;
+            /**
+             * Feedback Total
+             * @description 窗口内提出的意见总数
+             * @default 0
+             */
+            feedback_total: number;
+            /**
+             * Feedback Open
+             * @description 其中仍未落实的条数（下次生成会带上）
+             * @default 0
+             */
+            feedback_open: number;
+            /**
+             * Feedback Applied
+             * @description 其中已被后续生成落实的条数
+             * @default 0
+             */
+            feedback_applied: number;
+            /**
+             * Feedback Ignored
+             * @description 其中被判不采纳的条数
+             * @default 0
+             */
+            feedback_ignored: number;
+            /**
+             * Feedback Adoption Rate
+             * @description applied ÷ (applied + ignored)：有人处置过的意见里被采纳的比例
+             */
+            feedback_adoption_rate?: number | null;
+            /**
+             * Feedback Slot Top
+             * @description 被提意见最多的槽位（最多 5 个，整篇意见不计入）
+             */
+            feedback_slot_top?: components["schemas"]["ReportGenFeedbackSlotStat"][];
             /**
              * Agent Prompt Version
              * @description 正文生成提示词指纹（sha256 前 8 位）
@@ -88451,6 +88568,39 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenFeedbackData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    promote_report_gen_feedback_api_v1_research_report_gen_feedback__feedback_id__promote_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                feedback_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenExamplePromoteData_"];
                 };
             };
             /** @description Validation Error */

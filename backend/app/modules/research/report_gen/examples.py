@@ -87,11 +87,15 @@ async def record_manual_example(
     value: str | None,
     evidence: str | None = None,
     query_text: str | None = None,
+    source: str = "manual_edit",
 ) -> bool:
     """人工保存槽位后同步示例库；返回是否发生了变更。
 
     人工把值清空（判定该槽位其实不该有内容）时，示例置为停用而不是删除：
     留着历史值便于追查「为什么以前这么填」，但不再拿它教下一次生成。
+
+    ``source`` 记「这条正确答案是怎么来的」：直接改值记 ``manual_edit``，
+    由评审意见落实后沉淀的记 ``feedback_promoted``，便于日后追查示例库的构成。
     """
     if template_id is None or not slot_key:
         return False
@@ -117,7 +121,7 @@ async def record_manual_example(
                 template_id=template_id,
                 slot_key=slot_key,
                 slot_label=slot_label or "",
-                source="manual_edit",
+                source=source,
                 value=cleaned,
                 evidence_text=(evidence or "").strip() or None,
                 query_text=(query_text or "").strip() or None,
@@ -133,7 +137,7 @@ async def record_manual_example(
     changed = existing.value != cleaned or not existing.is_active
     existing.value = cleaned
     existing.slot_label = slot_label or existing.slot_label
-    existing.source = "manual_edit"
+    existing.source = source
     if new_evidence:
         existing.evidence_text = new_evidence
     existing.is_active = True

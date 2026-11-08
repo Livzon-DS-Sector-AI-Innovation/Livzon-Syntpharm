@@ -122,11 +122,20 @@ class ReportGenModelTestData(BaseModel):
     detail: str | None = Field(None, description="成功提示或失败原因摘要")
 
 
+class ReportGenFeedbackSlotStat(BaseModel):
+    """意见集中在哪些槽位：同一槽位反复被提，说明这里需要的不是改一次，而是改提示词或加示例。"""
+
+    slot_key: str = Field(description="槽位标识")
+    count: int = Field(description="窗口内该槽位被提意见的条数")
+
+
 class ReportGenMetricsData(BaseModel):
     """配置页「Agent 运行情况」：窗口内**已终态**任务的聚合口径。
 
     比率类字段在样本为 0 时返回 ``None``，前端显示「—」而不是假的 0%，
     避免「刚上线没跑过任务」被误读成「成功率 0%」。
+    评审意见部分按意见的提出时间落窗口，与任务窗口各算各的：意见是人对成品的判断，
+    不依赖任务是否在窗口内开始。
     """
 
     window_days: int = Field(description="统计窗口天数")
@@ -139,6 +148,16 @@ class ReportGenMetricsData(BaseModel):
     avg_duration_seconds: float | None = Field(None, description="仅统计 completed 的平均耗时（秒）")
     gap_rate: float | None = Field(None, description="Σslot_gap ÷ Σslot_total（仅 completed）")
     fallback_rate: float | None = Field(None, description="completed 中触发兜底降级的比例")
+    feedback_total: int = Field(0, description="窗口内提出的意见总数")
+    feedback_open: int = Field(0, description="其中仍未落实的条数（下次生成会带上）")
+    feedback_applied: int = Field(0, description="其中已被后续生成落实的条数")
+    feedback_ignored: int = Field(0, description="其中被判不采纳的条数")
+    feedback_adoption_rate: float | None = Field(
+        None, description="applied ÷ (applied + ignored)：有人处置过的意见里被采纳的比例"
+    )
+    feedback_slot_top: list[ReportGenFeedbackSlotStat] = Field(
+        default_factory=list, description="被提意见最多的槽位（最多 5 个，整篇意见不计入）"
+    )
     agent_prompt_version: str = Field(description="正文生成提示词指纹（sha256 前 8 位）")
     structure_prompt_version: str = Field(description="结构识别提示词指纹（sha256 前 8 位）")
     generated_at: datetime = Field(description="本次统计时间，用于判断面板数据新鲜度")
@@ -206,10 +225,23 @@ class ReportGenFeedbackListData(BaseModel):
     items: list[ReportGenFeedbackData] = Field(default_factory=list)
 
 
+class ReportGenExamplePromoteData(BaseModel):
+    """把一条已落实意见沉淀成槽位示例的结果：下次同模板生成会把它当 few-shot 参照。"""
+
+    feedback_id: str
+    slot_key: str
+    slot_label: str = ""
+    value: str = Field(description="被采纳的槽位写法（来自落实该意见的那次生成）")
+    source: str = Field(description="示例来源，沉淀路径固定为 feedback_promoted")
+    created: bool = Field(description="true=新建示例 / false=覆盖了该槽位原有示例")
+
+
 __all__ = [
+    "ReportGenExamplePromoteData",
     "ReportGenFeedbackCreateRequest",
     "ReportGenFeedbackData",
     "ReportGenFeedbackListData",
+    "ReportGenFeedbackSlotStat",
     "ReportGenFeedbackUpdateRequest",
     "ReportGenJobCreateRequest",
     "ReportGenJobData",
