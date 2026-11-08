@@ -44,6 +44,10 @@ def _config(**overrides: object) -> ReportGenConfig:
         "job_timeout_seconds": 2400.0,
         "kb_top_k": 6,
         "max_steps": 400,
+        "agent_prompt": "agent",
+        "structure_prompt": "structure",
+        "examples_enabled": False,
+        "examples_limit": 0,
     }
     base.update(overrides)
     return ReportGenConfig(**base)  # type: ignore[arg-type]

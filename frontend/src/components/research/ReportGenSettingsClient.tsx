@@ -12,6 +12,7 @@ import {
   Card,
   Col,
   Divider,
+  Input,
   InputNumber,
   Row,
   Select,
@@ -46,6 +47,25 @@ const MODEL_KEYS: Record<ReportGenModelSlot, string> = {
 
 const DISABLED_TOOLS_KEY = 'REPORT_GEN_DISABLED_TOOLS'
 const TOOL_MODE_KEY = 'REPORT_GEN_TOOL_MODE'
+const AGENT_PROMPT_KEY = 'REPORT_GEN_AGENT_PROMPT'
+const STRUCTURE_PROMPT_KEY = 'REPORT_GEN_STRUCTURE_PROMPT'
+const EXAMPLES_ENABLED_KEY = 'REPORT_GEN_EXAMPLES_ENABLED'
+
+/** 提示词整段覆盖：留空用后端内置版本，支持 $变量 填空 */
+const PROMPT_FIELDS = [
+  {
+    key: AGENT_PROMPT_KEY,
+    label: '正文生成提示词',
+    variables: '$drug_name / $doc_code / $report_title / $template_name / $slot_total / $max_rounds',
+    hint: '控制 Agent 怎么找资料、怎么填槽位、什么时候标缺口。留空使用内置版本。',
+  },
+  {
+    key: STRUCTURE_PROMPT_KEY,
+    label: '母本结构识别提示词',
+    variables: '$template_name / $deliverable_type / $stage / $candidate_count',
+    hint: '控制从母本里挑哪些位置当槽位。改完对下一次「重新识别结构」生效。',
+  },
+] as const
 
 interface NumericField {
   key: string
@@ -75,6 +95,14 @@ const NUMERIC_FIELDS: NumericField[] = [
     hint: '单次模型请求上限，超时触发兜底档位。',
   },
   { key: 'REPORT_GEN_KB_TOP_K', label: '检索条数', unit: '条', min: 1, max: 30, hint: '每次知识库检索返回的最大片段数。' },
+  {
+    key: 'REPORT_GEN_EXAMPLES_LIMIT',
+    label: '示例注入条数',
+    unit: '条',
+    min: 0,
+    max: 200,
+    hint: '每次生成最多注入多少条「人工改过的槽位写法」；0 等于不注入。',
+  },
 ]
 
 const TOOL_MODE_OPTIONS = [
@@ -106,6 +134,14 @@ function initialNumbers(settings: ModuleSetting[]): Record<string, number> {
   return result
 }
 
+function initialPrompts(settings: ModuleSetting[]): Record<string, string> {
+  const result: Record<string, string> = {}
+  for (const field of PROMPT_FIELDS) {
+    result[field.key] = settings.find((item) => item.key === field.key)?.value ?? ''
+  }
+  return result
+}
+
 export default function ReportGenSettingsClient({ settings, llmConfigs, canManage, initialMetrics }: Props) {
   const router = useRouter()
   const { message } = App.useApp()
@@ -120,24 +156,35 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
   const [disabledTools, setDisabledTools] = useState<string[]>(() =>
     parseDisabledTools(settings.find((item) => item.key === DISABLED_TOOLS_KEY)?.value)
   )
+  const [prompts, setPrompts] = useState<Record<string, string>>(() => initialPrompts(settings))
+  const [examplesEnabled, setExamplesEnabled] = useState(
+    () => (settings.find((item) => item.key === EXAMPLES_ENABLED_KEY)?.value ?? 'true') !== 'false'
+  )
   const [baseline, setBaseline] = useState(() =>
     JSON.stringify({
       models: initialModels(settings),
       numbers: initialNumbers(settings),
       toolMode: settings.find((item) => item.key === TOOL_MODE_KEY)?.value || 'auto',
       disabledTools: parseDisabledTools(settings.find((item) => item.key === DISABLED_TOOLS_KEY)?.value),
+      prompts: initialPrompts(settings),
+      examplesEnabled: (settings.find((item) => item.key === EXAMPLES_ENABLED_KEY)?.value ?? 'true') !== 'false',
     })
   )
   const [saving, setSaving] = useState(false)
   const [testingSlot, setTestingSlot] = useState<ReportGenModelSlot | null>(null)
 
-  const current = JSON.stringify({ models, numbers, toolMode, disabledTools })
+  const current = JSON.stringify({ models, numbers, toolMode, disabledTools, prompts, examplesEnabled })
   const dirty = current !== baseline
   const missingKeys = useMemo(
     () =>
-      [...Object.values(MODEL_KEYS), DISABLED_TOOLS_KEY, TOOL_MODE_KEY, ...NUMERIC_FIELDS.map((f) => f.key)].filter(
-        (key) => !existingKeys.has(key)
-      ),
+      [
+        ...Object.values(MODEL_KEYS),
+        DISABLED_TOOLS_KEY,
+        TOOL_MODE_KEY,
+        EXAMPLES_ENABLED_KEY,
+        ...NUMERIC_FIELDS.map((f) => f.key),
+        ...PROMPT_FIELDS.map((f) => f.key),
+      ].filter((key) => !existingKeys.has(key)),
     [existingKeys]
   )
 
@@ -169,6 +216,16 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
     if (parseDisabledTools(savedDisabled).join(',') !== nextDisabled) {
       changes.push({ key: DISABLED_TOOLS_KEY, value: nextDisabled })
     }
+    for (const field of PROMPT_FIELDS) {
+      const saved = settings.find((item) => item.key === field.key)?.value ?? ''
+      const next = (prompts[field.key] ?? '').trim()
+      // 只比较 trim 后的内容：末尾多一个换行不值得触发一次覆盖保存
+      if (next !== saved.trim()) changes.push({ key: field.key, value: next })
+    }
+    const savedExamples = (settings.find((item) => item.key === EXAMPLES_ENABLED_KEY)?.value ?? 'true') !== 'false'
+    if (examplesEnabled !== savedExamples) {
+      changes.push({ key: EXAMPLES_ENABLED_KEY, value: examplesEnabled ? 'true' : 'false' })
+    }
     return changes
   }
 
@@ -177,6 +234,8 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
     setNumbers(initialNumbers(settings))
     setToolMode(settings.find((item) => item.key === TOOL_MODE_KEY)?.value || 'auto')
     setDisabledTools(parseDisabledTools(settings.find((item) => item.key === DISABLED_TOOLS_KEY)?.value))
+    setPrompts(initialPrompts(settings))
+    setExamplesEnabled((settings.find((item) => item.key === EXAMPLES_ENABLED_KEY)?.value ?? 'true') !== 'false')
   }
 
   async function handleSave() {
@@ -363,6 +422,47 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
       </Card>
 
       <ReportGenAgentPanel initialMetrics={initialMetrics} />
+
+      <Card
+        size="small"
+        title="提示词（高级）"
+        extra={<Typography.Text type="secondary">留空即使用内置版本；改完对新任务生效</Typography.Text>}
+      >
+        <Row gutter={[16, 12]}>
+          {PROMPT_FIELDS.map((field) => (
+            <Col xs={24} key={field.key}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <Typography.Text>{field.label}</Typography.Text>
+                <Input.TextArea
+                  value={prompts[field.key] ?? ''}
+                  disabled={!canManage}
+                  autoSize={{ minRows: 3, maxRows: 12 }}
+                  placeholder={`留空使用内置提示词。可用变量：${field.variables}`}
+                  onChange={(event) => setPrompts((prev) => ({ ...prev, [field.key]: event.target.value }))}
+                />
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  {field.hint}
+                </Typography.Text>
+              </div>
+            </Col>
+          ))}
+          <Col xs={24} md={12}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <Space size={8}>
+                <Switch
+                  checked={examplesEnabled}
+                  disabled={!canManage}
+                  onChange={(checked) => setExamplesEnabled(checked)}
+                />
+                <Typography.Text>注入人工修正示例</Typography.Text>
+              </Space>
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                打开后，人工在任务详情里改过的槽位写法会作为参考下发给模型；条数上限见上方「示例注入条数」。
+              </Typography.Text>
+            </div>
+          </Col>
+        </Row>
+      </Card>
 
       <Card
         size="small"

@@ -42,6 +42,24 @@ _Avoid_: CurrentUser, 必选用户
 允许未登录访问的接口所使用的依赖注入参数；仍会解析 JWT/cookie，端点可据其做条件逻辑。
 _Avoid_: 可选用户, 匿名用户
 
+### 报告生成 (Report Generation)
+
+**槽位** (Slot):
+交付物母本里「需要填写内容」的位置描述（`slot_key`、`label`、锚点、`is_enabled` 等），存于模板的 `template_structure` 缓存。停用的槽位既不下发给模型，也不写入生成结果。
+_Avoid_: 字段, 占位符
+
+**示例库** (Slot Example):
+人工在任务详情页修正过的槽位值，沉淀为下次同模板生成的 few-shot 参照；以 `(template_id, slot_key)` 唯一，重复修正覆盖，人工清空即停用而不删除。示例只是措辞参考，不作为引用证据。
+_Avoid_: few-shot 库, 训练集, 语料
+
+**解析留痕** (Structure Run):
+每次母本结构识别的记录，保存解析当时选中的槽位标识。「后补」（漏选）与「否掉」（多选）是这批标识与当前启用结构的集合差，跨多次人工编辑会混在一起，只作趋势看。
+_Avoid_: 识别日志, 解析快照
+
+**提示词覆盖与指纹** (Prompt Override / Fingerprint):
+正文生成与母本识别各有一段 system prompt，库内 `REPORT_GEN_AGENT_PROMPT` / `REPORT_GEN_STRUCTURE_PROMPT` 可整段覆盖，留空则用 `report_gen/prompts.py` 的内置版本；变量用 `$name` 渲染。指纹是「生效文本 + 工具清单」的 sha256 前 8 位，用于判断提示词是否变过，不是版本号。
+_Avoid_: 提示词版本, prompt 模板（当指可覆盖的生效文本时）
+
 ### 设备台账 (Equipment Ledger)
 
 **增量更新策略** (Incremental Update Strategy):
@@ -63,3 +81,5 @@ _Avoid_: 设备编号（与 `asset_no` 混淆）
 - **Backend → Frontend**: 后端导出 OpenAPI 规范；前端据此生成 `Generated Types`。契约变更先于前端消费。
 - **Module → Module**: 模块之间只经 `Public API` 协作；`API Response Envelope` 是所有模块对外的统一响应形状。
 - **导入策略 → ADR**：设备导入的匹配与更新决策记录在 `backend/docs/adr/001-equipment-import-v3.md` 与 `backend/docs/adr/002-equipment-import-v4-incremental-update.md`；Excel 部门名称映射的真实来源是 `backend/app/modules/equipment/config/dept_mapping.py`。
+- **人工修正 → 示例库 → 下次生成**：人在详情页改槽位值即写 `Slot Example`；下次生成通过 `read_template_outline` 的 `manual_example` 下发，只影响措辞、不构成证据。
+- **解析留痕 → 槽位结构**：`Structure Run` 记录解析当时的槽位集合，与当前 `Slot` 的启用状态做差得出「后补/否掉」，用于判断识别提示词是否该调。

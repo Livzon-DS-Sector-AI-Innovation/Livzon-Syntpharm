@@ -9,6 +9,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.modules.research.report_gen.model_binding import ModelBinding, resolve_bindings
+from app.modules.research.report_gen.prompts import (
+    AGENT_SYSTEM_PROMPT,
+    STRUCTURE_SYSTEM_PROMPT,
+    resolve_prompt,
+)
 from app.shared.config_reader import (
     get_module_setting,
     get_module_setting_float,
@@ -36,6 +41,11 @@ class ReportGenConfig:
     job_timeout_seconds: float
     kb_top_k: int
     max_steps: int
+    # 提示词：库里配了就用库里的，留空用内置；变量渲染在任务内完成（要带品种/编码等）
+    agent_prompt: str
+    structure_prompt: str
+    examples_enabled: bool
+    examples_limit: int
 
 
 async def load_config() -> ReportGenConfig:
@@ -70,6 +80,17 @@ async def load_config() -> ReportGenConfig:
         job_timeout_seconds=await get_module_setting_float(MODULE, "REPORT_GEN_JOB_TIMEOUT_SECONDS", 2400.0),
         kb_top_k=await get_module_setting_int(MODULE, "REPORT_GEN_KB_TOP_K", 6),
         max_steps=await get_module_setting_int(MODULE, "REPORT_GEN_MAX_STEPS", 400),
+        agent_prompt=resolve_prompt(
+            await get_module_setting(MODULE, "REPORT_GEN_AGENT_PROMPT", ""),
+            AGENT_SYSTEM_PROMPT,
+        ),
+        structure_prompt=resolve_prompt(
+            await get_module_setting(MODULE, "REPORT_GEN_STRUCTURE_PROMPT", ""),
+            STRUCTURE_SYSTEM_PROMPT,
+        ),
+        examples_enabled=(await get_module_setting(MODULE, "REPORT_GEN_EXAMPLES_ENABLED", "true")).strip().lower()
+        not in ("false", "0", "off", "no"),
+        examples_limit=max(0, await get_module_setting_int(MODULE, "REPORT_GEN_EXAMPLES_LIMIT", 40)),
     )
 
 

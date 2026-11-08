@@ -109,6 +109,9 @@ export type ReportGenModelTest = components['schemas']['ReportGenModelTestData']
 export type ReportGenModelTestRequest = components['schemas']['ReportGenModelTestRequest']
 
 export type ReportGenMetrics = components['schemas']['ReportGenMetricsData']
+export type ReportGenStructureRun = components['schemas']['ReportGenStructureRunData']
+export type ReportGenStructureRunList = components['schemas']['ReportGenStructureRunListData']
+export type ReportGenStructureDiff = components['schemas']['ReportGenStructureDiff']
 
 /** 指标时间窗；顺序即 Segmented 顺序。 */
 export const REPORT_GEN_METRIC_WINDOWS = [7, 30, 90] as const

@@ -18,7 +18,7 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from app.core.database import get_db
-from app.modules.research.report_gen import agent as agent_module
+from app.modules.research.report_gen import prompts as prompts_module
 from app.modules.research.report_gen import service as service_module
 from app.modules.research.report_gen.api import router as report_gen_router
 from app.modules.research.report_gen.prompts_version import (
@@ -65,6 +65,19 @@ def _row(**overrides: object) -> SimpleNamespace:
     }
     payload.update(overrides)
     return SimpleNamespace(**payload)
+
+
+@pytest.fixture(autouse=True)
+def _stub_runtime_config(monkeypatch: pytest.MonkeyPatch) -> None:
+    """指标要算「当前生效提示词」的指纹，会把 load_config() 拉进来；这里给个固定配置。"""
+
+    async def _load_config() -> SimpleNamespace:
+        return SimpleNamespace(
+            agent_prompt=prompts_module.AGENT_SYSTEM_PROMPT,
+            structure_prompt=prompts_module.STRUCTURE_SYSTEM_PROMPT,
+        )
+
+    monkeypatch.setattr(service_module, "load_config", _load_config)
 
 
 @pytest.fixture
@@ -144,12 +157,8 @@ def test_prompt_version_is_stable_and_sensitive() -> None:
     assert first.startswith("prm-") and len(first) == len("prm-") + 8
     assert structure_prompt_version() == structure_prompt_version()
 
-    original = agent_module._SYSTEM_PROMPT
-    try:
-        agent_module._SYSTEM_PROMPT = original + "改动"
-        assert agent_prompt_version() != first
-    finally:
-        agent_module._SYSTEM_PROMPT = original
+    # P2 之后指纹按「实际生效文本」算：库里覆盖过的段落一改就换指纹
+    assert agent_prompt_version(prompts_module.AGENT_SYSTEM_PROMPT + "改动") != first
     assert agent_prompt_version() == first
 
 

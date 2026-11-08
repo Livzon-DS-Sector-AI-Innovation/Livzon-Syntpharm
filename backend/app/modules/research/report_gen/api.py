@@ -29,6 +29,7 @@ from app.modules.research.report_gen.schemas import (
     ReportGenSlotListData,
     ReportGenSlotUpdateRequest,
     ReportGenStepListData,
+    ReportGenStructureRunListData,
 )
 
 logger = logging.getLogger(__name__)
@@ -203,6 +204,23 @@ async def get_report_gen_metrics(
     """配置页「Agent 运行情况」：只读聚合，返回成功率/平均轮次/平均耗时/缺口率与提示词指纹。"""
     data = await service.agent_metrics(db, days)
     return DataResponse[ReportGenMetricsData](data=data)
+
+
+@router.get(
+    "/templates/{template_id}/structure-runs",
+    summary="母本解析留痕与漏选/多选统计",
+    response_model=DataResponse[ReportGenStructureRunListData],
+)
+async def list_report_gen_structure_runs(
+    template_id: UUID,
+    current_user: RequiredUser,
+    limit: int = Query(10, ge=1, le=50, description="最近 N 次解析"),
+    ctx: PermissionContext = Depends(require_permission("research:report:read")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[ReportGenStructureRunListData]:
+    """看每次解析选了多少槽位、以及人工随后后补/否掉了多少（只读）。"""
+    data = await service.list_structure_runs(db, template_id, limit)
+    return DataResponse[ReportGenStructureRunListData](data=data)
 
 
 def _attachment(data: bytes, filename: str, mime: str) -> Response:

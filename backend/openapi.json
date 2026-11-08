@@ -58218,6 +58218,81 @@
         }
       }
     },
+    "/api/v1/research/report-gen/templates/{template_id}/structure-runs": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u6bcd\u672c\u89e3\u6790\u7559\u75d5\u4e0e\u6f0f\u9009/\u591a\u9009\u7edf\u8ba1",
+        "description": "\u770b\u6bcf\u6b21\u89e3\u6790\u9009\u4e86\u591a\u5c11\u69fd\u4f4d\u3001\u4ee5\u53ca\u4eba\u5de5\u968f\u540e\u540e\u8865/\u5426\u6389\u4e86\u591a\u5c11\uff08\u53ea\u8bfb\uff09\u3002",
+        "operationId": "list_report_gen_structure_runs_api_v1_research_report_gen_templates__template_id__structure_runs_get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "description": "\u6700\u8fd1 N \u6b21\u89e3\u6790",
+              "default": 10,
+              "title": "Limit"
+            },
+            "description": "\u6700\u8fd1 N \u6b21\u89e3\u6790"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ReportGenStructureRunListData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/registration/": {
       "get": {
         "tags": [
@@ -112554,6 +112629,42 @@
         "type": "object",
         "title": "DataResponse[ReportGenStepListData]"
       },
+      "DataResponse_ReportGenStructureRunListData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportGenStructureRunListData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ReportGenStructureRunListData]"
+      },
       "DataResponse_ResearchProjectResponse_": {
         "properties": {
           "code": {
@@ -164407,6 +164518,174 @@
           "items"
         ],
         "title": "ReportGenStepListData"
+      },
+      "ReportGenStructureDiff": {
+        "properties": {
+          "ai_slot_count": {
+            "type": "integer",
+            "title": "Ai Slot Count",
+            "description": "\u89e3\u6790\u5f53\u65f6\u6a21\u578b\u9009\u51fa\u7684\u69fd\u4f4d\u6570"
+          },
+          "current_slot_count": {
+            "type": "integer",
+            "title": "Current Slot Count",
+            "description": "\u5f53\u524d\u7ed3\u6784\u91cc\u7684\u69fd\u4f4d\u603b\u6570\uff08\u542b\u5df2\u505c\u7528\uff09"
+          },
+          "kept_count": {
+            "type": "integer",
+            "title": "Kept Count",
+            "description": "AI \u9009\u4e2d\u4e14\u5f53\u524d\u4ecd\u542f\u7528\u7684\u69fd\u4f4d\u6570"
+          },
+          "missing_count": {
+            "type": "integer",
+            "title": "Missing Count",
+            "description": "\u6f0f\u9009\u6570\uff1a\u5f53\u524d\u542f\u7528\u4f46 AI \u5f53\u65f6\u6ca1\u9009\uff08\u4eba\u5de5\u540e\u8865\uff09"
+          },
+          "extra_count": {
+            "type": "integer",
+            "title": "Extra Count",
+            "description": "\u591a\u9009\u6570\uff1aAI \u5f53\u65f6\u9009\u4e86\u4f46\u73b0\u5728\u88ab\u505c\u7528\u6216\u5220\u9664"
+          },
+          "missing_keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Keys",
+            "description": "\u6f0f\u9009\u69fd\u4f4d\u6807\u8bc6\uff08\u6700\u591a 10 \u4e2a\uff09"
+          },
+          "extra_keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Extra Keys",
+            "description": "\u591a\u9009\u69fd\u4f4d\u6807\u8bc6\uff08\u6700\u591a 10 \u4e2a\uff09"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ai_slot_count",
+          "current_slot_count",
+          "kept_count",
+          "missing_count",
+          "extra_count"
+        ],
+        "title": "ReportGenStructureDiff",
+        "description": "\u89e3\u6790\u7ed3\u679c\u4e0e\u5f53\u524d\u7ed3\u6784\u7684\u5dee\u5f02\uff1a\u6f0f\u9009=\u4eba\u5de5\u540e\u8865\uff0c\u591a\u9009=\u4eba\u5de5\u5426\u6389\u3002"
+      },
+      "ReportGenStructureRunData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "source_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Key",
+            "description": "\u89e3\u6790\u65f6\u7684\u6bcd\u672c\u5b58\u50a8\u952e\uff0c\u6362\u7248\u5373\u53d8"
+          },
+          "prompt_version": {
+            "type": "string",
+            "title": "Prompt Version",
+            "description": "\u89e3\u6790\u6240\u7528\u63d0\u793a\u8bcd\u6307\u7eb9"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name",
+            "description": "\u89e3\u6790\u6240\u7528\u6a21\u578b"
+          },
+          "candidate_count": {
+            "type": "integer",
+            "title": "Candidate Count",
+            "description": "\u9001\u6a21\u578b\u7684\u5019\u9009\u4f4d\u7f6e\u6570"
+          },
+          "slot_count": {
+            "type": "integer",
+            "title": "Slot Count",
+            "description": "\u6a21\u578b\u5224\u5b9a\u51fa\u7684\u69fd\u4f4d\u6570"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "title": "Duration Ms",
+            "description": "\u89e3\u6790\u8017\u65f6\uff08\u6beb\u79d2\uff09"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "ok / failed"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error",
+            "description": "\u5931\u8d25\u539f\u56e0"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "\u89e3\u6790\u65f6\u95f4"
+          },
+          "diff": {
+            "$ref": "#/components/schemas/ReportGenStructureDiff",
+            "description": "\u4e0e\u5f53\u524d\u7ed3\u6784\u7684\u5dee\u5f02"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "prompt_version",
+          "candidate_count",
+          "slot_count",
+          "duration_ms",
+          "status",
+          "created_at",
+          "diff"
+        ],
+        "title": "ReportGenStructureRunData",
+        "description": "\u4e00\u6b21\u6bcd\u672c\u7ed3\u6784\u89e3\u6790\u7684\u7559\u75d5\u3002"
+      },
+      "ReportGenStructureRunListData": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportGenStructureRunData"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "items"
+        ],
+        "title": "ReportGenStructureRunListData"
       },
       "ReportItemData": {
         "properties": {

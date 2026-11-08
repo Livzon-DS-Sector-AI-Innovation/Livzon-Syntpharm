@@ -29,6 +29,22 @@ DEFAULT_SETTINGS = [
     ("research", "REPORT_GEN_JOB_TIMEOUT_SECONDS", "2400", "int", "整个生成任务超时（秒）"),
     ("research", "REPORT_GEN_KB_TOP_K", "6", "int", "知识库检索默认返回条数"),
     ("research", "REPORT_GEN_MAX_STEPS", "400", "int", "执行过程步骤数上限（超限只记状态行）"),
+    (
+        "research",
+        "REPORT_GEN_AGENT_PROMPT",
+        "",
+        "string",
+        "正文生成 system prompt 整段覆盖；留空用内置。变量见 report_gen/prompts.py",
+    ),
+    (
+        "research",
+        "REPORT_GEN_STRUCTURE_PROMPT",
+        "",
+        "string",
+        "母本结构识别 system prompt 整段覆盖；留空用内置。变量见 report_gen/prompts.py",
+    ),
+    ("research", "REPORT_GEN_EXAMPLES_ENABLED", "true", "bool", "是否把人工修正过的槽位当 few-shot 示例注入生成"),
+    ("research", "REPORT_GEN_EXAMPLES_LIMIT", "40", "int", "单次任务注入示例条数上限（按最近修正优先）"),
     # Research module — 知识库后台富化（切片摸底 / 事实抽取）
     ("research", "DOC_GEN_LLM_CALL_TIMEOUT_SECONDS", "180", "int", "单次模型调用硬超时（秒），超时按降级处理"),
     (

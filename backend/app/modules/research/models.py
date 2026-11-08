@@ -924,6 +924,72 @@ class RdReportGenSlot(BaseModel):
     owner_hint: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="缺口责任方提示")
 
 
+class RdReportGenExample(BaseModel):
+    """槽位填写示例：把人工修正沉淀成下次生成的 few-shot 参照。
+
+    为什么以 (template_id, slot_key) 为唯一键：同一模板的同一槽位只保留最新一条人工
+    答案，重复修正直接覆盖。示例库一旦攒出多条互相矛盾的答案，注入时模型只会更乱。
+    ``template_id`` 为空表示跨模板通用示例（按交付物类型共享），当前留作扩展位。
+    """
+
+    __tablename__ = "rd_report_gen_examples"
+    __table_args__ = (
+        UniqueConstraint("template_id", "slot_key", name="uq_research_rd_report_gen_examples_slot"),
+        Index("ix_research_rd_report_gen_examples_template", "template_id", "is_active"),
+        CheckConstraint(
+            "source IN ('manual_edit', 'agent_filled')",
+            name="ck_research_rd_report_gen_examples_source",
+        ),
+        {"schema": "research"},
+    )
+
+    template_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_deliverable_templates.id"),
+        nullable=True,
+        comment="所属交付物模板；空=跨模板通用",
+    )
+    slot_key: Mapped[str] = mapped_column(String(100), comment="槽位稳定标识")
+    slot_label: Mapped[str] = mapped_column(String(200), default="", comment="槽位名称")
+    source: Mapped[str] = mapped_column(
+        String(20), default="manual_edit", comment="manual_edit=人工修正 / agent_filled=模型填充"
+    )
+    value: Mapped[str] = mapped_column(Text, comment="该槽位的正确写法")
+    evidence_text: Mapped[str | None] = mapped_column(Text, nullable=True, comment="当时引用的原文证据")
+    query_text: Mapped[str | None] = mapped_column(Text, nullable=True, comment="当时用的检索词（给模型参考）")
+    usage_count: Mapped[int] = mapped_column(Integer, default=0, comment="被注入到生成任务的次数")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否参与注入")
+
+
+class RdReportGenStructureRun(BaseModel):
+    """母本结构解析留痕：每次真实解析一条，用来回答「这次解析漏选/多选了多少」。
+
+    为什么存 ``slot_keys`` 而不是只存数量：后补/误选只有在与「解析当时选了什么」逐条
+    比对时才算得准；只存计数的话，人工改了两轮就再也分不清谁改的。
+    """
+
+    __tablename__ = "rd_report_gen_structure_runs"
+    __table_args__ = (
+        Index("ix_research_rd_report_gen_structure_runs_template", "template_id", "created_at"),
+        {"schema": "research"},
+    )
+
+    template_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_deliverable_templates.id"),
+        comment="所属交付物模板",
+    )
+    source_key: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="母本存储键（换版即变）")
+    prompt_version: Mapped[str] = mapped_column(String(20), comment="解析所用提示词指纹")
+    model_name: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="解析所用模型档位")
+    candidate_count: Mapped[int] = mapped_column(Integer, default=0, comment="送模型的候选位置数")
+    slot_count: Mapped[int] = mapped_column(Integer, default=0, comment="模型判定出的槽位数")
+    slot_keys: Mapped[list[str] | None] = mapped_column(JSON, nullable=True, comment="模型判定出的槽位标识（有序）")
+    duration_ms: Mapped[int] = mapped_column(Integer, default=0, comment="解析耗时毫秒")
+    status: Mapped[str] = mapped_column(String(12), default="ok", comment="ok/failed")
+    error: Mapped[str | None] = mapped_column(Text, nullable=True, comment="失败原因（截断）")
+
+
 # 子包 ORM 注册：Alembic 只 import app.modules.<code>.models，
 # 放在文件末尾避免子包反向引用时出现部分初始化
 from app.modules.research.knowledge_base import models as _kb_models  # noqa: E402,F401

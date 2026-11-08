@@ -152,8 +152,9 @@ def test_generation_prompt_only_counts_enabled_slots() -> None:
     project = SimpleNamespace(name="示例项目", api_name="示例 API")
     report = SimpleNamespace(title="示例报告", report_type="阶段性报告", stage="临床前", version="v1")
 
-    messages = _build_messages(job, project, report, enabled_structure)
+    messages = _build_messages(job, project, report, enabled_structure, "系统提示词")
 
+    assert messages[0]["content"] == "系统提示词"
     assert "槽位数量：1" in messages[1]["content"]
 
 

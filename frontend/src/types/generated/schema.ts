@@ -11845,6 +11845,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/research/report-gen/templates/{template_id}/structure-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 母本解析留痕与漏选/多选统计
+         * @description 看每次解析选了多少槽位、以及人工随后后补/否掉了多少（只读）。
+         */
+        get: operations["list_report_gen_structure_runs_api_v1_research_report_gen_templates__template_id__structure_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/registration/": {
         parameters: {
             query?: never;
@@ -27547,6 +27567,21 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["ReportGenStepListData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ReportGenStructureRunListData] */
+        DataResponse_ReportGenStructureRunListData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenStructureRunListData"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[ResearchProjectResponse] */
@@ -49247,6 +49282,110 @@ export interface components {
              * @default 0
              */
             last_seq: number;
+        };
+        /**
+         * ReportGenStructureDiff
+         * @description 解析结果与当前结构的差异：漏选=人工后补，多选=人工否掉。
+         */
+        ReportGenStructureDiff: {
+            /**
+             * Ai Slot Count
+             * @description 解析当时模型选出的槽位数
+             */
+            ai_slot_count: number;
+            /**
+             * Current Slot Count
+             * @description 当前结构里的槽位总数（含已停用）
+             */
+            current_slot_count: number;
+            /**
+             * Kept Count
+             * @description AI 选中且当前仍启用的槽位数
+             */
+            kept_count: number;
+            /**
+             * Missing Count
+             * @description 漏选数：当前启用但 AI 当时没选（人工后补）
+             */
+            missing_count: number;
+            /**
+             * Extra Count
+             * @description 多选数：AI 当时选了但现在被停用或删除
+             */
+            extra_count: number;
+            /**
+             * Missing Keys
+             * @description 漏选槽位标识（最多 10 个）
+             */
+            missing_keys?: string[];
+            /**
+             * Extra Keys
+             * @description 多选槽位标识（最多 10 个）
+             */
+            extra_keys?: string[];
+        };
+        /**
+         * ReportGenStructureRunData
+         * @description 一次母本结构解析的留痕。
+         */
+        ReportGenStructureRunData: {
+            /** Id */
+            id: string;
+            /**
+             * Source Key
+             * @description 解析时的母本存储键，换版即变
+             */
+            source_key?: string | null;
+            /**
+             * Prompt Version
+             * @description 解析所用提示词指纹
+             */
+            prompt_version: string;
+            /**
+             * Model Name
+             * @description 解析所用模型
+             */
+            model_name?: string | null;
+            /**
+             * Candidate Count
+             * @description 送模型的候选位置数
+             */
+            candidate_count: number;
+            /**
+             * Slot Count
+             * @description 模型判定出的槽位数
+             */
+            slot_count: number;
+            /**
+             * Duration Ms
+             * @description 解析耗时（毫秒）
+             */
+            duration_ms: number;
+            /**
+             * Status
+             * @description ok / failed
+             */
+            status: string;
+            /**
+             * Error
+             * @description 失败原因
+             */
+            error?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             * @description 解析时间
+             */
+            created_at: string;
+            /** @description 与当前结构的差异 */
+            diff: components["schemas"]["ReportGenStructureDiff"];
+        };
+        /** ReportGenStructureRunListData */
+        ReportGenStructureRunListData: {
+            /** Total */
+            total: number;
+            /** Items */
+            items: components["schemas"]["ReportGenStructureRunData"][];
         };
         /**
          * ReportItemData
@@ -88196,6 +88335,42 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenMetricsData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_report_gen_structure_runs_api_v1_research_report_gen_templates__template_id__structure_runs_get: {
+        parameters: {
+            query?: {
+                /** @description 最近 N 次解析 */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenStructureRunListData_"];
                 };
             };
             /** @description Validation Error */

@@ -12,6 +12,7 @@ import hashlib
 import json
 import logging
 import re
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from io import BytesIO
@@ -24,6 +25,9 @@ from app.core.exceptions import BadRequestException
 from app.core.llm import llm_client
 from app.modules.research.doc_template import store
 from app.modules.research.report_gen.config import ReportGenConfig
+from app.modules.research.report_gen.prompts import STRUCTURE_SYSTEM_PROMPT, render_prompt
+from app.modules.research.report_gen.prompts_version import structure_prompt_version
+from app.modules.research.report_gen.structure_runs import record_structure_run
 
 logger = logging.getLogger(__name__)
 
@@ -41,25 +45,7 @@ _MAX_PARAGRAPH_TEXT = 80
 _MAX_CELL_TEXT = 200
 _VALUE_TYPES = ("text", "long_text", "number", "date", "list")
 
-_SYSTEM_PROMPT = """你是医药研发报告模板的结构分析专家。
-用户会给出 Word 母本里所有「可填写位置」的清单（段落与表格单元格），
-你的任务是判断：这份模板里哪些位置是**需要填写内容**的槽位。
-
-判定原则：
-1. 只挑真正需要写入业务信息的位置：品种名称、批号、日期、结论、数据、责任部门等。
-2. 表格里「字段名右侧/下方的空格」通常就是要填的槽位；表头、章节标题、说明文字、
-   已写死的编号不选。
-3. 相邻空位属于同一行的，按「字段名」理解：填的是字段值。
-4. 同一信息在正文与表格重复出现时，各自都算槽位（填同一个值）。
-5. 宁可少选，也不要选到正文叙述段落。
-
-只返回 JSON，不要任何解释，格式：
-{"slots":[{"candidate_id":"t0r1c1p0","slot_key":"drug_name","label":"品种名称",
-"value_type":"text","owner_hint":"注册部","hint":"填写品种通用名"}]}
-- candidate_id 必须来自清单里的 id；
-- slot_key 用英文 snake_case，在同一模板内唯一且语义稳定；
-- value_type 取 text/long_text/number/date/list；
-- owner_hint 为资料缺失时应找的部门（如 注册部/质量部/生产部/市场部）。"""
+_SYSTEM_PROMPT = STRUCTURE_SYSTEM_PROMPT  # 提示词本体与覆盖逻辑在 prompts.py
 
 
 @dataclass(slots=True)
@@ -508,9 +494,18 @@ async def _analyze_with_model(
         f"模板名称：{template.name}\n\n"
         f"可填写位置清单（共 {len(candidates)} 条）：\n{lines}"
     )
+    system_prompt = render_prompt(
+        config.structure_prompt,
+        {
+            "candidate_count": len(candidates),
+            "deliverable_type": template.deliverable_type,
+            "stage": template.stage,
+            "template_name": template.name,
+        },
+    )
     raw = await llm_client.chat_json(
         [
-            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
         temperature=0.1,
@@ -568,7 +563,34 @@ async def ensure_structure(
     if not candidates:
         raise BadRequestException("母本中没有可填写的位置，无法生成报告")
 
-    slots = await _analyze_with_model(template, candidates, config)
+    started = time.perf_counter()
+    try:
+        slots = await _analyze_with_model(template, candidates, config)
+    except Exception as exc:
+        # 解析失败也留痕：没有这条，「昨天还好今天选不出来」只能靠猜
+        await record_structure_run(
+            session,
+            template_id=template.id,
+            source_key=template.file_object_key,
+            prompt_version=structure_prompt_version(config.structure_prompt),
+            model_name=getattr(config.structure_model, "model", None),
+            candidate_count=len(candidates),
+            slot_keys=[],
+            duration_ms=int((time.perf_counter() - started) * 1000),
+            status="failed",
+            error=str(exc),
+        )
+        raise
+    await record_structure_run(
+        session,
+        template_id=template.id,
+        source_key=template.file_object_key,
+        prompt_version=structure_prompt_version(config.structure_prompt),
+        model_name=getattr(config.structure_model, "model", None),
+        candidate_count=len(candidates),
+        slot_keys=[str(slot.get("slot_key") or "") for slot in slots],
+        duration_ms=int((time.perf_counter() - started) * 1000),
+    )
     structure = {
         "version": STRUCTURE_VERSION,
         "source_key": template.file_object_key,

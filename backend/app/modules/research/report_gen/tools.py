@@ -69,6 +69,7 @@ class ReportGenRuntime:
         config: Any,
         *,
         report_title: str = "",
+        examples: dict[str, dict[str, Any]] | None = None,
     ) -> None:
         self.session = session
         self.job = job
@@ -77,6 +78,8 @@ class ReportGenRuntime:
         self.structure = structure
         self.slot_rows = slot_rows
         self.config = config
+        # 人工修正沉淀的示例：随槽位一起下发，模型照着写而不是从零猜
+        self.examples = examples or {}
         self.finalized = False
         self.final_summary = ""
         self.kb: RdKnowledgeBase | None = None
@@ -94,18 +97,25 @@ class ReportGenRuntime:
         for slot in page:
             key = str(slot.get("slot_key") or "")
             row = self.slot_rows.get(key)
-            items.append(
-                {
-                    "slot_key": key,
-                    "label": slot.get("label"),
-                    "location": slot.get("location"),
-                    "value_type": slot.get("value_type"),
-                    "hint": slot.get("hint"),
-                    "owner_hint": slot.get("owner_hint"),
-                    "state": row.state if row else "pending",
-                    "current_value": _cut(row.value, 200) if row and row.value else "",
+            item: dict[str, Any] = {
+                "slot_key": key,
+                "label": slot.get("label"),
+                "location": slot.get("location"),
+                "value_type": slot.get("value_type"),
+                "hint": slot.get("hint"),
+                "owner_hint": slot.get("owner_hint"),
+                "state": row.state if row else "pending",
+                "current_value": _cut(row.value, 200) if row and row.value else "",
+            }
+            example = self.examples.get(key)
+            if example:
+                # 标明这是「以前人工写过的」：不是依据，不能直接当 evidence 用
+                item["manual_example"] = {
+                    "value": example.get("value"),
+                    "evidence": example.get("evidence"),
+                    "note": "人工修正过的历史写法，可参考措辞；引用仍须以检索到的原文为依据",
                 }
-            )
+            items.append(item)
         return ToolOutcome(
             ok=True,
             summary=f"返回槽位 {offset + 1}-{offset + len(items)} / 共 {len(slots)} 个",

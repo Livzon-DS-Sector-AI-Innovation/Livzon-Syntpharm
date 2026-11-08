@@ -144,6 +144,39 @@ class ReportGenMetricsData(BaseModel):
     generated_at: datetime = Field(description="本次统计时间，用于判断面板数据新鲜度")
 
 
+class ReportGenStructureDiff(BaseModel):
+    """解析结果与当前结构的差异：漏选=人工后补，多选=人工否掉。"""
+
+    ai_slot_count: int = Field(description="解析当时模型选出的槽位数")
+    current_slot_count: int = Field(description="当前结构里的槽位总数（含已停用）")
+    kept_count: int = Field(description="AI 选中且当前仍启用的槽位数")
+    missing_count: int = Field(description="漏选数：当前启用但 AI 当时没选（人工后补）")
+    extra_count: int = Field(description="多选数：AI 当时选了但现在被停用或删除")
+    missing_keys: list[str] = Field(default_factory=list, description="漏选槽位标识（最多 10 个）")
+    extra_keys: list[str] = Field(default_factory=list, description="多选槽位标识（最多 10 个）")
+
+
+class ReportGenStructureRunData(BaseModel):
+    """一次母本结构解析的留痕。"""
+
+    id: str
+    source_key: str | None = Field(None, description="解析时的母本存储键，换版即变")
+    prompt_version: str = Field(description="解析所用提示词指纹")
+    model_name: str | None = Field(None, description="解析所用模型")
+    candidate_count: int = Field(description="送模型的候选位置数")
+    slot_count: int = Field(description="模型判定出的槽位数")
+    duration_ms: int = Field(description="解析耗时（毫秒）")
+    status: str = Field(description="ok / failed")
+    error: str | None = Field(None, description="失败原因")
+    created_at: datetime = Field(description="解析时间")
+    diff: ReportGenStructureDiff = Field(description="与当前结构的差异")
+
+
+class ReportGenStructureRunListData(BaseModel):
+    total: int
+    items: list[ReportGenStructureRunData]
+
+
 __all__ = [
     "ReportGenJobCreateRequest",
     "ReportGenJobData",
@@ -156,4 +189,7 @@ __all__ = [
     "ReportGenSlotUpdateRequest",
     "ReportGenStepData",
     "ReportGenStepListData",
+    "ReportGenStructureDiff",
+    "ReportGenStructureRunData",
+    "ReportGenStructureRunListData",
 ]

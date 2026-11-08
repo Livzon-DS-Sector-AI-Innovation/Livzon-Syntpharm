@@ -29,6 +29,7 @@ from app.modules.research.models import (
 )
 from app.modules.research.report_gen.agent import run_report_gen
 from app.modules.research.report_gen.config import load_config
+from app.modules.research.report_gen.examples import record_manual_example
 from app.modules.research.report_gen.prompts_version import agent_prompt_version, structure_prompt_version
 from app.modules.research.report_gen.schemas import (
     ReportGenJobCreateRequest,
@@ -41,7 +42,12 @@ from app.modules.research.report_gen.schemas import (
     ReportGenSlotUpdateRequest,
     ReportGenStepData,
     ReportGenStepListData,
+    ReportGenStructureDiff,
+    ReportGenStructureRunData,
+    ReportGenStructureRunListData,
 )
+from app.modules.research.report_gen.structure import normalize_structure
+from app.modules.research.report_gen.structure_runs import list_structure_runs as _list_structure_runs
 
 logger = logging.getLogger(__name__)
 
@@ -324,6 +330,18 @@ async def update_slot(
         job.slot_total = slots.total
         job.slot_filled = slots.filled
         job.slot_gap = slots.gaps
+        # 人工修正顺手沉淀成示例：下次同模板生成读它当 few-shot 参照（失败不影响保存）
+        try:
+            await record_manual_example(
+                session,
+                template_id=job.deliverable_template_id,
+                slot_key=row.slot_key,
+                slot_label=row.slot_label,
+                value=row.value,
+                evidence=payload.evidence or row.evidence,
+            )
+        except Exception:  # noqa: BLE001 - 示例库是增益项，不能反过来卡住人工保存
+            logger.exception("report-gen example record failed", extra={"job_id": str(job_id)})
     await session.commit()
 
     return ReportGenSlotData(
@@ -406,6 +424,8 @@ async def agent_metrics(session: AsyncSession, days: int = 30) -> ReportGenMetri
     """
     window = min(max(days, 1), _METRICS_MAX_DAYS)
     since = _now() - timedelta(days=window)
+    # 指纹要跟着「当前生效的提示词」走：库里整段覆盖过就按覆盖值算，改一个字即变
+    config = await load_config()
     finished = func.coalesce(RdReportGenJob.finished_at, RdReportGenJob.created_at)
     is_completed = RdReportGenJob.status == "completed"
     duration_seconds = func.extract("epoch", RdReportGenJob.finished_at - RdReportGenJob.started_at)
@@ -457,10 +477,45 @@ async def agent_metrics(session: AsyncSession, days: int = 30) -> ReportGenMetri
         avg_duration_seconds=None if avg_duration is None else round(float(avg_duration), 1),
         gap_rate=_ratio(slot_gap, slot_total),
         fallback_rate=_ratio(int(row.fallback_completed or 0), completed),
-        agent_prompt_version=agent_prompt_version(),
-        structure_prompt_version=structure_prompt_version(),
+        agent_prompt_version=agent_prompt_version(config.agent_prompt),
+        structure_prompt_version=structure_prompt_version(config.structure_prompt),
         generated_at=_now(),
     )
+
+
+async def list_structure_runs(
+    session: AsyncSession,
+    template_id: UUID,
+    limit: int = 10,
+) -> ReportGenStructureRunListData:
+    """母本解析留痕 + 与当前结构的差异（漏选/多选）。只读，不改结构。"""
+    template = await session.get(RdDeliverableTemplate, template_id)
+    if template is None or template.is_deleted:
+        raise NotFoundException("交付物模板不存在")
+    current_slots = normalize_structure(template.template_structure).get("slots") or []
+    rows = await _list_structure_runs(
+        session,
+        template_id,
+        current_slots=current_slots,
+        limit=limit,
+    )
+    items = [
+        ReportGenStructureRunData(
+            id=str(row["id"]),
+            source_key=row["source_key"],
+            prompt_version=row["prompt_version"],
+            model_name=row["model_name"],
+            candidate_count=row["candidate_count"],
+            slot_count=row["slot_count"],
+            duration_ms=row["duration_ms"],
+            status=row["status"],
+            error=row["error"],
+            created_at=row["created_at"],
+            diff=ReportGenStructureDiff(**row["diff"]),
+        )
+        for row in rows
+    ]
+    return ReportGenStructureRunListData(total=len(items), items=items)
 
 
 async def test_model(slot: str) -> ReportGenModelTestData:

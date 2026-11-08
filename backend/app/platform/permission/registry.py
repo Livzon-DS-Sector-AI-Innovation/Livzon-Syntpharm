@@ -1494,6 +1494,9 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("research:report:update", "POST", "/api/v1/research/report-gen/jobs/{job_id}/cancel"),
     ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/document"),
     ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/comparison"),
+    ApiBindingDef(
+        "research:report:read", "GET", "/api/v1/research/report-gen/templates/{template_id}/structure-runs"
+    ),
     # 报告生成配置：单档位连通测试走模块配置写权限，不动全局 LLM 配置库
     ApiBindingDef(
         "platform:module-setting:manage",

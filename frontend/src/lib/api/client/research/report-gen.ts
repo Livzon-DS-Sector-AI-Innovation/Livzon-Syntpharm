@@ -13,6 +13,7 @@ import {
   type ReportGenMetrics,
   type ReportGenSlotList,
   type ReportGenStepList,
+  type ReportGenStructureRunList,
 } from '@/types/research/report-gen'
 
 const API_BASE = '/api/v1/research/report-gen'
@@ -22,6 +23,21 @@ export async function fetchReportGenMetrics(
   days: number = REPORT_GEN_METRIC_DEFAULT_WINDOW
 ): Promise<ReportGenMetrics | null> {
   return apiGet<ReportGenMetrics>(`${API_BASE}/settings/metrics?days=${days}`)
+}
+
+/**
+ * 母本解析留痕（只读）：每次识别选了多少槽位，以及人工随后补了/否掉了多少。
+ *
+ * 统计是「解析当时的选择」对比「当前结构」，跨多次人工编辑会混在一起，只作趋势看。
+ */
+export async function fetchTemplateStructureRuns(
+  templateId: string,
+  limit = 10,
+): Promise<ReportGenStructureRunList> {
+  const result = await apiGet<ReportGenStructureRunList>(
+    `${API_BASE}/templates/${templateId}/structure-runs?limit=${limit}`,
+  )
+  return result ?? { total: 0, items: [] }
 }
 
 export async function fetchReportGenJobs(params: { projectId?: string; reportId?: string } = {}): Promise<ReportGenJobList> {

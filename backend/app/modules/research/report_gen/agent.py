@@ -37,7 +37,13 @@ from app.modules.research.models import (
     RdReportGenStep,
 )
 from app.modules.research.report_gen.config import ReportGenConfig, load_config
+from app.modules.research.report_gen.examples import load_examples
 from app.modules.research.report_gen.model_binding import ModelBinding, resolve_bindings
+from app.modules.research.report_gen.prompts import (
+    AGENT_JSON_PROTOCOL_PROMPT,
+    AGENT_SYSTEM_PROMPT,
+    render_prompt,
+)
 from app.modules.research.report_gen.render import SlotFill, render_document
 from app.modules.research.report_gen.structure import enabled_slots, ensure_structure
 from app.modules.research.report_gen.tools import (
@@ -52,28 +58,10 @@ logger = logging.getLogger(__name__)
 _MAX_ARGS_CHARS = 1000
 _MAX_RESULT_CHARS = 2000
 
-_SYSTEM_PROMPT = """你是原料药研发部的报告编写助手。你要基于**项目已有资料**填写一份 Word 报告模板。
-
-工作方式：
-1. 先调用 read_template_outline 看清要填哪些槽位（可分页读取）；
-2. 调用 read_project_context 拿项目登记信息、阶段记录、实验记录；
-3. 针对每个槽位，用 search_knowledge_base 找资料（检索词用槽位含义，不要照抄槽位名）；
-4. 找到依据就 fill_slot，必须带 source_name 与 evidence（原文摘录，不得改写）；
-5. 确实找不到就 mark_gap，并给出应补充的部门；
-6. 所有槽位都处理完后调用 finalize。
-
-硬性要求：
-- 绝不编造数据、批号、日期、数值；没有依据一律 mark_gap。
-- 品种名称、受控编码、报告标题以本次报告输入为准，项目登记数据可补全 API 名称、CAS 号等。
-- 同一信息可复用于多个语义相同的槽位。
-- 一次可以并行发起多个工具调用；不要重复检索同样的内容。
-- 除工具调用外，用一句中文说明你正在做什么。"""
-
-_JSON_PROTOCOL_PROMPT = """当前模型以 JSON 协议工作：每轮只输出一个 JSON 对象，不要输出别的文字。
-调用工具：{"thought":"一句话说明","action":"工具名","action_input":{...}}
-全部完成：{"thought":"一句话说明","final":true,"summary":"本次填写总结"}
-可用工具（JSON schema）：{tools}
-工具执行结果会以 {"tool_result": ...} 的形式回给你。"""
+# 提示词本体在 prompts.py：库里可整段覆盖（REPORT_GEN_AGENT_PROMPT），这里只留兜底与别名，
+# 保持既有引用（prompts_version 指纹、测试）不用改。
+_SYSTEM_PROMPT = AGENT_SYSTEM_PROMPT
+_JSON_PROTOCOL_PROMPT = AGENT_JSON_PROTOCOL_PROMPT
 
 
 def _cut(text: Any, limit: int) -> str:
@@ -212,8 +200,43 @@ def _slot_fill(row: RdReportGenSlot) -> SlotFill:
     )
 
 
+def _system_prompt_for(
+    config: ReportGenConfig,
+    *,
+    job: RdReportGenJob,
+    project: RdProject,
+    report: RdReport,
+    template_name: str,
+    slot_total: int,
+) -> str:
+    """渲染本次任务的 system prompt：变量填进去，库里覆盖的整段生效。
+
+    变量只做「事实填空」，不给模型额外自由度——漏传的变量会原样留下 ``$name``，
+    比静默替换成空串更容易被发现。
+    """
+    return render_prompt(
+        config.agent_prompt,
+        {
+            "doc_code": job.doc_code or "（未填写）",
+            "drug_name": job.drug_name or project.name,
+            "max_rounds": config.max_rounds,
+            "report_title": report.title,
+            "slot_total": slot_total,
+            "template_name": template_name or "（未指定）",
+        },
+    )
+
+
+def _json_system_prompt(system_prompt: str, tool_specs: list[dict[str, Any]]) -> str:
+    return system_prompt + "\n\n" + AGENT_JSON_PROTOCOL_PROMPT.format(tools=json.dumps(tool_specs, ensure_ascii=False))
+
+
 def _build_messages(
-    job: RdReportGenJob, project: RdProject, report: RdReport, structure: dict[str, Any]
+    job: RdReportGenJob,
+    project: RdProject,
+    report: RdReport,
+    structure: dict[str, Any],
+    system_prompt: str,
 ) -> list[dict[str, Any]]:
     slots = structure.get("slots") or []
     user_prompt = (
@@ -230,7 +253,7 @@ def _build_messages(
         "请开始：先读取槽位清单，再逐个查找资料并填写。"
     )
     return [
-        {"role": "system", "content": _SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt},
     ]
 
@@ -554,6 +577,17 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
     slot_rows = await _ensure_slot_rows(session, job, enabled_structure)
     await session.commit()
 
+    examples: dict[str, dict[str, Any]] = {}
+    if config.examples_enabled:
+        try:
+            examples = await load_examples(
+                session,
+                getattr(job, "deliverable_template_id", None),
+                limit=config.examples_limit,
+                exclude_keys={key for key, row in slot_rows.items() if row.state == "filled"},
+            )
+        except Exception:  # noqa: BLE001 - 示例是增益项，取不到就当没有
+            logger.exception("report-gen load examples failed", extra={"job_id": str(job.id)})
     runtime = ReportGenRuntime(
         session,
         job,
@@ -562,19 +596,23 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
         slot_rows,
         config,
         report_title=report.title,
+        examples=examples,
     )
-    messages = _build_messages(job, project, report, enabled_structure)
     # 工具清单在任务开始时算一次：禁用项既不下发给模型，也不允许被调用
     tool_specs = resolve_tool_specs(config.disabled_tools)
+    system_prompt = _system_prompt_for(
+        config,
+        job=job,
+        project=project,
+        report=report,
+        template_name=template.name,
+        slot_total=len(enabled_structure["slots"]),
+    )
+    messages = _build_messages(job, project, report, enabled_structure, system_prompt)
     switch = _ModelSwitch(config.model, config.fallback_model)
     mode = resolve_initial_mode(config.tool_mode)
     if mode == "json":
-        messages[0] = {
-            "role": "system",
-            "content": _SYSTEM_PROMPT + "\n\n" + _JSON_PROTOCOL_PROMPT.format(
-                tools=json.dumps(tool_specs, ensure_ascii=False)
-            ),
-        }
+        messages[0] = {"role": "system", "content": _json_system_prompt(system_prompt, tool_specs)}
 
     deadline = time.monotonic() + config.job_timeout_seconds
     for round_index in range(1, config.max_rounds + 1):
@@ -606,12 +644,7 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
             await steps.add("status", "当前模型不支持 tools 协议，切换为 JSON 协议继续")
             job.tool_mode = "json"
             mode = "json"
-            messages[0] = {
-                "role": "system",
-                "content": _SYSTEM_PROMPT + "\n\n" + _JSON_PROTOCOL_PROMPT.format(
-                    tools=json.dumps(tool_specs, ensure_ascii=False)
-                ),
-            }
+            messages[0] = {"role": "system", "content": _json_system_prompt(system_prompt, tool_specs)}
             continue
 
         job.tool_mode = mode
