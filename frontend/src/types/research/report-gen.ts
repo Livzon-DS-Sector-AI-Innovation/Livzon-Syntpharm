@@ -108,6 +108,30 @@ export function latestJobByReport(jobs: ReportGenJob[]): Map<string, ReportGenJo
 export type ReportGenModelTest = components['schemas']['ReportGenModelTestData']
 export type ReportGenModelTestRequest = components['schemas']['ReportGenModelTestRequest']
 
+export type ReportGenMetrics = components['schemas']['ReportGenMetricsData']
+
+/** 指标时间窗；顺序即 Segmented 顺序。 */
+export const REPORT_GEN_METRIC_WINDOWS = [7, 30, 90] as const
+
+export type ReportGenMetricWindow = (typeof REPORT_GEN_METRIC_WINDOWS)[number]
+
+export const REPORT_GEN_METRIC_DEFAULT_WINDOW: ReportGenMetricWindow = 30
+
+/**
+ * 比率 → 百分比文案。
+ * null/undefined 表示窗口内没有样本，显示「—」而不是 0%，否则「刚上线没跑过任务」会被误读成「成功率 0%」。
+ */
+export function formatRate(value: number | null | undefined, digits = 1): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—'
+  return `${(value * 100).toFixed(digits)}%`
+}
+
+/** 秒级均值 → 复用毫秒格式化，避免再写一套小时/分钟判断。 */
+export function formatSeconds(seconds: number | null | undefined): string {
+  if (seconds === null || seconds === undefined) return '—'
+  return formatDuration(Math.round(seconds * 1000))
+}
+
 /** 三个模型档位；顺序即配置页卡片顺序。 */
 export const REPORT_GEN_MODEL_SLOTS = [
   { slot: 'main', title: '正文生成', description: 'Agent 循环里的检索与填写调用都走这一档。' },

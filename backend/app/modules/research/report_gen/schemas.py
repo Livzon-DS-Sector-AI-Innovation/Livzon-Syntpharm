@@ -122,10 +122,33 @@ class ReportGenModelTestData(BaseModel):
     detail: str | None = Field(None, description="成功提示或失败原因摘要")
 
 
+class ReportGenMetricsData(BaseModel):
+    """配置页「Agent 运行情况」：窗口内**已终态**任务的聚合口径。
+
+    比率类字段在样本为 0 时返回 ``None``，前端显示「—」而不是假的 0%，
+    避免「刚上线没跑过任务」被误读成「成功率 0%」。
+    """
+
+    window_days: int = Field(description="统计窗口天数")
+    total: int = Field(0, description="窗口内终态任务数（completed + failed + cancelled）")
+    completed: int = 0
+    failed: int = 0
+    cancelled: int = 0
+    success_rate: float | None = Field(None, description="completed ÷ 终态任务数")
+    avg_rounds: float | None = Field(None, description="仅统计 completed 的平均轮次")
+    avg_duration_seconds: float | None = Field(None, description="仅统计 completed 的平均耗时（秒）")
+    gap_rate: float | None = Field(None, description="Σslot_gap ÷ Σslot_total（仅 completed）")
+    fallback_rate: float | None = Field(None, description="completed 中触发兜底降级的比例")
+    agent_prompt_version: str = Field(description="正文生成提示词指纹（sha256 前 8 位）")
+    structure_prompt_version: str = Field(description="结构识别提示词指纹（sha256 前 8 位）")
+    generated_at: datetime = Field(description="本次统计时间，用于判断面板数据新鲜度")
+
+
 __all__ = [
     "ReportGenJobCreateRequest",
     "ReportGenJobData",
     "ReportGenJobListData",
+    "ReportGenMetricsData",
     "ReportGenModelTestData",
     "ReportGenModelTestRequest",
     "ReportGenSlotData",

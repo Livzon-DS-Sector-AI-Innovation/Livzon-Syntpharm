@@ -6,14 +6,23 @@
  */
 
 import { apiGet } from '@/lib/api/client'
-import type {
-  ReportGenJob,
-  ReportGenJobList,
-  ReportGenSlotList,
-  ReportGenStepList,
+import {
+  REPORT_GEN_METRIC_DEFAULT_WINDOW,
+  type ReportGenJob,
+  type ReportGenJobList,
+  type ReportGenMetrics,
+  type ReportGenSlotList,
+  type ReportGenStepList,
 } from '@/types/research/report-gen'
 
 const API_BASE = '/api/v1/research/report-gen'
+
+/** 配置页「Agent 运行情况」：切换时间窗时重取，只读聚合，不改任何配置。 */
+export async function fetchReportGenMetrics(
+  days: number = REPORT_GEN_METRIC_DEFAULT_WINDOW
+): Promise<ReportGenMetrics | null> {
+  return apiGet<ReportGenMetrics>(`${API_BASE}/settings/metrics?days=${days}`)
+}
 
 export async function fetchReportGenJobs(params: { projectId?: string; reportId?: string } = {}): Promise<ReportGenJobList> {
   const qs = new URLSearchParams()

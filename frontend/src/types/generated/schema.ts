@@ -11825,6 +11825,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/research/report-gen/settings/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 报告生成 Agent 运行指标
+         * @description 配置页「Agent 运行情况」：只读聚合，返回成功率/平均轮次/平均耗时/缺口率与提示词指纹。
+         */
+        get: operations["get_report_gen_metrics_api_v1_research_report_gen_settings_metrics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/registration/": {
         parameters: {
             query?: never;
@@ -27452,6 +27472,21 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["ReportGenJobListData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ReportGenMetricsData] */
+        DataResponse_ReportGenMetricsData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenMetricsData"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[ReportGenModelTestData] */
@@ -48999,6 +49034,82 @@ export interface components {
              * @default 0
              */
             active_count: number;
+        };
+        /**
+         * ReportGenMetricsData
+         * @description 配置页「Agent 运行情况」：窗口内**已终态**任务的聚合口径。
+         *
+         *     比率类字段在样本为 0 时返回 ``None``，前端显示「—」而不是假的 0%，
+         *     避免「刚上线没跑过任务」被误读成「成功率 0%」。
+         */
+        ReportGenMetricsData: {
+            /**
+             * Window Days
+             * @description 统计窗口天数
+             */
+            window_days: number;
+            /**
+             * Total
+             * @description 窗口内终态任务数（completed + failed + cancelled）
+             * @default 0
+             */
+            total: number;
+            /**
+             * Completed
+             * @default 0
+             */
+            completed: number;
+            /**
+             * Failed
+             * @default 0
+             */
+            failed: number;
+            /**
+             * Cancelled
+             * @default 0
+             */
+            cancelled: number;
+            /**
+             * Success Rate
+             * @description completed ÷ 终态任务数
+             */
+            success_rate?: number | null;
+            /**
+             * Avg Rounds
+             * @description 仅统计 completed 的平均轮次
+             */
+            avg_rounds?: number | null;
+            /**
+             * Avg Duration Seconds
+             * @description 仅统计 completed 的平均耗时（秒）
+             */
+            avg_duration_seconds?: number | null;
+            /**
+             * Gap Rate
+             * @description Σslot_gap ÷ Σslot_total（仅 completed）
+             */
+            gap_rate?: number | null;
+            /**
+             * Fallback Rate
+             * @description completed 中触发兜底降级的比例
+             */
+            fallback_rate?: number | null;
+            /**
+             * Agent Prompt Version
+             * @description 正文生成提示词指纹（sha256 前 8 位）
+             */
+            agent_prompt_version: string;
+            /**
+             * Structure Prompt Version
+             * @description 结构识别提示词指纹（sha256 前 8 位）
+             */
+            structure_prompt_version: string;
+            /**
+             * Generated At
+             * Format: date-time
+             * @description 本次统计时间，用于判断面板数据新鲜度
+             */
+            generated_at: string;
         };
         /** ReportGenModelTestData */
         ReportGenModelTestData: {
@@ -88051,6 +88162,40 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenModelTestData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_report_gen_metrics_api_v1_research_report_gen_settings_metrics_get: {
+        parameters: {
+            query?: {
+                /** @description 统计窗口天数（近 N 天已终态任务） */
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenMetricsData_"];
                 };
             };
             /** @description Validation Error */

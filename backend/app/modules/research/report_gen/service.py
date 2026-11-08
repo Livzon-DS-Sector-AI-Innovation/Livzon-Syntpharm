@@ -9,11 +9,11 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import BadRequestException, NotFoundException
@@ -29,10 +29,12 @@ from app.modules.research.models import (
 )
 from app.modules.research.report_gen.agent import run_report_gen
 from app.modules.research.report_gen.config import load_config
+from app.modules.research.report_gen.prompts_version import agent_prompt_version, structure_prompt_version
 from app.modules.research.report_gen.schemas import (
     ReportGenJobCreateRequest,
     ReportGenJobData,
     ReportGenJobListData,
+    ReportGenMetricsData,
     ReportGenModelTestData,
     ReportGenSlotData,
     ReportGenSlotListData,
@@ -383,6 +385,83 @@ async def comparison_payload(session: AsyncSession, job_id: UUID) -> tuple[str, 
 
 _PROBE_TIMEOUT_SECONDS = 20
 
+# 统计窗口上限：超过 90 天样本混杂多轮提示词与模型调整，对比意义不大
+_METRICS_MAX_DAYS = 90
+
+
+def _ratio(numerator: int, denominator: int) -> float | None:
+    """比率：分母为 0 返回 None，让前端显示占位而不是假的 0%。"""
+    if denominator <= 0:
+        return None
+    return round(numerator / denominator, 4)
+
+
+async def agent_metrics(session: AsyncSession, days: int = 30) -> ReportGenMetricsData:
+    """配置页「Agent 运行情况」：一次聚合查询算完，不拉明细、不改任何配置。
+
+    口径：
+    - 窗口按 ``finished_at`` 落（历史任务该列为空时回退 ``created_at``），只统计已终态任务；
+    - 平均轮次/耗时/缺口率/降级率只算 completed，避免失败的半成品拉偏均值；
+    - 比率分母为 0 时返回 None，由前端显示占位。
+    """
+    window = min(max(days, 1), _METRICS_MAX_DAYS)
+    since = _now() - timedelta(days=window)
+    finished = func.coalesce(RdReportGenJob.finished_at, RdReportGenJob.created_at)
+    is_completed = RdReportGenJob.status == "completed"
+    duration_seconds = func.extract("epoch", RdReportGenJob.finished_at - RdReportGenJob.started_at)
+
+    statement = (
+        select(
+            func.count().label("total"),
+            func.coalesce(func.sum(case((is_completed, 1), else_=0)), 0).label("completed"),
+            func.coalesce(func.sum(case((RdReportGenJob.status == "failed", 1), else_=0)), 0).label("failed"),
+            func.coalesce(func.sum(case((RdReportGenJob.status == "cancelled", 1), else_=0)), 0).label(
+                "cancelled"
+            ),
+            func.avg(case((is_completed, RdReportGenJob.rounds), else_=None)).label("avg_rounds"),
+            func.avg(case((is_completed, duration_seconds), else_=None)).label("avg_duration_seconds"),
+            func.coalesce(func.sum(case((is_completed, RdReportGenJob.slot_total), else_=0)), 0).label(
+                "slot_total"
+            ),
+            func.coalesce(func.sum(case((is_completed, RdReportGenJob.slot_gap), else_=0)), 0).label(
+                "slot_gap"
+            ),
+            # 降级只对跑完的任务有意义：失败任务走兜底也说明不了模型质量
+            func.coalesce(
+                func.sum(case((is_completed & RdReportGenJob.used_fallback.is_(True), 1), else_=0)), 0
+            ).label("fallback_completed"),
+        )
+        .where(
+            RdReportGenJob.is_deleted.is_(False),
+            RdReportGenJob.status.in_(TERMINAL_STATUSES),
+            finished >= since,
+        )
+    )
+    row = (await session.execute(statement)).one()
+
+    total = int(row.total or 0)
+    completed = int(row.completed or 0)
+    slot_total = int(row.slot_total or 0)
+    slot_gap = int(row.slot_gap or 0)
+    avg_rounds = row.avg_rounds
+    avg_duration = row.avg_duration_seconds
+
+    return ReportGenMetricsData(
+        window_days=window,
+        total=total,
+        completed=completed,
+        failed=int(row.failed or 0),
+        cancelled=int(row.cancelled or 0),
+        success_rate=_ratio(completed, total),
+        avg_rounds=None if avg_rounds is None else round(float(avg_rounds), 2),
+        avg_duration_seconds=None if avg_duration is None else round(float(avg_duration), 1),
+        gap_rate=_ratio(slot_gap, slot_total),
+        fallback_rate=_ratio(int(row.fallback_completed or 0), completed),
+        agent_prompt_version=agent_prompt_version(),
+        structure_prompt_version=structure_prompt_version(),
+        generated_at=_now(),
+    )
+
 
 async def test_model(slot: str) -> ReportGenModelTestData:
     """按档位解析绑定后发一次极短对话，供配置页「测试连通」使用。
@@ -456,6 +535,7 @@ def _elapsed_ms(started: float) -> int:
 __all__ = [
     "ACTIVE_STATUSES",
     "TERMINAL_STATUSES",
+    "agent_metrics",
     "cancel_job",
     "comparison_payload",
     "create_job",

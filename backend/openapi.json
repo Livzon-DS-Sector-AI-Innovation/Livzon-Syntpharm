@@ -58153,6 +58153,71 @@
         }
       }
     },
+    "/api/v1/research/report-gen/settings/metrics": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u62a5\u544a\u751f\u6210 Agent \u8fd0\u884c\u6307\u6807",
+        "description": "\u914d\u7f6e\u9875\u300cAgent \u8fd0\u884c\u60c5\u51b5\u300d\uff1a\u53ea\u8bfb\u805a\u5408\uff0c\u8fd4\u56de\u6210\u529f\u7387/\u5e73\u5747\u8f6e\u6b21/\u5e73\u5747\u8017\u65f6/\u7f3a\u53e3\u7387\u4e0e\u63d0\u793a\u8bcd\u6307\u7eb9\u3002",
+        "operationId": "get_report_gen_metrics_api_v1_research_report_gen_settings_metrics_get",
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 1,
+              "description": "\u7edf\u8ba1\u7a97\u53e3\u5929\u6570\uff08\u8fd1 N \u5929\u5df2\u7ec8\u6001\u4efb\u52a1\uff09",
+              "default": 30,
+              "title": "Days"
+            },
+            "description": "\u7edf\u8ba1\u7a97\u53e3\u5929\u6570\uff08\u8fd1 N \u5929\u5df2\u7ec8\u6001\u4efb\u52a1\uff09"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ReportGenMetricsData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/registration/": {
       "get": {
         "tags": [
@@ -112309,6 +112374,42 @@
         "type": "object",
         "title": "DataResponse[ReportGenJobListData]"
       },
+      "DataResponse_ReportGenMetricsData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportGenMetricsData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ReportGenMetricsData]"
+      },
       "DataResponse_ReportGenModelTestData_": {
         "properties": {
           "code": {
@@ -163847,6 +163948,121 @@
           "items"
         ],
         "title": "ReportGenJobListData"
+      },
+      "ReportGenMetricsData": {
+        "properties": {
+          "window_days": {
+            "type": "integer",
+            "title": "Window Days",
+            "description": "\u7edf\u8ba1\u7a97\u53e3\u5929\u6570"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "\u7a97\u53e3\u5185\u7ec8\u6001\u4efb\u52a1\u6570\uff08completed + failed + cancelled\uff09",
+            "default": 0
+          },
+          "completed": {
+            "type": "integer",
+            "title": "Completed",
+            "default": 0
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed",
+            "default": 0
+          },
+          "cancelled": {
+            "type": "integer",
+            "title": "Cancelled",
+            "default": 0
+          },
+          "success_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Success Rate",
+            "description": "completed \u00f7 \u7ec8\u6001\u4efb\u52a1\u6570"
+          },
+          "avg_rounds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Rounds",
+            "description": "\u4ec5\u7edf\u8ba1 completed \u7684\u5e73\u5747\u8f6e\u6b21"
+          },
+          "avg_duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Duration Seconds",
+            "description": "\u4ec5\u7edf\u8ba1 completed \u7684\u5e73\u5747\u8017\u65f6\uff08\u79d2\uff09"
+          },
+          "gap_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap Rate",
+            "description": "\u03a3slot_gap \u00f7 \u03a3slot_total\uff08\u4ec5 completed\uff09"
+          },
+          "fallback_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Rate",
+            "description": "completed \u4e2d\u89e6\u53d1\u515c\u5e95\u964d\u7ea7\u7684\u6bd4\u4f8b"
+          },
+          "agent_prompt_version": {
+            "type": "string",
+            "title": "Agent Prompt Version",
+            "description": "\u6b63\u6587\u751f\u6210\u63d0\u793a\u8bcd\u6307\u7eb9\uff08sha256 \u524d 8 \u4f4d\uff09"
+          },
+          "structure_prompt_version": {
+            "type": "string",
+            "title": "Structure Prompt Version",
+            "description": "\u7ed3\u6784\u8bc6\u522b\u63d0\u793a\u8bcd\u6307\u7eb9\uff08sha256 \u524d 8 \u4f4d\uff09"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At",
+            "description": "\u672c\u6b21\u7edf\u8ba1\u65f6\u95f4\uff0c\u7528\u4e8e\u5224\u65ad\u9762\u677f\u6570\u636e\u65b0\u9c9c\u5ea6"
+          }
+        },
+        "type": "object",
+        "required": [
+          "window_days",
+          "agent_prompt_version",
+          "structure_prompt_version",
+          "generated_at"
+        ],
+        "title": "ReportGenMetricsData",
+        "description": "\u914d\u7f6e\u9875\u300cAgent \u8fd0\u884c\u60c5\u51b5\u300d\uff1a\u7a97\u53e3\u5185**\u5df2\u7ec8\u6001**\u4efb\u52a1\u7684\u805a\u5408\u53e3\u5f84\u3002\n\n\u6bd4\u7387\u7c7b\u5b57\u6bb5\u5728\u6837\u672c\u4e3a 0 \u65f6\u8fd4\u56de ``None``\uff0c\u524d\u7aef\u663e\u793a\u300c\u2014\u300d\u800c\u4e0d\u662f\u5047\u7684 0%\uff0c\n\u907f\u514d\u300c\u521a\u4e0a\u7ebf\u6ca1\u8dd1\u8fc7\u4efb\u52a1\u300d\u88ab\u8bef\u8bfb\u6210\u300c\u6210\u529f\u7387 0%\u300d\u3002"
       },
       "ReportGenModelTestData": {
         "properties": {

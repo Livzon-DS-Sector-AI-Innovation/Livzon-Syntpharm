@@ -31,8 +31,10 @@ import {
   modelLabel,
   parseDisabledTools,
   pickReportGenModels,
+  type ReportGenMetrics,
   type ReportGenModelSlot,
 } from '@/types/research/report-gen'
+import { ReportGenAgentPanel } from './ReportGenAgentPanel'
 
 const MODULE = 'research'
 
@@ -85,6 +87,8 @@ interface Props {
   settings: ModuleSetting[]
   llmConfigs: LLMConfig[]
   canManage: boolean
+  /** 近 30 天运行指标；后端取失败时为 null，面板自行兜底 */
+  initialMetrics: ReportGenMetrics | null
 }
 
 function initialModels(settings: ModuleSetting[]): Record<ReportGenModelSlot, string> {
@@ -102,7 +106,7 @@ function initialNumbers(settings: ModuleSetting[]): Record<string, number> {
   return result
 }
 
-export default function ReportGenSettingsClient({ settings, llmConfigs, canManage }: Props) {
+export default function ReportGenSettingsClient({ settings, llmConfigs, canManage, initialMetrics }: Props) {
   const router = useRouter()
   const { message } = App.useApp()
   const { token } = theme.useToken()
@@ -357,6 +361,8 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
           </Col>
         </Row>
       </Card>
+
+      <ReportGenAgentPanel initialMetrics={initialMetrics} />
 
       <Card
         size="small"

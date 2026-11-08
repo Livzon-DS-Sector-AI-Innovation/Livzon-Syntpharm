@@ -5,12 +5,14 @@
  */
 
 import { apiFetch, apiFetchData, getApiBaseUrl } from '@/lib/api/server/base'
-import type {
-  ReportGenJob,
-  ReportGenJobCreate,
-  ReportGenModelTest,
-  ReportGenModelTestRequest,
-  ReportGenSlotUpdate,
+import {
+  REPORT_GEN_METRIC_DEFAULT_WINDOW,
+  type ReportGenJob,
+  type ReportGenJobCreate,
+  type ReportGenMetrics,
+  type ReportGenModelTest,
+  type ReportGenModelTestRequest,
+  type ReportGenSlotUpdate,
 } from '@/types/research/report-gen'
 
 const API_BASE = '/api/v1/research/report-gen'
@@ -36,6 +38,13 @@ export async function updateReportGenSlot(jobId: string, slotKey: string, payloa
     method: 'PUT',
     body: JSON.stringify(payload),
   })
+}
+
+/** 配置页首屏指标：服务端取一次，避免面板白屏；失败由页面 try/catch 兜成空态。 */
+export async function fetchReportGenMetricsServer(
+  days: number = REPORT_GEN_METRIC_DEFAULT_WINDOW
+): Promise<ReportGenMetrics> {
+  return apiFetchData<ReportGenMetrics>(`${getApiBaseUrl()}${API_BASE}/settings/metrics?days=${days}`)
 }
 
 /** 单档位连通测试：只发一次极短对话，不写配置。 */

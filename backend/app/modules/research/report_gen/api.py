@@ -22,6 +22,7 @@ from app.modules.research.report_gen.schemas import (
     ReportGenJobCreateRequest,
     ReportGenJobData,
     ReportGenJobListData,
+    ReportGenMetricsData,
     ReportGenModelTestData,
     ReportGenModelTestRequest,
     ReportGenSlotData,
@@ -186,6 +187,22 @@ async def test_report_gen_model(
     """只发一次极短对话验证该档位可用，不修改任何配置、不影响全局活跃模型。"""
     data = await service.test_model(payload.slot)
     return DataResponse[ReportGenModelTestData](data=data, message="测试完成")
+
+
+@router.get(
+    "/settings/metrics",
+    summary="报告生成 Agent 运行指标",
+    response_model=DataResponse[ReportGenMetricsData],
+)
+async def get_report_gen_metrics(
+    current_user: RequiredUser,
+    days: int = Query(30, ge=1, le=90, description="统计窗口天数（近 N 天已终态任务）"),
+    ctx: PermissionContext = Depends(require_permission("platform:module-setting:read")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[ReportGenMetricsData]:
+    """配置页「Agent 运行情况」：只读聚合，返回成功率/平均轮次/平均耗时/缺口率与提示词指纹。"""
+    data = await service.agent_metrics(db, days)
+    return DataResponse[ReportGenMetricsData](data=data)
 
 
 def _attachment(data: bytes, filename: str, mime: str) -> Response:

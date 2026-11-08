@@ -1500,6 +1500,12 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "POST",
         "/api/v1/research/report-gen/settings/test-model",
     ),
+    # 运行指标是配置页的只读附属信息，跟随配置查看权限，避免配置查看者拿到 403 空面板
+    ApiBindingDef(
+        "platform:module-setting:read",
+        "GET",
+        "/api/v1/research/report-gen/settings/metrics",
+    ),
     # ── environment / administration / warehouse / procurement 模板端点 ──
     ApiBindingDef("environment:module:read", "GET", "/api/v1/environment"),
     ApiBindingDef("environment:module:read", "GET", "/api/v1/environment/"),
