@@ -39,6 +39,7 @@ from app.modules.research.schemas import (  # noqa: E402
     RdProjectUpdate,
     RdRegistrationFilingCreate,
     RdRegistrationFilingUpdate,
+    RdReportResponse,
     RdResearchFindingCreate,
     RdResearchFindingUpdate,
     RdResearchTrackCreate,
@@ -987,9 +988,18 @@ async def delete_experiment_log(db: AsyncSession, log_id: uuid.UUID, user_id: uu
 # ===== 研发报告 Service =====
 
 
-async def get_reports(db: AsyncSession, project_id: uuid.UUID):  # type: ignore[no-untyped-def]
-    """获取项目的所有研发报告"""
-    return await repo.get_reports_by_project(db, project_id)
+async def get_reports(db: AsyncSession, project_id: uuid.UUID | None = None, limit: int = 200):  # type: ignore[no-untyped-def]
+    """获取研发报告列表。
+
+    project_id 为空时跨项目返回（供「全部项目」视图），每行附带所属项目名称。
+    """
+    rows = await repo.list_reports_with_project(db, project_id=project_id, limit=limit)
+    reports: list[Any] = []
+    for report, project_name in rows:
+        item = RdReportResponse.model_validate(report)
+        item.project_name = project_name
+        reports.append(item)
+    return reports
 
 
 async def create_report(db: AsyncSession, data, user_id: uuid.UUID | None = None):  # type: ignore[no-untyped-def]

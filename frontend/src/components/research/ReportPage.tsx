@@ -24,7 +24,10 @@ import {
   hasActiveJob, isTerminal, latestJobByReport, modelLabel, pickReportGenModels, statusMeta,
 } from '@/types/research/report-gen'
 
-interface Props { projectId: string }
+interface Props {
+  /** 报告所属项目：本组件只在项目视图下渲染，「全部项目」由 ReportProjectOverview 承担 */
+  projectId: string
+}
 
 const statusColorMap: Record<string, string> = {
   draft: 'default',
@@ -55,14 +58,13 @@ export function ReportPage({ projectId }: Props) {
       const data = await fetchReports(projectId)
       return data || []
     },
-    enabled: !!projectId,
   })
 
   /** 整个项目的生成任务一次取回，前端按报告归集「最近一次」。 */
   const { data: jobsData } = useQuery({
     queryKey: ['report-gen-jobs', projectId],
-    queryFn: () => fetchReportGenJobs({ projectId }),
-    enabled: !!projectId,
+    // 单项目任务数可能超过后端默认 100 条，显式抬到上限，否则老任务会被截断成「未生成」
+    queryFn: () => fetchReportGenJobs({ projectId, limit: 200 }),
     // 有任务在跑才轮询；全部终态就停下来
     refetchInterval: (query) => (hasActiveJob(query.state.data?.items ?? []) ? 3000 : false),
   })
@@ -86,6 +88,9 @@ export function ReportPage({ projectId }: Props) {
   const invalidateReports = () => {
     queryClient.invalidateQueries({ queryKey: ['reports', projectId] })
     queryClient.invalidateQueries({ queryKey: ['report-gen-jobs', projectId] })
+    // 项目总览的统计也来自这两份数据，一并失效，避免切回全部时看到旧数字
+    queryClient.invalidateQueries({ queryKey: ['reports', 'all'] })
+    queryClient.invalidateQueries({ queryKey: ['report-gen-jobs', 'all'] })
   }
 
   const openCreate = () => {
@@ -267,6 +272,9 @@ export function ReportPage({ projectId }: Props) {
           <Space size={8} wrap>
             <span>研发报告</span>
             <Tag color="blue" style={{ margin: 0 }}>当前模型：{modelLabel(models.main)}</Tag>
+            <span style={{ fontSize: 13, color: '#8c8c8c', fontWeight: 400 }}>
+              共 {reports.length} 份
+            </span>
           </Space>
         }
         extra={
@@ -275,7 +283,9 @@ export function ReportPage({ projectId }: Props) {
               <Button onClick={() => router.push('/research/reports/settings')}>生成配置</Button>
             </PermissionGate>
             <PermissionGate code={PERM.researchReportCreate}>
-              <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建报告</Button>
+              <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+                新建报告
+              </Button>
             </PermissionGate>
           </Space>
         }

@@ -100,8 +100,20 @@ export async function fetchExperimentLogs(projectId: string): Promise<RdExperime
   return result || []
 }
 
-export async function fetchReports(projectId: string): Promise<RdReport[]> {
-  const result = await apiGet<RdReport[]>(`${API_BASE}/research/reports?project_id=${projectId}`)
+/**
+ * 研发报告列表。
+ *
+ * projectId 不传时返回全部项目的报告（每行带 project_name），供「全部项目」视图使用；
+ * limit 仅在跨项目时用于截断，研究报告总量小，默认由后端取 200。
+ */
+export async function fetchReports(projectId?: string, limit?: number): Promise<RdReport[]> {
+  const qs = new URLSearchParams()
+  if (projectId) qs.set('project_id', projectId)
+  if (limit) qs.set('limit', String(limit))
+  const query = qs.toString()
+  const result = await apiGet<RdReport[]>(
+    `${API_BASE}/research/reports${query ? `?${query}` : ''}`,
+  )
   return result || []
 }
 

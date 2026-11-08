@@ -54740,14 +54740,35 @@
           {
             "name": "project_id",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "description": "\u9879\u76eeID",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u9879\u76eeID\uff1b\u4e0d\u4f20\u5219\u8fd4\u56de\u5168\u90e8\u9879\u76ee\u7684\u62a5\u544a",
               "title": "Project Id"
             },
-            "description": "\u9879\u76eeID"
+            "description": "\u9879\u76eeID\uff1b\u4e0d\u4f20\u5219\u8fd4\u56de\u5168\u90e8\u9879\u76ee\u7684\u62a5\u544a"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "description": "\u8fd4\u56de\u6761\u6570\u4e0a\u9650\uff08\u8de8\u9879\u76ee\u65f6\u751f\u6548\uff09",
+              "default": 200,
+              "title": "Limit"
+            },
+            "description": "\u8fd4\u56de\u6761\u6570\u4e0a\u9650\uff08\u8de8\u9879\u76ee\u65f6\u751f\u6548\uff09"
           },
           {
             "name": "auth_token",
@@ -160008,6 +160029,18 @@
             "type": "string",
             "format": "date-time",
             "title": "Updated At"
+          },
+          "project_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Name",
+            "description": "\u6240\u5c5e\u9879\u76ee\u540d\u79f0\uff08\u5217\u8868\u67e5\u8be2\u65f6\u4e00\u5e76\u8fd4\u56de\uff09"
           }
         },
         "type": "object",

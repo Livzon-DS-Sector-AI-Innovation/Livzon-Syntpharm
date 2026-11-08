@@ -59,6 +59,11 @@ export async function fetchKnowledgeBasesByProject(projectId: string): Promise<K
   return apiGet<KnowledgeBaseItem[]>(`${KB_BASE}?project_id=${encodeURIComponent(projectId)}`)
 }
 
+/** 全部项目的知识库（每项带 project_name 与文档统计）：「全部项目」总览视图使用 */
+export async function fetchKnowledgeBaseList(): Promise<KnowledgeBaseItem[]> {
+  return apiGet<KnowledgeBaseItem[]>(KB_BASE)
+}
+
 /**
  * 文档列表（含解析进度）。
  *

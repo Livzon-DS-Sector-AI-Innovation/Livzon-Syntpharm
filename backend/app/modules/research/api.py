@@ -2743,12 +2743,13 @@ async def delete_experiment_log(
 async def get_reports(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:report:read")),
-    project_id: UUID = Query(..., description="项目ID"),
+    project_id: UUID | None = Query(None, description="项目ID；不传则返回全部项目的报告"),
+    limit: int = Query(200, ge=1, le=500, description="返回条数上限（跨项目时生效）"),
     db: AsyncSession = Depends(get_db),
 ) -> DataResponse[list[RdReportResponse]]:
-    reports = await service.get_reports(db, project_id)
+    reports = await service.get_reports(db, project_id, limit=limit)
 
-    return DataResponse[list[RdReportResponse]](data=[RdReportResponse.model_validate(r) for r in reports])
+    return DataResponse[list[RdReportResponse]](data=reports)
 
 
 @router.post("/reports", summary="创建研发报告")

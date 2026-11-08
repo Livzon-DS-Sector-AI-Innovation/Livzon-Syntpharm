@@ -3,16 +3,21 @@
 /**
  * 研发项目知识库页面（独立路由 `/research/knowledge-bases`）。
  *
- * 只负责页面级外壳：标题、项目选择、返回新建报告的入口；
- * 具体管理能力全部来自 KnowledgeBaseManager（与新建报告弹窗内的弹窗版共用）。
+ * 默认展示「全部项目知识库」总览，顶部项目下拉作为过滤器：
+ * - 未选项目：KnowledgeBaseOverview 一览各项目知识库状态，点行即切到该项目
+ * - 选中项目：KnowledgeBaseManager 管理该项目的资料（与新建报告弹窗内的弹窗版共用）
  */
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { App, Button, Card, Select, Space } from 'antd'
+import { useQuery } from '@tanstack/react-query'
+import { Button, Card, Select, Space } from 'antd'
 import { RollbackOutlined } from '@ant-design/icons'
 import { fetchRdProjects } from '@/lib/api/client/research/rd-project'
 import type { RdProject } from '@/types/research/rd-project'
 import { KnowledgeBaseManager } from './KnowledgeBaseManager'
+import { KnowledgeBaseOverview } from './KnowledgeBaseOverview'
+import { ALL_PROJECTS_VALUE, useProjectFilter } from './useProjectFilter'
+
+const STORAGE_KEY = 'research:knowledge-bases:projectId'
 
 interface Props {
   /** 从项目详情页跳转过来时带的项目 id，直接定位到该项目 */
@@ -21,26 +26,35 @@ interface Props {
   fromProjectDetail?: boolean
 }
 
-
 export function KnowledgeBasePage({
   initialProjectId = '',
   fromProjectDetail = false,
 }: Props) {
-  const { message: msgApi } = App.useApp()
-  const [projects, setProjects] = useState<RdProject[]>([])
-  const [projectId, setProjectId] = useState<string>(initialProjectId)
+  const { data: projects = [], isLoading } = useQuery({
+    queryKey: ['rd-projects', 'options'],
+    queryFn: async () => {
+      const result = await fetchRdProjects({ page_size: 100 })
+      return (result.items ?? []) as RdProject[]
+    },
+    staleTime: 5 * 60_000,
+  })
 
-  useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const result = await fetchRdProjects({ page_size: 100 })
-        setProjects(result.items)
-      } catch (e: unknown) {
-        msgApi.error(e instanceof Error ? e.message : '加载项目列表失败')
-      }
-    }
-    loadProjects()
-  }, [msgApi])
+  const basePath = fromProjectDetail
+    ? '/research/knowledge-bases?from=project-detail'
+    : '/research/knowledge-bases'
+
+  const { projectId, selectProject } = useProjectFilter({
+    basePath,
+    storageKey: STORAGE_KEY,
+    initialProjectId,
+    projectCount: projects.length,
+    soleProjectId: projects[0]?.id,
+  })
+
+  const options = [
+    { value: ALL_PROJECTS_VALUE, label: '全部项目（知识库总览）' },
+    ...projects.map((p) => ({ value: p.id, label: `${p.name} (${p.api_name})` })),
+  ]
 
   return (
     <div>
@@ -51,33 +65,38 @@ export function KnowledgeBasePage({
             每个研发项目一个知识库：上传项目资料后自动解析，供项目内检索与资料查阅
           </p>
         </div>
-        {fromProjectDetail && (projectId || initialProjectId) ? (
+        {fromProjectDetail && projectId ? (
           <Space>
-            {fromProjectDetail && (projectId || initialProjectId) ? (
-              <Link href={`/research/projects/${projectId || initialProjectId}`}>
-                <Button icon={<RollbackOutlined />}>返回项目详情</Button>
-              </Link>
-            ) : null}
+            <Link href={`/research/projects/${projectId}`}>
+              <Button icon={<RollbackOutlined />}>返回项目详情</Button>
+            </Link>
           </Space>
         ) : null}
       </div>
 
       <Card style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span>选择项目：</span>
+          <span>项目：</span>
           <Select
-            style={{ width: 320 }}
-            placeholder="请选择研发项目"
-            value={projectId || undefined}
-            onChange={(value) => setProjectId(value)}
+            style={{ minWidth: 320 }}
+            loading={isLoading}
+            value={projectId || ALL_PROJECTS_VALUE}
+            onChange={selectProject}
+            options={options}
             showSearch
             optionFilterProp="label"
-            options={projects.map((p) => ({ value: p.id, label: `${p.name} (${p.api_name})` }))}
           />
+          <span style={{ color: '#999' }}>
+            {projectId ? '正在管理该项目的知识库' : '已汇总全部项目，可选择项目进行管理'}
+          </span>
         </div>
       </Card>
 
-      <KnowledgeBaseManager projectId={projectId} variant="page" />
+      {projectId ? (
+        <KnowledgeBaseManager projectId={projectId} variant="page" />
+      ) : (
+        <KnowledgeBaseOverview onSelectProject={selectProject} />
+      )}
     </div>
   )
 }

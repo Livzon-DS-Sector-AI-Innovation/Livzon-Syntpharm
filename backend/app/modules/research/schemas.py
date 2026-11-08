@@ -692,6 +692,7 @@ class RdReportResponse(RdReportBase):
     reviewed_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
+    project_name: str | None = Field(None, description="所属项目名称（列表查询时一并返回）")
     model_config = {"from_attributes": True}
 
 

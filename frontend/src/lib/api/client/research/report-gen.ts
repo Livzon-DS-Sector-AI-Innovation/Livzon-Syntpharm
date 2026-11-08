@@ -54,10 +54,14 @@ export async function fetchReportGenFeedback(jobId: string): Promise<ReportGenFe
   return result ?? { total: 0, open_count: 0, items: [] }
 }
 
-export async function fetchReportGenJobs(params: { projectId?: string; reportId?: string } = {}): Promise<ReportGenJobList> {
+export async function fetchReportGenJobs(
+  params: { projectId?: string; reportId?: string; limit?: number } = {},
+): Promise<ReportGenJobList> {
   const qs = new URLSearchParams()
   if (params.projectId) qs.set('project_id', params.projectId)
   if (params.reportId) qs.set('report_id', params.reportId)
+  // 跨项目时后端默认只回 100 条，显式抬到上限，避免老任务的进度被截断成「未生成」
+  if (params.limit) qs.set('limit', String(params.limit))
   const result = await apiGet<ReportGenJobList>(`${API_BASE}/jobs?${qs}`)
   return result ?? { items: [], active_count: 0 }
 }

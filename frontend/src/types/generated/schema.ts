@@ -47361,6 +47361,11 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            /**
+             * Project Name
+             * @description 所属项目名称（列表查询时一并返回）
+             */
+            project_name?: string | null;
         };
         /** RdReportUpdate */
         RdReportUpdate: {
@@ -86960,9 +86965,11 @@ export interface operations {
     };
     get_reports_api_v1_research_reports_get: {
         parameters: {
-            query: {
-                /** @description 项目ID */
-                project_id: string;
+            query?: {
+                /** @description 项目ID；不传则返回全部项目的报告 */
+                project_id?: string | null;
+                /** @description 返回条数上限（跨项目时生效） */
+                limit?: number;
             };
             header?: never;
             path?: never;

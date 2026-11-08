@@ -352,6 +352,8 @@ export interface RdReport {
   reviewer_id: string | null
   reviewed_at: string | null
   notes: string | null
+  /** 所属项目名称：仅列表查询返回，单条详情可能为空 */
+  project_name?: string | null
   created_at: string
   updated_at: string
 }
