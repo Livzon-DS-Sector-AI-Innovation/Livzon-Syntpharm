@@ -2,12 +2,45 @@
 
 import asyncio
 import json
+from dataclasses import dataclass, field
 from typing import Any
 
 import httpx
 
 from .config import LLMConfigData, get_config, get_named_config
-from .exceptions import LLMOutputError, LLMProviderError, LLMRateLimitError
+from .exceptions import LLMOutputError, LLMProviderError, LLMRateLimitError, LLMToolsUnsupportedError
+
+# 端点拒绝 tools 时常见的错误文本片段（不同网关措辞差异较大，宁可多匹配几个）
+_TOOLS_UNSUPPORTED_HINTS = (
+    "tools",
+    "tool_choice",
+    "function",
+    "response_format",
+    "not supported",
+    "unsupported",
+    "does not support",
+    "tool calling",
+)
+
+
+@dataclass(slots=True)
+class LLMToolCall:
+    """一次工具调用（arguments 已解析为 dict）。"""
+
+    id: str
+    name: str
+    arguments: dict[str, Any] = field(default_factory=dict)
+    arguments_raw: str = ""
+    parse_error: str | None = None
+
+
+@dataclass(slots=True)
+class LLMResponse:
+    """tool-calling 调用的返回：正文 + 工具调用列表。"""
+
+    content: str = ""
+    tool_calls: list[LLMToolCall] = field(default_factory=list)
+    finish_reason: str | None = None
 
 
 class LLMClient:
@@ -138,6 +171,85 @@ class LLMClient:
                 raise
 
         # Should not reach here, but just in case
+        if last_error:
+            raise last_error
+        raise LLMProviderError("LLM request failed after 4 attempts")
+
+    async def chat_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        *,
+        temperature: float | None = None,
+        max_tokens: int = 16384,
+        config_type: str = "text",
+        model_override: str | None = None,
+        config_name: str | None = None,
+        tool_choice: str = "auto",
+    ) -> LLMResponse:
+        """OpenAI 兼容的 tool calling 调用，返回正文与工具调用列表。
+
+        刻意**不**发送 ``response_format``：部分网关不允许 ``tools`` 与
+        ``json_object`` 同时出现。需要结构化结果时由业务侧从工具入参拿。
+
+        Args:
+            messages: 对话消息（含上一轮的 assistant/tool 消息时按 OpenAI 协议原样传入）
+            tools: ``[{"type": "function", "function": {...}}]``
+            temperature: 覆盖配置温度
+            max_tokens: 最大输出 token
+            config_type: "text" 或 "vision"
+            model_override: 覆盖模型名
+            config_name: 指定命名配置（端点、密钥、模型都取自该配置）
+            tool_choice: "auto" / "none" / "required"
+
+        Raises:
+            LLMToolsUnsupportedError: 端点明确拒绝 tools（调用方可降级为 JSON 协议）
+            LLMProviderError: 其他供应商错误
+            LLMRateLimitError: 限流
+        """
+        client, config = await self._get_client_and_config(config_type, config_name)
+        temp = temperature if temperature is not None else config.temperature
+
+        body: dict[str, Any] = {
+            "model": model_override or config.model_name,
+            "messages": [dict(m) for m in messages],
+            "temperature": temp,
+            "max_tokens": max_tokens,
+            "tools": tools,
+            "tool_choice": tool_choice,
+        }
+
+        last_error: Exception | None = None
+        for attempt in range(4):
+            try:
+                resp = await client.post("/chat/completions", json=body)
+
+                if resp.status_code == 429:
+                    raise LLMRateLimitError("Rate limit exceeded", status_code=429)
+
+                if resp.is_error:
+                    error_text = resp.text[:500]
+                    if resp.status_code in (400, 404, 422) and _looks_like_tools_unsupported(error_text):
+                        raise LLMToolsUnsupportedError(
+                            f"endpoint does not support tool calling: {resp.status_code}",
+                            status_code=resp.status_code,
+                            raw_response=error_text,
+                        )
+                    raise LLMProviderError(
+                        f"LLM API error: {resp.status_code} - {error_text}",
+                        status_code=resp.status_code,
+                        raw_response=error_text,
+                    )
+
+                return _parse_tool_response(resp.json())
+
+            except (LLMRateLimitError, httpx.ConnectError, httpx.ReadTimeout, httpx.WriteTimeout) as e:
+                last_error = e
+                if attempt < 3:
+                    await asyncio.sleep(2**attempt)
+                    continue
+                raise
+
         if last_error:
             raise last_error
         raise LLMProviderError("LLM request failed after 4 attempts")
@@ -474,6 +586,71 @@ class LLMClient:
                             yield {"type": "content", "text": content}
                     except json_module.JSONDecodeError:
                         continue
+
+
+def _looks_like_tools_unsupported(error_text: str) -> bool:
+    """判断 400/422 是否因为端点不支持 tools，而不是参数本身写错。"""
+    lowered = error_text.lower()
+    return any(hint in lowered for hint in _TOOLS_UNSUPPORTED_HINTS)
+
+
+def _parse_tool_response(data: dict[str, Any]) -> LLMResponse:
+    """把供应商返回规范化成 ``LLMResponse``；单个 tool_call 参数坏掉不影响其他调用。"""
+    try:
+        message = data["choices"][0]["message"]
+    except (KeyError, IndexError, TypeError) as exc:
+        raise LLMOutputError(
+            "LLM response missing choices/message", json.dumps(data, ensure_ascii=False)[:500]
+        ) from exc
+
+    content = message.get("content")
+    calls: list[LLMToolCall] = []
+    for index, item in enumerate(message.get("tool_calls") or []):
+        function = item.get("function") or {}
+        name = str(function.get("name") or "").strip()
+        raw_arguments = function.get("arguments")
+        if isinstance(raw_arguments, dict):
+            arguments = raw_arguments
+            arguments_raw = json.dumps(raw_arguments, ensure_ascii=False)
+            parse_error = None
+        else:
+            arguments_raw = str(raw_arguments or "")
+            arguments, parse_error = _load_arguments(arguments_raw)
+        calls.append(
+            LLMToolCall(
+                id=str(item.get("id") or f"call_{index}"),
+                name=name,
+                arguments=arguments,
+                arguments_raw=arguments_raw,
+                parse_error=parse_error,
+            )
+        )
+
+    finish_reason = None
+    try:
+        finish_reason = data["choices"][0].get("finish_reason")
+    except (KeyError, IndexError, TypeError):
+        finish_reason = None
+
+    return LLMResponse(
+        content=str(content or ""),
+        tool_calls=calls,
+        finish_reason=str(finish_reason) if finish_reason else None,
+    )
+
+
+def _load_arguments(raw: str) -> tuple[dict[str, Any], str | None]:
+    """解析工具入参；模型偶尔返回空串或非对象 JSON，保留原文供上层记录。"""
+    text = raw.strip()
+    if not text:
+        return {}, None
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError as exc:
+        return {}, f"arguments 不是合法 JSON: {exc.msg}"
+    if not isinstance(parsed, dict):
+        return {}, "arguments 不是 JSON 对象"
+    return parsed, None
 
 
 # Global singleton instance

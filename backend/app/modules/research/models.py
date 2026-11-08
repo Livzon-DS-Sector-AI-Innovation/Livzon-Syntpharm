@@ -777,6 +777,153 @@ class RdDeliverableTemplateVersion(BaseModel):
     is_current: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", comment="是否当前生效版本")
 
 
+# ---------------------------------------------------------------------------
+# AI 报告生成（Agent 版）
+#
+# 三张表分工：job 承载「一次生成」的快照与终态，step 是只追加的执行轨迹，
+# slot 是 Agent 的填充结果。生成输入（受控编码/品种名称/补充说明）刻意挂在
+# job 上而不是 rd_reports：同一报告多次生成各留一份输入快照，且不改动已被
+# 多处在读的报告表结构。
+# ---------------------------------------------------------------------------
+
+REPORT_GEN_JOB_STATUS_VALUES = ("queued", "running", "completed", "failed", "cancelled")
+REPORT_GEN_STEP_KIND_VALUES = ("think", "tool_call", "tool_result", "error", "status")
+REPORT_GEN_SLOT_STATE_VALUES = ("filled", "conflict", "pending", "gap", "anchor_unresolved")
+
+
+class RdReportGenJob(BaseModel):
+    """AI 报告生成任务：一条记录对应「点一次 AI 生成」。"""
+
+    __tablename__ = "rd_report_gen_jobs"
+    __table_args__ = (
+        Index("ix_research_rd_report_gen_jobs_report", "report_id"),
+        Index("ix_research_rd_report_gen_jobs_project", "project_id"),
+        Index("ix_research_rd_report_gen_jobs_status", "status"),
+        CheckConstraint(
+            "status IN ('queued', 'running', 'completed', 'failed', 'cancelled')",
+            name="ck_research_rd_report_gen_jobs_status",
+        ),
+        {"schema": "research"},
+    )
+
+    report_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("research.rd_reports.id"), comment="关联研发报告"
+    )
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("research.rd_projects.id"), comment="关联研发项目"
+    )
+    deliverable_template_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_deliverable_templates.id"),
+        nullable=True,
+        comment="使用的交付物模板（Word 母本）",
+    )
+    # 母本存储键快照：模板在任务执行期间被换版时，仍按任务发起时的母本生成
+    template_file_key: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="母本存储键快照")
+    template_file_name: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="母本文件名快照")
+
+    status: Mapped[str] = mapped_column(
+        String(20), default="queued", comment="queued/running/completed/failed/cancelled"
+    )
+    progress: Mapped[int] = mapped_column(Integer, default=0, comment="进度百分比 0~100")
+    current_step: Mapped[str | None] = mapped_column(String(300), nullable=True, comment="当前步骤描述")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True, comment="失败原因")
+
+    doc_code: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="受控编码（输入快照）")
+    drug_name: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="品种名称（输入快照）")
+    supplement_text: Mapped[str | None] = mapped_column(Text, nullable=True, comment="补充说明（输入快照）")
+
+    document_object_key: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="成品 docx 存储键")
+    document_file_name: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="成品 docx 文件名")
+    comparison_object_key: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="槽位对照表存储键")
+
+    slot_total: Mapped[int] = mapped_column(Integer, default=0, comment="槽位总数")
+    slot_filled: Mapped[int] = mapped_column(Integer, default=0, comment="已填槽位数")
+    slot_gap: Mapped[int] = mapped_column(Integer, default=0, comment="缺口槽位数")
+
+    cancel_requested: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", comment="人工请求终止"
+    )
+    rounds: Mapped[int] = mapped_column(Integer, default=0, comment="已执行的 Agent 轮次")
+    tool_mode: Mapped[str | None] = mapped_column(String(16), nullable=True, comment="实际使用的协议：tools/json")
+
+    # 模型快照：任务发起时固定，执行期间改配置不影响本任务。
+    # 档位列存「配置里填的原值」（LLM 配置名或模型名），执行时按它重新解析；
+    # model_name 存解析后的实际模型名，只用于展示。
+    model_config_name: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, comment="正文生成档位原值（LLM 配置名或模型名）"
+    )
+    model_name: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="正文生成实际模型名")
+    structure_model_name: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, comment="结构识别档位原值"
+    )
+    fallback_model_name: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="兜底档位原值")
+    used_fallback: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", comment="是否已降级到兜底模型"
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="开始执行时间")
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="结束时间（含失败/终止）"
+    )
+
+
+class RdReportGenStep(BaseModel):
+    """执行轨迹：只追加，不更新。详情页按 (job_id, seq) 增量拉取。"""
+
+    __tablename__ = "rd_report_gen_steps"
+    __table_args__ = (
+        UniqueConstraint("job_id", "seq", name="uq_research_rd_report_gen_steps_seq"),
+        Index("ix_research_rd_report_gen_steps_job_seq", "job_id", "seq"),
+        CheckConstraint(
+            "kind IN ('think', 'tool_call', 'tool_result', 'error', 'status')",
+            name="ck_research_rd_report_gen_steps_kind",
+        ),
+        {"schema": "research"},
+    )
+
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("research.rd_report_gen_jobs.id"), comment="所属任务"
+    )
+    seq: Mapped[int] = mapped_column(Integer, comment="任务内自增序号，从 1 起")
+    kind: Mapped[str] = mapped_column(String(20), comment="think/tool_call/tool_result/error/status")
+    title: Mapped[str] = mapped_column(String(300), comment="一句话标题（列表直接展示）")
+    tool_name: Mapped[str | None] = mapped_column(String(60), nullable=True, comment="工具名")
+    args_summary: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="入参摘要（已截断）")
+    result_summary: Mapped[str | None] = mapped_column(Text, nullable=True, comment="结果摘要（已截断）")
+    status: Mapped[str] = mapped_column(String(12), default="ok", comment="ok/failed")
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="耗时毫秒")
+
+
+class RdReportGenSlot(BaseModel):
+    """一个模板槽位的填充结果（含出处与证据，供对照表与人工复核）。"""
+
+    __tablename__ = "rd_report_gen_slots"
+    __table_args__ = (
+        UniqueConstraint("job_id", "slot_key", name="uq_research_rd_report_gen_slots_key"),
+        Index("ix_research_rd_report_gen_slots_job_state", "job_id", "state"),
+        CheckConstraint(
+            "state IN ('filled', 'conflict', 'pending', 'gap', 'anchor_unresolved')",
+            name="ck_research_rd_report_gen_slots_state",
+        ),
+        {"schema": "research"},
+    )
+
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("research.rd_report_gen_jobs.id"), comment="所属任务"
+    )
+    slot_key: Mapped[str] = mapped_column(String(100), comment="槽位稳定标识")
+    slot_label: Mapped[str] = mapped_column(String(200), default="", comment="槽位名称（如「品种名称」）")
+    anchor: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="母本锚点定义")
+    value: Mapped[str | None] = mapped_column(Text, nullable=True, comment="填充值")
+    state: Mapped[str] = mapped_column(
+        String(20), default="pending", comment="filled/conflict/pending/gap/anchor_unresolved"
+    )
+    source_name: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="来源文件或数据表")
+    evidence: Mapped[str | None] = mapped_column(Text, nullable=True, comment="原文证据（引文）")
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True, comment="置信度 0~1")
+    owner_hint: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="缺口责任方提示")
+
+
 # 子包 ORM 注册：Alembic 只 import app.modules.<code>.models，
 # 放在文件末尾避免子包反向引用时出现部分初始化
 from app.modules.research.knowledge_base import models as _kb_models  # noqa: E402,F401

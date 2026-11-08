@@ -3528,3 +3528,9 @@ router.include_router(doc_template_router, prefix="/doc-gen", tags=["研发管�
 from app.modules.research.knowledge_base.api import router as knowledge_base_router  # noqa: E402
 
 router.include_router(knowledge_base_router, prefix="/knowledge-bases", tags=["研发管理-项目知识库"])
+
+# ===== AI 报告生成（异步 Agent：读母本 / 检索知识库 / 回写 docx）=====
+
+from app.modules.research.report_gen.api import router as report_gen_router  # noqa: E402
+
+router.include_router(report_gen_router, prefix="/report-gen", tags=["研发管理-AI报告生成"])

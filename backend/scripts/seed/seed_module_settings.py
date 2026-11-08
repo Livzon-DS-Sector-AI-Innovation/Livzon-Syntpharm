@@ -4,17 +4,31 @@ import asyncio
 import os
 import sys
 
-# Add project root to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Import models to ensure tables are registered
 from sqlalchemy import select
 
-from app.core.config_model import ModuleSetting
-from app.core.database import async_session_factory
-from app.platform.identity.models import User  # noqa: F401
+# 本文件在 scripts/seed/ 下，需上溯三层到 backend/ 才能 import app.*
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+# 导入模型确保表已注册（路径补丁必须在 app.* 之前执行）
+from app.core.config_model import ModuleSetting  # noqa: E402
+from app.core.database import async_session_factory  # noqa: E402
+from app.platform.identity.models import User  # noqa: F401,E402
 
 DEFAULT_SETTINGS = [
+    # Research module — AI 报告生成（Agent 读母本 / 检索知识库 / 回写 docx）
+    ("research", "REPORT_GEN_MODEL", "", "string", "报告生成主模型；可填配置名或模型名，留空用全局默认"),
+    ("research", "REPORT_GEN_FALLBACK_MODEL", "", "string", "报告生成兜底模型；可填配置名或模型名，留空不切换"),
+    ("research", "REPORT_GEN_STRUCTURE_MODEL", "", "string", "母本结构识别模型；可填配置名或模型名，留空复用主模型"),
+    ("research", "REPORT_GEN_DISABLED_TOOLS", "", "string", "停用的 Agent 工具，逗号分隔，空=全启用"),
+    ("research", "REPORT_GEN_TOOL_MODE", "auto", "string", "工具协议：auto=先试 tools 再降级 JSON / tools / json"),
+    ("research", "REPORT_GEN_MAX_ROUNDS", "16", "int", "Agent 最大轮次上限"),
+    ("research", "REPORT_GEN_LLM_TIMEOUT_SECONDS", "180", "int", "单次模型调用超时（秒）"),
+    ("research", "REPORT_GEN_TOOL_TIMEOUT_SECONDS", "60", "int", "单个工具执行超时（秒）"),
+    ("research", "REPORT_GEN_JOB_TIMEOUT_SECONDS", "2400", "int", "整个生成任务超时（秒）"),
+    ("research", "REPORT_GEN_KB_TOP_K", "6", "int", "知识库检索默认返回条数"),
+    ("research", "REPORT_GEN_MAX_STEPS", "400", "int", "执行过程步骤数上限（超限只记状态行）"),
     # Research module — 知识库后台富化（切片摸底 / 事实抽取）
     ("research", "DOC_GEN_LLM_CALL_TIMEOUT_SECONDS", "180", "int", "单次模型调用硬超时（秒），超时按降级处理"),
     (

@@ -17,7 +17,7 @@ from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import NotFoundException
 from app.core.response import build_response
 from app.modules.research.doc_template import service
@@ -25,6 +25,11 @@ from app.modules.research.doc_template.schemas import (
     DocGenBatchUploadResponse,
     DocGenOperationResponse,
     DocGenTemplateFileResponse,
+    DocGenTemplateSlotsReparseRequest,
+    DocGenTemplateSlotsReparseResponse,
+    DocGenTemplateSlotsResponse,
+    DocGenTemplateSlotsSaveRequest,
+    DocGenTemplateSlotsSaveResponse,
     DocGenTemplateVersionListResponse,
     DocGenTemplateVersionRestoreResponse,
 )
@@ -76,9 +81,9 @@ async def upload_template_file(
 
     上传不会自动启用模板：由用户确认母本无误后手动开启。
     """
-    from app.modules.research.models import RdDocGenTemplate
+    from app.modules.research.models import RdDeliverableTemplate
 
-    template = await db.get(RdDocGenTemplate, template_id)
+    template = await db.get(RdDeliverableTemplate, template_id)
     if template is None or template.is_deleted:
         raise NotFoundException("模板不存在")
     data = await file.read()
@@ -177,6 +182,72 @@ async def delete_template_version(
     await service.delete_template_version(db, template_id, version_id, current_user.id if current_user else None)
     await db.commit()
     return build_response(message="已删除该版本")
+
+
+@router.get(
+    "/deliverable-templates/{template_id}/slots",
+    summary="交付物模板槽位结构",
+    response_model=DocGenTemplateSlotsResponse,
+)
+async def get_template_slots(
+    template_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:deliverable-template:read")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """返回槽位清单与母本候选位置；只读文件，不触发模型识别。"""
+    return build_response(data=await service.template_slots_payload(db, template_id))
+
+
+@router.put(
+    "/deliverable-templates/{template_id}/slots",
+    summary="保存槽位结构",
+    response_model=DocGenTemplateSlotsSaveResponse,
+)
+async def save_template_slots(
+    template_id: UUID,
+    payload: DocGenTemplateSlotsSaveRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:deliverable-template:update")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """全量覆盖槽位结构（人工增删改）；锚点必须在当前母本里，换版后须先重新识别。"""
+    data = await service.save_template_slots(
+        db,
+        template_id,
+        [item.model_dump() for item in payload.slots],
+        payload.token,
+        current_user.id if current_user else None,
+    )
+    await db.commit()
+    return build_response(data=data, message="槽位结构已保存，下次生成生效")
+
+
+@router.post(
+    "/deliverable-templates/{template_id}/slots/reparse",
+    summary="重新识别槽位结构",
+    response_model=DocGenTemplateSlotsReparseResponse,
+)
+async def reparse_template_slots(
+    template_id: UUID,
+    payload: DocGenTemplateSlotsReparseRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:deliverable-template:update")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """强制重解析并按位置合并：人工改过的字段保留，只补 AI 新识别的位置。"""
+    data = await service.reparse_template_slots(
+        db,
+        template_id,
+        payload.token,
+        current_user.id if current_user else None,
+    )
+    await db.commit()
+    stats = data["stats"]
+    return build_response(
+        data=data,
+        message=f"识别完成：新增 {stats['added']}、保留 {stats['kept']}、移除 {stats['removed']}",
+    )
 
 
 def _attachment(data: bytes, filename: str, mime: str) -> Response:

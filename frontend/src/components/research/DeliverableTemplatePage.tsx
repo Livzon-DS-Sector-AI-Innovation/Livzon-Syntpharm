@@ -28,6 +28,7 @@ import {
   EyeOutlined,
   HistoryOutlined,
   InboxOutlined,
+  NodeIndexOutlined,
   PlusOutlined,
   UploadOutlined,
 } from '@ant-design/icons'
@@ -53,6 +54,7 @@ import {
   updateDeliverableTemplate,
 } from '@/actions/research/rd-project'
 import { DeliverableTemplateVersionDrawer } from './DeliverableTemplateVersionDrawer'
+import { DeliverableTemplateSlotsDrawer } from './DeliverableTemplateSlotsDrawer'
 import { PermissionGate } from '@/components/auth/PermissionGate'
 import { PERM } from '@/lib/permissions/codes'
 
@@ -106,6 +108,9 @@ export function DeliverableTemplatePage() {
 
   /** 版本历史抽屉的目标模板 */
   const [versionDrawer, setVersionDrawer] = useState<RdDeliverableTemplate | null>(null)
+
+  /** 槽位结构抽屉的目标模板 */
+  const [slotsDrawer, setSlotsDrawer] = useState<RdDeliverableTemplate | null>(null)
 
   /** 替换母本前收集版本说明（仅已有母本的模板需要，首次上传无需说明） */
   const [pendingNote, setPendingNote] = useState<{ record: RdDeliverableTemplate; file: File } | null>(null)
@@ -335,7 +340,7 @@ export function DeliverableTemplatePage() {
     {
       title: 'Word 模板原件',
       key: 'file',
-      width: 320,
+      width: 400,
       render: (_: unknown, record: RdDeliverableTemplate) =>
         record.file_object_key ? (
           <Space size={4} wrap>
@@ -351,6 +356,13 @@ export function DeliverableTemplatePage() {
                 版本历史
               </Button>
             </Tooltip>
+            <PermissionGate code={PERM.researchDeliverableTemplateUpdate}>
+              <Tooltip title="查看并人工调整 AI 识别出的可填位置，改完下次生成生效">
+                <Button type="link" size="small" icon={<NodeIndexOutlined />} onClick={() => setSlotsDrawer(record)}>
+                  槽位结构
+                </Button>
+              </Tooltip>
+            </PermissionGate>
           </Space>
         ) : (
           <Upload beforeUpload={(f) => handleUploadToTemplate(record, f)} showUploadList={false} accept={WORD_ACCEPT} disabled={uploadingFile}>
@@ -593,6 +605,15 @@ export function DeliverableTemplatePage() {
         onChanged={invalidateTemplates}
         onPreview={openVersionPreview}
         onDownload={(version) => void handleVersionDownload(version)}
+      />
+
+      <DeliverableTemplateSlotsDrawer
+        key={slotsDrawer?.id ?? 'none'}
+        open={slotsDrawer !== null}
+        templateId={slotsDrawer?.id ?? null}
+        templateName={slotsDrawer?.name ?? ''}
+        onClose={() => setSlotsDrawer(null)}
+        onChanged={invalidateTemplates}
       />
 
       <Modal

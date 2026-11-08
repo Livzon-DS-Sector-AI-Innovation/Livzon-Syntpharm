@@ -11414,6 +11414,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 交付物模板槽位结构
+         * @description 返回槽位清单与母本候选位置；只读文件，不触发模型识别。
+         */
+        get: operations["get_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_get"];
+        /**
+         * 保存槽位结构
+         * @description 全量覆盖槽位结构（人工增删改）；锚点必须在当前母本里，换版后须先重新识别。
+         */
+        put: operations["save_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots/reparse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 重新识别槽位结构
+         * @description 强制重解析并按位置合并：人工改过的字段保留，只补 AI 新识别的位置。
+         */
+        post: operations["reparse_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_reparse_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/research/knowledge-bases/limits": {
         parameters: {
             query?: never;
@@ -11606,6 +11650,175 @@ export interface paths {
         get: operations["list_document_chunks_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__chunks_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/report-gen/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * AI 报告生成任务列表
+         * @description 列表页一次取回整项目的任务，避免逐报告请求。
+         */
+        get: operations["list_report_gen_jobs_api_v1_research_report_gen_jobs_get"];
+        put?: never;
+        /**
+         * 提交 AI 报告生成任务
+         * @description 建任务并立刻返回；真正的 Agent 执行在后台 worker 内进行，不阻塞本请求。
+         */
+        post: operations["create_report_gen_job_api_v1_research_report_gen_jobs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/report-gen/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** AI 报告生成任务详情 */
+        get: operations["get_report_gen_job_api_v1_research_report_gen_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/report-gen/jobs/{job_id}/steps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 执行过程（按 seq 增量） */
+        get: operations["list_report_gen_steps_api_v1_research_report_gen_jobs__job_id__steps_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/report-gen/jobs/{job_id}/slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 槽位填充结果 */
+        get: operations["list_report_gen_slots_api_v1_research_report_gen_jobs__job_id__slots_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/report-gen/jobs/{job_id}/slots/{slot_key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 人工修正槽位
+         * @description 只改结果区与对照表口径；成品 docx 不重渲染（按已确认的需求口径）。
+         */
+        put: operations["update_report_gen_slot_api_v1_research_report_gen_jobs__job_id__slots__slot_key__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/report-gen/jobs/{job_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 终止生成任务
+         * @description 置取消标记：排队中直接落终态，执行中由 Agent 循环在下一轮自行退出。
+         */
+        post: operations["cancel_report_gen_job_api_v1_research_report_gen_jobs__job_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/report-gen/jobs/{job_id}/document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 下载生成的 Word 文档 */
+        get: operations["download_report_gen_document_api_v1_research_report_gen_jobs__job_id__document_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/report-gen/jobs/{job_id}/comparison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 下载槽位对照表 */
+        get: operations["download_report_gen_comparison_api_v1_research_report_gen_jobs__job_id__comparison_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/report-gen/settings/test-model": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 测试报告生成模型档位连通性
+         * @description 只发一次极短对话验证该档位可用，不修改任何配置、不影响全局活跃模型。
+         */
+        post: operations["test_report_gen_model_api_v1_research_report_gen_settings_test_model_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -27211,6 +27424,96 @@ export interface components {
             data?: components["schemas"]["ReferenceStandardResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[ReportGenJobData] */
+        DataResponse_ReportGenJobData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenJobData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ReportGenJobListData] */
+        DataResponse_ReportGenJobListData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenJobListData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ReportGenModelTestData] */
+        DataResponse_ReportGenModelTestData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenModelTestData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ReportGenSlotData] */
+        DataResponse_ReportGenSlotData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenSlotData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ReportGenSlotListData] */
+        DataResponse_ReportGenSlotListData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenSlotListData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ReportGenStepListData] */
+        DataResponse_ReportGenStepListData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenStepListData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[ResearchProjectResponse] */
         DataResponse_ResearchProjectResponse_: {
             /**
@@ -30180,6 +30483,131 @@ export interface components {
             message: string;
         };
         /**
+         * DocGenReparseStats
+         * @description 合并重解析的增减统计。
+         */
+        DocGenReparseStats: {
+            /**
+             * Added
+             * @default 0
+             */
+            added: number;
+            /**
+             * Kept
+             * @default 0
+             */
+            kept: number;
+            /**
+             * Removed
+             * @default 0
+             */
+            removed: number;
+        };
+        /**
+         * DocGenSlotAnchorData
+         * @description 母本里的一个具体位置（段落或表格单元格）。
+         */
+        DocGenSlotAnchorData: {
+            /**
+             * Kind
+             * @default
+             */
+            kind: string;
+            /** Index */
+            index?: number | null;
+            /** Table Index */
+            table_index?: number | null;
+            /** Row */
+            row?: number | null;
+            /** Col */
+            col?: number | null;
+            /** Para Index */
+            para_index?: number | null;
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+            /**
+             * Style
+             * @default
+             */
+            style: string;
+            /**
+             * Fingerprint
+             * @default
+             */
+            fingerprint: string;
+        };
+        /**
+         * DocGenSlotCandidateItem
+         * @description 母本里的候选位置；``used`` 表示已被某个槽位占用。
+         */
+        DocGenSlotCandidateItem: {
+            /** Candidate Id */
+            candidate_id: string;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+            /**
+             * Style
+             * @default
+             */
+            style: string;
+            /**
+             * Context
+             * @default
+             */
+            context: string;
+            /**
+             * Used
+             * @default false
+             */
+            used: boolean;
+        };
+        /**
+         * DocGenSlotItem
+         * @description 一个可填槽位；``candidate_id`` 与 ``anchor`` 二选一即可换绑位置。
+         */
+        DocGenSlotItem: {
+            /** Slot Key */
+            slot_key: string;
+            /** Label */
+            label: string;
+            /**
+             * Value Type
+             * @default text
+             */
+            value_type: string;
+            /** Owner Hint */
+            owner_hint?: string | null;
+            /** Hint */
+            hint?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Candidate Id */
+            candidate_id?: string | null;
+            anchor?: components["schemas"]["DocGenSlotAnchorData"] | null;
+            /**
+             * Is Enabled
+             * @default true
+             */
+            is_enabled: boolean;
+            /**
+             * Origin
+             * @default ai
+             */
+            origin: string;
+            /** Edited Fields */
+            edited_fields?: string[];
+        };
+        /**
          * DocGenTemplateFileData
          * @description 挂载 Word 模板原件后的回显信息。
          */
@@ -30207,6 +30635,175 @@ export interface components {
              */
             message: string;
             data: components["schemas"]["DocGenTemplateFileData"];
+        };
+        /**
+         * DocGenTemplateSlotsData
+         * @description GET /deliverable-templates/{id}/slots 响应体。
+         */
+        DocGenTemplateSlotsData: {
+            /** Template Id */
+            template_id: string;
+            /** Template Name */
+            template_name: string;
+            /** File Name */
+            file_name?: string | null;
+            /**
+             * Version
+             * @default 2
+             */
+            version: number;
+            /** Source Key */
+            source_key?: string | null;
+            /** Analyzed At */
+            analyzed_at?: string | null;
+            /** Edited At */
+            edited_at?: string | null;
+            /** Token */
+            token?: string | null;
+            /**
+             * Is Stale
+             * @default false
+             */
+            is_stale: boolean;
+            /** Slots */
+            slots?: components["schemas"]["DocGenSlotItem"][];
+            /** Candidates */
+            candidates?: components["schemas"]["DocGenSlotCandidateItem"][];
+            /**
+             * Candidate Total
+             * @default 0
+             */
+            candidate_total: number;
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * Enabled Count
+             * @default 0
+             */
+            enabled_count: number;
+        };
+        /**
+         * DocGenTemplateSlotsReparseData
+         * @description 重解析结果：AI 本次原始识别 + 合并后结果 + 统计（diff 只在响应里，不落库）。
+         */
+        DocGenTemplateSlotsReparseData: {
+            /** Slots */
+            slots?: components["schemas"]["DocGenSlotItem"][];
+            /** Token */
+            token?: string | null;
+            /** Analyzed At */
+            analyzed_at?: string | null;
+            /** Edited At */
+            edited_at?: string | null;
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * Enabled Count
+             * @default 0
+             */
+            enabled_count: number;
+            /** Ai Slots */
+            ai_slots?: components["schemas"]["DocGenSlotItem"][];
+            stats?: components["schemas"]["DocGenReparseStats"];
+        };
+        /**
+         * DocGenTemplateSlotsReparseRequest
+         * @description POST /deliverable-templates/{id}/slots/reparse 入参。
+         */
+        DocGenTemplateSlotsReparseRequest: {
+            /** Token */
+            token?: string | null;
+        };
+        /**
+         * DocGenTemplateSlotsReparseResponse
+         * @description POST /deliverable-templates/{id}/slots/reparse 响应。
+         */
+        DocGenTemplateSlotsReparseResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DocGenTemplateSlotsReparseData"];
+        };
+        /**
+         * DocGenTemplateSlotsResponse
+         * @description GET /deliverable-templates/{id}/slots 响应。
+         */
+        DocGenTemplateSlotsResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DocGenTemplateSlotsData"];
+        };
+        /**
+         * DocGenTemplateSlotsSaveData
+         * @description 保存/重解析后的回显。
+         */
+        DocGenTemplateSlotsSaveData: {
+            /** Slots */
+            slots?: components["schemas"]["DocGenSlotItem"][];
+            /** Token */
+            token?: string | null;
+            /** Analyzed At */
+            analyzed_at?: string | null;
+            /** Edited At */
+            edited_at?: string | null;
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * Enabled Count
+             * @default 0
+             */
+            enabled_count: number;
+        };
+        /**
+         * DocGenTemplateSlotsSaveRequest
+         * @description PUT /deliverable-templates/{id}/slots 入参：全量覆盖 + 乐观令牌。
+         */
+        DocGenTemplateSlotsSaveRequest: {
+            /** Slots */
+            slots: components["schemas"]["DocGenSlotItem"][];
+            /** Token */
+            token?: string | null;
+        };
+        /**
+         * DocGenTemplateSlotsSaveResponse
+         * @description PUT /deliverable-templates/{id}/slots 响应。
+         */
+        DocGenTemplateSlotsSaveResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DocGenTemplateSlotsSaveData"];
         };
         /**
          * DocGenTemplateVersionItem
@@ -48270,6 +48867,275 @@ export interface components {
             static_data?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /**
+         * ReportGenJobCreateRequest
+         * @description 提交一次 AI 生成。
+         */
+        ReportGenJobCreateRequest: {
+            /**
+             * Report Id
+             * Format: uuid
+             */
+            report_id: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /**
+             * Deliverable Template Id
+             * Format: uuid
+             * @description Word 母本对应的交付物模板
+             */
+            deliverable_template_id: string;
+            /**
+             * Doc Code
+             * @description 受控编码
+             */
+            doc_code?: string | null;
+            /**
+             * Drug Name
+             * @description 品种名称
+             */
+            drug_name?: string | null;
+            /**
+             * Supplement Text
+             * @description 补充说明
+             */
+            supplement_text?: string | null;
+        };
+        /**
+         * ReportGenJobData
+         * @description 任务详情：详情页头部与列表进度列都用它。
+         */
+        ReportGenJobData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Report Id
+             * Format: uuid
+             */
+            report_id: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Report Title */
+            report_title?: string | null;
+            /** Template File Name */
+            template_file_name?: string | null;
+            /** Deliverable Template Id */
+            deliverable_template_id?: string | null;
+            /** Status */
+            status: string;
+            /** Progress */
+            progress: number;
+            /** Current Step */
+            current_step?: string | null;
+            /** Error Message */
+            error_message?: string | null;
+            /** Doc Code */
+            doc_code?: string | null;
+            /** Drug Name */
+            drug_name?: string | null;
+            /** Supplement Text */
+            supplement_text?: string | null;
+            /** Document File Name */
+            document_file_name?: string | null;
+            /** Slot Total */
+            slot_total: number;
+            /** Slot Filled */
+            slot_filled: number;
+            /** Slot Gap */
+            slot_gap: number;
+            /** Rounds */
+            rounds: number;
+            /** Tool Mode */
+            tool_mode?: string | null;
+            /** Model Config Name */
+            model_config_name?: string | null;
+            /** Model Name */
+            model_name?: string | null;
+            /** Structure Model Name */
+            structure_model_name?: string | null;
+            /** Fallback Model Name */
+            fallback_model_name?: string | null;
+            /**
+             * Used Fallback
+             * @default false
+             */
+            used_fallback: boolean;
+            /**
+             * Can Cancel
+             * @default false
+             */
+            can_cancel: boolean;
+            /**
+             * Has Document
+             * @default false
+             */
+            has_document: boolean;
+            /** Started At */
+            started_at?: string | null;
+            /** Finished At */
+            finished_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ReportGenJobListData */
+        ReportGenJobListData: {
+            /** Items */
+            items: components["schemas"]["ReportGenJobData"][];
+            /**
+             * Active Count
+             * @default 0
+             */
+            active_count: number;
+        };
+        /** ReportGenModelTestData */
+        ReportGenModelTestData: {
+            /** Ok */
+            ok: boolean;
+            /** Slot */
+            slot: string;
+            /**
+             * Model
+             * @description 实际使用的模型名；不含密钥与端点
+             */
+            model?: string | null;
+            /**
+             * Latency Ms
+             * @description 一次往返耗时（毫秒）
+             */
+            latency_ms?: number | null;
+            /**
+             * Detail
+             * @description 成功提示或失败原因摘要
+             */
+            detail?: string | null;
+        };
+        /**
+         * ReportGenModelTestRequest
+         * @description 配置页的「测试连通」：只验证某一档能不能出字，不改任何配置。
+         */
+        ReportGenModelTestRequest: {
+            /**
+             * Slot
+             * @description 要测试的模型档位
+             * @enum {string}
+             */
+            slot: "main" | "structure" | "fallback";
+        };
+        /** ReportGenSlotData */
+        ReportGenSlotData: {
+            /** Slot Key */
+            slot_key: string;
+            /** Slot Label */
+            slot_label: string;
+            /** Location */
+            location?: string | null;
+            /** State */
+            state: string;
+            /** Value */
+            value?: string | null;
+            /** Source Name */
+            source_name?: string | null;
+            /** Evidence */
+            evidence?: string | null;
+            /** Confidence */
+            confidence?: number | null;
+            /** Owner Hint */
+            owner_hint?: string | null;
+        };
+        /** ReportGenSlotListData */
+        ReportGenSlotListData: {
+            /** Items */
+            items: components["schemas"]["ReportGenSlotData"][];
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Filled
+             * @default 0
+             */
+            filled: number;
+            /**
+             * Gaps
+             * @default 0
+             */
+            gaps: number;
+        };
+        /**
+         * ReportGenSlotUpdateRequest
+         * @description 人工修正槽位：只改结果与对照表，不重新渲染成品（按需求确认的口径）。
+         */
+        ReportGenSlotUpdateRequest: {
+            /**
+             * Value
+             * @description 新的填充值，留空表示标记缺口
+             */
+            value?: string | null;
+            /**
+             * Evidence
+             * @description 人工补充的依据
+             */
+            evidence?: string | null;
+            /**
+             * Owner Hint
+             * @description 缺口责任方
+             */
+            owner_hint?: string | null;
+        };
+        /** ReportGenStepData */
+        ReportGenStepData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Seq */
+            seq: number;
+            /** Kind */
+            kind: string;
+            /** Title */
+            title: string;
+            /** Tool Name */
+            tool_name?: string | null;
+            /** Args Summary */
+            args_summary?: {
+                [key: string]: unknown;
+            } | null;
+            /** Result Summary */
+            result_summary?: string | null;
+            /** Status */
+            status: string;
+            /** Duration Ms */
+            duration_ms?: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ReportGenStepListData */
+        ReportGenStepListData: {
+            /** Items */
+            items: components["schemas"]["ReportGenStepData"][];
+            /**
+             * Last Seq
+             * @default 0
+             */
+            last_seq: number;
         };
         /**
          * ReportItemData
@@ -86325,6 +87191,113 @@ export interface operations {
             };
         };
     };
+    get_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DocGenTemplateSlotsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocGenTemplateSlotsSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DocGenTemplateSlotsSaveResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reparse_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_reparse_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocGenTemplateSlotsReparseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DocGenTemplateSlotsReparseResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     read_limits_api_v1_research_knowledge_bases_limits_get: {
         parameters: {
             query?: never;
@@ -86731,6 +87704,353 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["KbChunkListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_report_gen_jobs_api_v1_research_report_gen_jobs_get: {
+        parameters: {
+            query?: {
+                /** @description 按项目过滤 */
+                project_id?: string | null;
+                /** @description 按报告过滤 */
+                report_id?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenJobListData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_report_gen_job_api_v1_research_report_gen_jobs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportGenJobCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenJobData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_report_gen_job_api_v1_research_report_gen_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenJobData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_report_gen_steps_api_v1_research_report_gen_jobs__job_id__steps_get: {
+        parameters: {
+            query?: {
+                /** @description 只返回 seq 大于该值的步骤 */
+                after_seq?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenStepListData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_report_gen_slots_api_v1_research_report_gen_jobs__job_id__slots_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenSlotListData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_report_gen_slot_api_v1_research_report_gen_jobs__job_id__slots__slot_key__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+                slot_key: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportGenSlotUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenSlotData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_report_gen_job_api_v1_research_report_gen_jobs__job_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenJobData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_report_gen_document_api_v1_research_report_gen_jobs__job_id__document_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_report_gen_comparison_api_v1_research_report_gen_jobs__job_id__comparison_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_report_gen_model_api_v1_research_report_gen_settings_test_model_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportGenModelTestRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenModelTestData_"];
                 };
             };
             /** @description Validation Error */

@@ -7,7 +7,7 @@ Usage:
     parsed = await llm_client.chat_json(messages, expected_keys=["key1", "key2"])
 """
 
-from .client import LLMClient, llm_client
+from .client import LLMClient, LLMResponse, LLMToolCall, llm_client
 from .config import (
     LLMConfigData,
     LLMConfigModel,
@@ -23,6 +23,7 @@ from .exceptions import (
     LLMOutputError,
     LLMProviderError,
     LLMRateLimitError,
+    LLMToolsUnsupportedError,
 )
 from .providers import PROVIDERS, ProviderConfig, ProviderType, get_provider_config
 
@@ -30,6 +31,8 @@ __all__ = [
     # Client
     "LLMClient",
     "llm_client",
+    "LLMResponse",
+    "LLMToolCall",
     # Config
     "get_config",
     "get_active_config",
@@ -43,6 +46,7 @@ __all__ = [
     "LLMProviderError",
     "LLMRateLimitError",
     "LLMOutputError",
+    "LLMToolsUnsupportedError",
     # Encryption
     "encrypt_api_key",
     "decrypt_api_key",

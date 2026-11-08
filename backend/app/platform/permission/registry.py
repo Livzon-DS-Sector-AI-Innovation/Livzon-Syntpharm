@@ -1402,9 +1402,9 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("research:report:update", "PUT", "/api/v1/research/reports/{report_id}"),
     ApiBindingDef("research:route:update", "PUT", "/api/v1/research/routes/{route_id}"),
     # ── research 交付物模板文件管理与知识库（knowledge-base）──
-    # 说明：这批接口当前只声明了登录态（require_user），绑定登记用于满足
+    # 说明：这批接口多数只声明了登录态（require_user），绑定登记用于满足
     # 中间件 fail-closed 兜底与 CI 完整性门禁；接口级鉴权码已就绪，待逐个
-    # 补 require_permission 后即生效。
+    # 补 require_permission 后即生效。槽位结构（slots）三个接口已启用接口级鉴权。
     ApiBindingDef(
         "research:deliverable-template:create", "POST", "/api/v1/research/doc-gen/deliverable-templates/batch-upload"
     ),
@@ -1438,6 +1438,22 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "POST",
         "/api/v1/research/doc-gen/deliverable-templates/{template_id}/versions/{version_id}/restore",
     ),
+    # 槽位结构：查看走 read，保存与重解析都改结构，走 update
+    ApiBindingDef(
+        "research:deliverable-template:read",
+        "GET",
+        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots",
+    ),
+    ApiBindingDef(
+        "research:deliverable-template:update",
+        "PUT",
+        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots",
+    ),
+    ApiBindingDef(
+        "research:deliverable-template:update",
+        "POST",
+        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots/reparse",
+    ),
     ApiBindingDef("research:knowledge-base:read", "GET", "/api/v1/research/knowledge-bases"),
     ApiBindingDef("research:knowledge-base:create", "POST", "/api/v1/research/knowledge-bases"),
     ApiBindingDef("research:knowledge-base:read", "GET", "/api/v1/research/knowledge-bases/limits"),
@@ -1466,6 +1482,24 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "/api/v1/research/knowledge-bases/{kb_id}/documents/{document_row_id}/reparse",
     ),
     ApiBindingDef("research:knowledge-base:read", "GET", "/api/v1/research/knowledge-bases/{kb_id}/images/{image_id}"),
+    # ── research AI 报告生成（异步任务 + 执行过程 + 成品下载）──
+    ApiBindingDef("research:report:create", "POST", "/api/v1/research/report-gen/jobs"),
+    ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs"),
+    ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}"),
+    ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/steps"),
+    ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/slots"),
+    ApiBindingDef(
+        "research:report:update", "PUT", "/api/v1/research/report-gen/jobs/{job_id}/slots/{slot_key}"
+    ),
+    ApiBindingDef("research:report:update", "POST", "/api/v1/research/report-gen/jobs/{job_id}/cancel"),
+    ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/document"),
+    ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/comparison"),
+    # 报告生成配置：单档位连通测试走模块配置写权限，不动全局 LLM 配置库
+    ApiBindingDef(
+        "platform:module-setting:manage",
+        "POST",
+        "/api/v1/research/report-gen/settings/test-model",
+    ),
     # ── environment / administration / warehouse / procurement 模板端点 ──
     ApiBindingDef("environment:module:read", "GET", "/api/v1/environment"),
     ApiBindingDef("environment:module:read", "GET", "/api/v1/environment/"),

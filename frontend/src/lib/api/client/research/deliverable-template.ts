@@ -7,6 +7,7 @@
  * 2. 下载：文件流必须由浏览器直接接收并触发保存。
  */
 import { apiGet } from '@/lib/api/client'
+import type { DocGenTemplateSlots } from '@/types/research/deliverable-template-slot'
 import type { components } from '@/types/generated/schema'
 
 const DOC_TEMPLATE_BASE = '/api/v1/research/doc-gen/deliverable-templates'
@@ -83,7 +84,7 @@ export type DocGenBatchUploadResult = Required<Pick<BatchUploadRaw, 'created' | 
 export async function uploadDeliverableTemplates(files: File[]): Promise<DocGenBatchUploadResult> {
   const formData = new FormData()
   files.forEach((f) => formData.append('files', f))
-  const result = await postMultipart<{ data: BatchUploadRaw }>(
+  const result = await postMultipart<components['schemas']['DocGenBatchUploadResponse']>(
     `${DOC_TEMPLATE_BASE}/batch-upload`,
     formData,
     '批量上传失败',
@@ -104,6 +105,21 @@ export async function fetchDeliverableTemplateVersions(templateId: string): Prom
     `${DOC_TEMPLATE_BASE}/${templateId}/versions`,
   )
   return data ?? []
+}
+
+/**
+ * 拉取模板的槽位结构与母本候选位置。
+ *
+ * 只读母本取候选位、不触发模型识别，所以可以在抽屉打开时直接调用。
+ */
+export async function fetchDeliverableTemplateSlots(templateId: string): Promise<DocGenTemplateSlots> {
+  const data = await apiGet<components['schemas']['DocGenTemplateSlotsData'] | null>(
+    `${DOC_TEMPLATE_BASE}/${templateId}/slots`,
+  )
+  if (!data) {
+    throw new Error('槽位结构返回为空，请稍后重试')
+  }
+  return data
 }
 
 /**

@@ -1,12 +1,14 @@
 """交付物模板服务层：Word 母本的上传留档、版本历史、下载与回滚。
 
-刻意不解析母本结构、不推断填充项：模板在这里只是一份带版本历史的 Word 原件。
+上传路径刻意不解析母本结构、不推断填充项：模板在这里只是一份带版本历史的 Word 原件。
+只有「槽位结构」相关接口会临时扁平化母本（认位置，不调模型），供人工核对与重解析。
 """
 
 from __future__ import annotations
 
 import logging
 import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -237,11 +239,22 @@ def _template_mime(ext: str) -> str:
     return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 
-async def _load_template_or_404(session: AsyncSession, template_id: uuid.UUID) -> Any:
-    """取模板记录，不存在（或已软删）即 404。"""
+async def _load_template_or_404(
+    session: AsyncSession, template_id: uuid.UUID, *, for_update: bool = False
+) -> Any:
+    """取模板记录，不存在（或已软删）即 404。
+
+    ``for_update=True`` 时对行加锁：槽位结构是「读-改-写」，不加锁时两个并发保存
+    都能通过令牌比对，后写的会静默覆盖前一个。
+    """
+    from sqlalchemy import select
+
     from app.modules.research.models import RdDeliverableTemplate
 
-    template = await session.get(RdDeliverableTemplate, template_id)
+    stmt = select(RdDeliverableTemplate).where(RdDeliverableTemplate.id == template_id)
+    if for_update:
+        stmt = stmt.with_for_update()
+    template = (await session.execute(stmt)).scalar_one_or_none()
     if template is None or template.is_deleted:
         raise NotFoundException("模板不存在")
     return template
@@ -443,3 +456,276 @@ async def delete_template_version(
     version.is_deleted = True
     version.updated_by = user_id
     await session.flush()
+
+
+# ===== 槽位结构：AI 识别结果的人工查看与编辑 =====
+
+# 人工新增的槽位默认锁定这几个字段：名称、标识、位置是人的判断，重解析不许覆盖
+_NEW_SLOT_EDITED_FIELDS = ("anchor", "label", "slot_key")
+
+
+def _now_iso() -> str:
+    return datetime.now(UTC).isoformat()
+
+
+def _structure_token(structure: dict[str, Any]) -> str | None:
+    """并发编辑令牌：优先用人工保存时间，没有人工痕迹时退回 AI 识别时间。"""
+    return structure.get("edited_at") or structure.get("analyzed_at")
+
+
+def _load_candidates(template: Any) -> list[dict[str, Any]]:
+    """把当前母本扁平化成候选位置：只读文件、不调模型、不写库。"""
+    from app.modules.research.report_gen.structure import (
+        build_candidates,
+        cell_refs,
+        open_document,
+        paragraph_refs,
+    )
+
+    if not template.file_object_key:
+        return []
+    data = store.load_bytes(template.file_object_key)
+    if not data:
+        raise BadRequestException("母本文件已丢失，请重新上传模板")
+    document = open_document(data)
+    return build_candidates(paragraph_refs(document), cell_refs(document))
+
+
+def _slot_payload(slot: dict[str, Any], candidate_ids: dict[tuple[Any, ...], str]) -> dict[str, Any]:
+    from app.modules.research.report_gen.structure import anchor_key
+
+    return {
+        "slot_key": slot["slot_key"],
+        "label": slot["label"],
+        "value_type": slot["value_type"],
+        "owner_hint": slot["owner_hint"],
+        "hint": slot["hint"],
+        "location": slot["location"],
+        "candidate_id": candidate_ids.get(anchor_key(slot["anchor"])),
+        "anchor": slot["anchor"],
+        "is_enabled": slot["is_enabled"],
+        "origin": slot["origin"],
+        "edited_fields": slot["edited_fields"],
+    }
+
+
+async def template_slots_payload(session: AsyncSession, template_id: uuid.UUID) -> dict[str, Any]:
+    """槽位结构 + 候选位置清单。母本换过版时 ``is_stale=True``，前端据此拦截保存。"""
+    from app.modules.research.report_gen.structure import (
+        STRUCTURE_VERSION,
+        anchor_key,
+        normalize_structure,
+        structure_is_stale,
+    )
+
+    template = await _load_template_or_404(session, template_id)
+    if not template.file_object_key:
+        raise BadRequestException("该模板还没有上传 Word 母本，无法查看槽位结构")
+
+    structure = normalize_structure(template.template_structure)
+    candidates = _load_candidates(template)
+    candidate_ids = {anchor_key(item["anchor"]): item["candidate_id"] for item in candidates}
+    used = {anchor_key(slot["anchor"]) for slot in structure["slots"]}
+
+    slots = [_slot_payload(slot, candidate_ids) for slot in structure["slots"]]
+    return {
+        "template_id": str(template.id),
+        "template_name": template.name,
+        "file_name": template.file_name,
+        "version": structure.get("version") or STRUCTURE_VERSION,
+        "source_key": structure.get("source_key"),
+        "analyzed_at": structure.get("analyzed_at"),
+        "edited_at": structure.get("edited_at"),
+        "token": _structure_token(structure),
+        "is_stale": structure_is_stale(structure, template.file_object_key),
+        "slots": slots,
+        "candidates": [
+            {
+                "candidate_id": item["candidate_id"],
+                "kind": item["kind"],
+                "label": item["label"],
+                "text": item["text"],
+                "style": item["style"] or "",
+                "context": item["context"],
+                "used": anchor_key(item["anchor"]) in used,
+            }
+            for item in candidates
+        ],
+        "candidate_total": len(candidates),
+        "total_count": len(slots),
+        "enabled_count": sum(1 for slot in slots if slot["is_enabled"]),
+    }
+
+
+def _resolve_slots(raw_slots: list[dict[str, Any]], candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """把前端提交的槽位对齐到真实候选位：锚点只能来自当前母本。"""
+    from app.modules.research.report_gen.structure import anchor_key, normalize_slot, validate_slots
+
+    by_id = {item["candidate_id"]: item for item in candidates}
+    by_anchor = {anchor_key(item["anchor"]): item for item in candidates}
+
+    resolved: list[dict[str, Any]] = []
+    for index, raw in enumerate(raw_slots):
+        key = str(raw.get("slot_key") or "").strip() or f"第 {index + 1} 个槽位"
+        candidate = None
+        candidate_id = str(raw.get("candidate_id") or "").strip()
+        if candidate_id:
+            candidate = by_id.get(candidate_id)
+        elif isinstance(raw.get("anchor"), dict):
+            candidate = by_anchor.get(anchor_key(raw["anchor"]))
+        if candidate is None:
+            raise BadRequestException(f"{key} 绑定的位置不在当前母本中，请重新识别或换个位置")
+        resolved.append(
+            normalize_slot({**raw, "anchor": candidate["anchor"], "location": candidate["label"]})
+        )
+
+    validate_slots(resolved, {anchor_key(item["anchor"]) for item in candidates})
+    return resolved
+
+
+def _stamp_manual_edits(
+    slots: list[dict[str, Any]], old_slots: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """把「这次到底改了什么」写进槽位，供下一次合并重解析判断保留范围。"""
+    from app.modules.research.report_gen.structure import anchor_key, edited_fields_between
+
+    old_by_anchor = {anchor_key(slot["anchor"]): slot for slot in old_slots}
+    for slot in slots:
+        old = old_by_anchor.get(anchor_key(slot["anchor"]))
+        if old is None:
+            slot["origin"] = "manual"
+            slot["edited_fields"] = list(_NEW_SLOT_EDITED_FIELDS)
+            continue
+        changed = edited_fields_between(old, slot)
+        # 老结构可能还没补 edited_fields / origin，按「未人工动过」处理
+        merged_fields = sorted(set(old.get("edited_fields") or []) | set(changed))
+        slot["edited_fields"] = merged_fields
+        slot["origin"] = "manual" if merged_fields or old.get("origin") == "manual" else "ai"
+    return slots
+
+
+def _save_result(structure: dict[str, Any], slots: list[dict[str, Any]], token: str) -> dict[str, Any]:
+    return {
+        "slots": slots,
+        "token": token,
+        "analyzed_at": structure.get("analyzed_at"),
+        "edited_at": structure.get("edited_at"),
+        "total_count": len(slots),
+        "enabled_count": sum(1 for slot in slots if slot["is_enabled"]),
+    }
+
+
+async def save_template_slots(
+    session: AsyncSession,
+    template_id: uuid.UUID,
+    raw_slots: list[dict[str, Any]],
+    token: str | None,
+    user_id: uuid.UUID | None = None,
+) -> dict[str, Any]:
+    """全量覆盖槽位结构；锚点必须属于当前母本，母本换版后禁止直接保存。"""
+    from app.modules.research.report_gen.structure import (
+        STRUCTURE_VERSION,
+        normalize_structure,
+        structure_is_stale,
+    )
+
+    template = await _load_template_or_404(session, template_id, for_update=True)
+    if not template.file_object_key:
+        raise BadRequestException("该模板还没有上传 Word 母本，无法保存槽位结构")
+
+    current = normalize_structure(template.template_structure)
+    if structure_is_stale(current, template.file_object_key):
+        raise BadRequestException("母本已换版，请先「重新识别」槽位结构再保存，避免把旧位置写到新母本上")
+
+    candidates = _load_candidates(template)
+    if not candidates:
+        raise BadRequestException("母本中没有可填写的位置，无法保存槽位结构")
+
+    stored_token = _structure_token(current)
+    if stored_token and token != stored_token:
+        raise BadRequestException("槽位结构已被其他人修改，请关闭抽屉重新打开后再改")
+
+    slots = _stamp_manual_edits(_resolve_slots(raw_slots, candidates), current["slots"])
+    now = _now_iso()
+    structure = {
+        "version": STRUCTURE_VERSION,
+        "source_key": template.file_object_key,
+        "analyzed_at": current.get("analyzed_at"),
+        "edited_at": now,
+        "edited_by": str(user_id) if user_id else None,
+        "slots": slots,
+    }
+    template.template_structure = structure
+    template.updated_by = user_id
+    await session.flush()
+    logger.info(
+        "template slots saved",
+        extra={
+            "template_id": str(template.id),
+            "slot_count": len(slots),
+            "enabled_count": sum(1 for slot in slots if slot["is_enabled"]),
+        },
+    )
+    return _save_result(structure, slots, now)
+
+
+async def reparse_template_slots(
+    session: AsyncSession,
+    template_id: uuid.UUID,
+    token: str | None,
+    user_id: uuid.UUID | None = None,
+) -> dict[str, Any]:
+    """强制重解析并按锚点合并：人工改过的字段保留，AI 新识别的位置补进来。
+
+    返回里同时带 ``ai_slots``（本次识别原始结果）与 ``slots``（合并后结果），
+    差异展示只走响应，不落库。
+    """
+    from app.modules.research.report_gen.config import load_config
+    from app.modules.research.report_gen.structure import (
+        STRUCTURE_VERSION,
+        ensure_structure,
+        merge_slots,
+        normalize_structure,
+    )
+
+    template = await _load_template_or_404(session, template_id, for_update=True)
+    if not template.file_object_key:
+        raise BadRequestException("该模板还没有上传 Word 母本，无法识别槽位结构")
+
+    current = normalize_structure(template.template_structure)
+    stored_token = _structure_token(current)
+    if stored_token and token != stored_token:
+        raise BadRequestException("槽位结构已被其他人修改，请关闭抽屉重新打开后再改")
+
+    config = await load_config()
+    fresh = await ensure_structure(session, template, config, force=True)
+    ai_slots: list[dict[str, Any]] = list(fresh.get("slots") or [])
+    merged, stats = merge_slots(current["slots"], ai_slots)
+
+    now = _now_iso()
+    structure = {
+        "version": STRUCTURE_VERSION,
+        "source_key": template.file_object_key,
+        "analyzed_at": now,
+        "edited_at": now,
+        "edited_by": str(user_id) if user_id else None,
+        "slots": merged,
+    }
+    # ensure_structure 刚写的是纯 AI 结果，这里用合并结果覆盖（同一 session，不额外提交）
+    template.template_structure = structure
+    template.updated_by = user_id
+    await session.flush()
+    logger.info(
+        "template slots reparsed",
+        extra={
+            "template_id": str(template.id),
+            "ai_slots": len(ai_slots),
+            "merged_slots": len(merged),
+            **stats,
+        },
+    )
+    return {
+        **_save_result(structure, merged, now),
+        "ai_slots": ai_slots,
+        "stats": stats,
+    }
