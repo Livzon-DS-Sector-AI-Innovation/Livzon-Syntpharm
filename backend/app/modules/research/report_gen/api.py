@@ -19,6 +19,10 @@ from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import DataResponse
 from app.modules.research.report_gen import service
 from app.modules.research.report_gen.schemas import (
+    ReportGenFeedbackCreateRequest,
+    ReportGenFeedbackData,
+    ReportGenFeedbackListData,
+    ReportGenFeedbackUpdateRequest,
     ReportGenJobCreateRequest,
     ReportGenJobData,
     ReportGenJobListData,
@@ -151,6 +155,56 @@ async def cancel_report_gen_job(
     """置取消标记：排队中直接落终态，执行中由 Agent 循环在下一轮自行退出。"""
     data = await service.cancel_job(db, job_id, current_user.id if current_user else None)
     return DataResponse[ReportGenJobData](data=data, message="已请求终止")
+
+
+@router.post(
+    "/jobs/{job_id}/feedback",
+    summary="对某一版报告提修改意见",
+    response_model=DataResponse[ReportGenFeedbackData],
+    status_code=201,
+)
+async def create_report_gen_feedback(
+    job_id: UUID,
+    payload: ReportGenFeedbackCreateRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:report:update")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[ReportGenFeedbackData]:
+    """意见只记录不立即执行：下次生成（含本页「重新生成」）会自动带上未落实的条目。"""
+    data = await service.create_feedback(db, job_id, payload, current_user.id if current_user else None)
+    return DataResponse[ReportGenFeedbackData](data=data, message="已记录意见")
+
+
+@router.get(
+    "/jobs/{job_id}/feedback",
+    summary="某一版报告上提过的修改意见",
+    response_model=DataResponse[ReportGenFeedbackListData],
+)
+async def list_report_gen_feedback(
+    job_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:report:read")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[ReportGenFeedbackListData]:
+    data = await service.list_feedback(db, job_id)
+    return DataResponse[ReportGenFeedbackListData](data=data)
+
+
+@router.patch(
+    "/feedback/{feedback_id}",
+    summary="处置修改意见（不采纳 / 重新打开）",
+    response_model=DataResponse[ReportGenFeedbackData],
+)
+async def update_report_gen_feedback(
+    feedback_id: UUID,
+    payload: ReportGenFeedbackUpdateRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:report:update")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[ReportGenFeedbackData]:
+    """标为不采纳后不再带入下一次生成；重新打开则恢复带入。"""
+    data = await service.update_feedback(db, feedback_id, payload, current_user.id if current_user else None)
+    return DataResponse[ReportGenFeedbackData](data=data, message="已更新")
 
 
 @router.get("/jobs/{job_id}/document", summary="下载生成的 Word 文档")

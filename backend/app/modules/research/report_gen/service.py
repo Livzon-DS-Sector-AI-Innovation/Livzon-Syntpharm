@@ -23,6 +23,7 @@ from app.modules.research.doc_template import store
 from app.modules.research.models import (
     RdDeliverableTemplate,
     RdReport,
+    RdReportGenFeedback,
     RdReportGenJob,
     RdReportGenSlot,
     RdReportGenStep,
@@ -30,8 +31,15 @@ from app.modules.research.models import (
 from app.modules.research.report_gen.agent import run_report_gen
 from app.modules.research.report_gen.config import load_config
 from app.modules.research.report_gen.examples import record_manual_example
+from app.modules.research.report_gen.feedback import list_open as _list_open_feedback
+from app.modules.research.report_gen.feedback import mark_applied as _mark_feedback_applied
+from app.modules.research.report_gen.feedback import merge_supplement as _merge_feedback
 from app.modules.research.report_gen.prompts_version import agent_prompt_version, structure_prompt_version
 from app.modules.research.report_gen.schemas import (
+    ReportGenFeedbackCreateRequest,
+    ReportGenFeedbackData,
+    ReportGenFeedbackListData,
+    ReportGenFeedbackUpdateRequest,
     ReportGenJobCreateRequest,
     ReportGenJobData,
     ReportGenJobListData,
@@ -153,6 +161,13 @@ async def create_job(
     # 模型快照：任务发起时固定三档原值，执行期间改配置不影响本任务
     config = await load_config()
 
+    # 未落实的评审意见跟着这次生成一起走：读失败只记日志，不能因此挡住生成
+    try:
+        pending_feedback = await _list_open_feedback(session, payload.report_id)
+    except Exception:  # noqa: BLE001 - 意见是增益项，读失败不该阻断生成
+        logger.exception("report-gen feedback load failed", extra={"report_id": str(payload.report_id)})
+        pending_feedback = []
+
     job = RdReportGenJob(
         report_id=payload.report_id,
         project_id=payload.project_id,
@@ -168,11 +183,17 @@ async def create_job(
         current_step="排队中",
         doc_code=payload.doc_code,
         drug_name=payload.drug_name,
-        supplement_text=payload.supplement_text,
+        supplement_text=_merge_feedback(payload.supplement_text, pending_feedback),
         created_by=user_id,
         updated_by=user_id,
     )
     session.add(job)
+    await session.flush()
+    if pending_feedback:
+        try:
+            await _mark_feedback_applied(session, pending_feedback, job.id)
+        except Exception:  # noqa: BLE001 - 标记失败只影响留痕，任务照常执行
+            logger.exception("report-gen feedback mark failed", extra={"job_id": str(job.id)})
     await session.commit()
     await session.refresh(job)
 
@@ -516,6 +537,102 @@ async def list_structure_runs(
         for row in rows
     ]
     return ReportGenStructureRunListData(total=len(items), items=items)
+
+
+def _to_feedback_data(row: RdReportGenFeedback) -> ReportGenFeedbackData:
+    return ReportGenFeedbackData(
+        id=str(row.id),
+        job_id=str(row.job_id),
+        slot_key=row.slot_key,
+        content=row.content,
+        status=row.status,
+        applied_job_id=str(row.applied_job_id) if row.applied_job_id else None,
+        created_at=row.created_at,
+    )
+
+
+async def create_feedback(
+    session: AsyncSession,
+    job_id: UUID,
+    payload: ReportGenFeedbackCreateRequest,
+    user_id: UUID | None,
+) -> ReportGenFeedbackData:
+    """对某一版报告提一条意见；槽位级意见必须落在本任务真实存在的槽位上。"""
+    job = await session.get(RdReportGenJob, job_id)
+    if job is None or job.is_deleted:
+        raise NotFoundException("生成任务不存在")
+
+    slot_key = (payload.slot_key or "").strip() or None
+    if slot_key:
+        slot_exists = await session.execute(
+            select(RdReportGenSlot.id).where(
+                RdReportGenSlot.job_id == job_id,
+                RdReportGenSlot.slot_key == slot_key,
+                RdReportGenSlot.is_deleted.is_(False),
+            )
+        )
+        if slot_exists.first() is None:
+            raise BadRequestException("该槽位不在本任务里，请刷新后重试")
+
+    content = " ".join((payload.content or "").split())
+    if not content:
+        raise BadRequestException("意见内容不能为空")
+
+    row = RdReportGenFeedback(
+        job_id=job_id,
+        report_id=job.report_id,
+        slot_key=slot_key,
+        content=content[:1000],
+        status="open",
+        created_by=user_id,
+        updated_by=user_id,
+    )
+    session.add(row)
+    await session.commit()
+    await session.refresh(row)
+    return _to_feedback_data(row)
+
+
+async def list_feedback(session: AsyncSession, job_id: UUID) -> ReportGenFeedbackListData:
+    """列出该任务上提过的意见；新提的在前，便于评审时先看最近一条。"""
+    job = await session.get(RdReportGenJob, job_id)
+    if job is None or job.is_deleted:
+        raise NotFoundException("生成任务不存在")
+    result = await session.execute(
+        select(RdReportGenFeedback)
+        .where(
+            RdReportGenFeedback.job_id == job_id,
+            RdReportGenFeedback.is_deleted.is_(False),
+        )
+        .order_by(RdReportGenFeedback.created_at.desc())
+        .limit(100)
+    )
+    rows = list(result.scalars().all())
+    items = [_to_feedback_data(row) for row in rows]
+    return ReportGenFeedbackListData(
+        total=len(items),
+        open_count=sum(1 for row in rows if row.status == "open"),
+        items=items,
+    )
+
+
+async def update_feedback(
+    session: AsyncSession,
+    feedback_id: UUID,
+    payload: ReportGenFeedbackUpdateRequest,
+    user_id: UUID | None,
+) -> ReportGenFeedbackData:
+    """人工处置：标不采纳，或把误标不采纳的重新打开（下次生成会再带上）。"""
+    row = await session.get(RdReportGenFeedback, feedback_id)
+    if row is None or row.is_deleted:
+        raise NotFoundException("修改意见不存在")
+    row.status = payload.status
+    if payload.status == "open":
+        row.applied_job_id = None
+    row.updated_by = user_id
+    await session.commit()
+    await session.refresh(row)
+    return _to_feedback_data(row)
 
 
 async def test_model(slot: str) -> ReportGenModelTestData:

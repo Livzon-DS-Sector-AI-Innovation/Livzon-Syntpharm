@@ -4,11 +4,14 @@ import { revalidatePath } from 'next/cache'
 
 import {
   cancelReportGenJob as cancelReportGenJobApi,
+  createReportGenFeedback as createReportGenFeedbackApi,
   createReportGenJob as createReportGenJobApi,
   testReportGenModel as testReportGenModelApi,
+  updateReportGenFeedback as updateReportGenFeedbackApi,
   updateReportGenSlot as updateReportGenSlotApi,
 } from '@/lib/api/server/research/report-gen'
 import type {
+  ReportGenFeedbackCreate,
   ReportGenJobCreate,
   ReportGenModelSlot,
   ReportGenSlotUpdate,
@@ -34,6 +37,21 @@ export async function saveReportGenSlot(jobId: string, slotKey: string, payload:
   const result = await updateReportGenSlotApi(jobId, slotKey, payload)
   revalidatePath(`/research/reports/generation/${jobId}`)
   return result
+}
+
+/**
+ * 提一条评审意见：只记录不立即执行。
+ * 下一次生成（含详情页「重新生成」）会把该报告下未落实的意见自动拼进补充说明。
+ */
+export async function createReportGenFeedback(jobId: string, payload: ReportGenFeedbackCreate) {
+  const result = await createReportGenFeedbackApi(jobId, payload)
+  revalidatePath(`/research/reports/generation/${jobId}`)
+  return result
+}
+
+/** 处置意见：标不采纳后不再带入下一次生成，重新打开则恢复带入。 */
+export async function updateReportGenFeedback(feedbackId: string, status: 'open' | 'ignored') {
+  return updateReportGenFeedbackApi(feedbackId, status)
 }
 
 /**

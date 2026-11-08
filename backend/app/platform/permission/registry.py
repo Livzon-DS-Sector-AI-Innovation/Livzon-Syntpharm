@@ -1492,6 +1492,9 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "research:report:update", "PUT", "/api/v1/research/report-gen/jobs/{job_id}/slots/{slot_key}"
     ),
     ApiBindingDef("research:report:update", "POST", "/api/v1/research/report-gen/jobs/{job_id}/cancel"),
+    ApiBindingDef("research:report:update", "POST", "/api/v1/research/report-gen/jobs/{job_id}/feedback"),
+    ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/feedback"),
+    ApiBindingDef("research:report:update", "PATCH", "/api/v1/research/report-gen/feedback/{feedback_id}"),
     ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/document"),
     ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/comparison"),
     ApiBindingDef(

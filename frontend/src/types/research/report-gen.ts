@@ -15,6 +15,9 @@ export type ReportGenSlot = components['schemas']['ReportGenSlotData']
 export type ReportGenSlotList = components['schemas']['ReportGenSlotListData']
 export type ReportGenJobCreate = components['schemas']['ReportGenJobCreateRequest']
 export type ReportGenSlotUpdate = components['schemas']['ReportGenSlotUpdateRequest']
+export type ReportGenFeedback = components['schemas']['ReportGenFeedbackData']
+export type ReportGenFeedbackList = components['schemas']['ReportGenFeedbackListData']
+export type ReportGenFeedbackCreate = components['schemas']['ReportGenFeedbackCreateRequest']
 
 export type ReportGenJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
 export type ReportGenStepKind = 'think' | 'tool_call' | 'tool_result' | 'error' | 'status'

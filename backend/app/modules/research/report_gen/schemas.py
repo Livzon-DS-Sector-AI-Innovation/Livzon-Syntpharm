@@ -177,7 +177,40 @@ class ReportGenStructureRunListData(BaseModel):
     items: list[ReportGenStructureRunData]
 
 
+class ReportGenFeedbackCreateRequest(BaseModel):
+    """提一条评审意见：要么针对整篇，要么针对某个槽位。"""
+
+    slot_key: str | None = Field(None, max_length=100, description="针对的槽位；留空=整篇意见")
+    content: str = Field(..., min_length=1, max_length=1000, description="意见内容")
+
+
+class ReportGenFeedbackUpdateRequest(BaseModel):
+    """人工处置意见：不采纳标 ignored，需要重新打开标 open。"""
+
+    status: Literal["open", "ignored"] = Field(description="open=重新待落实 / ignored=不采纳")
+
+
+class ReportGenFeedbackData(BaseModel):
+    id: str
+    job_id: str
+    slot_key: str | None = Field(None, description="针对的槽位；空=整篇意见")
+    content: str
+    status: str = Field(description="open / applied / ignored")
+    applied_job_id: str | None = Field(None, description="落实该意见的重生成任务")
+    created_at: datetime
+
+
+class ReportGenFeedbackListData(BaseModel):
+    total: int = 0
+    open_count: int = Field(0, description="待落实条数：下次生成会被自动带上")
+    items: list[ReportGenFeedbackData] = Field(default_factory=list)
+
+
 __all__ = [
+    "ReportGenFeedbackCreateRequest",
+    "ReportGenFeedbackData",
+    "ReportGenFeedbackListData",
+    "ReportGenFeedbackUpdateRequest",
     "ReportGenJobCreateRequest",
     "ReportGenJobData",
     "ReportGenJobListData",

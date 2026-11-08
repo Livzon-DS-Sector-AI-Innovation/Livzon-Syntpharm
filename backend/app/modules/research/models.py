@@ -990,6 +990,50 @@ class RdReportGenStructureRun(BaseModel):
     error: Mapped[str | None] = mapped_column(Text, nullable=True, comment="失败原因（截断）")
 
 
+class RdReportGenFeedback(BaseModel):
+    """评审修改意见：报告生成出来后，人在详情页对某一版提的具体改法。
+
+    为什么单独成表而不是复用 ``supplement_text``：补充说明是「这次生成多给点料」，
+    意见是「上一版哪里不对」，事后再生成时要能逐条回答改没改、哪次改的。
+    ``applied_job_id`` 指向真正落实它的那次重生成，没有它就只能靠猜。
+    """
+
+    __tablename__ = "rd_report_gen_feedback"
+    __table_args__ = (
+        Index("ix_research_rd_report_gen_feedback_job", "job_id", "status"),
+        Index("ix_research_rd_report_gen_feedback_report", "report_id", "status"),
+        CheckConstraint(
+            "status IN ('open', 'applied', 'ignored')",
+            name="ck_research_rd_report_gen_feedback_status",
+        ),
+        {"schema": "research"},
+    )
+
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_report_gen_jobs.id"),
+        comment="提出意见时对应的生成任务",
+    )
+    report_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_reports.id"),
+        comment="所属研发报告（跨任务汇总用）",
+    )
+    slot_key: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="针对的槽位；空=整篇意见"
+    )
+    content: Mapped[str] = mapped_column(Text, comment="意见内容")
+    status: Mapped[str] = mapped_column(
+        String(12), default="open", comment="open=待落实 / applied=已被重生成带走 / ignored=不采纳"
+    )
+    applied_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_report_gen_jobs.id"),
+        nullable=True,
+        comment="落实该意见的重生成任务",
+    )
+
+
 # 子包 ORM 注册：Alembic 只 import app.modules.<code>.models，
 # 放在文件末尾避免子包反向引用时出现部分初始化
 from app.modules.research.knowledge_base import models as _kb_models  # noqa: E402,F401

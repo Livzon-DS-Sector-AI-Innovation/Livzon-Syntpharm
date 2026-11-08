@@ -60,6 +60,10 @@ _Avoid_: 识别日志, 解析快照
 正文生成与母本识别各有一段 system prompt，库内 `REPORT_GEN_AGENT_PROMPT` / `REPORT_GEN_STRUCTURE_PROMPT` 可整段覆盖，留空则用 `report_gen/prompts.py` 的内置版本；变量用 `$name` 渲染。指纹是「生效文本 + 工具清单」的 sha256 前 8 位，用于判断提示词是否变过，不是版本号。
 _Avoid_: 提示词版本, prompt 模板（当指可覆盖的生效文本时）
 
+**评审意见** (Review Feedback):
+对某一版报告提出的逐条改法，可针对整篇或单个槽位。三态：待落实、已落实（被某次重生成带走并记下是哪次）、不采纳；未落实的会在下次生成时自动拼进补充说明，所以它不是一次性备注。
+_Avoid_: 批注, 备注, 补充说明（supplement_text 是另一样东西：发起生成时的一次性交代）
+
 ### 设备台账 (Equipment Ledger)
 
 **增量更新策略** (Incremental Update Strategy):
@@ -83,3 +87,4 @@ _Avoid_: 设备编号（与 `asset_no` 混淆）
 - **导入策略 → ADR**：设备导入的匹配与更新决策记录在 `backend/docs/adr/001-equipment-import-v3.md` 与 `backend/docs/adr/002-equipment-import-v4-incremental-update.md`；Excel 部门名称映射的真实来源是 `backend/app/modules/equipment/config/dept_mapping.py`。
 - **人工修正 → 示例库 → 下次生成**：人在详情页改槽位值即写 `Slot Example`；下次生成通过 `read_template_outline` 的 `manual_example` 下发，只影响措辞、不构成证据。
 - **解析留痕 → 槽位结构**：`Structure Run` 记录解析当时的槽位集合，与当前 `Slot` 的启用状态做差得出「后补/否掉」，用于判断识别提示词是否该调。
+- **评审意见 → 下次生成**：`Review Feedback` 未落实（open）的条目在新建生成任务时自动拼进 `supplement_text`，并标记为已落实、记下落实它的 job；标为不采纳则不再带入。

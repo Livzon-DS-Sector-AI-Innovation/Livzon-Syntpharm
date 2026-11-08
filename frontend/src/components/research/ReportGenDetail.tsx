@@ -15,6 +15,7 @@ import {
 } from '@/lib/api/client/research/report-gen'
 import { ReportGenTimeline } from './ReportGenTimeline'
 import { ReportGenSlotTable } from './ReportGenSlotTable'
+import { ReportGenFeedbackPanel } from './ReportGenFeedbackPanel'
 import {
   formatDuration, isTerminal, jobElapsedMs, jobModelSnapshot, statusMeta,
   type ReportGenJob, type ReportGenStep,
@@ -289,6 +290,8 @@ export function ReportGenDetail({ jobId, initialJob }: Props) {
           />
         )}
       </Card>
+
+      <ReportGenFeedbackPanel jobId={jobId} slots={slotData?.items ?? []} disabled={running} />
 
       <Row gutter={16}>
         <Col xs={24} xl={14}>

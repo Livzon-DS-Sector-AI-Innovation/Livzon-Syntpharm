@@ -7,6 +7,7 @@
 import { apiFetch, apiFetchData, getApiBaseUrl } from '@/lib/api/server/base'
 import {
   REPORT_GEN_METRIC_DEFAULT_WINDOW,
+  type ReportGenFeedbackCreate,
   type ReportGenJob,
   type ReportGenJobCreate,
   type ReportGenMetrics,
@@ -37,6 +38,22 @@ export async function updateReportGenSlot(jobId: string, slotKey: string, payloa
   return apiFetch(`${getApiBaseUrl()}${API_BASE}/jobs/${jobId}/slots/${encodeURIComponent(slotKey)}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
+  })
+}
+
+/** 对某一版报告提一条修改意见：下次生成会自动带上未落实的条目。 */
+export async function createReportGenFeedback(jobId: string, payload: ReportGenFeedbackCreate) {
+  return apiFetch(`${getApiBaseUrl()}${API_BASE}/jobs/${jobId}/feedback`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+/** 处置意见：ignored 不再带入下一次生成，open 恢复带入。 */
+export async function updateReportGenFeedback(feedbackId: string, status: 'open' | 'ignored') {
+  return apiFetch(`${getApiBaseUrl()}${API_BASE}/feedback/${feedbackId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
   })
 }
 

@@ -8,6 +8,7 @@
 import { apiGet } from '@/lib/api/client'
 import {
   REPORT_GEN_METRIC_DEFAULT_WINDOW,
+  type ReportGenFeedbackList,
   type ReportGenJob,
   type ReportGenJobList,
   type ReportGenMetrics,
@@ -38,6 +39,12 @@ export async function fetchTemplateStructureRuns(
     `${API_BASE}/templates/${templateId}/structure-runs?limit=${limit}`,
   )
   return result ?? { total: 0, items: [] }
+}
+
+/** 某一版报告上提过的修改意见（只读）：写操作走 Server Action。 */
+export async function fetchReportGenFeedback(jobId: string): Promise<ReportGenFeedbackList> {
+  const result = await apiGet<ReportGenFeedbackList>(`${API_BASE}/jobs/${jobId}/feedback`)
+  return result ?? { total: 0, open_count: 0, items: [] }
 }
 
 export async function fetchReportGenJobs(params: { projectId?: string; reportId?: string } = {}): Promise<ReportGenJobList> {

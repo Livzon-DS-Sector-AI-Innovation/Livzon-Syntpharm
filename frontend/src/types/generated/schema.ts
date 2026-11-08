@@ -11771,6 +11771,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/research/report-gen/jobs/{job_id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 某一版报告上提过的修改意见 */
+        get: operations["list_report_gen_feedback_api_v1_research_report_gen_jobs__job_id__feedback_get"];
+        put?: never;
+        /**
+         * 对某一版报告提修改意见
+         * @description 意见只记录不立即执行：下次生成（含本页「重新生成」）会自动带上未落实的条目。
+         */
+        post: operations["create_report_gen_feedback_api_v1_research_report_gen_jobs__job_id__feedback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/report-gen/feedback/{feedback_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 处置修改意见（不采纳 / 重新打开）
+         * @description 标为不采纳后不再带入下一次生成；重新打开则恢复带入。
+         */
+        patch: operations["update_report_gen_feedback_api_v1_research_report_gen_feedback__feedback_id__patch"];
+        trace?: never;
+    };
     "/api/v1/research/report-gen/jobs/{job_id}/document": {
         parameters: {
             query?: never;
@@ -27462,6 +27503,36 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["ReferenceStandardResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ReportGenFeedbackData] */
+        DataResponse_ReportGenFeedbackData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenFeedbackData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ReportGenFeedbackListData] */
+        DataResponse_ReportGenFeedbackListData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenFeedbackListData"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[ReportGenJobData] */
@@ -48937,6 +49008,79 @@ export interface components {
             static_data?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /**
+         * ReportGenFeedbackCreateRequest
+         * @description 提一条评审意见：要么针对整篇，要么针对某个槽位。
+         */
+        ReportGenFeedbackCreateRequest: {
+            /**
+             * Slot Key
+             * @description 针对的槽位；留空=整篇意见
+             */
+            slot_key?: string | null;
+            /**
+             * Content
+             * @description 意见内容
+             */
+            content: string;
+        };
+        /** ReportGenFeedbackData */
+        ReportGenFeedbackData: {
+            /** Id */
+            id: string;
+            /** Job Id */
+            job_id: string;
+            /**
+             * Slot Key
+             * @description 针对的槽位；空=整篇意见
+             */
+            slot_key?: string | null;
+            /** Content */
+            content: string;
+            /**
+             * Status
+             * @description open / applied / ignored
+             */
+            status: string;
+            /**
+             * Applied Job Id
+             * @description 落实该意见的重生成任务
+             */
+            applied_job_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ReportGenFeedbackListData */
+        ReportGenFeedbackListData: {
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Open Count
+             * @description 待落实条数：下次生成会被自动带上
+             * @default 0
+             */
+            open_count: number;
+            /** Items */
+            items?: components["schemas"]["ReportGenFeedbackData"][];
+        };
+        /**
+         * ReportGenFeedbackUpdateRequest
+         * @description 人工处置意见：不采纳标 ignored，需要重新打开标 open。
+         */
+        ReportGenFeedbackUpdateRequest: {
+            /**
+             * Status
+             * @description open=重新待落实 / ignored=不采纳
+             * @enum {string}
+             */
+            status: "open" | "ignored";
         };
         /**
          * ReportGenJobCreateRequest
@@ -88200,6 +88344,113 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenJobData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_report_gen_feedback_api_v1_research_report_gen_jobs__job_id__feedback_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenFeedbackListData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_report_gen_feedback_api_v1_research_report_gen_jobs__job_id__feedback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportGenFeedbackCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenFeedbackData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_report_gen_feedback_api_v1_research_report_gen_feedback__feedback_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                feedback_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportGenFeedbackUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenFeedbackData_"];
                 };
             };
             /** @description Validation Error */

@@ -57976,6 +57976,206 @@
         }
       }
     },
+    "/api/v1/research/report-gen/jobs/{job_id}/feedback": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u5bf9\u67d0\u4e00\u7248\u62a5\u544a\u63d0\u4fee\u6539\u610f\u89c1",
+        "description": "\u610f\u89c1\u53ea\u8bb0\u5f55\u4e0d\u7acb\u5373\u6267\u884c\uff1a\u4e0b\u6b21\u751f\u6210\uff08\u542b\u672c\u9875\u300c\u91cd\u65b0\u751f\u6210\u300d\uff09\u4f1a\u81ea\u52a8\u5e26\u4e0a\u672a\u843d\u5b9e\u7684\u6761\u76ee\u3002",
+        "operationId": "create_report_gen_feedback_api_v1_research_report_gen_jobs__job_id__feedback_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportGenFeedbackCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ReportGenFeedbackData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u67d0\u4e00\u7248\u62a5\u544a\u4e0a\u63d0\u8fc7\u7684\u4fee\u6539\u610f\u89c1",
+        "operationId": "list_report_gen_feedback_api_v1_research_report_gen_jobs__job_id__feedback_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ReportGenFeedbackListData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/report-gen/feedback/{feedback_id}": {
+      "patch": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u5904\u7f6e\u4fee\u6539\u610f\u89c1\uff08\u4e0d\u91c7\u7eb3 / \u91cd\u65b0\u6253\u5f00\uff09",
+        "description": "\u6807\u4e3a\u4e0d\u91c7\u7eb3\u540e\u4e0d\u518d\u5e26\u5165\u4e0b\u4e00\u6b21\u751f\u6210\uff1b\u91cd\u65b0\u6253\u5f00\u5219\u6062\u590d\u5e26\u5165\u3002",
+        "operationId": "update_report_gen_feedback_api_v1_research_report_gen_feedback__feedback_id__patch",
+        "parameters": [
+          {
+            "name": "feedback_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Feedback Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportGenFeedbackUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ReportGenFeedbackData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/research/report-gen/jobs/{job_id}/document": {
       "get": {
         "tags": [
@@ -112377,6 +112577,78 @@
         "type": "object",
         "title": "DataResponse[ReferenceStandardResponse]"
       },
+      "DataResponse_ReportGenFeedbackData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportGenFeedbackData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ReportGenFeedbackData]"
+      },
+      "DataResponse_ReportGenFeedbackListData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportGenFeedbackListData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ReportGenFeedbackListData]"
+      },
       "DataResponse_ReportGenJobData_": {
         "properties": {
           "code": {
@@ -163715,6 +163987,138 @@
         ],
         "title": "ReportCreate",
         "description": "\u62a5\u544a\u5355\u521b\u5efa"
+      },
+      "ReportGenFeedbackCreateRequest": {
+        "properties": {
+          "slot_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Key",
+            "description": "\u9488\u5bf9\u7684\u69fd\u4f4d\uff1b\u7559\u7a7a=\u6574\u7bc7\u610f\u89c1"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Content",
+            "description": "\u610f\u89c1\u5185\u5bb9"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "ReportGenFeedbackCreateRequest",
+        "description": "\u63d0\u4e00\u6761\u8bc4\u5ba1\u610f\u89c1\uff1a\u8981\u4e48\u9488\u5bf9\u6574\u7bc7\uff0c\u8981\u4e48\u9488\u5bf9\u67d0\u4e2a\u69fd\u4f4d\u3002"
+      },
+      "ReportGenFeedbackData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "slot_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Key",
+            "description": "\u9488\u5bf9\u7684\u69fd\u4f4d\uff1b\u7a7a=\u6574\u7bc7\u610f\u89c1"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "open / applied / ignored"
+          },
+          "applied_job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied Job Id",
+            "description": "\u843d\u5b9e\u8be5\u610f\u89c1\u7684\u91cd\u751f\u6210\u4efb\u52a1"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "job_id",
+          "content",
+          "status",
+          "created_at"
+        ],
+        "title": "ReportGenFeedbackData"
+      },
+      "ReportGenFeedbackListData": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "open_count": {
+            "type": "integer",
+            "title": "Open Count",
+            "description": "\u5f85\u843d\u5b9e\u6761\u6570\uff1a\u4e0b\u6b21\u751f\u6210\u4f1a\u88ab\u81ea\u52a8\u5e26\u4e0a",
+            "default": 0
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportGenFeedbackData"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "ReportGenFeedbackListData"
+      },
+      "ReportGenFeedbackUpdateRequest": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "ignored"
+            ],
+            "title": "Status",
+            "description": "open=\u91cd\u65b0\u5f85\u843d\u5b9e / ignored=\u4e0d\u91c7\u7eb3"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ReportGenFeedbackUpdateRequest",
+        "description": "\u4eba\u5de5\u5904\u7f6e\u610f\u89c1\uff1a\u4e0d\u91c7\u7eb3\u6807 ignored\uff0c\u9700\u8981\u91cd\u65b0\u6253\u5f00\u6807 open\u3002"
       },
       "ReportGenJobCreateRequest": {
         "properties": {
