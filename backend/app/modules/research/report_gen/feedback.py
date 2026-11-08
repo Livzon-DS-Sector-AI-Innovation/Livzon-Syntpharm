@@ -27,6 +27,18 @@ MAX_FEEDBACK_CHARS = 500
 _HEADER = "【上一版评审意见（逐条落实；确实无法落实的，在缺口说明里写明原因）】"
 
 
+def strip_merged(text: str | None) -> str:
+    """还原用户自己写的那段补充说明，去掉历史上拼进去的意见段。
+
+    落库的 ``supplement_text`` 是「原话 + 拼入意见」的成品；详情页「重新生成」会把它整段
+    作为新请求的补充说明传回来。若直接再拼一次，同一批意见会在提示词里出现两遍，
+    模型容易把同一条要求落实两次。拼入段以固定表头起始，从表头处截断即可。
+    """
+    value = (text or "").strip()
+    index = value.find(_HEADER)
+    return value[:index].strip() if index >= 0 else value
+
+
 async def list_open(session: AsyncSession, report_id: UUID) -> list[RdReportGenFeedback]:
     """取该报告下所有待落实意见，先提的先带入（评审通常是按顺序看的）。"""
     result = await session.execute(
@@ -73,4 +85,11 @@ async def mark_applied(session: AsyncSession, items: list[RdReportGenFeedback], 
     return len(items)
 
 
-__all__ = ["MAX_FEEDBACK_CHARS", "MAX_FEEDBACK_ITEMS", "list_open", "mark_applied", "merge_supplement"]
+__all__ = [
+    "MAX_FEEDBACK_CHARS",
+    "MAX_FEEDBACK_ITEMS",
+    "list_open",
+    "mark_applied",
+    "merge_supplement",
+    "strip_merged",
+]

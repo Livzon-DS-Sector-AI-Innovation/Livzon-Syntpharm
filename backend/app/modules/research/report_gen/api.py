@@ -19,7 +19,10 @@ from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import DataResponse
 from app.modules.research.report_gen import service
 from app.modules.research.report_gen.schemas import (
+    ReportGenExampleData,
+    ReportGenExampleListData,
     ReportGenExamplePromoteData,
+    ReportGenExampleUpdateRequest,
     ReportGenFeedbackCreateRequest,
     ReportGenFeedbackData,
     ReportGenFeedbackListData,
@@ -168,7 +171,7 @@ async def create_report_gen_feedback(
     job_id: UUID,
     payload: ReportGenFeedbackCreateRequest,
     current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:report:update")),
+    ctx: PermissionContext = Depends(require_permission("research:report:review")),
     db: AsyncSession = Depends(get_db),
 ) -> DataResponse[ReportGenFeedbackData]:
     """意见只记录不立即执行：下次生成（含本页「重新生成」）会自动带上未落实的条目。"""
@@ -200,7 +203,7 @@ async def update_report_gen_feedback(
     feedback_id: UUID,
     payload: ReportGenFeedbackUpdateRequest,
     current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:report:update")),
+    ctx: PermissionContext = Depends(require_permission("research:report:review")),
     db: AsyncSession = Depends(get_db),
 ) -> DataResponse[ReportGenFeedbackData]:
     """标为不采纳后不再带入下一次生成；重新打开则恢复带入。"""
@@ -216,7 +219,7 @@ async def update_report_gen_feedback(
 async def promote_report_gen_feedback(
     feedback_id: UUID,
     current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:report:update")),
+    ctx: PermissionContext = Depends(require_permission("research:report:review")),
     db: AsyncSession = Depends(get_db),
 ) -> DataResponse[ReportGenExamplePromoteData]:
     """把这次被采纳的写法收进示例库，下次同模板生成直接当 few-shot 参照。"""
@@ -292,6 +295,57 @@ async def list_report_gen_structure_runs(
     """看每次解析选了多少槽位、以及人工随后后补/否掉了多少（只读）。"""
     data = await service.list_structure_runs(db, template_id, limit)
     return DataResponse[ReportGenStructureRunListData](data=data)
+
+
+@router.get(
+    "/templates/{template_id}/examples",
+    summary="模板下已沉淀的槽位示例",
+    response_model=DataResponse[ReportGenExampleListData],
+)
+async def list_report_gen_examples(
+    template_id: UUID,
+    current_user: RequiredUser,
+    include_inactive: bool = Query(True, description="是否连已停用的示例一起返回"),
+    limit: int = Query(200, ge=1, le=500),
+    ctx: PermissionContext = Depends(require_permission("research:report:read")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[ReportGenExampleListData]:
+    """示例库管理用：这个模板下有哪些示例、各自从哪来、被引用过几次。"""
+    data = await service.list_examples(db, template_id, include_inactive=include_inactive, limit=limit)
+    return DataResponse[ReportGenExampleListData](data=data)
+
+
+@router.patch(
+    "/examples/{example_id}",
+    summary="人工维护槽位示例",
+    response_model=DataResponse[ReportGenExampleData],
+)
+async def update_report_gen_example(
+    example_id: UUID,
+    payload: ReportGenExampleUpdateRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:report:update")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[ReportGenExampleData]:
+    """改写法 / 补依据 / 停用错例；停用后不再注入下一次生成。"""
+    data = await service.update_example(db, example_id, payload, current_user.id if current_user else None)
+    return DataResponse[ReportGenExampleData](data=data, message="已更新")
+
+
+@router.delete(
+    "/examples/{example_id}",
+    summary="删除槽位示例（软删除）",
+    response_model=DataResponse[ReportGenExampleData],
+)
+async def delete_report_gen_example(
+    example_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:report:update")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[ReportGenExampleData]:
+    """彻底不再参与注入，但保留记录可追「以前为什么这么写」。"""
+    data = await service.delete_example(db, example_id, current_user.id if current_user else None)
+    return DataResponse[ReportGenExampleData](data=data, message="已删除")
 
 
 def _attachment(data: bytes, filename: str, mime: str) -> Response:

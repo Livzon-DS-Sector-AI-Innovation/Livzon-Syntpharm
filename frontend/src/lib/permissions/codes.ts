@@ -94,6 +94,7 @@ export const RESEARCH_PERM = {
   researchLiteratureCreate: 'research:literature:create',
   researchReportRead: 'research:report:read',
   researchReportCreate: 'research:report:create',
+  researchReportReview: 'research:report:review',
   researchReportUpdate: 'research:report:update',
   researchReportDelete: 'research:report:delete',
 } as const

@@ -24,6 +24,19 @@ class ReportGenJobCreateRequest(BaseModel):
     supplement_text: str | None = Field(None, description="补充说明")
 
 
+class ReportGenFeedbackBrief(BaseModel):
+    """本次生成带走的评审意见摘要。
+
+    ``supplement_text`` 里混着「人自己写的补充说明」和「系统按意见自动拼进去的段落」，
+    两者在出参里长得一样，详情页因此说不清这一版到底按哪几条意见改的；
+    这个列表把「带入的意见」单独列出来，与补充说明区分开。
+    """
+
+    id: uuid.UUID
+    slot_key: str | None = Field(None, description="针对的槽位；空=整篇意见")
+    content: str
+
+
 class ReportGenJobData(BaseModel):
     """任务详情：详情页头部与列表进度列都用它。"""
 
@@ -40,6 +53,9 @@ class ReportGenJobData(BaseModel):
     doc_code: str | None = None
     drug_name: str | None = None
     supplement_text: str | None = None
+    feedback_applied: list[ReportGenFeedbackBrief] = Field(
+        default_factory=list, description="本次生成带走的评审意见（已拼入补充说明）"
+    )
     document_file_name: str | None = None
     slot_total: int
     slot_filled: int
@@ -236,8 +252,41 @@ class ReportGenExamplePromoteData(BaseModel):
     created: bool = Field(description="true=新建示例 / false=覆盖了该槽位原有示例")
 
 
+class ReportGenExampleData(BaseModel):
+    """槽位示例库的一条记录：下次同模板生成会把它当 few-shot 参照。"""
+
+    id: uuid.UUID
+    template_id: uuid.UUID | None = None
+    slot_key: str
+    slot_label: str = ""
+    source: str = Field(description="manual_edit=人工修正 / agent_filled=模型填充 / feedback_promoted=评审意见沉淀")
+    value: str
+    evidence_text: str | None = None
+    usage_count: int = 0
+    is_active: bool = True
+    updated_at: datetime
+
+
+class ReportGenExampleListData(BaseModel):
+    items: list[ReportGenExampleData]
+    total: int = 0
+    active_total: int = 0
+
+
+class ReportGenExampleUpdateRequest(BaseModel):
+    """人工维护示例：改写法、补依据、停用错例。"""
+
+    value: str | None = Field(None, description="新的示例写法；留空表示不修改")
+    evidence_text: str | None = Field(None, description="示例依据")
+    is_active: bool | None = Field(None, description="false=停用，不再注入下次生成")
+
+
 __all__ = [
+    "ReportGenExampleData",
+    "ReportGenExampleListData",
     "ReportGenExamplePromoteData",
+    "ReportGenExampleUpdateRequest",
+    "ReportGenFeedbackBrief",
     "ReportGenFeedbackCreateRequest",
     "ReportGenFeedbackData",
     "ReportGenFeedbackListData",

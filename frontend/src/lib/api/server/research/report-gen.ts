@@ -7,6 +7,7 @@
 import { apiFetch, apiFetchData, getApiBaseUrl } from '@/lib/api/server/base'
 import {
   REPORT_GEN_METRIC_DEFAULT_WINDOW,
+  type ReportGenExampleUpdate,
   type ReportGenFeedbackCreate,
   type ReportGenJob,
   type ReportGenJobCreate,
@@ -60,6 +61,19 @@ export async function updateReportGenFeedback(feedbackId: string, status: 'open'
 /** 把已落实的意见沉淀成槽位示例：后端取那次生成的实际写法，前端不传值。 */
 export async function promoteReportGenFeedback(feedbackId: string) {
   return apiFetch(`${getApiBaseUrl()}${API_BASE}/feedback/${feedbackId}/promote`, { method: 'POST' })
+}
+
+/** 人工维护一条示例：改写法 / 补依据 / 停用。 */
+export async function updateTemplateExample(exampleId: string, payload: ReportGenExampleUpdate) {
+  return apiFetch(`${getApiBaseUrl()}${API_BASE}/examples/${exampleId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+/** 软删除一条示例：不再参与注入，但保留记录可追。 */
+export async function deleteTemplateExample(exampleId: string) {
+  return apiFetch(`${getApiBaseUrl()}${API_BASE}/examples/${exampleId}`, { method: 'DELETE' })
 }
 
 /** 配置页首屏指标：服务端取一次，避免面板白屏；失败由页面 try/catch 兜成空态。 */

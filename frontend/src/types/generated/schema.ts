@@ -11926,6 +11926,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/research/report-gen/templates/{template_id}/examples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 模板下已沉淀的槽位示例
+         * @description 示例库管理用：这个模板下有哪些示例、各自从哪来、被引用过几次。
+         */
+        get: operations["list_report_gen_examples_api_v1_research_report_gen_templates__template_id__examples_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/report-gen/examples/{example_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * 删除槽位示例（软删除）
+         * @description 彻底不再参与注入，但保留记录可追「以前为什么这么写」。
+         */
+        delete: operations["delete_report_gen_example_api_v1_research_report_gen_examples__example_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * 人工维护槽位示例
+         * @description 改写法 / 补依据 / 停用错例；停用后不再注入下一次生成。
+         */
+        patch: operations["update_report_gen_example_api_v1_research_report_gen_examples__example_id__patch"];
+        trace?: never;
+    };
     "/api/v1/registration/": {
         parameters: {
             query?: never;
@@ -27523,6 +27567,36 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["ReferenceStandardResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ReportGenExampleData] */
+        DataResponse_ReportGenExampleData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenExampleData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ReportGenExampleListData] */
+        DataResponse_ReportGenExampleListData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenExampleListData"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[ReportGenExamplePromoteData] */
@@ -49045,6 +49119,65 @@ export interface components {
             } | null;
         };
         /**
+         * ReportGenExampleData
+         * @description 槽位示例库的一条记录：下次同模板生成会把它当 few-shot 参照。
+         */
+        ReportGenExampleData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Template Id */
+            template_id?: string | null;
+            /** Slot Key */
+            slot_key: string;
+            /**
+             * Slot Label
+             * @default
+             */
+            slot_label: string;
+            /**
+             * Source
+             * @description manual_edit=人工修正 / agent_filled=模型填充 / feedback_promoted=评审意见沉淀
+             */
+            source: string;
+            /** Value */
+            value: string;
+            /** Evidence Text */
+            evidence_text?: string | null;
+            /**
+             * Usage Count
+             * @default 0
+             */
+            usage_count: number;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ReportGenExampleListData */
+        ReportGenExampleListData: {
+            /** Items */
+            items: components["schemas"]["ReportGenExampleData"][];
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Active Total
+             * @default 0
+             */
+            active_total: number;
+        };
+        /**
          * ReportGenExamplePromoteData
          * @description 把一条已落实意见沉淀成槽位示例的结果：下次同模板生成会把它当 few-shot 参照。
          */
@@ -49073,6 +49206,49 @@ export interface components {
              * @description true=新建示例 / false=覆盖了该槽位原有示例
              */
             created: boolean;
+        };
+        /**
+         * ReportGenExampleUpdateRequest
+         * @description 人工维护示例：改写法、补依据、停用错例。
+         */
+        ReportGenExampleUpdateRequest: {
+            /**
+             * Value
+             * @description 新的示例写法；留空表示不修改
+             */
+            value?: string | null;
+            /**
+             * Evidence Text
+             * @description 示例依据
+             */
+            evidence_text?: string | null;
+            /**
+             * Is Active
+             * @description false=停用，不再注入下次生成
+             */
+            is_active?: boolean | null;
+        };
+        /**
+         * ReportGenFeedbackBrief
+         * @description 本次生成带走的评审意见摘要。
+         *
+         *     ``supplement_text`` 里混着「人自己写的补充说明」和「系统按意见自动拼进去的段落」，
+         *     两者在出参里长得一样，详情页因此说不清这一版到底按哪几条意见改的；
+         *     这个列表把「带入的意见」单独列出来，与补充说明区分开。
+         */
+        ReportGenFeedbackBrief: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Slot Key
+             * @description 针对的槽位；空=整篇意见
+             */
+            slot_key?: string | null;
+            /** Content */
+            content: string;
         };
         /**
          * ReportGenFeedbackCreateRequest
@@ -49240,6 +49416,11 @@ export interface components {
             drug_name?: string | null;
             /** Supplement Text */
             supplement_text?: string | null;
+            /**
+             * Feedback Applied
+             * @description 本次生成带走的评审意见（已拼入补充说明）
+             */
+            feedback_applied?: components["schemas"]["ReportGenFeedbackBrief"][];
             /** Document File Name */
             document_file_name?: string | null;
             /** Slot Total */
@@ -88772,6 +88953,113 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenStructureRunListData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_report_gen_examples_api_v1_research_report_gen_templates__template_id__examples_get: {
+        parameters: {
+            query?: {
+                /** @description 是否连已停用的示例一起返回 */
+                include_inactive?: boolean;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenExampleListData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_report_gen_example_api_v1_research_report_gen_examples__example_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                example_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenExampleData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_report_gen_example_api_v1_research_report_gen_examples__example_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                example_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportGenExampleUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenExampleData_"];
                 };
             };
             /** @description Validation Error */

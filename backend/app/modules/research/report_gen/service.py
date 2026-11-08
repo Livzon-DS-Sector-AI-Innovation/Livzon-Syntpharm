@@ -35,9 +35,14 @@ from app.modules.research.report_gen.examples import record_manual_example
 from app.modules.research.report_gen.feedback import list_open as _list_open_feedback
 from app.modules.research.report_gen.feedback import mark_applied as _mark_feedback_applied
 from app.modules.research.report_gen.feedback import merge_supplement as _merge_feedback
+from app.modules.research.report_gen.feedback import strip_merged as _strip_feedback_text
 from app.modules.research.report_gen.prompts_version import agent_prompt_version, structure_prompt_version
 from app.modules.research.report_gen.schemas import (
+    ReportGenExampleData,
+    ReportGenExampleListData,
     ReportGenExamplePromoteData,
+    ReportGenExampleUpdateRequest,
+    ReportGenFeedbackBrief,
     ReportGenFeedbackCreateRequest,
     ReportGenFeedbackData,
     ReportGenFeedbackListData,
@@ -71,7 +76,11 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-def _to_job_data(job: RdReportGenJob, report_title: str | None = None) -> ReportGenJobData:
+def _to_job_data(
+    job: RdReportGenJob,
+    report_title: str | None = None,
+    feedback_applied: list[ReportGenFeedbackBrief] | None = None,
+) -> ReportGenJobData:
     return ReportGenJobData(
         id=job.id,
         report_id=job.report_id,
@@ -86,6 +95,7 @@ def _to_job_data(job: RdReportGenJob, report_title: str | None = None) -> Report
         doc_code=job.doc_code,
         drug_name=job.drug_name,
         supplement_text=job.supplement_text,
+        feedback_applied=feedback_applied or [],
         document_file_name=job.document_file_name,
         slot_total=job.slot_total,
         slot_filled=job.slot_filled,
@@ -186,7 +196,7 @@ async def create_job(
         current_step="排队中",
         doc_code=payload.doc_code,
         drug_name=payload.drug_name,
-        supplement_text=_merge_feedback(payload.supplement_text, pending_feedback),
+        supplement_text=_merge_feedback(_strip_feedback_text(payload.supplement_text), pending_feedback),
         created_by=user_id,
         updated_by=user_id,
     )
@@ -216,7 +226,11 @@ async def create_job(
         "report-gen job created",
         extra={"job_id": str(job.id), "report_id": str(payload.report_id), "template_id": str(template.id)},
     )
-    return _to_job_data(job, report.title)
+    applied = [
+        ReportGenFeedbackBrief(id=item.id, slot_key=item.slot_key, content=item.content)
+        for item in pending_feedback
+    ]
+    return _to_job_data(job, report.title, applied)
 
 
 async def list_jobs(
@@ -241,12 +255,30 @@ async def list_jobs(
     )
 
 
+async def _applied_feedback(session: AsyncSession, job_id: UUID) -> list[ReportGenFeedbackBrief]:
+    """这一版实际带走了哪几条意见：按 ``applied_job_id`` 反查。
+
+    没有这一步，详情页只能看到一整段拼好的 ``supplement_text``，
+    分不清哪些是用户自己写的、哪些是系统按上版意见加的。
+    """
+    result = await session.execute(
+        select(RdReportGenFeedback.id, RdReportGenFeedback.slot_key, RdReportGenFeedback.content)
+        .where(
+            RdReportGenFeedback.applied_job_id == job_id,
+            RdReportGenFeedback.is_deleted.is_(False),
+        )
+        .order_by(RdReportGenFeedback.created_at.asc())
+    )
+    return [ReportGenFeedbackBrief(id=row[0], slot_key=row[1], content=row[2]) for row in result.all()]
+
+
 async def get_job(session: AsyncSession, job_id: UUID) -> ReportGenJobData:
     job = await session.get(RdReportGenJob, job_id)
     if job is None or job.is_deleted:
         raise NotFoundException("生成任务不存在")
     titles = await _titles(session, [job.report_id])
-    return _to_job_data(job, titles.get(job.report_id))
+    applied = await _applied_feedback(session, job_id)
+    return _to_job_data(job, titles.get(job.report_id), applied)
 
 
 async def list_steps(
@@ -757,6 +789,94 @@ async def promote_feedback(
     )
 
 
+def _to_example_data(row: RdReportGenExample) -> ReportGenExampleData:
+    return ReportGenExampleData(
+        id=row.id,
+        template_id=row.template_id,
+        slot_key=row.slot_key,
+        slot_label=row.slot_label or "",
+        source=row.source,
+        value=row.value,
+        evidence_text=row.evidence_text,
+        usage_count=int(row.usage_count or 0),
+        is_active=bool(row.is_active),
+        updated_at=row.updated_at,
+    )
+
+
+async def list_examples(
+    session: AsyncSession,
+    template_id: UUID,
+    *,
+    include_inactive: bool = True,
+    limit: int = 200,
+) -> ReportGenExampleListData:
+    """模板下已沉淀的示例：默认连停用的一起返回，人工才好把错例重新打开。"""
+    statement = select(RdReportGenExample).where(
+        RdReportGenExample.template_id == template_id,
+        RdReportGenExample.is_deleted.is_(False),
+    )
+    if not include_inactive:
+        statement = statement.where(RdReportGenExample.is_active.is_(True))
+    result = await session.execute(
+        statement.order_by(RdReportGenExample.updated_at.desc()).limit(min(limit, 500))
+    )
+    items = [_to_example_data(row) for row in result.scalars().all()]
+    return ReportGenExampleListData(
+        items=items,
+        total=len(items),
+        active_total=sum(1 for item in items if item.is_active),
+    )
+
+
+async def update_example(
+    session: AsyncSession,
+    example_id: UUID,
+    payload: ReportGenExampleUpdateRequest,
+    user_id: UUID | None,
+) -> ReportGenExampleData:
+    """人工维护一条示例：改写法、补依据、停用。
+
+    停用而不是删除：历史值能回答「以前为什么这么写」，删掉就只剩一段没人理解的空白。
+    """
+    row = await session.get(RdReportGenExample, example_id)
+    if row is None or row.is_deleted:
+        raise NotFoundException("槽位示例不存在")
+    cleaned = (payload.value or "").strip()
+    if cleaned:
+        row.value = cleaned
+    if payload.evidence_text is not None:
+        row.evidence_text = payload.evidence_text.strip() or None
+    if payload.is_active is not None:
+        row.is_active = payload.is_active
+    row.updated_by = user_id
+    await session.commit()
+    await session.refresh(row)
+    logger.info(
+        "report-gen example updated",
+        extra={"example_id": str(row.id), "slot_key": row.slot_key, "is_active": row.is_active},
+    )
+    return _to_example_data(row)
+
+
+async def delete_example(
+    session: AsyncSession,
+    example_id: UUID,
+    user_id: UUID | None,
+) -> ReportGenExampleData:
+    """软删除：这条示例彻底不再参与注入，但保留痕迹可追。"""
+    row = await session.get(RdReportGenExample, example_id)
+    if row is None or row.is_deleted:
+        raise NotFoundException("槽位示例不存在")
+    row.is_deleted = True
+    row.is_active = False
+    row.updated_by = user_id
+    await session.commit()
+    await session.refresh(row)
+    logger.info("report-gen example deleted", extra={"example_id": str(row.id), "slot_key": row.slot_key})
+    return _to_example_data(row)
+
+
 async def test_model(slot: str) -> ReportGenModelTestData:
     """按档位解析绑定后发一次极短对话，供配置页「测试连通」使用。
 
@@ -834,14 +954,17 @@ __all__ = [
     "comparison_payload",
     "create_feedback",
     "create_job",
+    "delete_example",
     "document_payload",
     "get_job",
+    "list_examples",
     "list_feedback",
     "list_jobs",
     "list_slots",
     "list_steps",
     "promote_feedback",
     "test_model",
+    "update_example",
     "update_feedback",
     "update_slot",
 ]

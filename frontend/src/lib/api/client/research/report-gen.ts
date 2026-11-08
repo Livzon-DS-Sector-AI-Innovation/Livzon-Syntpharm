@@ -8,6 +8,7 @@
 import { apiGet } from '@/lib/api/client'
 import {
   REPORT_GEN_METRIC_DEFAULT_WINDOW,
+  type ReportGenExampleList,
   type ReportGenFeedbackList,
   type ReportGenJob,
   type ReportGenJobList,
@@ -39,6 +40,12 @@ export async function fetchTemplateStructureRuns(
     `${API_BASE}/templates/${templateId}/structure-runs?limit=${limit}`,
   )
   return result ?? { total: 0, items: [] }
+}
+
+/** 模板下已沉淀的槽位示例（只读）：写操作走 Server Action。 */
+export async function fetchTemplateExamples(templateId: string): Promise<ReportGenExampleList> {
+  const result = await apiGet<ReportGenExampleList>(`${API_BASE}/templates/${templateId}/examples`)
+  return result ?? { total: 0, active_total: 0, items: [] }
 }
 
 /** 某一版报告上提过的修改意见（只读）：写操作走 Server Action。 */

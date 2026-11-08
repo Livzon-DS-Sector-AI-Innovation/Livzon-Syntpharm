@@ -19,6 +19,9 @@ export type ReportGenFeedback = components['schemas']['ReportGenFeedbackData']
 export type ReportGenFeedbackList = components['schemas']['ReportGenFeedbackListData']
 export type ReportGenFeedbackCreate = components['schemas']['ReportGenFeedbackCreateRequest']
 export type ReportGenExamplePromote = components['schemas']['ReportGenExamplePromoteData']
+export type ReportGenExample = components['schemas']['ReportGenExampleData']
+export type ReportGenExampleList = components['schemas']['ReportGenExampleListData']
+export type ReportGenExampleUpdate = components['schemas']['ReportGenExampleUpdateRequest']
 
 export type ReportGenJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
 export type ReportGenStepKind = 'think' | 'tool_call' | 'tool_result' | 'error' | 'status'

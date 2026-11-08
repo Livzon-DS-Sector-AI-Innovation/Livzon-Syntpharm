@@ -6,12 +6,15 @@ import {
   cancelReportGenJob as cancelReportGenJobApi,
   createReportGenFeedback as createReportGenFeedbackApi,
   createReportGenJob as createReportGenJobApi,
+  deleteTemplateExample as deleteTemplateExampleApi,
   promoteReportGenFeedback as promoteReportGenFeedbackApi,
   testReportGenModel as testReportGenModelApi,
   updateReportGenFeedback as updateReportGenFeedbackApi,
   updateReportGenSlot as updateReportGenSlotApi,
+  updateTemplateExample as updateTemplateExampleApi,
 } from '@/lib/api/server/research/report-gen'
 import type {
+  ReportGenExampleUpdate,
   ReportGenFeedbackCreate,
   ReportGenJobCreate,
   ReportGenModelSlot,
@@ -69,4 +72,14 @@ export async function promoteReportGenFeedback(feedbackId: string) {
  */
 export async function testReportGenModel(slot: ReportGenModelSlot) {
   return testReportGenModelApi({ slot })
+}
+
+/** 人工维护一条槽位示例：改写法 / 补依据 / 停用。 */
+export async function updateReportGenExample(exampleId: string, payload: ReportGenExampleUpdate) {
+  return updateTemplateExampleApi(exampleId, payload)
+}
+
+/** 删除一条槽位示例（后端软删）：之后不再注入生成。 */
+export async function deleteReportGenExample(exampleId: string) {
+  return deleteTemplateExampleApi(exampleId)
 }

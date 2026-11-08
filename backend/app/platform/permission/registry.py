@@ -564,6 +564,7 @@ RESEARCH_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("research:report:create", "创建研发报告", "research", "report", "create"),
     PermissionDef("research:report:delete", "删除研发报告", "research", "report", "delete"),
     PermissionDef("research:report:read", "查看研发报告", "research", "report", "read"),
+    PermissionDef("research:report:review", "评审研发报告", "research", "report", "review"),
     PermissionDef("research:report:update", "更新研发报告", "research", "report", "update"),
     PermissionDef("research:route:create", "创建工艺路线", "research", "route", "create"),
     PermissionDef("research:route:delete", "删除工艺路线", "research", "route", "delete"),
@@ -1492,15 +1493,20 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "research:report:update", "PUT", "/api/v1/research/report-gen/jobs/{job_id}/slots/{slot_key}"
     ),
     ApiBindingDef("research:report:update", "POST", "/api/v1/research/report-gen/jobs/{job_id}/cancel"),
-    ApiBindingDef("research:report:update", "POST", "/api/v1/research/report-gen/jobs/{job_id}/feedback"),
+    ApiBindingDef("research:report:review", "POST", "/api/v1/research/report-gen/jobs/{job_id}/feedback"),
     ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/feedback"),
-    ApiBindingDef("research:report:update", "PATCH", "/api/v1/research/report-gen/feedback/{feedback_id}"),
-    ApiBindingDef("research:report:update", "POST", "/api/v1/research/report-gen/feedback/{feedback_id}/promote"),
+    ApiBindingDef("research:report:review", "PATCH", "/api/v1/research/report-gen/feedback/{feedback_id}"),
+    ApiBindingDef("research:report:review", "POST", "/api/v1/research/report-gen/feedback/{feedback_id}/promote"),
     ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/document"),
     ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/comparison"),
     ApiBindingDef(
         "research:report:read", "GET", "/api/v1/research/report-gen/templates/{template_id}/structure-runs"
     ),
+    ApiBindingDef(
+        "research:report:read", "GET", "/api/v1/research/report-gen/templates/{template_id}/examples"
+    ),
+    ApiBindingDef("research:report:update", "PATCH", "/api/v1/research/report-gen/examples/{example_id}"),
+    ApiBindingDef("research:report:update", "DELETE", "/api/v1/research/report-gen/examples/{example_id}"),
     # 报告生成配置：单档位连通测试走模块配置写权限，不动全局 LLM 配置库
     ApiBindingDef(
         "platform:module-setting:manage",

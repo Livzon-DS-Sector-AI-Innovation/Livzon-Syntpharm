@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, type CSSProperties } from 'react'
-import { Alert, Button, Drawer, Flex, Spin, Typography } from 'antd'
+import { Alert, Button, Drawer, Flex, Space, Spin, Typography } from 'antd'
+import { ReportGenExampleDrawer } from './ReportGenExampleDrawer'
 import { SlotCandidatePanel } from './SlotCandidatePanel'
 import { SlotStructureTable } from './SlotStructureTable'
 import { SlotsDrawerToolbar } from './SlotsDrawerToolbar'
@@ -82,6 +83,7 @@ interface BodyProps extends Omit<Props, 'templateId'> {
 function SlotsDrawerBody({ payload, templateId, templateName, open, onClose, onChanged }: BodyProps) {
   const editor = useTemplateSlotsEditor({ payload, templateId, onClose, onChanged })
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [examplesOpen, setExamplesOpen] = useState(false)
 
   return (
     <Drawer
@@ -91,9 +93,14 @@ function SlotsDrawerBody({ payload, templateId, templateName, open, onClose, onC
       destroyOnHidden
       styles={drawerStyles}
       extra={
-        <Button size="small" onClick={() => setHistoryOpen(true)}>
-          解析历史
-        </Button>
+        <Space size={8}>
+          <Button size="small" onClick={() => setExamplesOpen(true)}>
+            示例库
+          </Button>
+          <Button size="small" onClick={() => setHistoryOpen(true)}>
+            解析历史
+          </Button>
+        </Space>
       }
     >
       <SlotsDrawerToolbar
@@ -151,6 +158,12 @@ function SlotsDrawerBody({ payload, templateId, templateName, open, onClose, onC
       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
         候选位置最多展示母本里的前 {payload.candidate_total ?? 0} 个（段落 320 / 单元格 480 上限），未被列出的位置无法绑定。
       </Typography.Text>
+      <ReportGenExampleDrawer
+        open={examplesOpen}
+        templateId={templateId}
+        templateName={templateName}
+        onClose={() => setExamplesOpen(false)}
+      />
       <TemplateStructureRunsDrawer
         open={historyOpen}
         templateId={templateId}

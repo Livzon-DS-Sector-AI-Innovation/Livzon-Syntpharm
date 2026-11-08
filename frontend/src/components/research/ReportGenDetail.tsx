@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Alert, App, Button, Card, Col, Empty, Progress, Row, Space, Spin, Statistic, Tag,
+  Alert, App, Button, Card, Col, Empty, Progress, Row, Space, Spin, Statistic, Tag, Tooltip,
 } from 'antd'
 import {
   ArrowLeftOutlined, DownloadOutlined, FileTextOutlined, ReloadOutlined, StopOutlined,
@@ -172,6 +172,7 @@ export function ReportGenDetail({ jobId, initialJob }: Props) {
   const docReady = job.status === 'completed' && job.has_document
   // 模型快照：任务创建时落库；快照列上线前的历史任务为 null
   const snapshot = jobModelSnapshot(job)
+  const appliedFeedback = job.feedback_applied ?? []
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -227,6 +228,18 @@ export function ReportGenDetail({ jobId, initialJob }: Props) {
                 <Tag style={{ margin: 0 }}>模型：未记录（历史任务）</Tag>
               )}
             </div>
+            {appliedFeedback.length > 0 && (
+              <div style={{ marginTop: 6, fontSize: 13, color: '#5A6472' }}>
+                <span>本次带入 {appliedFeedback.length} 条上版意见：</span>
+                {appliedFeedback.map((item) => (
+                  <Tooltip key={item.id} title={item.content}>
+                    <Tag color="blue" style={{ marginInlineEnd: 6 }}>
+                      {item.slot_key || '整篇'}
+                    </Tag>
+                  </Tooltip>
+                ))}
+              </div>
+            )}
             {running && (
               <div style={{ marginTop: 12, maxWidth: 520 }}>
                 <Progress percent={job.progress ?? 0} size="small" strokeColor={meta.stroke} status="active" />

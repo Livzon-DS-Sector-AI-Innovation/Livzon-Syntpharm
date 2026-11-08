@@ -58554,6 +58554,221 @@
         }
       }
     },
+    "/api/v1/research/report-gen/templates/{template_id}/examples": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u6a21\u677f\u4e0b\u5df2\u6c89\u6dc0\u7684\u69fd\u4f4d\u793a\u4f8b",
+        "description": "\u793a\u4f8b\u5e93\u7ba1\u7406\u7528\uff1a\u8fd9\u4e2a\u6a21\u677f\u4e0b\u6709\u54ea\u4e9b\u793a\u4f8b\u3001\u5404\u81ea\u4ece\u54ea\u6765\u3001\u88ab\u5f15\u7528\u8fc7\u51e0\u6b21\u3002",
+        "operationId": "list_report_gen_examples_api_v1_research_report_gen_templates__template_id__examples_get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "include_inactive",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "\u662f\u5426\u8fde\u5df2\u505c\u7528\u7684\u793a\u4f8b\u4e00\u8d77\u8fd4\u56de",
+              "default": true,
+              "title": "Include Inactive"
+            },
+            "description": "\u662f\u5426\u8fde\u5df2\u505c\u7528\u7684\u793a\u4f8b\u4e00\u8d77\u8fd4\u56de"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 200,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ReportGenExampleListData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/report-gen/examples/{example_id}": {
+      "patch": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u4eba\u5de5\u7ef4\u62a4\u69fd\u4f4d\u793a\u4f8b",
+        "description": "\u6539\u5199\u6cd5 / \u8865\u4f9d\u636e / \u505c\u7528\u9519\u4f8b\uff1b\u505c\u7528\u540e\u4e0d\u518d\u6ce8\u5165\u4e0b\u4e00\u6b21\u751f\u6210\u3002",
+        "operationId": "update_report_gen_example_api_v1_research_report_gen_examples__example_id__patch",
+        "parameters": [
+          {
+            "name": "example_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Example Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportGenExampleUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ReportGenExampleData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u5220\u9664\u69fd\u4f4d\u793a\u4f8b\uff08\u8f6f\u5220\u9664\uff09",
+        "description": "\u5f7b\u5e95\u4e0d\u518d\u53c2\u4e0e\u6ce8\u5165\uff0c\u4f46\u4fdd\u7559\u8bb0\u5f55\u53ef\u8ffd\u300c\u4ee5\u524d\u4e3a\u4ec0\u4e48\u8fd9\u4e48\u5199\u300d\u3002",
+        "operationId": "delete_report_gen_example_api_v1_research_report_gen_examples__example_id__delete",
+        "parameters": [
+          {
+            "name": "example_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Example Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ReportGenExampleData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/registration/": {
       "get": {
         "tags": [
@@ -112638,6 +112853,78 @@
         "type": "object",
         "title": "DataResponse[ReferenceStandardResponse]"
       },
+      "DataResponse_ReportGenExampleData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportGenExampleData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ReportGenExampleData]"
+      },
+      "DataResponse_ReportGenExampleListData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportGenExampleListData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ReportGenExampleListData]"
+      },
       "DataResponse_ReportGenExamplePromoteData_": {
         "properties": {
           "code": {
@@ -164085,6 +164372,107 @@
         "title": "ReportCreate",
         "description": "\u62a5\u544a\u5355\u521b\u5efa"
       },
+      "ReportGenExampleData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          },
+          "slot_key": {
+            "type": "string",
+            "title": "Slot Key"
+          },
+          "slot_label": {
+            "type": "string",
+            "title": "Slot Label",
+            "default": ""
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "manual_edit=\u4eba\u5de5\u4fee\u6b63 / agent_filled=\u6a21\u578b\u586b\u5145 / feedback_promoted=\u8bc4\u5ba1\u610f\u89c1\u6c89\u6dc0"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "evidence_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Text"
+          },
+          "usage_count": {
+            "type": "integer",
+            "title": "Usage Count",
+            "default": 0
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slot_key",
+          "source",
+          "value",
+          "updated_at"
+        ],
+        "title": "ReportGenExampleData",
+        "description": "\u69fd\u4f4d\u793a\u4f8b\u5e93\u7684\u4e00\u6761\u8bb0\u5f55\uff1a\u4e0b\u6b21\u540c\u6a21\u677f\u751f\u6210\u4f1a\u628a\u5b83\u5f53 few-shot \u53c2\u7167\u3002"
+      },
+      "ReportGenExampleListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportGenExampleData"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "active_total": {
+            "type": "integer",
+            "title": "Active Total",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "ReportGenExampleListData"
+      },
       "ReportGenExamplePromoteData": {
         "properties": {
           "feedback_id": {
@@ -164126,6 +164514,81 @@
         ],
         "title": "ReportGenExamplePromoteData",
         "description": "\u628a\u4e00\u6761\u5df2\u843d\u5b9e\u610f\u89c1\u6c89\u6dc0\u6210\u69fd\u4f4d\u793a\u4f8b\u7684\u7ed3\u679c\uff1a\u4e0b\u6b21\u540c\u6a21\u677f\u751f\u6210\u4f1a\u628a\u5b83\u5f53 few-shot \u53c2\u7167\u3002"
+      },
+      "ReportGenExampleUpdateRequest": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value",
+            "description": "\u65b0\u7684\u793a\u4f8b\u5199\u6cd5\uff1b\u7559\u7a7a\u8868\u793a\u4e0d\u4fee\u6539"
+          },
+          "evidence_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Text",
+            "description": "\u793a\u4f8b\u4f9d\u636e"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active",
+            "description": "false=\u505c\u7528\uff0c\u4e0d\u518d\u6ce8\u5165\u4e0b\u6b21\u751f\u6210"
+          }
+        },
+        "type": "object",
+        "title": "ReportGenExampleUpdateRequest",
+        "description": "\u4eba\u5de5\u7ef4\u62a4\u793a\u4f8b\uff1a\u6539\u5199\u6cd5\u3001\u8865\u4f9d\u636e\u3001\u505c\u7528\u9519\u4f8b\u3002"
+      },
+      "ReportGenFeedbackBrief": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "slot_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Key",
+            "description": "\u9488\u5bf9\u7684\u69fd\u4f4d\uff1b\u7a7a=\u6574\u7bc7\u610f\u89c1"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "content"
+        ],
+        "title": "ReportGenFeedbackBrief",
+        "description": "\u672c\u6b21\u751f\u6210\u5e26\u8d70\u7684\u8bc4\u5ba1\u610f\u89c1\u6458\u8981\u3002\n\n``supplement_text`` \u91cc\u6df7\u7740\u300c\u4eba\u81ea\u5df1\u5199\u7684\u8865\u5145\u8bf4\u660e\u300d\u548c\u300c\u7cfb\u7edf\u6309\u610f\u89c1\u81ea\u52a8\u62fc\u8fdb\u53bb\u7684\u6bb5\u843d\u300d\uff0c\n\u4e24\u8005\u5728\u51fa\u53c2\u91cc\u957f\u5f97\u4e00\u6837\uff0c\u8be6\u60c5\u9875\u56e0\u6b64\u8bf4\u4e0d\u6e05\u8fd9\u4e00\u7248\u5230\u5e95\u6309\u54ea\u51e0\u6761\u610f\u89c1\u6539\u7684\uff1b\n\u8fd9\u4e2a\u5217\u8868\u628a\u300c\u5e26\u5165\u7684\u610f\u89c1\u300d\u5355\u72ec\u5217\u51fa\u6765\uff0c\u4e0e\u8865\u5145\u8bf4\u660e\u533a\u5206\u5f00\u3002"
       },
       "ReportGenFeedbackCreateRequest": {
         "properties": {
@@ -164459,6 +164922,14 @@
               }
             ],
             "title": "Supplement Text"
+          },
+          "feedback_applied": {
+            "items": {
+              "$ref": "#/components/schemas/ReportGenFeedbackBrief"
+            },
+            "type": "array",
+            "title": "Feedback Applied",
+            "description": "\u672c\u6b21\u751f\u6210\u5e26\u8d70\u7684\u8bc4\u5ba1\u610f\u89c1\uff08\u5df2\u62fc\u5165\u8865\u5145\u8bf4\u660e\uff09"
           },
           "document_file_name": {
             "anyOf": [
