@@ -37,12 +37,22 @@ class TestNormalizeResponsiblePersons:
         assert str(data["rectification_responsible_person"]) == valid_id
         assert data["rectification_responsible_person_name"] == "张三"
 
-    def test_empty_ids_does_not_touch_existing_single_field(self) -> None:
+    def test_empty_ids_keeps_name_snapshot_without_binding(self) -> None:
         data: dict = {"rectification_responsible_person_ids": [], "rectification_responsible_person_names": "张三"}
 
         HazardService._normalize_responsible_persons(data, is_create=False)
 
+        # 姓名无法唯一解析时保留姓名快照（页面显示待确认），但不写任何 UUID
         assert "rectification_responsible_person_ids" not in data
+        assert "rectification_responsible_person" not in data
+        assert data["rectification_responsible_person_names"] == "张三"
+        assert data["rectification_responsible_person_name"] == "张三"
+
+    def test_empty_ids_without_names_does_not_touch_existing_single_field(self) -> None:
+        data: dict = {"rectification_responsible_person_ids": []}
+
+        HazardService._normalize_responsible_persons(data, is_create=False)
+
         assert "rectification_responsible_person" not in data
         assert "rectification_responsible_person_name" not in data
 

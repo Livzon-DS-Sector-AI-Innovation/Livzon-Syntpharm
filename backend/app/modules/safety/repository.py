@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import and_, case, func, or_, select, update
+from sqlalchemy import and_, case, false, func, literal, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -33,6 +33,7 @@ from app.modules.safety.models import (
     SpecialOperationReport,
     TrainingRecord,
 )
+from app.platform.identity.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -115,6 +116,112 @@ class SafetyRepository:
 
     # ==================== HazardReport Operations ====================
 
+    async def _missing_person_names(self) -> set[str]:
+        """取出「UUID 为空但有姓名」的全部姓名，用于判定能否唯一解析。"""
+        rows = (
+            await self.session.execute(
+                select(HazardReport.discovered_by_name)
+                .where(
+                    ~HazardReport.is_deleted,
+                    HazardReport.discovered_by.is_(None),
+                    HazardReport.discovered_by_name.is_not(None),
+                    HazardReport.discovered_by_name != "",
+                )
+                .union(
+                    select(HazardReport.rectification_responsible_person_name).where(
+                        ~HazardReport.is_deleted,
+                        HazardReport.rectification_responsible_person.is_(None),
+                        HazardReport.rectification_responsible_person_name.is_not(None),
+                        HazardReport.rectification_responsible_person_name != "",
+                    )
+                )
+            )
+        ).all()
+        return {str(row[0]).strip() for row in rows if row[0] and str(row[0]).strip()}
+
+    async def _name_candidates(self, names: set[str]) -> dict[str, list[str | None]]:
+        """姓名 → 系统内同名用户的部门列表（只读展示字段，用于部门消歧判定）。"""
+        if not names:
+            return {}
+        rows = (
+            await self.session.execute(
+                select(User.name, User.department).where(User.is_deleted == False, User.name.in_(names))  # noqa: E712
+            )
+        ).all()
+        grouped: dict[str, list[str | None]] = {}
+        for name, department in rows:
+            grouped.setdefault(name, []).append(department)
+        return grouped
+
+    @staticmethod
+    def _pending_name_condition(
+        name_col: Any,
+        id_col: Any,
+        department_col: Any,
+        candidates: dict[str, list[str | None]],
+        all_names: set[str],
+    ) -> Any:
+        """「UUID 为空且姓名无法唯一解析」的 SQL 条件。
+
+        规则与 ``service.hazard_person.resolve_person_name`` 一致：
+        - 查无此人 → 待确认；
+        - 系统内同名 1 人 → 读时必然关联，不算待确认；
+        - 同名多人 → 无责任部门、或部门消歧后不是恰好 1 人 → 待确认。
+        """
+        conditions: list[Any] = []
+        no_match = sorted(name for name in all_names if name not in candidates)
+        if no_match:
+            conditions.append(name_col.in_(no_match))
+        for name, departments in candidates.items():
+            if len(departments) == 1:
+                continue
+            matched_count: Any = literal(0)
+            for department in departments:
+                if not department:
+                    continue
+                matched_count = matched_count + case(
+                    (
+                        and_(
+                            department_col.is_not(None),
+                            department_col != "",
+                            literal(department).contains(department_col),
+                        ),
+                        1,
+                    ),
+                    else_=0,
+                )
+            conditions.append(
+                and_(
+                    name_col == name,
+                    or_(department_col.is_(None), department_col == "", matched_count != 1),
+                )
+            )
+        if not conditions:
+            return false()
+        return and_(id_col.is_(None), name_col.is_not(None), name_col != "", or_(*conditions))
+
+    async def _pending_person_condition(self) -> Any:
+        """person_match=pending 的筛选条件（主查询与 count 查询共用）。"""
+        all_names = await self._missing_person_names()
+        if not all_names:
+            return false()
+        candidates = await self._name_candidates(all_names)
+        discovered = self._pending_name_condition(
+            HazardReport.discovered_by_name,
+            HazardReport.discovered_by,
+            HazardReport.department,
+            candidates,
+            all_names,
+        )
+        responsible = self._pending_name_condition(
+            HazardReport.rectification_responsible_person_name,
+            HazardReport.rectification_responsible_person,
+            HazardReport.department,
+            candidates,
+            all_names,
+        )
+        return or_(discovered, responsible)
+
     async def get_hazards(
         self,
         skip: int = 0,
@@ -131,25 +238,17 @@ class SafetyRepository:
     ) -> tuple[list[HazardReport], int]:
         """获取隐患列表
 
-        person_match="pending" 时只返回「有姓名但未绑定系统用户」的记录，
-        即待匹配清单（姓名来自 Bitable，user_id 留空待人工指定）。
+        person_match="pending" 时只返回「有姓名但姓名无法唯一解析」的记录，
+        即页面上仍显示「待确认」的清单：查无此人、同名多人且责任部门无法唯一消歧。
+        口径与 ``service.hazard_person.resolve_person_name`` 一致；
+        多选整改负责人只看首人快照（``rectification_responsible_person_name``），
+        后续追加人员不单独参与筛选。
         """
         query = select(HazardReport).where(~HazardReport.is_deleted)
 
         person_pending = None
         if person_match == "pending":
-            person_pending = or_(
-                and_(
-                    HazardReport.discovered_by.is_(None),
-                    HazardReport.discovered_by_name.is_not(None),
-                    HazardReport.discovered_by_name != "",
-                ),
-                and_(
-                    HazardReport.rectification_responsible_person.is_(None),
-                    HazardReport.rectification_responsible_person_name.is_not(None),
-                    HazardReport.rectification_responsible_person_name != "",
-                ),
-            )
+            person_pending = await self._pending_person_condition()
             query = query.where(person_pending)
 
         if status:

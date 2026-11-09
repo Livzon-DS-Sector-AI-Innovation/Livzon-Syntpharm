@@ -19,6 +19,7 @@ from app.modules.safety.models import HazardReport
 from app.modules.safety.repository import SafetyRepository
 from app.modules.safety.schemas import HazardReportCreate, HazardReportUpdate
 from app.modules.safety.service._helpers import audit_log
+from app.modules.safety.service.hazard_person import split_person_names
 from app.platform.integrations.ai.client import AIOutputError, AIService
 
 logger = logging.getLogger(__name__)
@@ -381,6 +382,7 @@ class HazardService:
         run_hazard_ai_script() 手动触发，与 Bitable 同步流程对齐。
         """
         hazard_data = data.model_dump(exclude_none=True)
+        await self._bind_person_ids(hazard_data)
         self._normalize_responsible_persons(hazard_data, is_create=True)
         if not hazard_data.get("hazard_no"):
             # 自动生成：HZ-年月日-序号
@@ -465,23 +467,70 @@ class HazardService:
     async def update_hazard(self, hazard_id: uuid.UUID, data: HazardReportUpdate) -> HazardReport | None:
         """更新隐患"""
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+        await self._bind_person_ids(update_data)
         self._normalize_responsible_persons(update_data, is_create=False)
         item = await self.repo.update_hazard(hazard_id, update_data)
         if item:
             await self._audit("update", "hazard_report", resource_id=hazard_id)
         return item
 
+    async def _bind_person_ids(self, data: dict[str, Any]) -> None:
+        """把「姓名唯一命中」的人员补成系统用户 UUID（同名多人 / 查无此人保持留空待确认）。
+
+        与读时解析、Alembic 回填共用同一套严格规则（``resolve_by_name_strict``）：
+        无 UUID 但姓名有值时解析，命中才落库，未命中不改动，避免静默错绑。
+        """
+        department_hint = data.get("department")
+        if not data.get("discovered_by") and data.get("discovered_by_name"):
+            bound = await self._resolve_person_uuid(str(data["discovered_by_name"]), department_hint)
+            if bound is not None:
+                data["discovered_by"] = bound
+
+        # 整改负责人多选：任一人未唯一命中则整条不写 ids，避免 ids 与 names 错位
+        if not data.get("rectification_responsible_person_ids"):
+            names = split_person_names(data.get("rectification_responsible_person_names"))
+            if names:
+                bound_ids: list[uuid.UUID] = []
+                for name in names:
+                    bound = await self._resolve_person_uuid(name, department_hint)
+                    if bound is None:
+                        logger.info("整改负责人未唯一命中，保留姓名待确认: name=%r", name)
+                        return
+                    bound_ids.append(bound)
+                data["rectification_responsible_person_ids"] = [str(value) for value in bound_ids]
+                data["rectification_responsible_person"] = bound_ids[0]
+                data["rectification_responsible_person_name"] = names[0][:100]
+
+    async def _resolve_person_uuid(self, name: str, department_hint: str | None) -> uuid.UUID | None:
+        """严格姓名解析 → UUID；同名多人无法消歧或查无此人返回 None。"""
+        from app.modules.safety.feishu.identity_resolver import IdentityResolver
+
+        try:
+            match = await IdentityResolver(self.session).resolve_by_name_strict(name, department_hint)
+        except Exception:
+            logger.exception("人员姓名解析失败，保留待确认: name=%r", name)
+            return None
+        if not match.is_matched or match.person is None or not match.person.id:
+            return None
+        return uuid.UUID(match.person.id)
+
     @staticmethod
     def _normalize_responsible_persons(data: dict[str, Any], *, is_create: bool) -> None:
         """整改负责人多选归一化：过滤非法 UUID，并把首人回写到单人字段以兼容旧逻辑。
 
-        - 多选为空：不写入（更新时保留原值），绝不误清空历史单人字段
+        - 多选为空但姓名有值：保留姓名快照（等人工确认），不写 ids
+        - 多选为空且无姓名：更新时保留原值，绝不误清空历史单人字段
         - 单人字段保留：通知、复核、Bitable 同步仍读 rectification_responsible_person(_name)
         """
         raw_ids = data.get("rectification_responsible_person_ids")
         if not raw_ids:
             data.pop("rectification_responsible_person_ids", None)
-            if is_create:
+            names = split_person_names(data.get("rectification_responsible_person_names"))
+            if names:
+                data["rectification_responsible_person_names"] = ",".join(names)[:500]
+                if not data.get("rectification_responsible_person_name"):
+                    data["rectification_responsible_person_name"] = names[0][:100]
+            elif is_create:
                 data.pop("rectification_responsible_person_names", None)
             return
 

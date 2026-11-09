@@ -7,6 +7,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from app.modules.safety.schemas.enums import HazardLevel, HazardType
+from app.modules.safety.schemas.person_ref import PersonRef
 
 
 class RectificationReplyRequest(BaseModel):
@@ -95,6 +96,9 @@ class HazardReportCreate(HazardReportBase):
     hazard_category: str | None = Field(None, max_length=64, description="隐患类别（字典表名称）")
     description: str | None = Field(None, description="隐患描述")  # type: ignore[assignment]
     discovered_at: datetime | None = Field(None, description="发现时间")  # type: ignore[assignment]
+    overall_status: str | None = Field(
+        None, max_length=20, description="整体状态（draft=草稿，completed=正式登记）"
+    )
 
 
 class HazardReportUpdate(BaseModel):
@@ -181,6 +185,11 @@ class HazardReportResponse(HazardReportBase):
     review_notified_level: int | None = None
     review_notify_status: str | None = None
     review_notify_error: str | None = None
+    # ── 人员引用（读时解析：UUID 命中 → 系统用户；仅姓名 → 唯一命中兜底）──
+    discovered_by_person: PersonRef | None = Field(None, description="检查人员/审批人（含头像）")
+    rectification_responsible_persons: list[PersonRef] = Field(
+        default_factory=list, description="整改负责人（顺序与 rectification_responsible_person_names 一致）"
+    )
 
     class Config:
         from_attributes = True

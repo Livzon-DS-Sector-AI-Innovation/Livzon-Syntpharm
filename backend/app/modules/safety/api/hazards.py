@@ -35,7 +35,6 @@ from app.modules.safety.schemas import (
     HazardRectificationNotifyApiResponse,
     HazardRectificationNotifyData,
     HazardReportCreate,
-    HazardReportResponse,
     HazardReportUpdate,
     HazardStatsApiResponse,
     HazardStatsResponse,
@@ -50,6 +49,10 @@ from app.modules.safety.service import (
 from app.modules.safety.service.hazard import (
     _send_rectification_notification,
     _send_verify_notification,
+)
+from app.modules.safety.service.hazard_person import (
+    to_hazard_response,
+    to_hazard_responses,
 )
 
 logger = logging.getLogger(__name__)
@@ -94,7 +97,7 @@ async def get(
         person_match,
     )
     return HazardListApiResponse(
-        data=[HazardReportResponse.model_validate(h) for h in items],
+        data=await to_hazard_responses(db, items),
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
@@ -179,7 +182,7 @@ async def handler(  # noqa: F811
     item = await service.get_hazard(hazard_id)
     if not item:
         raise NotFoundException(resource="隐患")
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.get(
@@ -219,7 +222,7 @@ async def post(current_user: RequiredUser, data: HazardReportCreate, db: AsyncSe
     service = HazardService(db)
     item = await service.create_hazard(data, auto_run_ai=False)
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.put(  # type: ignore[no-redef]
@@ -234,7 +237,7 @@ async def handler(  # noqa: F811
     if not item:
         raise NotFoundException(resource="隐患")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -280,7 +283,7 @@ async def handler(  # noqa: F811
     if not item:
         raise NotFoundException(resource="隐患")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -325,7 +328,7 @@ async def handler(  # noqa: F811
     if not item:
         raise NotFoundException(resource="隐患")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -342,7 +345,7 @@ async def handler(  # noqa: F811
     if not item:
         raise BadRequestException(message="无法开始整改，当前状态不允许")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -370,7 +373,7 @@ async def handler(  # noqa: F811
     if not item:
         raise BadRequestException(message="无法回复，当前状态不允许")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -396,7 +399,7 @@ async def handler(  # noqa: F811
     if not item:
         raise BadRequestException(message="无法复核，当前状态不允许")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -425,7 +428,7 @@ async def handler(  # noqa: F811
     if not item:
         raise BadRequestException(message="无法重新整改，当前状态不允许")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.delete(  # type: ignore[no-redef]

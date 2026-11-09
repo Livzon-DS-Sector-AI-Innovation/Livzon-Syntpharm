@@ -172,6 +172,7 @@ __all__ = [
     "PSSRResultEnum",
     "PSSR_RESULT_OPTIONS",
     "PermitStatus",
+    "PersonRef",
     "PersonnelStatus",
     "QUALIFICATION_LEVEL_OPTIONS",
     "QUALIFICATION_TYPE_OPTIONS",
@@ -541,6 +542,7 @@ from app.modules.safety.schemas.oh_health_exams import (
     OhHealthExamUpdate,
     SetExamConclusionRequest,
 )
+from app.modules.safety.schemas.person_ref import PersonRef
 from app.modules.safety.schemas.regulations import (
     OperationRegulationApiResponse,
     OperationRegulationBase,

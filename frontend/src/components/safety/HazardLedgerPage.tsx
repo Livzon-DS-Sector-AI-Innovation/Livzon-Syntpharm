@@ -7,8 +7,6 @@ import {
   Table,
   Button,
   Input,
-  message,
-  Typography,
   App,
   Space,
   Checkbox,
@@ -19,14 +17,9 @@ import type { ColumnsType } from 'antd/es/table'
 import {
   PlusOutlined,
   SearchOutlined,
-  PlayCircleOutlined,
-  CheckCircleOutlined,
-  SafetyCertificateOutlined,
   CloseCircleOutlined,
-  EditOutlined,
   DeleteOutlined,
   FilterOutlined,
-  ReloadOutlined,
   CaretUpFilled,
   CaretDownFilled,
 } from '@ant-design/icons'
@@ -34,10 +27,8 @@ import { useHazardStore } from '@/stores/safety'
 import {
   getHazards,
   fetchHazardStats,
-  runHazardAI,
   deleteHazards,
   deleteHazard,
-  startRectification,
 } from '@/actions/safety'
 import type {
   HazardReport,
@@ -49,20 +40,16 @@ import {
   HAZARD_LEVEL_OPTIONS,
   HAZARD_CATEGORY_OPTIONS,
   INSPECTION_CATEGORY_OPTIONS,
-  VERIFY_LEVEL_STATUS_OPTIONS,
   getHazardCategoryLabel,
 } from '@/types/safety'
-import HazardRectificationReplyModal from './HazardRectificationReplyModal'
-import HazardVerifyModal from './HazardVerifyModal'
 import HazardRegistrationDrawer from './HazardRegistrationDrawer'
-import HazardProgressEditModal from './HazardProgressEditModal'
 import { PersonNameWithBadge } from './PersonMatchBadge'
 import dayjs from 'dayjs'
 import { statusPill, actionLink } from '@/components/safety/sharedStyles'
 import { fileProxyUrl } from '@/lib/file-url'
-import { fetchHazardCategories, waitForHazardAiResult } from '@/lib/api/client/safety'
+import { fetchHazardCategories } from '@/lib/api/client/safety'
 
-const { Text } = Typography
+
 
 // ── 照片 JSON 数组 → 可访问 URL ──
 // 本地路径/object_key 走 /api/v1/safety/files 代理（与详情页 parsePhotos 保持一致），
@@ -158,7 +145,7 @@ const FILTER_FIELDS: FilterFieldConfig[] = [
   {
     key: 'person_match',
     label: '人员匹配',
-    options: [{ value: 'pending', label: '待确认（有姓名、未绑定系统用户）' }],
+    options: [{ value: 'pending', label: '待确认（同名多人或查无此人）' }],
   },
 ]
 
@@ -198,15 +185,6 @@ export default function HazardLedgerPage() {
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false)
   const [pendingFilterField, setPendingFilterField] = useState<string | null>(null)
 
-  const [_rerunLoading, setRerunLoading] = useState(false)
-
-  // ── 整改回复 & 三级复核 ──
-  const [replyModalVisible, setReplyModalVisible] = useState(false)
-  const [replyMode, setReplyMode] = useState<'reply' | 'rework'>('reply')
-  const [replyRecord, setReplyRecord] = useState<HazardReport | null>(null)
-  const [verifyModalVisible, setVerifyModalVisible] = useState(false)
-  const [verifyRecord, setVerifyRecord] = useState<HazardReport | null>(null)
-
   // ── 隐患登记抽屉 ──
   const [registrationDrawerOpen, setRegistrationDrawerOpen] = useState(false)
 
@@ -220,9 +198,6 @@ export default function HazardLedgerPage() {
 
   // UI state lives in the per-domain store; list data comes from React Query.
   const { queryParams: hazardQueryParams, setQueryParams: setHazardQueryParams } = useHazardStore()
-
-  // ── 整改进度编辑弹框 ──
-  const [progressEditRecord, setProgressEditRecord] = useState<HazardReport | null>(null)
 
   // ── 隐患类别字典（新增类别后筛选项同步可见）──
   const { data: categoryDict } = useQuery({
@@ -360,20 +335,6 @@ export default function HazardLedgerPage() {
   const hazards = queryData?.data ?? []
   const hazardTotal = queryData?.total ?? 0
 
-  // Optimistic row edits write straight into the cache, so the table reflects a
-  // mutation immediately without a round trip. The invalidateQueries calls that
-  // follow each mutation still refetch the authoritative data and overwrite it.
-  const patchHazard = useCallback(
-    (id: string, updates: Partial<HazardReport>) => {
-      queryClient.setQueriesData<{ data: HazardReport[]; total: number }>(
-        { queryKey: ['hazards'] },
-        (old) =>
-          old ? { ...old, data: old.data.map((h) => (h.id === id ? { ...h, ...updates } : h)) } : old
-      )
-    },
-    [queryClient]
-  )
-
   // Use query loading state
   const loading = queryLoading
 
@@ -412,46 +373,6 @@ export default function HazardLedgerPage() {
       setSortField(undefined)
       setSortOrder(undefined)
     }
-  }
-
-  // ── 开始整改 ──
-  const handleStartRectification = async (record: HazardReport) => {
-    try {
-      const response = await startRectification(record.id)
-      if (response.code === 200) {
-        message.success('已开始整改')
-        patchHazard(record.id, response.data as HazardReport)
-        refreshStats()
-      } else {
-        message.error(response.message || '开始整改失败')
-      }
-    } catch (err) {
-      message.error(err instanceof Error && err.message ? err.message : '开始整改失败，请检查网络')
-    }
-  }
-
-  // ── 整改回复 ──
-  const handleReply = (record: HazardReport) => {
-    setReplyMode(record.rectification_status === 'rejected' ? 'rework' : 'reply')
-    setReplyRecord(record)
-    setReplyModalVisible(true)
-  }
-
-  // ── 三级复核 ──
-  const handleVerifyLevel = (record: HazardReport) => {
-    setVerifyRecord(record)
-    setVerifyModalVisible(true)
-  }
-
-  // ── Modal 成功回调 ──
-  const handleReplySuccess = (updated: HazardReport) => {
-    patchHazard(updated.id, updated)
-    refreshStats()
-  }
-
-  const handleVerifySuccess = (updated: HazardReport) => {
-    patchHazard(updated.id, updated)
-    refreshStats()
   }
 
   // ── 批量删除 ──
@@ -503,46 +424,6 @@ export default function HazardLedgerPage() {
         }
       },
     })
-  }
-
-  const handleRerunAI = async (record: HazardReport) => {
-    setRerunLoading(true)
-    try {
-      // AI 端点现在只负责提交后台任务，结果需要轮询隐患详情获取
-      const r1 = await runHazardAI(record.id, 1)
-      if (r1.code !== 200) {
-        msgApi.error('重新执行 AI 识别失败: ' + (r1.message || ''))
-        return
-      }
-      const after1 = await waitForHazardAiResult(record.id)
-      if (!after1) {
-        msgApi.warning('AI 识别超时，请稍后刷新查看结果')
-        return
-      }
-      patchHazard(record.id, after1)
-      if (after1.ai_error_message) {
-        msgApi.error('AI 识别失败: ' + after1.ai_error_message)
-        return
-      }
-
-      const r2 = await runHazardAI(record.id, 2)
-      if (r2.code !== 200) {
-        msgApi.warning('AI 识别已完成，整改建议生成失败: ' + (r2.message || ''))
-        return
-      }
-      const after2 = await waitForHazardAiResult(record.id)
-      if (!after2) {
-        msgApi.warning('整改建议生成超时，请稍后刷新查看结果')
-        return
-      }
-      patchHazard(record.id, after2)
-      msgApi.success('AI 已重新执行完成')
-      refreshStats()
-    } catch (err) {
-      msgApi.error(err instanceof Error && err.message ? err.message : '重新执行 AI 失败')
-    } finally {
-      setRerunLoading(false)
-    }
   }
 
   const _getLevelColor = (level: HazardLevel) => {
@@ -600,234 +481,16 @@ export default function HazardLedgerPage() {
     )
   }
 
-  // ── 操作按钮渲染（状态操作 + 删除）──
-  const renderAction = (record: HazardReport) => {
-    const _deleteButton = (
-      <span
-        role="button"
-        onClick={() => handleDeleteRecord(record)}
-        style={actionLink('#e03131')}
-      >
-        <DeleteOutlined />删除
-      </span>
-    )
-
-    // 1. AI 已生成 — 可重新执行 AI
-    if (record.ai_generated) {
-      return (
-        <Space size="small">
-        <span
-          role="button"
-          onClick={() => handleRerunAI(record)}
-          style={actionLink('#0075de')}
-        >
-          <ReloadOutlined />重新执行AI
-        </span>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-    }
-    // 2. AI 错误 → 重试
-    if (record.ai_error_message) {
-      return (
-        <Space size="small">
-        <span
-          role="button"
-          onClick={() => handleRerunAI(record)}
-          style={actionLink('#0075de')}
-        >
-          重跑AI
-        </span>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-    }
-    // 3. 整改状态机
-    if (record.rectification_status === 'pending') {
-      return (
-        <Space size="small">
-          <Text type="secondary">-</Text>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-      return (
-        <Space size="small">
-        <span
-          role="button"
-          onClick={() => handleStartRectification(record)}
-          style={actionLink('#0075de')}
-        >
-          <PlayCircleOutlined />开始整改
-        </span>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-    }
-    if (record.rectification_status === 'in_progress') {
-      return (
-        <Space size="small">
-          <Text type="secondary">-</Text>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-      return (
-        <Space size="small">
-        <span
-          role="button"
-          onClick={() => handleReply(record)}
-          style={actionLink('#0075de')}
-        >
-          <CheckCircleOutlined />整改回复
-        </span>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-    }
-    if (record.rectification_status === 'replied') {
-      return (
-        <Space size="small">
-        <span
-          role="button"
-          onClick={() => handleVerifyLevel(record)}
-          style={actionLink('#5645d4')}
-        >
-          <SafetyCertificateOutlined />一级复核
-        </span>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-    }
-    if (record.rectification_status === 'no_rectification_needed') {
-      // AI 判定无需整改：L1/L2 已跳过，L3 待闭环
-      if (record.verify_level_3_status === 'pending') {
-        return (
-          <span
-            role="button"
-            onClick={() => handleVerifyLevel(record)}
-            style={actionLink('#5645d4')}
-          >
-            <SafetyCertificateOutlined />三级复核
-          </span>
-        )
-      }
-      return <Text type="secondary">-</Text>
-    }
-    if (record.rectification_status === 'level1_approved') {
-      const nextLabel = record.hazard_level === 'general' ? '三级复核' : '二级复核'
-      return (
-        <Space size="small">
-        <span
-          role="button"
-          onClick={() => handleVerifyLevel(record)}
-          style={actionLink('#5645d4')}
-        >
-          <SafetyCertificateOutlined />{nextLabel}
-        </span>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-    }
-    if (record.rectification_status === 'level2_approved') {
-      return (
-        <Space size="small">
-        <span
-          role="button"
-          onClick={() => handleVerifyLevel(record)}
-          style={actionLink('#5645d4')}
-        >
-          <SafetyCertificateOutlined />三级复核
-        </span>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-    }
-    if (record.rectification_status === 'rejected') {
-      return (
-        <Space size="small">
-        <span
-          role="button"
-          onClick={() => handleReply(record)}
-          style={actionLink('#e03131')}
-        >
-          <EditOutlined />重新整改
-        </span>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-    }
-    return (
-      <Space size="small">
-        <Text type="secondary">-</Text>
-        <span
-          role="button"
-          onClick={() => handleDeleteRecord(record)}
-          style={actionLink('#e03131')}
-        >
-          <DeleteOutlined />删除
-        </span>
-      </Space>
-    )
-  }
+  // ── 操作按钮渲染（仅保留删除，其余动作统一在详情页编辑）──
+  const renderAction = (record: HazardReport) => (
+    <span
+      role="button"
+      onClick={() => handleDeleteRecord(record)}
+      style={actionLink('#e03131')}
+    >
+      <DeleteOutlined />删除
+    </span>
+  )
 
   // ── 表格列定义 ──
   const columns: ColumnsType<HazardReport> = [
@@ -1007,6 +670,23 @@ export default function HazardLedgerPage() {
       key: 'rectification_responsible_person_names',
       width: 150,
       render: (_text: string, record: HazardReport) => {
+        // 优先用后端解析好的人员引用（含头像/部门），历史返回无该字段时走下面的姓名快照兜底
+        const persons = record.rectification_responsible_persons ?? []
+        if (persons.length > 0) {
+          return (
+            <Space size={4} wrap>
+              {persons.map((person, index) => (
+                <PersonNameWithBadge
+                  key={`${person.id ?? person.name ?? 'person'}-${index}`}
+                  name={person.name}
+                  src={person.avatar_url}
+                  pending={person.pending}
+                  bound={person.id}
+                />
+              ))}
+            </Space>
+          )
+        }
         // 多负责人优先，旧单人字段兜底（历史数据仍正常展示）
         const names = (record.rectification_responsible_person_names || record.rectification_responsible_person_name || '')
           .split(/[,，]/)
@@ -1032,9 +712,17 @@ export default function HazardLedgerPage() {
       dataIndex: 'discovered_by_name',
       key: 'discovered_by_name',
       width: 118,
-      render: (_text: string, record: HazardReport) => (
-        <PersonNameWithBadge name={record.discovered_by_name} bound={record.discovered_by} />
-      ),
+      render: (_text: string, record: HazardReport) => {
+        const person = record.discovered_by_person
+        return (
+          <PersonNameWithBadge
+            name={person?.name ?? record.discovered_by_name}
+            src={person?.avatar_url}
+            pending={person?.pending}
+            bound={person?.id ?? record.discovered_by}
+          />
+        )
+      },
     },
     {
       title: (
@@ -1063,12 +751,7 @@ export default function HazardLedgerPage() {
         const cfg = RECTIFICATION_STATUS_CONFIG[status]
         const note = record.rectification_progress_note
         return (
-          <div
-            role="button"
-            title="点击编辑整改进度与说明"
-            onClick={() => setProgressEditRecord(record)}
-            style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 3 }}
-          >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {cfg ? (
               <span style={statusPill(cfg.color, cfg.bg)}>{cfg.label}</span>
             ) : (
@@ -1099,52 +782,6 @@ export default function HazardLedgerPage() {
       key: 'status',
       width: 90,
       render: (status: string) => renderCloseStatus(status),
-    },
-    {
-      title: '复核进度',
-      key: 'verify_progress',
-      width: 100,
-      render: (_: unknown, record: HazardReport) => {
-        const levels = [
-          { status: record.verify_level_1_status || 'pending', label: '一' },
-          { status: record.verify_level_2_status || 'pending', label: '二' },
-          { status: record.verify_level_3_status || 'pending', label: '三' },
-        ]
-        return (
-          <Space size={4}>
-            {levels.map((lv) => {
-              const opt = VERIFY_LEVEL_STATUS_OPTIONS.find((o) => o.value === lv.status)
-              const color = opt?.color || '#c8c4be'
-              const bg = lv.status === 'approved'
-                ? '#d9f3e1'
-                : lv.status === 'rejected'
-                  ? '#fde0ec'
-                  : lv.status === 'no_review_needed'
-                    ? '#e8e6e1'
-                    : '#f0eeec'
-              return (
-                <span
-                  key={lv.label}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 22,
-                    height: 22,
-                    borderRadius: 4,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color,
-                    background: bg,
-                  }}
-                >
-                  {lv.label}
-                </span>
-              )
-            })}
-          </Space>
-        )
-      },
     },
     {
       title: (
@@ -1659,34 +1296,6 @@ export default function HazardLedgerPage() {
           }}
         />
       </div>
-
-      {/* ── 整改回复 Modal ── */}
-      <HazardRectificationReplyModal
-        open={replyModalVisible}
-        record={replyRecord}
-        mode={replyMode}
-        onClose={() => setReplyModalVisible(false)}
-        onSuccess={handleReplySuccess}
-      />
-
-      {/* ── 三级复核 Modal ── */}
-      <HazardVerifyModal
-        open={verifyModalVisible}
-        record={verifyRecord}
-        onClose={() => setVerifyModalVisible(false)}
-        onSuccess={handleVerifySuccess}
-      />
-
-      {/* ── 整改进度编辑 Modal ── */}
-      <HazardProgressEditModal
-        open={progressEditRecord !== null}
-        hazard={progressEditRecord}
-        onClose={() => setProgressEditRecord(null)}
-        onSaved={() => {
-          queryClient.invalidateQueries({ queryKey: ['hazards'] })
-          refreshStats()
-        }}
-      />
 
       {/* ── 隐患登记抽屉 ── */}
       <HazardRegistrationDrawer

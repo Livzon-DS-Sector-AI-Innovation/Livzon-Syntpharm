@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { App, Form, Input, DatePicker, Select, Upload, UploadFile, Button, Space, Card, Typography, Row, Col, Divider } from 'antd'
-import { ThunderboltOutlined, SaveOutlined, InboxOutlined, SearchOutlined, CameraOutlined, PlusOutlined } from '@ant-design/icons'
+import { App, Form, Input, DatePicker, Select, Button, Space, Card, Typography, Row, Col, Divider } from 'antd'
+import { CheckOutlined, SaveOutlined, SearchOutlined, PlusOutlined } from '@ant-design/icons'
 import {
   HAZARD_CATEGORY_OPTIONS,
   HAZARD_LEVEL_FORM_OPTIONS,
@@ -19,7 +19,6 @@ import dayjs, { type Dayjs } from 'dayjs'
 
 const { TextArea } = Input
 const { Text } = Typography
-const { Dragger } = Upload
 
 export interface InspectionFormValues {
   inspection_name?: string // 检查名称
@@ -41,8 +40,8 @@ export interface InspectionFormValues {
 interface Props {
   initialValues?: InspectionFormValues
   loading: boolean
-  onSubmit: (values: Record<string, unknown>, files: File[]) => Promise<void>
-  onSaveDraft: (values: Record<string, unknown>, files: File[]) => Promise<void>
+  onSubmit: (values: Record<string, unknown>) => Promise<void>
+  onSaveDraft: (values: Record<string, unknown>) => Promise<void>
 }
 
 /** 逗号/数组两种历史格式统一成数组（草稿回填兼容） */
@@ -103,7 +102,6 @@ function ResponsiblesField({
 export default function HazardInspectionForm({ initialValues, loading, onSubmit, onSaveDraft }: Props) {
   const [form] = Form.useForm<InspectionFormValues>()
   const { message } = App.useApp()
-  const [fileList, setFileList] = useState<UploadFile[]>([])
 
   // 组件卸载标记：异步回填不再 setState
   const mountedRef = useRef(true)
@@ -244,13 +242,10 @@ export default function HazardInspectionForm({ initialValues, loading, onSubmit,
     }
   }
 
-  const collectFiles = () =>
-    fileList.filter((file) => file.originFileObj).map((file) => file.originFileObj as File)
-
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
-      await onSubmit(normalizeValues(values as Record<string, unknown>), collectFiles())
+      await onSubmit(normalizeValues(values as Record<string, unknown>))
     } catch {
       message.warning('请完整填写全部必填项后再提交')
     }
@@ -259,10 +254,10 @@ export default function HazardInspectionForm({ initialValues, loading, onSubmit,
   const handleSaveDraft = async () => {
     try {
       const values = await form.validateFields()
-      await onSaveDraft(normalizeValues(values as Record<string, unknown>), collectFiles())
+      await onSaveDraft(normalizeValues(values as Record<string, unknown>))
     } catch {
       // 草稿允许不完整，直接取 form 当前值
-      await onSaveDraft(normalizeValues(form.getFieldsValue() as Record<string, unknown>), collectFiles())
+      await onSaveDraft(normalizeValues(form.getFieldsValue() as Record<string, unknown>))
     }
   }
 
@@ -291,7 +286,7 @@ export default function HazardInspectionForm({ initialValues, loading, onSubmit,
         <div>
           <span style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>登记隐患信息</span>
           <Text type="secondary" style={{ display: 'block', fontSize: 13, color: '#5d5b54' }}>
-            带 * 的项目为必填；AI 只会补全未填写的等级与类别，不覆盖手工填写内容
+            带 * 的项目为必填；可先保存草稿，填写完整后再正式登记
           </Text>
         </div>
       </div>
@@ -457,38 +452,12 @@ export default function HazardInspectionForm({ initialValues, loading, onSubmit,
 
         <Divider />
 
-        <div style={{ marginBottom: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <CameraOutlined style={{ color: '#5645d4', fontSize: 14 }} />
-            <Text strong style={{ fontSize: 14 }}>隐患图片上传</Text>
-          </div>
-          <Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>
-            上传隐患现场图片辅助 AI 识别（支持 JPG/PNG，单张不超过 10MB）
-          </Text>
-        </div>
-        <Dragger
-          multiple
-          fileList={fileList}
-          beforeUpload={() => false}
-          accept="image/*"
-          onChange={(info) => setFileList(info.fileList)}
-          style={{ marginBottom: 24 }}
-        >
-          <p className="ant-upload-drag-icon">
-            <InboxOutlined />
-          </p>
-          <p className="ant-upload-text">点击或拖拽图片到此区域上传</p>
-          <p className="ant-upload-hint">支持批量上传</p>
-        </Dragger>
-
-        <Divider />
-
         <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
           <Button icon={<SaveOutlined />} onClick={handleSaveDraft} disabled={loading}>
             保存草稿
           </Button>
-          <Button type="primary" size="large" icon={<ThunderboltOutlined />} onClick={handleSubmit} loading={loading}>
-            提交并AI分析
+          <Button type="primary" size="large" icon={<CheckOutlined />} onClick={handleSubmit} loading={loading}>
+            正式登记
           </Button>
         </Space>
       </Form>
