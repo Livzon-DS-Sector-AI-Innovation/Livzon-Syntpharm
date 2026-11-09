@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -18,6 +19,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     Text,
     func,
@@ -1136,6 +1138,73 @@ class HazardIdentification(BaseModel):
     )
 
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
+
+
+class WorkActivityHazard(BaseModel):
+    """作业活动危险源台账（LEC 法：D = L × E × C，D > 20，1–4 级）。"""
+
+    __tablename__ = "work_activity_hazards"
+    __table_args__ = (
+        Index("ix_work_activity_hazards_control_level", "control_level"),
+        Index("ix_work_activity_hazards_residual_risk", "residual_risk"),
+        Index("ix_work_activity_hazards_evaluation_grade", "evaluation_grade"),
+        {"schema": "safety"},
+    )
+
+    position_location: Mapped[str] = mapped_column(String(255), nullable=False, comment="岗位/地点")
+    area_activity: Mapped[str] = mapped_column(String(255), nullable=False, comment="区域/活动")
+    hazard_name_or_event: Mapped[str] = mapped_column(Text, nullable=False, comment="危险源名称或潜在事件")
+    possible_harm: Mapped[str] = mapped_column(Text, nullable=False, comment="可能导致的危害")
+    hazard_type: Mapped[str] = mapped_column(Text, nullable=False, comment="危险源类型")
+
+    likelihood_l: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False, comment="可能性L（0.1–10）")
+    exposure_e: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False, comment="发生频次E（0.5–10）")
+    consequence_c: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False, comment="后果C（1–100）")
+    risk_value_d: Mapped[Decimal] = mapped_column(
+        Numeric(38, 18), nullable=False, comment="风险值D = L×E×C（服务端精确计算，只读）"
+    )
+    evaluation_grade: Mapped[int] = mapped_column(Integer, nullable=False, comment="评价级别 1–4（4 最高，服务端计算）")
+    evaluation_grade_label: Mapped[str] = mapped_column(String(20), nullable=False, comment="评价级别中文标签")
+
+    control_measures: Mapped[list[str]] = mapped_column(JSON, nullable=False, comment="控制措施（有序的稳定 key 数组）")
+    residual_risk: Mapped[str] = mapped_column(String(20), nullable=False, comment="残余风险 key")
+    residual_risk_label: Mapped[str] = mapped_column(String(50), nullable=False, comment="残余风险中文标签")
+    control_level: Mapped[str] = mapped_column(String(100), nullable=False, comment="管控层级（部门单选）")
+    execution_level: Mapped[str] = mapped_column(String(20), nullable=False, comment="执行层级 key（车间/班组长）")
+
+
+class EquipmentFacilityHazard(BaseModel):
+    """设备设施危险源台账（安全风险矩阵：R 由 L/S 交叉格查得，只读）。"""
+
+    __tablename__ = "equipment_facility_hazards"
+    __table_args__ = (
+        Index("ix_equipment_facility_hazards_control_level", "control_level"),
+        Index("ix_equipment_facility_hazards_residual_risk", "residual_risk"),
+        {"schema": "safety"},
+    )
+
+    equipment_facility_tag: Mapped[str] = mapped_column(String(255), nullable=False, comment="设备设施/位号")
+    inspection_item: Mapped[str] = mapped_column(Text, nullable=False, comment="检查项目")
+    inspection_standard: Mapped[str] = mapped_column(Text, nullable=False, comment="检查标准")
+    nonconformity_consequence: Mapped[str] = mapped_column(Text, nullable=False, comment="不符合标准情况及后果")
+
+    likelihood_l: Mapped[int] = mapped_column(Integer, nullable=False, comment="可能性 L（1–5）")
+    severity_s: Mapped[str] = mapped_column(String(1), nullable=False, comment="严重性 S（A–E）")
+    risk_evaluation_r: Mapped[int] = mapped_column(
+        Integer, nullable=False, comment="危险评价 R（安全风险矩阵查表，服务端计算，只读）"
+    )
+
+    current_control_measures: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, comment="现有管控措施（有序的稳定 key 数组）"
+    )
+    improvement_measures: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, comment="建议改进（新增）措施（有序的稳定 key 数组）"
+    )
+    residual_risk: Mapped[str] = mapped_column(String(20), nullable=False, comment="残余风险 key")
+    residual_risk_label: Mapped[str] = mapped_column(String(50), nullable=False, comment="残余风险中文标签")
+    control_level: Mapped[str] = mapped_column(String(100), nullable=False, comment="管控层级（部门单选）")
+    execution_level: Mapped[str] = mapped_column(String(20), nullable=False, comment="执行层级 key（车间/班组长）")
+    remarks: Mapped[str] = mapped_column(Text, nullable=False, comment="备注")
 
 
 # ==================== 安全操作规程 ====================

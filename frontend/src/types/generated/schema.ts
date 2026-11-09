@@ -4797,6 +4797,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/safety/enums/risk-grading": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取风险分级管控台账的选项、矩阵与分级阈值
+         * @description 风险分级管控台账的权威选项字典；前端不得再手写这些常量。
+         */
+        get: operations["get_risk_grading_options_api_v1_safety_enums_risk_grading_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/safety/feishu/ws/status": {
         parameters: {
             query?: never;
@@ -6584,6 +6604,144 @@ export interface paths {
          */
         post: operations["handler_api_v1_safety_regulations__regulation_id__export_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/work-activity-hazards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取作业活动危险源台账列表
+         * @description 按创建时间倒序返回作业活动危险源台账，支持组合筛选与关键字搜索。
+         */
+        get: operations["list_work_activity_hazards_api_v1_safety_work_activity_hazards_get"];
+        put?: never;
+        /**
+         * 新建作业活动危险源台账记录
+         * @description 创建记录；D 与评价级别由服务端计算，D ≤ 20 直接拒绝。
+         */
+        post: operations["create_work_activity_hazard_api_v1_safety_work_activity_hazards_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/work-activity-hazards/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 导出作业活动危险源台账 .xlsx
+         * @description 按与列表相同的筛选条件导出当前结果；导出被视为只读动作。
+         */
+        get: operations["export_work_activity_hazards_api_v1_safety_work_activity_hazards_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/work-activity-hazards/{hazard_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取作业活动危险源台账详情 */
+        get: operations["get_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__get"];
+        /**
+         * 完整更新作业活动危险源台账记录
+         * @description 完整更新（PUT）：所有创建规则重新生效，D 与评价级别由服务端重算。
+         */
+        put: operations["replace_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__put"];
+        post?: never;
+        /**
+         * 删除作业活动危险源台账记录（软删除）
+         * @description 软删除记录：列表与详情不再返回，但数据行保留。
+         */
+        delete: operations["delete_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/equipment-facility-hazards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取设备设施危险源台账列表
+         * @description 按创建时间倒序返回设备设施危险源台账，支持组合筛选与关键字搜索。
+         */
+        get: operations["list_equipment_facility_hazards_api_v1_safety_equipment_facility_hazards_get"];
+        put?: never;
+        /**
+         * 新建设备设施危险源台账记录
+         * @description 创建记录；危险评价 R 由服务端按 L/S 查安全风险矩阵计算。
+         */
+        post: operations["create_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/equipment-facility-hazards/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 导出设备设施危险源台账 .xlsx
+         * @description 按与列表相同的筛选条件导出当前结果；导出被视为只读动作。
+         */
+        get: operations["export_equipment_facility_hazards_api_v1_safety_equipment_facility_hazards_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/equipment-facility-hazards/{hazard_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取设备设施危险源台账详情 */
+        get: operations["get_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__get"];
+        /**
+         * 完整更新设备设施危险源台账记录
+         * @description 完整更新（PUT）：所有创建规则重新生效，R 由服务端按 L/S 重新查表。
+         */
+        put: operations["replace_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__put"];
+        post?: never;
+        /**
+         * 删除设备设施危险源台账记录（软删除）
+         * @description 软删除记录：列表与详情不再返回，但数据行保留。
+         */
+        delete: operations["delete_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -32089,6 +32247,167 @@ export interface components {
              */
             scrap_time?: string | null;
         };
+        /** EquipmentFacilityHazardApiResponse */
+        EquipmentFacilityHazardApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["EquipmentFacilityHazardResponse"] | null;
+        };
+        /**
+         * EquipmentFacilityHazardCreate
+         * @description 新建设备设施危险源。
+         *
+         *     R 由服务端按 L/S 查安全风险矩阵得出；即使客户端附带 risk_evaluation_r
+         *     也会被忽略（extra=ignore），读取时始终返回服务端计算值。
+         */
+        EquipmentFacilityHazardCreate: {
+            /**
+             * Equipment Facility Tag
+             * @description 设备设施/位号（一期自由文本）
+             */
+            equipment_facility_tag: string;
+            /**
+             * Inspection Item
+             * @description 检查项目
+             */
+            inspection_item: string;
+            /**
+             * Inspection Standard
+             * @description 检查标准
+             */
+            inspection_standard: string;
+            /**
+             * Nonconformity Consequence
+             * @description 不符合标准情况及后果
+             */
+            nonconformity_consequence: string;
+            /**
+             * Likelihood L
+             * @description 可能性 L（1–5）
+             */
+            likelihood_l: number;
+            /**
+             * Severity S
+             * @description 严重性 S（A–E）
+             */
+            severity_s: string;
+            /**
+             * Current Control Measures
+             * @description 现有管控措施（有序 key 数组）
+             */
+            current_control_measures: string[];
+            /**
+             * Improvement Measures
+             * @description 建议改进（新增）措施（有序 key 数组）
+             */
+            improvement_measures: string[];
+            /**
+             * Residual Risk
+             * @description 残余风险 key
+             */
+            residual_risk: string;
+            /**
+             * Control Level
+             * @description 管控层级（28 个部门之一）
+             */
+            control_level: string;
+            /**
+             * Execution Level
+             * @description 执行层级 key（车间/班组长）
+             */
+            execution_level: string;
+            /**
+             * Remarks
+             * @description 备注
+             */
+            remarks: string;
+        };
+        /** EquipmentFacilityHazardListApiResponse */
+        EquipmentFacilityHazardListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["EquipmentFacilityHazardResponse"][];
+            meta: components["schemas"]["EquipmentFacilityHazardListMeta"];
+        };
+        /** EquipmentFacilityHazardListMeta */
+        EquipmentFacilityHazardListMeta: {
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+        };
+        /**
+         * EquipmentFacilityHazardResponse
+         * @description 设备设施危险源台账记录（含服务端计算字段）。
+         */
+        EquipmentFacilityHazardResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Equipment Facility Tag */
+            equipment_facility_tag: string;
+            /** Inspection Item */
+            inspection_item: string;
+            /** Inspection Standard */
+            inspection_standard: string;
+            /** Nonconformity Consequence */
+            nonconformity_consequence: string;
+            /** Likelihood L */
+            likelihood_l: number;
+            /** Severity S */
+            severity_s: string;
+            /** Risk Evaluation R */
+            risk_evaluation_r: number;
+            /** Current Control Measures */
+            current_control_measures: string[];
+            /** Improvement Measures */
+            improvement_measures: string[];
+            /** Residual Risk */
+            residual_risk: string;
+            /** Residual Risk Label */
+            residual_risk_label: string;
+            /** Control Level */
+            control_level: string;
+            /** Execution Level */
+            execution_level: string;
+            /** Remarks */
+            remarks: string;
+            /** Created By */
+            created_by?: string | null;
+            /** Updated By */
+            updated_by?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /**
          * EquipmentImportRow
          * @description 设备导入行数据
@@ -39079,6 +39398,16 @@ export interface components {
              * @description 负责部门
              */
             department: string;
+        };
+        /**
+         * LecRange
+         * @description LEC 某一项的合法闭区间。
+         */
+        LecRange: {
+            /** Min */
+            min: string;
+            /** Max */
+            max: string;
         };
         /**
          * LedgerExportRequest
@@ -47993,6 +48322,71 @@ export interface components {
          * @enum {string}
          */
         RevisionType: "manual" | "ai";
+        /**
+         * RiskGradeThreshold
+         * @description 分级阈值：D > lower_bound_exclusive 时取该 grade（阈值从高到低排列）。
+         */
+        RiskGradeThreshold: {
+            /** Grade */
+            grade: number;
+            /** Lower Bound Exclusive */
+            lower_bound_exclusive: string;
+        };
+        /**
+         * RiskGradingOptions
+         * @description 两张危险源台账前端所需的权威选项、矩阵与阈值。
+         */
+        RiskGradingOptions: {
+            /** Departments */
+            departments: string[];
+            /** Control Measures */
+            control_measures: components["schemas"]["RiskGradingValueLabel"][];
+            /** Equipment Measures */
+            equipment_measures: components["schemas"]["RiskGradingValueLabel"][];
+            /** Residual Risks */
+            residual_risks: components["schemas"]["RiskGradingValueLabel"][];
+            /** Execution Levels */
+            execution_levels: components["schemas"]["RiskGradingValueLabel"][];
+            /** Likelihood Levels */
+            likelihood_levels: number[];
+            /** Severity Levels */
+            severity_levels: string[];
+            /** Safety Risk Matrix */
+            safety_risk_matrix: {
+                [key: string]: number[];
+            };
+            /** Grade Thresholds */
+            grade_thresholds: components["schemas"]["RiskGradeThreshold"][];
+            likelihood_range: components["schemas"]["LecRange"];
+            exposure_range: components["schemas"]["LecRange"];
+            consequence_range: components["schemas"]["LecRange"];
+            /** Min Risk Value */
+            min_risk_value: string;
+        };
+        /** RiskGradingOptionsApiResponse */
+        RiskGradingOptionsApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["RiskGradingOptions"];
+        };
+        /**
+         * RiskGradingValueLabel
+         * @description 稳定的选项 key 与展示文本。
+         */
+        RiskGradingValueLabel: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+        };
         /** RoleDetailApiResponse */
         RoleDetailApiResponse: {
             /**
@@ -56462,6 +56856,170 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** WorkActivityHazardApiResponse */
+        WorkActivityHazardApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["WorkActivityHazardResponse"] | null;
+        };
+        /**
+         * WorkActivityHazardCreate
+         * @description 新建作业活动危险源。
+         *
+         *     D、评价级别由服务端计算；即使客户端附带同名字段也会被忽略（默认 extra=ignore）。
+         */
+        WorkActivityHazardCreate: {
+            /**
+             * Position Location
+             * @description 岗位/地点（一期自由文本）
+             */
+            position_location: string;
+            /**
+             * Area Activity
+             * @description 区域/活动（一期自由文本）
+             */
+            area_activity: string;
+            /**
+             * Hazard Name Or Event
+             * @description 危险源名称或潜在事件
+             */
+            hazard_name_or_event: string;
+            /**
+             * Possible Harm
+             * @description 可能导致的危害
+             */
+            possible_harm: string;
+            /**
+             * Hazard Type
+             * @description 危险源类型
+             */
+            hazard_type: string;
+            /**
+             * Likelihood L
+             * @description 可能性 L（0.1–10）
+             */
+            likelihood_l: number | string;
+            /**
+             * Exposure E
+             * @description 发生频次 E（0.5–10）
+             */
+            exposure_e: number | string;
+            /**
+             * Consequence C
+             * @description 后果 C（1–100）
+             */
+            consequence_c: number | string;
+            /**
+             * Control Measures
+             * @description 控制措施（有序的稳定 key 数组）
+             */
+            control_measures: string[];
+            /**
+             * Residual Risk
+             * @description 残余风险 key
+             */
+            residual_risk: string;
+            /**
+             * Control Level
+             * @description 管控层级（28 个部门之一）
+             */
+            control_level: string;
+            /**
+             * Execution Level
+             * @description 执行层级 key（车间/班组长）
+             */
+            execution_level: string;
+        };
+        /** WorkActivityHazardListApiResponse */
+        WorkActivityHazardListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["WorkActivityHazardResponse"][];
+            meta: components["schemas"]["WorkActivityHazardListMeta"];
+        };
+        /** WorkActivityHazardListMeta */
+        WorkActivityHazardListMeta: {
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+        };
+        /**
+         * WorkActivityHazardResponse
+         * @description 作业活动危险源台账记录（含服务端计算字段）。
+         */
+        WorkActivityHazardResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Position Location */
+            position_location: string;
+            /** Area Activity */
+            area_activity: string;
+            /** Hazard Name Or Event */
+            hazard_name_or_event: string;
+            /** Possible Harm */
+            possible_harm: string;
+            /** Hazard Type */
+            hazard_type: string;
+            /** Likelihood L */
+            likelihood_l: string;
+            /** Exposure E */
+            exposure_e: string;
+            /** Consequence C */
+            consequence_c: string;
+            /** Risk Value D */
+            risk_value_d: string;
+            /** Evaluation Grade */
+            evaluation_grade: number;
+            /** Evaluation Grade Label */
+            evaluation_grade_label: string;
+            /** Control Measures */
+            control_measures: string[];
+            /** Residual Risk */
+            residual_risk: string;
+            /** Residual Risk Label */
+            residual_risk_label: string;
+            /** Control Level */
+            control_level: string;
+            /** Execution Level */
+            execution_level: string;
+            /** Created By */
+            created_by?: string | null;
+            /** Updated By */
+            updated_by?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -69325,6 +69883,37 @@ export interface operations {
             };
         };
     };
+    get_risk_grading_options_api_v1_safety_enums_risk_grading_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["RiskGradingOptionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_feishu_ws_status_api_v1_safety_feishu_ws_status_get: {
         parameters: {
             query?: never;
@@ -73049,6 +73638,438 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_work_activity_hazards_api_v1_safety_work_activity_hazards_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+                /** @description 管控层级（部门） */
+                control_level?: string | null;
+                /** @description 评价级别 1–4 */
+                evaluation_grade?: number | null;
+                /** @description 残余风险 key */
+                residual_risk?: string | null;
+                /** @description 关键字（覆盖各文本字段） */
+                keyword?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["WorkActivityHazardListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_work_activity_hazard_api_v1_safety_work_activity_hazards_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkActivityHazardCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["WorkActivityHazardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_work_activity_hazards_api_v1_safety_work_activity_hazards_export_get: {
+        parameters: {
+            query?: {
+                /** @description 管控层级（部门） */
+                control_level?: string | null;
+                /** @description 评价级别 1–4 */
+                evaluation_grade?: number | null;
+                /** @description 残余风险 key */
+                residual_risk?: string | null;
+                /** @description 关键字（覆盖各文本字段） */
+                keyword?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hazard_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["WorkActivityHazardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hazard_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkActivityHazardCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["WorkActivityHazardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hazard_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["WorkActivityHazardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_equipment_facility_hazards_api_v1_safety_equipment_facility_hazards_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+                /** @description 管控层级（部门） */
+                control_level?: string | null;
+                /** @description 残余风险 key */
+                residual_risk?: string | null;
+                /** @description 关键字（覆盖各文本字段） */
+                keyword?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["EquipmentFacilityHazardListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EquipmentFacilityHazardCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["EquipmentFacilityHazardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_equipment_facility_hazards_api_v1_safety_equipment_facility_hazards_export_get: {
+        parameters: {
+            query?: {
+                /** @description 管控层级（部门） */
+                control_level?: string | null;
+                /** @description 残余风险 key */
+                residual_risk?: string | null;
+                /** @description 关键字（覆盖各文本字段） */
+                keyword?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hazard_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["EquipmentFacilityHazardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hazard_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EquipmentFacilityHazardCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["EquipmentFacilityHazardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hazard_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["EquipmentFacilityHazardApiResponse"];
                 };
             };
             /** @description Validation Error */

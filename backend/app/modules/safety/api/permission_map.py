@@ -23,6 +23,10 @@ SAFETY_RESOURCE_CODES: Final[dict[str, tuple[str, str]]] = {
     "contractors": ("safety:contractor:read", "safety:contractor:manage"),
     "daily-risk-reports": ("safety:daily-risk-report:read", "safety:daily-risk-report:manage"),
     "ehs-changes": ("safety:ehs-change:read", "safety:ehs-change:manage"),
+    "equipment-facility-hazards": (
+        "safety:equipment-facility-hazard:read",
+        "safety:equipment-facility-hazard:manage",
+    ),
     # 枚举字典 / 文件下载只有读动作，直接复用模块级只读码
     "enums": ("safety:module:read", "safety:module:read"),
     "feishu": ("safety:feishu:manage", "safety:feishu:manage"),
@@ -46,6 +50,7 @@ SAFETY_RESOURCE_CODES: Final[dict[str, tuple[str, str]]] = {
     ),
     "special-operation-reports": ("safety:special-operation-report:read", "safety:special-operation-report:manage"),
     "trainings": ("safety:training:read", "safety:training:manage"),
+    "work-activity-hazards": ("safety:work-activity-hazard:read", "safety:work-activity-hazard:manage"),
     "training-certificates": ("safety:training-certificate:read", "safety:training-certificate:manage"),
     "training-records": ("safety:training-record:read", "safety:training-record:manage"),
 }
