@@ -13,6 +13,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.modules.safety.schemas.risk_grading import (
+    EquipmentFacilityHazardApiResponse,
+    EquipmentFacilityHazardCreate,
+    EquipmentFacilityHazardListApiResponse,
+    EquipmentFacilityHazardListMeta,
+    EquipmentFacilityHazardResponse,
     WorkActivityHazardApiResponse,
     WorkActivityHazardCreate,
     WorkActivityHazardListApiResponse,
@@ -20,7 +25,10 @@ from app.modules.safety.schemas.risk_grading import (
     WorkActivityHazardResponse,
     WorkActivityHazardUpdate,
 )
-from app.modules.safety.service.risk_grading import WorkActivityHazardService
+from app.modules.safety.service.risk_grading import (
+    EquipmentFacilityHazardService,
+    WorkActivityHazardService,
+)
 
 work_activity_hazards_router = APIRouter()
 
@@ -174,3 +182,44 @@ async def delete_work_activity_hazard(
     await service.delete_hazard(hazard_id)
     await db.commit()
     return WorkActivityHazardApiResponse(code=200, message="删除成功", data=None)
+
+
+equipment_facility_hazards_router = APIRouter()
+
+
+@equipment_facility_hazards_router.get(
+    "/equipment-facility-hazards",
+    response_model=EquipmentFacilityHazardListApiResponse,
+    summary="获取设备设施危险源台账列表",
+)
+async def list_equipment_facility_hazards(
+    current_user: RequiredUser,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """按创建时间倒序返回设备设施危险源台账。"""
+    service = EquipmentFacilityHazardService(db)
+    skip = (page - 1) * page_size
+    items, total = await service.list_hazards(skip, page_size)
+    return EquipmentFacilityHazardListApiResponse(
+        data=[EquipmentFacilityHazardResponse.model_validate(item) for item in items],
+        meta=EquipmentFacilityHazardListMeta(page=page, page_size=page_size, total=total),
+    )
+
+
+@equipment_facility_hazards_router.post(
+    "/equipment-facility-hazards",
+    response_model=EquipmentFacilityHazardApiResponse,
+    summary="新建设备设施危险源台账记录",
+)
+async def create_equipment_facility_hazard(
+    current_user: RequiredUser,
+    data: EquipmentFacilityHazardCreate,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """创建记录；危险评价 R 由服务端按 L/S 查安全风险矩阵计算。"""
+    service = EquipmentFacilityHazardService(db)
+    item = await service.create_hazard(data)
+    await db.commit()
+    return EquipmentFacilityHazardApiResponse(data=EquipmentFacilityHazardResponse.model_validate(item))

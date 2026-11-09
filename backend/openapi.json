@@ -31963,6 +31963,137 @@
         }
       }
     },
+    "/api/v1/safety/equipment-facility-hazards": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u8bbe\u5907\u8bbe\u65bd\u5371\u9669\u6e90\u53f0\u8d26\u5217\u8868",
+        "description": "\u6309\u521b\u5efa\u65f6\u95f4\u5012\u5e8f\u8fd4\u56de\u8bbe\u5907\u8bbe\u65bd\u5371\u9669\u6e90\u53f0\u8d26\u3002",
+        "operationId": "list_equipment_facility_hazards_api_v1_safety_equipment_facility_hazards_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentFacilityHazardListApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u65b0\u5efa\u8bbe\u5907\u8bbe\u65bd\u5371\u9669\u6e90\u53f0\u8d26\u8bb0\u5f55",
+        "description": "\u521b\u5efa\u8bb0\u5f55\uff1b\u5371\u9669\u8bc4\u4ef7 R \u7531\u670d\u52a1\u7aef\u6309 L/S \u67e5\u5b89\u5168\u98ce\u9669\u77e9\u9635\u8ba1\u7b97\u3002",
+        "operationId": "create_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EquipmentFacilityHazardCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentFacilityHazardApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/safety/scheduled-tasks/data-source-options": {
       "get": {
         "tags": [
@@ -123785,6 +123916,315 @@
         ],
         "title": "EquipmentCreate",
         "description": "\u521b\u5efa\u8bbe\u5907\u8bf7\u6c42"
+      },
+      "EquipmentFacilityHazardApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EquipmentFacilityHazardResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "EquipmentFacilityHazardApiResponse"
+      },
+      "EquipmentFacilityHazardCreate": {
+        "properties": {
+          "equipment_facility_tag": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Equipment Facility Tag",
+            "description": "\u8bbe\u5907\u8bbe\u65bd/\u4f4d\u53f7\uff08\u4e00\u671f\u81ea\u7531\u6587\u672c\uff09"
+          },
+          "inspection_item": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Inspection Item",
+            "description": "\u68c0\u67e5\u9879\u76ee"
+          },
+          "inspection_standard": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Inspection Standard",
+            "description": "\u68c0\u67e5\u6807\u51c6"
+          },
+          "nonconformity_consequence": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Nonconformity Consequence",
+            "description": "\u4e0d\u7b26\u5408\u6807\u51c6\u60c5\u51b5\u53ca\u540e\u679c"
+          },
+          "likelihood_l": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Likelihood L",
+            "description": "\u53ef\u80fd\u6027 L\uff081\u20135\uff09"
+          },
+          "severity_s": {
+            "type": "string",
+            "maxLength": 1,
+            "minLength": 1,
+            "title": "Severity S",
+            "description": "\u4e25\u91cd\u6027 S\uff08A\u2013E\uff09"
+          },
+          "current_control_measures": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Current Control Measures",
+            "description": "\u73b0\u6709\u7ba1\u63a7\u63aa\u65bd\uff08\u6709\u5e8f key \u6570\u7ec4\uff09"
+          },
+          "improvement_measures": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Improvement Measures",
+            "description": "\u5efa\u8bae\u6539\u8fdb\uff08\u65b0\u589e\uff09\u63aa\u65bd\uff08\u6709\u5e8f key \u6570\u7ec4\uff09"
+          },
+          "residual_risk": {
+            "type": "string",
+            "title": "Residual Risk",
+            "description": "\u6b8b\u4f59\u98ce\u9669 key"
+          },
+          "control_level": {
+            "type": "string",
+            "title": "Control Level",
+            "description": "\u7ba1\u63a7\u5c42\u7ea7\uff0828 \u4e2a\u90e8\u95e8\u4e4b\u4e00\uff09"
+          },
+          "execution_level": {
+            "type": "string",
+            "title": "Execution Level",
+            "description": "\u6267\u884c\u5c42\u7ea7 key\uff08\u8f66\u95f4/\u73ed\u7ec4\u957f\uff09"
+          },
+          "remarks": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Remarks",
+            "description": "\u5907\u6ce8"
+          }
+        },
+        "type": "object",
+        "required": [
+          "equipment_facility_tag",
+          "inspection_item",
+          "inspection_standard",
+          "nonconformity_consequence",
+          "likelihood_l",
+          "severity_s",
+          "current_control_measures",
+          "improvement_measures",
+          "residual_risk",
+          "control_level",
+          "execution_level",
+          "remarks"
+        ],
+        "title": "EquipmentFacilityHazardCreate",
+        "description": "\u65b0\u5efa\u8bbe\u5907\u8bbe\u65bd\u5371\u9669\u6e90\u3002\n\nR \u7531\u670d\u52a1\u7aef\u6309 L/S \u67e5\u5b89\u5168\u98ce\u9669\u77e9\u9635\u5f97\u51fa\uff1b\u5373\u4f7f\u5ba2\u6237\u7aef\u9644\u5e26 risk_evaluation_r\n\u4e5f\u4f1a\u88ab\u5ffd\u7565\uff08extra=ignore\uff09\uff0c\u8bfb\u53d6\u65f6\u59cb\u7ec8\u8fd4\u56de\u670d\u52a1\u7aef\u8ba1\u7b97\u503c\u3002"
+      },
+      "EquipmentFacilityHazardListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EquipmentFacilityHazardResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/EquipmentFacilityHazardListMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "EquipmentFacilityHazardListApiResponse"
+      },
+      "EquipmentFacilityHazardListMeta": {
+        "properties": {
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "EquipmentFacilityHazardListMeta"
+      },
+      "EquipmentFacilityHazardResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "equipment_facility_tag": {
+            "type": "string",
+            "title": "Equipment Facility Tag"
+          },
+          "inspection_item": {
+            "type": "string",
+            "title": "Inspection Item"
+          },
+          "inspection_standard": {
+            "type": "string",
+            "title": "Inspection Standard"
+          },
+          "nonconformity_consequence": {
+            "type": "string",
+            "title": "Nonconformity Consequence"
+          },
+          "likelihood_l": {
+            "type": "integer",
+            "title": "Likelihood L"
+          },
+          "severity_s": {
+            "type": "string",
+            "title": "Severity S"
+          },
+          "risk_evaluation_r": {
+            "type": "integer",
+            "title": "Risk Evaluation R"
+          },
+          "current_control_measures": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Current Control Measures"
+          },
+          "improvement_measures": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Improvement Measures"
+          },
+          "residual_risk": {
+            "type": "string",
+            "title": "Residual Risk"
+          },
+          "residual_risk_label": {
+            "type": "string",
+            "title": "Residual Risk Label"
+          },
+          "control_level": {
+            "type": "string",
+            "title": "Control Level"
+          },
+          "execution_level": {
+            "type": "string",
+            "title": "Execution Level"
+          },
+          "remarks": {
+            "type": "string",
+            "title": "Remarks"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "equipment_facility_tag",
+          "inspection_item",
+          "inspection_standard",
+          "nonconformity_consequence",
+          "likelihood_l",
+          "severity_s",
+          "risk_evaluation_r",
+          "current_control_measures",
+          "improvement_measures",
+          "residual_risk",
+          "residual_risk_label",
+          "control_level",
+          "execution_level",
+          "remarks",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "EquipmentFacilityHazardResponse",
+        "description": "\u8bbe\u5907\u8bbe\u65bd\u5371\u9669\u6e90\u53f0\u8d26\u8bb0\u5f55\uff08\u542b\u670d\u52a1\u7aef\u8ba1\u7b97\u5b57\u6bb5\uff09\u3002"
       },
       "EquipmentImportRow": {
         "properties": {

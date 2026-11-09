@@ -13,7 +13,10 @@ from app.modules.safety.service.knowledge_graph import KnowledgeGraphService
 from app.modules.safety.service.oh_hazard_monitor import OhHazardMonitorService
 from app.modules.safety.service.oh_health_exam import OhHealthExamService
 from app.modules.safety.service.regulation import RegulationService
-from app.modules.safety.service.risk_grading import WorkActivityHazardService
+from app.modules.safety.service.risk_grading import (
+    EquipmentFacilityHazardService,
+    WorkActivityHazardService,
+)
 from app.modules.safety.service.safety import SafetyService
 from app.modules.safety.service.scheduled_task import ScheduledTaskService
 from app.modules.safety.service.sop_generator import SopGeneratorService
@@ -40,5 +43,6 @@ __all__ = [
     "OhHazardMonitorService",
     "OhHealthExamService",
     "WorkActivityHazardService",
+    "EquipmentFacilityHazardService",
 ]
 # ruff: noqa: F401

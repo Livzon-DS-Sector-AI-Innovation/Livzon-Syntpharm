@@ -43,3 +43,17 @@ export async function exportWorkActivityHazards(
 
   return { blob: await response.blob(), filename }
 }
+
+type EquipmentFacilityHazardCreate = components['schemas']['EquipmentFacilityHazardCreate']
+type EquipmentFacilityHazard = components['schemas']['EquipmentFacilityHazardResponse']
+
+const EQUIPMENT_HAZARDS_PATH = '/api/v1/safety/equipment-facility-hazards'
+
+export async function createEquipmentFacilityHazard(
+  data: EquipmentFacilityHazardCreate,
+): Promise<EquipmentFacilityHazard> {
+  return apiFetchData<EquipmentFacilityHazard>(`${getApiBaseUrl()}${EQUIPMENT_HAZARDS_PATH}`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}

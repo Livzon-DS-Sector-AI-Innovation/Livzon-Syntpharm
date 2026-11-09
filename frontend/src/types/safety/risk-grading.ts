@@ -28,6 +28,19 @@ export type WorkActivityHazardExportParams = NonNullable<
   WorkActivityHazardExportOperation['parameters']['query']
 >
 
+export type EquipmentFacilityHazard = components['schemas']['EquipmentFacilityHazardResponse']
+export type EquipmentFacilityHazardCreate = components['schemas']['EquipmentFacilityHazardCreate']
+export type EquipmentFacilityHazardListApiResponse =
+  components['schemas']['EquipmentFacilityHazardListApiResponse']
+export type EquipmentFacilityHazardApiResponse = components['schemas']['EquipmentFacilityHazardApiResponse']
+
+type EquipmentFacilityHazardListOperation =
+  operations['list_equipment_facility_hazards_api_v1_safety_equipment_facility_hazards_get']
+
+export type EquipmentFacilityHazardListParams = NonNullable<
+  EquipmentFacilityHazardListOperation['parameters']['query']
+>
+
 export interface OptionItem {
   value: string
   label: string
@@ -116,4 +129,48 @@ export function deriveEvaluationGrade(d: number): number {
   if (d > 160) return 3
   if (d > 70) return 2
   return 1
+}
+
+/** 设备设施台账措施：与作业活动台账共用稳定 key，展示短标签。 */
+export const EQUIPMENT_MEASURE_OPTIONS: OptionItem[] = [
+  { value: 'engineering', label: '工程技术' },
+  { value: 'management', label: '管理措施' },
+  { value: 'education', label: '培训教育' },
+  { value: 'ppe', label: '个体防护' },
+  { value: 'emergency', label: '应急处置' },
+]
+
+export const EQUIPMENT_MEASURE_LABELS: Record<string, string> = Object.fromEntries(
+  EQUIPMENT_MEASURE_OPTIONS.map((item) => [item.value, item.label]),
+)
+
+export const LIKELIHOOD_LEVEL_OPTIONS: { value: number; label: string }[] = [1, 2, 3, 4, 5].map(
+  (value) => ({
+    value,
+    label: String(value),
+  }),
+)
+
+export const SEVERITY_LEVEL_OPTIONS: OptionItem[] = ['A', 'B', 'C', 'D', 'E'].map((value) => ({
+  value,
+  label: value,
+}))
+
+/**
+ * 安全风险矩阵（S 纵轴 A–E，L 横轴 1–5），与后端 risk_grading.py 一致。
+ * R 取交叉格，不是 L×S。
+ */
+export const SAFETY_RISK_MATRIX: Record<string, readonly number[]> = {
+  A: [3, 5, 7, 10, 15],
+  B: [5, 7, 10, 15, 23],
+  C: [7, 11, 16, 23, 35],
+  D: [17, 25, 37, 55, 81],
+  E: [22, 32, 46, 68, 100],
+}
+
+/** 仅用于表单即时预览；最终 R 以后端查表结果为准。 */
+export function lookupRiskEvaluation(likelihood: number, severity: string): number | null {
+  const row = SAFETY_RISK_MATRIX[severity]
+  if (!row || !Number.isInteger(likelihood) || likelihood < 1 || likelihood > 5) return null
+  return row[likelihood - 1] ?? null
 }

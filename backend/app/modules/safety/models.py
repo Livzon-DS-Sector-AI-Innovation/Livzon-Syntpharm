@@ -1160,6 +1160,40 @@ class WorkActivityHazard(BaseModel):
     execution_level: Mapped[str] = mapped_column(String(20), nullable=False, comment="执行层级 key（车间/班组长）")
 
 
+class EquipmentFacilityHazard(BaseModel):
+    """设备设施危险源台账（安全风险矩阵：R 由 L/S 交叉格查得，只读）。"""
+
+    __tablename__ = "equipment_facility_hazards"
+    __table_args__ = (
+        Index("ix_equipment_facility_hazards_control_level", "control_level"),
+        Index("ix_equipment_facility_hazards_residual_risk", "residual_risk"),
+        {"schema": "safety"},
+    )
+
+    equipment_facility_tag: Mapped[str] = mapped_column(String(255), nullable=False, comment="设备设施/位号")
+    inspection_item: Mapped[str] = mapped_column(Text, nullable=False, comment="检查项目")
+    inspection_standard: Mapped[str] = mapped_column(Text, nullable=False, comment="检查标准")
+    nonconformity_consequence: Mapped[str] = mapped_column(Text, nullable=False, comment="不符合标准情况及后果")
+
+    likelihood_l: Mapped[int] = mapped_column(Integer, nullable=False, comment="可能性 L（1–5）")
+    severity_s: Mapped[str] = mapped_column(String(1), nullable=False, comment="严重性 S（A–E）")
+    risk_evaluation_r: Mapped[int] = mapped_column(
+        Integer, nullable=False, comment="危险评价 R（安全风险矩阵查表，服务端计算，只读）"
+    )
+
+    current_control_measures: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, comment="现有管控措施（有序的稳定 key 数组）"
+    )
+    improvement_measures: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, comment="建议改进（新增）措施（有序的稳定 key 数组）"
+    )
+    residual_risk: Mapped[str] = mapped_column(String(20), nullable=False, comment="残余风险 key")
+    residual_risk_label: Mapped[str] = mapped_column(String(50), nullable=False, comment="残余风险中文标签")
+    control_level: Mapped[str] = mapped_column(String(100), nullable=False, comment="管控层级（部门单选）")
+    execution_level: Mapped[str] = mapped_column(String(20), nullable=False, comment="执行层级 key（车间/班组长）")
+    remarks: Mapped[str] = mapped_column(Text, nullable=False, comment="备注")
+
+
 # ==================== 安全操作规程 ====================
 
 

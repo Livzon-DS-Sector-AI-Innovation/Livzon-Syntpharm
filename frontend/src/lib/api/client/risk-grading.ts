@@ -1,5 +1,7 @@
 import { fetchApi } from '@/lib/api/client'
 import type {
+  EquipmentFacilityHazardListApiResponse,
+  EquipmentFacilityHazardListParams,
   WorkActivityHazardListApiResponse,
   WorkActivityHazardListParams,
 } from '@/types/safety/risk-grading'
@@ -20,6 +22,24 @@ export async function fetchWorkActivityHazards(
   if (!searchParams.has('page_size')) searchParams.set('page_size', '20')
   return fetchApi<WorkActivityHazardListApiResponse>(
     `${API_BASE}/safety/work-activity-hazards?${searchParams.toString()}`,
+    { method: 'GET' },
+  )
+}
+
+/** 浏览器侧读取设备设施危险源台账（分页）。 */
+export async function fetchEquipmentFacilityHazards(
+  params?: EquipmentFacilityHazardListParams,
+): Promise<EquipmentFacilityHazardListApiResponse> {
+  const searchParams = new URLSearchParams()
+  Object.entries(params ?? {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value) !== '') {
+      searchParams.set(key, String(value))
+    }
+  })
+  if (!searchParams.has('page')) searchParams.set('page', '1')
+  if (!searchParams.has('page_size')) searchParams.set('page_size', '20')
+  return fetchApi<EquipmentFacilityHazardListApiResponse>(
+    `${API_BASE}/safety/equipment-facility-hazards?${searchParams.toString()}`,
     { method: 'GET' },
   )
 }

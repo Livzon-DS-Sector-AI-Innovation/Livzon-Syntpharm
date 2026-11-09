@@ -289,6 +289,11 @@ __all__ = [
     "VerifyMonitorRequest",
     "WORK_RECORD_STATUS_OPTIONS",
     "WorkRecordStatusEnum",
+    "EquipmentFacilityHazardApiResponse",
+    "EquipmentFacilityHazardCreate",
+    "EquipmentFacilityHazardListApiResponse",
+    "EquipmentFacilityHazardListMeta",
+    "EquipmentFacilityHazardResponse",
     "WorkActivityHazardApiResponse",
     "WorkActivityHazardCreate",
     "WorkActivityHazardListApiResponse",
@@ -567,6 +572,11 @@ from app.modules.safety.schemas.regulations import (
     SopMeta,
 )
 from app.modules.safety.schemas.risk_grading import (
+    EquipmentFacilityHazardApiResponse,
+    EquipmentFacilityHazardCreate,
+    EquipmentFacilityHazardListApiResponse,
+    EquipmentFacilityHazardListMeta,
+    EquipmentFacilityHazardResponse,
     WorkActivityHazardApiResponse,
     WorkActivityHazardCreate,
     WorkActivityHazardListApiResponse,

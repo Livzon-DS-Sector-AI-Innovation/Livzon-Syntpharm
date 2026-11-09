@@ -15,6 +15,7 @@ from app.modules.safety.models import (
     ContractorWorkRecord,
     DailyRiskReport,
     EhsChange,
+    EquipmentFacilityHazard,
     HazardIdentification,
     HazardReport,
     OhHazardMonitor,
@@ -985,6 +986,38 @@ class SafetyRepository:
         )
         result = await self.session.execute(query)
         return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]
+
+    # ==================== 设备设施危险源台账 Operations ====================
+
+    async def get_equipment_facility_hazards(
+        self,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> tuple[list[EquipmentFacilityHazard], int]:
+        """获取设备设施危险源台账列表（按创建时间倒序）。"""
+        conditions: list[Any] = [~EquipmentFacilityHazard.is_deleted]
+        base = select(EquipmentFacilityHazard).where(*conditions)
+        count_query = select(func.count(EquipmentFacilityHazard.id)).where(*conditions)
+        total = await self.session.scalar(count_query)
+        query = (
+            base.order_by(
+                EquipmentFacilityHazard.created_at.desc(),
+                EquipmentFacilityHazard.id.desc(),
+            )
+            .offset(skip)
+            .limit(limit)
+        )
+        result = await self.session.execute(query)
+        return list(result.scalars().all()), total or 0
+
+    async def create_equipment_facility_hazard(self, data: dict[str, Any]) -> EquipmentFacilityHazard:
+        """创建设备设施危险源记录。"""
+        item = EquipmentFacilityHazard(**data)
+        self.session.add(item)
+        await self.session.flush()
+        stmt = select(EquipmentFacilityHazard).where(EquipmentFacilityHazard.id == item.id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
 
     # ==================== OperationRegulation Operations ====================
 

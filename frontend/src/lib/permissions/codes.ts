@@ -181,6 +181,8 @@ export const SAFETY_PERM = {
   dailyRiskReportRead: 'safety:daily-risk-report:read',
   ehsChangeManage: 'safety:ehs-change:manage',
   ehsChangeRead: 'safety:ehs-change:read',
+  equipmentFacilityHazardManage: 'safety:equipment-facility-hazard:manage',
+  equipmentFacilityHazardRead: 'safety:equipment-facility-hazard:read',
   feishuManage: 'safety:feishu:manage',
   hazardIdentificationManage: 'safety:hazard-identification:manage',
   hazardIdentificationRead: 'safety:hazard-identification:read',

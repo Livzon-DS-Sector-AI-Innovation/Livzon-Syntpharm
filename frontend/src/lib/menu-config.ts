@@ -120,6 +120,11 @@ export const moduleMenus: ModuleMenu[] = [
                 label: "作业活动危险源台账",
                 path: "/safety/risk-grading/work-activity-ledger",
               },
+              {
+                key: "equipment-ledger",
+                label: "设备设施危险源台账",
+                path: "/safety/risk-grading/equipment-ledger",
+              },
             ],
           },
           {

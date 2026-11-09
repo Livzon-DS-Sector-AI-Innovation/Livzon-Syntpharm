@@ -12,7 +12,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import BadRequestException, NotFoundException
-from app.modules.safety.models import WorkActivityHazard
+from app.modules.safety.models import EquipmentFacilityHazard, WorkActivityHazard
 from app.modules.safety.repository import SafetyRepository
 from app.modules.safety.risk_grading import (
     CONTROL_MEASURE_OPTIONS,
@@ -20,8 +20,13 @@ from app.modules.safety.risk_grading import (
     RESIDUAL_RISK_LABELS,
     compute_risk_value,
     derive_evaluation_grade,
+    lookup_risk_evaluation,
 )
-from app.modules.safety.schemas.risk_grading import WorkActivityHazardCreate, WorkActivityHazardUpdate
+from app.modules.safety.schemas.risk_grading import (
+    EquipmentFacilityHazardCreate,
+    WorkActivityHazardCreate,
+    WorkActivityHazardUpdate,
+)
 from app.modules.safety.service._helpers import audit_log
 
 # 导出行数上限，避免一次导出拖垮请求；正常情况下远小于该值。
@@ -219,3 +224,24 @@ def build_work_activity_hazard_workbook(items: list[WorkActivityHazard]) -> byte
     buffer = BytesIO()
     workbook.save(buffer)
     return buffer.getvalue()
+
+
+class EquipmentFacilityHazardService:
+    """设备设施危险源台账业务逻辑（安全风险矩阵）。"""
+
+    def __init__(self, session: AsyncSession):
+        self.session = session
+        self.repo = SafetyRepository(session)
+
+    async def list_hazards(self, skip: int, limit: int) -> tuple[list[EquipmentFacilityHazard], int]:
+        return await self.repo.get_equipment_facility_hazards(skip, limit)
+
+    async def create_hazard(self, data: EquipmentFacilityHazardCreate) -> EquipmentFacilityHazard:
+        payload = data.model_dump()
+        payload.update(
+            risk_evaluation_r=lookup_risk_evaluation(data.likelihood_l, data.severity_s),
+            residual_risk_label=RESIDUAL_RISK_LABELS[data.residual_risk],
+        )
+        item = await self.repo.create_equipment_facility_hazard(payload)
+        await audit_log(self.session, "create", "equipment_facility_hazard", resource_id=item.id)
+        return item

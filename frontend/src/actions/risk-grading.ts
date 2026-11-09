@@ -3,17 +3,20 @@
 import { revalidatePath } from 'next/cache'
 
 import {
+  createEquipmentFacilityHazard as apiCreateEquipmentFacilityHazard,
   createWorkActivityHazard as apiCreateWorkActivityHazard,
   deleteWorkActivityHazard as apiDeleteWorkActivityHazard,
   exportWorkActivityHazards as apiExportWorkActivityHazards,
   updateWorkActivityHazard as apiUpdateWorkActivityHazard,
 } from '@/lib/api/server/risk-grading'
 import type {
+  EquipmentFacilityHazardCreate,
   WorkActivityHazardCreate,
   WorkActivityHazardExportParams,
 } from '@/types/safety/risk-grading'
 
 const LEDGER_PATH = '/safety/risk-grading/work-activity-ledger'
+const EQUIPMENT_LEDGER_PATH = '/safety/risk-grading/equipment-ledger'
 
 export async function createWorkActivityHazardAction(data: WorkActivityHazardCreate) {
   const result = await apiCreateWorkActivityHazard(data)
@@ -35,4 +38,10 @@ export async function deleteWorkActivityHazardAction(id: string) {
 
 export async function exportWorkActivityHazardsAction(params?: WorkActivityHazardExportParams) {
   return apiExportWorkActivityHazards(params)
+}
+
+export async function createEquipmentFacilityHazardAction(data: EquipmentFacilityHazardCreate) {
+  const result = await apiCreateEquipmentFacilityHazard(data)
+  revalidatePath(EQUIPMENT_LEDGER_PATH)
+  return result
 }

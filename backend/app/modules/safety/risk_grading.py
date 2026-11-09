@@ -74,6 +74,41 @@ EXECUTION_LEVEL_OPTIONS: Final[tuple[dict[str, str], ...]] = (
 EXECUTION_LEVEL_LABELS: Final[dict[str, str]] = {item["key"]: item["label"] for item in EXECUTION_LEVEL_OPTIONS}
 EXECUTION_LEVEL_KEYS: Final[frozenset[str]] = frozenset(EXECUTION_LEVEL_LABELS)
 
+# ── 设备设施台账措施：与作业活动台账共用稳定 key，仅展示短标签 ──
+EQUIPMENT_MEASURE_OPTIONS: Final[tuple[dict[str, str], ...]] = (
+    {"key": "engineering", "label": "工程技术"},
+    {"key": "management", "label": "管理措施"},
+    {"key": "education", "label": "培训教育"},
+    {"key": "ppe", "label": "个体防护"},
+    {"key": "emergency", "label": "应急处置"},
+)
+
+EQUIPMENT_MEASURE_LABELS: Final[dict[str, str]] = {item["key"]: item["label"] for item in EQUIPMENT_MEASURE_OPTIONS}
+
+# ── 设备设施台账：可能性 L 1–5、严重性 S A–E ──
+LIKELIHOOD_LEVELS: Final[tuple[int, ...]] = (1, 2, 3, 4, 5)
+SEVERITY_LEVELS: Final[tuple[str, ...]] = ("A", "B", "C", "D", "E")
+
+# ── 安全风险矩阵（S 纵轴 A–E，L 横轴 1–5）：R 取交叉格，不是 L×S ──
+SAFETY_RISK_MATRIX: Final[dict[str, tuple[int, int, int, int, int]]] = {
+    "A": (3, 5, 7, 10, 15),
+    "B": (5, 7, 10, 15, 23),
+    "C": (7, 11, 16, 23, 35),
+    "D": (17, 25, 37, 55, 81),
+    "E": (22, 32, 46, 68, 100),
+}
+
+
+def lookup_risk_evaluation(likelihood: int, severity: str) -> int:
+    """按 L（1–5）与 S（A–E）查安全风险矩阵，返回十进制 R 值。"""
+    if likelihood not in LIKELIHOOD_LEVELS:
+        raise ValueError(f"可能性 L 必须是 1–5，收到: {likelihood}")
+    row = SAFETY_RISK_MATRIX.get(severity)
+    if row is None:
+        raise ValueError(f"严重性 S 必须是 A–E，收到: {severity}")
+    return row[likelihood - 1]
+
+
 # ── LEC 校验区间 ──
 LIKELIHOOD_MIN: Final[Decimal] = Decimal("0.1")
 LIKELIHOOD_MAX: Final[Decimal] = Decimal("10")
