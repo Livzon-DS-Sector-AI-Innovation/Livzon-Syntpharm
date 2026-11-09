@@ -18785,6 +18785,561 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agent/voices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 音色目录（含语言与商用许可） */
+        get: operations["list_voices_api_v1_agent_voices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 配音视频项目列表 */
+        get: operations["list_projects_api_v1_agent_ppt_videos_get"];
+        put?: never;
+        /** 新建配音视频项目（上传 PPT + 可选逐页讲稿） */
+        post: operations["create_project_api_v1_agent_ppt_videos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/versions/{version_id}/manifest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 版本复用记录（每页 sha256 与命中情况） */
+        get: operations["get_version_manifest_api_v1_agent_ppt_videos_versions__version_id__manifest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/versions/{version_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 下载/播放成片 MP4（支持 Range） */
+        get: operations["download_version_api_v1_agent_ppt_videos_versions__version_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/source/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 下载当前源 PPT（含页内编辑结果） */
+        get: operations["download_source_pptx_api_v1_agent_ppt_videos__project_id__source_file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 项目详情（含逐页讲稿、版本、最近任务） */
+        get: operations["get_project_detail_api_v1_agent_ppt_videos__project_id__get"];
+        put?: never;
+        post?: never;
+        /** 删除项目（软删除，已生成文件保留） */
+        delete: operations["delete_project_api_v1_agent_ppt_videos__project_id__delete"];
+        options?: never;
+        head?: never;
+        /** 更新项目全局设置（语言/音色/语速/文稿高亮） */
+        patch: operations["update_project_api_v1_agent_ppt_videos__project_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 保存单页讲稿/语言/音色/语速 */
+        put: operations["update_slide_api_v1_agent_ppt_videos__project_id__slides__slide_uid__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/regions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 单页可高亮区域清单（区域设置面板用） */
+        get: operations["slide_regions_api_v1_agent_ppt_videos__project_id__slides__slide_uid__regions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 单页试听（合成或命中缓存） */
+        post: operations["preview_slide_api_v1_agent_ppt_videos__project_id__slides__slide_uid__preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 页面图片（播放器/编辑器大图） */
+        get: operations["get_slide_image_api_v1_agent_ppt_videos__project_id__slides__slide_no__image_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/thumb": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 页面缩略图（时间轴/列表） */
+        get: operations["get_slide_thumb_api_v1_agent_ppt_videos__project_id__slides__slide_no__thumb_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/page-images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 重新生成页图（老项目回填 / 页图异常时手动重试）
+         * @description 立刻返回 job_id，进度由前端轮 `GET .../page-images/status`。
+         *
+         *     投递前先落 `queued`（同一事务提交）：前端拿到的详情/状态里就带「排队中」，
+         *     刷新页面也不会退回上一次的 done/failed。后台任务认领时会覆盖成 running。
+         */
+        post: operations["refresh_page_images_api_v1_agent_ppt_videos__project_id__page_images_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/page-images/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 页图生成状态（左栏进度条轮询，单表查询） */
+        get: operations["get_page_images_status_api_v1_agent_ppt_videos__project_id__page_images_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 页面旁白 wav（支持 Range） */
+        get: operations["get_slide_audio_api_v1_agent_ppt_videos__project_id__slides__slide_no__audio_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/render": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 提交渲染任务（立刻返回 job_id，前端轮询 /job） */
+        post: operations["request_render_api_v1_agent_ppt_videos__project_id__render_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/script-ai": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** （重新）生成 AI 讲稿初稿（只填空页，已有讲稿不动） */
+        post: operations["regenerate_script_ai_api_v1_agent_ppt_videos__project_id__script_ai_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/job": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 最近一次渲染任务状态（轮询） */
+        get: operations["get_latest_job_api_v1_agent_ppt_videos__project_id__job_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 版本列表 */
+        get: operations["list_versions_api_v1_agent_ppt_videos__project_id__versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ai-configs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** AI 配置：系统预置模型 + 自定义模型 + 全局提示词指南 */
+        get: operations["list_ai_configs_api_v1_agent_ai_configs_get"];
+        put?: never;
+        /** 新增自定义模型（一个 Key 可勾选多个模型，仅本人可见可用） */
+        post: operations["create_ai_config_api_v1_agent_ai_configs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ai-configs/global": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 设置全局默认模型与全局提示词指南（需平台管理员） */
+        put: operations["update_global_ai_settings_api_v1_agent_ai_configs_global_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ai-configs/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 按接口地址与 API Key 拉取可用模型（服务端代理） */
+        post: operations["discover_ai_config_models_api_v1_agent_ai_configs_models_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ai-configs/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 连通性测试（测表单值或已保存的个人配置） */
+        post: operations["test_ai_config_api_v1_agent_ai_configs_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ai-configs/{config_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 删除个人 API Key */
+        delete: operations["delete_ai_config_api_v1_agent_ai_configs__config_id__delete"];
+        options?: never;
+        head?: never;
+        /** 修改个人 API Key */
+        patch: operations["update_ai_config_api_v1_agent_ai_configs__config_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/ai": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 项目级模型覆盖与提示词指南（留空即继承全局） */
+        put: operations["update_project_ai_settings_api_v1_agent_ppt_videos__project_id__ai_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/script-rewrite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 按模式改写讲稿（补空页/按指令/单页/全部） */
+        post: operations["rewrite_scripts_api_v1_agent_ppt_videos__project_id__script_rewrite_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 讲稿修订记录（可回滚） */
+        get: operations["list_script_revisions_api_v1_agent_ppt_videos__project_id__revisions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/revisions/{revision_id}/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 回滚到某次改写之前 */
+        post: operations["rollback_script_revision_api_v1_agent_ppt_videos__project_id__revisions__revision_id__rollback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 上传新 PPT 并比对页序列（不改动现有数据） */
+        post: operations["preview_source_replace_api_v1_agent_ppt_videos__project_id__source_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/source/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 应用换源：未变页保留讲稿与音频，变更页自动重写 */
+        post: operations["apply_source_replace_api_v1_agent_ppt_videos__project_id__source_apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/shapes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 可编辑文本框/图片清单 */
+        get: operations["list_editable_shapes_api_v1_agent_ppt_videos__project_id__slides__slide_uid__shapes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/edit-text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 改文本框文字（不保证版式） */
+        put: operations["edit_slide_text_api_v1_agent_ppt_videos__project_id__slides__slide_uid__edit_text_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/edit-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 替换某张图片（保留位置尺寸） */
+        post: operations["edit_slide_image_api_v1_agent_ppt_videos__project_id__slides__slide_uid__edit_image_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/llm/configs": {
         parameters: {
             query?: never;
@@ -18795,6 +19350,9 @@ export interface paths {
         /**
          * List Configs
          * @description List all LLM configurations.
+         *
+         *     平台管理页只关心系统预置配置；个人私有 Key 由各业务模块自己的入口管理，
+         *     避免管理员的列表被他人私钥淹没，也避免私钥配置被误删。
          */
         get: operations["list_configs_api_v1_llm_configs_get"];
         put?: never;
@@ -19759,6 +20317,147 @@ export interface components {
              */
             notes?: string | null;
         };
+        /** AiConfigCreateRequest */
+        AiConfigCreateRequest: {
+            /** Config Name */
+            config_name: string;
+            /** Api Base Url */
+            api_base_url: string;
+            /** Api Key */
+            api_key: string;
+            /** Available Models */
+            available_models?: string[];
+            /** Model Name */
+            model_name?: string | null;
+            /**
+             * Temperature
+             * @default 0.7
+             */
+            temperature: number;
+            /**
+             * Timeout Seconds
+             * @default 60
+             */
+            timeout_seconds: number;
+            /** Notes */
+            notes?: string | null;
+        };
+        /**
+         * AiConfigItem
+         * @description 下拉里的一项模型配置。永远不返回明文 Key。
+         */
+        AiConfigItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Config Name */
+            config_name: string;
+            /** Model Name */
+            model_name: string;
+            /** Available Models */
+            available_models?: string[];
+            /** Api Base Url */
+            api_base_url: string;
+            /**
+             * Visibility
+             * @enum {string}
+             */
+            visibility: "system" | "personal";
+            /**
+             * Is Active
+             * @default false
+             */
+            is_active: boolean;
+            /**
+             * Masked Api Key
+             * @default
+             */
+            masked_api_key: string;
+            /**
+             * Temperature
+             * @default 0.7
+             */
+            temperature: number;
+            /**
+             * Timeout Seconds
+             * @default 60
+             */
+            timeout_seconds: number;
+            /**
+             * Owned
+             * @default false
+             */
+            owned: boolean;
+        };
+        /** AiConfigListResponse */
+        AiConfigListResponse: {
+            /** Items */
+            items?: components["schemas"]["AiConfigItem"][];
+            /** Global Default Id */
+            global_default_id?: string | null;
+            /**
+             * Global Default Model
+             * @default
+             */
+            global_default_model: string;
+            /**
+             * Can Manage Global
+             * @default false
+             */
+            can_manage_global: boolean;
+            /**
+             * Global Guide
+             * @default
+             */
+            global_guide: string;
+            /**
+             * Script Guide Max Chars
+             * @default 2000
+             */
+            script_guide_max_chars: number;
+        };
+        /**
+         * AiConfigTestRequest
+         * @description 连通性测试：可直接测表单值，也可测已保存的配置。
+         */
+        AiConfigTestRequest: {
+            /** Config Id */
+            config_id?: string | null;
+            /** Api Base Url */
+            api_base_url?: string | null;
+            /** Model Name */
+            model_name?: string | null;
+            /** Api Key */
+            api_key?: string | null;
+        };
+        /** AiConfigTestResponse */
+        AiConfigTestResponse: {
+            /** Ok */
+            ok: boolean;
+            /** Message */
+            message: string;
+        };
+        /** AiConfigUpdateRequest */
+        AiConfigUpdateRequest: {
+            /** Config Name */
+            config_name?: string | null;
+            /** Api Base Url */
+            api_base_url?: string | null;
+            /** Available Models */
+            available_models?: string[] | null;
+            /** Model Name */
+            model_name?: string | null;
+            /** Api Key */
+            api_key?: string | null;
+            /** Temperature */
+            temperature?: number | null;
+            /** Timeout Seconds */
+            timeout_seconds?: number | null;
+            /** Notes */
+            notes?: string | null;
+        };
         /**
          * AiLogDetailApiResponse
          * @description AI 交互日志详情 API 响应信封
@@ -19882,6 +20581,27 @@ export interface components {
              * @default 20
              */
             page_size: number;
+        };
+        /**
+         * AiModelsDiscoverRequest
+         * @description 按 Key 拉取可用模型清单：编辑态可只传 config_id 复用已保存的 Key。
+         */
+        AiModelsDiscoverRequest: {
+            /** Config Id */
+            config_id?: string | null;
+            /** Api Base Url */
+            api_base_url?: string | null;
+            /** Api Key */
+            api_key?: string | null;
+        };
+        /** AiModelsDiscoverResponse */
+        AiModelsDiscoverResponse: {
+            /** Ok */
+            ok: boolean;
+            /** Message */
+            message: string;
+            /** Models */
+            models?: string[];
         };
         /** AlertRecordProcessRequest */
         AlertRecordProcessRequest: {
@@ -21736,6 +22456,33 @@ export interface components {
              */
             recommendation_level?: string | null;
         };
+        /** Body_create_project_api_v1_agent_ppt_videos_post */
+        Body_create_project_api_v1_agent_ppt_videos_post: {
+            /**
+             * File
+             * @description PPT 文件（.ppt / .pptx）
+             */
+            file: string;
+            /**
+             * Script File
+             * @description 可选：按页讲稿（.txt/.md/.docx）
+             */
+            script_file?: string | null;
+            /** Name */
+            name?: string | null;
+            /**
+             * Default Language
+             * @default zh
+             */
+            default_language: string;
+            /** Default Voice Id */
+            default_voice_id?: string | null;
+            /**
+             * Speed
+             * @default 1
+             */
+            speed: number;
+        };
         /** Body_edbo_generate_scope_api_v1_research_edbo_generate_scope_post */
         Body_edbo_generate_scope_api_v1_research_edbo_generate_scope_post: {
             /**
@@ -21788,6 +22535,16 @@ export interface components {
              * @default false
              */
             save_prediction: boolean;
+        };
+        /** Body_edit_slide_image_api_v1_agent_ppt_videos__project_id__slides__slide_uid__edit_image_post */
+        Body_edit_slide_image_api_v1_agent_ppt_videos__project_id__slides__slide_uid__edit_image_post: {
+            /** Shape Index */
+            shape_index: number;
+            /**
+             * File
+             * @description 替换图片（png/jpg/webp）
+             */
+            file: string;
         };
         /** Body_handler_api_v1_quality_label_verifications_upload_video_post */
         Body_handler_api_v1_quality_label_verifications_upload_video_post: {
@@ -22233,6 +22990,14 @@ export interface components {
              * @description 应聘职位名称
              */
             position: string;
+        };
+        /** Body_preview_source_replace_api_v1_agent_ppt_videos__project_id__source_post */
+        Body_preview_source_replace_api_v1_agent_ppt_videos__project_id__source_post: {
+            /**
+             * File
+             * @description 新的 PPT 文件（.ppt / .pptx）
+             */
+            file: string;
         };
         /** Body_recognize_invoice_api_v1_procurement_invoices_recognize_post */
         Body_recognize_invoice_api_v1_procurement_invoices_recognize_post: {
@@ -26323,6 +27088,51 @@ export interface components {
             /** Remark */
             remark?: string | null;
         };
+        /** DataResponse[AiConfigListResponse] */
+        DataResponse_AiConfigListResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["AiConfigListResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[AiConfigTestResponse] */
+        DataResponse_AiConfigTestResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["AiConfigTestResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[AiModelsDiscoverResponse] */
+        DataResponse_AiModelsDiscoverResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["AiModelsDiscoverResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[AuthorizationLetterResponse] */
         DataResponse_AuthorizationLetterResponse_: {
             /**
@@ -26578,6 +27388,21 @@ export interface components {
             data?: components["schemas"]["DrugWithNodesResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[EditableShapeList] */
+        DataResponse_EditableShapeList_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["EditableShapeList"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[ExperimentCreateResult] */
         DataResponse_ExperimentCreateResult_: {
             /**
@@ -26743,6 +27568,36 @@ export interface components {
             data?: components["schemas"]["LedgerSummary"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[ManifestResponse] */
+        DataResponse_ManifestResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ManifestResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[MessageResult] */
+        DataResponse_MessageResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["MessageResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[NoneType] */
         DataResponse_NoneType_: {
             /**
@@ -26802,6 +27657,36 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["OptimizationResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[PageImagesAccepted] */
+        DataResponse_PageImagesAccepted_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["PageImagesAccepted"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[PageImagesState] */
+        DataResponse_PageImagesState_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["PageImagesState"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[PersonnelAddResult] */
@@ -26909,6 +27794,21 @@ export interface components {
             data?: components["schemas"]["PilotWorkflowStepResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[PreviewResponse] */
+        DataResponse_PreviewResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["PreviewResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[ProblemHandleResult] */
         DataResponse_ProblemHandleResult_: {
             /**
@@ -26922,6 +27822,36 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["ProblemHandleResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ProjectDetail] */
+        DataResponse_ProjectDetail_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ProjectDetail"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ProjectListResponse] */
+        DataResponse_ProjectListResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ProjectListResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[ProjectResponse] */
@@ -27074,6 +28004,21 @@ export interface components {
             data?: components["schemas"]["ReferenceStandardResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[RenderAccepted] */
+        DataResponse_RenderAccepted_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["RenderAccepted"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[ResearchProjectResponse] */
         DataResponse_ResearchProjectResponse_: {
             /**
@@ -27117,6 +28062,21 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["ResearchTrackDetailResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[RevisionListResponse] */
+        DataResponse_RevisionListResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["RevisionListResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[RoleResponse] */
@@ -27194,6 +28154,21 @@ export interface components {
             data?: components["schemas"]["ScopeGenerateResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[ScriptRewriteResult] */
+        DataResponse_ScriptRewriteResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ScriptRewriteResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[SingleCheckResponse] */
         DataResponse_SingleCheckResponse_: {
             /**
@@ -27207,6 +28182,51 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["SingleCheckResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[SlideEditResult] */
+        DataResponse_SlideEditResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["SlideEditResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[SlideItem] */
+        DataResponse_SlideItem_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["SlideItem"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[SlideRegionsResponse] */
+        DataResponse_SlideRegionsResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["SlideRegionsResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[SopAiConfigUpdateResult] */
@@ -27237,6 +28257,36 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["SopAiConfigValue"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[SourceApplyResult] */
+        DataResponse_SourceApplyResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["SourceApplyResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[SourceDiffSummary] */
+        DataResponse_SourceDiffSummary_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["SourceDiffSummary"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[StageTransitionCheckResult] */
@@ -27297,6 +28347,36 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["SupplementaryReplyResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[Union[JobState, NoneType]] */
+        DataResponse_Union_JobState__NoneType__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["JobState"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[VoiceCatalogResponse] */
+        DataResponse_VoiceCatalogResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["VoiceCatalogResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[WorkOrderResponse] */
@@ -27952,6 +29032,22 @@ export interface components {
             message: string;
             /** Data */
             data?: components["schemas"]["UserBrief"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[VersionItem]] */
+        DataResponse_list_VersionItem__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["VersionItem"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[list[WcCertificateResponse]] */
@@ -30237,6 +31333,40 @@ export interface components {
              * @description 预测文件名（可选）
              */
             prediction_filename?: string | null;
+        };
+        /** EditableShapeItem */
+        EditableShapeItem: {
+            /** Index */
+            index: number;
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @default
+             */
+            kind: string;
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+            /**
+             * Has Picture
+             * @default false
+             */
+            has_picture: boolean;
+            /**
+             * Editable Text
+             * @default false
+             */
+            editable_text: boolean;
+        };
+        /** EditableShapeList */
+        EditableShapeList: {
+            /** Page Index */
+            page_index: number;
+            /** Items */
+            items?: components["schemas"]["EditableShapeItem"][];
         };
         /**
          * EhsChangeApiResponse
@@ -34201,6 +35331,28 @@ export interface components {
             /** Data */
             data?: components["schemas"]["FillResultItem"][] | null;
         };
+        /**
+         * GlobalAiSettingsRequest
+         * @description 全局默认模型与全局提示词指南（需模块配置管理权限）。
+         */
+        GlobalAiSettingsRequest: {
+            /** Global Config Id */
+            global_config_id?: string | null;
+            /** Global Model Name */
+            global_model_name?: string | null;
+            /**
+             * Clear Global Config
+             * @default false
+             */
+            clear_global_config: boolean;
+            /** Global Guide */
+            global_guide?: string | null;
+            /**
+             * Clear Global Guide
+             * @default false
+             */
+            clear_global_guide: boolean;
+        };
         /** GrantCreate */
         GrantCreate: {
             /**
@@ -35818,6 +36970,62 @@ export interface components {
             message: string;
             /** Data */
             data: components["schemas"]["ComponentHealth"][];
+        };
+        /**
+         * HighlightRect
+         * @description 手绘矩形：相对整页的比例坐标，按像素存会随分辨率/版式一起偏。
+         */
+        HighlightRect: {
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+            /** W */
+            w: number;
+            /** H */
+            h: number;
+        };
+        /**
+         * HighlightRegionItem
+         * @description 一个区域的人工配置；`id` 是 layout 元素 id（`s0`、`s3.r2c1`）或 `rect:N`。
+         */
+        HighlightRegionItem: {
+            /** Id */
+            id: string;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "off" | "text" | "area";
+            /** Color */
+            color?: string | null;
+            /** Fill Alpha */
+            fill_alpha?: number | null;
+            rect?: components["schemas"]["HighlightRect"] | null;
+            /** Shape Sha */
+            shape_sha?: string | null;
+        };
+        /**
+         * HighlightRegionsPayload
+         * @description 一页的区域级配置；空对象等价于未配置（走自动判定）。
+         */
+        HighlightRegionsPayload: {
+            /** Regions */
+            regions?: components["schemas"]["HighlightRegionItem"][];
+            /** Sentences */
+            sentences?: components["schemas"]["HighlightSentenceItem"][];
+        };
+        /**
+         * HighlightSentenceItem
+         * @description 句级微调：这句讲哪些区域、这句哪些区域不亮。
+         */
+        HighlightSentenceItem: {
+            /** Text */
+            text: string;
+            /** Targets */
+            targets?: string[];
+            /** Mute */
+            mute?: string[];
         };
         /** HolidayCreate */
         HolidayCreate: {
@@ -39074,6 +40282,39 @@ export interface components {
             deleted: boolean;
         };
         /**
+         * JobState
+         * @description 渲染任务状态（轮询端点）。
+         */
+        JobState: {
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "succeeded" | "failed" | "canceled";
+            /** Stage */
+            stage: string;
+            /** Progress */
+            progress: number;
+            /**
+             * Attempts
+             * @default 0
+             */
+            attempts: number;
+            /** Error Message */
+            error_message?: string | null;
+            /** Version Id */
+            version_id?: string | null;
+            /** Started At */
+            started_at?: string | null;
+            /** Finished At */
+            finished_at?: string | null;
+        };
+        /**
          * KnowledgeAttachmentRequest
          * @description 从知识库创建附件请求
          */
@@ -39874,6 +41115,40 @@ export interface components {
              */
             remark?: string | null;
         };
+        /** ManifestResponse */
+        ManifestResponse: {
+            /**
+             * Version Id
+             * Format: uuid
+             */
+            version_id: string;
+            /** Head Key */
+            head_key: string;
+            /** Body Key */
+            body_key: string;
+            /** Encoder Key */
+            encoder_key: string;
+            /** Total Duration Ms */
+            total_duration_ms: number;
+            reuse: components["schemas"]["ReuseSummary"];
+            /** Slides */
+            slides: components["schemas"]["ManifestSlideItem"][];
+        };
+        /** ManifestSlideItem */
+        ManifestSlideItem: {
+            /** Slide No */
+            slide_no: number;
+            /** Image Sha256 */
+            image_sha256: string;
+            /** Audio Sha256 */
+            audio_sha256: string;
+            /** Segment Sha256 */
+            segment_sha256: string;
+            /** Duration Ms */
+            duration_ms: number;
+            /** Cache Hit */
+            cache_hit: boolean;
+        };
         /**
          * MaterialBalanceApiResponse
          * @description 物料平衡响应包装
@@ -40261,6 +41536,14 @@ export interface components {
              * @description 需要的权限码（任一满足即可）；None = 按代码默认规则；[] = 不限制
              */
             perms?: string[] | null;
+        };
+        /**
+         * MessageResult
+         * @description 无数据返回的写操作回执。
+         */
+        MessageResult: {
+            /** Message */
+            message: string;
         };
         /**
          * MessageTemplateRequest
@@ -41705,6 +42988,57 @@ export interface components {
             updated_at?: string | null;
         };
         /**
+         * PageImagesAccepted
+         * @description 页图重生成受理结果（202）：前端拿到 job_id 后开始轮询状态。
+         */
+        PageImagesAccepted: {
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /**
+             * Status
+             * @default queued
+             * @enum {string}
+             */
+            status: "queued" | "running";
+        };
+        /**
+         * PageImagesState
+         * @description 页图（编辑态底图）生成状态。
+         *
+         *     与 `ScriptAiState` 同构：状态与进度取自项目列，前端左栏进度条轮询
+         *     `GET /ppt-videos/{id}/page-images/status`，终态再回填一次整份详情。
+         */
+        PageImagesState: {
+            /**
+             * Status
+             * @default idle
+             * @enum {string}
+             */
+            status: "idle" | "queued" | "running" | "done" | "failed";
+            /** Error */
+            error?: string | null;
+            /**
+             * Progress
+             * @default 0
+             */
+            progress: number;
+            /**
+             * Done
+             * @default 0
+             */
+            done: number;
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /** Job Id */
+            job_id?: string | null;
+        };
+        /**
          * PageSplitItem
          * @description 页拆分项
          */
@@ -42688,6 +44022,17 @@ export interface components {
              * @default
              */
             trainer: string;
+        };
+        /** PreviewResponse */
+        PreviewResponse: {
+            /** Slide No */
+            slide_no: number;
+            /** Audio Url */
+            audio_url: string;
+            /** Duration Ms */
+            duration_ms: number;
+            /** Audio Sha256 */
+            audio_sha256: string;
         };
         /**
          * ProblemApiResponse
@@ -44290,6 +45635,25 @@ export interface components {
              */
             remarks?: string | null;
         };
+        /** ProjectAiSettingsRequest */
+        ProjectAiSettingsRequest: {
+            /** Llm Config Id */
+            llm_config_id?: string | null;
+            /** Llm Model Name */
+            llm_model_name?: string | null;
+            /**
+             * Clear Config
+             * @default false
+             */
+            clear_config: boolean;
+            /** Script Guide */
+            script_guide?: string | null;
+            /**
+             * Clear Guide
+             * @default false
+             */
+            clear_guide: boolean;
+        };
         /** ProjectCreate */
         ProjectCreate: {
             /** Product Name */
@@ -44316,6 +45680,101 @@ export interface components {
             owner?: string | null;
             /** Latest Progress */
             latest_progress?: string | null;
+        };
+        /** ProjectDetail */
+        ProjectDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Source Filename */
+            source_filename: string;
+            /** Slide Count */
+            slide_count: number;
+            /**
+             * Default Language
+             * @enum {string}
+             */
+            default_language: "zh" | "en";
+            /** Default Voice Id */
+            default_voice_id: string;
+            /** Speed */
+            speed: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "rendering" | "ready" | "failed";
+            /** Head Key */
+            head_key?: string | null;
+            /** Body Key */
+            body_key?: string | null;
+            /**
+             * Current Body Key
+             * @default
+             */
+            current_body_key: string;
+            /**
+             * Body Stale
+             * @default false
+             */
+            body_stale: boolean;
+            /** Slides */
+            slides?: components["schemas"]["SlideItem"][];
+            /** Versions */
+            versions?: components["schemas"]["VersionItem"][];
+            latest_job?: components["schemas"]["JobState"] | null;
+            script_ai?: components["schemas"]["ScriptAiState"];
+            page_images?: components["schemas"]["PageImagesState"];
+            script_runtime?: components["schemas"]["ScriptRuntime"] | null;
+            /**
+             * Source Version
+             * @default 1
+             */
+            source_version: number;
+            /**
+             * Source Download Url
+             * @default
+             */
+            source_download_url: string;
+            /**
+             * Script Guide
+             * @default
+             */
+            script_guide: string;
+            /** Llm Config Id */
+            llm_config_id?: string | null;
+            /** Llm Model Name */
+            llm_model_name?: string | null;
+            /** Highlight Style */
+            highlight_style?: string | null;
+            /** Highlight Color */
+            highlight_color?: string | null;
+            /**
+             * Highlight Override Enabled
+             * @default false
+             */
+            highlight_override_enabled: boolean;
+            /**
+             * Module Highlight Style
+             * @default
+             */
+            module_highlight_style: string;
+            /**
+             * Module Highlight Color
+             * @default
+             */
+            module_highlight_color: string;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /** ProjectListResponse */
+        ProjectListResponse: {
+            /** Items */
+            items: components["schemas"]["ProjectSummary"][];
         };
         /**
          * ProjectProgressItem
@@ -44397,6 +45856,52 @@ export interface components {
              */
             updated_at: string;
         };
+        /** ProjectSummary */
+        ProjectSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Source Filename */
+            source_filename: string;
+            /** Slide Count */
+            slide_count: number;
+            /**
+             * Default Language
+             * @enum {string}
+             */
+            default_language: "zh" | "en";
+            /** Default Voice Id */
+            default_voice_id: string;
+            /** Speed */
+            speed: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "rendering" | "ready" | "failed";
+            /**
+             * Version Count
+             * @default 0
+             */
+            version_count: number;
+            /** Latest Version Id */
+            latest_version_id?: string | null;
+            /**
+             * Preview Url
+             * @default
+             */
+            preview_url: string;
+            /** Latest Error */
+            latest_error?: string | null;
+            /** Thumbnail Url */
+            thumbnail_url?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
         /** ProjectUpdate */
         ProjectUpdate: {
             /** Product Name */
@@ -44419,6 +45924,33 @@ export interface components {
             owner?: string | null;
             /** Latest Progress */
             latest_progress?: string | null;
+        };
+        /** ProjectUpdateRequest */
+        ProjectUpdateRequest: {
+            /** Name */
+            name?: string | null;
+            /** Default Language */
+            default_language?: ("zh" | "en") | null;
+            /** Default Voice Id */
+            default_voice_id?: string | null;
+            /** Speed */
+            speed?: number | null;
+            /** Highlight Style */
+            highlight_style?: string | null;
+            /** Highlight Color */
+            highlight_color?: string | null;
+            /** Highlight Override Enabled */
+            highlight_override_enabled?: boolean | null;
+            /**
+             * Clear Highlight Style
+             * @default false
+             */
+            clear_highlight_style: boolean;
+            /**
+             * Clear Highlight Color
+             * @default false
+             */
+            clear_highlight_color: boolean;
         };
         /** PurchaseApprovalRecordResponse */
         PurchaseApprovalRecordResponse: {
@@ -47873,6 +49405,20 @@ export interface components {
              */
             message_template?: string | null;
         };
+        /** RenderAccepted */
+        RenderAccepted: {
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /**
+             * Status
+             * @default queued
+             * @enum {string}
+             */
+            status: "queued" | "running";
+        };
         /**
          * ReportCreate
          * @description 报告单创建
@@ -48282,6 +49828,39 @@ export interface components {
          * @enum {string}
          */
         RetentionStatus: "retained" | "expired" | "disposed";
+        /** ReuseSummary */
+        ReuseSummary: {
+            /**
+             * Total Slides
+             * @default 0
+             */
+            total_slides: number;
+            /**
+             * Reused Slides
+             * @default 0
+             */
+            reused_slides: number;
+            /**
+             * Rendered Slides
+             * @default 0
+             */
+            rendered_slides: number;
+            /**
+             * Body Reused Slides
+             * @default 0
+             */
+            body_reused_slides: number;
+            /**
+             * Body Rendered Slides
+             * @default 0
+             */
+            body_rendered_slides: number;
+            /**
+             * Head Reused
+             * @default 0
+             */
+            head_reused: number;
+        };
         /** ReviewNodeConfig */
         ReviewNodeConfig: {
             /** Index */
@@ -48315,6 +49894,57 @@ export interface components {
             updated_at?: string | null;
         } & {
             [key: string]: unknown;
+        };
+        /** RevisionItem */
+        RevisionItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "fill_blank" | "rewrite_all" | "rewrite_selected" | "rewrite_one" | "source_replace";
+            /** Instruction */
+            instruction?: string | null;
+            /** Model Name */
+            model_name?: string | null;
+            /** Provider */
+            provider?: string | null;
+            /**
+             * Status
+             * @default running
+             * @enum {string}
+             */
+            status: "queued" | "running" | "succeeded" | "failed";
+            /**
+             * Progress
+             * @default 0
+             */
+            progress: number;
+            /**
+             * Scope Count
+             * @default 0
+             */
+            scope_count: number;
+            /**
+             * Applied
+             * @default true
+             */
+            applied: boolean;
+            /** Error Message */
+            error_message?: string | null;
+            /** Requested By Name */
+            requested_by_name?: string | null;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /** RevisionListResponse */
+        RevisionListResponse: {
+            /** Items */
+            items?: components["schemas"]["RevisionItem"][];
         };
         /**
          * RevisionType
@@ -50674,6 +52304,154 @@ export interface components {
             recommended_experiments?: string | null;
         };
         /**
+         * ScriptAiState
+         * @description AI 讲稿初稿状态（前端横幅与时间轴标记共用）。
+         *
+         *     计数全部由 slides 现算，不额外存表：
+         *     - `total`：有页内文字/备注的页数（送模型的基数）
+         *     - `done`：其中有讲稿的页数（上传/AI/手工都算）
+         *     - `pending`：其中仍无讲稿的页数
+         *     - `skipped`：无页内文字且无讲稿的页数（「本页无文字」）
+         *     - `failed`：任务已结束但仍 pending 的页数（partial/failed 时才有意义）
+         */
+        ScriptAiState: {
+            /**
+             * Status
+             * @default idle
+             * @enum {string}
+             */
+            status: "idle" | "queued" | "running" | "done" | "partial" | "failed" | "disabled";
+            /** Error */
+            error?: string | null;
+            /**
+             * Progress
+             * @default 0
+             */
+            progress: number;
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Done
+             * @default 0
+             */
+            done: number;
+            /**
+             * Pending
+             * @default 0
+             */
+            pending: number;
+            /**
+             * Skipped
+             * @default 0
+             */
+            skipped: number;
+            /**
+             * Failed
+             * @default 0
+             */
+            failed: number;
+        };
+        /** ScriptRewriteRequest */
+        ScriptRewriteRequest: {
+            /**
+             * Mode
+             * @default rewrite_selected
+             * @enum {string}
+             */
+            mode: "fill_blank" | "rewrite_all" | "rewrite_selected" | "rewrite_one";
+            /** Slide Uids */
+            slide_uids?: string[];
+            /** Instruction */
+            instruction?: string | null;
+            /**
+             * Background
+             * @default true
+             */
+            background: boolean;
+        };
+        /** ScriptRewriteResult */
+        ScriptRewriteResult: {
+            /** Revision Id */
+            revision_id?: string | null;
+            /**
+             * Status
+             * @default done
+             * @enum {string}
+             */
+            status: "queued" | "running" | "done" | "partial" | "failed";
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Done
+             * @default 0
+             */
+            done: number;
+            /**
+             * Skipped
+             * @default 0
+             */
+            skipped: number;
+            /**
+             * Failed
+             * @default 0
+             */
+            failed: number;
+            /** Errors */
+            errors?: string[];
+        };
+        /**
+         * ScriptRuntime
+         * @description 当前项目实际生效的模型与规则，用于页面回显。
+         */
+        ScriptRuntime: {
+            /** Model Name */
+            model_name: string;
+            /** Provider */
+            provider: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "project" | "global" | "active" | "env";
+            /** Config Id */
+            config_id?: string | null;
+            /** Project Config Id */
+            project_config_id?: string | null;
+            /** Global Config Id */
+            global_config_id?: string | null;
+            /**
+             * Global Guide
+             * @default
+             */
+            global_guide: string;
+            /**
+             * Project Guide
+             * @default
+             */
+            project_guide: string;
+            /**
+             * Effective Guide
+             * @default
+             */
+            effective_guide: string;
+            /**
+             * Guide Max Chars
+             * @default 2000
+             */
+            guide_max_chars: number;
+            /**
+             * Highlight Enabled
+             * @default true
+             */
+            highlight_enabled: boolean;
+        };
+        /**
          * SessionItem
          * @description 在线会话条目（Redis 中存储的会话信息）。
          */
@@ -50847,6 +52625,235 @@ export interface components {
              */
             problems?: components["schemas"]["DetectedProblem"][];
         };
+        /** SlideEditResult */
+        SlideEditResult: {
+            /** Revision Id */
+            revision_id?: string | null;
+            /** Source Version */
+            source_version: number;
+            /** Page Index */
+            page_index: number;
+            /** Rewrite Uids */
+            rewrite_uids?: string[];
+            diff: components["schemas"]["SourceDiffSummary"];
+        };
+        /**
+         * SlideEditTextRequest
+         * @description 把页面里某个文本形状的文字换掉，格式沿用第一个 run。
+         */
+        SlideEditTextRequest: {
+            /** Shape Index */
+            shape_index: number;
+            /** Text */
+            text: string;
+        };
+        /**
+         * SlideItem
+         * @description 一页幻灯片（工作台时间轴与编辑区共用）。
+         */
+        SlideItem: {
+            /** Slide No */
+            slide_no: number;
+            /**
+             * Slide Uid
+             * Format: uuid
+             */
+            slide_uid: string;
+            /**
+             * Script Text
+             * @default
+             */
+            script_text: string;
+            /**
+             * Script Source
+             * @default
+             * @enum {string}
+             */
+            script_source: "" | "upload" | "ai" | "manual";
+            /**
+             * Script Stale
+             * @default false
+             */
+            script_stale: boolean;
+            /**
+             * Has Page Text
+             * @default false
+             */
+            has_page_text: boolean;
+            /** Language */
+            language?: ("zh" | "en") | null;
+            /** Voice Id */
+            voice_id?: string | null;
+            /** Speed */
+            speed?: number | null;
+            /** Highlight Style */
+            highlight_style?: string | null;
+            /** Highlight Color */
+            highlight_color?: string | null;
+            /**
+             * Highlight Override Enabled
+             * @default false
+             */
+            highlight_override_enabled: boolean;
+            highlight_regions?: components["schemas"]["HighlightRegionsPayload"] | null;
+            /** Page Text */
+            page_text?: string | null;
+            /** Page Notes */
+            page_notes?: string | null;
+            /** Image Url */
+            image_url?: string | null;
+            /** Thumb Url */
+            thumb_url?: string | null;
+            /** Audio Url */
+            audio_url?: string | null;
+            /** Audio Sha256 */
+            audio_sha256?: string | null;
+            /**
+             * Duration Ms
+             * @default 0
+             */
+            duration_ms: number;
+            /**
+             * Has Audio
+             * @default false
+             */
+            has_audio: boolean;
+        };
+        /**
+         * SlideRegionItem
+         * @description 可被人工点选的区域（坐标来自 layout 解析，换分辨率不会偏）。
+         */
+        SlideRegionItem: {
+            /** Element Id */
+            element_id: string;
+            /**
+             * Kind
+             * @default
+             */
+            kind: string;
+            /**
+             * Label
+             * @default
+             */
+            label: string;
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+            /**
+             * Left
+             * @default 0
+             */
+            left: number;
+            /**
+             * Top
+             * @default 0
+             */
+            top: number;
+            /**
+             * Width
+             * @default 0
+             */
+            width: number;
+            /**
+             * Height
+             * @default 0
+             */
+            height: number;
+        };
+        /**
+         * SlideRegionsResponse
+         * @description 区域设置面板的数据：页面尺寸 + 元素清单 + 可逐句微调的句子。
+         */
+        SlideRegionsResponse: {
+            /**
+             * Page Width
+             * @default 0
+             */
+            page_width: number;
+            /**
+             * Page Height
+             * @default 0
+             */
+            page_height: number;
+            /** Items */
+            items?: components["schemas"]["SlideRegionItem"][];
+            /** Sentences */
+            sentences?: string[];
+            /** Sentence Hints */
+            sentence_hints?: components["schemas"]["SlideSentenceHint"][];
+            /** Image Sha256 */
+            image_sha256?: string | null;
+        };
+        /**
+         * SlideSentenceHint
+         * @description 逐句微调用的句子 + 当前自动命中来源。
+         *
+         *     `fallback` 为 `guess`/`page` 时说明这句是自己猜出来的（不是模型绑定，也不是字面命中），
+         *     前端要标「兜底」，用户可复核后把它设为不亮。
+         */
+        SlideSentenceHint: {
+            /** Text */
+            text: string;
+            /** Targets */
+            targets?: string[];
+            /**
+             * Fallback
+             * @default
+             */
+            fallback: string;
+            /** Elements */
+            elements?: string[];
+        };
+        /** SlideUpdateRequest */
+        SlideUpdateRequest: {
+            /** Script Text */
+            script_text?: string | null;
+            /** Language */
+            language?: ("zh" | "en") | null;
+            /** Voice Id */
+            voice_id?: string | null;
+            /** Speed */
+            speed?: number | null;
+            /** Highlight Style */
+            highlight_style?: string | null;
+            /** Highlight Color */
+            highlight_color?: string | null;
+            /** Highlight Override Enabled */
+            highlight_override_enabled?: boolean | null;
+            highlight_regions?: components["schemas"]["HighlightRegionsPayload"] | null;
+            /**
+             * Clear Language
+             * @default false
+             */
+            clear_language: boolean;
+            /**
+             * Clear Voice
+             * @default false
+             */
+            clear_voice: boolean;
+            /**
+             * Clear Speed
+             * @default false
+             */
+            clear_speed: boolean;
+            /**
+             * Clear Highlight Style
+             * @default false
+             */
+            clear_highlight_style: boolean;
+            /**
+             * Clear Highlight Color
+             * @default false
+             */
+            clear_highlight_color: boolean;
+            /**
+             * Clear Highlight Regions
+             * @default false
+             */
+            clear_highlight_regions: boolean;
+        };
         /**
          * SopAiConfigResponse
          * @description 配置响应模型
@@ -50968,6 +52975,80 @@ export interface components {
              * @description 新状态（可选）
              */
             status?: string | null;
+        };
+        /** SourceApplyResult */
+        SourceApplyResult: {
+            /** Revision Id */
+            revision_id?: string | null;
+            /** Source Version */
+            source_version: number;
+            /** Slide Count */
+            slide_count: number;
+            /** Rewrite Uids */
+            rewrite_uids?: string[];
+            diff: components["schemas"]["SourceDiffSummary"];
+        };
+        /** SourceDiffEntry */
+        SourceDiffEntry: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "unchanged" | "changed" | "added" | "removed";
+            /** Old Index */
+            old_index?: number | null;
+            /** New Index */
+            new_index?: number | null;
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /**
+             * Similarity
+             * @default 0
+             */
+            similarity: number;
+        };
+        /** SourceDiffSummary */
+        SourceDiffSummary: {
+            /**
+             * Old Count
+             * @default 0
+             */
+            old_count: number;
+            /**
+             * New Count
+             * @default 0
+             */
+            new_count: number;
+            /**
+             * Unchanged
+             * @default 0
+             */
+            unchanged: number;
+            /**
+             * Changed
+             * @default 0
+             */
+            changed: number;
+            /**
+             * Added
+             * @default 0
+             */
+            added: number;
+            /**
+             * Removed
+             * @default 0
+             */
+            removed: number;
+            /**
+             * Has Changes
+             * @default false
+             */
+            has_changes: boolean;
+            /** Entries */
+            entries?: components["schemas"]["SourceDiffEntry"][];
         };
         /**
          * SparePartCreate
@@ -56462,6 +58543,74 @@ export interface components {
              * @description 验证意见
              */
             comments?: string | null;
+        };
+        /**
+         * VersionItem
+         * @description 一个成片版本。
+         */
+        VersionItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version No */
+            version_no: number;
+            /** File Name */
+            file_name: string;
+            /** File Size */
+            file_size: number;
+            /** Duration Ms */
+            duration_ms: number;
+            /** File Sha256 */
+            file_sha256: string;
+            /** Head Key */
+            head_key: string;
+            /** Body Key */
+            body_key: string;
+            reuse: components["schemas"]["ReuseSummary"];
+            /** Download Url */
+            download_url: string;
+            /**
+             * Preview Url
+             * @default
+             */
+            preview_url: string;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /** VoiceCatalogResponse */
+        VoiceCatalogResponse: {
+            /** Items */
+            items: components["schemas"]["VoiceOption"][];
+        };
+        /**
+         * VoiceOption
+         * @description 可选音色（含许可信息，TC-010 交付依据之一）。
+         */
+        VoiceOption: {
+            /** Voice Id */
+            voice_id: string;
+            /**
+             * Language
+             * @enum {string}
+             */
+            language: "zh" | "en";
+            /** Display Name */
+            display_name: string;
+            /** Gender */
+            gender: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** License */
+            license: string;
+            /** Version */
+            version: string;
+            /** Source */
+            source: string;
         };
         /** WarehouseFeishuConfigApiResponse */
         WarehouseFeishuConfigApiResponse: {
@@ -103730,6 +105879,1296 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["AssetListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_voices_api_v1_agent_voices_get: {
+        parameters: {
+            query?: {
+                /** @description 按语言过滤 */
+                language?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_VoiceCatalogResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_projects_api_v1_agent_ppt_videos_get: {
+        parameters: {
+            query?: {
+                /** @description 按项目名模糊搜索 */
+                keyword?: string | null;
+                /** @description 状态筛选 */
+                status?: string | null;
+                /** @description 默认语言筛选 */
+                language?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ProjectListResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_project_api_v1_agent_ppt_videos_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_create_project_api_v1_agent_ppt_videos_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ProjectDetail_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_version_manifest_api_v1_agent_ppt_videos_versions__version_id__manifest_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ManifestResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_version_api_v1_agent_ppt_videos_versions__version_id__file_get: {
+        parameters: {
+            query?: {
+                /** @description true 时 Content-Disposition 用 inline，供页面内 <video> 直接播放 */
+                inline?: boolean;
+            };
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_source_pptx_api_v1_agent_ppt_videos__project_id__source_file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_project_detail_api_v1_agent_ppt_videos__project_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ProjectDetail_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_project_api_v1_agent_ppt_videos__project_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_MessageResult_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_project_api_v1_agent_ppt_videos__project_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ProjectDetail_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_slide_api_v1_agent_ppt_videos__project_id__slides__slide_uid__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                slide_uid: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlideUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_SlideItem_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    slide_regions_api_v1_agent_ppt_videos__project_id__slides__slide_uid__regions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                slide_uid: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_SlideRegionsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_slide_api_v1_agent_ppt_videos__project_id__slides__slide_uid__preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                slide_uid: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_PreviewResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_slide_image_api_v1_agent_ppt_videos__project_id__slides__slide_no__image_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                slide_no: number;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_slide_thumb_api_v1_agent_ppt_videos__project_id__slides__slide_no__thumb_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                slide_no: number;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_page_images_api_v1_agent_ppt_videos__project_id__page_images_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_PageImagesAccepted_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_page_images_status_api_v1_agent_ppt_videos__project_id__page_images_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_PageImagesState_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_slide_audio_api_v1_agent_ppt_videos__project_id__slides__slide_no__audio_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                slide_no: number;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_render_api_v1_agent_ppt_videos__project_id__render_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RenderAccepted_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    regenerate_script_ai_api_v1_agent_ppt_videos__project_id__script_ai_post: {
+        parameters: {
+            query?: {
+                /** @description 强制重发：服务重启后状态可能卡在 running */
+                force?: boolean;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ProjectDetail_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_latest_job_api_v1_agent_ppt_videos__project_id__job_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_Union_JobState__NoneType__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_versions_api_v1_agent_ppt_videos__project_id__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_VersionItem__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_ai_configs_api_v1_agent_ai_configs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_AiConfigListResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_ai_config_api_v1_agent_ai_configs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiConfigCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_AiConfigListResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_global_ai_settings_api_v1_agent_ai_configs_global_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GlobalAiSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_AiConfigListResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discover_ai_config_models_api_v1_agent_ai_configs_models_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiModelsDiscoverRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_AiModelsDiscoverResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_ai_config_api_v1_agent_ai_configs_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiConfigTestRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_AiConfigTestResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_ai_config_api_v1_agent_ai_configs__config_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                config_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_AiConfigListResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_ai_config_api_v1_agent_ai_configs__config_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                config_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiConfigUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_AiConfigListResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_project_ai_settings_api_v1_agent_ppt_videos__project_id__ai_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectAiSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ProjectDetail_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rewrite_scripts_api_v1_agent_ppt_videos__project_id__script_rewrite_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScriptRewriteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ScriptRewriteResult_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_script_revisions_api_v1_agent_ppt_videos__project_id__revisions_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_RevisionListResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rollback_script_revision_api_v1_agent_ppt_videos__project_id__revisions__revision_id__rollback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                revision_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_MessageResult_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_source_replace_api_v1_agent_ppt_videos__project_id__source_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_preview_source_replace_api_v1_agent_ppt_videos__project_id__source_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_SourceDiffSummary_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_source_replace_api_v1_agent_ppt_videos__project_id__source_apply_post: {
+        parameters: {
+            query?: {
+                /** @description 是否自动重写变更页与新增页讲稿 */
+                auto_rewrite?: boolean;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_SourceApplyResult_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_editable_shapes_api_v1_agent_ppt_videos__project_id__slides__slide_uid__shapes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                slide_uid: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_EditableShapeList_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_slide_text_api_v1_agent_ppt_videos__project_id__slides__slide_uid__edit_text_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                slide_uid: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlideEditTextRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_SlideEditResult_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_slide_image_api_v1_agent_ppt_videos__project_id__slides__slide_uid__edit_image_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                slide_uid: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_edit_slide_image_api_v1_agent_ppt_videos__project_id__slides__slide_uid__edit_image_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_SlideEditResult_"];
                 };
             };
             /** @description Validation Error */

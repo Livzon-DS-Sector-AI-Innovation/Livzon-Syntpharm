@@ -92476,6 +92476,2457 @@
         }
       }
     },
+    "/api/v1/agent/voices": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u97f3\u8272\u76ee\u5f55\uff08\u542b\u8bed\u8a00\u4e0e\u5546\u7528\u8bb8\u53ef\uff09",
+        "operationId": "list_voices_api_v1_agent_voices_get",
+        "parameters": [
+          {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(zh|en)$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6309\u8bed\u8a00\u8fc7\u6ee4",
+              "title": "Language"
+            },
+            "description": "\u6309\u8bed\u8a00\u8fc7\u6ee4"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_VoiceCatalogResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u914d\u97f3\u89c6\u9891\u9879\u76ee\u5217\u8868",
+        "operationId": "list_projects_api_v1_agent_ppt_videos_get",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6309\u9879\u76ee\u540d\u6a21\u7cca\u641c\u7d22",
+              "title": "Keyword"
+            },
+            "description": "\u6309\u9879\u76ee\u540d\u6a21\u7cca\u641c\u7d22"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(draft|rendering|ready|failed)$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u72b6\u6001\u7b5b\u9009",
+              "title": "Status"
+            },
+            "description": "\u72b6\u6001\u7b5b\u9009"
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(zh|en)$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u9ed8\u8ba4\u8bed\u8a00\u7b5b\u9009",
+              "title": "Language"
+            },
+            "description": "\u9ed8\u8ba4\u8bed\u8a00\u7b5b\u9009"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ProjectListResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u65b0\u5efa\u914d\u97f3\u89c6\u9891\u9879\u76ee\uff08\u4e0a\u4f20 PPT + \u53ef\u9009\u9010\u9875\u8bb2\u7a3f\uff09",
+        "operationId": "create_project_api_v1_agent_ppt_videos_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_project_api_v1_agent_ppt_videos_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ProjectDetail_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/versions/{version_id}/manifest": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u7248\u672c\u590d\u7528\u8bb0\u5f55\uff08\u6bcf\u9875 sha256 \u4e0e\u547d\u4e2d\u60c5\u51b5\uff09",
+        "operationId": "get_version_manifest_api_v1_agent_ppt_videos_versions__version_id__manifest_get",
+        "parameters": [
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ManifestResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/versions/{version_id}/file": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u4e0b\u8f7d/\u64ad\u653e\u6210\u7247 MP4\uff08\u652f\u6301 Range\uff09",
+        "operationId": "download_version_api_v1_agent_ppt_videos_versions__version_id__file_get",
+        "parameters": [
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          },
+          {
+            "name": "inline",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "true \u65f6 Content-Disposition \u7528 inline\uff0c\u4f9b\u9875\u9762\u5185 <video> \u76f4\u63a5\u64ad\u653e",
+              "default": false,
+              "title": "Inline"
+            },
+            "description": "true \u65f6 Content-Disposition \u7528 inline\uff0c\u4f9b\u9875\u9762\u5185 <video> \u76f4\u63a5\u64ad\u653e"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/source/file": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u4e0b\u8f7d\u5f53\u524d\u6e90 PPT\uff08\u542b\u9875\u5185\u7f16\u8f91\u7ed3\u679c\uff09",
+        "operationId": "download_source_pptx_api_v1_agent_ppt_videos__project_id__source_file_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u9879\u76ee\u8be6\u60c5\uff08\u542b\u9010\u9875\u8bb2\u7a3f\u3001\u7248\u672c\u3001\u6700\u8fd1\u4efb\u52a1\uff09",
+        "operationId": "get_project_detail_api_v1_agent_ppt_videos__project_id__get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ProjectDetail_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u66f4\u65b0\u9879\u76ee\u5168\u5c40\u8bbe\u7f6e\uff08\u8bed\u8a00/\u97f3\u8272/\u8bed\u901f/\u6587\u7a3f\u9ad8\u4eae\uff09",
+        "operationId": "update_project_api_v1_agent_ppt_videos__project_id__patch",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ProjectDetail_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u5220\u9664\u9879\u76ee\uff08\u8f6f\u5220\u9664\uff0c\u5df2\u751f\u6210\u6587\u4ef6\u4fdd\u7559\uff09",
+        "operationId": "delete_project_api_v1_agent_ppt_videos__project_id__delete",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_MessageResult_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}": {
+      "put": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u4fdd\u5b58\u5355\u9875\u8bb2\u7a3f/\u8bed\u8a00/\u97f3\u8272/\u8bed\u901f",
+        "operationId": "update_slide_api_v1_agent_ppt_videos__project_id__slides__slide_uid__put",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "slide_uid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slide Uid"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlideUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_SlideItem_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/regions": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u5355\u9875\u53ef\u9ad8\u4eae\u533a\u57df\u6e05\u5355\uff08\u533a\u57df\u8bbe\u7f6e\u9762\u677f\u7528\uff09",
+        "operationId": "slide_regions_api_v1_agent_ppt_videos__project_id__slides__slide_uid__regions_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "slide_uid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slide Uid"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_SlideRegionsResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/preview": {
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u5355\u9875\u8bd5\u542c\uff08\u5408\u6210\u6216\u547d\u4e2d\u7f13\u5b58\uff09",
+        "operationId": "preview_slide_api_v1_agent_ppt_videos__project_id__slides__slide_uid__preview_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "slide_uid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slide Uid"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_PreviewResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/image": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u9875\u9762\u56fe\u7247\uff08\u64ad\u653e\u5668/\u7f16\u8f91\u5668\u5927\u56fe\uff09",
+        "operationId": "get_slide_image_api_v1_agent_ppt_videos__project_id__slides__slide_no__image_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "slide_no",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Slide No"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/thumb": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u9875\u9762\u7f29\u7565\u56fe\uff08\u65f6\u95f4\u8f74/\u5217\u8868\uff09",
+        "operationId": "get_slide_thumb_api_v1_agent_ppt_videos__project_id__slides__slide_no__thumb_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "slide_no",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Slide No"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/page-images": {
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u91cd\u65b0\u751f\u6210\u9875\u56fe\uff08\u8001\u9879\u76ee\u56de\u586b / \u9875\u56fe\u5f02\u5e38\u65f6\u624b\u52a8\u91cd\u8bd5\uff09",
+        "description": "\u7acb\u523b\u8fd4\u56de job_id\uff0c\u8fdb\u5ea6\u7531\u524d\u7aef\u8f6e `GET .../page-images/status`\u3002\n\n\u6295\u9012\u524d\u5148\u843d `queued`\uff08\u540c\u4e00\u4e8b\u52a1\u63d0\u4ea4\uff09\uff1a\u524d\u7aef\u62ff\u5230\u7684\u8be6\u60c5/\u72b6\u6001\u91cc\u5c31\u5e26\u300c\u6392\u961f\u4e2d\u300d\uff0c\n\u5237\u65b0\u9875\u9762\u4e5f\u4e0d\u4f1a\u9000\u56de\u4e0a\u4e00\u6b21\u7684 done/failed\u3002\u540e\u53f0\u4efb\u52a1\u8ba4\u9886\u65f6\u4f1a\u8986\u76d6\u6210 running\u3002",
+        "operationId": "refresh_page_images_api_v1_agent_ppt_videos__project_id__page_images_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_PageImagesAccepted_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/page-images/status": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u9875\u56fe\u751f\u6210\u72b6\u6001\uff08\u5de6\u680f\u8fdb\u5ea6\u6761\u8f6e\u8be2\uff0c\u5355\u8868\u67e5\u8be2\uff09",
+        "operationId": "get_page_images_status_api_v1_agent_ppt_videos__project_id__page_images_status_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_PageImagesState_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/audio": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u9875\u9762\u65c1\u767d wav\uff08\u652f\u6301 Range\uff09",
+        "operationId": "get_slide_audio_api_v1_agent_ppt_videos__project_id__slides__slide_no__audio_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "slide_no",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Slide No"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/render": {
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u63d0\u4ea4\u6e32\u67d3\u4efb\u52a1\uff08\u7acb\u523b\u8fd4\u56de job_id\uff0c\u524d\u7aef\u8f6e\u8be2 /job\uff09",
+        "operationId": "request_render_api_v1_agent_ppt_videos__project_id__render_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_RenderAccepted_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/script-ai": {
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\uff08\u91cd\u65b0\uff09\u751f\u6210 AI \u8bb2\u7a3f\u521d\u7a3f\uff08\u53ea\u586b\u7a7a\u9875\uff0c\u5df2\u6709\u8bb2\u7a3f\u4e0d\u52a8\uff09",
+        "operationId": "regenerate_script_ai_api_v1_agent_ppt_videos__project_id__script_ai_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "force",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "\u5f3a\u5236\u91cd\u53d1\uff1a\u670d\u52a1\u91cd\u542f\u540e\u72b6\u6001\u53ef\u80fd\u5361\u5728 running",
+              "default": true,
+              "title": "Force"
+            },
+            "description": "\u5f3a\u5236\u91cd\u53d1\uff1a\u670d\u52a1\u91cd\u542f\u540e\u72b6\u6001\u53ef\u80fd\u5361\u5728 running"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ProjectDetail_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/job": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u6700\u8fd1\u4e00\u6b21\u6e32\u67d3\u4efb\u52a1\u72b6\u6001\uff08\u8f6e\u8be2\uff09",
+        "operationId": "get_latest_job_api_v1_agent_ppt_videos__project_id__job_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_Union_JobState__NoneType__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/versions": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u7248\u672c\u5217\u8868",
+        "operationId": "list_versions_api_v1_agent_ppt_videos__project_id__versions_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_VersionItem__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ai-configs": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "AI \u914d\u7f6e\uff1a\u7cfb\u7edf\u9884\u7f6e\u6a21\u578b + \u81ea\u5b9a\u4e49\u6a21\u578b + \u5168\u5c40\u63d0\u793a\u8bcd\u6307\u5357",
+        "operationId": "list_ai_configs_api_v1_agent_ai_configs_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_AiConfigListResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u65b0\u589e\u81ea\u5b9a\u4e49\u6a21\u578b\uff08\u4e00\u4e2a Key \u53ef\u52fe\u9009\u591a\u4e2a\u6a21\u578b\uff0c\u4ec5\u672c\u4eba\u53ef\u89c1\u53ef\u7528\uff09",
+        "operationId": "create_ai_config_api_v1_agent_ai_configs_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiConfigCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_AiConfigListResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ai-configs/global": {
+      "put": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u8bbe\u7f6e\u5168\u5c40\u9ed8\u8ba4\u6a21\u578b\u4e0e\u5168\u5c40\u63d0\u793a\u8bcd\u6307\u5357\uff08\u9700\u5e73\u53f0\u7ba1\u7406\u5458\uff09",
+        "operationId": "update_global_ai_settings_api_v1_agent_ai_configs_global_put",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GlobalAiSettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_AiConfigListResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ai-configs/models": {
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u6309\u63a5\u53e3\u5730\u5740\u4e0e API Key \u62c9\u53d6\u53ef\u7528\u6a21\u578b\uff08\u670d\u52a1\u7aef\u4ee3\u7406\uff09",
+        "operationId": "discover_ai_config_models_api_v1_agent_ai_configs_models_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiModelsDiscoverRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_AiModelsDiscoverResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ai-configs/test": {
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u8fde\u901a\u6027\u6d4b\u8bd5\uff08\u6d4b\u8868\u5355\u503c\u6216\u5df2\u4fdd\u5b58\u7684\u4e2a\u4eba\u914d\u7f6e\uff09",
+        "operationId": "test_ai_config_api_v1_agent_ai_configs_test_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiConfigTestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_AiConfigTestResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ai-configs/{config_id}": {
+      "patch": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u4fee\u6539\u4e2a\u4eba API Key",
+        "operationId": "update_ai_config_api_v1_agent_ai_configs__config_id__patch",
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Config Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiConfigUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_AiConfigListResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u5220\u9664\u4e2a\u4eba API Key",
+        "operationId": "delete_ai_config_api_v1_agent_ai_configs__config_id__delete",
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Config Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_AiConfigListResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/ai": {
+      "put": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u9879\u76ee\u7ea7\u6a21\u578b\u8986\u76d6\u4e0e\u63d0\u793a\u8bcd\u6307\u5357\uff08\u7559\u7a7a\u5373\u7ee7\u627f\u5168\u5c40\uff09",
+        "operationId": "update_project_ai_settings_api_v1_agent_ppt_videos__project_id__ai_put",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectAiSettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ProjectDetail_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/script-rewrite": {
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u6309\u6a21\u5f0f\u6539\u5199\u8bb2\u7a3f\uff08\u8865\u7a7a\u9875/\u6309\u6307\u4ee4/\u5355\u9875/\u5168\u90e8\uff09",
+        "operationId": "rewrite_scripts_api_v1_agent_ppt_videos__project_id__script_rewrite_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScriptRewriteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ScriptRewriteResult_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/revisions": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u8bb2\u7a3f\u4fee\u8ba2\u8bb0\u5f55\uff08\u53ef\u56de\u6eda\uff09",
+        "operationId": "list_script_revisions_api_v1_agent_ppt_videos__project_id__revisions_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_RevisionListResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/revisions/{revision_id}/rollback": {
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u56de\u6eda\u5230\u67d0\u6b21\u6539\u5199\u4e4b\u524d",
+        "operationId": "rollback_script_revision_api_v1_agent_ppt_videos__project_id__revisions__revision_id__rollback_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "revision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Revision Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_MessageResult_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/source": {
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u4e0a\u4f20\u65b0 PPT \u5e76\u6bd4\u5bf9\u9875\u5e8f\u5217\uff08\u4e0d\u6539\u52a8\u73b0\u6709\u6570\u636e\uff09",
+        "operationId": "preview_source_replace_api_v1_agent_ppt_videos__project_id__source_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_preview_source_replace_api_v1_agent_ppt_videos__project_id__source_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_SourceDiffSummary_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/source/apply": {
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u5e94\u7528\u6362\u6e90\uff1a\u672a\u53d8\u9875\u4fdd\u7559\u8bb2\u7a3f\u4e0e\u97f3\u9891\uff0c\u53d8\u66f4\u9875\u81ea\u52a8\u91cd\u5199",
+        "operationId": "apply_source_replace_api_v1_agent_ppt_videos__project_id__source_apply_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auto_rewrite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "\u662f\u5426\u81ea\u52a8\u91cd\u5199\u53d8\u66f4\u9875\u4e0e\u65b0\u589e\u9875\u8bb2\u7a3f",
+              "default": true,
+              "title": "Auto Rewrite"
+            },
+            "description": "\u662f\u5426\u81ea\u52a8\u91cd\u5199\u53d8\u66f4\u9875\u4e0e\u65b0\u589e\u9875\u8bb2\u7a3f"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_SourceApplyResult_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/shapes": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u53ef\u7f16\u8f91\u6587\u672c\u6846/\u56fe\u7247\u6e05\u5355",
+        "operationId": "list_editable_shapes_api_v1_agent_ppt_videos__project_id__slides__slide_uid__shapes_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "slide_uid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slide Uid"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_EditableShapeList_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/edit-text": {
+      "put": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u6539\u6587\u672c\u6846\u6587\u5b57\uff08\u4e0d\u4fdd\u8bc1\u7248\u5f0f\uff09",
+        "operationId": "edit_slide_text_api_v1_agent_ppt_videos__project_id__slides__slide_uid__edit_text_put",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "slide_uid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slide Uid"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlideEditTextRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_SlideEditResult_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/edit-image": {
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u66ff\u6362\u67d0\u5f20\u56fe\u7247\uff08\u4fdd\u7559\u4f4d\u7f6e\u5c3a\u5bf8\uff09",
+        "operationId": "edit_slide_image_api_v1_agent_ppt_videos__project_id__slides__slide_uid__edit_image_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "slide_uid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slide Uid"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_edit_slide_image_api_v1_agent_ppt_videos__project_id__slides__slide_uid__edit_image_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_SlideEditResult_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/llm/configs": {
       "get": {
         "tags": [
@@ -92483,7 +94934,7 @@
           "LLM Configuration"
         ],
         "summary": "List Configs",
-        "description": "List all LLM configurations.",
+        "description": "List all LLM configurations.\n\n\u5e73\u53f0\u7ba1\u7406\u9875\u53ea\u5173\u5fc3\u7cfb\u7edf\u9884\u7f6e\u914d\u7f6e\uff1b\u4e2a\u4eba\u79c1\u6709 Key \u7531\u5404\u4e1a\u52a1\u6a21\u5757\u81ea\u5df1\u7684\u5165\u53e3\u7ba1\u7406\uff0c\n\u907f\u514d\u7ba1\u7406\u5458\u7684\u5217\u8868\u88ab\u4ed6\u4eba\u79c1\u94a5\u6df9\u6ca1\uff0c\u4e5f\u907f\u514d\u79c1\u94a5\u914d\u7f6e\u88ab\u8bef\u5220\u3002",
         "operationId": "list_configs_api_v1_llm_configs_get",
         "parameters": [
           {
@@ -94933,6 +97384,381 @@
         "title": "AccidentUpdate",
         "description": "\u66f4\u65b0\u4e8b\u6545"
       },
+      "AiConfigCreateRequest": {
+        "properties": {
+          "config_name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Config Name"
+          },
+          "api_base_url": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Api Base Url"
+          },
+          "api_key": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Api Key"
+          },
+          "available_models": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Available Models"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "temperature": {
+            "type": "number",
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Temperature",
+            "default": 0.7
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "maximum": 300.0,
+            "minimum": 5.0,
+            "title": "Timeout Seconds",
+            "default": 60
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "config_name",
+          "api_base_url",
+          "api_key"
+        ],
+        "title": "AiConfigCreateRequest"
+      },
+      "AiConfigItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "config_name": {
+            "type": "string",
+            "title": "Config Name"
+          },
+          "model_name": {
+            "type": "string",
+            "title": "Model Name"
+          },
+          "available_models": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Available Models"
+          },
+          "api_base_url": {
+            "type": "string",
+            "title": "Api Base Url"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "system",
+              "personal"
+            ],
+            "title": "Visibility"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": false
+          },
+          "masked_api_key": {
+            "type": "string",
+            "title": "Masked Api Key",
+            "default": ""
+          },
+          "temperature": {
+            "type": "number",
+            "title": "Temperature",
+            "default": 0.7
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "title": "Timeout Seconds",
+            "default": 60
+          },
+          "owned": {
+            "type": "boolean",
+            "title": "Owned",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "config_name",
+          "model_name",
+          "api_base_url",
+          "visibility"
+        ],
+        "title": "AiConfigItem",
+        "description": "\u4e0b\u62c9\u91cc\u7684\u4e00\u9879\u6a21\u578b\u914d\u7f6e\u3002\u6c38\u8fdc\u4e0d\u8fd4\u56de\u660e\u6587 Key\u3002"
+      },
+      "AiConfigListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AiConfigItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "global_default_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Global Default Id"
+          },
+          "global_default_model": {
+            "type": "string",
+            "title": "Global Default Model",
+            "default": ""
+          },
+          "can_manage_global": {
+            "type": "boolean",
+            "title": "Can Manage Global",
+            "default": false
+          },
+          "global_guide": {
+            "type": "string",
+            "title": "Global Guide",
+            "default": ""
+          },
+          "script_guide_max_chars": {
+            "type": "integer",
+            "title": "Script Guide Max Chars",
+            "default": 2000
+          }
+        },
+        "type": "object",
+        "title": "AiConfigListResponse"
+      },
+      "AiConfigTestRequest": {
+        "properties": {
+          "config_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Id"
+          },
+          "api_base_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Base Url"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          }
+        },
+        "type": "object",
+        "title": "AiConfigTestRequest",
+        "description": "\u8fde\u901a\u6027\u6d4b\u8bd5\uff1a\u53ef\u76f4\u63a5\u6d4b\u8868\u5355\u503c\uff0c\u4e5f\u53ef\u6d4b\u5df2\u4fdd\u5b58\u7684\u914d\u7f6e\u3002"
+      },
+      "AiConfigTestResponse": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "message"
+        ],
+        "title": "AiConfigTestResponse"
+      },
+      "AiConfigUpdateRequest": {
+        "properties": {
+          "config_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Name"
+          },
+          "api_base_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Base Url"
+          },
+          "available_models": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Models"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 2.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          },
+          "timeout_seconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 300.0,
+                "minimum": 5.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeout Seconds"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "AiConfigUpdateRequest"
+      },
       "AiLogDetailApiResponse": {
         "properties": {
           "code": {
@@ -95136,6 +97962,74 @@
         "type": "object",
         "title": "AiLogPaginatedListResponse",
         "description": "AI \u4ea4\u4e92\u65e5\u5fd7\u5206\u9875\u6570\u636e"
+      },
+      "AiModelsDiscoverRequest": {
+        "properties": {
+          "config_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Id"
+          },
+          "api_base_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Base Url"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          }
+        },
+        "type": "object",
+        "title": "AiModelsDiscoverRequest",
+        "description": "\u6309 Key \u62c9\u53d6\u53ef\u7528\u6a21\u578b\u6e05\u5355\uff1a\u7f16\u8f91\u6001\u53ef\u53ea\u4f20 config_id \u590d\u7528\u5df2\u4fdd\u5b58\u7684 Key\u3002"
+      },
+      "AiModelsDiscoverResponse": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "models": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Models"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "message"
+        ],
+        "title": "AiModelsDiscoverResponse"
       },
       "AlertRecordProcessRequest": {
         "properties": {
@@ -99026,6 +101920,69 @@
         ],
         "title": "Body_create_candidate_api_v1_hr_candidates_post"
       },
+      "Body_create_project_api_v1_agent_ppt_videos_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "PPT \u6587\u4ef6\uff08.ppt / .pptx\uff09"
+          },
+          "script_file": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Script File",
+            "description": "\u53ef\u9009\uff1a\u6309\u9875\u8bb2\u7a3f\uff08.txt/.md/.docx\uff09"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "default_language": {
+            "type": "string",
+            "pattern": "^(zh|en)$",
+            "title": "Default Language",
+            "default": "zh"
+          },
+          "default_voice_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Voice Id"
+          },
+          "speed": {
+            "type": "number",
+            "maximum": 2.0,
+            "minimum": 0.5,
+            "title": "Speed",
+            "default": 1.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_create_project_api_v1_agent_ppt_videos_post"
+      },
       "Body_edbo_generate_scope_api_v1_research_edbo_generate_scope_post": {
         "properties": {
           "components": {
@@ -99098,6 +102055,27 @@
           "objectives"
         ],
         "title": "Body_edbo_optimize_api_v1_research_edbo_optimize_post"
+      },
+      "Body_edit_slide_image_api_v1_agent_ppt_videos__project_id__slides__slide_uid__edit_image_post": {
+        "properties": {
+          "shape_index": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Shape Index"
+          },
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "\u66ff\u6362\u56fe\u7247\uff08png/jpg/webp\uff09"
+          }
+        },
+        "type": "object",
+        "required": [
+          "shape_index",
+          "file"
+        ],
+        "title": "Body_edit_slide_image_api_v1_agent_ppt_videos__project_id__slides__slide_uid__edit_image_post"
       },
       "Body_handler_api_v1_quality_label_verifications_upload_video_post": {
         "properties": {
@@ -100083,6 +103061,21 @@
           "position"
         ],
         "title": "Body_preview_resume_parse_api_v1_hr_candidates_parse_preview_post"
+      },
+      "Body_preview_source_replace_api_v1_agent_ppt_videos__project_id__source_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "\u65b0\u7684 PPT \u6587\u4ef6\uff08.ppt / .pptx\uff09"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_preview_source_replace_api_v1_agent_ppt_videos__project_id__source_post"
       },
       "Body_recognize_invoice_api_v1_procurement_invoices_recognize_post": {
         "properties": {
@@ -109504,6 +112497,114 @@
         "type": "object",
         "title": "DataMasterUpdate"
       },
+      "DataResponse_AiConfigListResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AiConfigListResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[AiConfigListResponse]"
+      },
+      "DataResponse_AiConfigTestResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AiConfigTestResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[AiConfigTestResponse]"
+      },
+      "DataResponse_AiModelsDiscoverResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AiModelsDiscoverResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[AiModelsDiscoverResponse]"
+      },
       "DataResponse_AuthorizationLetterResponse_": {
         "properties": {
           "code": {
@@ -110116,6 +113217,42 @@
         "type": "object",
         "title": "DataResponse[DrugWithNodesResponse]"
       },
+      "DataResponse_EditableShapeList_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EditableShapeList"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[EditableShapeList]"
+      },
       "DataResponse_ExperimentCreateResult_": {
         "properties": {
           "code": {
@@ -110512,6 +113649,78 @@
         "type": "object",
         "title": "DataResponse[LedgerSummary]"
       },
+      "DataResponse_ManifestResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ManifestResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ManifestResponse]"
+      },
+      "DataResponse_MessageResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MessageResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[MessageResult]"
+      },
       "DataResponse_NoneType_": {
         "properties": {
           "code": {
@@ -110649,6 +113858,78 @@
         },
         "type": "object",
         "title": "DataResponse[OptimizationResponse]"
+      },
+      "DataResponse_PageImagesAccepted_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PageImagesAccepted"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[PageImagesAccepted]"
+      },
+      "DataResponse_PageImagesState_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PageImagesState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[PageImagesState]"
       },
       "DataResponse_PersonnelAddResult_": {
         "properties": {
@@ -110902,6 +114183,42 @@
         "type": "object",
         "title": "DataResponse[PilotWorkflowStepResponse]"
       },
+      "DataResponse_PreviewResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PreviewResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[PreviewResponse]"
+      },
       "DataResponse_ProblemHandleResult_": {
         "properties": {
           "code": {
@@ -110937,6 +114254,78 @@
         },
         "type": "object",
         "title": "DataResponse[ProblemHandleResult]"
+      },
+      "DataResponse_ProjectDetail_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectDetail"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ProjectDetail]"
+      },
+      "DataResponse_ProjectListResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectListResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ProjectListResponse]"
       },
       "DataResponse_ProjectResponse_": {
         "properties": {
@@ -111298,6 +114687,42 @@
         "type": "object",
         "title": "DataResponse[ReferenceStandardResponse]"
       },
+      "DataResponse_RenderAccepted_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RenderAccepted"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[RenderAccepted]"
+      },
       "DataResponse_ResearchProjectResponse_": {
         "properties": {
           "code": {
@@ -111405,6 +114830,42 @@
         },
         "type": "object",
         "title": "DataResponse[ResearchTrackDetailResponse]"
+      },
+      "DataResponse_RevisionListResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RevisionListResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[RevisionListResponse]"
       },
       "DataResponse_RoleResponse_": {
         "properties": {
@@ -111586,6 +115047,42 @@
         "type": "object",
         "title": "DataResponse[ScopeGenerateResponse]"
       },
+      "DataResponse_ScriptRewriteResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScriptRewriteResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ScriptRewriteResult]"
+      },
       "DataResponse_SingleCheckResponse_": {
         "properties": {
           "code": {
@@ -111621,6 +115118,114 @@
         },
         "type": "object",
         "title": "DataResponse[SingleCheckResponse]"
+      },
+      "DataResponse_SlideEditResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SlideEditResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[SlideEditResult]"
+      },
+      "DataResponse_SlideItem_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SlideItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[SlideItem]"
+      },
+      "DataResponse_SlideRegionsResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SlideRegionsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[SlideRegionsResponse]"
       },
       "DataResponse_SopAiConfigUpdateResult_": {
         "properties": {
@@ -111693,6 +115298,78 @@
         },
         "type": "object",
         "title": "DataResponse[SopAiConfigValue]"
+      },
+      "DataResponse_SourceApplyResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceApplyResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[SourceApplyResult]"
+      },
+      "DataResponse_SourceDiffSummary_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceDiffSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[SourceDiffSummary]"
       },
       "DataResponse_StageTransitionCheckResult_": {
         "properties": {
@@ -111837,6 +115514,78 @@
         },
         "type": "object",
         "title": "DataResponse[SupplementaryReplyResponse]"
+      },
+      "DataResponse_Union_JobState__NoneType__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[Union[JobState, NoneType]]"
+      },
+      "DataResponse_VoiceCatalogResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VoiceCatalogResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[VoiceCatalogResponse]"
       },
       "DataResponse_WorkOrderResponse_": {
         "properties": {
@@ -113473,6 +117222,46 @@
         },
         "type": "object",
         "title": "DataResponse[list[UserBrief]]"
+      },
+      "DataResponse_list_VersionItem__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/VersionItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[VersionItem]]"
       },
       "DataResponse_list_WcCertificateResponse__": {
         "properties": {
@@ -119400,6 +123189,64 @@
         ],
         "title": "EDBOOptimizeResponse",
         "description": "EDBO+ \u8d1d\u53f6\u65af\u4f18\u5316\u54cd\u5e94"
+      },
+      "EditableShapeItem": {
+        "properties": {
+          "index": {
+            "type": "integer",
+            "title": "Index"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "default": ""
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "default": ""
+          },
+          "has_picture": {
+            "type": "boolean",
+            "title": "Has Picture",
+            "default": false
+          },
+          "editable_text": {
+            "type": "boolean",
+            "title": "Editable Text",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "index",
+          "name"
+        ],
+        "title": "EditableShapeItem"
+      },
+      "EditableShapeList": {
+        "properties": {
+          "page_index": {
+            "type": "integer",
+            "title": "Page Index"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EditableShapeItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "page_index"
+        ],
+        "title": "EditableShapeList"
       },
       "EhsChangeApiResponse": {
         "properties": {
@@ -128731,6 +132578,59 @@
         "type": "object",
         "title": "FillResultListApiResponse"
       },
+      "GlobalAiSettingsRequest": {
+        "properties": {
+          "global_config_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Global Config Id"
+          },
+          "global_model_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Global Model Name"
+          },
+          "clear_global_config": {
+            "type": "boolean",
+            "title": "Clear Global Config",
+            "default": false
+          },
+          "global_guide": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Global Guide"
+          },
+          "clear_global_guide": {
+            "type": "boolean",
+            "title": "Clear Global Guide",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "GlobalAiSettingsRequest",
+        "description": "\u5168\u5c40\u9ed8\u8ba4\u6a21\u578b\u4e0e\u5168\u5c40\u63d0\u793a\u8bcd\u6307\u5357\uff08\u9700\u6a21\u5757\u914d\u7f6e\u7ba1\u7406\u6743\u9650\uff09\u3002"
+      },
       "GrantCreate": {
         "properties": {
           "user_id": {
@@ -132809,6 +136709,171 @@
           "data"
         ],
         "title": "HealthResponse"
+      },
+      "HighlightRect": {
+        "properties": {
+          "x": {
+            "type": "number",
+            "exclusiveMaximum": 1.0,
+            "minimum": 0.0,
+            "title": "X"
+          },
+          "y": {
+            "type": "number",
+            "exclusiveMaximum": 1.0,
+            "minimum": 0.0,
+            "title": "Y"
+          },
+          "w": {
+            "type": "number",
+            "maximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "W"
+          },
+          "h": {
+            "type": "number",
+            "maximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "H"
+          }
+        },
+        "type": "object",
+        "required": [
+          "x",
+          "y",
+          "w",
+          "h"
+        ],
+        "title": "HighlightRect",
+        "description": "\u624b\u7ed8\u77e9\u5f62\uff1a\u76f8\u5bf9\u6574\u9875\u7684\u6bd4\u4f8b\u5750\u6807\uff0c\u6309\u50cf\u7d20\u5b58\u4f1a\u968f\u5206\u8fa8\u7387/\u7248\u5f0f\u4e00\u8d77\u504f\u3002"
+      },
+      "HighlightRegionItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Id"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "off",
+              "text",
+              "area"
+            ],
+            "title": "Mode"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "fill_alpha": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 255.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fill Alpha"
+          },
+          "rect": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HighlightRect"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "shape_sha": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shape Sha"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "mode"
+        ],
+        "title": "HighlightRegionItem",
+        "description": "\u4e00\u4e2a\u533a\u57df\u7684\u4eba\u5de5\u914d\u7f6e\uff1b`id` \u662f layout \u5143\u7d20 id\uff08`s0`\u3001`s3.r2c1`\uff09\u6216 `rect:N`\u3002"
+      },
+      "HighlightRegionsPayload": {
+        "properties": {
+          "regions": {
+            "items": {
+              "$ref": "#/components/schemas/HighlightRegionItem"
+            },
+            "type": "array",
+            "maxItems": 60,
+            "title": "Regions"
+          },
+          "sentences": {
+            "items": {
+              "$ref": "#/components/schemas/HighlightSentenceItem"
+            },
+            "type": "array",
+            "maxItems": 40,
+            "title": "Sentences"
+          }
+        },
+        "type": "object",
+        "title": "HighlightRegionsPayload",
+        "description": "\u4e00\u9875\u7684\u533a\u57df\u7ea7\u914d\u7f6e\uff1b\u7a7a\u5bf9\u8c61\u7b49\u4ef7\u4e8e\u672a\u914d\u7f6e\uff08\u8d70\u81ea\u52a8\u5224\u5b9a\uff09\u3002"
+      },
+      "HighlightSentenceItem": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "targets": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Targets"
+          },
+          "mute": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Mute"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "HighlightSentenceItem",
+        "description": "\u53e5\u7ea7\u5fae\u8c03\uff1a\u8fd9\u53e5\u8bb2\u54ea\u4e9b\u533a\u57df\u3001\u8fd9\u53e5\u54ea\u4e9b\u533a\u57df\u4e0d\u4eae\u3002"
       },
       "HolidayCreate": {
         "properties": {
@@ -140657,6 +144722,97 @@
         "title": "JobDeleteResult",
         "description": "\u5b9a\u65f6\u4efb\u52a1\u5220\u9664\u7ed3\u679c"
       },
+      "JobState": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "canceled"
+            ],
+            "title": "Status"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage"
+          },
+          "progress": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Progress"
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts",
+            "default": 0
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Id"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status",
+          "stage",
+          "progress"
+        ],
+        "title": "JobState",
+        "description": "\u6e32\u67d3\u4efb\u52a1\u72b6\u6001\uff08\u8f6e\u8be2\u7aef\u70b9\uff09\u3002"
+      },
       "KnowledgeAttachmentRequest": {
         "properties": {
           "knowledge_ids": {
@@ -142481,6 +146637,90 @@
         "title": "MaintenancePlanUpdate",
         "description": "\u66f4\u65b0\u7ef4\u62a4\u8ba1\u5212\u8bf7\u6c42"
       },
+      "ManifestResponse": {
+        "properties": {
+          "version_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Version Id"
+          },
+          "head_key": {
+            "type": "string",
+            "title": "Head Key"
+          },
+          "body_key": {
+            "type": "string",
+            "title": "Body Key"
+          },
+          "encoder_key": {
+            "type": "string",
+            "title": "Encoder Key"
+          },
+          "total_duration_ms": {
+            "type": "integer",
+            "title": "Total Duration Ms"
+          },
+          "reuse": {
+            "$ref": "#/components/schemas/ReuseSummary"
+          },
+          "slides": {
+            "items": {
+              "$ref": "#/components/schemas/ManifestSlideItem"
+            },
+            "type": "array",
+            "title": "Slides"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version_id",
+          "head_key",
+          "body_key",
+          "encoder_key",
+          "total_duration_ms",
+          "reuse",
+          "slides"
+        ],
+        "title": "ManifestResponse"
+      },
+      "ManifestSlideItem": {
+        "properties": {
+          "slide_no": {
+            "type": "integer",
+            "title": "Slide No"
+          },
+          "image_sha256": {
+            "type": "string",
+            "title": "Image Sha256"
+          },
+          "audio_sha256": {
+            "type": "string",
+            "title": "Audio Sha256"
+          },
+          "segment_sha256": {
+            "type": "string",
+            "title": "Segment Sha256"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "title": "Duration Ms"
+          },
+          "cache_hit": {
+            "type": "boolean",
+            "title": "Cache Hit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slide_no",
+          "image_sha256",
+          "audio_sha256",
+          "segment_sha256",
+          "duration_ms",
+          "cache_hit"
+        ],
+        "title": "ManifestSlideItem"
+      },
       "MaterialBalanceApiResponse": {
         "properties": {
           "code": {
@@ -143320,6 +147560,20 @@
         "type": "object",
         "title": "MenuItemOverride",
         "description": "\u5185\u7f6e\u83dc\u5355\u9879\u7684\u8986\u76d6\u914d\u7f6e\u3002"
+      },
+      "MessageResult": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "MessageResult",
+        "description": "\u65e0\u6570\u636e\u8fd4\u56de\u7684\u5199\u64cd\u4f5c\u56de\u6267\u3002"
       },
       "MessageTemplateRequest": {
         "properties": {
@@ -146535,6 +150789,89 @@
         ],
         "title": "PackagingMaterialResponse"
       },
+      "PageImagesAccepted": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running"
+            ],
+            "title": "Status",
+            "default": "queued"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "PageImagesAccepted",
+        "description": "\u9875\u56fe\u91cd\u751f\u6210\u53d7\u7406\u7ed3\u679c\uff08202\uff09\uff1a\u524d\u7aef\u62ff\u5230 job_id \u540e\u5f00\u59cb\u8f6e\u8be2\u72b6\u6001\u3002"
+      },
+      "PageImagesState": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "queued",
+              "running",
+              "done",
+              "failed"
+            ],
+            "title": "Status",
+            "default": "idle"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "progress": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Progress",
+            "default": 0
+          },
+          "done": {
+            "type": "integer",
+            "title": "Done",
+            "default": 0
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          }
+        },
+        "type": "object",
+        "title": "PageImagesState",
+        "description": "\u9875\u56fe\uff08\u7f16\u8f91\u6001\u5e95\u56fe\uff09\u751f\u6210\u72b6\u6001\u3002\n\n\u4e0e `ScriptAiState` \u540c\u6784\uff1a\u72b6\u6001\u4e0e\u8fdb\u5ea6\u53d6\u81ea\u9879\u76ee\u5217\uff0c\u524d\u7aef\u5de6\u680f\u8fdb\u5ea6\u6761\u8f6e\u8be2\n`GET /ppt-videos/{id}/page-images/status`\uff0c\u7ec8\u6001\u518d\u56de\u586b\u4e00\u6b21\u6574\u4efd\u8be6\u60c5\u3002"
+      },
       "PageSplitItem": {
         "properties": {
           "page_number": {
@@ -148604,6 +152941,34 @@
         ],
         "title": "PrejobTemplateItem",
         "description": "\u5c97\u524d\u57f9\u8bad\u8ba1\u5212\u5355\u884c\u6761\u76ee\uff08\u517110\u884c\uff09\u3002"
+      },
+      "PreviewResponse": {
+        "properties": {
+          "slide_no": {
+            "type": "integer",
+            "title": "Slide No"
+          },
+          "audio_url": {
+            "type": "string",
+            "title": "Audio Url"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "title": "Duration Ms"
+          },
+          "audio_sha256": {
+            "type": "string",
+            "title": "Audio Sha256"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slide_no",
+          "audio_url",
+          "duration_ms",
+          "audio_sha256"
+        ],
+        "title": "PreviewResponse"
       },
       "ProblemApiResponse": {
         "properties": {
@@ -151960,6 +156325,58 @@
         "title": "ProductionRecordUpdate",
         "description": "\u66f4\u65b0\u751f\u4ea7\u8bb0\u5f55"
       },
+      "ProjectAiSettingsRequest": {
+        "properties": {
+          "llm_config_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Config Id"
+          },
+          "llm_model_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Model Name"
+          },
+          "clear_config": {
+            "type": "boolean",
+            "title": "Clear Config",
+            "default": false
+          },
+          "script_guide": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Script Guide"
+          },
+          "clear_guide": {
+            "type": "boolean",
+            "title": "Clear Guide",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "ProjectAiSettingsRequest"
+      },
       "ProjectCreate": {
         "properties": {
           "product_name": {
@@ -152080,6 +156497,240 @@
           "market"
         ],
         "title": "ProjectCreate"
+      },
+      "ProjectDetail": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "source_filename": {
+            "type": "string",
+            "title": "Source Filename"
+          },
+          "slide_count": {
+            "type": "integer",
+            "title": "Slide Count"
+          },
+          "default_language": {
+            "type": "string",
+            "enum": [
+              "zh",
+              "en"
+            ],
+            "title": "Default Language"
+          },
+          "default_voice_id": {
+            "type": "string",
+            "title": "Default Voice Id"
+          },
+          "speed": {
+            "type": "number",
+            "title": "Speed"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "rendering",
+              "ready",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "head_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Head Key"
+          },
+          "body_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body Key"
+          },
+          "current_body_key": {
+            "type": "string",
+            "title": "Current Body Key",
+            "default": ""
+          },
+          "body_stale": {
+            "type": "boolean",
+            "title": "Body Stale",
+            "default": false
+          },
+          "slides": {
+            "items": {
+              "$ref": "#/components/schemas/SlideItem"
+            },
+            "type": "array",
+            "title": "Slides"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/VersionItem"
+            },
+            "type": "array",
+            "title": "Versions"
+          },
+          "latest_job": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "script_ai": {
+            "$ref": "#/components/schemas/ScriptAiState"
+          },
+          "page_images": {
+            "$ref": "#/components/schemas/PageImagesState"
+          },
+          "script_runtime": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScriptRuntime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_version": {
+            "type": "integer",
+            "title": "Source Version",
+            "default": 1
+          },
+          "source_download_url": {
+            "type": "string",
+            "title": "Source Download Url",
+            "default": ""
+          },
+          "script_guide": {
+            "type": "string",
+            "title": "Script Guide",
+            "default": ""
+          },
+          "llm_config_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Config Id"
+          },
+          "llm_model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Model Name"
+          },
+          "highlight_style": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Style"
+          },
+          "highlight_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Color"
+          },
+          "highlight_override_enabled": {
+            "type": "boolean",
+            "title": "Highlight Override Enabled",
+            "default": false
+          },
+          "module_highlight_style": {
+            "type": "string",
+            "title": "Module Highlight Style",
+            "default": ""
+          },
+          "module_highlight_color": {
+            "type": "string",
+            "title": "Module Highlight Color",
+            "default": ""
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "source_filename",
+          "slide_count",
+          "default_language",
+          "default_voice_id",
+          "speed",
+          "status"
+        ],
+        "title": "ProjectDetail"
+      },
+      "ProjectListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectSummary"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "ProjectListResponse"
       },
       "ProjectProgressItem": {
         "properties": {
@@ -152291,6 +156942,121 @@
         ],
         "title": "ProjectResponse"
       },
+      "ProjectSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "source_filename": {
+            "type": "string",
+            "title": "Source Filename"
+          },
+          "slide_count": {
+            "type": "integer",
+            "title": "Slide Count"
+          },
+          "default_language": {
+            "type": "string",
+            "enum": [
+              "zh",
+              "en"
+            ],
+            "title": "Default Language"
+          },
+          "default_voice_id": {
+            "type": "string",
+            "title": "Default Voice Id"
+          },
+          "speed": {
+            "type": "number",
+            "title": "Speed"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "rendering",
+              "ready",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "version_count": {
+            "type": "integer",
+            "title": "Version Count",
+            "default": 0
+          },
+          "latest_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Version Id"
+          },
+          "preview_url": {
+            "type": "string",
+            "title": "Preview Url",
+            "default": ""
+          },
+          "latest_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Error"
+          },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "source_filename",
+          "slide_count",
+          "default_language",
+          "default_voice_id",
+          "speed",
+          "status"
+        ],
+        "title": "ProjectSummary"
+      },
       "ProjectUpdate": {
         "properties": {
           "product_name": {
@@ -152427,6 +157193,109 @@
         },
         "type": "object",
         "title": "ProjectUpdate"
+      },
+      "ProjectUpdateRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "default_language": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "zh",
+                  "en"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Language"
+          },
+          "default_voice_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Voice Id"
+          },
+          "speed": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 2.0,
+                "minimum": 0.5
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed"
+          },
+          "highlight_style": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Style"
+          },
+          "highlight_color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Color"
+          },
+          "highlight_override_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Override Enabled"
+          },
+          "clear_highlight_style": {
+            "type": "boolean",
+            "title": "Clear Highlight Style",
+            "default": false
+          },
+          "clear_highlight_color": {
+            "type": "boolean",
+            "title": "Clear Highlight Color",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "ProjectUpdateRequest"
       },
       "PurchaseApprovalRecordResponse": {
         "properties": {
@@ -161391,6 +166260,29 @@
         "title": "ReminderRuleRequest",
         "description": "\u63d0\u9192\u89c4\u5219\u8bf7\u6c42"
       },
+      "RenderAccepted": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running"
+            ],
+            "title": "Status",
+            "default": "queued"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "RenderAccepted"
+      },
       "ReportCreate": {
         "properties": {
           "template_id": {
@@ -162351,6 +167243,42 @@
         "title": "RetentionStatus",
         "description": "\u7559\u6837\u72b6\u6001"
       },
+      "ReuseSummary": {
+        "properties": {
+          "total_slides": {
+            "type": "integer",
+            "title": "Total Slides",
+            "default": 0
+          },
+          "reused_slides": {
+            "type": "integer",
+            "title": "Reused Slides",
+            "default": 0
+          },
+          "rendered_slides": {
+            "type": "integer",
+            "title": "Rendered Slides",
+            "default": 0
+          },
+          "body_reused_slides": {
+            "type": "integer",
+            "title": "Body Reused Slides",
+            "default": 0
+          },
+          "body_rendered_slides": {
+            "type": "integer",
+            "title": "Body Rendered Slides",
+            "default": 0
+          },
+          "head_reused": {
+            "type": "integer",
+            "title": "Head Reused",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "ReuseSummary"
+      },
       "ReviewNodeConfig": {
         "properties": {
           "index": {
@@ -162448,6 +167376,138 @@
         ],
         "title": "ReviewingDrugItem",
         "description": "\u5ba1\u8bc4\u4e2d\u54c1\u79cd\n\n`node_N`\uff08\u5404\u5ba1\u8bc4\u8282\u70b9\u7684\u5b9e\u9645\u5b8c\u6210\u65e5\u671f\uff09\u968f\u54c1\u79cd\u8282\u70b9\u6570\u52a8\u6001\u53d8\u5316\uff0c\u65e0\u6cd5\u5728\u5951\u7ea6\u91cc\u7a77\u4e3e\uff0c\n\u56e0\u6b64\u5141\u8bb8\u989d\u5916\u5b57\u6bb5\u2014\u2014\u8fd9\u6837\u65e2\u80fd\u58f0\u660e\u56fa\u5b9a\u5b57\u6bb5\uff0c\u4e5f\u4e0d\u4f1a\u4e22\u6389\u8282\u70b9\u65e5\u671f\u3002"
+      },
+      "RevisionItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "fill_blank",
+              "rewrite_all",
+              "rewrite_selected",
+              "rewrite_one",
+              "source_replace"
+            ],
+            "title": "Mode"
+          },
+          "instruction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instruction"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "default": "running"
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress",
+            "default": 0
+          },
+          "scope_count": {
+            "type": "integer",
+            "title": "Scope Count",
+            "default": 0
+          },
+          "applied": {
+            "type": "boolean",
+            "title": "Applied",
+            "default": true
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "requested_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested By Name"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "mode"
+        ],
+        "title": "RevisionItem"
+      },
+      "RevisionListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RevisionItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "RevisionListResponse"
       },
       "RevisionType": {
         "type": "string",
@@ -167558,6 +172618,260 @@
         "title": "ScopeGenerateResponse",
         "description": "EDBO+ \u63a8\u8350\u7814\u7a76\u8303\u56f4\uff08CSV \u5f62\u5f0f\uff09"
       },
+      "ScriptAiState": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "queued",
+              "running",
+              "done",
+              "partial",
+              "failed",
+              "disabled"
+            ],
+            "title": "Status",
+            "default": "idle"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "progress": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Progress",
+            "default": 0
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "done": {
+            "type": "integer",
+            "title": "Done",
+            "default": 0
+          },
+          "pending": {
+            "type": "integer",
+            "title": "Pending",
+            "default": 0
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped",
+            "default": 0
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "ScriptAiState",
+        "description": "AI \u8bb2\u7a3f\u521d\u7a3f\u72b6\u6001\uff08\u524d\u7aef\u6a2a\u5e45\u4e0e\u65f6\u95f4\u8f74\u6807\u8bb0\u5171\u7528\uff09\u3002\n\n\u8ba1\u6570\u5168\u90e8\u7531 slides \u73b0\u7b97\uff0c\u4e0d\u989d\u5916\u5b58\u8868\uff1a\n- `total`\uff1a\u6709\u9875\u5185\u6587\u5b57/\u5907\u6ce8\u7684\u9875\u6570\uff08\u9001\u6a21\u578b\u7684\u57fa\u6570\uff09\n- `done`\uff1a\u5176\u4e2d\u6709\u8bb2\u7a3f\u7684\u9875\u6570\uff08\u4e0a\u4f20/AI/\u624b\u5de5\u90fd\u7b97\uff09\n- `pending`\uff1a\u5176\u4e2d\u4ecd\u65e0\u8bb2\u7a3f\u7684\u9875\u6570\n- `skipped`\uff1a\u65e0\u9875\u5185\u6587\u5b57\u4e14\u65e0\u8bb2\u7a3f\u7684\u9875\u6570\uff08\u300c\u672c\u9875\u65e0\u6587\u5b57\u300d\uff09\n- `failed`\uff1a\u4efb\u52a1\u5df2\u7ed3\u675f\u4f46\u4ecd pending \u7684\u9875\u6570\uff08partial/failed \u65f6\u624d\u6709\u610f\u4e49\uff09"
+      },
+      "ScriptRewriteRequest": {
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "fill_blank",
+              "rewrite_all",
+              "rewrite_selected",
+              "rewrite_one"
+            ],
+            "title": "Mode",
+            "default": "rewrite_selected"
+          },
+          "slide_uids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Slide Uids"
+          },
+          "instruction": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instruction"
+          },
+          "background": {
+            "type": "boolean",
+            "title": "Background",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "ScriptRewriteRequest"
+      },
+      "ScriptRewriteResult": {
+        "properties": {
+          "revision_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "done",
+              "partial",
+              "failed"
+            ],
+            "title": "Status",
+            "default": "done"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "done": {
+            "type": "integer",
+            "title": "Done",
+            "default": 0
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped",
+            "default": 0
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed",
+            "default": 0
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "title": "ScriptRewriteResult"
+      },
+      "ScriptRuntime": {
+        "properties": {
+          "model_name": {
+            "type": "string",
+            "title": "Model Name"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "project",
+              "global",
+              "active",
+              "env"
+            ],
+            "title": "Source"
+          },
+          "config_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Id"
+          },
+          "project_config_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Config Id"
+          },
+          "global_config_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Global Config Id"
+          },
+          "global_guide": {
+            "type": "string",
+            "title": "Global Guide",
+            "default": ""
+          },
+          "project_guide": {
+            "type": "string",
+            "title": "Project Guide",
+            "default": ""
+          },
+          "effective_guide": {
+            "type": "string",
+            "title": "Effective Guide",
+            "default": ""
+          },
+          "guide_max_chars": {
+            "type": "integer",
+            "title": "Guide Max Chars",
+            "default": 2000
+          },
+          "highlight_enabled": {
+            "type": "boolean",
+            "title": "Highlight Enabled",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_name",
+          "provider",
+          "source"
+        ],
+        "title": "ScriptRuntime",
+        "description": "\u5f53\u524d\u9879\u76ee\u5b9e\u9645\u751f\u6548\u7684\u6a21\u578b\u4e0e\u89c4\u5219\uff0c\u7528\u4e8e\u9875\u9762\u56de\u663e\u3002"
+      },
       "SessionItem": {
         "properties": {
           "jti": {
@@ -167883,6 +173197,530 @@
         "title": "SingleCheckResult",
         "description": "\u5355\u6587\u4ef6\u9884\u5ba1\u7684\u6c47\u603b\u7ed3\u679c"
       },
+      "SlideEditResult": {
+        "properties": {
+          "revision_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Id"
+          },
+          "source_version": {
+            "type": "integer",
+            "title": "Source Version"
+          },
+          "page_index": {
+            "type": "integer",
+            "title": "Page Index"
+          },
+          "rewrite_uids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Rewrite Uids"
+          },
+          "diff": {
+            "$ref": "#/components/schemas/SourceDiffSummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_version",
+          "page_index",
+          "diff"
+        ],
+        "title": "SlideEditResult"
+      },
+      "SlideEditTextRequest": {
+        "properties": {
+          "shape_index": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Shape Index"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "shape_index",
+          "text"
+        ],
+        "title": "SlideEditTextRequest",
+        "description": "\u628a\u9875\u9762\u91cc\u67d0\u4e2a\u6587\u672c\u5f62\u72b6\u7684\u6587\u5b57\u6362\u6389\uff0c\u683c\u5f0f\u6cbf\u7528\u7b2c\u4e00\u4e2a run\u3002"
+      },
+      "SlideItem": {
+        "properties": {
+          "slide_no": {
+            "type": "integer",
+            "title": "Slide No"
+          },
+          "slide_uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Slide Uid"
+          },
+          "script_text": {
+            "type": "string",
+            "title": "Script Text",
+            "default": ""
+          },
+          "script_source": {
+            "type": "string",
+            "enum": [
+              "",
+              "upload",
+              "ai",
+              "manual"
+            ],
+            "title": "Script Source",
+            "default": ""
+          },
+          "script_stale": {
+            "type": "boolean",
+            "title": "Script Stale",
+            "default": false
+          },
+          "has_page_text": {
+            "type": "boolean",
+            "title": "Has Page Text",
+            "default": false
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "zh",
+                  "en"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "voice_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Id"
+          },
+          "speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed"
+          },
+          "highlight_style": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Style"
+          },
+          "highlight_color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Color"
+          },
+          "highlight_override_enabled": {
+            "type": "boolean",
+            "title": "Highlight Override Enabled",
+            "default": false
+          },
+          "highlight_regions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HighlightRegionsPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "page_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Text"
+          },
+          "page_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Notes"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          },
+          "thumb_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumb Url"
+          },
+          "audio_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Url"
+          },
+          "audio_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Sha256"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "title": "Duration Ms",
+            "default": 0
+          },
+          "has_audio": {
+            "type": "boolean",
+            "title": "Has Audio",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "slide_no",
+          "slide_uid"
+        ],
+        "title": "SlideItem",
+        "description": "\u4e00\u9875\u5e7b\u706f\u7247\uff08\u5de5\u4f5c\u53f0\u65f6\u95f4\u8f74\u4e0e\u7f16\u8f91\u533a\u5171\u7528\uff09\u3002"
+      },
+      "SlideRegionItem": {
+        "properties": {
+          "element_id": {
+            "type": "string",
+            "title": "Element Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "default": ""
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "default": ""
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "default": ""
+          },
+          "left": {
+            "type": "integer",
+            "title": "Left",
+            "default": 0
+          },
+          "top": {
+            "type": "integer",
+            "title": "Top",
+            "default": 0
+          },
+          "width": {
+            "type": "integer",
+            "title": "Width",
+            "default": 0
+          },
+          "height": {
+            "type": "integer",
+            "title": "Height",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "element_id"
+        ],
+        "title": "SlideRegionItem",
+        "description": "\u53ef\u88ab\u4eba\u5de5\u70b9\u9009\u7684\u533a\u57df\uff08\u5750\u6807\u6765\u81ea layout \u89e3\u6790\uff0c\u6362\u5206\u8fa8\u7387\u4e0d\u4f1a\u504f\uff09\u3002"
+      },
+      "SlideRegionsResponse": {
+        "properties": {
+          "page_width": {
+            "type": "integer",
+            "title": "Page Width",
+            "default": 0
+          },
+          "page_height": {
+            "type": "integer",
+            "title": "Page Height",
+            "default": 0
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SlideRegionItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "sentences": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sentences"
+          },
+          "sentence_hints": {
+            "items": {
+              "$ref": "#/components/schemas/SlideSentenceHint"
+            },
+            "type": "array",
+            "title": "Sentence Hints"
+          },
+          "image_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Sha256"
+          }
+        },
+        "type": "object",
+        "title": "SlideRegionsResponse",
+        "description": "\u533a\u57df\u8bbe\u7f6e\u9762\u677f\u7684\u6570\u636e\uff1a\u9875\u9762\u5c3a\u5bf8 + \u5143\u7d20\u6e05\u5355 + \u53ef\u9010\u53e5\u5fae\u8c03\u7684\u53e5\u5b50\u3002"
+      },
+      "SlideSentenceHint": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "targets": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Targets"
+          },
+          "fallback": {
+            "type": "string",
+            "title": "Fallback",
+            "default": ""
+          },
+          "elements": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Elements"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "SlideSentenceHint",
+        "description": "\u9010\u53e5\u5fae\u8c03\u7528\u7684\u53e5\u5b50 + \u5f53\u524d\u81ea\u52a8\u547d\u4e2d\u6765\u6e90\u3002\n\n`fallback` \u4e3a `guess`/`page` \u65f6\u8bf4\u660e\u8fd9\u53e5\u662f\u81ea\u5df1\u731c\u51fa\u6765\u7684\uff08\u4e0d\u662f\u6a21\u578b\u7ed1\u5b9a\uff0c\u4e5f\u4e0d\u662f\u5b57\u9762\u547d\u4e2d\uff09\uff0c\n\u524d\u7aef\u8981\u6807\u300c\u515c\u5e95\u300d\uff0c\u7528\u6237\u53ef\u590d\u6838\u540e\u628a\u5b83\u8bbe\u4e3a\u4e0d\u4eae\u3002"
+      },
+      "SlideUpdateRequest": {
+        "properties": {
+          "script_text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Script Text"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "zh",
+                  "en"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "voice_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Id"
+          },
+          "speed": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 2.0,
+                "minimum": 0.5
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed"
+          },
+          "highlight_style": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Style"
+          },
+          "highlight_color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Color"
+          },
+          "highlight_override_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight Override Enabled"
+          },
+          "highlight_regions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HighlightRegionsPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "clear_language": {
+            "type": "boolean",
+            "title": "Clear Language",
+            "default": false
+          },
+          "clear_voice": {
+            "type": "boolean",
+            "title": "Clear Voice",
+            "default": false
+          },
+          "clear_speed": {
+            "type": "boolean",
+            "title": "Clear Speed",
+            "default": false
+          },
+          "clear_highlight_style": {
+            "type": "boolean",
+            "title": "Clear Highlight Style",
+            "default": false
+          },
+          "clear_highlight_color": {
+            "type": "boolean",
+            "title": "Clear Highlight Color",
+            "default": false
+          },
+          "clear_highlight_regions": {
+            "type": "boolean",
+            "title": "Clear Highlight Regions",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "SlideUpdateRequest"
+      },
       "SopAiConfigResponse": {
         "properties": {
           "config_key": {
@@ -168074,6 +173912,147 @@
         ],
         "title": "SopContentUpdate",
         "description": "\u66f4\u65b0 SOP \u6807\u51c6\u5316\u5185\u5bb9"
+      },
+      "SourceApplyResult": {
+        "properties": {
+          "revision_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Id"
+          },
+          "source_version": {
+            "type": "integer",
+            "title": "Source Version"
+          },
+          "slide_count": {
+            "type": "integer",
+            "title": "Slide Count"
+          },
+          "rewrite_uids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Rewrite Uids"
+          },
+          "diff": {
+            "$ref": "#/components/schemas/SourceDiffSummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_version",
+          "slide_count",
+          "diff"
+        ],
+        "title": "SourceApplyResult"
+      },
+      "SourceDiffEntry": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "unchanged",
+              "changed",
+              "added",
+              "removed"
+            ],
+            "title": "Status"
+          },
+          "old_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old Index"
+          },
+          "new_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Index"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "similarity": {
+            "type": "number",
+            "title": "Similarity",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "SourceDiffEntry"
+      },
+      "SourceDiffSummary": {
+        "properties": {
+          "old_count": {
+            "type": "integer",
+            "title": "Old Count",
+            "default": 0
+          },
+          "new_count": {
+            "type": "integer",
+            "title": "New Count",
+            "default": 0
+          },
+          "unchanged": {
+            "type": "integer",
+            "title": "Unchanged",
+            "default": 0
+          },
+          "changed": {
+            "type": "integer",
+            "title": "Changed",
+            "default": 0
+          },
+          "added": {
+            "type": "integer",
+            "title": "Added",
+            "default": 0
+          },
+          "removed": {
+            "type": "integer",
+            "title": "Removed",
+            "default": 0
+          },
+          "has_changes": {
+            "type": "boolean",
+            "title": "Has Changes",
+            "default": false
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/SourceDiffEntry"
+            },
+            "type": "array",
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "SourceDiffSummary"
       },
       "SparePartCreate": {
         "properties": {
@@ -181288,6 +187267,151 @@
         "type": "object",
         "title": "VerifyMonitorRequest",
         "description": "\u9a8c\u8bc1\u76d1\u6d4b\u8bf7\u6c42"
+      },
+      "VersionItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version_no": {
+            "type": "integer",
+            "title": "Version No"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "file_size": {
+            "type": "integer",
+            "title": "File Size"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "title": "Duration Ms"
+          },
+          "file_sha256": {
+            "type": "string",
+            "title": "File Sha256"
+          },
+          "head_key": {
+            "type": "string",
+            "title": "Head Key"
+          },
+          "body_key": {
+            "type": "string",
+            "title": "Body Key"
+          },
+          "reuse": {
+            "$ref": "#/components/schemas/ReuseSummary"
+          },
+          "download_url": {
+            "type": "string",
+            "title": "Download Url"
+          },
+          "preview_url": {
+            "type": "string",
+            "title": "Preview Url",
+            "default": ""
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version_no",
+          "file_name",
+          "file_size",
+          "duration_ms",
+          "file_sha256",
+          "head_key",
+          "body_key",
+          "reuse",
+          "download_url"
+        ],
+        "title": "VersionItem",
+        "description": "\u4e00\u4e2a\u6210\u7247\u7248\u672c\u3002"
+      },
+      "VoiceCatalogResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/VoiceOption"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "VoiceCatalogResponse"
+      },
+      "VoiceOption": {
+        "properties": {
+          "voice_id": {
+            "type": "string",
+            "title": "Voice Id"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "zh",
+              "en"
+            ],
+            "title": "Language"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "gender": {
+            "type": "string",
+            "title": "Gender"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "license": {
+            "type": "string",
+            "title": "License"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "voice_id",
+          "language",
+          "display_name",
+          "gender",
+          "license",
+          "version",
+          "source"
+        ],
+        "title": "VoiceOption",
+        "description": "\u53ef\u9009\u97f3\u8272\uff08\u542b\u8bb8\u53ef\u4fe1\u606f\uff0cTC-010 \u4ea4\u4ed8\u4f9d\u636e\u4e4b\u4e00\uff09\u3002"
       },
       "WarehouseFeishuConfigApiResponse": {
         "properties": {
