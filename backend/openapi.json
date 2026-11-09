@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Livzon-Syntpharm",
+    "title": "dazah-backend",
     "description": "\u539f\u6599\u836f\u4e8b\u4e1a\u90e8\u5de5\u5382\u57fa\u5ea7\u7cfb\u7edf",
     "version": "0.1.0"
   },
