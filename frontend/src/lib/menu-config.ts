@@ -115,6 +115,11 @@ export const moduleMenus: ModuleMenu[] = [
               { key: "hazard-identification", label: "危险源辨识工作流", path: "/safety/hazard-identification" },
               { key: "hazard-identification-new", label: "新建危险源辨识", path: "/safety/hazard-identification/new" },
               { key: "hazard-ledger", label: "危险源辨识台账", path: "/safety/hazard-identification/ledger" },
+              {
+                key: "work-activity-ledger",
+                label: "作业活动危险源台账",
+                path: "/safety/risk-grading/work-activity-ledger",
+              },
             ],
           },
           {

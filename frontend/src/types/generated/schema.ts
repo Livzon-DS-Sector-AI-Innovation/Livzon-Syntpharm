@@ -6541,6 +6541,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/safety/work-activity-hazards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取作业活动危险源台账列表
+         * @description 按创建时间倒序返回作业活动危险源台账。
+         */
+        get: operations["list_work_activity_hazards_api_v1_safety_work_activity_hazards_get"];
+        put?: never;
+        /**
+         * 新建作业活动危险源台账记录
+         * @description 创建记录；D 与评价级别由服务端计算，D ≤ 20 直接拒绝。
+         */
+        post: operations["create_work_activity_hazard_api_v1_safety_work_activity_hazards_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/safety/scheduled-tasks/data-source-options": {
         parameters: {
             query?: never;
@@ -56219,6 +56243,170 @@ export interface components {
              */
             updated_at: string;
         };
+        /** WorkActivityHazardApiResponse */
+        WorkActivityHazardApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["WorkActivityHazardResponse"] | null;
+        };
+        /**
+         * WorkActivityHazardCreate
+         * @description 新建作业活动危险源。
+         *
+         *     D、评价级别由服务端计算；即使客户端附带同名字段也会被忽略（默认 extra=ignore）。
+         */
+        WorkActivityHazardCreate: {
+            /**
+             * Position Location
+             * @description 岗位/地点（一期自由文本）
+             */
+            position_location: string;
+            /**
+             * Area Activity
+             * @description 区域/活动（一期自由文本）
+             */
+            area_activity: string;
+            /**
+             * Hazard Name Or Event
+             * @description 危险源名称或潜在事件
+             */
+            hazard_name_or_event: string;
+            /**
+             * Possible Harm
+             * @description 可能导致的危害
+             */
+            possible_harm: string;
+            /**
+             * Hazard Type
+             * @description 危险源类型
+             */
+            hazard_type: string;
+            /**
+             * Likelihood L
+             * @description 可能性 L（0.1–10）
+             */
+            likelihood_l: number | string;
+            /**
+             * Exposure E
+             * @description 发生频次 E（0.5–10）
+             */
+            exposure_e: number | string;
+            /**
+             * Consequence C
+             * @description 后果 C（1–100）
+             */
+            consequence_c: number | string;
+            /**
+             * Control Measures
+             * @description 控制措施（有序的稳定 key 数组）
+             */
+            control_measures: string[];
+            /**
+             * Residual Risk
+             * @description 残余风险 key
+             */
+            residual_risk: string;
+            /**
+             * Control Level
+             * @description 管控层级（28 个部门之一）
+             */
+            control_level: string;
+            /**
+             * Execution Level
+             * @description 执行层级 key（车间/班组长）
+             */
+            execution_level: string;
+        };
+        /** WorkActivityHazardListApiResponse */
+        WorkActivityHazardListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["WorkActivityHazardResponse"][];
+            meta: components["schemas"]["WorkActivityHazardListMeta"];
+        };
+        /** WorkActivityHazardListMeta */
+        WorkActivityHazardListMeta: {
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+        };
+        /**
+         * WorkActivityHazardResponse
+         * @description 作业活动危险源台账记录（含服务端计算字段）。
+         */
+        WorkActivityHazardResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Position Location */
+            position_location: string;
+            /** Area Activity */
+            area_activity: string;
+            /** Hazard Name Or Event */
+            hazard_name_or_event: string;
+            /** Possible Harm */
+            possible_harm: string;
+            /** Hazard Type */
+            hazard_type: string;
+            /** Likelihood L */
+            likelihood_l: string;
+            /** Exposure E */
+            exposure_e: string;
+            /** Consequence C */
+            consequence_c: string;
+            /** Risk Value D */
+            risk_value_d: string;
+            /** Evaluation Grade */
+            evaluation_grade: number;
+            /** Evaluation Grade Label */
+            evaluation_grade_label: string;
+            /** Control Measures */
+            control_measures: string[];
+            /** Residual Risk */
+            residual_risk: string;
+            /** Residual Risk Label */
+            residual_risk_label: string;
+            /** Control Level */
+            control_level: string;
+            /** Execution Level */
+            execution_level: string;
+            /** Created By */
+            created_by?: string | null;
+            /** Updated By */
+            updated_by?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /**
          * WorkOrderAssign
          * @description 指派工单请求
@@ -72696,6 +72884,75 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_work_activity_hazards_api_v1_safety_work_activity_hazards_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["WorkActivityHazardListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_work_activity_hazard_api_v1_safety_work_activity_hazards_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkActivityHazardCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["WorkActivityHazardApiResponse"];
                 };
             };
             /** @description Validation Error */

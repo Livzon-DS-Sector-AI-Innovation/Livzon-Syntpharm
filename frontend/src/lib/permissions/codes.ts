@@ -186,6 +186,8 @@ export const SAFETY_PERM = {
   hazardIdentificationRead: 'safety:hazard-identification:read',
   hazardManage: 'safety:hazard:manage',
   hazardRead: 'safety:hazard:read',
+  workActivityHazardManage: 'safety:work-activity-hazard:manage',
+  workActivityHazardRead: 'safety:work-activity-hazard:read',
   knowledgeArticleManage: 'safety:knowledge-article:manage',
   knowledgeArticleRead: 'safety:knowledge-article:read',
   knowledgeGraphManage: 'safety:knowledge-graph:manage',

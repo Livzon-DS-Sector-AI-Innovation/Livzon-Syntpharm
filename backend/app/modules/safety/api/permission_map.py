@@ -42,6 +42,7 @@ SAFETY_RESOURCE_CODES: Final[dict[str, tuple[str, str]]] = {
     ),
     "special-operation-reports": ("safety:special-operation-report:read", "safety:special-operation-report:manage"),
     "trainings": ("safety:training:read", "safety:training:manage"),
+    "work-activity-hazards": ("safety:work-activity-hazard:read", "safety:work-activity-hazard:manage"),
     "training-certificates": ("safety:training-certificate:read", "safety:training-certificate:manage"),
     "training-records": ("safety:training-record:read", "safety:training-record:manage"),
 }

@@ -31,6 +31,7 @@ from app.modules.safety.models import (
     SpecialOperationPersonnel,
     SpecialOperationReport,
     TrainingRecord,
+    WorkActivityHazard,
 )
 
 logger = logging.getLogger(__name__)
@@ -888,6 +889,28 @@ class SafetyRepository:
         query = base.order_by(HazardIdentification.created_at.asc()).offset(skip).limit(limit)
         result = await self.session.execute(query)
         return list(result.scalars().all()), total
+
+    # ==================== 作业活动危险源台账 Operations ====================
+
+    async def get_work_activity_hazards(self, skip: int = 0, limit: int = 20) -> tuple[list[WorkActivityHazard], int]:
+        """获取作业活动危险源台账列表（按创建时间倒序）。"""
+        base = select(WorkActivityHazard).where(~WorkActivityHazard.is_deleted)
+        count_query = select(func.count(WorkActivityHazard.id)).where(~WorkActivityHazard.is_deleted)
+        total = await self.session.scalar(count_query)
+        query = (
+            base.order_by(WorkActivityHazard.created_at.desc(), WorkActivityHazard.id.desc()).offset(skip).limit(limit)
+        )
+        result = await self.session.execute(query)
+        return list(result.scalars().all()), total or 0
+
+    async def create_work_activity_hazard(self, data: dict[str, Any]) -> WorkActivityHazard:
+        """创建作业活动危险源记录。"""
+        item = WorkActivityHazard(**data)
+        self.session.add(item)
+        await self.session.flush()
+        stmt = select(WorkActivityHazard).where(WorkActivityHazard.id == item.id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
 
     # ==================== OperationRegulation Operations ====================
 

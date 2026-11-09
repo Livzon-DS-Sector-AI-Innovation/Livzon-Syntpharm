@@ -500,6 +500,21 @@ SAFETY_PERMISSIONS: tuple[PermissionDef, ...] = (
         "training-record",
         "manage",
     ),
+    # work-activity-hazards（作业活动危险源台账，LEC）
+    PermissionDef(
+        "safety:work-activity-hazard:read",
+        "查看作业活动危险源台账",
+        "safety",
+        "work-activity-hazard",
+        "read",
+    ),
+    PermissionDef(
+        "safety:work-activity-hazard:manage",
+        "管理作业活动危险源台账（创建/修改/删除）",
+        "safety",
+        "work-activity-hazard",
+        "manage",
+    ),
 )
 
 
@@ -1522,6 +1537,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ),
     ApiBindingDef("safety:hazard-identification:manage", "POST", "/api/v1/safety/hazard-identifications/{hid}/submit"),
     ApiBindingDef("safety:hazard-identification:manage", "POST", "/api/v1/safety/hazard-identifications/{hid}/upload"),
+    ApiBindingDef("safety:work-activity-hazard:read", "GET", "/api/v1/safety/work-activity-hazards"),
+    ApiBindingDef("safety:work-activity-hazard:manage", "POST", "/api/v1/safety/work-activity-hazards"),
     ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazards"),
     ApiBindingDef("safety:hazard:manage", "POST", "/api/v1/safety/hazards"),
     ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazards/catch-up/diagnose"),
