@@ -2212,7 +2212,7 @@ class HazardCategoryDict(BaseModel):
             unique=True,
             postgresql_where=text("is_deleted = false"),
         ),
-        {"schema": "safety"},
+        {"schema": "safety", "comment": "隐患类别字典（用户可新增，全公司共享）"},
     )
 
     name: Mapped[str] = mapped_column(

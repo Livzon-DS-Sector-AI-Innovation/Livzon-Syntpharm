@@ -8,11 +8,20 @@
 
 import uuid
 from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from app.modules.safety.service.hazard import BUILTIN_HAZARD_CATEGORIES, HazardService
+
+if TYPE_CHECKING:
+    from app.modules.safety.models import HazardReport
+
+
+def repo_of(service: HazardService) -> Any:
+    """单测里 repo 被替换成 Mock；用 Any 承接，避免 mypy 把 Mock 赋值判成「Cannot assign to a method」。"""
+    return service.repo
 
 
 def make_service() -> HazardService:
@@ -38,7 +47,10 @@ class TestNormalizeResponsiblePersons:
         assert data["rectification_responsible_person_name"] == "张三"
 
     def test_empty_ids_keeps_name_snapshot_without_binding(self) -> None:
-        data: dict = {"rectification_responsible_person_ids": [], "rectification_responsible_person_names": "张三"}
+        data: dict[str, Any] = {
+            "rectification_responsible_person_ids": [],
+            "rectification_responsible_person_names": "张三",
+        }
 
         HazardService._normalize_responsible_persons(data, is_create=False)
 
@@ -49,7 +61,7 @@ class TestNormalizeResponsiblePersons:
         assert data["rectification_responsible_person_name"] == "张三"
 
     def test_empty_ids_without_names_does_not_touch_existing_single_field(self) -> None:
-        data: dict = {"rectification_responsible_person_ids": []}
+        data: dict[str, Any] = {"rectification_responsible_person_ids": []}
 
         HazardService._normalize_responsible_persons(data, is_create=False)
 
@@ -70,12 +82,15 @@ class TestAiBlankOnly:
 
     def test_manual_level_and_category_are_not_overwritten(self) -> None:
         service = make_service()
-        current = SimpleNamespace(
-            id=uuid.uuid4(),
-            hazard_level="major",
-            hazard_category="化学品管理",
+        current = cast(
+            "HazardReport",
+            SimpleNamespace(
+                id=uuid.uuid4(),
+                hazard_level="major",
+                hazard_category="化学品管理",
+            ),
         )
-        update_data: dict = {}
+        update_data: dict[str, Any] = {}
 
         service._map_hazard_ai_output(
             1,
@@ -91,8 +106,11 @@ class TestAiBlankOnly:
 
     def test_blank_fields_are_filled_and_legacy_category_mapped(self) -> None:
         service = make_service()
-        current = SimpleNamespace(id=uuid.uuid4(), hazard_level=None, hazard_category=None)
-        update_data: dict = {}
+        current = cast(
+            "HazardReport",
+            SimpleNamespace(id=uuid.uuid4(), hazard_level=None, hazard_category=None),
+        )
+        update_data: dict[str, Any] = {}
 
         service._map_hazard_ai_output(
             1,
@@ -110,7 +128,8 @@ class TestHazardCategoryDict:
 
     async def test_list_merges_builtin_and_stored_without_duplicates(self) -> None:
         service = make_service()
-        service.repo.list_hazard_categories = AsyncMock(
+        repo = repo_of(service)
+        repo.list_hazard_categories = AsyncMock(
             return_value=[
                 SimpleNamespace(id=uuid.uuid4(), name="化学品管理", sort_order=100),
                 SimpleNamespace(id=uuid.uuid4(), name="特殊作业", sort_order=100),
@@ -127,13 +146,14 @@ class TestHazardCategoryDict:
 
     async def test_creating_builtin_category_is_idempotent(self) -> None:
         service = make_service()
-        service.repo.get_hazard_category_by_name = AsyncMock()
+        repo = repo_of(service)
+        repo.get_hazard_category_by_name = AsyncMock()
 
         item = await service.create_hazard_category("设备设施")
 
         assert item["is_builtin"] is True
         assert item["name"] == "设备设施"
-        service.repo.get_hazard_category_by_name.assert_not_awaited()
+        repo.get_hazard_category_by_name.assert_not_awaited()
 
     @pytest.mark.parametrize("name", ["", "   "])
     async def test_blank_name_rejected(self, name: str) -> None:

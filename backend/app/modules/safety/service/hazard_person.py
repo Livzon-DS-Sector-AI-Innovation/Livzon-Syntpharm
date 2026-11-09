@@ -230,9 +230,7 @@ def _to_hazard_response(item: HazardReport, lookup: PersonLookup) -> HazardRepor
     entries = _responsible_entries(item)
     response.rectification_responsible_persons = [
         ref
-        for ref in (
-            lookup.ref(person_id, name, department_hint=item.department) for person_id, name in entries
-        )
+        for ref in (lookup.ref(person_id, name, department_hint=item.department) for person_id, name in entries)
         if ref is not None
     ]
     return response
@@ -263,9 +261,7 @@ async def to_hazard_response(db: AsyncSession, item: HazardReport) -> HazardRepo
 
 def _identification_person_refs(item: Any, lookup: PersonLookup) -> list[PersonRef]:
     names = split_person_names(item.responsible_person)
-    return [
-        ref for ref in (lookup.ref(None, name, bind_by_name=False) for name in names) if ref is not None
-    ]
+    return [ref for ref in (lookup.ref(None, name, bind_by_name=False) for name in names) if ref is not None]
 
 
 async def to_hazard_identification_responses(

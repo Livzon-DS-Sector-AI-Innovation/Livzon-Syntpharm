@@ -96,9 +96,7 @@ class HazardReportCreate(HazardReportBase):
     hazard_category: str | None = Field(None, max_length=64, description="隐患类别（字典表名称）")
     description: str | None = Field(None, description="隐患描述")  # type: ignore[assignment]
     discovered_at: datetime | None = Field(None, description="发现时间")  # type: ignore[assignment]
-    overall_status: str | None = Field(
-        None, max_length=20, description="整体状态（draft=草稿，completed=正式登记）"
-    )
+    overall_status: str | None = Field(None, max_length=20, description="整体状态（draft=草稿，completed=正式登记）")
 
 
 class HazardReportUpdate(BaseModel):
