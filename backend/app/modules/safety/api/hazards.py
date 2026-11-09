@@ -27,6 +27,10 @@ from app.modules.safety.schemas import (
     HazardAiRunApiResponse,
     HazardAiRunData,
     HazardApiResponse,
+    HazardCategoryApiResponse,
+    HazardCategoryCreate,
+    HazardCategoryListApiResponse,
+    HazardCategoryResponse,
     HazardListApiResponse,
     HazardRectificationNotifyApiResponse,
     HazardRectificationNotifyData,
@@ -176,6 +180,36 @@ async def handler(  # noqa: F811
     if not item:
         raise NotFoundException(resource="隐患")
     return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+
+
+@hazards_router.get(
+    "/hazard-categories",
+    response_model=HazardCategoryListApiResponse,
+    summary="获取隐患类别字典（内置 7 类 + 用户新增）",
+)
+async def get_hazard_categories(current_user: RequiredUser, db: AsyncSession = Depends(get_db)) -> Any:
+    """隐患登记下拉用的类别清单：内置类别与字典表增量合并去重"""
+    service = HazardService(db)
+    data = await service.list_hazard_categories()
+    return HazardCategoryListApiResponse(data=[HazardCategoryResponse(**item) for item in data])
+
+
+@hazards_router.post(
+    "/hazard-categories",
+    response_model=HazardCategoryApiResponse,
+    summary="新增隐患类别（全公司共享）",
+)
+async def post_hazard_category(
+    current_user: RequiredUser, data: HazardCategoryCreate, db: AsyncSession = Depends(get_db)
+) -> Any:
+    """新增隐患类别：重名直接返回已有记录（幂等），软删除记录自动恢复"""
+    service = HazardService(db)
+    try:
+        item = await service.create_hazard_category(data.name)
+    except ValueError as exc:
+        raise BadRequestException(message=str(exc)) from exc
+    await db.commit()
+    return HazardCategoryApiResponse(data=HazardCategoryResponse(**item))
 
 
 @hazards_router.post("/hazards", response_model=HazardApiResponse, summary="创建隐患")

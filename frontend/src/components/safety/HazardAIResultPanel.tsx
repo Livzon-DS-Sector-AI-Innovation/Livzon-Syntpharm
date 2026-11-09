@@ -25,14 +25,16 @@ import {
   HAZARD_TYPE_OPTIONS,
   HAZARD_LEVEL_OPTIONS,
   HAZARD_CATEGORY_OPTIONS,
+  LEGACY_HAZARD_CATEGORY_LABELS,
 } from '@/types/safety'
 
 const { Text } = Typography
 const { TextArea } = Input
 
-const CATEGORY_LABELS = Object.fromEntries(
-  HAZARD_CATEGORY_OPTIONS.map((o) => [o.value, o.label])
-)
+const CATEGORY_LABELS: Record<string, string> = {
+  ...LEGACY_HAZARD_CATEGORY_LABELS,
+  ...Object.fromEntries(HAZARD_CATEGORY_OPTIONS.map((o) => [o.value, o.label])),
+}
 
 interface EditableFields {
   hazard_type: string
@@ -220,7 +222,12 @@ export default function HazardAIResultPanel({
               value={getFieldValue('hazard_category')}
               onChange={(v) => setEdits((p) => ({ ...p, hazard_category: v }))}
               style={{ width: '100%' }}
-              options={HAZARD_CATEGORY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+              options={Array.from(
+                new Set([
+                  ...HAZARD_CATEGORY_OPTIONS.map((o) => o.value),
+                  ...(getFieldValue('hazard_category') ? [getFieldValue('hazard_category')] : []),
+                ])
+              ).map((value) => ({ value, label: CATEGORY_LABELS[value] || value }))}
             />
           </Col>
           <Col span={12}>

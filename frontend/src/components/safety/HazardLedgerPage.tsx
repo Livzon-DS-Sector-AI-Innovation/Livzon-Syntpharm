@@ -48,16 +48,19 @@ import type {
 import {
   HAZARD_LEVEL_OPTIONS,
   HAZARD_CATEGORY_OPTIONS,
+  INSPECTION_CATEGORY_OPTIONS,
   VERIFY_LEVEL_STATUS_OPTIONS,
+  getHazardCategoryLabel,
 } from '@/types/safety'
 import HazardRectificationReplyModal from './HazardRectificationReplyModal'
 import HazardVerifyModal from './HazardVerifyModal'
 import HazardRegistrationDrawer from './HazardRegistrationDrawer'
+import HazardProgressEditModal from './HazardProgressEditModal'
 import { PersonNameWithBadge } from './PersonMatchBadge'
 import dayjs from 'dayjs'
 import { statusPill, actionLink } from '@/components/safety/sharedStyles'
 import { fileProxyUrl } from '@/lib/file-url'
-import { waitForHazardAiResult } from '@/lib/api/client/safety'
+import { fetchHazardCategories, waitForHazardAiResult } from '@/lib/api/client/safety'
 
 const { Text } = Typography
 
@@ -144,14 +147,7 @@ const FILTER_FIELDS: FilterFieldConfig[] = [
   {
     key: 'inspection_category',
     label: '检查类别',
-    options: [
-      { value: '日常检查', label: '日常检查' },
-      { value: '专项检查', label: '专项检查' },
-      { value: '月度安全检查', label: '月度安全检查' },
-      { value: '周检', label: '周检' },
-      { value: '节假日检查', label: '节假日检查' },
-      { value: '季节性检查', label: '季节性检查' },
-    ],
+    options: INSPECTION_CATEGORY_OPTIONS,
   },
   {
     key: 'department',
@@ -225,6 +221,38 @@ export default function HazardLedgerPage() {
   // UI state lives in the per-domain store; list data comes from React Query.
   const { queryParams: hazardQueryParams, setQueryParams: setHazardQueryParams } = useHazardStore()
 
+  // ── 整改进度编辑弹框 ──
+  const [progressEditRecord, setProgressEditRecord] = useState<HazardReport | null>(null)
+
+  // ── 隐患类别字典（新增类别后筛选项同步可见）──
+  const { data: categoryDict } = useQuery({
+    queryKey: ['safety', 'hazard-categories'],
+    queryFn: () => fetchHazardCategories(),
+    staleTime: 5 * 60 * 1000,
+  })
+  const categoryFilterOptions = useMemo(() => {
+    const seen = new Set<string>()
+    const options: { value: string; label: string }[] = []
+    for (const item of categoryDict ?? []) {
+      if (!item.name || seen.has(item.name)) continue
+      seen.add(item.name)
+      options.push({ value: item.name, label: item.name })
+    }
+    for (const item of HAZARD_CATEGORY_OPTIONS) {
+      if (seen.has(item.value)) continue
+      seen.add(item.value)
+      options.push({ value: item.value, label: item.label })
+    }
+    return options
+  }, [categoryDict])
+  const filterFields = useMemo<FilterFieldConfig[]>(
+    () =>
+      FILTER_FIELDS.map((field) =>
+        field.key === 'hazard_category' ? { ...field, options: categoryFilterOptions } : field,
+      ),
+    [categoryFilterOptions],
+  )
+
   // ── 活跃筛选条件 (多维表格 chip 模式) ──
   const activeFilters = useMemo(() => {
     const list: { key: string; fieldLabel: string; value: string; valueLabel: string }[] = []
@@ -233,11 +261,11 @@ export default function HazardLedgerPage() {
       list.push({ key: 'hazard_level', fieldLabel: '等级', value: levelFilter, valueLabel: opt?.label || levelFilter })
     }
     if (categoryFilter) {
-      const opt = HAZARD_CATEGORY_OPTIONS.find((o) => o.value === categoryFilter)
-      list.push({ key: 'hazard_category', fieldLabel: '类别', value: categoryFilter, valueLabel: opt?.label || categoryFilter })
+      const label = getHazardCategoryLabel(categoryFilter)
+      list.push({ key: 'hazard_category', fieldLabel: '类别', value: categoryFilter, valueLabel: label })
     }
     if (inspectionCategoryFilter) {
-      const opt = FILTER_FIELDS.find((f) => f.key === 'inspection_category')?.options.find((o) => o.value === inspectionCategoryFilter)
+      const opt = filterFields.find((f) => f.key === 'inspection_category')?.options.find((o) => o.value === inspectionCategoryFilter)
       list.push({ key: 'inspection_category', fieldLabel: '检查类别', value: inspectionCategoryFilter, valueLabel: opt?.label || inspectionCategoryFilter })
     }
     if (deptFilter) {
@@ -247,7 +275,7 @@ export default function HazardLedgerPage() {
       list.push({ key: 'person_match', fieldLabel: '人员匹配', value: personMatchFilter, valueLabel: '待确认' })
     }
     return list
-  }, [levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, personMatchFilter])
+  }, [levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, personMatchFilter, filterFields])
 
   // 移除单个筛选条件
   const removeFilter = useCallback((key: string) => {
@@ -940,10 +968,9 @@ export default function HazardLedgerPage() {
       key: 'hazard_category',
       width: 100,
       sorter: false,
-      render: (category: string) => {
-        const option = HAZARD_CATEGORY_OPTIONS.find((o) => o.value === category)
-        return <span style={statusPill('#5d5b54', '#f0eeec')}>{option?.label || category || '-'}</span>
-      },
+      render: (category: string) => (
+        <span style={statusPill('#5d5b54', '#f0eeec')}>{getHazardCategoryLabel(category)}</span>
+      ),
     },
     {
       title: '缺陷项描述',
@@ -976,18 +1003,32 @@ export default function HazardLedgerPage() {
     },
     {
       title: '整改负责人',
-      dataIndex: 'rectification_responsible_person_name',
-      key: 'rectification_responsible_person_name',
-      width: 118,
-      render: (_text: string, record: HazardReport) => (
-        <PersonNameWithBadge
-          name={record.rectification_responsible_person_name}
-          bound={record.rectification_responsible_person}
-        />
-      ),
+      dataIndex: 'rectification_responsible_person_names',
+      key: 'rectification_responsible_person_names',
+      width: 150,
+      render: (_text: string, record: HazardReport) => {
+        // 多负责人优先，旧单人字段兜底（历史数据仍正常展示）
+        const names = (record.rectification_responsible_person_names || record.rectification_responsible_person_name || '')
+          .split(/[,，]/)
+          .map((name) => name.trim())
+          .filter(Boolean)
+        if (names.length === 0) return <span style={{ color: '#a4a097' }}>-</span>
+        const ids = Array.isArray(record.rectification_responsible_person_ids) ? record.rectification_responsible_person_ids : []
+        return (
+          <Space size={4} wrap>
+            {names.map((name, index) => (
+              <PersonNameWithBadge
+                key={`${name}-${index}`}
+                name={name}
+                bound={ids[index] || (names.length === 1 ? record.rectification_responsible_person : null)}
+              />
+            ))}
+          </Space>
+        )
+      },
     },
     {
-      title: '检查人员',
+      title: '审批人',
       dataIndex: 'discovered_by_name',
       key: 'discovered_by_name',
       width: 118,
@@ -1017,11 +1058,39 @@ export default function HazardLedgerPage() {
       title: '整改进度',
       dataIndex: 'rectification_status',
       key: 'rectification_status',
-      width: 90,
-      render: (status: string) => {
+      width: 130,
+      render: (status: string, record: HazardReport) => {
         const cfg = RECTIFICATION_STATUS_CONFIG[status]
-        if (!cfg) return <span style={statusPill('#5d5b54', '#f0eeec')}>{status}</span>
-        return <span style={statusPill(cfg.color, cfg.bg)}>{cfg.label}</span>
+        const note = record.rectification_progress_note
+        return (
+          <div
+            role="button"
+            title="点击编辑整改进度与说明"
+            onClick={() => setProgressEditRecord(record)}
+            style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 3 }}
+          >
+            {cfg ? (
+              <span style={statusPill(cfg.color, cfg.bg)}>{cfg.label}</span>
+            ) : (
+              <span style={statusPill('#5d5b54', '#f0eeec')}>{status || '-'}</span>
+            )}
+            {note ? (
+              <span
+                style={{
+                  fontSize: 11,
+                  color: '#787671',
+                  lineHeight: 1.35,
+                  maxWidth: 120,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {note}
+              </span>
+            ) : null}
+          </div>
+        )
       },
     },
     {
@@ -1113,24 +1182,6 @@ export default function HazardLedgerPage() {
         ),
     },
     {
-      title: '证据（整改前）',
-      dataIndex: 'defect_photos',
-      key: 'defect_photos',
-      width: 100,
-      render: (json: string) => {
-        const urls = parsePhotoUrls(json)
-        if (urls.length === 0) return <span style={{ color: '#a4a097' }}>-</span>
-        return (
-          <Space size={4}>
-            <Image.PreviewGroup items={urls}>
-              <Image src={urls[0]} alt="整改前证据" width={32} height={32} style={{ objectFit: 'cover', borderRadius: 4 }} />
-            </Image.PreviewGroup>
-            {urls.length > 1 && <span style={{ fontSize: 11, color: '#787671' }}>+{urls.length - 1}</span>}
-          </Space>
-        )
-      },
-    },
-    {
       title: '整改后照片',
       dataIndex: 'rectification_photos',
       key: 'rectification_photos',
@@ -1179,9 +1230,9 @@ export default function HazardLedgerPage() {
             ← 返回
           </div>
           <div style={{ fontSize: 12, color: '#787671', marginBottom: 8 }}>
-            {FILTER_FIELDS.find((f) => f.key === pendingFilterField)?.label}
+            {filterFields.find((f) => f.key === pendingFilterField)?.label}
           </div>
-          {FILTER_FIELDS.find((f) => f.key === pendingFilterField)?.type === 'text' ? (
+          {filterFields.find((f) => f.key === pendingFilterField)?.type === 'text' ? (
             <Input
               placeholder="请输入责任部门名称"
               onPressEnter={(e) => {
@@ -1193,7 +1244,7 @@ export default function HazardLedgerPage() {
             />
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {FILTER_FIELDS
+              {filterFields
                 .find((f) => f.key === pendingFilterField)
                 ?.options.map((opt) => (
                   <div
@@ -1223,7 +1274,7 @@ export default function HazardLedgerPage() {
             添加筛选条件
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {FILTER_FIELDS.map((field) => {
+            {filterFields.map((field) => {
               const isApplied = activeFilters.some((f) => f.key === field.key)
               return (
                 <div
@@ -1624,6 +1675,17 @@ export default function HazardLedgerPage() {
         record={verifyRecord}
         onClose={() => setVerifyModalVisible(false)}
         onSuccess={handleVerifySuccess}
+      />
+
+      {/* ── 整改进度编辑 Modal ── */}
+      <HazardProgressEditModal
+        open={progressEditRecord !== null}
+        hazard={progressEditRecord}
+        onClose={() => setProgressEditRecord(null)}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ['hazards'] })
+          refreshStats()
+        }}
       />
 
       {/* ── 隐患登记抽屉 ── */}

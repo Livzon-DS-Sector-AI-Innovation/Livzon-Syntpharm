@@ -64,6 +64,12 @@ export const HAZARD_LEVEL_OPTIONS = [
   { value: HazardLevel.MAJOR, label: '重大隐患', color: 'red' },
 ]
 
+/** 登记表单/筛选项只保留两档（「较大隐患」仅历史数据存在，仍需能展示与筛选） */
+export const HAZARD_LEVEL_FORM_OPTIONS = [
+  { value: HazardLevel.GENERAL, label: '一般隐患', color: 'blue' },
+  { value: HazardLevel.MAJOR, label: '重大隐患', color: 'red' },
+]
+
 export enum HazardCategory {
   EQUIPMENT = 'equipment',
   HAZARDOUS_STORAGE = 'hazardous_storage',
@@ -80,21 +86,43 @@ export enum HazardCategory {
   SPECIAL_OPERATION = 'special_operation',
 }
 
+/**
+ * 隐患类别（2026-11 收窄为 7 类业务类别，值即字典表 safety.hazard_categories.name）。
+ * 用户可在登记时新增类别，实际下拉由接口数据与内置项合并得出；
+ * 这里保留内置 7 项作为兜底与排序基准。
+ */
 export const HAZARD_CATEGORY_OPTIONS = [
-  { value: HazardCategory.EQUIPMENT, label: '设备设施' },
-  { value: HazardCategory.HAZARDOUS_STORAGE, label: '危化储存' },
-  { value: HazardCategory.EMERGENCY_MGMT, label: '应急管理' },
-  { value: HazardCategory.INSTRUMENT_ELECTRICAL, label: '仪表+电气' },
-  { value: HazardCategory.LIGHTNING_ANTISTATIC, label: '防雷防静电' },
-  { value: HazardCategory.OCCUPATIONAL_HEALTH, label: '职业健康+劳保防护' },
-  { value: HazardCategory.VIOLATION_OPERATION, label: '三违作业' },
-  { value: HazardCategory.SIX_S, label: '6S' },
-  { value: HazardCategory.LABEL_SIGNAGE, label: '标签标识' },
-  { value: HazardCategory.PROCESS_MGMT, label: '工艺管理' },
-  { value: HazardCategory.CONTRACTOR_DEFECT, label: '承包商缺陷' },
-  { value: HazardCategory.DOCUMENTATION, label: '内页资料' },
-  { value: HazardCategory.SPECIAL_OPERATION, label: '特殊作业' },
+  { value: '安全标识', label: '安全标识' },
+  { value: '化学品管理', label: '化学品管理' },
+  { value: '跑冒滴漏', label: '跑冒滴漏' },
+  { value: '设备设施', label: '设备设施' },
+  { value: '消防应急', label: '消防应急' },
+  { value: '仪表电气', label: '仪表电气' },
+  { value: '作业环境', label: '作业环境' },
 ]
+
+/** 旧枚举值 → 新类别名称（历史台账展示用，AI 结果也可能回填旧值） */
+export const LEGACY_HAZARD_CATEGORY_LABELS: Record<string, string> = {
+  [HazardCategory.EQUIPMENT]: '设备设施',
+  [HazardCategory.HAZARDOUS_STORAGE]: '化学品管理',
+  [HazardCategory.EMERGENCY_MGMT]: '消防应急',
+  [HazardCategory.INSTRUMENT_ELECTRICAL]: '仪表电气',
+  [HazardCategory.LIGHTNING_ANTISTATIC]: '防雷防静电',
+  [HazardCategory.OCCUPATIONAL_HEALTH]: '职业健康+劳保防护',
+  [HazardCategory.VIOLATION_OPERATION]: '三违作业',
+  [HazardCategory.SIX_S]: '6S',
+  [HazardCategory.LABEL_SIGNAGE]: '安全标识',
+  [HazardCategory.PROCESS_MGMT]: '工艺管理',
+  [HazardCategory.CONTRACTOR_DEFECT]: '承包商缺陷',
+  [HazardCategory.DOCUMENTATION]: '内页资料',
+  [HazardCategory.SPECIAL_OPERATION]: '特殊作业',
+}
+
+/** 隐患类别显示文案：新类别名原样返回，旧英文枚举映射为中文 */
+export function getHazardCategoryLabel(value?: string | null): string {
+  if (!value) return '-'
+  return LEGACY_HAZARD_CATEGORY_LABELS[value] ?? value
+}
 
 // ============ Special Operations Enums ============
 
@@ -392,22 +420,8 @@ export const CERTIFICATE_STATUS_OPTIONS = [
 
 // ── 检查类别（隐患台账 Bitable 多选字段 16 种预设）──
 export const INSPECTION_CATEGORY_OPTIONS = [
-  { value: '月度安全检查', label: '月度安全检查' },
-  { value: '节前安全检查', label: '节前安全检查' },
-  { value: '专项安全检查', label: '专项安全检查' },
-  { value: '领导干部值班检查', label: '领导干部值班检查' },
-  { value: '部门安全检查', label: '部门安全检查' },
-  { value: '季节性安全检查', label: '季节性安全检查' },
-  { value: '周检', label: '周检' },
-  { value: '复工复产安全检查', label: '复工复产安全检查' },
-  { value: '部门互查', label: '部门互查' },
-  { value: '变更验收', label: '变更验收' },
-  { value: '防雷检查', label: '防雷检查' },
-  { value: '安全阀专项检查', label: '安全阀专项检查' },
-  { value: '节后复工检查', label: '节后复工检查' },
-  { value: '防暑降温专项', label: '防暑降温专项' },
-  { value: '电气专项检查', label: '电气专项检查' },
-  { value: '关键风险作业专项检查', label: '关键风险作业专项检查' },
+  { value: '内部检查', label: '内部检查' },
+  { value: '政府检查', label: '政府检查' },
 ]
 
 // ─ 责任部门（统一部门列表）──

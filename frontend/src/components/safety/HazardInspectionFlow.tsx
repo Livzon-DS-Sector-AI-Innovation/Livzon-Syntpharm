@@ -193,6 +193,25 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
     }
   }, [])
 
+  // ── 表单值 → 后端载荷（登记字段统一在此收敛，避免多处漏字段）──
+  const buildPayload = (values: InspectionFormValues): HazardReportFormData =>
+    ({
+      inspection_name: values.inspection_name,
+      inspection_category: values.inspection_category,
+      hazard_level: values.hazard_level,
+      hazard_category: values.hazard_category,
+      discovered_by: values.discovered_by,
+      discovered_by_name: values.discovered_by_name,
+      inspector_department: values.inspector_department,
+      department: values.department,
+      discovered_at: values.discovered_at,
+      deadline: values.deadline,
+      description: values.description,
+      capa_measures: values.capa_measures,
+      rectification_responsible_person_ids: values.rectification_responsible_person_ids,
+      rectification_responsible_person_names: values.rectification_responsible_person_names,
+    }) as HazardReportFormData
+
   // ── 提交隐患 → 创建/更新记录 + 上传图片 + 触发AI ──
   const handleSubmit = async (values: InspectionFormValues, files: File[]) => {
     setSubmitting(true)
@@ -200,17 +219,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
       let hazard: HazardReport
 
       if (currentHazard) {
-        const updateRes = await updateHazard(currentHazard.id, {
-          inspection_name: values.inspection_name,
-          inspection_category: values.inspection_category,
-          discovered_by: values.discovered_by,
-          discovered_by_name: values.discovered_by_name,
-          inspector_department: values.inspector_department,
-          department: values.department,
-          discovered_at: values.discovered_at,
-          description: values.description,
-
-        } as Partial<HazardReportFormData>)
+        const updateRes = await updateHazard(currentHazard.id, buildPayload(values))
         if (updateRes.code !== 200) {
           message.error(updateRes.message || '更新失败')
           setSubmitting(false)
@@ -218,17 +227,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
         }
         hazard = updateRes.data as HazardReport
       } else {
-        const createRes = await createHazard({
-          hazard_no: '',
-          inspection_name: values.inspection_name,
-          inspection_category: values.inspection_category,
-          discovered_by: values.discovered_by,
-          discovered_by_name: values.discovered_by_name,
-          inspector_department: values.inspector_department,
-          department: values.department,
-          discovered_at: values.discovered_at,
-          description: values.description,
-        } as HazardReportFormData)
+        const createRes = await createHazard({ hazard_no: '', ...buildPayload(values) } as HazardReportFormData)
         if (createRes.code !== 200) {
           message.error(createRes.message || '创建失败')
           setSubmitting(false)
@@ -319,16 +318,9 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
 
       if (currentHazard) {
         const updateRes = await updateHazard(currentHazard.id, {
-          inspection_name: values.inspection_name,
-          inspection_category: values.inspection_category,
-          discovered_by: values.discovered_by,
-          discovered_by_name: values.discovered_by_name,
-          inspector_department: values.inspector_department,
-          department: values.department,
-          discovered_at: values.discovered_at,
-          description: values.description,
+          ...buildPayload(values),
           overall_status: 'draft',
-        } as Partial<HazardReportFormData>)
+        })
         if (updateRes.code !== 200) {
           message.error(updateRes.message || '保存草稿失败')
           return
@@ -337,14 +329,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
       } else {
         const createRes = await createHazard({
           hazard_no: '',
-          inspection_name: values.inspection_name,
-          inspection_category: values.inspection_category,
-          discovered_by: values.discovered_by,
-          discovered_by_name: values.discovered_by_name,
-          inspector_department: values.inspector_department,
-          department: values.department,
-          discovered_at: values.discovered_at,
-          description: values.description,
+          ...buildPayload(values),
           overall_status: 'draft',
         } as HazardReportFormData)
         if (createRes.code !== 200) {
@@ -389,12 +374,13 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
   // ── 从草稿继续登记 ──
   const handleContinueDraft = (draft: HazardReport) => {
     setDraftFormValues({
-      // mode="multiple" 的 Select 需要数组格式（兼容字符串和数组）
+      inspection_name: draft.inspection_name ?? undefined,
+      // 检查类别已收窄为单选：历史多选草稿取第一个值回显
       inspection_category: Array.isArray(draft.inspection_category)
-        ? draft.inspection_category
-        : draft.inspection_category
-          ? draft.inspection_category.split(/[,，]/).filter(Boolean)
-          : undefined,
+        ? draft.inspection_category[0]
+        : (draft.inspection_category ?? undefined),
+      hazard_level: draft.hazard_level ?? undefined,
+      hazard_category: draft.hazard_category ?? undefined,
       discovered_by: draft.discovered_by ?? undefined,
       discovered_by_name: draft.discovered_by_name ?? undefined,
       inspector_department: Array.isArray(draft.inspector_department)
@@ -404,7 +390,11 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
           : undefined,
       department: draft.department ?? undefined,
       discovered_at: draft.discovered_at,
+      deadline: draft.deadline ?? undefined,
       description: draft.description,
+      capa_measures: draft.capa_measures ?? undefined,
+      rectification_responsible_person_ids: draft.rectification_responsible_person_ids ?? undefined,
+      rectification_responsible_person_names: draft.rectification_responsible_person_names ?? undefined,
     })
     setCurrentHazard(draft)
     setDraftDrawerOpen(false)

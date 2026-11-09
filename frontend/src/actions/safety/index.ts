@@ -183,6 +183,14 @@ export async function createHazard(data: HazardReportFormData): Promise<ApiRespo
   return response as unknown as ApiResponse<HazardReport>
 }
 
+/** 新增隐患类别（全公司共享，写入 safety.hazard_categories） */
+export async function createHazardCategory(name: string): Promise<ApiResponse<{ id: string | null; name: string; sort_order: number; is_builtin: boolean }>> {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.createHazardCategory(name, authHeaders)
+  revalidatePath('/safety/hazard-ledger')
+  return response as unknown as ApiResponse<{ id: string | null; name: string; sort_order: number; is_builtin: boolean }>
+}
+
 export async function updateHazard(id: string, data: Partial<HazardReportFormData>): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateHazard(id, data, authHeaders)

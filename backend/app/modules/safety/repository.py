@@ -15,6 +15,7 @@ from app.modules.safety.models import (
     ContractorWorkRecord,
     DailyRiskReport,
     EhsChange,
+    HazardCategoryDict,
     HazardIdentification,
     HazardReport,
     OhHazardMonitor,
@@ -312,6 +313,32 @@ class SafetyRepository:
         )
         result = await self.session.execute(query)
         return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
+
+    # ==================== Hazard Category Dict Operations ====================
+
+    async def list_hazard_categories(self, only_active: bool = True) -> list[HazardCategoryDict]:
+        """列出隐患类别字典（按 sort_order、名称排序）"""
+        query = select(HazardCategoryDict).where(~HazardCategoryDict.is_deleted)
+        if only_active:
+            query = query.where(HazardCategoryDict.is_active.is_(True))
+        query = query.order_by(HazardCategoryDict.sort_order.asc(), HazardCategoryDict.name.asc())
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def get_hazard_category_by_name(self, name: str) -> HazardCategoryDict | None:
+        """按名称取隐患类别（含同名已软删除记录，用于幂等复用）"""
+        query = select(HazardCategoryDict).where(HazardCategoryDict.name == name)
+        result = await self.session.execute(query)
+        return result.scalars().first()
+
+    async def create_hazard_category(self, data: dict[str, Any]) -> HazardCategoryDict:
+        """新增隐患类别"""
+        item = HazardCategoryDict(**data)
+        self.session.add(item)
+        await self.session.flush()
+        stmt = select(HazardCategoryDict).where(HazardCategoryDict.id == item.id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
 
     async def count_hazards_today(self, date_prefix: str) -> int:
         """统计指定日期前缀的隐患编号数量（含软删除），用于自动生成序号。"""

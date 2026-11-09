@@ -49,6 +49,7 @@ import {
   HAZARD_TYPE_OPTIONS,
   HAZARD_LEVEL_OPTIONS,
   HAZARD_CATEGORY_OPTIONS,
+  LEGACY_HAZARD_CATEGORY_LABELS,
   INSPECTION_CATEGORY_OPTIONS,
   RECTIFICATION_STATUS_OPTIONS,
   INSPECTOR_DEPARTMENT_OPTIONS,
@@ -56,7 +57,7 @@ import {
   VERIFY_LEVEL_STATUS_OPTIONS,
 } from '@/types/safety'
 import dayjs from 'dayjs'
-import PersonnelSelect from '@/components/safety/PersonnelSelect'
+import PersonnelSelect, { PersonnelMultiSelect } from '@/components/safety/PersonnelSelect'
 import { PersonNameWithBadge } from '@/components/safety/PersonMatchBadge'
 
 const { Text } = Typography
@@ -117,7 +118,7 @@ function getLevelLabel(level: string) {
 }
 
 // ── 隐患类别 label map ──
-const HAZARD_CATEGORY_LABEL_MAP: Record<string, string> = {}
+const HAZARD_CATEGORY_LABEL_MAP: Record<string, string> = { ...LEGACY_HAZARD_CATEGORY_LABELS }
 HAZARD_CATEGORY_OPTIONS.forEach((o) => { HAZARD_CATEGORY_LABEL_MAP[o.value] = o.label })
 
 // ═══════════════════════════════════════════════════════════
@@ -439,7 +440,7 @@ export default function HazardLedgerDetailPage() {
 
   // 编辑状态
   const [editSection, setEditSection] = useState<'registration' | 'ai' | 'rectification' | null>(null)
-  const [edits, setEdits] = useState<Partial<Record<string, string>>>({})
+  const [edits, setEdits] = useState<Partial<Record<string, string | string[]>>>({})
   const [saving, setSaving] = useState(false)
 
   // 整改回复状态
@@ -492,8 +493,17 @@ export default function HazardLedgerDetailPage() {
 
   const fieldVal = (field: string): string => {
     const rec = record as Record<string, unknown> | null
-    if (editSection && field in edits) return edits[field] ?? (rec?.[field] as string | undefined) ?? ''
-    return (rec?.[field] as string | undefined) ?? ''
+    const raw = editSection && field in edits ? (edits[field] ?? rec?.[field]) : rec?.[field]
+    return typeof raw === 'string' ? raw : ''
+  }
+
+  /** 数组字段取值（整改负责人 UUID 列表；旧数据是单个 uuid 字符串时也能兼容） */
+  const fieldIds = (field: string): string[] => {
+    const rec = record as Record<string, unknown> | null
+    const raw = editSection && field in edits ? (edits[field] ?? rec?.[field]) : rec?.[field]
+    if (Array.isArray(raw)) return raw.filter((item): item is string => typeof item === 'string')
+    if (typeof raw === 'string' && raw) return [raw]
+    return []
   }
 
   const handleEdit = (section: 'registration' | 'ai' | 'rectification') => {
@@ -888,12 +898,14 @@ export default function HazardLedgerDetailPage() {
       const allPhotoPaths = [...existingPaths, ...newPaths]
 
       // 3. 根据状态调用 replyRectification 或 reworkRectification
-      const replyContent = edits.rectification_reply || record.rectification_reply || fieldVal('rectification_reply')
-      const capaMeasures = edits.capa_measures ?? record.capa_measures
+      const replyContent = fieldVal('rectification_reply') || record.rectification_reply || ''
+      const capaMeasures = fieldVal('capa_measures') || record.capa_measures
+      const progressNote = fieldVal('rectification_progress_note') || record.rectification_progress_note
       const data = {
         reply_content: replyContent,
         rectification_photos: allPhotoPaths.length > 0 ? JSON.stringify(allPhotoPaths) : undefined,
         capa_measures: capaMeasures || undefined,
+        rectification_progress_note: progressNote || undefined,
       }
       const isRework = record.rectification_status === 'rejected'
       const replyRes = isRework
@@ -1171,7 +1183,7 @@ export default function HazardLedgerDetailPage() {
                   </FieldEditor>
                 </Col>
                 <Col span={8}>
-                  <FieldEditor label="检查人员">
+                  <FieldEditor label="审批人">
                     <PersonnelSelect
                       value={fieldVal('discovered_by') || null}
                       label={fieldVal('discovered_by_name')}
@@ -1191,17 +1203,24 @@ export default function HazardLedgerDetailPage() {
                   ) : null}
                 </Col>
                 <Col span={8}>
-                  <FieldEditor label="责任人">
-                    <PersonnelSelect
-                      value={fieldVal('rectification_responsible_person') || null}
-                      label={fieldVal('rectification_responsible_person_name')}
-                      placeholder="搜索姓名/账号绑定系统用户"
-                      onChange={(p) => {
-                        if (!p) return
+                  <FieldEditor label="整改负责人">
+                    <PersonnelMultiSelect
+                      value={
+                        fieldIds('rectification_responsible_person_ids').length > 0
+                          ? fieldIds('rectification_responsible_person_ids')
+                          : fieldIds('rectification_responsible_person')
+                      }
+                      labels={(fieldVal('rectification_responsible_person_names') || fieldVal('rectification_responsible_person_name') || '')
+                        .split(/[,，]/)
+                        .map((n) => n.trim())
+                        .filter(Boolean)}
+                      onChange={(persons) => {
                         setEdits((prev) => ({
                           ...prev,
-                          rectification_responsible_person: p.id,
-                          rectification_responsible_person_name: p.name,
+                          rectification_responsible_person_ids: persons.map((p) => p.id),
+                          rectification_responsible_person_names: persons.map((p) => p.name).join(','),
+                          rectification_responsible_person: persons[0]?.id,
+                          rectification_responsible_person_name: persons[0]?.name,
                         }))
                       }}
                     />
@@ -1251,19 +1270,44 @@ export default function HazardLedgerDetailPage() {
                     </FieldTile>
                   </Col>
                   <Col span={8}>
-                    <FieldLabel>检查人员</FieldLabel>
+                    <FieldLabel>审批人</FieldLabel>
                     <FieldTile>
                       <PersonNameWithBadge name={record.discovered_by_name} bound={record.discovered_by} fontSize={14} />
                     </FieldTile>
                   </Col>
                   <Col span={8}>
-                    <FieldLabel>责任人</FieldLabel>
+                    <FieldLabel>整改负责人</FieldLabel>
                     <FieldTile>
-                      <PersonNameWithBadge
-                        name={record.rectification_responsible_person_name}
-                        bound={record.rectification_responsible_person}
-                        fontSize={14}
-                      />
+                      {(() => {
+                        const names = (record.rectification_responsible_person_names || record.rectification_responsible_person_name || '')
+                          .split(/[,，]/)
+                          .map((n) => n.trim())
+                          .filter(Boolean)
+                        if (names.length === 0) return <Text style={{ fontSize: 14, color: '#a4a097' }}>-</Text>
+                        const ids = Array.isArray(record.rectification_responsible_person_ids)
+                          ? record.rectification_responsible_person_ids
+                          : []
+                        return (
+                          <Space size={4} wrap>
+                            {names.map((name, index) => (
+                              <PersonNameWithBadge
+                                key={`${name}-${index}`}
+                                name={name}
+                                bound={ids[index] || (names.length === 1 ? record.rectification_responsible_person : null)}
+                                fontSize={14}
+                              />
+                            ))}
+                          </Space>
+                        )
+                      })()}
+                    </FieldTile>
+                  </Col>
+                  <Col span={8}>
+                    <FieldLabel>进度说明</FieldLabel>
+                    <FieldTile>
+                      <Text style={{ fontSize: 14, color: record.rectification_progress_note ? '#1a1a1a' : '#a4a097' }}>
+                        {record.rectification_progress_note || '-'}
+                      </Text>
                     </FieldTile>
                   </Col>
                   <Col span={8}>
@@ -1348,7 +1392,12 @@ export default function HazardLedgerDetailPage() {
                       <Select style={{ width: '100%' }}
                         value={fieldVal('hazard_category')}
                         onChange={(v) => setEdits((p) => ({ ...p, hazard_category: v }))}
-                        options={HAZARD_CATEGORY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))} />
+                        options={Array.from(
+                          new Set([
+                            ...HAZARD_CATEGORY_OPTIONS.map((o) => o.value),
+                            ...(fieldVal('hazard_category') ? [fieldVal('hazard_category') as string] : []),
+                          ])
+                        ).map((value) => ({ value, label: HAZARD_CATEGORY_LABEL_MAP[value] || value }))} />
                     </FieldEditor>
                   </Col>
                   <Col span={8}>

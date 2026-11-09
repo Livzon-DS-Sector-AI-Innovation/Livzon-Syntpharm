@@ -5238,6 +5238,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/safety/hazard-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取隐患类别字典（内置 7 类 + 用户新增）
+         * @description 隐患登记下拉用的类别清单：内置类别与字典表增量合并去重
+         */
+        get: operations["get_hazard_categories_api_v1_safety_hazard_categories_get"];
+        put?: never;
+        /**
+         * 新增隐患类别（全公司共享）
+         * @description 新增隐患类别：重名直接返回已有记录（幂等），软删除记录自动恢复
+         */
+        post: operations["post_hazard_category_api_v1_safety_hazard_categories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/safety/hazards/{hazard_id}/upload-photo": {
         parameters: {
             query?: never;
@@ -33991,11 +34015,79 @@ export interface components {
             data?: components["schemas"]["HazardReportResponse"] | null;
         };
         /**
-         * HazardCategory
-         * @description 隐患类别枚举（13种）
-         * @enum {string}
+         * HazardCategoryApiResponse
+         * @description 单个隐患类别响应包装
          */
-        HazardCategory: "equipment" | "hazardous_storage" | "emergency_mgmt" | "instrument_electrical" | "lightning_antistatic" | "occupational_health" | "violation_operation" | "six_s" | "label_signage" | "process_mgmt" | "contractor_defect" | "documentation" | "special_operation";
+        HazardCategoryApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["HazardCategoryResponse"] | null;
+        };
+        /**
+         * HazardCategoryCreate
+         * @description 新增隐患类别请求
+         */
+        HazardCategoryCreate: {
+            /**
+             * Name
+             * @description 类别名称
+             */
+            name: string;
+        };
+        /**
+         * HazardCategoryListApiResponse
+         * @description 隐患类别列表响应包装
+         */
+        HazardCategoryListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["HazardCategoryResponse"][];
+        };
+        /**
+         * HazardCategoryResponse
+         * @description 隐患类别项
+         */
+        HazardCategoryResponse: {
+            /**
+             * Id
+             * @description 字典记录 ID（内置类别为 None）
+             */
+            id?: string | null;
+            /**
+             * Name
+             * @description 类别名称
+             */
+            name: string;
+            /**
+             * Sort Order
+             * @description 排序值，越小越前
+             * @default 0
+             */
+            sort_order: number;
+            /**
+             * Is Builtin
+             * @description 是否内置类别（不可删除）
+             * @default false
+             */
+            is_builtin: boolean;
+        };
         /**
          * HazardIdentificationApiResponse
          * @description Single hazard identification response wrapper
@@ -34697,8 +34789,11 @@ export interface components {
             hazard_type?: components["schemas"]["HazardType"] | null;
             /** @description 隐患等级 */
             hazard_level?: components["schemas"]["HazardLevel"] | null;
-            /** @description 隐患类别 */
-            hazard_category?: components["schemas"]["HazardCategory"] | null;
+            /**
+             * Hazard Category
+             * @description 隐患类别（字典表名称）
+             */
+            hazard_category?: string | null;
             /**
              * Description
              * @description 隐患描述
@@ -34754,6 +34849,21 @@ export interface components {
              * @description 整改责任人姓名
              */
             rectification_responsible_person_name?: string | null;
+            /**
+             * Rectification Responsible Person Ids
+             * @description 整改负责人多选 UUID 列表
+             */
+            rectification_responsible_person_ids?: string[] | null;
+            /**
+             * Rectification Responsible Person Names
+             * @description 整改负责人姓名快照（逗号分隔）
+             */
+            rectification_responsible_person_names?: string | null;
+            /**
+             * Rectification Progress Note
+             * @description 整改进度说明（自定义文字）
+             */
+            rectification_progress_note?: string | null;
             /**
              * Corrective Preventive Measures
              * @description AI整改建议
@@ -34822,8 +34932,11 @@ export interface components {
              * @default general
              */
             hazard_level: components["schemas"]["HazardLevel"];
-            /** @description 隐患类别（设备设施/危化储存…） */
-            hazard_category?: components["schemas"]["HazardCategory"] | null;
+            /**
+             * Hazard Category
+             * @description 隐患类别（字典表名称）
+             */
+            hazard_category?: string | null;
             /**
              * Description
              * @description 隐患描述
@@ -34880,6 +34993,21 @@ export interface components {
              * @description 整改责任人姓名
              */
             rectification_responsible_person_name?: string | null;
+            /**
+             * Rectification Responsible Person Ids
+             * @description 整改负责人多选 UUID 列表
+             */
+            rectification_responsible_person_ids?: string[] | null;
+            /**
+             * Rectification Responsible Person Names
+             * @description 整改负责人姓名快照（逗号分隔）
+             */
+            rectification_responsible_person_names?: string | null;
+            /**
+             * Rectification Progress Note
+             * @description 整改进度说明（自定义文字）
+             */
+            rectification_progress_note?: string | null;
             /**
              * Corrective Preventive Measures
              * @description AI整改建议
@@ -35051,8 +35179,11 @@ export interface components {
             hazard_type?: components["schemas"]["HazardType"] | null;
             /** @description 隐患等级 */
             hazard_level?: components["schemas"]["HazardLevel"] | null;
-            /** @description 隐患类别 */
-            hazard_category?: components["schemas"]["HazardCategory"] | null;
+            /**
+             * Hazard Category
+             * @description 隐患类别（字典表名称）
+             */
+            hazard_category?: string | null;
             /**
              * Description
              * @description 隐患描述
@@ -35108,6 +35239,21 @@ export interface components {
              * @description 整改责任人姓名
              */
             rectification_responsible_person_name?: string | null;
+            /**
+             * Rectification Responsible Person Ids
+             * @description 整改负责人多选 UUID 列表
+             */
+            rectification_responsible_person_ids?: string[] | null;
+            /**
+             * Rectification Responsible Person Names
+             * @description 整改负责人姓名快照（逗号分隔）
+             */
+            rectification_responsible_person_names?: string | null;
+            /**
+             * Rectification Progress Note
+             * @description 整改进度说明
+             */
+            rectification_progress_note?: string | null;
             /**
              * Corrective Preventive Measures
              * @description AI整改建议
@@ -46537,6 +46683,11 @@ export interface components {
              * @description 整改完成时间（默认当前时间）
              */
             actual_completion_date?: string | null;
+            /**
+             * Rectification Progress Note
+             * @description 整改进度说明
+             */
+            rectification_progress_note?: string | null;
         };
         /** RedisDeleteResponse */
         RedisDeleteResponse: {
@@ -69968,6 +70119,72 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_hazard_categories_api_v1_safety_hazard_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["HazardCategoryListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_hazard_category_api_v1_safety_hazard_categories_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HazardCategoryCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["HazardCategoryApiResponse"];
                 };
             };
             /** @description Validation Error */

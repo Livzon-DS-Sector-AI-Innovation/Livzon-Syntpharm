@@ -25819,6 +25819,114 @@
         }
       }
     },
+    "/api/v1/safety/hazard-categories": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u9690\u60a3\u7c7b\u522b\u5b57\u5178\uff08\u5185\u7f6e 7 \u7c7b + \u7528\u6237\u65b0\u589e\uff09",
+        "description": "\u9690\u60a3\u767b\u8bb0\u4e0b\u62c9\u7528\u7684\u7c7b\u522b\u6e05\u5355\uff1a\u5185\u7f6e\u7c7b\u522b\u4e0e\u5b57\u5178\u8868\u589e\u91cf\u5408\u5e76\u53bb\u91cd",
+        "operationId": "get_hazard_categories_api_v1_safety_hazard_categories_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/HazardCategoryListApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u65b0\u589e\u9690\u60a3\u7c7b\u522b\uff08\u5168\u516c\u53f8\u5171\u4eab\uff09",
+        "description": "\u65b0\u589e\u9690\u60a3\u7c7b\u522b\uff1a\u91cd\u540d\u76f4\u63a5\u8fd4\u56de\u5df2\u6709\u8bb0\u5f55\uff08\u5e42\u7b49\uff09\uff0c\u8f6f\u5220\u9664\u8bb0\u5f55\u81ea\u52a8\u6062\u590d",
+        "operationId": "post_hazard_category_api_v1_safety_hazard_categories_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HazardCategoryCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/HazardCategoryApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/safety/hazards/{hazard_id}/upload-photo": {
       "post": {
         "tags": [
@@ -127542,25 +127650,115 @@
         "title": "HazardApiResponse",
         "description": "Single hazard response wrapper"
       },
-      "HazardCategory": {
-        "type": "string",
-        "enum": [
-          "equipment",
-          "hazardous_storage",
-          "emergency_mgmt",
-          "instrument_electrical",
-          "lightning_antistatic",
-          "occupational_health",
-          "violation_operation",
-          "six_s",
-          "label_signage",
-          "process_mgmt",
-          "contractor_defect",
-          "documentation",
-          "special_operation"
+      "HazardCategoryApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HazardCategoryResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "HazardCategoryApiResponse",
+        "description": "\u5355\u4e2a\u9690\u60a3\u7c7b\u522b\u54cd\u5e94\u5305\u88c5"
+      },
+      "HazardCategoryCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name",
+            "description": "\u7c7b\u522b\u540d\u79f0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
         ],
-        "title": "HazardCategory",
-        "description": "\u9690\u60a3\u7c7b\u522b\u679a\u4e3e\uff0813\u79cd\uff09"
+        "title": "HazardCategoryCreate",
+        "description": "\u65b0\u589e\u9690\u60a3\u7c7b\u522b\u8bf7\u6c42"
+      },
+      "HazardCategoryListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/HazardCategoryResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "HazardCategoryListApiResponse",
+        "description": "\u9690\u60a3\u7c7b\u522b\u5217\u8868\u54cd\u5e94\u5305\u88c5"
+      },
+      "HazardCategoryResponse": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id",
+            "description": "\u5b57\u5178\u8bb0\u5f55 ID\uff08\u5185\u7f6e\u7c7b\u522b\u4e3a None\uff09"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "\u7c7b\u522b\u540d\u79f0"
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order",
+            "description": "\u6392\u5e8f\u503c\uff0c\u8d8a\u5c0f\u8d8a\u524d",
+            "default": 0
+          },
+          "is_builtin": {
+            "type": "boolean",
+            "title": "Is Builtin",
+            "description": "\u662f\u5426\u5185\u7f6e\u7c7b\u522b\uff08\u4e0d\u53ef\u5220\u9664\uff09",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "HazardCategoryResponse",
+        "description": "\u9690\u60a3\u7c7b\u522b\u9879"
       },
       "HazardIdentificationApiResponse": {
         "properties": {
@@ -129607,13 +129805,15 @@
           "hazard_category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/HazardCategory"
+                "type": "string",
+                "maxLength": 64
               },
               {
                 "type": "null"
               }
             ],
-            "description": "\u9690\u60a3\u7c7b\u522b"
+            "title": "Hazard Category",
+            "description": "\u9690\u60a3\u7c7b\u522b\uff08\u5b57\u5178\u8868\u540d\u79f0\uff09"
           },
           "description": {
             "anyOf": [
@@ -129753,6 +129953,46 @@
             ],
             "title": "Rectification Responsible Person Name",
             "description": "\u6574\u6539\u8d23\u4efb\u4eba\u59d3\u540d"
+          },
+          "rectification_responsible_person_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Responsible Person Ids",
+            "description": "\u6574\u6539\u8d1f\u8d23\u4eba\u591a\u9009 UUID \u5217\u8868"
+          },
+          "rectification_responsible_person_names": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Responsible Person Names",
+            "description": "\u6574\u6539\u8d1f\u8d23\u4eba\u59d3\u540d\u5feb\u7167\uff08\u9017\u53f7\u5206\u9694\uff09"
+          },
+          "rectification_progress_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Progress Note",
+            "description": "\u6574\u6539\u8fdb\u5ea6\u8bf4\u660e\uff08\u81ea\u5b9a\u4e49\u6587\u5b57\uff09"
           },
           "corrective_preventive_measures": {
             "anyOf": [
@@ -129904,13 +130144,15 @@
           "hazard_category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/HazardCategory"
+                "type": "string",
+                "maxLength": 64
               },
               {
                 "type": "null"
               }
             ],
-            "description": "\u9690\u60a3\u7c7b\u522b\uff08\u8bbe\u5907\u8bbe\u65bd/\u5371\u5316\u50a8\u5b58\u2026\uff09"
+            "title": "Hazard Category",
+            "description": "\u9690\u60a3\u7c7b\u522b\uff08\u5b57\u5178\u8868\u540d\u79f0\uff09"
           },
           "description": {
             "type": "string",
@@ -130036,6 +130278,46 @@
             ],
             "title": "Rectification Responsible Person Name",
             "description": "\u6574\u6539\u8d23\u4efb\u4eba\u59d3\u540d"
+          },
+          "rectification_responsible_person_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Responsible Person Ids",
+            "description": "\u6574\u6539\u8d1f\u8d23\u4eba\u591a\u9009 UUID \u5217\u8868"
+          },
+          "rectification_responsible_person_names": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Responsible Person Names",
+            "description": "\u6574\u6539\u8d1f\u8d23\u4eba\u59d3\u540d\u5feb\u7167\uff08\u9017\u53f7\u5206\u9694\uff09"
+          },
+          "rectification_progress_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Progress Note",
+            "description": "\u6574\u6539\u8fdb\u5ea6\u8bf4\u660e\uff08\u81ea\u5b9a\u4e49\u6587\u5b57\uff09"
           },
           "corrective_preventive_measures": {
             "anyOf": [
@@ -130517,13 +130799,15 @@
           "hazard_category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/HazardCategory"
+                "type": "string",
+                "maxLength": 64
               },
               {
                 "type": "null"
               }
             ],
-            "description": "\u9690\u60a3\u7c7b\u522b"
+            "title": "Hazard Category",
+            "description": "\u9690\u60a3\u7c7b\u522b\uff08\u5b57\u5178\u8868\u540d\u79f0\uff09"
           },
           "description": {
             "anyOf": [
@@ -130663,6 +130947,46 @@
             ],
             "title": "Rectification Responsible Person Name",
             "description": "\u6574\u6539\u8d23\u4efb\u4eba\u59d3\u540d"
+          },
+          "rectification_responsible_person_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Responsible Person Ids",
+            "description": "\u6574\u6539\u8d1f\u8d23\u4eba\u591a\u9009 UUID \u5217\u8868"
+          },
+          "rectification_responsible_person_names": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Responsible Person Names",
+            "description": "\u6574\u6539\u8d1f\u8d23\u4eba\u59d3\u540d\u5feb\u7167\uff08\u9017\u53f7\u5206\u9694\uff09"
+          },
+          "rectification_progress_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Progress Note",
+            "description": "\u6574\u6539\u8fdb\u5ea6\u8bf4\u660e"
           },
           "corrective_preventive_measures": {
             "anyOf": [
@@ -157780,6 +158104,18 @@
             ],
             "title": "Actual Completion Date",
             "description": "\u6574\u6539\u5b8c\u6210\u65f6\u95f4\uff08\u9ed8\u8ba4\u5f53\u524d\u65f6\u95f4\uff09"
+          },
+          "rectification_progress_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Progress Note",
+            "description": "\u6574\u6539\u8fdb\u5ea6\u8bf4\u660e"
           }
         },
         "type": "object",
