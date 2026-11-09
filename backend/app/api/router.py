@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.core.config_api import router as module_settings_router
 from app.core.llm.api import router as llm_router
 from app.modules.administration import router as administration_router
+from app.modules.agent import router as agent_router
 from app.modules.energy import router as energy_router
 from app.modules.environment import router as environment_router
 from app.modules.equipment import router as equipment_router
@@ -138,5 +139,6 @@ api_router.include_router(
     tags=["申报资料撰写"],
 )
 
+api_router.include_router(agent_router, prefix="/agent", tags=["智能体"])
 api_router.include_router(llm_router, tags=["LLM配置"])
 api_router.include_router(module_settings_router, tags=["模块配置"])
