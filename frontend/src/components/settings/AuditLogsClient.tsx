@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { App, Button, Input, Result, Select, Space, Table, Tag } from 'antd'
+import { App, Button, Input, Result, Select, Table, Tag } from 'antd'
 import { DownloadOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { getAuditLogs } from '@/actions/audit'
 import type { AuditLogItem } from '@/types/audit'
 import { auditDiffRows, auditDiffSummary } from '@/lib/auditFormat'
+import { UserLabel } from '@/components/common/UserAvatar'
 import { SettingsListCard } from './SettingsListCard'
 
 const ACTION_LABEL: Record<string, string> = {
@@ -113,14 +114,10 @@ export default function AuditLogsClient() {
       title: '操作者',
       dataIndex: 'user_name',
       key: 'user_name',
-      width: 140,
+      width: 180,
+      // 头像由后端 join identity.users 带出（avatar_url），无头像时回退首字
       render: (text: string | null, record: AuditLogItem) => (
-        <Space orientation="vertical" size={0}>
-          <span className="font-medium text-[var(--color-charcoal)]">{text || '-'}</span>
-          {record.username && (
-            <span className="text-[12px] text-[var(--color-steel)]">{record.username}</span>
-          )}
-        </Space>
+        <UserLabel name={text} src={record.avatar_url} secondary={record.username} />
       ),
     },
     {

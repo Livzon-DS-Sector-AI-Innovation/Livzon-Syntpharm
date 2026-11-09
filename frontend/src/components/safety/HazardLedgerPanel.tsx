@@ -37,6 +37,7 @@ import {
 } from '@/actions/safety'
 import type { HazardIdentification, HazardLedgerStats } from '@/types/safety'
 import { RISK_LEVEL_OPTIONS } from '@/types/safety'
+import { UserLabel } from '@/components/common/UserAvatar'
 import dayjs from 'dayjs'
 import { statusPill } from '@/components/safety/sharedStyles'
 
@@ -614,9 +615,27 @@ export default function HazardLedgerPanel() {
       title: '责任人',
       dataIndex: 'responsible_person',
       key: 'responsible_person',
-      width: 80,
+      width: 120,
       ellipsis: true,
-      render: (text: string) => text || <span style={{ color: '#a4a097' }}>-</span>,
+      render: (text: string, record: HazardIdentification) => {
+        // 老台账「责任人」是纯文本，后端读时按姓名唯一命中系统用户才带头像；未命中保持原文本
+        const persons = record.responsible_person_users ?? []
+        const matched = persons.filter((person) => person.id || person.avatar_url)
+        if (matched.length === 0) return text || <span style={{ color: '#a4a097' }}>-</span>
+        return (
+          <Space size={4} wrap>
+            {matched.map((person, index) => (
+              <UserLabel
+                key={`${person.id ?? person.name ?? 'person'}-${index}`}
+                name={person.name}
+                src={person.avatar_url}
+                secondary={null}
+                avatarSize={20}
+              />
+            ))}
+          </Space>
+        )
+      },
     },
     {
       title: (

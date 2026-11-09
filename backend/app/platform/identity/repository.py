@@ -271,30 +271,33 @@ class UserRepository:
         *,
         department_id: str | None = None,
         keyword: str | None = None,
+        feishu_bound_only: bool = False,
         offset: int = 0,
         limit: int = 100,
     ) -> tuple[list[User], int]:
-        """分页查询所有用户，支持按部门/关键词筛选。"""
+        """分页查询所有用户，支持按部门/关键词筛选。
+
+        feishu_bound_only=True 时只返回已绑定飞书身份的账号，
+        判定口径与「绑定飞书」的 unbound_only 保持一致（两个飞书 ID 任一存在即视为已绑定）。
+        """
         base = select(User).where(User.is_deleted == False)  # noqa: E712
-
-        if department_id:
-            base = base.where(
-                User.feishu_department_ids.contains(department_id),
-            )
-        if keyword:
-            base = base.where(
-                User.name.ilike(f"%{keyword}%"),
-            )
-
         count_stmt = select(User.id).where(User.is_deleted == False)  # noqa: E712
+
         if department_id:
-            count_stmt = count_stmt.where(
-                User.feishu_department_ids.contains(department_id),
-            )
+            department_filter = User.feishu_department_ids.contains(department_id)
+            base = base.where(department_filter)
+            count_stmt = count_stmt.where(department_filter)
         if keyword:
-            count_stmt = count_stmt.where(
-                User.name.ilike(f"%{keyword}%"),
+            keyword_filter = User.name.ilike(f"%{keyword}%")
+            base = base.where(keyword_filter)
+            count_stmt = count_stmt.where(keyword_filter)
+        if feishu_bound_only:
+            bound_filter = or_(
+                User.feishu_user_id.isnot(None),
+                User.feishu_open_id.isnot(None),
             )
+            base = base.where(bound_filter)
+            count_stmt = count_stmt.where(bound_filter)
         total_result = await session.execute(count_stmt)
         total = len(total_result.scalars().all())
 

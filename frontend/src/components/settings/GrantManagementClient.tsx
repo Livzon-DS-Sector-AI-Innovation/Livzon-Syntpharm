@@ -33,6 +33,7 @@ import {
 import type { BatchResult, DepartmentOption, GrantCreateInput, GrantItem, ScopeType } from '@/types/permission'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
+import { UserLabel } from '@/components/common/UserAvatar'
 import { SettingsListCard } from './SettingsListCard'
 import { BatchActionBar, BatchDeleteConfirmModal, BatchResultModal } from './BatchOperations'
 import { moduleMenus } from '@/lib/menu-config'
@@ -101,7 +102,20 @@ export default function GrantManagementClient() {
   const userOptions = users.map((u) => ({
     value: u.id,
     label: `${u.name}${u.username ? `（${u.username}）` : ''}`,
+    // 下拉选项左侧头像：小图优先，缺失时降级首字母
+    name: u.name,
+    avatarUrl: u.avatar_thumb ?? u.avatar_url ?? null,
   }))
+
+  // 用户下拉选项：左侧头像 + 姓名（账号），重名时靠账号区分
+  const renderUserOption = (option: { data: (typeof userOptions)[number] }) => (
+    <UserLabel
+      name={option.data.name}
+      src={option.data.avatarUrl}
+      avatarSize={24}
+      fallback={option.data.label}
+    />
+  )
 
   // 生效预览：选定用户后拉其权限，算出可见模块/页面
   const { data: previewData } = useQuery({
@@ -356,8 +370,11 @@ export default function GrantManagementClient() {
     {
       title: '用户',
       key: 'user',
-      width: 180,
-      render: (_: unknown, r: GrantItem) => r.user_name || r.user_id,
+      width: 210,
+      // 头像来自 identity.users（授权列表接口已带回 avatar_url），缺失时回退首字
+      render: (_: unknown, r: GrantItem) => (
+        <UserLabel name={r.user_name} src={r.avatar_url} secondary={r.username} fallback={r.user_id} />
+      ),
     },
     {
       title: '角色',
@@ -504,7 +521,13 @@ export default function GrantManagementClient() {
               rules={[{ required: true, message: '请选择用户' }]}
               style={{ width: '100%', maxWidth: 260 }}
             >
-              <Select showSearch optionFilterProp="label" options={userOptions} placeholder="选择用户" />
+              <Select
+                showSearch
+                optionFilterProp="label"
+                options={userOptions}
+                optionRender={renderUserOption}
+                placeholder="选择用户"
+              />
             </Form.Item>
           )}
           <Form.Item
@@ -584,6 +607,7 @@ export default function GrantManagementClient() {
           onChange={(v) => setPreviewUserId(v)}
           options={userOptions}
           optionFilterProp="label"
+          optionRender={renderUserOption}
         />
         <div className="mt-4">
           {previewData && (

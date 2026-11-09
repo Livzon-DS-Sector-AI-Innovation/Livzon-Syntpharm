@@ -579,9 +579,9 @@ class HazardReport(BaseModel):
         comment="隐患等级（AI）：一般隐患/较大隐患/重大隐患",
     )
     hazard_category: Mapped[str | None] = mapped_column(
-        String(32),
+        String(64),
         nullable=True,
-        comment="隐患类别（AI）：设备设施/危化储存/仪表+电气/…（13种）",
+        comment="隐患类别：字典表 safety.hazard_categories 的 name（内置 7 类 + 用户新增）",
     )
     description: Mapped[str] = mapped_column(Text, nullable=False, comment="隐患描述")
     discovered_by: Mapped[uuid.UUID | None] = mapped_column(
@@ -618,6 +618,16 @@ class HazardReport(BaseModel):
     rectification_responsible_person_name: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="整改责任人姓名（Bitable「责任人」）"
     )
+    rectification_responsible_person_ids: Mapped[list[str] | None] = mapped_column(
+        JSON,
+        nullable=True,
+        comment="整改负责人多选 UUID 列表（新）。为空时回退单人字段 rectification_responsible_person",
+    )
+    rectification_responsible_person_names: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        comment="整改负责人姓名快照（逗号分隔，与 ids 顺序一致）",
+    )
     corrective_preventive_measures: Mapped[str | None] = mapped_column(Text, nullable=True, comment="AI整改建议")
     rectification_reply: Mapped[str | None] = mapped_column(Text, nullable=True, comment="整改回复内容")
     capa_measures: Mapped[str | None] = mapped_column(
@@ -634,6 +644,9 @@ class HazardReport(BaseModel):
         server_default="pending",
         nullable=False,
         comment="整改进度",
+    )
+    rectification_progress_note: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="整改进度说明（自定义文字，与单选状态并存）"
     )
     # ── 三级复核 ──
     verify_level_1_status: Mapped[str] = mapped_column(
@@ -2182,4 +2195,32 @@ class GraphKnowledgeEdge(BaseModel):
     )
     target_node: Mapped[GraphKnowledgeNode] = relationship(
         "GraphKnowledgeNode", foreign_keys=[target_node_id], lazy="select"
+    )
+
+
+# ==================== 隐患类别字典 ====================
+
+
+class HazardCategoryDict(BaseModel):
+    """隐患类别字典表（用户可在登记时新增，全公司共享）"""
+
+    __tablename__ = "hazard_categories"
+    __table_args__ = (
+        Index(
+            "uq_hazard_categories_name",
+            "name",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
+        {"schema": "safety", "comment": "隐患类别字典（用户可新增，全公司共享）"},
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="类别名称（与 hazard_reports.hazard_category 同值）"
+    )
+    sort_order: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False, comment="排序值（越小越前）"
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default="true", nullable=False, comment="是否启用"
     )

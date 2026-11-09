@@ -9,6 +9,7 @@ type DepartmentSafetyOfficerApiResponse = components['schemas']['DepartmentSafet
 type HazardVerifyNotifyApiResponse = components['schemas']['HazardVerifyNotifyApiResponse']
 type HazardAiRunApiResponse = components['schemas']['HazardAiRunApiResponse']
 type HazardRectificationNotifyApiResponse = components['schemas']['HazardRectificationNotifyApiResponse']
+type HazardCategoryApiResponse = components['schemas']['HazardCategoryApiResponse']
 type RegulationContentUpdateApiResponse = components['schemas']['RegulationContentUpdateApiResponse']
 
 type SafetyCheckListApiResponse = components['schemas']['SafetyCheckListApiResponse']
@@ -166,6 +167,14 @@ export async function createHazard(data: unknown, authHeaders?: Record<string, s
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
+  })
+}
+
+export async function createHazardCategory(name: string, authHeaders?: Record<string, string>) {
+  return apiFetch<HazardCategoryApiResponse>('/api/v1/safety/hazard-categories', {
+    method: 'POST',
+    headers: authHeaders,
+    body: JSON.stringify({ name }),
   })
 }
 

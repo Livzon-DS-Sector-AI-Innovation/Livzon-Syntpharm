@@ -440,7 +440,15 @@ async def list_grants(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     stmt = (
-        select(UserRoleGrant, Role.code, Role.name, User.name)
+        select(
+            UserRoleGrant,
+            Role.code,
+            Role.name,
+            User.name,
+            User.username,
+            User.avatar_thumb,
+            User.avatar_url,
+        )
         .join(Role, Role.id == UserRoleGrant.role_id)
         .outerjoin(User, User.id == UserRoleGrant.user_id)
         .where(UserRoleGrant.is_deleted == False)  # noqa: E712
@@ -463,8 +471,10 @@ async def list_grants(
             role_code=role_code,
             role_name=role_name,
             user_name=user_name,
+            username=username,
+            avatar_url=avatar_thumb or avatar_url,
         )
-        for g, role_code, role_name, user_name in rows
+        for g, role_code, role_name, user_name, username, avatar_thumb, avatar_url in rows
     ]
     return build_response(data=data)
 

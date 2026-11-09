@@ -583,3 +583,16 @@ class SyncAllTriggerApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: SyncAllTriggerData
+
+
+class SyncUserInfoTriggerData(BaseModel):
+    """「同步飞书用户信息」触发结果（后台执行，留意 later 到用户列表刷新）。"""
+
+    status: str
+    message: str
+
+
+class SyncUserInfoTriggerApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: SyncUserInfoTriggerData

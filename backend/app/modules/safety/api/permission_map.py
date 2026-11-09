@@ -6,8 +6,10 @@
 - GET/HEAD（以及语义等价的只读 POST）→ `<prefix>:read`
 - 其余写动作 → `<prefix>:manage`
 
-表是唯一权威：`safety/api/__init__.py` 用它生成依赖，registry 的绑定登记也用同一份
-口径生成（见 `scripts/ci/gen_permission_bindings.py` 的 safety 分支）。
+表是唯一权威：`safety/api/__init__.py` 用它生成依赖，`permission/registry.py` 的
+`PermissionDef` / `ApiBindingDef` 必须与之同码登记（`scripts/ci/check_permissions.py`
+校验完整性；该脚本只校验绑定是否存在，不校验绑定码与本表的解析结果是否一致，
+改动本表时须同步手改 registry 绑定）。
 新增资源时必须同时补 registry 的 PermissionDef，否则导入期校验会报错。
 """
 
@@ -25,6 +27,8 @@ SAFETY_RESOURCE_CODES: Final[dict[str, tuple[str, str]]] = {
     "enums": ("safety:module:read", "safety:module:read"),
     "feishu": ("safety:feishu:manage", "safety:feishu:manage"),
     "files": ("safety:module:read", "safety:module:read"),
+    # 隐患类别字典挂在 /hazards 页面内，与隐患本身共用同一对权限码
+    "hazard-categories": ("safety:hazard:read", "safety:hazard:manage"),
     "hazard-identifications": ("safety:hazard-identification:read", "safety:hazard-identification:manage"),
     "hazards": ("safety:hazard:read", "safety:hazard:manage"),
     "knowledge-articles": ("safety:knowledge-article:read", "safety:knowledge-article:manage"),
