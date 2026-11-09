@@ -16,8 +16,8 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from alembic import op
 
-revision: str = "0097_safety_equipment_facility_hazards"
-down_revision: str = "0096_safety_work_activity_hazards"
+revision: str = "0100_safety_equipment_facility_hazards"
+down_revision: str = "0099_safety_work_activity_hazards"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -41,7 +41,12 @@ def upgrade() -> None:
             comment="危险评价 R（安全风险矩阵查表，服务端计算，只读）",
         ),
         sa.Column("current_control_measures", sa.JSON(), nullable=False, comment="现有管控措施（有序的稳定 key 数组）"),
-        sa.Column("improvement_measures", sa.JSON(), nullable=False, comment="建议改进（新增）措施（有序的稳定 key 数组）"),
+        sa.Column(
+            "improvement_measures",
+            sa.JSON(),
+            nullable=False,
+            comment="建议改进（新增）措施（有序的稳定 key 数组）",
+        ),
         sa.Column("residual_risk", sa.String(20), nullable=False, comment="残余风险 key"),
         sa.Column("residual_risk_label", sa.String(50), nullable=False, comment="残余风险中文标签"),
         sa.Column("control_level", sa.String(100), nullable=False, comment="管控层级（部门单选）"),

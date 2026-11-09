@@ -40,4 +40,7 @@ export interface UserOption {
   id: string
   name: string
   username: string | null
+  /** 飞书头像（授权下拉展示用），缺失时前端回退首字母 */
+  avatar_url?: string | null
+  avatar_thumb?: string | null
 }

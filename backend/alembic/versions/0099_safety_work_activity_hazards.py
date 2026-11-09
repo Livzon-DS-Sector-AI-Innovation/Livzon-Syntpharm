@@ -16,8 +16,8 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from alembic import op
 
-revision: str = "0096_safety_work_activity_hazards"
-down_revision: str = "0095_safety_hazard_identification_ledger_fields"
+revision: str = "0099_safety_work_activity_hazards"
+down_revision: str = "0098_safety_hazard_category_dict_align"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

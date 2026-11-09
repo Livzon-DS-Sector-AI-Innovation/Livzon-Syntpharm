@@ -37,6 +37,7 @@ export default async function HomePage() {
   return (
     <HomeWorkspace
       userName={user.name}
+      avatarUrl={user.avatar_url}
       department={user.department}
       position={user.position}
       today={today}

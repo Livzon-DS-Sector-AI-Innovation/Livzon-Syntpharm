@@ -1241,6 +1241,10 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:config:manage", "POST", "/api/v1/identity/sync/departments"),
     ApiBindingDef("platform:config:manage", "POST", "/api/v1/identity/sync/members"),
     ApiBindingDef("platform:config:manage", "POST", "/api/v1/identity/sync/all"),
+    # 该接口的路由依赖是 require_any_permission(config:manage, user:manage)，
+    # 绑定只能登记一个码（ApiBindingDef 单码 + 中间件只校验「是否登记」），
+    # 取同族的 config:manage；仅持 user:manage 的账号由路由依赖放行。
+    ApiBindingDef("platform:config:manage", "POST", "/api/v1/identity/sync/user-info"),
     # 角色管理
     ApiBindingDef("platform:role:read", "GET", "/api/v1/permission/roles"),
     ApiBindingDef("platform:role:manage", "POST", "/api/v1/permission/roles"),
@@ -1571,6 +1575,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("safety:work-activity-hazard:manage", "PUT", "/api/v1/safety/work-activity-hazards/{hazard_id}"),
     ApiBindingDef("safety:work-activity-hazard:manage", "DELETE", "/api/v1/safety/work-activity-hazards/{hazard_id}"),
     ApiBindingDef("safety:module:read", "GET", "/api/v1/safety/enums/risk-grading"),
+    ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazard-categories"),
+    ApiBindingDef("safety:hazard:manage", "POST", "/api/v1/safety/hazard-categories"),
     ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazards"),
     ApiBindingDef("safety:hazard:manage", "POST", "/api/v1/safety/hazards"),
     ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazards/catch-up/diagnose"),
