@@ -13,6 +13,7 @@ type HazardVerifyNotifyData = components['schemas']['HazardVerifyNotifyData']
 type HazardRectificationNotifyData = components['schemas']['HazardRectificationNotifyData']
 type RegulationContentUpdateData = components['schemas']['RegulationContentUpdateData']
 type HazardAiRunData = components['schemas']['HazardAiRunData']
+type HazardCategoryApiResponse = components['schemas']['HazardCategoryApiResponse']
 import type {
   AccidentFormData,
   AccidentQueryParams,
@@ -184,11 +185,11 @@ export async function createHazard(data: HazardReportFormData): Promise<ApiRespo
 }
 
 /** 新增隐患类别（全公司共享，写入 safety.hazard_categories） */
-export async function createHazardCategory(name: string): Promise<ApiResponse<{ id: string | null; name: string; sort_order: number; is_builtin: boolean }>> {
+export async function createHazardCategory(name: string): Promise<HazardCategoryApiResponse> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createHazardCategory(name, authHeaders)
   revalidatePath('/safety/hazard-ledger')
-  return response as unknown as ApiResponse<{ id: string | null; name: string; sort_order: number; is_builtin: boolean }>
+  return response
 }
 
 export async function updateHazard(id: string, data: Partial<HazardReportFormData>): Promise<ApiResponse<HazardReport>> {
