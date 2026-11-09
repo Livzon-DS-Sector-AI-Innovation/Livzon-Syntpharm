@@ -61,6 +61,34 @@ class TestWorkActivityHazardList:
         assert response.status_code == 401
 
 
+class TestRiskGradingOptionsContract:
+    async def test_options_endpoint_exposes_authoritative_constants(self, auth_client: AsyncClient) -> None:
+        response = await auth_client.get("/api/v1/safety/enums/risk-grading")
+
+        assert response.status_code == 200, response.text
+        data = response.json()["data"]
+        assert len(data["departments"]) == 28
+        assert [item["value"] for item in data["control_measures"]] == [
+            "engineering",
+            "management",
+            "education",
+            "ppe",
+            "emergency",
+        ]
+        assert [item["value"] for item in data["residual_risks"]] == ["level_1", "level_2", "level_3"]
+        assert [item["value"] for item in data["execution_levels"]] == ["workshop", "team_leader"]
+        assert data["likelihood_levels"] == [1, 2, 3, 4, 5]
+        assert data["severity_levels"] == ["A", "B", "C", "D", "E"]
+        assert data["safety_risk_matrix"]["C"][1] == 11
+        assert [item["grade"] for item in data["grade_thresholds"]] == [4, 3, 2, 1]
+        assert [Decimal(item["lower_bound_exclusive"]) for item in data["grade_thresholds"]] == [
+            Decimal("320"),
+            Decimal("160"),
+            Decimal("70"),
+            Decimal("20"),
+        ]
+
+
 class TestWorkActivityHazardCreate:
     async def test_create_returns_all_fields_and_computed_values(self, auth_client: AsyncClient) -> None:
         data = await create(auth_client)
@@ -117,6 +145,28 @@ class TestWorkActivityHazardCreate:
 
         assert Decimal(data["risk_value_d"]) == Decimal("21")
         assert data["evaluation_grade"] == 1
+
+    @pytest.mark.parametrize("field", ["likelihood_l", "exposure_e", "consequence_c"])
+    async def test_more_than_six_decimal_places_is_rejected(self, auth_client: AsyncClient, field: str) -> None:
+        response = await auth_client.post(BASE_URL, json=payload(**{field: "1.1234567"}))
+
+        assert response.status_code == 422, response.text
+
+    async def test_six_decimal_places_are_stored_exactly_and_d_matches_product(self, auth_client: AsyncClient) -> None:
+        data = await create(
+            auth_client,
+            likelihood_l="1.123456",
+            exposure_e="3.000001",
+            consequence_c="15",
+        )
+
+        stored_l = Decimal(data["likelihood_l"])
+        stored_e = Decimal(data["exposure_e"])
+        stored_c = Decimal(data["consequence_c"])
+        assert stored_l == Decimal("1.123456")
+        assert stored_e == Decimal("3.000001")
+        assert stored_c == Decimal("15")
+        assert Decimal(data["risk_value_d"]) == stored_l * stored_e * stored_c
 
 
 REQUIRED_FIELDS = [
@@ -390,17 +440,18 @@ class TestWorkActivityHazardUpdate:
         assert Decimal(data["likelihood_l"]) == Decimal("4")
         assert Decimal(data["consequence_c"]) == Decimal("20")
 
-    async def test_patch_partial_update_recomputes_from_merged_values(self, auth_client: AsyncClient) -> None:
-        created = await create(auth_client)
+    async def test_put_reproduces_same_d_from_stored_precision_values(self, auth_client: AsyncClient) -> None:
+        overrides = {"likelihood_l": "1.123456", "exposure_e": "3.000001", "consequence_c": "15"}
+        created = await create(auth_client, **overrides)
 
-        response = await auth_client.patch(f"{BASE_URL}/{created['id']}", json={"consequence_c": "100"})
+        response = await auth_client.put(f"{BASE_URL}/{created['id']}", json=payload(**overrides))
 
         assert response.status_code == 200, response.text
         data = response.json()["data"]
-        assert Decimal(data["risk_value_d"]) == Decimal("1800")
-        assert data["evaluation_grade"] == 4
-        assert data["position_location"] == created["position_location"]
-        assert data["area_activity"] == created["area_activity"]
+        assert Decimal(data["risk_value_d"]) == Decimal(created["risk_value_d"])
+        assert Decimal(data["risk_value_d"]) == (
+            Decimal(data["likelihood_l"]) * Decimal(data["exposure_e"]) * Decimal(data["consequence_c"])
+        )
 
     async def test_update_reapplies_d_gate(self, auth_client: AsyncClient) -> None:
         created = await create(auth_client)

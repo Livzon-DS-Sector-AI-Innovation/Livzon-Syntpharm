@@ -2,11 +2,22 @@ import { fetchApi } from '@/lib/api/client'
 import type {
   EquipmentFacilityHazardListApiResponse,
   EquipmentFacilityHazardListParams,
+  RiskGradingOptions,
+  RiskGradingOptionsApiResponse,
   WorkActivityHazardListApiResponse,
   WorkActivityHazardListParams,
 } from '@/types/safety/risk-grading'
 
 const API_BASE = '/api/v1'
+
+/** 读取后端权威的风险分级选项、矩阵与阈值（只读）。 */
+export async function fetchRiskGradingOptions(): Promise<RiskGradingOptions> {
+  const response = await fetchApi<RiskGradingOptionsApiResponse>(
+    `${API_BASE}/safety/enums/risk-grading`,
+    { method: 'GET' },
+  )
+  return response.data
+}
 
 /** 浏览器侧读取作业活动危险源台账（支持分页、筛选与关键字）。 */
 export async function fetchWorkActivityHazards(

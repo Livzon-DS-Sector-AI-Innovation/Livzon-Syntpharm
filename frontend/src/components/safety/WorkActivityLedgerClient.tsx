@@ -33,30 +33,19 @@ import {
   exportWorkActivityHazardsAction,
   updateWorkActivityHazardAction,
 } from '@/actions/risk-grading'
-import { fetchWorkActivityHazards } from '@/lib/api/client/risk-grading'
+import { fetchRiskGradingOptions, fetchWorkActivityHazards } from '@/lib/api/client/risk-grading'
 import {
-  CONTROL_MEASURE_LABELS,
-  CONTROL_MEASURE_OPTIONS,
-  EXECUTION_LEVEL_LABELS,
-  EXECUTION_LEVEL_OPTIONS,
-  RESIDUAL_RISK_OPTIONS,
-  RISK_GRADING_DEPARTMENT_OPTIONS,
   STANDARD_LINKS,
   computeRiskValue,
   deriveEvaluationGrade,
+  toValueLabelOptions,
   type WorkActivityHazard,
   type WorkActivityHazardCreate,
   type WorkActivityHazardExportParams,
 } from '@/types/safety/risk-grading'
 
 const QUERY_KEY = 'work-activity-hazards'
-
-const GRADE_OPTIONS = [
-  { value: 1, label: '1级' },
-  { value: 2, label: '2级' },
-  { value: 3, label: '3级' },
-  { value: 4, label: '4级' },
-]
+const OPTIONS_QUERY_KEY = 'risk-grading-options'
 
 function formatDecimal(value: string | null | undefined): string {
   if (value === null || value === undefined || value === '') return ''
@@ -118,6 +107,42 @@ export default function WorkActivityLedgerClient() {
     [controlLevel, evaluationGrade, residualRisk, keyword],
   )
 
+  const { data: options } = useQuery({
+    queryKey: [OPTIONS_QUERY_KEY],
+    queryFn: fetchRiskGradingOptions,
+    staleTime: Infinity,
+  })
+
+  const departmentOptions = useMemo(() => toValueLabelOptions(options?.departments ?? []), [options])
+  const controlMeasureOptions = useMemo(() => options?.control_measures ?? [], [options])
+  const residualRiskOptions = useMemo(() => options?.residual_risks ?? [], [options])
+  const executionLevelOptions = useMemo(() => options?.execution_levels ?? [], [options])
+  const controlMeasureLabels = useMemo(
+    () => Object.fromEntries(controlMeasureOptions.map((item) => [item.value, item.label])),
+    [controlMeasureOptions],
+  )
+  const executionLevelLabels = useMemo(
+    () => Object.fromEntries(executionLevelOptions.map((item) => [item.value, item.label])),
+    [executionLevelOptions],
+  )
+  const gradeOptions = useMemo(
+    () =>
+      [...new Set((options?.grade_thresholds ?? []).map((item) => item.grade))]
+        .sort((a, b) => a - b)
+        .map((grade) => ({ value: grade, label: `${grade}级` })),
+    [options],
+  )
+  const likelihoodRange = options?.likelihood_range
+  const exposureRange = options?.exposure_range
+  const consequenceRange = options?.consequence_range
+  const likelihoodMin = likelihoodRange ? Number(likelihoodRange.min) : undefined
+  const likelihoodMax = likelihoodRange ? Number(likelihoodRange.max) : undefined
+  const exposureMin = exposureRange ? Number(exposureRange.min) : undefined
+  const exposureMax = exposureRange ? Number(exposureRange.max) : undefined
+  const consequenceMin = consequenceRange ? Number(consequenceRange.min) : undefined
+  const consequenceMax = consequenceRange ? Number(consequenceRange.max) : undefined
+  const minRiskValue = options ? Number(options.min_risk_value) : undefined
+
   const { data, isLoading } = useQuery({
     queryKey: [QUERY_KEY, page, pageSize, controlLevel, evaluationGrade, residualRisk, keyword],
     queryFn: () =>
@@ -143,8 +168,8 @@ export default function WorkActivityLedgerClient() {
     return computeRiskValue(l, e, c)
   }, [watchedL, watchedE, watchedC])
 
-  const previewGrade = previewD === null ? null : deriveEvaluationGrade(previewD)
-  const belowGate = previewD !== null && previewD <= 20
+  const previewGrade = previewD === null ? null : deriveEvaluationGrade(previewD, options?.grade_thresholds)
+  const belowGate = previewD !== null && minRiskValue !== undefined && previewD <= minRiskValue
 
   const resetFilters = () => {
     setControlLevel(undefined)
@@ -194,8 +219,8 @@ export default function WorkActivityLedgerClient() {
       return
     }
     const d = computeRiskValue(Number(values.likelihood_l), Number(values.exposure_e), Number(values.consequence_c))
-    if (d <= 20) {
-      message.error(`风险值 D=${formatDecimal(String(d))} 必须大于 20，不允许提交`)
+    if (minRiskValue !== undefined && d <= minRiskValue) {
+      message.error(`风险值 D=${formatDecimal(String(d))} 必须大于 ${minRiskValue}，不允许提交`)
       return
     }
     setSubmitting(true)
@@ -262,7 +287,7 @@ export default function WorkActivityLedgerClient() {
       title: '控制措施',
       dataIndex: 'control_measures',
       width: 320,
-      render: (value: string[]) => value.map((key) => CONTROL_MEASURE_LABELS[key] ?? key).join('；'),
+      render: (value: string[]) => value.map((key) => controlMeasureLabels[key] ?? key).join('；'),
     },
     {
       title: '残余风险',
@@ -275,7 +300,7 @@ export default function WorkActivityLedgerClient() {
       title: '执行层级',
       dataIndex: 'execution_level',
       width: 100,
-      render: (value: string) => EXECUTION_LEVEL_LABELS[value] ?? value,
+      render: (value: string) => executionLevelLabels[value] ?? value,
     },
     {
       title: '操作',
@@ -325,7 +350,7 @@ export default function WorkActivityLedgerClient() {
           placeholder="管控层级"
           style={{ width: 180 }}
           value={controlLevel}
-          options={RISK_GRADING_DEPARTMENT_OPTIONS}
+          options={departmentOptions}
           onChange={(value) => {
             setControlLevel(value)
             setPage(1)
@@ -336,7 +361,7 @@ export default function WorkActivityLedgerClient() {
           placeholder="评价级别"
           style={{ width: 130 }}
           value={evaluationGrade}
-          options={GRADE_OPTIONS}
+          options={gradeOptions}
           onChange={(value) => {
             setEvaluationGrade(value)
             setPage(1)
@@ -347,7 +372,7 @@ export default function WorkActivityLedgerClient() {
           placeholder="残余风险"
           style={{ width: 150 }}
           value={residualRisk}
-          options={RESIDUAL_RISK_OPTIONS}
+          options={residualRiskOptions}
           onChange={(value) => {
             setResidualRisk(value)
             setPage(1)
@@ -459,33 +484,54 @@ export default function WorkActivityLedgerClient() {
           <Space size="large" align="start" wrap>
             <Form.Item
               name="likelihood_l"
-              label="可能性 L（0.1–10）"
+              label={likelihoodRange ? `可能性 L（${likelihoodRange.min}–${likelihoodRange.max}）` : '可能性 L'}
               rules={[
                 { required: true, message: '请填写可能性 L' },
-                { type: 'number', min: 0.1, max: 10, message: '可能性 L 必须在 0.1–10 之间' },
+                {
+                  type: 'number',
+                  min: likelihoodMin,
+                  max: likelihoodMax,
+                  message: `可能性 L 必须在 ${likelihoodRange?.min ?? ''}–${likelihoodRange?.max ?? ''} 之间`,
+                },
               ]}
             >
-              <InputNumber min={0.1} max={10} step={0.1} precision={2} style={{ width: 160 }} />
+              <InputNumber
+                min={likelihoodMin}
+                max={likelihoodMax}
+                step={0.1}
+                precision={6}
+                style={{ width: 160 }}
+              />
             </Form.Item>
             <Form.Item
               name="exposure_e"
-              label="发生频次 E（0.5–10）"
+              label={exposureRange ? `发生频次 E（${exposureRange.min}–${exposureRange.max}）` : '发生频次 E'}
               rules={[
                 { required: true, message: '请填写发生频次 E' },
-                { type: 'number', min: 0.5, max: 10, message: '发生频次 E 必须在 0.5–10 之间' },
+                {
+                  type: 'number',
+                  min: exposureMin,
+                  max: exposureMax,
+                  message: `发生频次 E 必须在 ${exposureRange?.min ?? ''}–${exposureRange?.max ?? ''} 之间`,
+                },
               ]}
             >
-              <InputNumber min={0.5} max={10} step={0.1} precision={2} style={{ width: 160 }} />
+              <InputNumber min={exposureMin} max={exposureMax} step={0.1} precision={6} style={{ width: 160 }} />
             </Form.Item>
             <Form.Item
               name="consequence_c"
-              label="后果 C（1–100）"
+              label={consequenceRange ? `后果 C（${consequenceRange.min}–${consequenceRange.max}）` : '后果 C'}
               rules={[
                 { required: true, message: '请填写后果 C' },
-                { type: 'number', min: 1, max: 100, message: '后果 C 必须在 1–100 之间' },
+                {
+                  type: 'number',
+                  min: consequenceMin,
+                  max: consequenceMax,
+                  message: `后果 C 必须在 ${consequenceRange?.min ?? ''}–${consequenceRange?.max ?? ''} 之间`,
+                },
               ]}
             >
-              <InputNumber min={1} max={100} step={1} precision={2} style={{ width: 160 }} />
+              <InputNumber min={consequenceMin} max={consequenceMax} step={1} precision={6} style={{ width: 160 }} />
             </Form.Item>
             <Form.Item label="风险值 D（自动计算）">
               <Input
@@ -510,7 +556,7 @@ export default function WorkActivityLedgerClient() {
               type="error"
               showIcon
               style={{ marginBottom: 16 }}
-              message={`风险值 D=${formatDecimal(String(previewD))} 不满足 D > 20，不允许提交`}
+              message={`风险值 D=${formatDecimal(String(previewD))} 不满足 D > ${minRiskValue ?? ''}，不允许提交`}
             />
           )}
 
@@ -519,14 +565,14 @@ export default function WorkActivityLedgerClient() {
             label="控制措施"
             rules={[{ required: true, type: 'array', min: 1, message: '请至少选择一项控制措施' }]}
           >
-            <Select mode="multiple" options={CONTROL_MEASURE_OPTIONS} placeholder="可多选" />
+            <Select mode="multiple" options={controlMeasureOptions} placeholder="可多选" />
           </Form.Item>
           <Form.Item
             name="residual_risk"
             label="残余风险"
             rules={[{ required: true, message: '请选择残余风险' }]}
           >
-            <Select options={RESIDUAL_RISK_OPTIONS} placeholder="仅 1–3 级" />
+            <Select options={residualRiskOptions} placeholder="仅 1–3 级" />
           </Form.Item>
           <Form.Item
             name="control_level"
@@ -536,7 +582,7 @@ export default function WorkActivityLedgerClient() {
             <Select
               showSearch
               optionFilterProp="label"
-              options={RISK_GRADING_DEPARTMENT_OPTIONS}
+              options={departmentOptions}
               placeholder="选择部门"
             />
           </Form.Item>
@@ -545,7 +591,7 @@ export default function WorkActivityLedgerClient() {
             label="执行层级"
             rules={[{ required: true, message: '请选择执行层级' }]}
           >
-            <Select options={EXECUTION_LEVEL_OPTIONS} placeholder="车间 / 班组长" />
+            <Select options={executionLevelOptions} placeholder="车间 / 班组长" />
           </Form.Item>
         </Form>
       </Modal>

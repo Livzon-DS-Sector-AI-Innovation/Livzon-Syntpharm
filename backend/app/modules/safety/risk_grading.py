@@ -117,8 +117,26 @@ EXPOSURE_MAX: Final[Decimal] = Decimal("10")
 CONSEQUENCE_MIN: Final[Decimal] = Decimal("1")
 CONSEQUENCE_MAX: Final[Decimal] = Decimal("100")
 
+# L/E/C 在数据库中以 Numeric(18,6) 存储；输入超过 6 位小数会被拒绝，
+# 保证存储值、返回值与 D 的乘积来自同一组量化后的数值。
+DECIMAL_QUANTUM: Final[Decimal] = Decimal("0.000001")
+
 # 分级下限：D 必须大于 20
 MIN_RISK_VALUE: Final[Decimal] = Decimal("20")
+
+# 分级阈值（按下限从高到低）：D > lower_bound_exclusive → grade。
+# 边界值归低档；grade 越高风险越大（与旧 RiskLevel 方向相反）。
+EVALUATION_GRADE_THRESHOLDS: Final[tuple[tuple[int, Decimal], ...]] = (
+    (4, Decimal("320")),
+    (3, Decimal("160")),
+    (2, Decimal("70")),
+    (1, MIN_RISK_VALUE),
+)
+
+
+def quantize_decimal(value: Decimal) -> Decimal:
+    """把 L/E/C 量化到数据库的 6 位小数精度。"""
+    return value.quantize(DECIMAL_QUANTUM)
 
 
 def compute_risk_value(likelihood: Decimal, exposure: Decimal, consequence: Decimal) -> Decimal:
@@ -131,14 +149,7 @@ def derive_evaluation_grade(risk_value: Decimal) -> tuple[int, str]:
 
     边界值归低档。调用方必须先通过 D > 20 的下限校验。
     """
-    if risk_value > Decimal("320"):
-        grade = 4
-    elif risk_value > Decimal("160"):
-        grade = 3
-    elif risk_value > Decimal("70"):
-        grade = 2
-    elif risk_value > MIN_RISK_VALUE:
-        grade = 1
-    else:
-        raise ValueError(f"风险值 D={risk_value} 不满足 D > 20 的分级下限")
-    return grade, f"{grade}级"
+    for grade, lower_bound_exclusive in EVALUATION_GRADE_THRESHOLDS:
+        if risk_value > lower_bound_exclusive:
+            return grade, f"{grade}级"
+    raise ValueError(f"风险值 D={risk_value} 不满足 D > 20 的分级下限")

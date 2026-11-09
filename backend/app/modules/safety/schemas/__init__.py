@@ -294,13 +294,13 @@ __all__ = [
     "EquipmentFacilityHazardListApiResponse",
     "EquipmentFacilityHazardListMeta",
     "EquipmentFacilityHazardResponse",
-    "EquipmentFacilityHazardUpdate",
     "WorkActivityHazardApiResponse",
     "WorkActivityHazardCreate",
     "WorkActivityHazardListApiResponse",
     "WorkActivityHazardListMeta",
     "WorkActivityHazardResponse",
-    "WorkActivityHazardUpdate",
+    "RiskGradingOptions",
+    "RiskGradingOptionsApiResponse",
 ]
 
 from app.modules.safety.schemas.accidents import (
@@ -578,13 +578,13 @@ from app.modules.safety.schemas.risk_grading import (
     EquipmentFacilityHazardListApiResponse,
     EquipmentFacilityHazardListMeta,
     EquipmentFacilityHazardResponse,
-    EquipmentFacilityHazardUpdate,
+    RiskGradingOptions,
+    RiskGradingOptionsApiResponse,
     WorkActivityHazardApiResponse,
     WorkActivityHazardCreate,
     WorkActivityHazardListApiResponse,
     WorkActivityHazardListMeta,
     WorkActivityHazardResponse,
-    WorkActivityHazardUpdate,
 )
 from app.modules.safety.schemas.risk_reports import (
     REPORT_STATUS_OPTIONS,

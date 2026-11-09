@@ -1562,9 +1562,6 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "safety:equipment-facility-hazard:manage", "PUT", "/api/v1/safety/equipment-facility-hazards/{hazard_id}"
     ),
     ApiBindingDef(
-        "safety:equipment-facility-hazard:manage", "PATCH", "/api/v1/safety/equipment-facility-hazards/{hazard_id}"
-    ),
-    ApiBindingDef(
         "safety:equipment-facility-hazard:manage", "DELETE", "/api/v1/safety/equipment-facility-hazards/{hazard_id}"
     ),
     ApiBindingDef("safety:work-activity-hazard:read", "GET", "/api/v1/safety/work-activity-hazards"),
@@ -1572,8 +1569,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("safety:work-activity-hazard:read", "GET", "/api/v1/safety/work-activity-hazards/export"),
     ApiBindingDef("safety:work-activity-hazard:read", "GET", "/api/v1/safety/work-activity-hazards/{hazard_id}"),
     ApiBindingDef("safety:work-activity-hazard:manage", "PUT", "/api/v1/safety/work-activity-hazards/{hazard_id}"),
-    ApiBindingDef("safety:work-activity-hazard:manage", "PATCH", "/api/v1/safety/work-activity-hazards/{hazard_id}"),
     ApiBindingDef("safety:work-activity-hazard:manage", "DELETE", "/api/v1/safety/work-activity-hazards/{hazard_id}"),
+    ApiBindingDef("safety:module:read", "GET", "/api/v1/safety/enums/risk-grading"),
     ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazards"),
     ApiBindingDef("safety:hazard:manage", "POST", "/api/v1/safety/hazards"),
     ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazards/catch-up/diagnose"),

@@ -442,37 +442,10 @@ class TestEquipmentFacilityHazardUpdate:
         empty_measures = await auth_client.put(f"{BASE_URL}/{created['id']}", json=payload(current_control_measures=[]))
         assert empty_measures.status_code == 422, empty_measures.text
 
-    async def test_patch_partial_update_recomputes_from_merged_values(self, auth_client: AsyncClient) -> None:
-        created = await create(auth_client)
-
-        response = await auth_client.patch(f"{BASE_URL}/{created['id']}", json={"severity_s": "E"})
-
-        assert response.status_code == 200, response.text
-        data = response.json()["data"]
-        # L 仍为 2，S 改为 E → R = 32
-        assert data["likelihood_l"] == 2
-        assert data["severity_s"] == "E"
-        assert data["risk_evaluation_r"] == 32
-        assert data["inspection_item"] == created["inspection_item"]
-
-    async def test_patch_ignores_client_supplied_r(self, auth_client: AsyncClient) -> None:
-        created = await create(auth_client)
-
-        response = await auth_client.patch(
-            f"{BASE_URL}/{created['id']}", json={"likelihood_l": 4, "risk_evaluation_r": 1}
-        )
-
-        assert response.status_code == 200, response.text
-        # L=4、S=C → R = 23，客户端传入的 R 被忽略
-        assert response.json()["data"]["risk_evaluation_r"] == 23
-
     async def test_update_missing_record_returns_404(self, auth_client: AsyncClient) -> None:
         missing = "00000000-0000-0000-0000-000000000000"
 
         response = await auth_client.put(f"{BASE_URL}/{missing}", json=payload())
-        assert response.status_code == 404, response.text
-
-        response = await auth_client.patch(f"{BASE_URL}/{missing}", json={"severity_s": "A"})
         assert response.status_code == 404, response.text
 
 

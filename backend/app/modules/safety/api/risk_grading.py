@@ -12,19 +12,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
+from app.core.response import build_response
 from app.modules.safety.schemas.risk_grading import (
     EquipmentFacilityHazardApiResponse,
     EquipmentFacilityHazardCreate,
     EquipmentFacilityHazardListApiResponse,
     EquipmentFacilityHazardListMeta,
     EquipmentFacilityHazardResponse,
-    EquipmentFacilityHazardUpdate,
     WorkActivityHazardApiResponse,
     WorkActivityHazardCreate,
     WorkActivityHazardListApiResponse,
     WorkActivityHazardListMeta,
     WorkActivityHazardResponse,
-    WorkActivityHazardUpdate,
 )
 from app.modules.safety.service.risk_grading import (
     EquipmentFacilityHazardService,
@@ -62,9 +61,9 @@ async def list_work_activity_hazards(
         residual_risk=residual_risk,
         keyword=keyword,
     )
-    return WorkActivityHazardListApiResponse(
+    return build_response(
         data=[WorkActivityHazardResponse.model_validate(item) for item in items],
-        meta=WorkActivityHazardListMeta(page=page, page_size=page_size, total=total),
+        meta=WorkActivityHazardListMeta(page=page, page_size=page_size, total=total).model_dump(),
     )
 
 
@@ -82,7 +81,7 @@ async def create_work_activity_hazard(
     service = WorkActivityHazardService(db)
     item = await service.create_hazard(data)
     await db.commit()
-    return WorkActivityHazardApiResponse(data=WorkActivityHazardResponse.model_validate(item))
+    return build_response(data=WorkActivityHazardResponse.model_validate(item))
 
 
 @work_activity_hazards_router.get(
@@ -129,7 +128,7 @@ async def get_work_activity_hazard(
 ) -> Any:
     service = WorkActivityHazardService(db)
     item = await service.get_hazard(hazard_id)
-    return WorkActivityHazardApiResponse(data=WorkActivityHazardResponse.model_validate(item))
+    return build_response(data=WorkActivityHazardResponse.model_validate(item))
 
 
 @work_activity_hazards_router.put(
@@ -145,27 +144,9 @@ async def replace_work_activity_hazard(
 ) -> Any:
     """完整更新（PUT）：所有创建规则重新生效，D 与评价级别由服务端重算。"""
     service = WorkActivityHazardService(db)
-    item = await service.update_hazard(hazard_id, WorkActivityHazardUpdate(**data.model_dump()))
-    await db.commit()
-    return WorkActivityHazardApiResponse(data=WorkActivityHazardResponse.model_validate(item), message="更新成功")
-
-
-@work_activity_hazards_router.patch(
-    "/work-activity-hazards/{hazard_id}",
-    response_model=WorkActivityHazardApiResponse,
-    summary="部分更新作业活动危险源台账记录",
-)
-async def update_work_activity_hazard(
-    current_user: RequiredUser,
-    hazard_id: uuid.UUID,
-    data: WorkActivityHazardUpdate,
-    db: AsyncSession = Depends(get_db),
-) -> Any:
-    """部分更新（PATCH）：合并现有值后重新套用全部创建规则，并重算 D 与评价级别。"""
-    service = WorkActivityHazardService(db)
     item = await service.update_hazard(hazard_id, data)
     await db.commit()
-    return WorkActivityHazardApiResponse(data=WorkActivityHazardResponse.model_validate(item), message="更新成功")
+    return build_response(data=WorkActivityHazardResponse.model_validate(item), message="更新成功")
 
 
 @work_activity_hazards_router.delete(
@@ -182,7 +163,7 @@ async def delete_work_activity_hazard(
     service = WorkActivityHazardService(db)
     await service.delete_hazard(hazard_id)
     await db.commit()
-    return WorkActivityHazardApiResponse(code=200, message="删除成功", data=None)
+    return build_response(code=200, message="删除成功")
 
 
 equipment_facility_hazards_router = APIRouter()
@@ -212,9 +193,9 @@ async def list_equipment_facility_hazards(
         residual_risk=residual_risk,
         keyword=keyword,
     )
-    return EquipmentFacilityHazardListApiResponse(
+    return build_response(
         data=[EquipmentFacilityHazardResponse.model_validate(item) for item in items],
-        meta=EquipmentFacilityHazardListMeta(page=page, page_size=page_size, total=total),
+        meta=EquipmentFacilityHazardListMeta(page=page, page_size=page_size, total=total).model_dump(),
     )
 
 
@@ -232,7 +213,7 @@ async def create_equipment_facility_hazard(
     service = EquipmentFacilityHazardService(db)
     item = await service.create_hazard(data)
     await db.commit()
-    return EquipmentFacilityHazardApiResponse(data=EquipmentFacilityHazardResponse.model_validate(item))
+    return build_response(data=EquipmentFacilityHazardResponse.model_validate(item))
 
 
 @equipment_facility_hazards_router.get(
@@ -277,7 +258,7 @@ async def get_equipment_facility_hazard(
 ) -> Any:
     service = EquipmentFacilityHazardService(db)
     item = await service.get_hazard(hazard_id)
-    return EquipmentFacilityHazardApiResponse(data=EquipmentFacilityHazardResponse.model_validate(item))
+    return build_response(data=EquipmentFacilityHazardResponse.model_validate(item))
 
 
 @equipment_facility_hazards_router.put(
@@ -293,31 +274,9 @@ async def replace_equipment_facility_hazard(
 ) -> Any:
     """完整更新（PUT）：所有创建规则重新生效，R 由服务端按 L/S 重新查表。"""
     service = EquipmentFacilityHazardService(db)
-    item = await service.update_hazard(hazard_id, EquipmentFacilityHazardUpdate(**data.model_dump()))
-    await db.commit()
-    return EquipmentFacilityHazardApiResponse(
-        data=EquipmentFacilityHazardResponse.model_validate(item), message="更新成功"
-    )
-
-
-@equipment_facility_hazards_router.patch(
-    "/equipment-facility-hazards/{hazard_id}",
-    response_model=EquipmentFacilityHazardApiResponse,
-    summary="部分更新设备设施危险源台账记录",
-)
-async def update_equipment_facility_hazard(
-    current_user: RequiredUser,
-    hazard_id: uuid.UUID,
-    data: EquipmentFacilityHazardUpdate,
-    db: AsyncSession = Depends(get_db),
-) -> Any:
-    """部分更新（PATCH）：合并现有值后重新套用全部创建规则，并按 L/S 重算 R。"""
-    service = EquipmentFacilityHazardService(db)
     item = await service.update_hazard(hazard_id, data)
     await db.commit()
-    return EquipmentFacilityHazardApiResponse(
-        data=EquipmentFacilityHazardResponse.model_validate(item), message="更新成功"
-    )
+    return build_response(data=EquipmentFacilityHazardResponse.model_validate(item), message="更新成功")
 
 
 @equipment_facility_hazards_router.delete(
@@ -334,4 +293,4 @@ async def delete_equipment_facility_hazard(
     service = EquipmentFacilityHazardService(db)
     await service.delete_hazard(hazard_id)
     await db.commit()
-    return EquipmentFacilityHazardApiResponse(code=200, message="删除成功", data=None)
+    return build_response(code=200, message="删除成功")

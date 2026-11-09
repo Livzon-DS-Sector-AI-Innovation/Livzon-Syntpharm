@@ -5,6 +5,25 @@ from typing import Any
 from fastapi import APIRouter
 
 from app.core.deps import RequiredUser
+from app.core.response import build_response
+from app.modules.safety.risk_grading import (
+    CONSEQUENCE_MAX,
+    CONSEQUENCE_MIN,
+    CONTROL_MEASURE_OPTIONS,
+    EQUIPMENT_MEASURE_OPTIONS,
+    EVALUATION_GRADE_THRESHOLDS,
+    EXECUTION_LEVEL_OPTIONS,
+    EXPOSURE_MAX,
+    EXPOSURE_MIN,
+    LIKELIHOOD_LEVELS,
+    LIKELIHOOD_MAX,
+    LIKELIHOOD_MIN,
+    MIN_RISK_VALUE,
+    RESIDUAL_RISK_OPTIONS,
+    RISK_GRADING_DEPARTMENTS,
+    SAFETY_RISK_MATRIX,
+    SEVERITY_LEVELS,
+)
 from app.modules.safety.schemas import (
     ABNORMALITY_STATUS_OPTIONS,
     ACCIDENT_LEVEL_OPTIONS,
@@ -49,6 +68,13 @@ from app.modules.safety.schemas import (
     TRAINING_TYPE_OPTIONS,
     WORK_RECORD_STATUS_OPTIONS,
     SafetyEnumsApiResponse,
+)
+from app.modules.safety.schemas.risk_grading import (
+    LecRange,
+    RiskGradeThreshold,
+    RiskGradingOptions,
+    RiskGradingOptionsApiResponse,
+    RiskGradingValueLabel,
 )
 
 enums_router = APIRouter()
@@ -103,4 +129,38 @@ async def get(current_user: RequiredUser) -> Any:
             "oh_exam_statuses": EXAM_STATUS_OPTIONS,
             "oh_abnormality_statuses": ABNORMALITY_STATUS_OPTIONS,
         }
+    )
+
+
+def _value_label_options(options: tuple[dict[str, str], ...]) -> list[RiskGradingValueLabel]:
+    return [RiskGradingValueLabel(value=item["key"], label=item["label"]) for item in options]
+
+
+@enums_router.get(
+    "/enums/risk-grading",
+    response_model=RiskGradingOptionsApiResponse,
+    summary="获取风险分级管控台账的选项、矩阵与分级阈值",
+)
+async def get_risk_grading_options(current_user: RequiredUser) -> Any:
+    """风险分级管控台账的权威选项字典；前端不得再手写这些常量。"""
+
+    return build_response(
+        data=RiskGradingOptions(
+            departments=list(RISK_GRADING_DEPARTMENTS),
+            control_measures=_value_label_options(CONTROL_MEASURE_OPTIONS),
+            equipment_measures=_value_label_options(EQUIPMENT_MEASURE_OPTIONS),
+            residual_risks=_value_label_options(RESIDUAL_RISK_OPTIONS),
+            execution_levels=_value_label_options(EXECUTION_LEVEL_OPTIONS),
+            likelihood_levels=list(LIKELIHOOD_LEVELS),
+            severity_levels=list(SEVERITY_LEVELS),
+            safety_risk_matrix={key: list(row) for key, row in SAFETY_RISK_MATRIX.items()},
+            grade_thresholds=[
+                RiskGradeThreshold(grade=grade, lower_bound_exclusive=lower_bound)
+                for grade, lower_bound in EVALUATION_GRADE_THRESHOLDS
+            ],
+            likelihood_range=LecRange(min=LIKELIHOOD_MIN, max=LIKELIHOOD_MAX),
+            exposure_range=LecRange(min=EXPOSURE_MIN, max=EXPOSURE_MAX),
+            consequence_range=LecRange(min=CONSEQUENCE_MIN, max=CONSEQUENCE_MAX),
+            min_risk_value=MIN_RISK_VALUE,
+        )
     )

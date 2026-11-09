@@ -38,6 +38,29 @@ from app.modules.safety.models import (
 logger = logging.getLogger(__name__)
 
 
+def _risk_grading_filter_conditions(
+    model: Any,
+    *,
+    control_level: str | None,
+    residual_risk: str | None,
+    keyword: str | None,
+    keyword_columns: tuple[Any, ...],
+    evaluation_grade: int | None = None,
+) -> list[Any]:
+    """两张危险源台账共用的筛选条件：软删除 + 管控层级/残余风险/级别/关键字。"""
+    conditions: list[Any] = [~model.is_deleted]
+    if control_level:
+        conditions.append(model.control_level == control_level)
+    if evaluation_grade is not None:
+        conditions.append(model.evaluation_grade == evaluation_grade)
+    if residual_risk:
+        conditions.append(model.residual_risk == residual_risk)
+    if keyword and keyword.strip():
+        like = f"%{keyword.strip()}%"
+        conditions.append(or_(*(column.ilike(like) for column in keyword_columns)))
+    return conditions
+
+
 class SafetyRepository:
     """Safety module repository"""
 
@@ -901,36 +924,31 @@ class SafetyRepository:
         keyword: str | None = None,
     ) -> list[Any]:
         """构造作业活动台账的筛选条件（软删除 + 可选筛选，全部 AND 组合）。"""
-        conditions: list[Any] = [~WorkActivityHazard.is_deleted]
-        if control_level:
-            conditions.append(WorkActivityHazard.control_level == control_level)
-        if evaluation_grade is not None:
-            conditions.append(WorkActivityHazard.evaluation_grade == evaluation_grade)
-        if residual_risk:
-            conditions.append(WorkActivityHazard.residual_risk == residual_risk)
-        if keyword and keyword.strip():
-            like = f"%{keyword.strip()}%"
-            conditions.append(
-                or_(
-                    WorkActivityHazard.position_location.ilike(like),
-                    WorkActivityHazard.area_activity.ilike(like),
-                    WorkActivityHazard.hazard_name_or_event.ilike(like),
-                    WorkActivityHazard.possible_harm.ilike(like),
-                    WorkActivityHazard.hazard_type.ilike(like),
-                )
-            )
-        return conditions
+        return _risk_grading_filter_conditions(
+            WorkActivityHazard,
+            control_level=control_level,
+            evaluation_grade=evaluation_grade,
+            residual_risk=residual_risk,
+            keyword=keyword,
+            keyword_columns=(
+                WorkActivityHazard.position_location,
+                WorkActivityHazard.area_activity,
+                WorkActivityHazard.hazard_name_or_event,
+                WorkActivityHazard.possible_harm,
+                WorkActivityHazard.hazard_type,
+            ),
+        )
 
     async def get_work_activity_hazards(
         self,
         skip: int = 0,
-        limit: int = 20,
+        limit: int | None = 20,
         control_level: str | None = None,
         evaluation_grade: int | None = None,
         residual_risk: str | None = None,
         keyword: str | None = None,
     ) -> tuple[list[WorkActivityHazard], int]:
-        """获取作业活动危险源台账列表（按创建时间倒序）。"""
+        """获取作业活动危险源台账列表（按创建时间倒序）。limit=None 表示导出全部。"""
         conditions = self._work_activity_hazard_conditions(
             control_level=control_level,
             evaluation_grade=evaluation_grade,
@@ -940,9 +958,9 @@ class SafetyRepository:
         base = select(WorkActivityHazard).where(*conditions)
         count_query = select(func.count(WorkActivityHazard.id)).where(*conditions)
         total = await self.session.scalar(count_query)
-        query = (
-            base.order_by(WorkActivityHazard.created_at.desc(), WorkActivityHazard.id.desc()).offset(skip).limit(limit)
-        )
+        query = base.order_by(WorkActivityHazard.created_at.desc(), WorkActivityHazard.id.desc()).offset(skip)
+        if limit is not None:
+            query = query.limit(limit)
         result = await self.session.execute(query)
         return list(result.scalars().all()), total or 0
 
@@ -996,33 +1014,29 @@ class SafetyRepository:
         keyword: str | None = None,
     ) -> list[Any]:
         """构造设备设施台账的筛选条件（软删除 + 可选筛选，全部 AND 组合）。"""
-        conditions: list[Any] = [~EquipmentFacilityHazard.is_deleted]
-        if control_level:
-            conditions.append(EquipmentFacilityHazard.control_level == control_level)
-        if residual_risk:
-            conditions.append(EquipmentFacilityHazard.residual_risk == residual_risk)
-        if keyword and keyword.strip():
-            like = f"%{keyword.strip()}%"
-            conditions.append(
-                or_(
-                    EquipmentFacilityHazard.equipment_facility_tag.ilike(like),
-                    EquipmentFacilityHazard.inspection_item.ilike(like),
-                    EquipmentFacilityHazard.inspection_standard.ilike(like),
-                    EquipmentFacilityHazard.nonconformity_consequence.ilike(like),
-                    EquipmentFacilityHazard.remarks.ilike(like),
-                )
-            )
-        return conditions
+        return _risk_grading_filter_conditions(
+            EquipmentFacilityHazard,
+            control_level=control_level,
+            residual_risk=residual_risk,
+            keyword=keyword,
+            keyword_columns=(
+                EquipmentFacilityHazard.equipment_facility_tag,
+                EquipmentFacilityHazard.inspection_item,
+                EquipmentFacilityHazard.inspection_standard,
+                EquipmentFacilityHazard.nonconformity_consequence,
+                EquipmentFacilityHazard.remarks,
+            ),
+        )
 
     async def get_equipment_facility_hazards(
         self,
         skip: int = 0,
-        limit: int = 20,
+        limit: int | None = 20,
         control_level: str | None = None,
         residual_risk: str | None = None,
         keyword: str | None = None,
     ) -> tuple[list[EquipmentFacilityHazard], int]:
-        """获取设备设施危险源台账列表（按创建时间倒序）。"""
+        """获取设备设施危险源台账列表（按创建时间倒序）。limit=None 表示导出全部。"""
         conditions = self._equipment_facility_hazard_conditions(
             control_level=control_level,
             residual_risk=residual_risk,
@@ -1031,14 +1045,12 @@ class SafetyRepository:
         base = select(EquipmentFacilityHazard).where(*conditions)
         count_query = select(func.count(EquipmentFacilityHazard.id)).where(*conditions)
         total = await self.session.scalar(count_query)
-        query = (
-            base.order_by(
-                EquipmentFacilityHazard.created_at.desc(),
-                EquipmentFacilityHazard.id.desc(),
-            )
-            .offset(skip)
-            .limit(limit)
-        )
+        query = base.order_by(
+            EquipmentFacilityHazard.created_at.desc(),
+            EquipmentFacilityHazard.id.desc(),
+        ).offset(skip)
+        if limit is not None:
+            query = query.limit(limit)
         result = await self.session.execute(query)
         return list(result.scalars().all()), total or 0
 

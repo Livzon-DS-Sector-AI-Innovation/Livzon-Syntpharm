@@ -7,7 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from app.modules.safety.risk_grading import (
     CONSEQUENCE_MAX,
@@ -22,6 +22,7 @@ from app.modules.safety.risk_grading import (
     RESIDUAL_RISK_KEYS,
     RISK_GRADING_DEPARTMENTS,
     SEVERITY_LEVELS,
+    quantize_decimal,
 )
 
 RequiredShortText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
@@ -76,6 +77,14 @@ class WorkActivityHazardCreate(BaseModel):
     control_level: str = Field(..., description="管控层级（28 个部门之一）")
     execution_level: str = Field(..., description="执行层级 key（车间/班组长）")
 
+    @field_validator("likelihood_l", "exposure_e", "consequence_c")
+    @classmethod
+    def _quantize_to_storage_scale(cls, value: Decimal) -> Decimal:
+        """拒绝超过 6 位小数的输入，并量化为数据库存储精度。"""
+        if value != quantize_decimal(value):
+            raise ValueError(f"最多允许 6 位小数，收到: {value}")
+        return quantize_decimal(value)
+
     @field_validator("control_measures")
     @classmethod
     def _validate_control_measures(cls, value: list[str]) -> list[str]:
@@ -95,65 +104,6 @@ class WorkActivityHazardCreate(BaseModel):
     @classmethod
     def _validate_execution_level(cls, value: str) -> str:
         return _validate_execution_level_value(value)
-
-
-class WorkActivityHazardUpdate(BaseModel):
-    """部分更新作业活动危险源（PATCH）。
-
-    只提交需要修改的字段；服务端会把未提交字段与数据库现值合并后，再按
-    `WorkActivityHazardCreate` 的完整规则重新校验并重算 D / 评价级别。
-    客户端附带 D、评价级别等同名字段会被忽略。
-    """
-
-    position_location: RequiredShortText | None = None
-    area_activity: RequiredShortText | None = None
-    hazard_name_or_event: RequiredLongText | None = None
-    possible_harm: RequiredLongText | None = None
-    hazard_type: RequiredLongText | None = None
-
-    likelihood_l: Decimal | None = Field(None, ge=LIKELIHOOD_MIN, le=LIKELIHOOD_MAX)
-    exposure_e: Decimal | None = Field(None, ge=EXPOSURE_MIN, le=EXPOSURE_MAX)
-    consequence_c: Decimal | None = Field(None, ge=CONSEQUENCE_MIN, le=CONSEQUENCE_MAX)
-
-    control_measures: list[str] | None = None
-    residual_risk: str | None = None
-    control_level: str | None = None
-    execution_level: str | None = None
-
-    @field_validator("control_measures")
-    @classmethod
-    def _validate_control_measures(cls, value: list[str] | None) -> list[str] | None:
-        if value is None:
-            return None
-        return _validate_control_measures_value(value)
-
-    @field_validator("residual_risk")
-    @classmethod
-    def _validate_residual_risk(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        return _validate_residual_risk_value(value)
-
-    @field_validator("control_level")
-    @classmethod
-    def _validate_control_level(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        return _validate_control_level_value(value)
-
-    @field_validator("execution_level")
-    @classmethod
-    def _validate_execution_level(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        return _validate_execution_level_value(value)
-
-    @model_validator(mode="after")
-    def _reject_explicit_nulls(self) -> WorkActivityHazardUpdate:
-        null_fields = [name for name in self.model_fields_set if getattr(self, name) is None]
-        if null_fields:
-            raise ValueError(f"以下字段不能为 null: {', '.join(sorted(null_fields))}")
-        return self
 
 
 class WorkActivityHazardResponse(BaseModel):
@@ -264,76 +214,6 @@ class EquipmentFacilityHazardCreate(BaseModel):
         return _validate_execution_level_value(value)
 
 
-class EquipmentFacilityHazardUpdate(BaseModel):
-    """部分更新设备设施危险源（PATCH）。
-
-    只提交需要修改的字段；服务端把未提交字段与数据库现值合并后，再按
-    `EquipmentFacilityHazardCreate` 的完整规则重新校验，并按 L/S 重新查表得出 R。
-    客户端附带 risk_evaluation_r 会被忽略。
-    """
-
-    model_config = ConfigDict(extra="ignore")
-
-    equipment_facility_tag: RequiredShortText | None = None
-    inspection_item: RequiredLongText | None = None
-    inspection_standard: RequiredLongText | None = None
-    nonconformity_consequence: RequiredLongText | None = None
-
-    likelihood_l: int | None = Field(None, ge=1, le=5)
-    severity_s: str | None = Field(None, min_length=1, max_length=1)
-
-    current_control_measures: list[str] | None = None
-    improvement_measures: list[str] | None = None
-    residual_risk: str | None = None
-    control_level: str | None = None
-    execution_level: str | None = None
-    remarks: RequiredLongText | None = None
-
-    @field_validator("severity_s")
-    @classmethod
-    def _validate_severity(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        if value not in SEVERITY_LEVELS:
-            raise ValueError(f"严重性 S 必须是以下之一: {', '.join(SEVERITY_LEVELS)}")
-        return value
-
-    @field_validator("current_control_measures", "improvement_measures")
-    @classmethod
-    def _validate_measures(cls, value: list[str] | None) -> list[str] | None:
-        if value is None:
-            return None
-        return _validate_equipment_measures_value(value)
-
-    @field_validator("residual_risk")
-    @classmethod
-    def _validate_residual_risk(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        return _validate_residual_risk_value(value)
-
-    @field_validator("control_level")
-    @classmethod
-    def _validate_control_level(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        return _validate_control_level_value(value)
-
-    @field_validator("execution_level")
-    @classmethod
-    def _validate_execution_level(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        return _validate_execution_level_value(value)
-
-    @model_validator(mode="after")
-    def _reject_explicit_nulls(self) -> EquipmentFacilityHazardUpdate:
-        null_fields = [name for name in self.model_fields_set if getattr(self, name) is None]
-        if null_fields:
-            raise ValueError(f"以下字段不能为 null: {', '.join(sorted(null_fields))}")
-        return self
-
-
 class EquipmentFacilityHazardResponse(BaseModel):
     """设备设施危险源台账记录（含服务端计算字段）。"""
 
@@ -377,3 +257,51 @@ class EquipmentFacilityHazardListApiResponse(BaseModel):
     message: str = "success"
     data: list[EquipmentFacilityHazardResponse]
     meta: EquipmentFacilityHazardListMeta
+
+
+# ============ 风险分级管控选项契约（只读，后端权威） ============
+
+
+class RiskGradingValueLabel(BaseModel):
+    """稳定的选项 key 与展示文本。"""
+
+    value: str
+    label: str
+
+
+class LecRange(BaseModel):
+    """LEC 某一项的合法闭区间。"""
+
+    min: Decimal
+    max: Decimal
+
+
+class RiskGradeThreshold(BaseModel):
+    """分级阈值：D > lower_bound_exclusive 时取该 grade（阈值从高到低排列）。"""
+
+    grade: int
+    lower_bound_exclusive: Decimal
+
+
+class RiskGradingOptions(BaseModel):
+    """两张危险源台账前端所需的权威选项、矩阵与阈值。"""
+
+    departments: list[str]
+    control_measures: list[RiskGradingValueLabel]
+    equipment_measures: list[RiskGradingValueLabel]
+    residual_risks: list[RiskGradingValueLabel]
+    execution_levels: list[RiskGradingValueLabel]
+    likelihood_levels: list[int]
+    severity_levels: list[str]
+    safety_risk_matrix: dict[str, list[int]]
+    grade_thresholds: list[RiskGradeThreshold]
+    likelihood_range: LecRange
+    exposure_range: LecRange
+    consequence_range: LecRange
+    min_risk_value: Decimal
+
+
+class RiskGradingOptionsApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: RiskGradingOptions

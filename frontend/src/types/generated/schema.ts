@@ -4773,6 +4773,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/safety/enums/risk-grading": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取风险分级管控台账的选项、矩阵与分级阈值
+         * @description 风险分级管控台账的权威选项字典；前端不得再手写这些常量。
+         */
+        get: operations["get_risk_grading_options_api_v1_safety_enums_risk_grading_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/safety/feishu/ws/status": {
         parameters: {
             query?: never;
@@ -6607,11 +6627,7 @@ export interface paths {
         delete: operations["delete_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__delete"];
         options?: never;
         head?: never;
-        /**
-         * 部分更新作业活动危险源台账记录
-         * @description 部分更新（PATCH）：合并现有值后重新套用全部创建规则，并重算 D 与评价级别。
-         */
-        patch: operations["update_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__patch"];
+        patch?: never;
         trace?: never;
     };
     "/api/v1/safety/equipment-facility-hazards": {
@@ -6680,11 +6696,7 @@ export interface paths {
         delete: operations["delete_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__delete"];
         options?: never;
         head?: never;
-        /**
-         * 部分更新设备设施危险源台账记录
-         * @description 部分更新（PATCH）：合并现有值后重新套用全部创建规则，并按 L/S 重算 R。
-         */
-        patch: operations["update_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__patch"];
+        patch?: never;
         trace?: never;
     };
     "/api/v1/safety/scheduled-tasks/data-source-options": {
@@ -32347,40 +32359,6 @@ export interface components {
             updated_at: string;
         };
         /**
-         * EquipmentFacilityHazardUpdate
-         * @description 部分更新设备设施危险源（PATCH）。
-         *
-         *     只提交需要修改的字段；服务端把未提交字段与数据库现值合并后，再按
-         *     `EquipmentFacilityHazardCreate` 的完整规则重新校验，并按 L/S 重新查表得出 R。
-         *     客户端附带 risk_evaluation_r 会被忽略。
-         */
-        EquipmentFacilityHazardUpdate: {
-            /** Equipment Facility Tag */
-            equipment_facility_tag?: string | null;
-            /** Inspection Item */
-            inspection_item?: string | null;
-            /** Inspection Standard */
-            inspection_standard?: string | null;
-            /** Nonconformity Consequence */
-            nonconformity_consequence?: string | null;
-            /** Likelihood L */
-            likelihood_l?: number | null;
-            /** Severity S */
-            severity_s?: string | null;
-            /** Current Control Measures */
-            current_control_measures?: string[] | null;
-            /** Improvement Measures */
-            improvement_measures?: string[] | null;
-            /** Residual Risk */
-            residual_risk?: string | null;
-            /** Control Level */
-            control_level?: string | null;
-            /** Execution Level */
-            execution_level?: string | null;
-            /** Remarks */
-            remarks?: string | null;
-        };
-        /**
          * EquipmentImportRow
          * @description 设备导入行数据
          */
@@ -39227,6 +39205,16 @@ export interface components {
              * @description 负责部门
              */
             department: string;
+        };
+        /**
+         * LecRange
+         * @description LEC 某一项的合法闭区间。
+         */
+        LecRange: {
+            /** Min */
+            min: string;
+            /** Max */
+            max: string;
         };
         /**
          * LedgerExportRequest
@@ -48104,6 +48092,71 @@ export interface components {
          * @enum {string}
          */
         RevisionType: "manual" | "ai";
+        /**
+         * RiskGradeThreshold
+         * @description 分级阈值：D > lower_bound_exclusive 时取该 grade（阈值从高到低排列）。
+         */
+        RiskGradeThreshold: {
+            /** Grade */
+            grade: number;
+            /** Lower Bound Exclusive */
+            lower_bound_exclusive: string;
+        };
+        /**
+         * RiskGradingOptions
+         * @description 两张危险源台账前端所需的权威选项、矩阵与阈值。
+         */
+        RiskGradingOptions: {
+            /** Departments */
+            departments: string[];
+            /** Control Measures */
+            control_measures: components["schemas"]["RiskGradingValueLabel"][];
+            /** Equipment Measures */
+            equipment_measures: components["schemas"]["RiskGradingValueLabel"][];
+            /** Residual Risks */
+            residual_risks: components["schemas"]["RiskGradingValueLabel"][];
+            /** Execution Levels */
+            execution_levels: components["schemas"]["RiskGradingValueLabel"][];
+            /** Likelihood Levels */
+            likelihood_levels: number[];
+            /** Severity Levels */
+            severity_levels: string[];
+            /** Safety Risk Matrix */
+            safety_risk_matrix: {
+                [key: string]: number[];
+            };
+            /** Grade Thresholds */
+            grade_thresholds: components["schemas"]["RiskGradeThreshold"][];
+            likelihood_range: components["schemas"]["LecRange"];
+            exposure_range: components["schemas"]["LecRange"];
+            consequence_range: components["schemas"]["LecRange"];
+            /** Min Risk Value */
+            min_risk_value: string;
+        };
+        /** RiskGradingOptionsApiResponse */
+        RiskGradingOptionsApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["RiskGradingOptions"];
+        };
+        /**
+         * RiskGradingValueLabel
+         * @description 稳定的选项 key 与展示文本。
+         */
+        RiskGradingValueLabel: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+        };
         /** RoleDetailApiResponse */
         RoleDetailApiResponse: {
             /**
@@ -56723,40 +56776,6 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
-        };
-        /**
-         * WorkActivityHazardUpdate
-         * @description 部分更新作业活动危险源（PATCH）。
-         *
-         *     只提交需要修改的字段；服务端会把未提交字段与数据库现值合并后，再按
-         *     `WorkActivityHazardCreate` 的完整规则重新校验并重算 D / 评价级别。
-         *     客户端附带 D、评价级别等同名字段会被忽略。
-         */
-        WorkActivityHazardUpdate: {
-            /** Position Location */
-            position_location?: string | null;
-            /** Area Activity */
-            area_activity?: string | null;
-            /** Hazard Name Or Event */
-            hazard_name_or_event?: string | null;
-            /** Possible Harm */
-            possible_harm?: string | null;
-            /** Hazard Type */
-            hazard_type?: string | null;
-            /** Likelihood L */
-            likelihood_l?: number | string | null;
-            /** Exposure E */
-            exposure_e?: number | string | null;
-            /** Consequence C */
-            consequence_c?: number | string | null;
-            /** Control Measures */
-            control_measures?: string[] | null;
-            /** Residual Risk */
-            residual_risk?: string | null;
-            /** Control Level */
-            control_level?: string | null;
-            /** Execution Level */
-            execution_level?: string | null;
         };
         /**
          * WorkOrderAssign
@@ -69577,6 +69596,37 @@ export interface operations {
             };
         };
     };
+    get_risk_grading_options_api_v1_safety_enums_risk_grading_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["RiskGradingOptionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_feishu_ws_status_api_v1_safety_feishu_ws_status_get: {
         parameters: {
             query?: never;
@@ -73466,43 +73516,6 @@ export interface operations {
             };
         };
     };
-    update_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                hazard_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WorkActivityHazardUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["WorkActivityHazardApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_equipment_facility_hazards_api_v1_safety_equipment_facility_hazards_get: {
         parameters: {
             query?: {
@@ -73696,43 +73709,6 @@ export interface operations {
             };
         };
         requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["EquipmentFacilityHazardApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                hazard_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EquipmentFacilityHazardUpdate"];
-            };
-        };
         responses: {
             /** @description Successful Response */
             200: {

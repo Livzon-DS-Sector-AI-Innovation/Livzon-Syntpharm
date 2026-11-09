@@ -48,7 +48,6 @@ export async function exportWorkActivityHazards(
 }
 
 type EquipmentFacilityHazardCreate = components['schemas']['EquipmentFacilityHazardCreate']
-type EquipmentFacilityHazardUpdate = components['schemas']['EquipmentFacilityHazardUpdate']
 type EquipmentFacilityHazard = components['schemas']['EquipmentFacilityHazardResponse']
 
 const EQUIPMENT_HAZARDS_PATH = '/api/v1/safety/equipment-facility-hazards'
@@ -64,7 +63,7 @@ export async function createEquipmentFacilityHazard(
 
 export async function updateEquipmentFacilityHazard(
   id: string,
-  data: EquipmentFacilityHazardCreate | EquipmentFacilityHazardUpdate,
+  data: EquipmentFacilityHazardCreate,
 ): Promise<EquipmentFacilityHazard> {
   return apiFetchData<EquipmentFacilityHazard>(`${getApiBaseUrl()}${EQUIPMENT_HAZARDS_PATH}/${id}`, {
     method: 'PUT',

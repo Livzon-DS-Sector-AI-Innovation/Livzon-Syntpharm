@@ -18,23 +18,18 @@ import {
   exportEquipmentFacilityHazardsAction,
   updateEquipmentFacilityHazardAction,
 } from '@/actions/risk-grading'
-import { fetchEquipmentFacilityHazards } from '@/lib/api/client/risk-grading'
+import { fetchEquipmentFacilityHazards, fetchRiskGradingOptions } from '@/lib/api/client/risk-grading'
 import {
-  EQUIPMENT_MEASURE_LABELS,
-  EQUIPMENT_MEASURE_OPTIONS,
-  EXECUTION_LEVEL_LABELS,
-  EXECUTION_LEVEL_OPTIONS,
-  LIKELIHOOD_LEVEL_OPTIONS,
-  RESIDUAL_RISK_OPTIONS,
-  RISK_GRADING_DEPARTMENT_OPTIONS,
-  SEVERITY_LEVEL_OPTIONS,
   lookupRiskEvaluation,
+  toNumberOptions,
+  toValueLabelOptions,
   type EquipmentFacilityHazard,
   type EquipmentFacilityHazardCreate,
   type EquipmentFacilityHazardExportParams,
 } from '@/types/safety/risk-grading'
 
 const QUERY_KEY = 'equipment-facility-hazards'
+const OPTIONS_QUERY_KEY = 'risk-grading-options'
 
 function downloadBlob(blob: Blob, filename: string): void {
   const url = window.URL.createObjectURL(blob)
@@ -72,6 +67,28 @@ export default function EquipmentLedgerClient() {
     [controlLevel, residualRisk, keyword],
   )
 
+  const { data: options } = useQuery({
+    queryKey: [OPTIONS_QUERY_KEY],
+    queryFn: fetchRiskGradingOptions,
+    staleTime: Infinity,
+  })
+
+  const departmentOptions = useMemo(() => toValueLabelOptions(options?.departments ?? []), [options])
+  const equipmentMeasureOptions = useMemo(() => options?.equipment_measures ?? [], [options])
+  const residualRiskOptions = useMemo(() => options?.residual_risks ?? [], [options])
+  const executionLevelOptions = useMemo(() => options?.execution_levels ?? [], [options])
+  const likelihoodOptions = useMemo(() => toNumberOptions(options?.likelihood_levels ?? []), [options])
+  const severityOptions = useMemo(() => toValueLabelOptions(options?.severity_levels ?? []), [options])
+  const equipmentMeasureLabels = useMemo(
+    () => Object.fromEntries(equipmentMeasureOptions.map((item) => [item.value, item.label])),
+    [equipmentMeasureOptions],
+  )
+  const executionLevelLabels = useMemo(
+    () => Object.fromEntries(executionLevelOptions.map((item) => [item.value, item.label])),
+    [executionLevelOptions],
+  )
+  const safetyRiskMatrix = options?.safety_risk_matrix
+
   const { data, isLoading } = useQuery({
     queryKey: [QUERY_KEY, page, pageSize, controlLevel, residualRisk, keyword],
     queryFn: () =>
@@ -90,8 +107,8 @@ export default function EquipmentLedgerClient() {
 
   const previewR = useMemo(() => {
     if (watchedL === undefined || watchedL === null || !watchedS) return null
-    return lookupRiskEvaluation(Number(watchedL), watchedS)
-  }, [watchedL, watchedS])
+    return lookupRiskEvaluation(safetyRiskMatrix, Number(watchedL), watchedS)
+  }, [safetyRiskMatrix, watchedL, watchedS])
 
   const resetFilters = () => {
     setControlLevel(undefined)
@@ -200,13 +217,13 @@ export default function EquipmentLedgerClient() {
       title: '现有管控措施',
       dataIndex: 'current_control_measures',
       width: 220,
-      render: (value: string[]) => value.map((key) => EQUIPMENT_MEASURE_LABELS[key] ?? key).join('；'),
+      render: (value: string[]) => value.map((key) => equipmentMeasureLabels[key] ?? key).join('；'),
     },
     {
       title: '建议改进（新增）措施',
       dataIndex: 'improvement_measures',
       width: 220,
-      render: (value: string[]) => value.map((key) => EQUIPMENT_MEASURE_LABELS[key] ?? key).join('；'),
+      render: (value: string[]) => value.map((key) => equipmentMeasureLabels[key] ?? key).join('；'),
     },
     {
       title: '残余风险',
@@ -219,7 +236,7 @@ export default function EquipmentLedgerClient() {
       title: '执行层级',
       dataIndex: 'execution_level',
       width: 100,
-      render: (value: string) => EXECUTION_LEVEL_LABELS[value] ?? value,
+      render: (value: string) => executionLevelLabels[value] ?? value,
     },
     { title: '备注', dataIndex: 'remarks', width: 220 },
     {
@@ -256,9 +273,6 @@ export default function EquipmentLedgerClient() {
           <Button icon={<DownloadOutlined />} loading={exporting} onClick={handleExport}>
             导出当前筛选
           </Button>
-          <Button icon={<ReloadOutlined />} onClick={() => queryClient.invalidateQueries({ queryKey: [QUERY_KEY] })}>
-            刷新
-          </Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
             新建
           </Button>
@@ -273,7 +287,7 @@ export default function EquipmentLedgerClient() {
           placeholder="管控层级"
           style={{ width: 180 }}
           value={controlLevel}
-          options={RISK_GRADING_DEPARTMENT_OPTIONS}
+          options={departmentOptions}
           onChange={(value) => {
             setControlLevel(value)
             setPage(1)
@@ -284,7 +298,7 @@ export default function EquipmentLedgerClient() {
           placeholder="残余风险"
           style={{ width: 150 }}
           value={residualRisk}
-          options={RESIDUAL_RISK_OPTIONS}
+          options={residualRiskOptions}
           onChange={(value) => {
             setResidualRisk(value)
             setPage(1)
@@ -373,14 +387,14 @@ export default function EquipmentLedgerClient() {
               label="可能性 L（1–5）"
               rules={[{ required: true, message: '请选择可能性 L' }]}
             >
-              <Select options={LIKELIHOOD_LEVEL_OPTIONS} placeholder="1–5" style={{ width: 160 }} />
+              <Select options={likelihoodOptions} placeholder="1–5" style={{ width: 160 }} />
             </Form.Item>
             <Form.Item
               name="severity_s"
               label="严重性 S（A–E）"
               rules={[{ required: true, message: '请选择严重性 S' }]}
             >
-              <Select options={SEVERITY_LEVEL_OPTIONS} placeholder="A–E" style={{ width: 160 }} />
+              <Select options={severityOptions} placeholder="A–E" style={{ width: 160 }} />
             </Form.Item>
             <Form.Item label="危险评价 R（自动查表）">
               <Input
@@ -397,28 +411,28 @@ export default function EquipmentLedgerClient() {
             label="现有管控措施"
             rules={[{ required: true, type: 'array', min: 1, message: '请至少选择一项现有管控措施' }]}
           >
-            <Select mode="multiple" options={EQUIPMENT_MEASURE_OPTIONS} placeholder="可多选" />
+            <Select mode="multiple" options={equipmentMeasureOptions} placeholder="可多选" />
           </Form.Item>
           <Form.Item
             name="improvement_measures"
             label="建议改进（新增）措施"
             rules={[{ required: true, type: 'array', min: 1, message: '请至少选择一项建议改进措施' }]}
           >
-            <Select mode="multiple" options={EQUIPMENT_MEASURE_OPTIONS} placeholder="可多选" />
+            <Select mode="multiple" options={equipmentMeasureOptions} placeholder="可多选" />
           </Form.Item>
           <Form.Item name="residual_risk" label="残余风险" rules={[{ required: true, message: '请选择残余风险' }]}>
-            <Select options={RESIDUAL_RISK_OPTIONS} placeholder="仅 1–3 级" />
+            <Select options={residualRiskOptions} placeholder="仅 1–3 级" />
           </Form.Item>
           <Form.Item name="control_level" label="管控层级" rules={[{ required: true, message: '请选择管控层级' }]}>
             <Select
               showSearch
               optionFilterProp="label"
-              options={RISK_GRADING_DEPARTMENT_OPTIONS}
+              options={departmentOptions}
               placeholder="选择部门"
             />
           </Form.Item>
           <Form.Item name="execution_level" label="执行层级" rules={[{ required: true, message: '请选择执行层级' }]}>
-            <Select options={EXECUTION_LEVEL_OPTIONS} placeholder="车间 / 班组长" />
+            <Select options={executionLevelOptions} placeholder="车间 / 班组长" />
           </Form.Item>
           <Form.Item
             name="remarks"
