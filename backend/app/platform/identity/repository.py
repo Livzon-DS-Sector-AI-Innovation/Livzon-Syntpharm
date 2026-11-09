@@ -244,7 +244,11 @@ class UserRepository:
             count_stmt = count_stmt.where(User.must_change_password == must_change_password)
 
         total = int((await session.execute(count_stmt)).scalar_one())
-        result = await session.execute(base.order_by(User.created_at.desc()).offset(offset).limit(limit))
+        # created_at 由 server_default=func.now() 生成，同事务批量插入（飞书通讯录同步）
+        # 会得到完全相同的时间戳；没有唯一键兜底时，offset 分页会出现同一行跨页重复 / 漏行。
+        result = await session.execute(
+            base.order_by(User.created_at.desc(), User.id.desc()).offset(offset).limit(limit)
+        )
         return list(result.scalars().all()), total
 
     async def get_roles_for_users(
@@ -267,30 +271,33 @@ class UserRepository:
         *,
         department_id: str | None = None,
         keyword: str | None = None,
+        feishu_bound_only: bool = False,
         offset: int = 0,
         limit: int = 100,
     ) -> tuple[list[User], int]:
-        """分页查询所有用户，支持按部门/关键词筛选。"""
+        """分页查询所有用户，支持按部门/关键词筛选。
+
+        feishu_bound_only=True 时只返回已绑定飞书身份的账号，
+        判定口径与「绑定飞书」的 unbound_only 保持一致（两个飞书 ID 任一存在即视为已绑定）。
+        """
         base = select(User).where(User.is_deleted == False)  # noqa: E712
-
-        if department_id:
-            base = base.where(
-                User.feishu_department_ids.contains(department_id),
-            )
-        if keyword:
-            base = base.where(
-                User.name.ilike(f"%{keyword}%"),
-            )
-
         count_stmt = select(User.id).where(User.is_deleted == False)  # noqa: E712
+
         if department_id:
-            count_stmt = count_stmt.where(
-                User.feishu_department_ids.contains(department_id),
-            )
+            department_filter = User.feishu_department_ids.contains(department_id)
+            base = base.where(department_filter)
+            count_stmt = count_stmt.where(department_filter)
         if keyword:
-            count_stmt = count_stmt.where(
-                User.name.ilike(f"%{keyword}%"),
+            keyword_filter = User.name.ilike(f"%{keyword}%")
+            base = base.where(keyword_filter)
+            count_stmt = count_stmt.where(keyword_filter)
+        if feishu_bound_only:
+            bound_filter = or_(
+                User.feishu_user_id.isnot(None),
+                User.feishu_open_id.isnot(None),
             )
+            base = base.where(bound_filter)
+            count_stmt = count_stmt.where(bound_filter)
         total_result = await session.execute(count_stmt)
         total = len(total_result.scalars().all())
 

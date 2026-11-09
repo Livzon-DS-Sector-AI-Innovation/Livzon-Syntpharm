@@ -559,6 +559,9 @@ class HazardReport(BaseModel):
     )
 
     hazard_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="隐患编号")
+    inspection_name: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, comment="检查名称（Bitable「检查名称」）"
+    )
     inspection_category: Mapped[str | None] = mapped_column(
         String(128),
         nullable=True,
@@ -576,9 +579,9 @@ class HazardReport(BaseModel):
         comment="隐患等级（AI）：一般隐患/较大隐患/重大隐患",
     )
     hazard_category: Mapped[str | None] = mapped_column(
-        String(32),
+        String(64),
         nullable=True,
-        comment="隐患类别（AI）：设备设施/危化储存/仪表+电气/…（13种）",
+        comment="隐患类别：字典表 safety.hazard_categories 的 name（内置 7 类 + 用户新增）",
     )
     description: Mapped[str] = mapped_column(Text, nullable=False, comment="隐患描述")
     discovered_by: Mapped[uuid.UUID | None] = mapped_column(
@@ -615,8 +618,21 @@ class HazardReport(BaseModel):
     rectification_responsible_person_name: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="整改责任人姓名（Bitable「责任人」）"
     )
+    rectification_responsible_person_ids: Mapped[list[str] | None] = mapped_column(
+        JSON,
+        nullable=True,
+        comment="整改负责人多选 UUID 列表（新）。为空时回退单人字段 rectification_responsible_person",
+    )
+    rectification_responsible_person_names: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        comment="整改负责人姓名快照（逗号分隔，与 ids 顺序一致）",
+    )
     corrective_preventive_measures: Mapped[str | None] = mapped_column(Text, nullable=True, comment="AI整改建议")
     rectification_reply: Mapped[str | None] = mapped_column(Text, nullable=True, comment="整改回复内容")
+    capa_measures: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="纠正预防措施（人工填写，Bitable「纠正预防措施」）"
+    )
     deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="整改期限")
     actual_completion_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="整改完成时间"
@@ -628,6 +644,9 @@ class HazardReport(BaseModel):
         server_default="pending",
         nullable=False,
         comment="整改进度",
+    )
+    rectification_progress_note: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="整改进度说明（自定义文字，与单选状态并存）"
     )
     # ── 三级复核 ──
     verify_level_1_status: Mapped[str] = mapped_column(
@@ -651,13 +670,42 @@ class HazardReport(BaseModel):
         nullable=False,
         comment="检查人员复核状态 (Bitable「检查人员复核」): pending/approved/rejected",
     )
+    # ── 审批人留痕（轻量：每级只保留最后一次）──
+    verify_level_1_reviewer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="一级复核审批人"
+    )
+    verify_level_1_reviewer_name: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="一级复核审批人姓名"
+    )
+    verify_level_1_reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="一级复核时间"
+    )
+    verify_level_2_reviewer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="二级复核审批人"
+    )
+    verify_level_2_reviewer_name: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="二级复核审批人姓名"
+    )
+    verify_level_2_reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="二级复核时间"
+    )
+    verify_level_3_reviewer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("identity.users.id"), nullable=True, comment="三级复核审批人"
+    )
+    verify_level_3_reviewer_name: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="三级复核审批人姓名"
+    )
+    verify_level_3_reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="三级复核时间"
+    )
     status: Mapped[str] = mapped_column(
         String(32),
         default="open",
         server_default="open",
         nullable=False,
-        comment="状态",
+        comment="关闭状态: open=未关闭 / closed=已关闭",
     )
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="完成/关闭日期")
     check_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("safety.safety_checks.id"),
@@ -974,6 +1022,20 @@ class HazardIdentification(BaseModel):
         nullable=True,
         comment="该工段对应的 Chapter 7 节选 Markdown（供Script 1使用）",
     )
+
+    # ── 历史台账原始字段（Excel/CSV 清单导入） ──
+    checklist_no: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="检查表编号")
+    risk_point_no: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="风险点编号")
+    risk_point_type: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="风险点类型")
+    risk_point_name: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="风险点名称")
+    work_unit: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="作业单元/区域")
+    location_tag: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="位号/部位")
+    work_step: Mapped[str | None] = mapped_column(Text, nullable=True, comment="作业步骤/检查项目")
+    check_standard: Mapped[str | None] = mapped_column(Text, nullable=True, comment="检查标准")
+    risk_method: Mapped[str | None] = mapped_column(String(10), nullable=True, comment="风险评价方法（LEC/LS）")
+    severity_s: Mapped[float | None] = mapped_column(nullable=True, comment="严重性S（LS法）")
+    control_unit: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="管控单位")
+    training_measures: Mapped[str | None] = mapped_column(Text, nullable=True, comment="现有培训教育措施")
 
     # ── 脚本1 输出：附件解析（AI → 人工审核） ──
     specific_activity: Mapped[str | None] = mapped_column(Text, nullable=True, comment="具体作业活动")
@@ -2133,4 +2195,32 @@ class GraphKnowledgeEdge(BaseModel):
     )
     target_node: Mapped[GraphKnowledgeNode] = relationship(
         "GraphKnowledgeNode", foreign_keys=[target_node_id], lazy="select"
+    )
+
+
+# ==================== 隐患类别字典 ====================
+
+
+class HazardCategoryDict(BaseModel):
+    """隐患类别字典表（用户可在登记时新增，全公司共享）"""
+
+    __tablename__ = "hazard_categories"
+    __table_args__ = (
+        Index(
+            "uq_hazard_categories_name",
+            "name",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
+        {"schema": "safety", "comment": "隐患类别字典（用户可新增，全公司共享）"},
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="类别名称（与 hazard_reports.hazard_category 同值）"
+    )
+    sort_order: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False, comment="排序值（越小越前）"
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default="true", nullable=False, comment="是否启用"
     )

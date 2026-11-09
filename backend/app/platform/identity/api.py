@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
-from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.deps import PermissionContext, RequiredUser, require_any_permission, require_permission
 from app.core.exceptions import (
     AppException,
     BadRequestException,
@@ -49,6 +49,7 @@ from app.platform.identity.schemas import (
     SyncAllTriggerApiResponse,
     SyncDepartmentsTriggerApiResponse,
     SyncMembersTriggerApiResponse,
+    SyncUserInfoTriggerApiResponse,
     TokenResponse,
     UserBatchFailure,
     UserBatchStatusApiResponse,
@@ -440,6 +441,7 @@ async def list_personnel(
     current_user: RequiredUser,
     department_id: str | None = Query(None, description="按部门 ID 筛选"),
     keyword: str | None = Query(None, description="按姓名搜索"),
+    feishu_bound_only: bool = Query(False, description="仅返回已绑定飞书身份的用户"),
     offset: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -450,6 +452,7 @@ async def list_personnel(
         db,
         department_id=department_id,
         keyword=keyword,
+        feishu_bound_only=feishu_bound_only,
         offset=offset,
         limit=limit,
     )
@@ -533,6 +536,32 @@ async def trigger_sync_all(
         data={
             "status": "ok",
             "message": "通讯录同步已在后台开始（部门 + 成员），约 1 分钟后刷新本页查看结果。",
+        },
+    )
+
+
+@sync_router.post(
+    "/user-info",
+    summary="同步飞书用户信息（资料 + 头像 + 部门，后台执行）",
+    response_model=SyncUserInfoTriggerApiResponse,
+)
+async def trigger_sync_user_info(
+    ctx: PermissionContext = Depends(require_any_permission("platform:config:manage", "platform:user:manage")),
+) -> Any:
+    """用户管理页「同步飞书用户信息」入口。
+
+    与 `/sync/all` 复用同一后台任务（部门 + 成员全量同步），区别只在权限：
+    这里额外允许仅持有「用户管理」权限的账号触发，方便管理员自行补齐头像与部门。
+    本次不分配账号（飞书 user_id / 工号权限未开通），只回填资料。
+    """
+    from app.platform.identity.service import sync_livzon_feishu_contacts_all
+
+    await submit_job("identity.sync-user-info", lambda _job_id: sync_livzon_feishu_contacts_all())
+    logger.info("Feishu user info sync triggered", extra={"module": "identity"})
+    return build_response(
+        data={
+            "status": "ok",
+            "message": "已开始在后台同步飞书用户信息（姓名 / 部门 / 职位 / 头像），约 1 分钟后刷新列表查看结果。",
         },
     )
 

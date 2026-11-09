@@ -97,6 +97,8 @@ class GrantResponse(BaseModel):
     role_code: str | None = None
     role_name: str | None = None
     user_name: str | None = None
+    username: str | None = None
+    avatar_url: str | None = None
 
 
 class GrantListResponse(BaseModel):

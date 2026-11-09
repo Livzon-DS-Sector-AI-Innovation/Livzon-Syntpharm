@@ -28,7 +28,7 @@ HAZARD_COLUMN_MAPPING: dict[str, str] = {
     "f": "possible_accident",
     "g": "existing_engineering_controls",
     "h": "existing_management_controls",
-    "i": "",  # 培训教育措施·现有 — no DB field yet
+    "i": "training_measures",
     "j": "existing_ppe",
     "k": "existing_emergency_measures",
     "l": "l_inherent",

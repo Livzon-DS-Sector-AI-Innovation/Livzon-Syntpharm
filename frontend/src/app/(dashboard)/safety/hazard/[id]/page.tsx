@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter, useParams } from 'next/navigation'
 import {
@@ -18,9 +18,6 @@ import {
   DatePicker,
   Flex,
   Upload,
-  Tag,
-  Radio,
-  Timeline,
   UploadFile,
 } from 'antd'
 
@@ -31,31 +28,27 @@ import {
   CloseOutlined,
   SaveOutlined,
   CloseCircleOutlined,
-  MinusCircleOutlined,
-  RobotOutlined,
-  ExclamationCircleOutlined,
   ClockCircleOutlined,
+  SyncOutlined,
+  ExclamationCircleOutlined,
   FileTextOutlined,
   ToolOutlined,
   CameraOutlined,
   InboxOutlined,
-  SendOutlined,
-  ReloadOutlined,
-  SyncOutlined,
 } from '@ant-design/icons'
-import { getHazard, updateHazard, replyRectification, reworkRectification, uploadRectificationPhoto, getDepartmentLeader, getDepartmentSafetyOfficer, notifyReviewer, notifyRectification, triggerRectificationReview, verifyLevel } from '@/actions/safety'
+import { getHazard, updateHazard, uploadRectificationPhoto, getDepartmentLeader, getDepartmentSafetyOfficer } from '@/actions/safety'
 import type { HazardReport, HazardReportFormData } from '@/types/safety'
 import {
-  HAZARD_TYPE_OPTIONS,
   HAZARD_LEVEL_OPTIONS,
   HAZARD_CATEGORY_OPTIONS,
+  LEGACY_HAZARD_CATEGORY_LABELS,
   INSPECTION_CATEGORY_OPTIONS,
   RECTIFICATION_STATUS_OPTIONS,
   INSPECTOR_DEPARTMENT_OPTIONS,
-  VERIFY_LEVEL_OPTIONS,
-  VERIFY_LEVEL_STATUS_OPTIONS,
 } from '@/types/safety'
 import dayjs from 'dayjs'
+import PersonnelSelect, { PersonnelMultiSelect } from '@/components/safety/PersonnelSelect'
+import { PersonNameWithBadge } from '@/components/safety/PersonMatchBadge'
 
 const { Text } = Typography
 const { TextArea } = Input
@@ -104,6 +97,14 @@ function fmtDate(iso?: string | null, format = 'YYYY-MM-DD HH:mm'): string {
   return dayjs(iso).format(format)
 }
 
+// ── 已绑定人员的头像回显：按 UUID 从后端人员引用里取，避免用错误的旧头像 ──
+function personAvatarOf(
+  persons: { id?: string | null; avatar_url?: string | null }[] | undefined,
+  id: string,
+): string | undefined {
+  return persons?.find((person) => person.id === id)?.avatar_url ?? undefined
+}
+
 // ── 隐患等级颜色/标签 ──
 function getLevelColor(level: string) {
   const opt = HAZARD_LEVEL_OPTIONS.find((o) => o.value === level)
@@ -115,7 +116,7 @@ function getLevelLabel(level: string) {
 }
 
 // ── 隐患类别 label map ──
-const HAZARD_CATEGORY_LABEL_MAP: Record<string, string> = {}
+const HAZARD_CATEGORY_LABEL_MAP: Record<string, string> = { ...LEGACY_HAZARD_CATEGORY_LABELS }
 HAZARD_CATEGORY_OPTIONS.forEach((o) => { HAZARD_CATEGORY_LABEL_MAP[o.value] = o.label })
 
 // ═══════════════════════════════════════════════════════════
@@ -170,9 +171,6 @@ const pillNeutral = (text: string) => (
 )
 const pillWarning = (text: string) => (
   <StatusPill color="#dd5b00" bg="#ffe8d4" icon={<ExclamationCircleOutlined />}>{text}</StatusPill>
-)
-const pillPurple = (text: string) => (
-  <StatusPill color="#5645d4" bg="#e6e0f5">{text}</StatusPill>
 )
 const pillProcessing = (text: string) => (
   <StatusPill color="#0075de" bg="#dcecfa" icon={<SyncOutlined spin />}>{text}</StatusPill>
@@ -432,27 +430,17 @@ export default function HazardLedgerDetailPage() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
-  const { message, modal } = App.useApp()
+  const { message } = App.useApp()
 
 
   // 编辑状态
-  const [editSection, setEditSection] = useState<'registration' | 'ai' | 'rectification' | null>(null)
-  const [edits, setEdits] = useState<Partial<Record<string, string>>>({})
+  const [editSection, setEditSection] = useState<'registration' | 'rectification' | null>(null)
+  const [edits, setEdits] = useState<Partial<Record<string, string | string[]>>>({})
   const [saving, setSaving] = useState(false)
 
-  // 整改回复状态
+  // 整改后照片（编辑态暂存，保存时统一上传）
   const [replyFiles, setReplyFiles] = useState<UploadFile[]>([])
-  const [replySubmitting, setReplySubmitting] = useState(false)
   const [_leaderLoading, setLeaderLoading] = useState(false)
-  const [notifyLoading, setNotifyLoading] = useState(false)
-  const [aiReviewTriggering, setAiReviewTriggering] = useState(false)
-  const [notifyRectLoading, setNotifyRectLoading] = useState(false)
-
-  // ── 人员搜索状态 ──
-  interface UserOption { value: string; label: string }
-  const [_userOptions, setUserOptions] = useState<UserOption[]>([])
-  const [_userSearchLoading, setUserSearchLoading] = useState(false)
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const queryClient = useQueryClient()
 
@@ -486,49 +474,63 @@ export default function HazardLedgerDetailPage() {
     enabled: !!record?.department,
   })
 
-  // Handle error case and redirect
-  if (!loading && !record && id) {
-    message.error('加载失败')
-    router.push('/safety/hazard-ledger')
-  }
-
-  const _handleUserSearch = useCallback((keyword: string) => {
-    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
-    if (!keyword || keyword.length < 1) {
-      setUserOptions([])
-      return
+  // 加载失败时提示并退回台账（渲染期不能有副作用：message / router.push 必须在 effect 内）
+  useEffect(() => {
+    if (!loading && !record && id) {
+      message.error('加载失败')
+      router.push('/safety/hazard-ledger')
     }
-    searchTimerRef.current = setTimeout(async () => {
-      setUserSearchLoading(true)
-      try {
-        const API_BASE = '/api/v1'
-        const params = new URLSearchParams({ keyword, limit: '50' })
-        const resp = await fetch(`${API_BASE}/identity/personnel?${params}`)
-        if (resp.ok) {
-          const json = await resp.json()
-          const items = (json.data?.items ?? []) as Record<string, unknown>[]
-          setUserOptions(items.map((u) => ({
-            value: String(u.id),
-            label: `${String(u.name)} - ${String(u.department || '未知部门')}`,
-          })))
-        }
-      } catch { /* 静默失败 */ } finally {
-        setUserSearchLoading(false)
-      }
-    }, 300)
-  }, [])
-
-
+  }, [loading, record, id, router, message])
 
   const fieldVal = (field: string): string => {
     const rec = record as Record<string, unknown> | null
-    if (editSection && field in edits) return edits[field] ?? (rec?.[field] as string | undefined) ?? ''
-    return (rec?.[field] as string | undefined) ?? ''
+    const raw = editSection && field in edits ? (edits[field] ?? rec?.[field]) : rec?.[field]
+    return typeof raw === 'string' ? raw : ''
   }
 
-  const handleEdit = (section: 'registration' | 'ai' | 'rectification') => {
+  /** 数组字段取值（整改负责人 UUID 列表；旧数据是单个 uuid 字符串时也能兼容） */
+  const fieldIds = (field: string): string[] => {
+    const rec = record as Record<string, unknown> | null
+    const raw = editSection && field in edits ? (edits[field] ?? rec?.[field]) : rec?.[field]
+    if (Array.isArray(raw)) return raw.filter((item): item is string => typeof item === 'string')
+    if (typeof raw === 'string' && raw) return [raw]
+    return []
+  }
+
+  const handleEdit = (section: 'registration' | 'rectification') => {
     setEditSection(section)
-    setEdits({})
+    // 读时唯一匹配会把用户 UUID 解析到 person ref 上，编辑态先同步进来，
+    // 避免「已关联但输入框空白、仍提示待确认」
+    const discoveredId = record?.discovered_by_person?.id ?? record?.discovered_by
+    const responsiblePersons = record?.rectification_responsible_persons ?? []
+    const allResponsibleResolved =
+      responsiblePersons.length > 0 && responsiblePersons.every((person) => Boolean(person.id))
+    const responsibleIds = allResponsibleResolved
+      ? responsiblePersons.map((person) => person.id as string)
+      : []
+    setEdits({
+      ...(discoveredId
+        ? {
+            discovered_by: discoveredId,
+            discovered_by_name:
+              record?.discovered_by_name ?? record?.discovered_by_person?.name ?? undefined,
+          }
+        : {}),
+      ...(responsibleIds.length > 0
+        ? {
+            rectification_responsible_person_ids: responsibleIds,
+            rectification_responsible_person_names: responsiblePersons
+              .map((person) => person.name)
+              .filter(Boolean)
+              .join(','),
+            rectification_responsible_person: responsibleIds[0],
+            rectification_responsible_person_name:
+              record?.rectification_responsible_person_name ??
+              responsiblePersons[0]?.name ??
+              undefined,
+          }
+        : {}),
+    })
   }
   const handleCancelEdit = () => {
     setEditSection(null)
@@ -549,14 +551,6 @@ export default function HazardLedgerDetailPage() {
           rectification_responsible_person: leaderId || '',
           rectification_responsible_person_name: name,
         }))
-        // 预填负责人到选项列表，确保 Select 正确显示
-        if (leaderId) {
-          setUserOptions((prev) => {
-            const exists = prev.some((o) => o.value === leaderId)
-            if (exists) return prev
-            return [{ value: leaderId, label: `${name} - ${dept}` }, ...prev]
-          })
-        }
       }
       // 同步获取安全员
       try {
@@ -607,348 +601,65 @@ export default function HazardLedgerDetailPage() {
 
   // ── 状态判定 ──
   const rStatus = record.rectification_status
-  const v1 = record.verify_level_1_status
-  const v2 = record.verify_level_2_status
-  const v3 = record.verify_level_3_status
-  const v1Done = v1 === 'approved' || v1 === 'rejected' || v1 === 'no_review_needed'
-  const v2Done = v2 === 'approved' || v2 === 'rejected' || v2 === 'no_review_needed'
-  const v3Done = v3 === 'approved' || v3 === 'rejected'
 
-  // 当前待复核级别：仅当整改状态为「已回复」或某级已通过时，尚未复核的
-  // 最低级别才是当前可操作级别。rejected / ai_reviewing 等状态下不应出现复核入口。
-  // 「无需整改」场景允许 L3 复核（v1/v2=no_review_needed, v3=pending）。
-  const currentLevel = (() => {
-    if (!rStatus || rStatus === 'pending' || rStatus === 'in_progress' || rStatus === 'rejected' || rStatus === 'ai_reviewing') return null
-    if (!v1Done) return 1
-    if (!v2Done) return 2
-    if (!v3Done) return 3
-    return null
-  })()
-
-  // ── 复核操作（equipment 风格 modal.confirm）──
-  const handleVerify = (level: number) => {
-    const levelLabel = VERIFY_LEVEL_OPTIONS.find((o) => o.value === level)?.label || `第${level}级复核`
-    const refs = { action: 'approved' as string, opinion: '' }
-
-    modal.confirm({
-      title: `${levelLabel}复核`,
-      icon: null,
-      width: 560,
-      content: (
-        <div style={{ marginTop: 16 }}>
-          {/* 隐患摘要 */}
-          <div style={{
-            background: '#faf9f7', padding: 12, borderRadius: 8,
-            marginBottom: 16, fontSize: 13, lineHeight: 1.8,
-          }}>
-            <div><strong>隐患编号：</strong>{record!.hazard_no}</div>
-            <div><strong>隐患描述：</strong>{record!.description}</div>
-            <div><strong>整改回复：</strong>{record!.rectification_reply || '-'}</div>
-          </div>
-
-          {/* 三级复核进度 */}
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {[1, 2, 3].map((l) => {
-                const s = [v1, v2, v3][l - 1]
-                const label = VERIFY_LEVEL_OPTIONS.find((o) => o.value === l)?.label
-                const statusOpt = VERIFY_LEVEL_STATUS_OPTIONS.find((o) => o.value === (s || 'pending'))
-                return (
-                  <Tag key={l} color={statusOpt?.color}>{label}: {statusOpt?.label}</Tag>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* 复核结论 */}
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ marginBottom: 12 }}>
-              <Text strong>复核结论</Text>
-            </div>
-            <Radio.Group defaultValue="approved" onChange={(e) => { refs.action = e.target.value }}>
-              <Radio value="approved">✅ 通过</Radio>
-              <Radio value="rejected">❌ 驳回</Radio>
-            </Radio.Group>
-          </div>
-
-          {/* 复核意见 */}
-          <div>
-            <div style={{ marginBottom: 12 }}>
-              <Text strong>复核意见（可选）</Text>
-            </div>
-            <TextArea rows={3} placeholder="请填写复核意见" onChange={(e) => { refs.opinion = e.target.value }} />
-          </div>
-        </div>
-      ),
-      okText: '提交复核',
-      cancelText: '取消',
-      onOk: async () => {
-        const res = await verifyLevel(record!.id, {
-          level,
-          action: refs.action as 'approved' | 'rejected',
-          opinion: refs.opinion || undefined,
-        })
-        if (res.code === 200) {
-          message.success(`${levelLabel}复核${refs.action === 'approved' ? '通过' : '驳回'}`)
-          queryClient.invalidateQueries({ queryKey: ['safety-hazard'] })
-        } else {
-          message.error(res.message || '复核失败')
-          throw new Error(res.message) // 阻止弹窗关闭
-        }
-      },
-    })
-  }
-
-  // ── 飞书通知状态标识 ──
-  const renderNotifyStatus = (
-    notifyStatus: string | null | undefined,
-    notifiedAt: string | null | undefined,
-    notifyError: string | null | undefined,
-  ) => {
-    if (notifyStatus === 'success' && notifiedAt) {
-      return (
-        <span style={{ color: '#1aae39', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          <CheckCircleOutlined style={{ fontSize: 12 }} />
-          已通知 {fmtDate(notifiedAt, 'YYYY-MM-DD HH:mm')}
-        </span>
-      )
-    }
-    if (notifyStatus === 'failed') {
-      return (
-        <span style={{ color: '#e03131', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          <ExclamationCircleOutlined style={{ fontSize: 12 }} />
-          通知失败{notifyError ? `：${notifyError}` : ''}
-        </span>
-      )
-    }
-    // 从未发送过通知
-    return (
-      <span style={{ color: '#999', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-        <ExclamationCircleOutlined style={{ fontSize: 12 }} />
-        未通知
-      </span>
-    )
-  }
-
-  // ── AI 初审状态渲染 ──
-  const renderAIReviewStatus = () => {
-    const aiStatus = record?.ai_review_status || 'pending'
-    const aiResult = record?.ai_review_result
-
-    if (aiStatus === 'pending') {
-      return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#8c8c8c', fontSize: 13 }}>
-          <RobotOutlined style={{ fontSize: 14 }} />
-          AI 初审待处理
-        </span>
-      )
-    }
-    if (aiStatus === 'processing') {
-      return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#0075de', fontSize: 13 }}>
-          <Spin size="small" />
-          AI 初审中...
-        </span>
-      )
-    }
-    if (aiStatus === 'failed') {
-      return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            background: '#fde0ec', color: '#e03131', fontSize: 12,
-            padding: '2px 10px', borderRadius: 999,
-          }}>
-            <ExclamationCircleOutlined style={{ fontSize: 12 }} />
-            AI 初审失败
-          </span>
-          {record?.ai_error_message && (
-            <Text type="danger" style={{ fontSize: 12 }}>{record.ai_error_message}</Text>
-          )}
-        </span>
-      )
-    }
-    if (aiStatus === 'completed' && aiResult) {
-      const conclusion = aiResult.review_conclusion
-      if (conclusion === '通过') {
-        return (
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            background: '#e6f9ee', color: '#1aae39', fontSize: 12,
-            padding: '2px 10px', borderRadius: 999,
-          }}>
-            <CheckCircleOutlined style={{ fontSize: 12 }} />
-            AI 初审通过
-          </span>
-        )
-      }
-      if (conclusion === '不通过') {
-        return (
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            background: '#fde0ec', color: '#e03131', fontSize: 12,
-            padding: '2px 10px', borderRadius: 999,
-          }}>
-            <CloseCircleOutlined style={{ fontSize: 12 }} />
-            AI 初审不通过（需重新整改）
-          </span>
-        )
-      }
-    }
-    return (
-      <span style={{
-        display: 'inline-flex', alignItems: 'center', gap: 4,
-        background: '#f0f0f0', color: '#8c8c8c', fontSize: 12,
-        padding: '2px 10px', borderRadius: 999,
-      }}>
-        <RobotOutlined style={{ fontSize: 12 }} />
-        AI 初审
-      </span>
-    )
-  }
-
-  const renderAIReviewDetail = () => {
-    const aiResult = record?.ai_review_result
-    if (!aiResult || record?.ai_review_status !== 'completed') return null
-
-    const levelLabelMap: Record<string, Record<string, string>> = {
-      photo_match_level: { matched: '匹配', partial_match: '部分匹配', unmatched: '不匹配', no_photos: '无照片' },
-      measure_quality_level: { adequate: '合格', basic: '基本合格', inadequate: '不合格' },
-      standard_compliance_level: { compliant: '合规', basically_compliant: '基本合规', non_compliant: '不合规' },
+  // ── 整改回复保存：普通字段编辑，保存即生效（不触发审批流转）──
+  const handleSaveRectification = async () => {
+    const pendingFiles = replyFiles.filter((f) => f.originFileObj)
+    if (Object.keys(edits).length === 0 && pendingFiles.length === 0) {
+      setEditSection(null)
+      return
     }
 
-    const levelColorMap: Record<string, string> = {
-      matched: 'success', adequate: 'success', compliant: 'success',
-      partial_match: 'warning', basic: 'warning', basically_compliant: 'warning',
-      unmatched: 'error', no_photos: 'error', inadequate: 'error', non_compliant: 'error',
-    }
-
-    // 维度定义：key → label、icon、及对应的描述文本字段
-    const dims = [
-      { key: 'photo_match_level' as const, descKey: 'photo_match_analysis', label: '图片比对', icon: <CameraOutlined /> },
-      { key: 'measure_quality_level' as const, descKey: 'measure_quality_assessment', label: '措施有效性', icon: <ToolOutlined /> },
-      { key: 'standard_compliance_level' as const, descKey: 'standard_compliance', label: '标准合规', icon: <FileTextOutlined /> },
-    ]
-
-    return (
-      <div style={{ marginTop: 12 }}>
-        {/* 各维度判定：等级 pill + 详细描述 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {dims.map(dim => {
-            const level = aiResult[dim.key] as string
-            const label = levelLabelMap[dim.key]?.[level] || level || '—'
-            const color = levelColorMap[level] || 'default'
-            const description = (aiResult as Record<string, unknown>)[dim.descKey] as string | undefined
-
-            return (
-              <div key={dim.key} style={{
-                padding: '8px 12px',
-                borderRadius: 8,
-                background: '#fafaf9',
-                border: '1px solid #ede9e4',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: description ? 6 : 0 }}>
-                  {dim.icon}
-                  <Text style={{ fontSize: 13, fontWeight: 600, color: '#3b3833' }}>{dim.label}</Text>
-                  <Tag style={{ margin: 0, fontSize: 11, lineHeight: '18px' }} color={color}>{label}</Tag>
-                </div>
-                {description && (
-                  <Text style={{ fontSize: 12, color: '#5d5b54', lineHeight: 1.7, display: 'block' }}>
-                    {description}
-                  </Text>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        {aiResult.confidence != null && (
-          <div style={{ marginTop: 10, textAlign: 'center' }}>
-            <Text style={{ fontSize: 12, color: '#8c8c8c' }}>AI 置信度 </Text>
-            <Text style={{ fontSize: 13, fontWeight: 600 }}>
-              {Math.round((aiResult.confidence as number) * 100)}%
-            </Text>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  // ── 整改回复提交 ──
-  const handleReplySubmit = async () => {
-    if (!record) return
-    setReplySubmitting(true)
+    setSaving(true)
     try {
-      // 1. 保存字段编辑
-      if (Object.keys(edits).length > 0) {
-        const updateRes = await updateHazard(id, edits as unknown as Partial<HazardReportFormData>)
-        if (updateRes.code !== 200) {
-          message.error(updateRes.message || '保存失败')
-          setReplySubmitting(false)
-          return
-        }
-      }
-
-      // 2. 上传新照片
-      const pendingFiles = replyFiles.filter((f) => f.originFileObj)
-      // 从数据库读取原始路径（不经过 URL 转换），避免存储混合格式
+      // 数据库存储的是原始路径（不经过 URL 转换），先取出已保存的照片
       let existingPaths: string[] = []
       if (record.rectification_photos) {
         try {
           const raw = JSON.parse(record.rectification_photos)
           if (Array.isArray(raw)) existingPaths = raw.filter((p: unknown) => typeof p === 'string')
-        } catch { /* ignore */ }
+        } catch { /* 历史数据非 JSON 数组时忽略 */ }
       }
-      const newPaths: string[] = []
 
-      if (pendingFiles.length > 0) {
-        for (const file of pendingFiles) {
-          try {
-            const uploadRes = await uploadRectificationPhoto(id, file.originFileObj as File)
-            if (uploadRes.code === 200 && uploadRes.data) {
-              // 获取最新 rectification_photos
-              const data = uploadRes.data as HazardReport
-              if (data.rectification_photos) {
-                try {
-                  const photos = JSON.parse(data.rectification_photos)
-                  if (Array.isArray(photos) && photos.length > 0) {
-                    newPaths.push(photos[photos.length - 1])
-                  }
-                } catch { /* ignore */ }
-              }
-            }
-          } catch {
-            message.error('照片上传失败')
+      // 逐张上传新增照片，后端返回的最新记录里取本次新增路径
+      const newPaths: string[] = []
+      for (const file of pendingFiles) {
+        try {
+          const uploadRes = await uploadRectificationPhoto(id, file.originFileObj as File)
+          const uploaded = uploadRes.data as HazardReport | undefined
+          if (uploadRes.code === 200 && uploaded?.rectification_photos) {
+            try {
+              const list = JSON.parse(uploaded.rectification_photos)
+              if (Array.isArray(list) && list.length > 0) newPaths.push(list[list.length - 1])
+            } catch { /* ignore */ }
           }
+        } catch {
+          message.error('照片上传失败')
         }
       }
 
-      const allPhotoPaths = [...existingPaths, ...newPaths]
+      const allPaths = [...existingPaths, ...newPaths]
+      const payload = {
+        ...edits,
+        ...(pendingFiles.length > 0 && allPaths.length > 0
+          ? { rectification_photos: JSON.stringify(allPaths) }
+          : {}),
+      } as unknown as Partial<HazardReportFormData>
 
-      // 3. 根据状态调用 replyRectification 或 reworkRectification
-      const replyContent = edits.rectification_reply || record.rectification_reply || fieldVal('rectification_reply')
-      const data = {
-        reply_content: replyContent,
-        rectification_photos: allPhotoPaths.length > 0 ? JSON.stringify(allPhotoPaths) : undefined,
-      }
-      const isRework = record.rectification_status === 'rejected'
-      const replyRes = isRework
-        ? await reworkRectification(id, data)
-        : await replyRectification(id, data)
-
-      if (replyRes.code === 200) {
-        message.success(isRework ? '已重新提交整改回复' : '整改回复已提交')
+      const res = await updateHazard(id, payload)
+      if (res.code === 200) {
+        message.success('修改已保存')
         queryClient.invalidateQueries({ queryKey: ['safety-hazard'] })
         setEditSection(null)
         setEdits({})
         setReplyFiles([])
       } else {
-        message.error(replyRes.message || '提交失败')
+        message.error(res.message || '保存失败')
       }
-    } catch {
-      message.error('提交整改回复失败')
+    } catch (err) {
+      message.error(err instanceof Error && err.message ? err.message : '保存失败')
     } finally {
-      setReplySubmitting(false)
+      setSaving(false)
     }
   }
 
@@ -965,10 +676,15 @@ export default function HazardLedgerDetailPage() {
   }
   const rectificationPill = makeRectificationPill()
 
+  // ── 关闭状态（复用 status 字段：open / closed）──
+  const closeStatusPill =
+    record.status === 'closed'
+      ? pillSuccess(`已关闭${record.closed_at ? ` · ${fmtDate(record.closed_at, 'YYYY-MM-DD')}` : ''}`)
+      : pillNeutral('未关闭')
+
   // ── 阶段状态 pill ──
   const stage1Pill = pillSuccess('已完成')
-  const stage2Pill = record.ai_generated ? pillPurple('AI 已识别') : pillNeutral('待识别')
-  const stage3Pill = record.rectification_reply ? pillSuccess('已回复') : pillNeutral('待回复')
+  const stage2Pill = record.rectification_reply ? pillSuccess('已回复') : pillNeutral('待回复')
 
   // 整改期限 = 检查日期 + 2 个月（不可更改）
   const deadlineDefault = record.discovered_at
@@ -978,145 +694,6 @@ export default function HazardLedgerDetailPage() {
   const photos = {
     defect: parsePhotos(record.defect_photos),
     rectification: parsePhotos(record.rectification_photos),
-  }
-
-  // ── 复核流程 Timeline ──
-  // 参照 equipment 模块 WorkOrderDetailDrawer 的 Timeline 交互模式
-  const buildReviewTimelineItems = () => {
-    const items: Array<{ color: string; icon: React.ReactNode; content: React.ReactNode }> = []
-
-    // ── AI 初审 ──
-    const aiStatus = record.ai_review_status || 'pending'
-    const aiResult = record.ai_review_result
-    let aiColor = '#c8c4be'
-    let aiIcon: React.ReactNode = <RobotOutlined style={{ fontSize: 14 }} />
-
-    if (aiStatus === 'completed' && aiResult?.review_conclusion === '通过') {
-      aiColor = '#1aae39'
-      aiIcon = <CheckCircleOutlined style={{ fontSize: 14 }} />
-    } else if (aiStatus === 'completed' && aiResult?.review_conclusion === '不通过') {
-      aiColor = '#e03131'
-      aiIcon = <CloseCircleOutlined style={{ fontSize: 14 }} />
-    } else if (aiStatus === 'processing') {
-      aiColor = '#0075de'
-      aiIcon = <SyncOutlined spin style={{ fontSize: 14 }} />
-    } else if (aiStatus === 'failed') {
-      aiColor = '#e03131'
-      aiIcon = <ExclamationCircleOutlined style={{ fontSize: 14 }} />
-    }
-
-    items.push({
-      color: aiColor,
-      icon: aiIcon,
-      content: (
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Text strong style={{ fontSize: 14 }}>AI 初审</Text>
-              {renderAIReviewStatus()}
-            </div>
-            {(aiStatus === 'failed') && (
-              <Button
-                size="small"
-                icon={<ReloadOutlined />}
-                loading={aiReviewTriggering}
-                onClick={async () => {
-                  setAiReviewTriggering(true)
-                  try {
-                    const res = await triggerRectificationReview(id)
-                    if (res.code === 200) {
-                      message.success(res.message || 'AI 初审已触发')
-                      const updated = await getHazard(id)
-                      if (updated?.data) queryClient.invalidateQueries({ queryKey: ['safety-hazard'] })
-                    } else {
-                      message.error(res.message || '触发失败')
-                    }
-                  } catch {
-                    message.error('触发 AI 初审失败')
-                  } finally {
-                    setAiReviewTriggering(false)
-                  }
-                }}
-              >
-                重试
-              </Button>
-            )}
-          </div>
-          {renderAIReviewDetail()}
-        </div>
-      ),
-    })
-
-    // ── 三级人工复核 ──
-    const levelConfigs = [
-      { level: 1, label: '部门负责人复核', status: v1 },
-      { level: 2, label: '分管领导复核', status: v2 },
-      { level: 3, label: '检查人员复核', status: v3 },
-    ]
-
-    levelConfigs.forEach(({ level, label, status }) => {
-      const isCurrent = currentLevel === level
-      const isApproved = status === 'approved'
-      const isRejected = status === 'rejected'
-      const isSkipped = status === 'no_review_needed'
-
-      let color = '#c8c4be'
-      let icon: React.ReactNode = (
-        <span style={{
-          display: 'inline-flex', width: 24, height: 24, borderRadius: '50%',
-          background: '#f0eeec', color: '#787671',
-          alignItems: 'center', justifyContent: 'center',
-          fontSize: 12, fontWeight: 700,
-        }}>
-          {level}
-        </span>
-      )
-
-      if (isApproved) {
-        color = '#1aae39'
-        icon = <CheckCircleOutlined style={{ fontSize: 16 }} />
-      } else if (isSkipped) {
-        color = '#c8c4be'
-        icon = <MinusCircleOutlined style={{ fontSize: 16 }} />
-      } else if (isRejected) {
-        color = '#e03131'
-        icon = <CloseCircleOutlined style={{ fontSize: 16 }} />
-      } else if (isCurrent) {
-        color = '#1677ff'
-        icon = <ClockCircleOutlined style={{ fontSize: 16 }} />
-      }
-
-      let statusTag: React.ReactNode = <StatusPill color="#787671" bg="#f0eeec">待开始</StatusPill>
-      if (isApproved) statusTag = pillSuccess('已通过')
-      else if (isSkipped) statusTag = <StatusPill color="#787671" bg="#f0eeec">无需复核</StatusPill>
-      else if (isRejected) statusTag = pillError('已驳回')
-      else if (isCurrent) statusTag = pillInfo('待复核')
-
-      items.push({
-        color,
-        icon,
-        content: (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Text strong style={{ fontSize: 14 }}>{label}</Text>
-              {statusTag}
-            </div>
-            {isCurrent && (
-              <Button
-                type="primary"
-                size="small"
-                icon={<CheckCircleOutlined />}
-                onClick={() => handleVerify(level)}
-              >
-                复核
-              </Button>
-            )}
-          </div>
-        ),
-      })
-    })
-
-    return items
   }
 
   // ── 隐患级别 pill ──
@@ -1146,27 +723,24 @@ export default function HazardLedgerDetailPage() {
 
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h2 style={{ fontSize: 22, fontWeight: 600, color: '#1a1a1a', margin: 0, lineHeight: 1.3 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 600, color: '#1a1a1a', margin: 0, lineHeight: 1.3 }}>
               隐患台账详情
-            </h2>
+            </h1>
             <p style={{ fontSize: 14, color: '#787671', margin: '4px 0 0', lineHeight: 1.5 }}>
               编号 {record.hazard_no}
               <span style={{ color: '#c8c4be', margin: '0 8px' }}>·</span>
               {fmtDate(record.discovered_at, 'YYYY-MM-DD')}
-              <span style={{ color: '#c8c4be', margin: '0 8px' }}>·</span>
-              <StatusPill color={record.ai_generated ? '#391c57' : '#787671'} bg={record.ai_generated ? '#e6e0f5' : '#f0eeec'}>
-                {record.ai_generated ? 'AI 识别' : '人工录入'}
-              </StatusPill>
             </p>
           </div>
           <Space size={8}>
             {levelPill}
             {rectificationPill}
+            {closeStatusPill}
           </Space>
         </div>
       </div>
 
-      {/* ═══════ 四阶段纵轴布局 ═══════ */}
+      {/* ═══════ 两阶段纵轴布局 ═══════ */}
 
       {/* ── ① 隐患登记 ── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
@@ -1193,21 +767,106 @@ export default function HazardLedgerDetailPage() {
                   </FieldEditor>
                 </Col>
                 <Col span={8}>
-                  <FieldEditor label="检查人员">
+                  <FieldEditor label="审批人">
+                    <PersonnelSelect
+                      value={fieldVal('discovered_by') || null}
+                      label={fieldVal('discovered_by_name')}
+                      avatarSrc={
+                        fieldVal('discovered_by') === record.discovered_by_person?.id ||
+                        fieldVal('discovered_by') === record.discovered_by
+                          ? record.discovered_by_person?.avatar_url
+                          : undefined
+                      }
+                      placeholder="搜索姓名/账号绑定系统用户"
+                      onChange={(p) => {
+                        if (!p) return
+                        setEdits((prev) => ({
+                          ...prev,
+                          discovered_by: p.id,
+                          discovered_by_name: p.name,
+                        }))
+                      }}
+                    />
+                  </FieldEditor>
+                  {record.discovered_by_person?.pending && !fieldVal('discovered_by') ? (
+                    <Text style={{ fontSize: 12, color: '#b45309' }}>
+                      待确认：同名多人或查无此人，请选择实际人员
+                    </Text>
+                  ) : null}
+                </Col>
+                <Col span={8}>
+                  <FieldEditor label="整改负责人">
+                    <PersonnelMultiSelect
+                      value={
+                        fieldIds('rectification_responsible_person_ids').length > 0
+                          ? fieldIds('rectification_responsible_person_ids')
+                          : fieldIds('rectification_responsible_person')
+                      }
+                      labels={(fieldVal('rectification_responsible_person_names') || fieldVal('rectification_responsible_person_name') || '')
+                        .split(/[,，]/)
+                        .map((n) => n.trim())
+                        .filter(Boolean)}
+                      avatarSrcs={(fieldIds('rectification_responsible_person_ids').length > 0
+                        ? fieldIds('rectification_responsible_person_ids')
+                        : fieldIds('rectification_responsible_person')
+                      ).map((id) => personAvatarOf(record.rectification_responsible_persons, id))}
+                      onChange={(persons) => {
+                        setEdits((prev) => ({
+                          ...prev,
+                          rectification_responsible_person_ids: persons.map((p) => p.id),
+                          rectification_responsible_person_names: persons.map((p) => p.name).join(','),
+                          rectification_responsible_person: persons[0]?.id,
+                          rectification_responsible_person_name: persons[0]?.name,
+                        }))
+                      }}
+                    />
+                  </FieldEditor>
+                  {(() => {
+                    // 读时未全部唯一命中的负责人保留「待确认」；全部命中时编辑态已回填 ids
+                    const persons = record.rectification_responsible_persons ?? []
+                    const hasPending = persons.length > 0 ? persons.some((person) => person.pending) : true
+                    const hasNames = Boolean(
+                      fieldVal('rectification_responsible_person_names') ||
+                        fieldVal('rectification_responsible_person_name'),
+                    )
+                    if (!hasPending || !hasNames || fieldIds('rectification_responsible_person_ids').length > 0) {
+                      return null
+                    }
+                    return (
+                      <Text style={{ fontSize: 12, color: '#b45309' }}>
+                        待确认：同名多人或查无此人，请选择实际人员
+                      </Text>
+                    )
+                  })()}
+                </Col>
+                <Col span={8}>
+                  <FieldEditor label="检查名称">
                     <Input
-                      placeholder="多维表格自动填入"
-                      value={fieldVal('discovered_by_name')}
-                      onChange={(e) => setEdits((p) => ({ ...p, discovered_by_name: e.target.value }))}
+                      value={fieldVal('inspection_name')}
+                      onChange={(e) => setEdits((p) => ({ ...p, inspection_name: e.target.value }))}
+                      placeholder="请输入检查名称"
                     />
                   </FieldEditor>
                 </Col>
                 <Col span={8}>
-                  <FieldEditor label="责任人">
-                    <Input
-                      placeholder="多维表格自动填入"
-                      value={fieldVal('rectification_responsible_person_name')}
-                      onChange={(e) => setEdits((p) => ({ ...p, rectification_responsible_person_name: e.target.value }))}
-                    />
+                  <FieldEditor label="隐患等级">
+                    <Select style={{ width: '100%' }}
+                      value={fieldVal('hazard_level') || undefined}
+                      onChange={(v) => setEdits((p) => ({ ...p, hazard_level: v }))}
+                      options={HAZARD_LEVEL_OPTIONS.map((o) => ({ value: o.value, label: o.label }))} />
+                  </FieldEditor>
+                </Col>
+                <Col span={8}>
+                  <FieldEditor label="隐患类别">
+                    <Select style={{ width: '100%' }}
+                      value={fieldVal('hazard_category') || undefined}
+                      onChange={(v) => setEdits((p) => ({ ...p, hazard_category: v }))}
+                      options={Array.from(
+                        new Set([
+                          ...HAZARD_CATEGORY_OPTIONS.map((o) => o.value),
+                          ...(fieldVal('hazard_category') ? [fieldVal('hazard_category') as string] : []),
+                        ])
+                      ).map((value) => ({ value, label: HAZARD_CATEGORY_LABEL_MAP[value] || value }))} />
                   </FieldEditor>
                 </Col>
                 <Col span={8}>
@@ -1235,7 +894,7 @@ export default function HazardLedgerDetailPage() {
                   </FieldEditor>
                 </Col>
                 <Col span={24}>
-                  <FieldEditor label="隐患描述">
+                  <FieldEditor label="缺陷项描述">
                     <TextArea rows={3} value={fieldVal('description')}
                       onChange={(e) => setEdits((p) => ({ ...p, description: e.target.value }))} />
                   </FieldEditor>
@@ -1251,15 +910,71 @@ export default function HazardLedgerDetailPage() {
                     </FieldTile>
                   </Col>
                   <Col span={8}>
-                    <FieldLabel>检查人员</FieldLabel>
+                    <FieldLabel>审批人</FieldLabel>
                     <FieldTile>
-                      <Text style={{ fontSize: 14 }}>{record.discovered_by_name || '-'}</Text>
+                      <PersonNameWithBadge
+                        name={record.discovered_by_person?.name ?? record.discovered_by_name}
+                        src={record.discovered_by_person?.avatar_url}
+                        pending={record.discovered_by_person?.pending}
+                        bound={record.discovered_by_person?.id ?? record.discovered_by}
+                        fontSize={14}
+                        avatarSize={22}
+                      />
                     </FieldTile>
                   </Col>
                   <Col span={8}>
-                    <FieldLabel>责任人</FieldLabel>
+                    <FieldLabel>整改负责人</FieldLabel>
                     <FieldTile>
-                      <Text style={{ fontSize: 14 }}>{record.rectification_responsible_person_name || '-'}</Text>
+                      {(() => {
+                        // 优先用后端解析好的人员引用（含头像），历史返回无该字段时走姓名快照兜底
+                        const persons = record.rectification_responsible_persons ?? []
+                        if (persons.length > 0) {
+                          return (
+                            <Space size={6} wrap>
+                              {persons.map((person, index) => (
+                                <PersonNameWithBadge
+                                  key={`${person.id ?? person.name ?? 'person'}-${index}`}
+                                  name={person.name}
+                                  src={person.avatar_url}
+                                  pending={person.pending}
+                                  bound={person.id}
+                                  fontSize={14}
+                                  avatarSize={22}
+                                />
+                              ))}
+                            </Space>
+                          )
+                        }
+                        const names = (record.rectification_responsible_person_names || record.rectification_responsible_person_name || '')
+                          .split(/[,，]/)
+                          .map((n) => n.trim())
+                          .filter(Boolean)
+                        if (names.length === 0) return <Text style={{ fontSize: 14, color: '#a4a097' }}>-</Text>
+                        const ids = Array.isArray(record.rectification_responsible_person_ids)
+                          ? record.rectification_responsible_person_ids
+                          : []
+                        return (
+                          <Space size={4} wrap>
+                            {names.map((name, index) => (
+                              <PersonNameWithBadge
+                                key={`${name}-${index}`}
+                                name={name}
+                                bound={ids[index] || (names.length === 1 ? record.rectification_responsible_person : null)}
+                                fontSize={14}
+                                avatarSize={22}
+                              />
+                            ))}
+                          </Space>
+                        )
+                      })()}
+                    </FieldTile>
+                  </Col>
+                  <Col span={8}>
+                    <FieldLabel>进度说明</FieldLabel>
+                    <FieldTile>
+                      <Text style={{ fontSize: 14, color: record.rectification_progress_note ? '#1a1a1a' : '#a4a097' }}>
+                        {record.rectification_progress_note || '-'}
+                      </Text>
                     </FieldTile>
                   </Col>
                   <Col span={8}>
@@ -1283,18 +998,43 @@ export default function HazardLedgerDetailPage() {
                       <Text style={{ fontSize: 14 }}>{safetyOfficerName || '-'}</Text>
                     </FieldTile>
                   </Col>
+                  <Col span={8}>
+                    <FieldLabel>隐患等级</FieldLabel>
+                    <FieldTile>{levelPill}</FieldTile>
+                  </Col>
+                  <Col span={8}>
+                    <FieldLabel>隐患类别</FieldLabel>
+                    <FieldTile>
+                      {record.hazard_category
+                        ? (
+                          <StatusPill color="#5d5b54" bg="#f0eeec">
+                            {HAZARD_CATEGORY_LABEL_MAP[record.hazard_category] || record.hazard_category}
+                          </StatusPill>
+                        )
+                        : <Text style={{ fontSize: 14, color: '#a4a097' }}>-</Text>}
+                    </FieldTile>
+                  </Col>
                 </Row>
+
+                {record.inspection_name && (
+                  <div style={{ marginTop: 16 }}>
+                    <FieldLabel>检查名称</FieldLabel>
+                    <FieldTile>
+                      <Text style={{ fontSize: 14 }}>{record.inspection_name}</Text>
+                    </FieldTile>
+                  </div>
+                )}
 
                 {record.description && (
                   <div style={{ marginTop: 16 }}>
-                    <FieldLabel>隐患描述</FieldLabel>
+                    <FieldLabel>缺陷项描述</FieldLabel>
                     <TextBlock>{record.description}</TextBlock>
                   </div>
                 )}
 
                 {photos.defect.length > 0 && (
                   <div style={{ marginTop: 16 }}>
-                    <FieldLabel><CameraOutlined style={{ marginRight: 4 }} />缺陷照片</FieldLabel>
+                    <FieldLabel><CameraOutlined style={{ marginRight: 4 }} />证据（整改前照片）</FieldLabel>
                     <PhotoGallery photos={photos.defect} />
                   </div>
                 )}
@@ -1304,139 +1044,10 @@ export default function HazardLedgerDetailPage() {
         </div>
       </div>
 
-      {/* ── ② AI 智能识别 ── */}
-      {record.ai_generated && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 28 }}>
-            <StageDot num={2} active />
-            <StageConnector />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <StageCard accentColor="#5d5b54">
-              <StageHeader
-                icon={<RobotOutlined />}
-                title="AI 智能识别"
-                statusPill={stage2Pill}
-                extra={<EditButton editing={editSection === 'ai'} loading={saving} onEdit={() => handleEdit('ai')} onCancel={handleCancelEdit} onSave={handleSave} />}
-              />
-
-              {editSection === 'ai' ? (
-                <Row gutter={[16, 12]}>
-                  <Col span={8}>
-                    <FieldEditor label="隐患分类（AI）">
-                      <Select style={{ width: '100%' }}
-                        value={fieldVal('hazard_type')}
-                        onChange={(v) => setEdits((p) => ({ ...p, hazard_type: v }))}
-                        options={HAZARD_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))} />
-                    </FieldEditor>
-                  </Col>
-                  <Col span={8}>
-                    <FieldEditor label="隐患类别（AI）">
-                      <Select style={{ width: '100%' }}
-                        value={fieldVal('hazard_category')}
-                        onChange={(v) => setEdits((p) => ({ ...p, hazard_category: v }))}
-                        options={HAZARD_CATEGORY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))} />
-                    </FieldEditor>
-                  </Col>
-                  <Col span={8}>
-                    <FieldEditor label="隐患级别（AI）">
-                      <Select style={{ width: '100%' }}
-                        value={fieldVal('hazard_level')}
-                        onChange={(v) => setEdits((p) => ({ ...p, hazard_level: v }))}
-                        options={HAZARD_LEVEL_OPTIONS.map((o) => ({ value: o.value, label: o.label }))} />
-                    </FieldEditor>
-                  </Col>
-                  <Col span={24}>
-                    <FieldEditor label="隐患描述（AI）">
-                      <TextArea rows={3} value={fieldVal('key_defect')}
-                        onChange={(e) => setEdits((p) => ({ ...p, key_defect: e.target.value }))} />
-                    </FieldEditor>
-                  </Col>
-                  <Col span={24}>
-                    <FieldEditor label="隐患判定依据（AI）">
-                      <TextArea rows={2} value={fieldVal('major_hazard_basis')}
-                        onChange={(e) => setEdits((p) => ({ ...p, major_hazard_basis: e.target.value }))} />
-                    </FieldEditor>
-                  </Col>
-                  <Col span={24}>
-                    <FieldEditor label="整改建议（AI）">
-                      <TextArea rows={4} value={fieldVal('corrective_preventive_measures')}
-                        onChange={(e) => setEdits((p) => ({ ...p, corrective_preventive_measures: e.target.value }))}
-                        placeholder="AI 生成的整改建议，可手动修正" />
-                    </FieldEditor>
-                  </Col>
-                </Row>
-              ) : (
-                <>
-                  <Row gutter={[16, 12]}>
-                    <Col span={8}>
-                      <FieldLabel>隐患分类（AI）</FieldLabel>
-                      <FieldTile>
-                        {(() => {
-                          const opt = HAZARD_TYPE_OPTIONS.find((o) => o.value === record.hazard_type)
-                          return <StatusPill color="#391c57" bg="#e6e0f5">{opt?.label || record.hazard_type}</StatusPill>
-                        })()}
-                      </FieldTile>
-                    </Col>
-                    <Col span={8}>
-                      <FieldLabel>隐患类别（AI）</FieldLabel>
-                      <FieldTile>
-                        <StatusPill color="#391c57" bg="#e6e0f5">
-                          {HAZARD_CATEGORY_LABEL_MAP[record.hazard_category || ''] || record.hazard_category || '-'}
-                        </StatusPill>
-                      </FieldTile>
-                    </Col>
-                    <Col span={8}>
-                      <FieldLabel>隐患级别（AI）</FieldLabel>
-                      <FieldTile>
-                        <StatusPill
-                          color={getLevelColor(record.hazard_level) === 'red' ? '#e03131' : getLevelColor(record.hazard_level) === 'orange' ? '#dd5b00' : '#5645d4'}
-                          bg={getLevelColor(record.hazard_level) === 'red' ? '#fde0ec' : getLevelColor(record.hazard_level) === 'orange' ? '#ffe8d4' : '#e6e0f5'}>
-                          {getLevelLabel(record.hazard_level)}
-                        </StatusPill>
-                      </FieldTile>
-                    </Col>
-                  </Row>
-
-                  {record.key_defect && (
-                    <div style={{ marginTop: 16 }}>
-                      <FieldLabel>
-                        <ExclamationCircleOutlined style={{ color: '#d4b106', marginRight: 4 }} />
-                        隐患描述（AI）
-                      </FieldLabel>
-                      <TextBlock style={{ background: '#fffbe6', border: '1px solid #ffe58f' }}>
-                        {record.key_defect}
-                      </TextBlock>
-                    </div>
-                  )}
-                  {record.major_hazard_basis && (
-                    <div style={{ marginTop: 12 }}>
-                      <FieldLabel>隐患判定依据（AI）</FieldLabel>
-                      <TextBlock>{record.major_hazard_basis}</TextBlock>
-                    </div>
-                  )}
-                  {record.corrective_preventive_measures && (
-                    <div style={{ marginTop: 16 }}>
-                      <FieldLabel>
-                        <ToolOutlined style={{ color: '#5645d4', marginRight: 4 }} />
-                        整改建议（AI）
-                      </FieldLabel>
-                      <TextBlock style={{ background: '#f8f6ff', border: '1px solid #cdc4e8' }}>
-                        {record.corrective_preventive_measures}
-                      </TextBlock>
-                    </div>
-                  )}
-                </>
-              )}
-            </StageCard>
-          </div>
-        </div>
-      )}
-
-      {/* ── ③ 整改回复 ── */}
+      {/* ── ② 整改回复 ── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 28 }}>
-          <StageDot num={3} active />
+          <StageDot num={2} active />
           <StageConnector />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -1444,46 +1055,18 @@ export default function HazardLedgerDetailPage() {
             <StageHeader
               icon={<ToolOutlined />}
               title="整改回复"
-              statusPill={stage3Pill}
+              statusPill={stage2Pill}
               extra={
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  {renderNotifyStatus(record.rectification_notify_status, record.rectification_notified_at, record.rectification_notify_error)}
-                  <Button
-                    icon={<SendOutlined />}
-                    size="small"
-                    loading={notifyRectLoading}
-                    onClick={async () => {
-                      setNotifyRectLoading(true)
-                      try {
-                        const res = await notifyRectification(id)
-                        if (res.code === 200) {
-                          message.success(res.message || '飞书通知已发送')
-                          // 刷新数据以展示通知状态
-                          const updated = await getHazard(id)
-                          if (updated?.data) queryClient.invalidateQueries({ queryKey: ['safety-hazard'] })
-                        } else {
-                          message.error(res.message || '发送失败')
-                        }
-                      } catch {
-                        message.error('发送失败，请稍后重试')
-                      } finally {
-                        setNotifyRectLoading(false)
-                      }
-                    }}
-                  >
-                    飞书通知
-                  </Button>
-                  <EditButton editing={editSection === 'rectification'} loading={saving} onEdit={() => handleEdit('rectification')} onCancel={handleCancelEdit} onSave={handleSave} />
-                </div>
+                <EditButton editing={editSection === 'rectification'} loading={saving} onEdit={() => handleEdit('rectification')} onCancel={handleCancelEdit} onSave={handleSaveRectification} />
               }
             />
 
             {editSection === 'rectification' ? (
               <>
-                {/* 整改期限 — 只读，自动计算 */}
+                {/* 目标完成日期 — 只读，自动计算 */}
                 <Row gutter={[16, 12]} style={{ marginBottom: 16 }}>
                   <Col span={12}>
-                    <FieldLabel>整改期限</FieldLabel>
+                    <FieldLabel>目标完成日期</FieldLabel>
                     <FieldTile>
                       <Text style={{ fontSize: 14, fontWeight: 500 }}>
                         {record.deadline
@@ -1504,11 +1087,18 @@ export default function HazardLedgerDetailPage() {
                   </Col>
                 </Row>
 
-                <FieldEditor label="纠正预防措施">
-                  <TextArea rows={5}
+                <FieldEditor label="整改回复">
+                  <TextArea rows={4}
                     value={fieldVal('rectification_reply')}
                     onChange={(e) => setEdits((p) => ({ ...p, rectification_reply: e.target.value }))}
-                    placeholder="请详细描述纠正预防措施，包括具体整改措施、实施过程、完成情况等" />
+                    placeholder="请详细描述整改过程、实施情况及完成情况" />
+                </FieldEditor>
+
+                <FieldEditor label="纠正预防措施（CAPA）">
+                  <TextArea rows={3}
+                    value={fieldVal('capa_measures')}
+                    onChange={(e) => setEdits((p) => ({ ...p, capa_measures: e.target.value }))}
+                    placeholder="针对该隐患制定的纠正与预防措施，如完善制度、增加巡检频次、加装防护设施等" />
                 </FieldEditor>
 
                 {/* 整改照片上传 */}
@@ -1528,27 +1118,12 @@ export default function HazardLedgerDetailPage() {
                     <p className="ant-upload-hint">支持多张整改后照片（提交时统一上传）</p>
                   </Upload.Dragger>
                 </div>
-
-                {/* 操作按钮 */}
-                <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #ede9e4', display: 'flex', justifyContent: 'center', gap: 12 }}>
-                  <Button size="middle" icon={<CloseOutlined />} onClick={handleCancelEdit}>取消</Button>
-                  <Button
-                    type="primary"
-                    size="middle"
-                    icon={<CheckCircleOutlined />}
-                    loading={replySubmitting}
-                    onClick={handleReplySubmit}
-                    style={{ fontWeight: 600, borderRadius: 8 }}
-                  >
-                    提交整改
-                  </Button>
-                </div>
               </>
             ) : (
               <>
                 <Row gutter={[16, 12]}>
                   <Col span={12}>
-                    <FieldLabel>整改期限</FieldLabel>
+                    <FieldLabel>目标完成日期</FieldLabel>
                     <FieldTile>
                       {record.deadline ? (
                         <span>
@@ -1573,9 +1148,16 @@ export default function HazardLedgerDetailPage() {
                 </Row>
 
                 <div style={{ marginTop: 16 }}>
-                  <FieldLabel><EditOutlined style={{ marginRight: 4 }} />纠正预防措施</FieldLabel>
+                  <FieldLabel><EditOutlined style={{ marginRight: 4 }} />整改回复</FieldLabel>
                   <FieldTile>
                     <Text style={{ fontSize: 14 }}>{record.rectification_reply || '-'}</Text>
+                  </FieldTile>
+                </div>
+
+                <div style={{ marginTop: 16 }}>
+                  <FieldLabel><EditOutlined style={{ marginRight: 4 }} />纠正预防措施（CAPA）</FieldLabel>
+                  <FieldTile>
+                    <Text style={{ fontSize: 14 }}>{record.capa_measures || '-'}</Text>
                   </FieldTile>
                 </div>
 
@@ -1590,144 +1172,7 @@ export default function HazardLedgerDetailPage() {
                   )}
                 </div>
 
-                {/* 整改回复操作按钮（inline 编辑）*/}
-                {(rStatus === 'pending' || rStatus === 'in_progress') && record.status === 'open' && (
-                  <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #ede9e4', display: 'flex', justifyContent: 'center' }}>
-                    <Button type="primary" icon={<EditOutlined />} size="middle"
-                      onClick={() => handleEdit('rectification')}>
-                      整改回复
-                    </Button>
-                  </div>
-                )}
-                {rStatus === 'rejected' && (
-                  <>
-                    {/* AI 初审驳回原因：展示具体不通过的维度，帮助责任人了解需改进方向 */}
-                    {record?.ai_review_status === 'completed' && record?.ai_review_result?.review_conclusion === '不通过' && (
-                      <div style={{
-                        marginTop: 16, padding: 12,
-                        background: '#fff2f0', borderRadius: 8,
-                        border: '1px solid #ffccc7',
-                      }}>
-                        <Text style={{ fontSize: 13, fontWeight: 600, color: '#e03131' }}>
-                          <RobotOutlined style={{ marginRight: 4 }} />
-                          AI 初审驳回（不通过）
-                        </Text>
-                        <div style={{ marginTop: 8, fontSize: 13, color: '#5d5b54' }}>
-                          {(() => {
-                            const ar = record.ai_review_result
-                            // 每一项包含：问题描述 + 改进指导
-                            const items: { problem: string; guidance: string }[] = []
-                            if (ar?.photo_match_level === 'no_photos') {
-                              items.push({
-                                problem: '未提供整改后照片',
-                                guidance: '请拍摄整改后的现场照片（同一角度、同一位置），清晰展示缺陷已修复',
-                              })
-                            }
-                            if (ar?.photo_match_level === 'unmatched') {
-                              items.push({
-                                problem: '整改后图片与原始缺陷不符',
-                                guidance: '请确保照片拍摄角度与原始缺陷照片一致，完整覆盖整改区域',
-                              })
-                            }
-                            if (ar?.measure_quality_level === 'inadequate') {
-                              items.push({
-                                problem: '整改措施不合格（空泛/不可操作）',
-                                guidance: '请补充具体的整改措施，包含量化标准、时间节点、责任主体，避免使用「已整改」「已处理」等笼统描述',
-                              })
-                            }
-                            if (ar?.standard_compliance_level === 'non_compliant') {
-                              items.push({
-                                problem: '整改措施不符合标准要求',
-                                guidance: '请参照相关法规标准要求，确保整改措施符合规范（可参考上方 AI 审核详情中的法规依据）',
-                              })
-                            }
-                            return items.length > 0 ? items.map((item, i) => (
-                              <div key={i} style={{ marginTop: i > 0 ? 10 : 0 }}>
-                                <div style={{ fontWeight: 600, color: '#3b3833' }}>
-                                  • {item.problem}
-                                </div>
-                                <div style={{
-                                  marginTop: 2, marginLeft: 12, paddingLeft: 8,
-                                  borderLeft: '2px solid #e8c55a',
-                                  color: '#5d5b54', fontSize: 12, lineHeight: 1.7,
-                                }}>
-                                  {item.guidance}
-                                </div>
-                              </div>
-                            )) : <Text style={{ color: '#a4a097' }}>详见上方各维度分析</Text>
-                          })()}
-                        </div>
-                      </div>
-                    )}
-                    <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #ede9e4', display: 'flex', justifyContent: 'center' }}>
-                      <Button danger icon={<EditOutlined />} size="middle"
-                        onClick={() => handleEdit('rectification')}>
-                        重新整改
-                      </Button>
-                    </div>
-                  </>
-                )}
               </>
-            )}
-          </StageCard>
-        </div>
-      </div>
-
-      {/* ── ④ 复核 ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 28 }}>
-          <StageDot num={4} active />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <StageCard accentColor={rStatus === 'completed' || rStatus === 'closed' ? '#1aae39' : '#0075de'}>
-            <StageHeader
-              icon={<CheckCircleOutlined />}
-              title="复核"
-              statusPill={rectificationPill}
-              extra={
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  {renderNotifyStatus(record.review_notify_status, record.review_notified_at, record.review_notify_error)}
-                  {currentLevel && (
-                    <Button
-                      icon={<SendOutlined />}
-                      size="small"
-                      loading={notifyLoading}
-                      onClick={async () => {
-                        setNotifyLoading(true)
-                        try {
-                          const res = await notifyReviewer(id)
-                          if (res.code === 200) {
-                            message.success(res.message || '飞书通知已发送')
-                            const updated = await getHazard(id)
-                            if (updated?.data) queryClient.invalidateQueries({ queryKey: ['safety-hazard'] })
-                          } else {
-                            message.error(res.message || '发送失败')
-                          }
-                        } catch {
-                          message.error('发送失败，请稍后重试')
-                        } finally {
-                          setNotifyLoading(false)
-                        }
-                      }}
-                    >
-                      飞书通知
-                    </Button>
-                  )}
-                </div>
-              }
-            />
-
-            {/* ── 四级复核 Timeline（参照 equipment 模块 WorkOrderDetailDrawer）── */}
-            <Timeline
-              items={buildReviewTimelineItems()}
-              style={{ marginTop: 4 }}
-            />
-
-            {/* 已关闭状态 */}
-            {!currentLevel && (rStatus === 'completed' || rStatus === 'closed') && (
-              <div style={{ textAlign: 'center', marginTop: 20, paddingTop: 16, borderTop: '1px solid #ede9e4' }}>
-                {pillSuccess('整改已关闭')}
-              </div>
             )}
           </StageCard>
         </div>

@@ -6,6 +6,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.modules.safety.schemas.person_ref import PersonRef
+
 # ── 风险等级常量 ──
 RISK_LEVELS = [
     {
@@ -113,6 +115,19 @@ class HazardIdentificationUpdate(BaseModel):
     batch_id: uuid.UUID | None = None
     stage_name: str | None = None
     notes: str | None = None
+    # 历史台账原始字段
+    checklist_no: str | None = None
+    risk_point_no: str | None = None
+    risk_point_type: str | None = None
+    risk_point_name: str | None = None
+    work_unit: str | None = None
+    location_tag: str | None = None
+    work_step: str | None = None
+    check_standard: str | None = None
+    risk_method: str | None = None
+    severity_s: float | None = None
+    control_unit: str | None = None
+    training_measures: str | None = None
     specific_activity: str | None = None
     equipment_facilities: str | None = None
     raw_auxiliary_materials: str | None = None
@@ -173,6 +188,19 @@ class HazardIdentificationResponse(HazardIdentificationBase):
     batch_id: uuid.UUID | None = None
     stage_name: str | None = None
     regulation_name: str | None = None
+    # 历史台账原始字段
+    checklist_no: str | None = None
+    risk_point_no: str | None = None
+    risk_point_type: str | None = None
+    risk_point_name: str | None = None
+    work_unit: str | None = None
+    location_tag: str | None = None
+    work_step: str | None = None
+    check_standard: str | None = None
+    risk_method: str | None = None
+    severity_s: float | None = None
+    control_unit: str | None = None
+    training_measures: str | None = None
     specific_activity: str | None = None
     equipment_facilities: str | None = None
     raw_auxiliary_materials: str | None = None
@@ -209,6 +237,9 @@ class HazardIdentificationResponse(HazardIdentificationBase):
     post_risk_label: str | None = None
     control_level: str | None = None
     responsible_person: str | None = None
+    responsible_person_users: list[PersonRef] = Field(
+        default_factory=list, description="责任人匹配结果（命中系统用户时含头像，未命中仅保留姓名）"
+    )
     ai_node_progress: str
     ai_error_message: str | None = None
     overall_status: str

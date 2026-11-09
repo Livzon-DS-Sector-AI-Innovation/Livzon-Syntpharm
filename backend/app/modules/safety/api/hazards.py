@@ -1,6 +1,7 @@
 # mypy: ignore-errors
 """Safety API — hazards endpoints."""
 
+import logging
 import os
 import uuid
 from datetime import datetime
@@ -8,10 +9,12 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.concurrency import run_in_threadpool
 
-from app.core.database import get_db
+from app.core.database import async_session_factory, get_db
 from app.core.deps import RequiredUser
-from app.core.exceptions import NotFoundException
+from app.core.exceptions import BadRequestException, NotFoundException
+from app.core.image_utils import compress_image
 from app.core.jobs import submit_job, submit_job_safe
 from app.core.response import build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
@@ -21,13 +24,22 @@ from app.modules.safety.schemas import (
     DepartmentLeaderResponse,
     DepartmentSafetyOfficerApiResponse,
     DepartmentSafetyOfficerResponse,
+    HazardAiRunApiResponse,
+    HazardAiRunData,
     HazardApiResponse,
+    HazardCategoryApiResponse,
+    HazardCategoryCreate,
+    HazardCategoryListApiResponse,
+    HazardCategoryResponse,
     HazardListApiResponse,
+    HazardRectificationNotifyApiResponse,
+    HazardRectificationNotifyData,
     HazardReportCreate,
-    HazardReportResponse,
     HazardReportUpdate,
     HazardStatsApiResponse,
     HazardStatsResponse,
+    HazardVerifyNotifyApiResponse,
+    HazardVerifyNotifyData,
     RectificationReplyRequest,
     VerifyLevelRequest,
 )
@@ -38,6 +50,12 @@ from app.modules.safety.service.hazard import (
     _send_rectification_notification,
     _send_verify_notification,
 )
+from app.modules.safety.service.hazard_person import (
+    to_hazard_response,
+    to_hazard_responses,
+)
+
+logger = logging.getLogger(__name__)
 
 hazards_router = APIRouter()
 
@@ -55,6 +73,11 @@ async def get(
     inspection_category: str | None = None,
     department: str | None = None,
     keyword: str | None = None,
+    person_match: str | None = Query(
+        None,
+        pattern="^(pending)$",
+        description='人员绑定状态筛选："pending" 仅返回待匹配（有姓名、未绑定系统用户）',
+    ),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取隐患列表"""
@@ -71,15 +94,17 @@ async def get(
         inspection_category,
         department,
         keyword,
+        person_match,
     )
     return HazardListApiResponse(
-        data=[HazardReportResponse.model_validate(h) for h in items],
+        data=await to_hazard_responses(db, items),
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
 @hazards_router.get("/hazards/stats", response_model=HazardStatsApiResponse, summary="获取隐患统计数据")
 async def handler(
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取隐患全局统计数据（不受分页/筛选影响，用于统计药丸展示）。"""
@@ -92,6 +117,7 @@ async def handler(
     "/hazards/department-leader", response_model=DepartmentLeaderApiResponse, summary="查询部门负责人"
 )
 async def handler(  # noqa: F811
+    current_user: RequiredUser,
     department_name: str = Query(..., min_length=1, description="部门名称"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -105,7 +131,7 @@ async def handler(  # noqa: F811
     resolver = IdentityResolver(db)
     person = await resolver.resolve_department_leader(department_name)
     if person is None:
-        return build_response(code=404, message=f"未找到部门 '{department_name}' 或其负责人")
+        raise NotFoundException(resource=f"部门 '{department_name}' 的负责人")
     return DepartmentLeaderApiResponse(
         data=DepartmentLeaderResponse(
             department=person.department or department_name,
@@ -121,6 +147,7 @@ async def handler(  # noqa: F811
     summary="查询部门分管安全员",
 )
 async def handler(  # noqa: F811
+    current_user: RequiredUser,
     department_name: str = Query(..., min_length=1, description="部门名称"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -134,7 +161,7 @@ async def handler(  # noqa: F811
     resolver = IdentityResolver(db)
     person = await resolver.resolve_safety_officer(department_name)
     if person is None:
-        return build_response(code=404, message=f"未找到部门 '{department_name}' 的安全员")
+        raise NotFoundException(resource=f"部门 '{department_name}' 的安全员")
     return DepartmentSafetyOfficerApiResponse(
         data=DepartmentSafetyOfficerResponse(
             department=person.department or department_name,
@@ -155,7 +182,37 @@ async def handler(  # noqa: F811
     item = await service.get_hazard(hazard_id)
     if not item:
         raise NotFoundException(resource="隐患")
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
+
+
+@hazards_router.get(
+    "/hazard-categories",
+    response_model=HazardCategoryListApiResponse,
+    summary="获取隐患类别字典（内置 7 类 + 用户新增）",
+)
+async def get_hazard_categories(current_user: RequiredUser, db: AsyncSession = Depends(get_db)) -> Any:
+    """隐患登记下拉用的类别清单：内置类别与字典表增量合并去重"""
+    service = HazardService(db)
+    data = await service.list_hazard_categories()
+    return HazardCategoryListApiResponse(data=[HazardCategoryResponse(**item) for item in data])
+
+
+@hazards_router.post(
+    "/hazard-categories",
+    response_model=HazardCategoryApiResponse,
+    summary="新增隐患类别（全公司共享）",
+)
+async def post_hazard_category(
+    current_user: RequiredUser, data: HazardCategoryCreate, db: AsyncSession = Depends(get_db)
+) -> Any:
+    """新增隐患类别：重名直接返回已有记录（幂等），软删除记录自动恢复"""
+    service = HazardService(db)
+    try:
+        item = await service.create_hazard_category(data.name)
+    except ValueError as exc:
+        raise BadRequestException(message=str(exc)) from exc
+    await db.commit()
+    return HazardCategoryApiResponse(data=HazardCategoryResponse(**item))
 
 
 @hazards_router.post("/hazards", response_model=HazardApiResponse, summary="创建隐患")
@@ -165,7 +222,7 @@ async def post(current_user: RequiredUser, data: HazardReportCreate, db: AsyncSe
     service = HazardService(db)
     item = await service.create_hazard(data, auto_run_ai=False)
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.put(  # type: ignore[no-redef]
@@ -180,7 +237,7 @@ async def handler(  # noqa: F811
     if not item:
         raise NotFoundException(resource="隐患")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -193,18 +250,22 @@ async def handler(  # noqa: F811
 ) -> Any:
     """上传隐患缺陷图片，追加到 defect_photos JSON 数组"""
 
-    file_ext = os.path.splitext(file.filename or ".png")[1]
-    safe_name = f"hazard_{hazard_id}_{int(datetime.now().timestamp())}{file_ext}"
     content = await file.read()
+    # Pillow 解码/重编码是 CPU 密集同步操作，放线程池避免阻塞事件循环
+    content, file_ext, content_type = await run_in_threadpool(compress_image, content, file.filename, file.content_type)
+    # 时间戳仅到秒，同秒多图会互相覆盖，追加随机后缀保证对象名唯一
+    safe_name = f"hazard_{hazard_id}_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}{file_ext}"
 
     if minio_enabled():
         object_key = f"hazard/{safe_name}"
-        upload_object(
+        # MinIO 客户端是同步阻塞调用，放线程池避免大图上传期间阻塞事件循环
+        await run_in_threadpool(
+            upload_object,
             "safety",
             object_key,
             content,
             len(content),
-            file.content_type or "image/jpeg",
+            content_type,
         )
         stored_path = object_key
     else:
@@ -222,7 +283,7 @@ async def handler(  # noqa: F811
     if not item:
         raise NotFoundException(resource="隐患")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -235,18 +296,22 @@ async def handler(  # noqa: F811
 ) -> Any:
     """上传整改后图片，追加到 rectification_photos JSON 数组"""
 
-    file_ext = os.path.splitext(file.filename or ".png")[1]
-    safe_name = f"rectification_{hazard_id}_{int(datetime.now().timestamp())}{file_ext}"
     content = await file.read()
+    # Pillow 解码/重编码是 CPU 密集同步操作，放线程池避免阻塞事件循环
+    content, file_ext, content_type = await run_in_threadpool(compress_image, content, file.filename, file.content_type)
+    # 时间戳仅到秒，同秒多图会互相覆盖，追加随机后缀保证对象名唯一
+    safe_name = f"rectification_{hazard_id}_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}{file_ext}"
 
     if minio_enabled():
         object_key = f"hazard/{safe_name}"
-        upload_object(
+        # MinIO 客户端是同步阻塞调用，放线程池避免大图上传期间阻塞事件循环
+        await run_in_threadpool(
+            upload_object,
             "safety",
             object_key,
             content,
             len(content),
-            file.content_type or "image/jpeg",
+            content_type,
         )
         stored_path = object_key
     else:
@@ -263,7 +328,7 @@ async def handler(  # noqa: F811
     if not item:
         raise NotFoundException(resource="隐患")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -278,9 +343,9 @@ async def handler(  # noqa: F811
     service = HazardService(db)
     item = await service.start_rectification(hazard_id)
     if not item:
-        return build_response(code=400, message="无法开始整改，当前状态不允许")
+        raise BadRequestException(message="无法开始整改，当前状态不允许")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -303,11 +368,12 @@ async def handler(  # noqa: F811
         corrective_preventive_measures=data.corrective_preventive_measures,
         rectification_reply=data.rectification_reply,
         actual_completion_date=data.actual_completion_date,
+        capa_measures=data.capa_measures,
     )
     if not item:
-        return build_response(code=400, message="无法回复，当前状态不允许")
+        raise BadRequestException(message="无法回复，当前状态不允许")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -331,9 +397,9 @@ async def handler(  # noqa: F811
         user_name=user_name,
     )
     if not item:
-        return build_response(code=400, message="无法复核，当前状态不允许")
+        raise BadRequestException(message="无法复核，当前状态不允许")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -357,11 +423,12 @@ async def handler(  # noqa: F811
         rectification_photos=data.rectification_photos,
         user_id=user_id,
         user_name=user_name,
+        capa_measures=data.capa_measures,
     )
     if not item:
-        return build_response(code=400, message="无法重新整改，当前状态不允许")
+        raise BadRequestException(message="无法重新整改，当前状态不允许")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.delete(  # type: ignore[no-redef]
@@ -381,36 +448,86 @@ async def handler(  # noqa: F811
 
 @hazards_router.post(  # type: ignore[no-redef]
     "/hazards/{hazard_id}/ai/run/{script_number}",
-    response_model=HazardApiResponse,
+    response_model=HazardAiRunApiResponse,
     summary="执行隐患AI工作流",
 )
 async def handler(  # noqa: F811
     current_user: RequiredUser, hazard_id: uuid.UUID, script_number: int, db: AsyncSession = Depends(get_db)
 ) -> Any:
-    """执行隐患AI工作流脚本。AI从已有数据库数据读取上下文，无需额外传入参数。
+    """提交隐患AI工作流脚本（后台异步执行）。
+
+    AI 调用耗时通常远超 HTTP 请求预算（AGENTS.md：请求内不执行超过 5 秒的操作），
+    所以这里只做存在性校验 + 置「执行中」标记，真正的 AI 调用交给后台任务；
+    前端轮询隐患详情，读 `ai_node_progress` / `ai_error_message` 取最终结果。
 
     没有 body 参数——FastAPI 不会解析请求 body，避免空 body + JSON Content-Type 触发 422。
     """
     service = HazardService(db)
-    item = await service.run_hazard_ai_script(hazard_id, script_number)
-    if item is None:
-        return build_response(code=400, message="无法执行AI工作流，当前状态不允许或前置步骤未完成")
+    exist = await service.get_hazard(hazard_id)
+    if not exist:
+        raise NotFoundException(resource="隐患")
+
+    # 先落「执行中」，前端据此区分「尚未开始」与「已结束」，重跑时也不会读到上一次的 completed
+    await service.repo.update_hazard(hazard_id, {"ai_node_progress": "running", "ai_error_message": None})
     await db.commit()
 
-    # AI 识别完成后异步通知责任人整改（与 Bitable 同步流程对齐：
-    # _create_hazard_from_bitable → AI 完成 → _send_rectification_notification）
-    if script_number == 1 and item and not item.ai_error_message:
-        await submit_job_safe(
-            "safety.hazard-rectification-notify",
-            lambda _job_id: _send_rectification_notification(item),
-        )
+    async def _runner(_job_id: uuid.UUID) -> dict[str, Any]:
+        async with async_session_factory() as bg_session:
+            bg_service = HazardService(bg_session)
+            try:
+                updated = await bg_service.run_hazard_ai_script(hazard_id, script_number)
+            except Exception:
+                # 兜底：异常时不能让 ai_node_progress 永远停在 running，否则前端轮询到超时
+                logger.exception("隐患 AI 工作流执行异常: hazard_id=%s script=%s", hazard_id, script_number)
+                await bg_session.rollback()
+                await bg_service.repo.update_hazard(
+                    hazard_id,
+                    {"ai_node_progress": "failed", "ai_error_message": "AI 工作流执行异常，请稍后重试"},
+                )
+                await bg_session.commit()
+                raise
 
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+            if updated is None:
+                await bg_session.rollback()
+                await bg_service.repo.update_hazard(
+                    hazard_id,
+                    {"ai_node_progress": "failed", "ai_error_message": "隐患不存在，AI 工作流未执行"},
+                )
+                await bg_session.commit()
+                raise RuntimeError(f"隐患 {hazard_id} 不存在，AI 工作流未执行")
+
+            # 脚本内部失败只写 ai_error_message，不会推进 ai_node_progress，这里补齐终态避免前端一直轮询
+            if updated.ai_node_progress == "running":
+                await bg_service.repo.update_hazard(hazard_id, {"ai_node_progress": "failed"})
+            await bg_session.commit()
+
+            # AI 识别完成后异步通知责任人整改（与 Bitable 同步流程对齐：
+            # _create_hazard_from_bitable → AI 完成 → _send_rectification_notification）
+            if script_number == 1 and not updated.ai_error_message:
+                fresh = await bg_service.repo.get_hazard_by_id(hazard_id)
+                if fresh is not None:
+                    await submit_job_safe(
+                        "safety.hazard-rectification-notify",
+                        lambda _job_id, h=fresh: _send_rectification_notification(h),
+                    )
+
+            return {
+                "hazard_id": str(hazard_id),
+                "script_number": script_number,
+                "ai_error_message": updated.ai_error_message,
+            }
+
+    job_id = await submit_job("safety.hazard-ai-run", _runner)
+
+    return HazardAiRunApiResponse(
+        message="AI 工作流已提交，正在后台执行",
+        data=HazardAiRunData(job_id=str(job_id), hazard_id=str(hazard_id), script_number=script_number),
+    )
 
 
 @hazards_router.post(  # type: ignore[no-redef]
     "/hazards/{hazard_id}/rectification/notify-reviewer",
-    response_model=HazardApiResponse,
+    response_model=HazardVerifyNotifyApiResponse,
     summary="飞书通知当前复核人",
 )
 async def handler(  # noqa: F811
@@ -448,7 +565,7 @@ async def handler(  # noqa: F811
             current_level = 3
 
     if current_level is None:
-        return build_response(code=400, message="当前无需复核，无法发送通知")
+        raise BadRequestException(message="当前无需复核，无法发送通知")
 
     level_labels = {1: "部门负责人", 2: "分管领导", 3: "检查人员"}
 
@@ -458,9 +575,9 @@ async def handler(  # noqa: F811
         lambda _job_id: _send_verify_notification(hazard, current_level),
     )
 
-    return build_response(
+    return HazardVerifyNotifyApiResponse(
         message=f"已向{level_labels[current_level]}发送飞书通知",
-        data={"level": current_level, "level_label": level_labels[current_level]},
+        data=HazardVerifyNotifyData(level=current_level, level_label=level_labels[current_level]),
     )
 
 
@@ -484,10 +601,7 @@ async def handler(  # noqa: F811
         raise NotFoundException(resource="隐患")
 
     if hazard.rectification_status not in ("replied",):
-        return build_response(
-            code=400,
-            message="当前整改状态不允许触发 AI 初审，仅「已回复」状态可触发",
-        )
+        raise BadRequestException(message="当前整改状态不允许触发 AI 初审，仅「已回复」状态可触发")
 
     # 异步执行，不阻塞 HTTP 响应
     await submit_job(
@@ -500,7 +614,7 @@ async def handler(  # noqa: F811
 
 @hazards_router.post(  # type: ignore[no-redef]
     "/hazards/{hazard_id}/rectification/notify-rectification",
-    response_model=HazardApiResponse,
+    response_model=HazardRectificationNotifyApiResponse,
     summary="飞书通知整改责任人",
 )
 async def handler(  # noqa: F811
@@ -518,9 +632,9 @@ async def handler(  # noqa: F811
         lambda _job_id: _send_rectification_notification(hazard),
     )
 
-    return build_response(
+    return HazardRectificationNotifyApiResponse(
         message="已向整改责任人发送飞书通知",
-        data={"target": hazard.rectification_responsible_person_name or "未知"},
+        data=HazardRectificationNotifyData(target=hazard.rectification_responsible_person_name or "未知"),
     )
 
 

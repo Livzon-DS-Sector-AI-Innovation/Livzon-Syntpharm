@@ -7,25 +7,19 @@ import {
   Table,
   Button,
   Input,
-  message,
-  Typography,
   App,
   Space,
   Checkbox,
   Popover,
+  Image,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
   PlusOutlined,
   SearchOutlined,
-  PlayCircleOutlined,
-  CheckCircleOutlined,
-  SafetyCertificateOutlined,
   CloseCircleOutlined,
-  EditOutlined,
   DeleteOutlined,
   FilterOutlined,
-  ReloadOutlined,
   CaretUpFilled,
   CaretDownFilled,
 } from '@ant-design/icons'
@@ -33,10 +27,8 @@ import { useHazardStore } from '@/stores/safety'
 import {
   getHazards,
   fetchHazardStats,
-  runHazardAI,
   deleteHazards,
   deleteHazard,
-  startRectification,
 } from '@/actions/safety'
 import type {
   HazardReport,
@@ -45,18 +37,52 @@ import type {
   HazardReportQueryParams,
 } from '@/types/safety'
 import {
-  HAZARD_TYPE_OPTIONS,
   HAZARD_LEVEL_OPTIONS,
   HAZARD_CATEGORY_OPTIONS,
-  VERIFY_LEVEL_STATUS_OPTIONS,
+  INSPECTION_CATEGORY_OPTIONS,
+  getHazardCategoryLabel,
 } from '@/types/safety'
-import HazardRectificationReplyModal from './HazardRectificationReplyModal'
-import HazardVerifyModal from './HazardVerifyModal'
 import HazardRegistrationDrawer from './HazardRegistrationDrawer'
+import { PersonNameWithBadge } from './PersonMatchBadge'
 import dayjs from 'dayjs'
 import { statusPill, actionLink } from '@/components/safety/sharedStyles'
+import { fileProxyUrl } from '@/lib/file-url'
+import { fetchHazardCategories } from '@/lib/api/client/safety'
 
-const { Text } = Typography
+
+
+// ── 照片 JSON 数组 → 可访问 URL ──
+// 本地路径/object_key 走 /api/v1/safety/files 代理（与详情页 parsePhotos 保持一致），
+// Bitable attachment 用预签名 url
+function parsePhotoUrls(photos?: string | null): string[] {
+  if (!photos) return []
+  let arr: unknown[] = []
+  try {
+    const parsed: unknown = JSON.parse(photos)
+    arr = Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+  return arr
+    .map((item): string | null => {
+      if (typeof item === 'string') {
+        return item.startsWith('http') ? item : fileProxyUrl(item)
+      }
+      if (typeof item === 'object' && item !== null) {
+        const att = item as Record<string, unknown>
+        if (typeof att.url === 'string' && att.url) return att.url
+        if (typeof att.tmp_url === 'string' && att.tmp_url) return att.tmp_url
+      }
+      return null
+    })
+    .filter((url): url is string => url !== null)
+}
+
+// ── 关闭状态（复用 status 字段）──
+function renderCloseStatus(status?: string | null) {
+  if (status === 'closed') return <span style={statusPill('#1f7a45', '#d9f3e1')}>已关闭</span>
+  return <span style={statusPill('#5d5b54', '#f0eeec')}>未关闭</span>
+}
 
 // ── 整改状态语义色配置 ──
 const RECTIFICATION_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -101,11 +127,6 @@ const FILTER_FIELDS: FilterFieldConfig[] = [
     options: HAZARD_LEVEL_OPTIONS,
   },
   {
-    key: 'hazard_type',
-    label: '隐患类型',
-    options: HAZARD_TYPE_OPTIONS,
-  },
-  {
     key: 'hazard_category',
     label: '隐患类别',
     options: HAZARD_CATEGORY_OPTIONS,
@@ -113,20 +134,18 @@ const FILTER_FIELDS: FilterFieldConfig[] = [
   {
     key: 'inspection_category',
     label: '检查类别',
-    options: [
-      { value: '日常检查', label: '日常检查' },
-      { value: '专项检查', label: '专项检查' },
-      { value: '月度安全检查', label: '月度安全检查' },
-      { value: '周检', label: '周检' },
-      { value: '节假日检查', label: '节假日检查' },
-      { value: '季节性检查', label: '季节性检查' },
-    ],
+    options: INSPECTION_CATEGORY_OPTIONS,
   },
   {
     key: 'department',
     label: '责任部门',
     type: 'text' as const,
     options: [],
+  },
+  {
+    key: 'person_match',
+    label: '人员匹配',
+    options: [{ value: 'pending', label: '待确认（同名多人或查无此人）' }],
   },
 ]
 
@@ -135,7 +154,7 @@ const _AI_FIELD_LABELS: Record<string, string> = {
   hazard_type: '隐患分类',
   hazard_level: '隐患等级',
   hazard_category: '隐患类别',
-  description: '隐患描述',
+  description: '缺陷项描述',
   key_defect: '重点缺陷',
   major_hazard_basis: '判定依据',
   corrective_preventive_measures: '纠正预防措施',
@@ -153,13 +172,10 @@ export default function HazardLedgerPage() {
   const [searchKeyword, setSearchKeyword] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [levelFilter, setLevelFilter] = useState<string | undefined>()
-  const [typeFilter, setTypeFilter] = useState<string | undefined>()
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>()
   const [inspectionCategoryFilter, setInspectionCategoryFilter] = useState<string | undefined>()
   const [deptFilter, setDeptFilter] = useState<string | undefined>()
-
-  // ── 全局统计（来自 API，不受分页/筛选影响）──
-  const [hazardStats, setHazardStats] = useState<HazardStats | null>(null)
+  const [personMatchFilter, setPersonMatchFilter] = useState<'pending' | undefined>()
 
   // ── 排序状态 ──
   const [sortField, setSortField] = useState<string | undefined>()
@@ -168,15 +184,6 @@ export default function HazardLedgerPage() {
   // ── 筛选弹出框状态 ──
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false)
   const [pendingFilterField, setPendingFilterField] = useState<string | null>(null)
-
-  const [_rerunLoading, setRerunLoading] = useState(false)
-
-  // ── 整改回复 & 三级复核 ──
-  const [replyModalVisible, setReplyModalVisible] = useState(false)
-  const [replyMode, setReplyMode] = useState<'reply' | 'rework'>('reply')
-  const [replyRecord, setReplyRecord] = useState<HazardReport | null>(null)
-  const [verifyModalVisible, setVerifyModalVisible] = useState(false)
-  const [verifyRecord, setVerifyRecord] = useState<HazardReport | null>(null)
 
   // ── 隐患登记抽屉 ──
   const [registrationDrawerOpen, setRegistrationDrawerOpen] = useState(false)
@@ -192,6 +199,35 @@ export default function HazardLedgerPage() {
   // UI state lives in the per-domain store; list data comes from React Query.
   const { queryParams: hazardQueryParams, setQueryParams: setHazardQueryParams } = useHazardStore()
 
+  // ── 隐患类别字典（新增类别后筛选项同步可见）──
+  const { data: categoryDict } = useQuery({
+    queryKey: ['safety', 'hazard-categories'],
+    queryFn: () => fetchHazardCategories(),
+    staleTime: 5 * 60 * 1000,
+  })
+  const categoryFilterOptions = useMemo(() => {
+    const seen = new Set<string>()
+    const options: { value: string; label: string }[] = []
+    for (const item of categoryDict ?? []) {
+      if (!item.name || seen.has(item.name)) continue
+      seen.add(item.name)
+      options.push({ value: item.name, label: item.name })
+    }
+    for (const item of HAZARD_CATEGORY_OPTIONS) {
+      if (seen.has(item.value)) continue
+      seen.add(item.value)
+      options.push({ value: item.value, label: item.label })
+    }
+    return options
+  }, [categoryDict])
+  const filterFields = useMemo<FilterFieldConfig[]>(
+    () =>
+      FILTER_FIELDS.map((field) =>
+        field.key === 'hazard_category' ? { ...field, options: categoryFilterOptions } : field,
+      ),
+    [categoryFilterOptions],
+  )
+
   // ── 活跃筛选条件 (多维表格 chip 模式) ──
   const activeFilters = useMemo(() => {
     const list: { key: string; fieldLabel: string; value: string; valueLabel: string }[] = []
@@ -199,33 +235,32 @@ export default function HazardLedgerPage() {
       const opt = HAZARD_LEVEL_OPTIONS.find((o) => o.value === levelFilter)
       list.push({ key: 'hazard_level', fieldLabel: '等级', value: levelFilter, valueLabel: opt?.label || levelFilter })
     }
-    if (typeFilter) {
-      const opt = HAZARD_TYPE_OPTIONS.find((o) => o.value === typeFilter)
-      list.push({ key: 'hazard_type', fieldLabel: '类型', value: typeFilter, valueLabel: opt?.label || typeFilter })
-    }
     if (categoryFilter) {
-      const opt = HAZARD_CATEGORY_OPTIONS.find((o) => o.value === categoryFilter)
-      list.push({ key: 'hazard_category', fieldLabel: '类别', value: categoryFilter, valueLabel: opt?.label || categoryFilter })
+      const label = getHazardCategoryLabel(categoryFilter)
+      list.push({ key: 'hazard_category', fieldLabel: '类别', value: categoryFilter, valueLabel: label })
     }
     if (inspectionCategoryFilter) {
-      const opt = FILTER_FIELDS.find((f) => f.key === 'inspection_category')?.options.find((o) => o.value === inspectionCategoryFilter)
+      const opt = filterFields.find((f) => f.key === 'inspection_category')?.options.find((o) => o.value === inspectionCategoryFilter)
       list.push({ key: 'inspection_category', fieldLabel: '检查类别', value: inspectionCategoryFilter, valueLabel: opt?.label || inspectionCategoryFilter })
     }
     if (deptFilter) {
       list.push({ key: 'department', fieldLabel: '责任部门', value: deptFilter, valueLabel: deptFilter })
     }
+    if (personMatchFilter) {
+      list.push({ key: 'person_match', fieldLabel: '人员匹配', value: personMatchFilter, valueLabel: '待确认' })
+    }
     return list
-  }, [levelFilter, typeFilter, categoryFilter, inspectionCategoryFilter, deptFilter])
+  }, [levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, personMatchFilter, filterFields])
 
   // 移除单个筛选条件
   const removeFilter = useCallback((key: string) => {
     setHazardQueryParams({ page: 1 })
     switch (key) {
       case 'hazard_level': setLevelFilter(undefined); break
-      case 'hazard_type': setTypeFilter(undefined); break
       case 'hazard_category': setCategoryFilter(undefined); break
       case 'inspection_category': setInspectionCategoryFilter(undefined); break
       case 'department': setDeptFilter(undefined); break
+      case 'person_match': setPersonMatchFilter(undefined); break
     }
   }, [setHazardQueryParams])
 
@@ -233,10 +268,10 @@ export default function HazardLedgerPage() {
   const clearAllFilters = useCallback(() => {
     setSelectedRowKeys([])
     setLevelFilter(undefined)
-    setTypeFilter(undefined)
     setCategoryFilter(undefined)
     setInspectionCategoryFilter(undefined)
     setDeptFilter(undefined)
+    setPersonMatchFilter(undefined)
     setStatusFilter(undefined)
     setSearchText('')
     setSearchApplied(false)
@@ -254,26 +289,26 @@ export default function HazardLedgerPage() {
     setSelectedRowKeys([])
     switch (fieldKey) {
       case 'hazard_level': setLevelFilter(value); break
-      case 'hazard_type': setTypeFilter(value); break
       case 'hazard_category': setCategoryFilter(value); break
       case 'inspection_category': setInspectionCategoryFilter(value); break
       case 'department': setDeptFilter(value); break
+      case 'person_match': setPersonMatchFilter(value as 'pending'); break
     }
     setPendingFilterField(null)
     setFilterPopoverOpen(false)
   }
 
   const { data: queryData, isLoading: queryLoading } = useQuery({
-    queryKey: ['hazards', hazardQueryParams, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, searchKeyword, sortField, sortOrder],
+    queryKey: ['hazards', hazardQueryParams, statusFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, personMatchFilter, searchKeyword, sortField, sortOrder],
     queryFn: async () => {
       const response = await getHazards({
         ...hazardQueryParams,
         rectification_status: statusFilter,
-        hazard_type: typeFilter,
         hazard_level: levelFilter,
         hazard_category: categoryFilter,
         inspection_category: inspectionCategoryFilter,
         department: deptFilter,
+        person_match: personMatchFilter,
         keyword: searchKeyword || undefined,
       } as HazardReportQueryParams)
       if (response.code === 200) {
@@ -300,36 +335,18 @@ export default function HazardLedgerPage() {
   const hazards = queryData?.data ?? []
   const hazardTotal = queryData?.total ?? 0
 
-  // Optimistic row edits write straight into the cache, so the table reflects a
-  // mutation immediately without a round trip. The invalidateQueries calls that
-  // follow each mutation still refetch the authoritative data and overwrite it.
-  const patchHazard = useCallback(
-    (id: string, updates: Partial<HazardReport>) => {
-      queryClient.setQueriesData<{ data: HazardReport[]; total: number }>(
-        { queryKey: ['hazards'] },
-        (old) =>
-          old ? { ...old, data: old.data.map((h) => (h.id === id ? { ...h, ...updates } : h)) } : old
-      )
-    },
-    [queryClient]
-  )
-
   // Use query loading state
   const loading = queryLoading
 
-  // ── 全局统计（挂载时 + 数据变更后刷新）──
-  const loadStats = async () => {
-    try {
-      const stats = await fetchHazardStats()
-      setHazardStats(stats.data || null)
-    } catch { /* 静默失败，统计数字保持上次值 */ }
-  }
-  const refreshStats = () => { loadStats() }
+  // ── 全局统计（挂载即取，数据变更后失效重取）──
+  const { data: hazardStats = null } = useQuery<HazardStats | null>({
+    queryKey: ['hazard-stats'],
+    queryFn: fetchHazardStats,
+  })
 
-
-
-
-  // 排序变化时重新加载
+  const refreshStats = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ['hazard-stats'] })
+  }, [queryClient])
 
   const handleSearch = () => {
     setSearchKeyword(searchText)
@@ -356,46 +373,6 @@ export default function HazardLedgerPage() {
       setSortField(undefined)
       setSortOrder(undefined)
     }
-  }
-
-  // ── 开始整改 ──
-  const handleStartRectification = async (record: HazardReport) => {
-    try {
-      const response = await startRectification(record.id)
-      if (response.code === 200) {
-        message.success('已开始整改')
-        patchHazard(record.id, response.data as HazardReport)
-        refreshStats()
-      } else {
-        message.error(response.message || '开始整改失败')
-      }
-    } catch {
-      message.error('开始整改失败，请检查网络')
-    }
-  }
-
-  // ── 整改回复 ──
-  const handleReply = (record: HazardReport) => {
-    setReplyMode(record.rectification_status === 'rejected' ? 'rework' : 'reply')
-    setReplyRecord(record)
-    setReplyModalVisible(true)
-  }
-
-  // ── 三级复核 ──
-  const handleVerifyLevel = (record: HazardReport) => {
-    setVerifyRecord(record)
-    setVerifyModalVisible(true)
-  }
-
-  // ── Modal 成功回调 ──
-  const handleReplySuccess = (updated: HazardReport) => {
-    patchHazard(updated.id, updated)
-    refreshStats()
-  }
-
-  const handleVerifySuccess = (updated: HazardReport) => {
-    patchHazard(updated.id, updated)
-    refreshStats()
   }
 
   // ── 批量删除 ──
@@ -447,30 +424,6 @@ export default function HazardLedgerPage() {
         }
       },
     })
-  }
-
-  const handleRerunAI = async (record: HazardReport) => {
-    setRerunLoading(true)
-    try {
-      const r1 = await runHazardAI(record.id, 1)
-      if (r1.code !== 200) {
-        msgApi.error('重新执行 AI 识别失败: ' + (r1.message || ''))
-        return
-      }
-      patchHazard(record.id, r1.data as HazardReport)
-      const r2 = await runHazardAI(record.id, 2)
-      if (r2.code === 200) {
-        msgApi.success('AI 已重新执行完成')
-        patchHazard(record.id, r2.data as HazardReport)
-        refreshStats()
-      } else {
-        msgApi.warning('AI 识别已完成，整改建议生成失败: ' + (r2.message || ''))
-      }
-    } catch {
-      msgApi.error('重新执行 AI 失败')
-    } finally {
-      setRerunLoading(false)
-    }
   }
 
   const _getLevelColor = (level: HazardLevel) => {
@@ -528,234 +481,16 @@ export default function HazardLedgerPage() {
     )
   }
 
-  // ── 操作按钮渲染（状态操作 + 删除）──
-  const renderAction = (record: HazardReport) => {
-    const _deleteButton = (
-      <span
-        role="button"
-        onClick={() => handleDeleteRecord(record)}
-        style={actionLink('#e03131')}
-      >
-        <DeleteOutlined />删除
-      </span>
-    )
-
-    // 1. AI 已生成 — 可重新执行 AI
-    if (record.ai_generated) {
-      return (
-        <Space size="small">
-        <span
-          role="button"
-          onClick={() => handleRerunAI(record)}
-          style={actionLink('#0075de')}
-        >
-          <ReloadOutlined />重新执行AI
-        </span>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-    }
-    // 2. AI 错误 → 重试
-    if (record.ai_error_message) {
-      return (
-        <Space size="small">
-        <span
-          role="button"
-          onClick={() => handleRerunAI(record)}
-          style={actionLink('#0075de')}
-        >
-          重跑AI
-        </span>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-    }
-    // 3. 整改状态机
-    if (record.rectification_status === 'pending') {
-      return (
-        <Space size="small">
-          <Text type="secondary">-</Text>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-      return (
-        <Space size="small">
-        <span
-          role="button"
-          onClick={() => handleStartRectification(record)}
-          style={actionLink('#0075de')}
-        >
-          <PlayCircleOutlined />开始整改
-        </span>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-    }
-    if (record.rectification_status === 'in_progress') {
-      return (
-        <Space size="small">
-          <Text type="secondary">-</Text>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-      return (
-        <Space size="small">
-        <span
-          role="button"
-          onClick={() => handleReply(record)}
-          style={actionLink('#0075de')}
-        >
-          <CheckCircleOutlined />整改回复
-        </span>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-    }
-    if (record.rectification_status === 'replied') {
-      return (
-        <Space size="small">
-        <span
-          role="button"
-          onClick={() => handleVerifyLevel(record)}
-          style={actionLink('#5645d4')}
-        >
-          <SafetyCertificateOutlined />一级复核
-        </span>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-    }
-    if (record.rectification_status === 'no_rectification_needed') {
-      // AI 判定无需整改：L1/L2 已跳过，L3 待闭环
-      if (record.verify_level_3_status === 'pending') {
-        return (
-          <span
-            role="button"
-            onClick={() => handleVerifyLevel(record)}
-            style={actionLink('#5645d4')}
-          >
-            <SafetyCertificateOutlined />三级复核
-          </span>
-        )
-      }
-      return <Text type="secondary">-</Text>
-    }
-    if (record.rectification_status === 'level1_approved') {
-      const nextLabel = record.hazard_level === 'general' ? '三级复核' : '二级复核'
-      return (
-        <Space size="small">
-        <span
-          role="button"
-          onClick={() => handleVerifyLevel(record)}
-          style={actionLink('#5645d4')}
-        >
-          <SafetyCertificateOutlined />{nextLabel}
-        </span>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-    }
-    if (record.rectification_status === 'level2_approved') {
-      return (
-        <Space size="small">
-        <span
-          role="button"
-          onClick={() => handleVerifyLevel(record)}
-          style={actionLink('#5645d4')}
-        >
-          <SafetyCertificateOutlined />三级复核
-        </span>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-    }
-    if (record.rectification_status === 'rejected') {
-      return (
-        <Space size="small">
-        <span
-          role="button"
-          onClick={() => handleReply(record)}
-          style={actionLink('#e03131')}
-        >
-          <EditOutlined />重新整改
-        </span>
-          <span
-            role="button"
-            onClick={() => handleDeleteRecord(record)}
-            style={actionLink('#e03131')}
-          >
-            <DeleteOutlined />删除
-          </span>
-        </Space>
-      )
-    }
-    return (
-      <Space size="small">
-        <Text type="secondary">-</Text>
-        <span
-          role="button"
-          onClick={() => handleDeleteRecord(record)}
-          style={actionLink('#e03131')}
-        >
-          <DeleteOutlined />删除
-        </span>
-      </Space>
-    )
-  }
+  // ── 操作按钮渲染（仅保留删除，其余动作统一在详情页编辑）──
+  const renderAction = (record: HazardReport) => (
+    <span
+      role="button"
+      onClick={() => handleDeleteRecord(record)}
+      style={actionLink('#e03131')}
+    >
+      <DeleteOutlined />删除
+    </span>
+  )
 
   // ── 表格列定义 ──
   const columns: ColumnsType<HazardReport> = [
@@ -845,6 +580,14 @@ export default function HazardLedgerPage() {
       ),
     },
     {
+      title: '检查名称',
+      dataIndex: 'inspection_name',
+      key: 'inspection_name',
+      width: 140,
+      ellipsis: true,
+      render: (text: string) => text || <span style={{ color: '#a4a097' }}>-</span>,
+    },
+    {
       title: '检查类别',
       dataIndex: 'inspection_category',
       key: 'inspection_category',
@@ -888,35 +631,24 @@ export default function HazardLedgerPage() {
       key: 'hazard_category',
       width: 100,
       sorter: false,
-      render: (category: string) => {
-        const option = HAZARD_CATEGORY_OPTIONS.find((o) => o.value === category)
-        return <span style={statusPill('#5d5b54', '#f0eeec')}>{option?.label || category || '-'}</span>
-      },
-    },
-    {
-      title: (
-        <span
-          onClick={() => handleSort('hazard_type')}
-          style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-        >
-          隐患类型{renderSortIcon('hazard_type')}
-        </span>
+      render: (category: string) => (
+        <span style={statusPill('#5d5b54', '#f0eeec')}>{getHazardCategoryLabel(category)}</span>
       ),
-      dataIndex: 'hazard_type',
-      key: 'hazard_type',
-      width: 120,
-      sorter: false,
-      render: (type: string) => {
-        const option = HAZARD_TYPE_OPTIONS.find((o) => o.value === type)
-        return <span style={statusPill('#5d5b54', '#f0eeec')}>{option?.label || type}</span>
-      },
     },
     {
-      title: '隐患描述',
+      title: '缺陷项描述',
       dataIndex: 'description',
       key: 'description',
       width: 150,
       ellipsis: true,
+    },
+    {
+      title: '纠正预防措施',
+      dataIndex: 'capa_measures',
+      key: 'capa_measures',
+      width: 150,
+      ellipsis: true,
+      render: (text: string) => text || <span style={{ color: '#a4a097' }}>-</span>,
     },
     {
       title: (
@@ -933,12 +665,64 @@ export default function HazardLedgerPage() {
       sorter: false,
     },
     {
-      title: '检查人员',
+      title: '整改负责人',
+      dataIndex: 'rectification_responsible_person_names',
+      key: 'rectification_responsible_person_names',
+      width: 150,
+      render: (_text: string, record: HazardReport) => {
+        // 优先用后端解析好的人员引用（含头像/部门），历史返回无该字段时走下面的姓名快照兜底
+        const persons = record.rectification_responsible_persons ?? []
+        if (persons.length > 0) {
+          return (
+            <Space size={4} wrap>
+              {persons.map((person, index) => (
+                <PersonNameWithBadge
+                  key={`${person.id ?? person.name ?? 'person'}-${index}`}
+                  name={person.name}
+                  src={person.avatar_url}
+                  pending={person.pending}
+                  bound={person.id}
+                />
+              ))}
+            </Space>
+          )
+        }
+        // 多负责人优先，旧单人字段兜底（历史数据仍正常展示）
+        const names = (record.rectification_responsible_person_names || record.rectification_responsible_person_name || '')
+          .split(/[,，]/)
+          .map((name) => name.trim())
+          .filter(Boolean)
+        if (names.length === 0) return <span style={{ color: '#a4a097' }}>-</span>
+        const ids = Array.isArray(record.rectification_responsible_person_ids) ? record.rectification_responsible_person_ids : []
+        return (
+          <Space size={4} wrap>
+            {names.map((name, index) => (
+              <PersonNameWithBadge
+                key={`${name}-${index}`}
+                name={name}
+                bound={ids[index] || (names.length === 1 ? record.rectification_responsible_person : null)}
+              />
+            ))}
+          </Space>
+        )
+      },
+    },
+    {
+      title: '审批人',
       dataIndex: 'discovered_by_name',
       key: 'discovered_by_name',
-      width: 90,
-      ellipsis: true,
-      render: (text: string) => text || <span style={{ color: '#a4a097' }}>-</span>,
+      width: 118,
+      render: (_text: string, record: HazardReport) => {
+        const person = record.discovered_by_person
+        return (
+          <PersonNameWithBadge
+            name={person?.name ?? record.discovered_by_name}
+            src={person?.avatar_url}
+            pending={person?.pending}
+            bound={person?.id ?? record.discovered_by}
+          />
+        )
+      },
     },
     {
       title: (
@@ -959,61 +743,45 @@ export default function HazardLedgerPage() {
       },
     },
     {
-      title: '整改状态',
+      title: '整改进度',
       dataIndex: 'rectification_status',
       key: 'rectification_status',
-      width: 80,
-      render: (status: string) => {
+      width: 130,
+      render: (status: string, record: HazardReport) => {
         const cfg = RECTIFICATION_STATUS_CONFIG[status]
-        if (!cfg) return <span style={statusPill('#5d5b54', '#f0eeec')}>{status}</span>
-        return <span style={statusPill(cfg.color, cfg.bg)}>{cfg.label}</span>
+        const note = record.rectification_progress_note
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {cfg ? (
+              <span style={statusPill(cfg.color, cfg.bg)}>{cfg.label}</span>
+            ) : (
+              <span style={statusPill('#5d5b54', '#f0eeec')}>{status || '-'}</span>
+            )}
+            {note ? (
+              <span
+                style={{
+                  fontSize: 11,
+                  color: '#787671',
+                  lineHeight: 1.35,
+                  maxWidth: 120,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {note}
+              </span>
+            ) : null}
+          </div>
+        )
       },
     },
     {
-      title: '复核进度',
-      key: 'verify_progress',
-      width: 100,
-      render: (_: unknown, record: HazardReport) => {
-        const levels = [
-          { status: record.verify_level_1_status || 'pending', label: '一' },
-          { status: record.verify_level_2_status || 'pending', label: '二' },
-          { status: record.verify_level_3_status || 'pending', label: '三' },
-        ]
-        return (
-          <Space size={4}>
-            {levels.map((lv) => {
-              const opt = VERIFY_LEVEL_STATUS_OPTIONS.find((o) => o.value === lv.status)
-              const color = opt?.color || '#c8c4be'
-              const bg = lv.status === 'approved'
-                ? '#d9f3e1'
-                : lv.status === 'rejected'
-                  ? '#fde0ec'
-                  : lv.status === 'no_review_needed'
-                    ? '#e8e6e1'
-                    : '#f0eeec'
-              return (
-                <span
-                  key={lv.label}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 22,
-                    height: 22,
-                    borderRadius: 4,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color,
-                    background: bg,
-                  }}
-                >
-                  {lv.label}
-                </span>
-              )
-            })}
-          </Space>
-        )
-      },
+      title: '关闭状态',
+      dataIndex: 'status',
+      key: 'status',
+      width: 90,
+      render: (status: string) => renderCloseStatus(status),
     },
     {
       title: (
@@ -1021,12 +789,12 @@ export default function HazardLedgerPage() {
           onClick={() => handleSort('deadline')}
           style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
         >
-          整改期限{renderSortIcon('deadline')}
+          目标完成日期{renderSortIcon('deadline')}
         </span>
       ),
       dataIndex: 'deadline',
       key: 'deadline',
-      width: 100,
+      width: 110,
       sorter: false,
       render: (date: string) => {
         if (!date) return '-'
@@ -1035,6 +803,36 @@ export default function HazardLedgerPage() {
           <span style={{ color: isOverdue ? '#e03131' : '#1a1a1a', fontWeight: isOverdue ? 600 : 400, fontSize: 13 }}>
             {dayjs(date).format('YYYY-MM-DD')}
           </span>
+        )
+      },
+    },
+    {
+      title: '完成/关闭日期',
+      dataIndex: 'closed_at',
+      key: 'closed_at',
+      width: 110,
+      render: (date?: string | null) =>
+        date ? (
+          <span style={{ fontSize: 13 }}>{dayjs(date).format('YYYY-MM-DD')}</span>
+        ) : (
+          <span style={{ color: '#a4a097' }}>-</span>
+        ),
+    },
+    {
+      title: '整改后照片',
+      dataIndex: 'rectification_photos',
+      key: 'rectification_photos',
+      width: 100,
+      render: (json: string) => {
+        const urls = parsePhotoUrls(json)
+        if (urls.length === 0) return <span style={{ color: '#a4a097' }}>-</span>
+        return (
+          <Space size={4}>
+            <Image.PreviewGroup items={urls}>
+              <Image src={urls[0]} alt="整改后照片" width={32} height={32} style={{ objectFit: 'cover', borderRadius: 4 }} />
+            </Image.PreviewGroup>
+            {urls.length > 1 && <span style={{ fontSize: 11, color: '#787671' }}>+{urls.length - 1}</span>}
+          </Space>
         )
       },
     },
@@ -1069,9 +867,9 @@ export default function HazardLedgerPage() {
             ← 返回
           </div>
           <div style={{ fontSize: 12, color: '#787671', marginBottom: 8 }}>
-            {FILTER_FIELDS.find((f) => f.key === pendingFilterField)?.label}
+            {filterFields.find((f) => f.key === pendingFilterField)?.label}
           </div>
-          {FILTER_FIELDS.find((f) => f.key === pendingFilterField)?.type === 'text' ? (
+          {filterFields.find((f) => f.key === pendingFilterField)?.type === 'text' ? (
             <Input
               placeholder="请输入责任部门名称"
               onPressEnter={(e) => {
@@ -1083,7 +881,7 @@ export default function HazardLedgerPage() {
             />
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {FILTER_FIELDS
+              {filterFields
                 .find((f) => f.key === pendingFilterField)
                 ?.options.map((opt) => (
                   <div
@@ -1113,7 +911,7 @@ export default function HazardLedgerPage() {
             添加筛选条件
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {FILTER_FIELDS.map((field) => {
+            {filterFields.map((field) => {
               const isApplied = activeFilters.some((f) => f.key === field.key)
               return (
                 <div
@@ -1498,23 +1296,6 @@ export default function HazardLedgerPage() {
           }}
         />
       </div>
-
-      {/* ── 整改回复 Modal ── */}
-      <HazardRectificationReplyModal
-        open={replyModalVisible}
-        record={replyRecord}
-        mode={replyMode}
-        onClose={() => setReplyModalVisible(false)}
-        onSuccess={handleReplySuccess}
-      />
-
-      {/* ── 三级复核 Modal ── */}
-      <HazardVerifyModal
-        open={verifyModalVisible}
-        record={verifyRecord}
-        onClose={() => setVerifyModalVisible(false)}
-        onSuccess={handleVerifySuccess}
-      />
 
       {/* ── 隐患登记抽屉 ── */}
       <HazardRegistrationDrawer

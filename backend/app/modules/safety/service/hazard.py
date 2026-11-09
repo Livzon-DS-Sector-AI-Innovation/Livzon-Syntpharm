@@ -12,16 +12,38 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.jobs import JobRunner, submit_job, submit_job_safe
-from app.core.storage import delete_object
+from app.core.storage import delete_object, get_object
 from app.core.storage import is_enabled as minio_enabled
 from app.modules.safety.feishu.notification import send_user_card
 from app.modules.safety.models import HazardReport
 from app.modules.safety.repository import SafetyRepository
 from app.modules.safety.schemas import HazardReportCreate, HazardReportUpdate
 from app.modules.safety.service._helpers import audit_log
+from app.modules.safety.service.hazard_person import split_person_names
 from app.platform.integrations.ai.client import AIOutputError, AIService
 
 logger = logging.getLogger(__name__)
+
+# ── 内置隐患类别（2026-11 需求收窄为 7 类；字典表只存用户新增项，GET 时合并去重）──
+BUILTIN_HAZARD_CATEGORIES: tuple[str, ...] = (
+    "安全标识",
+    "化学品管理",
+    "跑冒滴漏",
+    "设备设施",
+    "消防应急",
+    "仪表电气",
+    "作业环境",
+)
+
+# AI 插件仍输出旧英文枚举值，落库前映射到新中文类别名称（不是 7 类之一的保持原值）
+_AI_CATEGORY_TO_LABEL: dict[str, str] = {
+    "label_signage": "安全标识",
+    "hazardous_storage": "化学品管理",
+    "equipment": "设备设施",
+    "emergency_mgmt": "消防应急",
+    "instrument_electrical": "仪表电气",
+    "six_s": "作业环境",
+}
 
 # ── 模块级辅助函数 ──
 
@@ -245,6 +267,16 @@ def _bitable_sync_runner(
     return _run
 
 
+def resolve_rectification_reply(rectification_reply: str | None, capa_measures: str | None) -> str:
+    """AI 整改初审的整改回复输入。
+
+    飞书 Bitable 自 2026-11 起把「纠正预防措施」落在 capa_measures（不再写
+    rectification_reply），若只取 rectification_reply，Bitable 渠道的记录会拿到空串，
+    触发 RectificationReviewInput 的 min_length=1 校验失败，AI 初审必然判 failed。
+    """
+    return rectification_reply or capa_measures or ""
+
+
 class HazardService:
     """HazardReport CRUD, AI identification, rectification review, notifications."""
 
@@ -318,8 +350,9 @@ class HazardService:
         inspection_category: str | None = None,
         department: str | None = None,
         keyword: str | None = None,
+        person_match: str | None = None,
     ) -> tuple[list[HazardReport], int]:
-        """获取隐患列表"""
+        """获取隐患列表（person_match="pending" 仅返回人员待匹配记录）"""
         return await self.repo.get_hazards(
             skip,
             limit,
@@ -331,6 +364,7 @@ class HazardService:
             inspection_category,
             department,
             keyword,
+            person_match,
         )
 
     async def get_hazard_stats(self) -> dict[str, int]:
@@ -348,6 +382,8 @@ class HazardService:
         run_hazard_ai_script() 手动触发，与 Bitable 同步流程对齐。
         """
         hazard_data = data.model_dump(exclude_none=True)
+        await self._bind_person_ids(hazard_data)
+        self._normalize_responsible_persons(hazard_data, is_create=True)
         if not hazard_data.get("hazard_no"):
             # 自动生成：HZ-年月日-序号
             today = datetime.now().strftime("%Y%m%d")
@@ -431,10 +467,152 @@ class HazardService:
     async def update_hazard(self, hazard_id: uuid.UUID, data: HazardReportUpdate) -> HazardReport | None:
         """更新隐患"""
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+        await self._bind_person_ids(update_data)
+        self._normalize_responsible_persons(update_data, is_create=False)
         item = await self.repo.update_hazard(hazard_id, update_data)
         if item:
             await self._audit("update", "hazard_report", resource_id=hazard_id)
         return item
+
+    async def _bind_person_ids(self, data: dict[str, Any]) -> None:
+        """把「姓名唯一命中」的人员补成系统用户 UUID（同名多人 / 查无此人保持留空待确认）。
+
+        与读时解析、Alembic 回填共用同一套严格规则（``resolve_by_name_strict``）：
+        无 UUID 但姓名有值时解析，命中才落库，未命中不改动，避免静默错绑。
+        """
+        department_hint = data.get("department")
+        if not data.get("discovered_by") and data.get("discovered_by_name"):
+            bound = await self._resolve_person_uuid(str(data["discovered_by_name"]), department_hint)
+            if bound is not None:
+                data["discovered_by"] = bound
+
+        # 整改负责人多选：任一人未唯一命中则整条不写 ids，避免 ids 与 names 错位
+        if not data.get("rectification_responsible_person_ids"):
+            names = split_person_names(data.get("rectification_responsible_person_names"))
+            if names:
+                bound_ids: list[uuid.UUID] = []
+                for name in names:
+                    bound = await self._resolve_person_uuid(name, department_hint)
+                    if bound is None:
+                        logger.info("整改负责人未唯一命中，保留姓名待确认: name=%r", name)
+                        return
+                    bound_ids.append(bound)
+                data["rectification_responsible_person_ids"] = [str(value) for value in bound_ids]
+                data["rectification_responsible_person"] = bound_ids[0]
+                data["rectification_responsible_person_name"] = names[0][:100]
+
+    async def _resolve_person_uuid(self, name: str, department_hint: str | None) -> uuid.UUID | None:
+        """严格姓名解析 → UUID；同名多人无法消歧或查无此人返回 None。"""
+        from app.modules.safety.feishu.identity_resolver import IdentityResolver
+
+        try:
+            match = await IdentityResolver(self.session).resolve_by_name_strict(name, department_hint)
+        except Exception:
+            logger.exception("人员姓名解析失败，保留待确认: name=%r", name)
+            return None
+        if not match.is_matched or match.person is None or not match.person.id:
+            return None
+        return uuid.UUID(match.person.id)
+
+    @staticmethod
+    def _normalize_responsible_persons(data: dict[str, Any], *, is_create: bool) -> None:
+        """整改负责人多选归一化：过滤非法 UUID，并把首人回写到单人字段以兼容旧逻辑。
+
+        - 多选为空但姓名有值：保留姓名快照（等人工确认），不写 ids
+        - 多选为空且无姓名：更新时保留原值，绝不误清空历史单人字段
+        - 单人字段保留：通知、复核、Bitable 同步仍读 rectification_responsible_person(_name)
+        """
+        raw_ids = data.get("rectification_responsible_person_ids")
+        if not raw_ids:
+            data.pop("rectification_responsible_person_ids", None)
+            names = split_person_names(data.get("rectification_responsible_person_names"))
+            if names:
+                data["rectification_responsible_person_names"] = ",".join(names)[:500]
+                if not data.get("rectification_responsible_person_name"):
+                    data["rectification_responsible_person_name"] = names[0][:100]
+            elif is_create:
+                data.pop("rectification_responsible_person_names", None)
+            return
+
+        valid_ids: list[str] = []
+        for raw in raw_ids:
+            try:
+                valid_ids.append(str(uuid.UUID(str(raw))))
+            except (ValueError, AttributeError, TypeError):
+                logger.warning("整改负责人 UUID 非法，已忽略: %r", raw)
+        if not valid_ids:
+            data.pop("rectification_responsible_person_ids", None)
+            return
+
+        data["rectification_responsible_person_ids"] = valid_ids
+        names_raw = data.get("rectification_responsible_person_names") or ""
+        names = [n.strip() for n in str(names_raw).split(",") if n.strip()]
+        if names:
+            data["rectification_responsible_person_names"] = ",".join(names)[:500]
+            data["rectification_responsible_person_name"] = names[0][:100]
+        # 首人回写单人字段（FK 字段），保证旧通知/复核链路可用
+        data["rectification_responsible_person"] = uuid.UUID(valid_ids[0])
+
+    # ==================== 隐患类别字典 ====================
+
+    async def list_hazard_categories(self) -> list[dict[str, Any]]:
+        """类别下拉数据源：内置 7 类 + 字典表增量，按排序值去重合并。"""
+        rows = await self.repo.list_hazard_categories()
+        stored = [
+            {
+                "id": str(row.id),
+                "name": row.name,
+                "sort_order": row.sort_order,
+                "is_builtin": False,
+            }
+            for row in rows
+        ]
+        stored_names = {item["name"] for item in stored}
+        builtin = [
+            {
+                "id": None,
+                "name": name,
+                "sort_order": idx,
+                "is_builtin": True,
+            }
+            for idx, name in enumerate(BUILTIN_HAZARD_CATEGORIES)
+            if name not in stored_names
+        ]
+        return sorted(builtin + stored, key=lambda x: (x["sort_order"], x["name"]))
+
+    async def create_hazard_category(self, name: str) -> dict[str, Any]:
+        """新增隐患类别（幂等：重名返回已有记录，软删除记录自动恢复）。"""
+        value = (name or "").strip()
+        if not value:
+            raise ValueError("类别名称不能为空")
+        if len(value) > 64:
+            raise ValueError("类别名称不能超过 64 个字符")
+        if value in BUILTIN_HAZARD_CATEGORIES:
+            return {
+                "id": None,
+                "name": value,
+                "sort_order": BUILTIN_HAZARD_CATEGORIES.index(value),
+                "is_builtin": True,
+            }
+
+        existing = await self.repo.get_hazard_category_by_name(value)
+        if existing is not None:
+            if existing.is_deleted or not existing.is_active:
+                existing.is_deleted = False
+                existing.is_active = True
+                await self.session.flush()
+                logger.info("hazard category restored", extra={"module": "safety", "category": value})
+            return {
+                "id": str(existing.id),
+                "name": existing.name,
+                "sort_order": existing.sort_order,
+                "is_builtin": False,
+            }
+
+        row = await self.repo.create_hazard_category({"name": value, "sort_order": 100, "is_active": True})
+        logger.info("hazard category created", extra={"module": "safety", "category": value})
+        await self._audit("create", "hazard_category", resource_id=row.id)
+        return {"id": str(row.id), "name": row.name, "sort_order": row.sort_order, "is_builtin": False}
 
     async def upload_hazard_photo(self, hazard_id: uuid.UUID, file_name: str, file_path: str) -> HazardReport | None:
         """保存隐患图片路径，追加到 defect_photos JSON 数组"""
@@ -497,6 +675,8 @@ class HazardService:
         corrective_preventive_measures: str | None = None,
         rectification_reply: str | None = None,
         actual_completion_date: datetime | None = None,
+        capa_measures: str | None = None,
+        rectification_progress_note: str | None = None,
     ) -> HazardReport | None:
         """整改回复：in_progress → ai_reviewing（AI 初审作为复核阶段第一道关卡）。"""
         hazard = await self.repo.get_hazard_by_id(hazard_id)
@@ -505,6 +685,10 @@ class HazardService:
         update_data: dict[str, Any] = {
             "rectification_status": "ai_reviewing",
         }
+        if capa_measures is not None:
+            update_data["capa_measures"] = capa_measures
+        if rectification_progress_note is not None:
+            update_data["rectification_progress_note"] = rectification_progress_note
         # 整改完成时间：优先用传入值，其次保留已有值，最后 fallback 当前时间
         if actual_completion_date:
             update_data["actual_completion_date"] = actual_completion_date
@@ -574,10 +758,18 @@ class HazardService:
         ):
             return None
 
+        # 审批人留痕：每级只保留最后一次（同一级被驳回后重审会覆盖）
+        reviewer_data: dict[str, Any] = {
+            f"verify_level_{level}_reviewer_id": user_id,
+            f"verify_level_{level}_reviewer_name": user_name,
+            f"verify_level_{level}_reviewed_at": datetime.now(),
+        }
+
         if action == "rejected":
             update_data: dict[str, Any] = {
                 "rectification_status": "rejected",
                 f"verify_level_{level}_status": "rejected",
+                **reviewer_data,
             }
             return await self.repo.update_hazard(hazard_id, update_data)
 
@@ -586,13 +778,16 @@ class HazardService:
             update_data: dict[str, Any] = {  # type: ignore[no-redef]
                 "rectification_status": "closed",
                 "status": "closed",
+                "closed_at": datetime.now(),
                 "verify_level_3_status": "approved",
+                **reviewer_data,
             }
         else:
             next_status = f"level{level}_approved"
             update_data: dict[str, Any] = {  # type: ignore[no-redef]
                 "rectification_status": next_status,
                 f"verify_level_{level}_status": "approved",
+                **reviewer_data,
             }
         updated = await self.repo.update_hazard(hazard_id, update_data)
 
@@ -640,6 +835,7 @@ class HazardService:
         rectification_photos: str | None,
         user_id: uuid.UUID,
         user_name: str,
+        capa_measures: str | None = None,
     ) -> HazardReport | None:
         """重新整改：rejected → ai_reviewing，重置所有复核级别，AI 重新审查"""
         hazard = await self.repo.get_hazard_by_id(hazard_id)
@@ -651,6 +847,18 @@ class HazardService:
             "verify_level_1_status": "pending",
             "verify_level_2_status": "pending",
             "verify_level_3_status": "pending",
+            # 重置关闭状态与审批人留痕（驳回后重新走流程）
+            "status": "open",
+            "closed_at": None,
+            "verify_level_1_reviewer_id": None,
+            "verify_level_1_reviewer_name": None,
+            "verify_level_1_reviewed_at": None,
+            "verify_level_2_reviewer_id": None,
+            "verify_level_2_reviewer_name": None,
+            "verify_level_2_reviewed_at": None,
+            "verify_level_3_reviewer_id": None,
+            "verify_level_3_reviewer_name": None,
+            "verify_level_3_reviewed_at": None,
             # 重置 AI 初审状态，重新审查
             "ai_review_status": "pending",
             "ai_review_result": None,
@@ -658,6 +866,8 @@ class HazardService:
         }
         if rectification_photos is not None:
             update_data["rectification_photos"] = rectification_photos
+        if capa_measures is not None:
+            update_data["capa_measures"] = capa_measures
         updated = await self.repo.update_hazard(hazard_id, update_data)
 
         # 重新整改回复后，异步触发 AI 初审（非阻塞），AI 结果将决定后续通知路由
@@ -861,7 +1071,19 @@ class HazardService:
                 except Exception as exc:
                     logger.warning("无法读取图片 %s: %s", found_path, exc)
             else:
-                # 文件不存在，记录警告以便排查（AI 审查缺少图片时可根据此日志定位）
+                # 本地文件不存在 → MinIO 模式下存的是 object_key，回落到对象存储读取
+                if minio_enabled():
+                    try:
+                        obj = get_object("safety", p_str)
+                    except Exception:
+                        obj = None
+                        logger.warning("MinIO 读取失败: key=%s", p_str, exc_info=True)
+                    if obj:
+                        obj_data, obj_type = obj
+                        urls.append(f"data:{obj_type or 'image/jpeg'};base64,{base64.b64encode(obj_data).decode()}")
+                        logger.debug("从 MinIO 读取图片: %s (%s)", p_str, obj_type)
+                        continue
+                # 仍未取到，记录警告以便排查（AI 审查缺少图片时可根据此日志定位）
                 logger.warning(
                     "defect_photos 本地文件不存在: path=%s (checked: %s)",
                     p_str,
@@ -898,12 +1120,16 @@ class HazardService:
             self._parse_defect_photo_urls(item.rectification_photos) if item.rectification_photos else []
         )
 
+        # Bitable 入站自 2026-11 起把「纠正预防措施」落在 capa_measures，rectification_reply 可能为空；
+        # 取二者之一作为整改回复，避免 AI 初审因输入为空而必然校验失败。
+        rectification_reply_text = resolve_rectification_reply(item.rectification_reply, item.capa_measures)
+
         logger.info(
             "AI 整改初审插件启动: hazard_id=%s defect_photos=%d rectification_photos=%d reply_len=%d",
             item.id,
             len(defect_image_urls),
             len(rectification_image_urls),
-            len(item.rectification_reply or ""),
+            len(rectification_reply_text),
         )
 
         # 解析 AI 识别结果中的整改建议
@@ -927,7 +1153,7 @@ class HazardService:
             hazard_category=item.hazard_category or "",
             hazard_level=item.hazard_level or "",
             ai_rectification_suggestion=ai_suggestion,
-            rectification_reply=item.rectification_reply or "",
+            rectification_reply=rectification_reply_text,
             rectification_photos=rectification_image_urls,
             department=item.department or "",
             defect_substance=item.defect_substance or "",
@@ -1212,7 +1438,7 @@ class HazardService:
 
         try:
             generated = await self._generate_hazard_ai_output(script_number, item)
-            self._map_hazard_ai_output(script_number, generated, update_data)
+            self._map_hazard_ai_output(script_number, generated, update_data, current=item)
             update_data["ai_node_progress"] = "completed"
             update_data["ai_error_message"] = None
             update_data["ai_generated"] = True
@@ -1249,8 +1475,17 @@ class HazardService:
         "special_operation",
     }
 
-    def _map_hazard_ai_output(self, script_number: int, output: dict[str, Any], update_data: dict[str, Any]) -> None:
-        """将 AI JSON 输出映射到 HazardReport 字段（校验枚举值）。"""
+    # 人工可填字段：AI 只补空白，不覆盖手填值（2026-11 需求）
+    _AI_BLANK_ONLY_FIELDS = frozenset({"hazard_level", "hazard_category"})
+
+    def _map_hazard_ai_output(
+        self,
+        script_number: int,
+        output: dict[str, Any],
+        update_data: dict[str, Any],
+        current: HazardReport | None = None,
+    ) -> None:
+        """将 AI JSON 输出映射到 HazardReport 字段（校验枚举值；人工已填字段不覆盖）。"""
         if script_number == 1:
             for json_key, db_field in [
                 ("hazard_type", "hazard_type"),
@@ -1272,6 +1507,18 @@ class HazardService:
                     if db_field == "hazard_category" and val not in self._VALID_HAZARD_CATEGORIES:
                         logger.debug("AI 输出非法 hazard_category=%s，跳过", val)
                         continue
+                    if db_field == "hazard_category":
+                        val = _AI_CATEGORY_TO_LABEL.get(val, val)
+                    if db_field in self._AI_BLANK_ONLY_FIELDS and current is not None:
+                        existing = getattr(current, db_field, None)
+                        if existing:
+                            logger.debug(
+                                "AI 跳过人工已填字段: hazard_id=%s field=%s existing=%s",
+                                current.id,
+                                db_field,
+                                existing,
+                            )
+                            continue
                     update_data[db_field] = val
 
             # 插件生成的整改建议（两层结构）→ 格式化为可读中文文本

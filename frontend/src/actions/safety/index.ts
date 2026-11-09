@@ -3,11 +3,17 @@
 import { revalidatePath } from 'next/cache'
 import { getAuthHeaders } from '@/lib/auth'
 import * as safetyApi from '@/lib/api/server/safety'
+import { unwrapResponse } from '@/lib/api/server/base'
 import type { components } from '@/types/generated/schema'
 
 // Response type aliases for safety module
 type HazardIdentificationApiResponse = components['schemas']['HazardIdentificationApiResponse']
 type RegulationRevisionApiResponse = components['schemas']['RegulationRevisionApiResponse']
+type HazardVerifyNotifyData = components['schemas']['HazardVerifyNotifyData']
+type HazardRectificationNotifyData = components['schemas']['HazardRectificationNotifyData']
+type RegulationContentUpdateData = components['schemas']['RegulationContentUpdateData']
+type HazardAiRunData = components['schemas']['HazardAiRunData']
+type HazardCategoryApiResponse = components['schemas']['HazardCategoryApiResponse']
 import type {
   AccidentFormData,
   AccidentQueryParams,
@@ -80,6 +86,7 @@ import type {
   SyncKnowledgeResponse,
   HazardIdentification,
   HazardIdentificationBatchResponse,
+  HazardIdentificationStats,
   RegulationStagesResponse,
   HazardRiskOption,
   DailyRiskReport,
@@ -90,6 +97,7 @@ import type {
   FeishuChat,
   HazardRevisionRecord,
   HazardRevisionArchive,
+  HazardLedgerStats,
 } from '@/types/safety'
 
 // ============ SafetyCheck Actions ============
@@ -142,9 +150,9 @@ export async function deleteCheck(id: string): Promise<ApiResponse<null>> {
 
 // ============ HazardReport Actions ============
 
-export async function fetchHazardStats(): Promise<ApiResponse<HazardStats>> {
+export async function fetchHazardStats(): Promise<HazardStats> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.fetchHazardStats(authHeaders) as Promise<ApiResponse<HazardStats>>
+  return unwrapResponse(await safetyApi.fetchHazardStats(authHeaders))
 }
 
 export async function getHazards(params: HazardReportQueryParams = {}): Promise<ApiResponse<HazardReport[]>> {
@@ -174,6 +182,14 @@ export async function createHazard(data: HazardReportFormData): Promise<ApiRespo
   const response = await safetyApi.createHazard(data, authHeaders)
   revalidatePath('/safety/hazard')
   return response as unknown as ApiResponse<HazardReport>
+}
+
+/** 新增隐患类别（全公司共享，写入 safety.hazard_categories） */
+export async function createHazardCategory(name: string): Promise<HazardCategoryApiResponse> {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.createHazardCategory(name, authHeaders)
+  revalidatePath('/safety/hazard-ledger')
+  return response
 }
 
 export async function updateHazard(id: string, data: Partial<HazardReportFormData>): Promise<ApiResponse<HazardReport>> {
@@ -211,14 +227,14 @@ export async function verifyLevel(id: string, data: VerifyLevelRequest): Promise
   return response as unknown as ApiResponse<HazardReport>
 }
 
-export async function notifyReviewer(id: string): Promise<ApiResponse<HazardReport>> {
+export async function notifyReviewer(id: string): Promise<ApiResponse<HazardVerifyNotifyData>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.notifyReviewer(id, authHeaders) as Promise<ApiResponse<HazardReport>>
+  return safetyApi.notifyReviewer(id, authHeaders) as Promise<ApiResponse<HazardVerifyNotifyData>>
 }
 
-export async function notifyRectification(id: string): Promise<ApiResponse<HazardReport>> {
+export async function notifyRectification(id: string): Promise<ApiResponse<HazardRectificationNotifyData>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.notifyRectification(id, authHeaders) as Promise<ApiResponse<HazardReport>>
+  return safetyApi.notifyRectification(id, authHeaders) as Promise<ApiResponse<HazardRectificationNotifyData>>
 }
 
 export async function triggerRectificationReview(id: string): Promise<ApiResponse<HazardReport>> {
@@ -261,11 +277,11 @@ export async function uploadRectificationPhoto(id: string, file: File): Promise<
   return safetyApi.uploadHazardPhoto(`/safety/hazards/${id}/upload-rectification-photo`, file, authHeaders) as Promise<ApiResponse<HazardReport>>
 }
 
-export async function runHazardAI(hazardId: string, scriptNumber: number): Promise<ApiResponse<unknown>> {
+export async function runHazardAI(hazardId: string, scriptNumber: number): Promise<ApiResponse<HazardAiRunData>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.runHazardAI(hazardId, scriptNumber, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<unknown>
+  return response as ApiResponse<HazardAiRunData>
 }
 
 // ============ Accident Actions ============
@@ -549,9 +565,10 @@ export async function getHazardIdentifications(
   return safetyApi.getHazardIdentifications(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<HazardIdentification[]>>
 }
 
-export async function getHIStats() {
+export async function getHIStats(): Promise<HazardIdentificationStats | null> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHIStats(authHeaders) as Promise<HazardIdentificationApiResponse>
+  const res = await safetyApi.getHIStats(authHeaders)
+  return unwrapResponse<HazardIdentificationStats | null>({ code: res.code, message: res.message, data: res.data ?? null })
 }
 
 export async function getHILedgerStats(
@@ -562,9 +579,10 @@ export async function getHILedgerStats(
     date_from?: string
     date_to?: string
   } = {}
-) {
+): Promise<HazardLedgerStats | null> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHILedgerStats(params, authHeaders) as Promise<HazardIdentificationApiResponse>
+  const res = await safetyApi.getHILedgerStats(params, authHeaders)
+  return unwrapResponse<HazardLedgerStats | null>({ code: res.code, message: res.message, data: res.data ?? null })
 }
 
 export async function getHazardIdentification(id: string) {
@@ -737,11 +755,11 @@ export async function generateSop(file: File) {
   }
 }
 
-export async function updateSopContent(regulationId: string, content: string, status?: string): Promise<ApiResponse<OperationRegulation>> {
+export async function updateSopContent(regulationId: string, content: string, status?: string): Promise<ApiResponse<RegulationContentUpdateData>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateSopContent(regulationId, { content, status }, authHeaders)
   revalidatePath('/safety/regulation')
-  return response as ApiResponse<OperationRegulation>
+  return response as ApiResponse<RegulationContentUpdateData>
 }
 
 export async function exportSopPdf(regulationId: string): Promise<ApiResponse<Blob>> {
