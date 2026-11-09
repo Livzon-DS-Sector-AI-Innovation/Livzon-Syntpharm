@@ -105,3 +105,18 @@ export async function syncLivzonFeishuContacts(token?: string) {
   )
   return unwrapResponse(envelope)
 }
+
+/**
+ * 用户管理页「同步飞书用户信息」：只回填资料（姓名 / 部门 / 职位 / 头像），
+ * 不分配账号、不改状态与角色。后台执行，接口立即返回。
+ */
+export async function triggerFeishuUserInfoSync(token?: string) {
+  const envelope = await apiFetch<components['schemas']['SyncUserInfoTriggerApiResponse']>(
+    `${getApiBaseUrl()}/api/v1/identity/sync/user-info`,
+    {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    },
+  )
+  return unwrapResponse(envelope)
+}

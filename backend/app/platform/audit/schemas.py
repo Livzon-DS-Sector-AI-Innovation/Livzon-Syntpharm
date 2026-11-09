@@ -14,6 +14,7 @@ class AuditLogItem(BaseModel):
     user_id: uuid.UUID | None = None
     user_name: str | None = None
     username: str | None = None
+    avatar_url: str | None = None
     action: str
     resource_type: str | None = None
     resource_id: uuid.UUID | None = None

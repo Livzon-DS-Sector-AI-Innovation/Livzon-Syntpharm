@@ -1,36 +1,17 @@
 'use client'
 
-import {Avatar, Popover, Typography} from 'antd'
+import {Popover, Typography} from 'antd'
 import {
-  UserOutlined, IdcardOutlined, BankOutlined,
+  IdcardOutlined, BankOutlined,
   PhoneOutlined,
 } from '@ant-design/icons'
 import type { Personnel } from '@/types/equipment-personnel'
+import { UserAvatar } from '@/components/common/UserAvatar'
 
 const { Text } = Typography
 
 interface PersonnelInfoProps {
   personnel: Pick<Personnel, 'name' | 'employee_no' | 'department' | 'position' | 'mobile' | 'avatar_url' | 'roles'>
-}
-
-const AVATAR_COLORS = ['#5645d4', '#7b3ff2', '#dd5b00', '#0075de', '#1aae39', '#2a9d99']
-
-function avatarColor(name: string): string {
-  let hash = 0
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
-}
-
-function initials(name: string): string {
-  if (!name) return '?'
-  const t = name.trim()
-  if (/[一-鿿]/.test(t)) return t.slice(0, 2)
-  const parts = t.split(/\s+/)
-  return parts.length >= 2
-    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    : t.slice(0, 2).toUpperCase()
 }
 
 export function PersonnelInfo({ personnel }: PersonnelInfoProps) {
@@ -44,20 +25,12 @@ export function PersonnelInfo({ personnel }: PersonnelInfoProps) {
         paddingBottom: 14, marginBottom: 14,
         borderBottom: '1px solid #ede9e4',
       }}>
-        <Avatar
+        <UserAvatar
           size={48}
-          src={avatar_url || undefined}
-          style={{
-            backgroundColor: avatar_url ? 'transparent' : avatarColor(name),
-            flexShrink: 0,
-            fontSize: 18,
-            fontWeight: 700,
-            boxShadow: '0 3px 12px rgba(0,0,0,0.1)',
-          }}
-          icon={!name && !avatar_url ? <UserOutlined /> : undefined}
-        >
-          {name && !avatar_url ? initials(name) : undefined}
-        </Avatar>
+          name={name}
+          src={avatar_url}
+          style={{ boxShadow: '0 3px 12px rgba(0,0,0,0.1)' }}
+        />
         <div style={{ minWidth: 0 }}>
           <Text strong style={{ fontSize: 15, color: '#1a1a1a', display: 'block', lineHeight: '20px' }}>
             {name || '—'}
@@ -146,21 +119,12 @@ export function PersonnelInfo({ personnel }: PersonnelInfoProps) {
         borderRadius: 9,
         transition: 'background 0.15s ease',
       }}>
-        <Avatar
+        <UserAvatar
           size={34}
-          src={avatar_url || undefined}
-          style={{
-            backgroundColor: avatar_url ? 'transparent' : avatarColor(name),
-            flexShrink: 0,
-            fontSize: 13,
-            fontWeight: 700,
-            border: '2px solid #ffffff',
-            outline: '2px solid #ede9e4',
-          }}
-          icon={!name && !avatar_url ? <UserOutlined /> : undefined}
-        >
-          {name && !avatar_url ? initials(name) : undefined}
-        </Avatar>
+          name={name}
+          src={avatar_url}
+          style={{ border: '2px solid #ffffff', outline: '2px solid #ede9e4' }}
+        />
         <div style={{
           display: 'flex', flexDirection: 'column',
           lineHeight: 1.35, minWidth: 0,
