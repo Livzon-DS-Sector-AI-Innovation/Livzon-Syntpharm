@@ -1,7 +1,7 @@
 """add owner and visibility scope to core llm configs
 
-Revision ID: 0097_llm_config_owner_scope
-Revises: 0096_agent_ppt_video_script_ai
+Revision ID: 0103_llm_config_owner_scope
+Revises: 0102_agent_ppt_video_script_ai
 Create Date: 2026-11-03
 
 业务用户需要「用自己的 API Key」，但平台级 LLM 配置对所有有读权限的人可见。
@@ -19,8 +19,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0097_llm_config_owner_scope"
-down_revision: str = "0096_agent_ppt_video_script_ai"
+revision: str = "0103_llm_config_owner_scope"
+down_revision: str = "0102_agent_ppt_video_script_ai"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

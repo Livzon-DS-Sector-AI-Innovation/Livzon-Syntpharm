@@ -1,7 +1,7 @@
 """add ai script draft fields to agent ppt video
 
-Revision ID: 0096_agent_ppt_video_script_ai
-Revises: 0095_create_agent_schema_and_ppt_video_tables
+Revision ID: 0102_agent_ppt_video_script_ai
+Revises: 0101_create_agent_schema_and_ppt_video_tables
 Create Date: 2026-11-03
 
 上传 PPT 后由 AI 逐页生成讲稿初稿，需要记录项目级生成状态与单页讲稿来源：
@@ -19,8 +19,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0096_agent_ppt_video_script_ai"
-down_revision: str = "0095_create_agent_schema_and_ppt_video_tables"
+revision: str = "0102_agent_ppt_video_script_ai"
+down_revision: str = "0101_create_agent_schema_and_ppt_video_tables"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

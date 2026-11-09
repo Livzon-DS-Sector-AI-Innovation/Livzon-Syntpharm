@@ -1,7 +1,7 @@
 """add highlight_style / highlight_color to agent.ppt_video_project
 
-Revision ID: 0107_agent_ppt_video_project_highlight_override
-Revises: 0106_agent_ppt_video_llm_model_name
+Revision ID: 0113_agent_ppt_video_project_highlight_override
+Revises: 0112_agent_ppt_video_llm_model_name
 Create Date: 2026-11-05
 
 高亮原来只有「模块设置 + 单页覆盖」两层，项目级无处可配。升为三层后取值顺序是
@@ -15,8 +15,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0107_agent_ppt_video_project_highlight_override"
-down_revision: str = "0106_agent_ppt_video_llm_model_name"
+revision: str = "0113_agent_ppt_video_project_highlight_override"
+down_revision: str = "0112_agent_ppt_video_llm_model_name"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -1,7 +1,7 @@
 """split slide identity from slide number
 
-Revision ID: 0098_agent_ppt_video_slide_identity
-Revises: 0097_llm_config_owner_scope
+Revision ID: 0104_agent_ppt_video_slide_identity
+Revises: 0103_llm_config_owner_scope
 Create Date: 2026-11-03
 
 换源后页序会整体平移，而 `slide_no` 过去同时承担「页码」和「身份」两个职责：
@@ -22,8 +22,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0098_agent_ppt_video_slide_identity"
-down_revision: str = "0097_llm_config_owner_scope"
+revision: str = "0104_agent_ppt_video_slide_identity"
+down_revision: str = "0103_llm_config_owner_scope"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

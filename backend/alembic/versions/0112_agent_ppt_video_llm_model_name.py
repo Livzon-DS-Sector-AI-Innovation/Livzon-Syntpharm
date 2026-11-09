@@ -1,7 +1,7 @@
 """add llm_model_name to agent.ppt_video_project
 
-Revision ID: 0106_agent_ppt_video_llm_model_name
-Revises: 0105_core_llm_config_available_models
+Revision ID: 0112_agent_ppt_video_llm_model_name
+Revises: 0111_core_llm_config_available_models
 Create Date: 2026-11-05
 
 一个 Key 可勾选多个模型后，项目级覆盖不能只记配置 id，还要记「选的是哪一个模型」。
@@ -16,8 +16,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0106_agent_ppt_video_llm_model_name"
-down_revision: str = "0105_core_llm_config_available_models"
+revision: str = "0112_agent_ppt_video_llm_model_name"
+down_revision: str = "0111_core_llm_config_available_models"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

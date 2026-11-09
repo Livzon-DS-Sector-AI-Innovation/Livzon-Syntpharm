@@ -1,7 +1,7 @@
 """add per-slide highlight style override to ppt video slide
 
-Revision ID: 0103_agent_ppt_video_slide_highlight_override
-Revises: 0102_agent_ppt_video_script_segments
+Revision ID: 0109_agent_ppt_video_slide_highlight_override
+Revises: 0108_agent_ppt_video_script_segments
 Create Date: 2026-11-03
 
 高亮样式原本只有模块级一套（`AGENT_PPT_VIDEO_HIGHLIGHT_*`），整条视频只能同一种风格。
@@ -17,8 +17,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0103_agent_ppt_video_slide_highlight_override"
-down_revision: str = "0102_agent_ppt_video_script_segments"
+revision: str = "0109_agent_ppt_video_slide_highlight_override"
+down_revision: str = "0108_agent_ppt_video_script_segments"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

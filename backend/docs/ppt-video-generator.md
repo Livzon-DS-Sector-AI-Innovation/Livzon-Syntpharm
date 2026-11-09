@@ -74,8 +74,8 @@ API 与渲染彻底分离：API 侧不做 ffmpeg/LibreOffice，任何请求都�
 
 迁移：
 
-- `alembic/versions/0095_create_agent_schema_and_ppt_video_tables.py`（down_revision = `0093_quality_qms_deviation_flow_tables`）
-- `alembic/versions/0096_agent_ppt_video_script_ai.py`：`ppt_video_project` 加 `script_ai_status` /
+- `alembic/versions/0101_create_agent_schema_and_ppt_video_tables.py`（down_revision = `0100_safety_equipment_facility_hazards`）
+- `alembic/versions/0102_agent_ppt_video_script_ai.py`：`ppt_video_project` 加 `script_ai_status` /
   `script_ai_error` / `script_ai_progress`，`ppt_video_slide` 加 `script_source`（upload/ai/manual）。
   历史项目取默认值（idle / 空来源），旧数据与渲染链路不受影响。
 

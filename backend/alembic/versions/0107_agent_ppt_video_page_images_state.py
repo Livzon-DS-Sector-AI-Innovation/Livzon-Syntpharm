@@ -1,7 +1,7 @@
 """add page images generation state to ppt video project
 
-Revision ID: 0101_agent_ppt_video_page_images_state
-Revises: 0100_agent_ppt_video_page_images
+Revision ID: 0107_agent_ppt_video_page_images_state
+Revises: 0106_agent_ppt_video_page_images
 Create Date: 2026-11-03
 
 页图生成是一本一本串行跑的：53 页 PPT 命中 PDF 缓存也要拆图约 170 秒。
@@ -23,8 +23,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0101_agent_ppt_video_page_images_state"
-down_revision: str = "0100_agent_ppt_video_page_images"
+revision: str = "0107_agent_ppt_video_page_images_state"
+down_revision: str = "0106_agent_ppt_video_page_images"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

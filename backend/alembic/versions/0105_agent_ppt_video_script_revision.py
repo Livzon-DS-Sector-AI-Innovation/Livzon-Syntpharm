@@ -1,7 +1,7 @@
 """create agent ppt video script revision table
 
-Revision ID: 0099_agent_ppt_video_script_revision
-Revises: 0098_agent_ppt_video_slide_identity
+Revision ID: 0105_agent_ppt_video_script_revision
+Revises: 0104_agent_ppt_video_slide_identity
 Create Date: 2026-11-03
 
 讲稿改写与换源都需要「改完能反悔」。不做版本文件，改为一条修订记录同时承担：
@@ -19,8 +19,8 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from alembic import op
 
-revision: str = "0099_agent_ppt_video_script_revision"
-down_revision: str = "0098_agent_ppt_video_slide_identity"
+revision: str = "0105_agent_ppt_video_script_revision"
+down_revision: str = "0104_agent_ppt_video_slide_identity"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

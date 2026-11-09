@@ -1,7 +1,7 @@
 """switch project highlight switch to project-level semantics
 
-Revision ID: 0109_agent_ppt_video_highlight_project_default
-Revises: 0108_agent_ppt_video_highlight_override_enabled
+Revision ID: 0115_agent_ppt_video_highlight_project_default
+Revises: 0114_agent_ppt_video_highlight_override_enabled
 Create Date: 2026-11-09
 
 高亮语义从「不勾选=回落到模块默认」改成「不勾选=整项目成片无高亮，单页可单独开启」。
@@ -19,8 +19,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0109_agent_ppt_video_highlight_project_default"
-down_revision: str = "0108_agent_ppt_video_highlight_override_enabled"
+revision: str = "0115_agent_ppt_video_highlight_project_default"
+down_revision: str = "0114_agent_ppt_video_highlight_override_enabled"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

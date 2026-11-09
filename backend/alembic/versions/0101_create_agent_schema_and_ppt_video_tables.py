@@ -1,7 +1,7 @@
 """create agent schema and ppt video tables
 
-Revision ID: 0095_create_agent_schema_and_ppt_video_tables
-Revises: 0093_quality_qms_deviation_flow_tables
+Revision ID: 0101_create_agent_schema_and_ppt_video_tables
+Revises: 0100_safety_equipment_facility_hazards
 Create Date: 2026-11-03
 
 新建「智能体」顶层业务模块（code=agent）及其首个能力「PPT 配音视频」的五张表：
@@ -23,8 +23,8 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from alembic import op
 
-revision: str = "0095_create_agent_schema_and_ppt_video_tables"
-down_revision: str = "0093_quality_qms_deviation_flow_tables"
+revision: str = "0101_create_agent_schema_and_ppt_video_tables"
+down_revision: str = "0100_safety_equipment_facility_hazards"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

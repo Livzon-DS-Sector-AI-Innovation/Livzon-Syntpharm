@@ -1,7 +1,7 @@
 """add available_models to core.llm_configs
 
-Revision ID: 0105_core_llm_config_available_models
-Revises: 0104_agent_ppt_video_slide_highlight_regions
+Revision ID: 0111_core_llm_config_available_models
+Revises: 0110_agent_ppt_video_slide_highlight_regions
 Create Date: 2026-11-05
 
 一个 API Key 往往能调用同一网关下的多个模型（如 qwen-plus / qwen-max），
@@ -17,8 +17,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0105_core_llm_config_available_models"
-down_revision: str = "0104_agent_ppt_video_slide_highlight_regions"
+revision: str = "0111_core_llm_config_available_models"
+down_revision: str = "0110_agent_ppt_video_slide_highlight_regions"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

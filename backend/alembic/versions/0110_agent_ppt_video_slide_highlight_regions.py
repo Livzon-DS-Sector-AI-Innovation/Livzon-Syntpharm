@@ -1,7 +1,7 @@
 """add per-region highlight config to ppt video slide
 
-Revision ID: 0104_agent_ppt_video_slide_highlight_regions
-Revises: 0103_agent_ppt_video_slide_highlight_override
+Revision ID: 0110_agent_ppt_video_slide_highlight_regions
+Revises: 0109_agent_ppt_video_slide_highlight_override
 Create Date: 2026-11-04
 
 高亮此前只有「整页一套」的粒度（模块设置 + 页级样式覆盖），哪几个区域亮完全由讲稿自动决定，
@@ -19,8 +19,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0104_agent_ppt_video_slide_highlight_regions"
-down_revision: str = "0103_agent_ppt_video_slide_highlight_override"
+revision: str = "0110_agent_ppt_video_slide_highlight_regions"
+down_revision: str = "0109_agent_ppt_video_slide_highlight_override"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

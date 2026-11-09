@@ -1,7 +1,7 @@
 """add highlight_override_enabled to ppt_video_project / ppt_video_slide
 
-Revision ID: 0108_agent_ppt_video_highlight_override_enabled
-Revises: 0107_agent_ppt_video_project_highlight_override
+Revision ID: 0114_agent_ppt_video_highlight_override_enabled
+Revises: 0113_agent_ppt_video_project_highlight_override
 Create Date: 2026-11-05
 
 高亮升为「单页 > 项目 > 模块」三层后，覆盖值只能靠「空值」表达跟随，用户想
@@ -18,8 +18,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0108_agent_ppt_video_highlight_override_enabled"
-down_revision: str = "0107_agent_ppt_video_project_highlight_override"
+revision: str = "0114_agent_ppt_video_highlight_override_enabled"
+down_revision: str = "0113_agent_ppt_video_project_highlight_override"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
