@@ -62,9 +62,7 @@ async def main() -> None:
             slide.layout,
             config=config,
         )
-        off_config = highlight.parse_region_config(
-            {"regions": [{"id": first.element_id, "mode": "off"}]}, slide.layout
-        )
+        off_config = highlight.parse_region_config({"regions": [{"id": first.element_id, "mode": "off"}]}, slide.layout)
         off_boxes = highlight.boxes_for_segment(
             highlight.ScriptSegment(text=response.sentences[0], targets=(first.element_id,)),
             slide.layout,

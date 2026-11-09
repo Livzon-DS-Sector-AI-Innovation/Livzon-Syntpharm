@@ -6,7 +6,7 @@
 
 import uuid
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import httpx
 import pytest
@@ -438,9 +438,7 @@ async def test_update_personal_replaces_model_list(db_session: AsyncSession, use
     assert updated.model_name == "new-1"
 
 
-async def test_update_personal_legacy_model_name_keeps_other_models(
-    db_session: AsyncSession, users
-) -> None:
+async def test_update_personal_legacy_model_name_keeps_other_models(db_session: AsyncSession, users) -> None:
     owner, _ = users
     config = await _add_config(
         db_session, "legacy", owner_id=owner.id, model_name="old", available_models=["old", "keep"]
@@ -462,7 +460,7 @@ async def test_update_personal_legacy_model_name_keeps_other_models(
     )
 
     assert updated.model_name == "fresh"
-    assert set(updated.available_models) == {"fresh", "old", "keep"}
+    assert set(updated.available_models or ()) == {"fresh", "old", "keep"}
 
 
 async def test_delete_personal_clears_global_model(db_session: AsyncSession, users) -> None:
@@ -505,9 +503,9 @@ def _patch_discover_http(monkeypatch: pytest.MonkeyPatch, handler) -> None:
             return False
 
         async def get(self, url: str, headers: dict[str, str] | None = None) -> _FakeResponse:
-            return await handler(url, headers)
+            return cast(_FakeResponse, await handler(url, headers))
 
-    monkeypatch.setattr(ai_config.httpx, "AsyncClient", _FakeClient)
+    monkeypatch.setattr(httpx, "AsyncClient", _FakeClient)
 
 
 async def test_discover_models_reads_openai_style_list(monkeypatch: pytest.MonkeyPatch) -> None:

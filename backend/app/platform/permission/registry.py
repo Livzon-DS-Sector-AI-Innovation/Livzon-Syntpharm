@@ -3149,6 +3149,11 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "GET",
         "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/audio",
     ),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/thumb",
+    ),
     ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/render"),
     ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/script-ai"),
     # 页图重生成与状态查询：重试属写操作，状态查询只读（左栏进度条轮询）
@@ -3182,6 +3187,11 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/source/apply"),
     ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/source/file"),
     # 智能体 - 页级轻量编辑
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/regions",
+    ),
     ApiBindingDef(
         "agent:ppt-video:manage",
         "GET",

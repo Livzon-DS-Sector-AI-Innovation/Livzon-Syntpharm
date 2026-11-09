@@ -19,7 +19,7 @@ from app.core import storage
 from app.modules.agent import cache, service, tts
 from app.modules.agent.config import DEFAULTS
 from app.modules.agent.highlight import ScriptSegment
-from app.modules.agent.models import PptVideoSlide
+from app.modules.agent.models import PptVideoProject, PptVideoSlide
 
 SAMPLE_RATE = 24000
 
@@ -191,8 +191,8 @@ def test_page_audio_plan_requires_some_level_enabled() -> None:
         script_segments=stored_segments,
     )
 
-    project_on = SimpleNamespace(highlight_override_enabled=True)
-    project_off = SimpleNamespace(highlight_override_enabled=False)
+    project_on = PptVideoProject(highlight_override_enabled=True)
+    project_off = PptVideoProject(highlight_override_enabled=False)
 
     # 项目开、本页不开 → 分段
     assert len(service.page_audio_plan(slide_off, effective, DEFAULTS, project_on)[0]) == 2
