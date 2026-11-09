@@ -8,11 +8,25 @@
  * - 执行层级：仅车间 / 班组长
  */
 
-import type { components } from '@/types/generated/schema'
+import type { components, operations } from '@/types/generated/schema'
 
 export type WorkActivityHazard = components['schemas']['WorkActivityHazardResponse']
 export type WorkActivityHazardCreate = components['schemas']['WorkActivityHazardCreate']
+export type WorkActivityHazardUpdate = components['schemas']['WorkActivityHazardUpdate']
 export type WorkActivityHazardListApiResponse = components['schemas']['WorkActivityHazardListApiResponse']
+export type WorkActivityHazardApiResponse = components['schemas']['WorkActivityHazardApiResponse']
+
+type WorkActivityHazardListOperation =
+  operations['list_work_activity_hazards_api_v1_safety_work_activity_hazards_get']
+type WorkActivityHazardExportOperation =
+  operations['export_work_activity_hazards_api_v1_safety_work_activity_hazards_export_get']
+
+export type WorkActivityHazardListParams = NonNullable<
+  WorkActivityHazardListOperation['parameters']['query']
+>
+export type WorkActivityHazardExportParams = NonNullable<
+  WorkActivityHazardExportOperation['parameters']['query']
+>
 
 export interface OptionItem {
   value: string

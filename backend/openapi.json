@@ -31394,7 +31394,7 @@
           "\u5b89\u5168\u7ba1\u7406"
         ],
         "summary": "\u83b7\u53d6\u4f5c\u4e1a\u6d3b\u52a8\u5371\u9669\u6e90\u53f0\u8d26\u5217\u8868",
-        "description": "\u6309\u521b\u5efa\u65f6\u95f4\u5012\u5e8f\u8fd4\u56de\u4f5c\u4e1a\u6d3b\u52a8\u5371\u9669\u6e90\u53f0\u8d26\u3002",
+        "description": "\u6309\u521b\u5efa\u65f6\u95f4\u5012\u5e8f\u8fd4\u56de\u4f5c\u4e1a\u6d3b\u52a8\u5371\u9669\u6e90\u53f0\u8d26\uff0c\u652f\u6301\u7ec4\u5408\u7b5b\u9009\u4e0e\u5173\u952e\u5b57\u641c\u7d22\u3002",
         "operationId": "list_work_activity_hazards_api_v1_safety_work_activity_hazards_get",
         "parameters": [
           {
@@ -31419,6 +31419,80 @@
               "default": 20,
               "title": "Page Size"
             }
+          },
+          {
+            "name": "control_level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u7ba1\u63a7\u5c42\u7ea7\uff08\u90e8\u95e8\uff09",
+              "title": "Control Level"
+            },
+            "description": "\u7ba1\u63a7\u5c42\u7ea7\uff08\u90e8\u95e8\uff09"
+          },
+          {
+            "name": "evaluation_grade",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 4,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u8bc4\u4ef7\u7ea7\u522b 1\u20134",
+              "title": "Evaluation Grade"
+            },
+            "description": "\u8bc4\u4ef7\u7ea7\u522b 1\u20134"
+          },
+          {
+            "name": "residual_risk",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6b8b\u4f59\u98ce\u9669 key",
+              "title": "Residual Risk"
+            },
+            "description": "\u6b8b\u4f59\u98ce\u9669 key"
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u5173\u952e\u5b57\uff08\u8986\u76d6\u5404\u6587\u672c\u5b57\u6bb5\uff09",
+              "title": "Keyword"
+            },
+            "description": "\u5173\u952e\u5b57\uff08\u8986\u76d6\u5404\u6587\u672c\u5b57\u6bb5\uff09"
           },
           {
             "name": "auth_token",
@@ -31495,6 +31569,376 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkActivityHazardApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/work-activity-hazards/export": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u5bfc\u51fa\u4f5c\u4e1a\u6d3b\u52a8\u5371\u9669\u6e90\u53f0\u8d26 .xlsx",
+        "description": "\u6309\u4e0e\u5217\u8868\u76f8\u540c\u7684\u7b5b\u9009\u6761\u4ef6\u5bfc\u51fa\u5f53\u524d\u7ed3\u679c\uff1b\u5bfc\u51fa\u88ab\u89c6\u4e3a\u53ea\u8bfb\u52a8\u4f5c\u3002",
+        "operationId": "export_work_activity_hazards_api_v1_safety_work_activity_hazards_export_get",
+        "parameters": [
+          {
+            "name": "control_level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u7ba1\u63a7\u5c42\u7ea7\uff08\u90e8\u95e8\uff09",
+              "title": "Control Level"
+            },
+            "description": "\u7ba1\u63a7\u5c42\u7ea7\uff08\u90e8\u95e8\uff09"
+          },
+          {
+            "name": "evaluation_grade",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 4,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u8bc4\u4ef7\u7ea7\u522b 1\u20134",
+              "title": "Evaluation Grade"
+            },
+            "description": "\u8bc4\u4ef7\u7ea7\u522b 1\u20134"
+          },
+          {
+            "name": "residual_risk",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6b8b\u4f59\u98ce\u9669 key",
+              "title": "Residual Risk"
+            },
+            "description": "\u6b8b\u4f59\u98ce\u9669 key"
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u5173\u952e\u5b57\uff08\u8986\u76d6\u5404\u6587\u672c\u5b57\u6bb5\uff09",
+              "title": "Keyword"
+            },
+            "description": "\u5173\u952e\u5b57\uff08\u8986\u76d6\u5404\u6587\u672c\u5b57\u6bb5\uff09"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/work-activity-hazards/{hazard_id}": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u4f5c\u4e1a\u6d3b\u52a8\u5371\u9669\u6e90\u53f0\u8d26\u8be6\u60c5",
+        "operationId": "get_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__get",
+        "parameters": [
+          {
+            "name": "hazard_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hazard Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkActivityHazardApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u5b8c\u6574\u66f4\u65b0\u4f5c\u4e1a\u6d3b\u52a8\u5371\u9669\u6e90\u53f0\u8d26\u8bb0\u5f55",
+        "description": "\u5b8c\u6574\u66f4\u65b0\uff08PUT\uff09\uff1a\u6240\u6709\u521b\u5efa\u89c4\u5219\u91cd\u65b0\u751f\u6548\uff0cD \u4e0e\u8bc4\u4ef7\u7ea7\u522b\u7531\u670d\u52a1\u7aef\u91cd\u7b97\u3002",
+        "operationId": "replace_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__put",
+        "parameters": [
+          {
+            "name": "hazard_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hazard Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkActivityHazardCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkActivityHazardApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u90e8\u5206\u66f4\u65b0\u4f5c\u4e1a\u6d3b\u52a8\u5371\u9669\u6e90\u53f0\u8d26\u8bb0\u5f55",
+        "description": "\u90e8\u5206\u66f4\u65b0\uff08PATCH\uff09\uff1a\u5408\u5e76\u73b0\u6709\u503c\u540e\u91cd\u65b0\u5957\u7528\u5168\u90e8\u521b\u5efa\u89c4\u5219\uff0c\u5e76\u91cd\u7b97 D \u4e0e\u8bc4\u4ef7\u7ea7\u522b\u3002",
+        "operationId": "update_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__patch",
+        "parameters": [
+          {
+            "name": "hazard_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hazard Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkActivityHazardUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkActivityHazardApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u5220\u9664\u4f5c\u4e1a\u6d3b\u52a8\u5371\u9669\u6e90\u53f0\u8d26\u8bb0\u5f55\uff08\u8f6f\u5220\u9664\uff09",
+        "description": "\u8f6f\u5220\u9664\u8bb0\u5f55\uff1a\u5217\u8868\u4e0e\u8be6\u60c5\u4e0d\u518d\u8fd4\u56de\uff0c\u4f46\u6570\u636e\u884c\u4fdd\u7559\u3002",
+        "operationId": "delete_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__delete",
+        "parameters": [
+          {
+            "name": "hazard_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hazard Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -180801,6 +181245,176 @@
         ],
         "title": "WorkActivityHazardResponse",
         "description": "\u4f5c\u4e1a\u6d3b\u52a8\u5371\u9669\u6e90\u53f0\u8d26\u8bb0\u5f55\uff08\u542b\u670d\u52a1\u7aef\u8ba1\u7b97\u5b57\u6bb5\uff09\u3002"
+      },
+      "WorkActivityHazardUpdate": {
+        "properties": {
+          "position_location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position Location"
+          },
+          "area_activity": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area Activity"
+          },
+          "hazard_name_or_event": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hazard Name Or Event"
+          },
+          "possible_harm": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Possible Harm"
+          },
+          "hazard_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hazard Type"
+          },
+          "likelihood_l": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 10.0,
+                "minimum": 0.1
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Likelihood L"
+          },
+          "exposure_e": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 10.0,
+                "minimum": 0.5
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exposure E"
+          },
+          "consequence_c": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consequence C"
+          },
+          "control_measures": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Control Measures"
+          },
+          "residual_risk": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Residual Risk"
+          },
+          "control_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Control Level"
+          },
+          "execution_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Level"
+          }
+        },
+        "type": "object",
+        "title": "WorkActivityHazardUpdate",
+        "description": "\u90e8\u5206\u66f4\u65b0\u4f5c\u4e1a\u6d3b\u52a8\u5371\u9669\u6e90\uff08PATCH\uff09\u3002\n\n\u53ea\u63d0\u4ea4\u9700\u8981\u4fee\u6539\u7684\u5b57\u6bb5\uff1b\u670d\u52a1\u7aef\u4f1a\u628a\u672a\u63d0\u4ea4\u5b57\u6bb5\u4e0e\u6570\u636e\u5e93\u73b0\u503c\u5408\u5e76\u540e\uff0c\u518d\u6309\n`WorkActivityHazardCreate` \u7684\u5b8c\u6574\u89c4\u5219\u91cd\u65b0\u6821\u9a8c\u5e76\u91cd\u7b97 D / \u8bc4\u4ef7\u7ea7\u522b\u3002\n\u5ba2\u6237\u7aef\u9644\u5e26 D\u3001\u8bc4\u4ef7\u7ea7\u522b\u7b49\u540c\u540d\u5b57\u6bb5\u4f1a\u88ab\u5ffd\u7565\u3002"
       },
       "WorkOrderAssign": {
         "properties": {

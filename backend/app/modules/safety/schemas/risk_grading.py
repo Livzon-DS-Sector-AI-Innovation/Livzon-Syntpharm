@@ -7,7 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
 
 from app.modules.safety.risk_grading import (
     CONSEQUENCE_MAX,
@@ -24,6 +24,33 @@ from app.modules.safety.risk_grading import (
 
 RequiredShortText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
 RequiredLongText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=5000)]
+
+
+def _validate_control_measures_value(value: list[str]) -> list[str]:
+    unknown = [key for key in value if key not in CONTROL_MEASURE_KEYS]
+    if unknown:
+        raise ValueError(f"控制措施包含未知选项: {', '.join(unknown)}")
+    if not value:
+        raise ValueError("控制措施至少选择一项")
+    return value
+
+
+def _validate_residual_risk_value(value: str) -> str:
+    if value not in RESIDUAL_RISK_KEYS:
+        raise ValueError(f"残余风险必须是以下之一: {', '.join(sorted(RESIDUAL_RISK_KEYS))}")
+    return value
+
+
+def _validate_control_level_value(value: str) -> str:
+    if value not in RISK_GRADING_DEPARTMENTS:
+        raise ValueError("管控层级不在允许的部门列表中")
+    return value
+
+
+def _validate_execution_level_value(value: str) -> str:
+    if value not in EXECUTION_LEVEL_KEYS:
+        raise ValueError(f"执行层级必须是以下之一: {', '.join(sorted(EXECUTION_LEVEL_KEYS))}")
+    return value
 
 
 class WorkActivityHazardCreate(BaseModel):
@@ -50,31 +77,81 @@ class WorkActivityHazardCreate(BaseModel):
     @field_validator("control_measures")
     @classmethod
     def _validate_control_measures(cls, value: list[str]) -> list[str]:
-        unknown = [key for key in value if key not in CONTROL_MEASURE_KEYS]
-        if unknown:
-            raise ValueError(f"控制措施包含未知选项: {', '.join(unknown)}")
-        return value
+        return _validate_control_measures_value(value)
 
     @field_validator("residual_risk")
     @classmethod
     def _validate_residual_risk(cls, value: str) -> str:
-        if value not in RESIDUAL_RISK_KEYS:
-            raise ValueError(f"残余风险必须是以下之一: {', '.join(sorted(RESIDUAL_RISK_KEYS))}")
-        return value
+        return _validate_residual_risk_value(value)
 
     @field_validator("control_level")
     @classmethod
     def _validate_control_level(cls, value: str) -> str:
-        if value not in RISK_GRADING_DEPARTMENTS:
-            raise ValueError("管控层级不在允许的部门列表中")
-        return value
+        return _validate_control_level_value(value)
 
     @field_validator("execution_level")
     @classmethod
     def _validate_execution_level(cls, value: str) -> str:
-        if value not in EXECUTION_LEVEL_KEYS:
-            raise ValueError(f"执行层级必须是以下之一: {', '.join(sorted(EXECUTION_LEVEL_KEYS))}")
-        return value
+        return _validate_execution_level_value(value)
+
+
+class WorkActivityHazardUpdate(BaseModel):
+    """部分更新作业活动危险源（PATCH）。
+
+    只提交需要修改的字段；服务端会把未提交字段与数据库现值合并后，再按
+    `WorkActivityHazardCreate` 的完整规则重新校验并重算 D / 评价级别。
+    客户端附带 D、评价级别等同名字段会被忽略。
+    """
+
+    position_location: RequiredShortText | None = None
+    area_activity: RequiredShortText | None = None
+    hazard_name_or_event: RequiredLongText | None = None
+    possible_harm: RequiredLongText | None = None
+    hazard_type: RequiredLongText | None = None
+
+    likelihood_l: Decimal | None = Field(None, ge=LIKELIHOOD_MIN, le=LIKELIHOOD_MAX)
+    exposure_e: Decimal | None = Field(None, ge=EXPOSURE_MIN, le=EXPOSURE_MAX)
+    consequence_c: Decimal | None = Field(None, ge=CONSEQUENCE_MIN, le=CONSEQUENCE_MAX)
+
+    control_measures: list[str] | None = None
+    residual_risk: str | None = None
+    control_level: str | None = None
+    execution_level: str | None = None
+
+    @field_validator("control_measures")
+    @classmethod
+    def _validate_control_measures(cls, value: list[str] | None) -> list[str] | None:
+        if value is None:
+            return None
+        return _validate_control_measures_value(value)
+
+    @field_validator("residual_risk")
+    @classmethod
+    def _validate_residual_risk(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _validate_residual_risk_value(value)
+
+    @field_validator("control_level")
+    @classmethod
+    def _validate_control_level(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _validate_control_level_value(value)
+
+    @field_validator("execution_level")
+    @classmethod
+    def _validate_execution_level(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _validate_execution_level_value(value)
+
+    @model_validator(mode="after")
+    def _reject_explicit_nulls(self) -> WorkActivityHazardUpdate:
+        null_fields = [name for name in self.model_fields_set if getattr(self, name) is None]
+        if null_fields:
+            raise ValueError(f"以下字段不能为 null: {', '.join(sorted(null_fields))}")
+        return self
 
 
 class WorkActivityHazardResponse(BaseModel):

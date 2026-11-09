@@ -330,3 +330,304 @@ class TestOptionEnforcement:
 
         assert data["residual_risk"] == key
         assert data["residual_risk_label"] == label
+
+
+# ── #180：编辑 / 软删除 / 筛选 / .xlsx 导出 ─────────────────────────────
+
+from io import BytesIO  # noqa: E402
+
+import openpyxl  # noqa: E402
+from sqlalchemy import select  # noqa: E402
+
+from app.modules.safety.api.permission_map import SAFETY_RESOURCE_CODES, resolve_code  # noqa: E402
+from app.modules.safety.models import WorkActivityHazard  # noqa: E402
+
+EXPORT_URL = f"{BASE_URL}/export"
+
+EXPORT_HEADERS = [
+    "序号",
+    "岗位/地点",
+    "区域/活动",
+    "危险源名称或潜在事件",
+    "可能导致的危害",
+    "危险源类型",
+    "可能性L",
+    "发生频次E",
+    "后果C",
+    "风险值D",
+    "评价级别",
+    "控制措施",
+    "残余风险",
+    "管控层级",
+    "执行层级",
+]
+
+
+async def create_variant(client: AsyncClient, **overrides: Any) -> dict[str, Any]:
+    """创建一条记录，用于筛选/导出用例。"""
+    return await create(client, **overrides)
+
+
+class TestWorkActivityHazardUpdate:
+    async def test_put_recomputes_d_and_grade_and_ignores_client_values(self, auth_client: AsyncClient) -> None:
+        created = await create(auth_client)
+
+        body = payload(
+            likelihood_l="4",
+            exposure_e="7",
+            consequence_c="20",
+            risk_value_d="1",
+            evaluation_grade=1,
+            evaluation_grade_label="1级",
+        )
+        response = await auth_client.put(f"{BASE_URL}/{created['id']}", json=body)
+
+        assert response.status_code == 200, response.text
+        data = response.json()["data"]
+        assert Decimal(data["risk_value_d"]) == Decimal("560")
+        assert data["evaluation_grade"] == 4
+        assert data["evaluation_grade_label"] == "4级"
+        assert Decimal(data["likelihood_l"]) == Decimal("4")
+        assert Decimal(data["consequence_c"]) == Decimal("20")
+
+    async def test_patch_partial_update_recomputes_from_merged_values(self, auth_client: AsyncClient) -> None:
+        created = await create(auth_client)
+
+        response = await auth_client.patch(f"{BASE_URL}/{created['id']}", json={"consequence_c": "100"})
+
+        assert response.status_code == 200, response.text
+        data = response.json()["data"]
+        assert Decimal(data["risk_value_d"]) == Decimal("1800")
+        assert data["evaluation_grade"] == 4
+        assert data["position_location"] == created["position_location"]
+        assert data["area_activity"] == created["area_activity"]
+
+    async def test_update_reapplies_d_gate(self, auth_client: AsyncClient) -> None:
+        created = await create(auth_client)
+
+        response = await auth_client.put(
+            f"{BASE_URL}/{created['id']}",
+            json=payload(likelihood_l="1", exposure_e="1", consequence_c="20"),
+        )
+
+        assert response.status_code == 400, response.text
+        assert "20" in response.text
+
+    async def test_update_reapplies_option_validation(self, auth_client: AsyncClient) -> None:
+        created = await create(auth_client)
+
+        response = await auth_client.put(
+            f"{BASE_URL}/{created['id']}",
+            json=payload(residual_risk="level_4"),
+        )
+
+        assert response.status_code == 422, response.text
+
+    async def test_update_missing_record_returns_404(self, auth_client: AsyncClient) -> None:
+        missing = "00000000-0000-0000-0000-000000000000"
+
+        response = await auth_client.put(f"{BASE_URL}/{missing}", json=payload())
+
+        assert response.status_code == 404, response.text
+
+
+class TestWorkActivityHazardSoftDelete:
+    async def test_deleted_record_leaves_list_and_detail_but_stays_in_table(
+        self,
+        auth_client: AsyncClient,
+        db_session: Any,
+    ) -> None:
+        created = await create(auth_client)
+
+        response = await auth_client.delete(f"{BASE_URL}/{created['id']}")
+        assert response.status_code == 200, response.text
+        assert response.json()["message"] == "删除成功"
+
+        list_response = await auth_client.get(BASE_URL)
+        assert list_response.status_code == 200
+        assert list_response.json()["meta"]["total"] == 0
+        assert list_response.json()["data"] == []
+
+        detail_response = await auth_client.get(f"{BASE_URL}/{created['id']}")
+        assert detail_response.status_code == 404
+
+        row = await db_session.scalar(select(WorkActivityHazard).where(WorkActivityHazard.id == created["id"]))
+        assert row is not None
+        assert row.is_deleted is True
+
+    async def test_delete_missing_record_returns_404(self, auth_client: AsyncClient) -> None:
+        missing = "00000000-0000-0000-0000-000000000000"
+
+        response = await auth_client.delete(f"{BASE_URL}/{missing}")
+
+        assert response.status_code == 404, response.text
+
+    async def test_delete_anonymous_is_rejected(self, anonymous_client: AsyncClient) -> None:
+        response = await anonymous_client.delete(f"{BASE_URL}/00000000-0000-0000-0000-000000000000")
+
+        assert response.status_code == 401
+
+
+class TestWorkActivityHazardFilters:
+    async def test_each_filter_works_alone_and_combined(self, auth_client: AsyncClient) -> None:
+        await create_variant(
+            auth_client, position_location="101车间A岗", control_level="101车间", residual_risk="level_1"
+        )
+        await create_variant(
+            auth_client,
+            position_location="201车间B岗",
+            control_level="201车间",
+            residual_risk="level_2",
+            likelihood_l="4",
+            exposure_e="7",
+            consequence_c="20",
+        )
+        await create_variant(
+            auth_client,
+            position_location="301车间C岗",
+            control_level="301车间",
+            residual_risk="level_3",
+            likelihood_l="1",
+            exposure_e="1",
+            consequence_c="21",
+        )
+
+        by_level = await auth_client.get(BASE_URL, params={"control_level": "201车间"})
+        assert by_level.status_code == 200
+        assert by_level.json()["meta"]["total"] == 1
+        assert by_level.json()["data"][0]["position_location"] == "201车间B岗"
+
+        by_grade = await auth_client.get(BASE_URL, params={"evaluation_grade": 4})
+        assert by_grade.status_code == 200
+        assert by_grade.json()["meta"]["total"] == 1
+        assert by_grade.json()["data"][0]["position_location"] == "201车间B岗"
+
+        by_residual = await auth_client.get(BASE_URL, params={"residual_risk": "level_3"})
+        assert by_residual.status_code == 200
+        assert by_residual.json()["meta"]["total"] == 1
+        assert by_residual.json()["data"][0]["position_location"] == "301车间C岗"
+
+        combined = await auth_client.get(
+            BASE_URL,
+            params={"control_level": "201车间", "residual_risk": "level_2", "evaluation_grade": 4},
+        )
+        assert combined.status_code == 200
+        assert combined.json()["meta"]["total"] == 1
+        assert combined.json()["data"][0]["position_location"] == "201车间B岗"
+
+        excluded = await auth_client.get(BASE_URL, params={"control_level": "201车间", "residual_risk": "level_3"})
+        assert excluded.status_code == 200
+        assert excluded.json()["meta"]["total"] == 0
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "position_location",
+            "area_activity",
+            "hazard_name_or_event",
+            "possible_harm",
+            "hazard_type",
+        ],
+    )
+    async def test_keyword_searches_every_text_field(self, auth_client: AsyncClient, field: str) -> None:
+        marker = f"KEYWORD-{field}"
+        await create_variant(auth_client, **{field: f"{marker} 文本"})
+        await create_variant(auth_client, position_location="无关键字岗位")
+
+        response = await auth_client.get(BASE_URL, params={"keyword": marker})
+
+        assert response.status_code == 200
+        assert response.json()["meta"]["total"] == 1
+        assert response.json()["data"][0][field] == f"{marker} 文本"
+
+    async def test_keyword_combines_with_other_filters(self, auth_client: AsyncClient) -> None:
+        await create_variant(auth_client, position_location="MATCH岗位", control_level="101车间")
+        await create_variant(auth_client, position_location="MATCH岗位", control_level="201车间")
+
+        response = await auth_client.get(
+            BASE_URL,
+            params={"keyword": "MATCH", "control_level": "201车间"},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["meta"]["total"] == 1
+        assert response.json()["data"][0]["control_level"] == "201车间"
+
+
+class TestWorkActivityHazardExport:
+    async def test_export_returns_xlsx_with_chinese_headers_and_filtered_rows(self, auth_client: AsyncClient) -> None:
+        await create_variant(auth_client, position_location="导出命中岗", control_level="201车间")
+        await create_variant(auth_client, position_location="导出排除岗", control_level="101车间")
+
+        response = await auth_client.get(EXPORT_URL, params={"control_level": "201车间"})
+
+        assert response.status_code == 200, response.text
+        assert response.headers["content-type"].startswith(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        disposition = response.headers["content-disposition"]
+        assert "attachment" in disposition.lower()
+        assert ".xlsx" in disposition
+
+        workbook = openpyxl.load_workbook(BytesIO(response.content))
+        sheet = workbook.active
+        headers = [cell.value for cell in sheet[1]]
+        assert headers == EXPORT_HEADERS
+        assert sheet.max_row == 2
+        assert sheet.cell(row=2, column=2).value == "导出命中岗"
+        assert str(sheet.cell(row=2, column=10).value) == "270"
+        assert sheet.cell(row=2, column=11).value == "3级"
+
+    async def test_export_honors_keyword_and_combined_filters(self, auth_client: AsyncClient) -> None:
+        await create_variant(
+            auth_client,
+            position_location="组合命中岗",
+            hazard_name_or_event="组合关键字",
+            control_level="201车间",
+            residual_risk="level_2",
+        )
+        await create_variant(
+            auth_client,
+            position_location="组合排除岗",
+            hazard_name_or_event="组合关键字",
+            control_level="201车间",
+            residual_risk="level_3",
+        )
+
+        response = await auth_client.get(
+            EXPORT_URL,
+            params={"keyword": "组合关键字", "control_level": "201车间", "residual_risk": "level_2"},
+        )
+
+        assert response.status_code == 200, response.text
+        sheet = openpyxl.load_workbook(BytesIO(response.content)).active
+        assert sheet.max_row == 2
+        assert sheet.cell(row=2, column=2).value == "组合命中岗"
+
+    async def test_export_route_is_authorized_as_read_only(self) -> None:
+        read_code, _write_code = SAFETY_RESOURCE_CODES["work-activity-hazards"]
+
+        assert resolve_code("GET", "/api/v1/safety/work-activity-hazards/export") == read_code
+        assert resolve_code("GET", "/api/v1/safety/work-activity-hazards/export/") == read_code
+
+
+class TestWorkActivityHazardDetail:
+    async def test_get_detail_returns_record(self, auth_client: AsyncClient) -> None:
+        created = await create(auth_client)
+
+        response = await auth_client.get(f"{BASE_URL}/{created['id']}")
+
+        assert response.status_code == 200, response.text
+        assert response.json()["data"]["id"] == created["id"]
+
+    async def test_get_missing_detail_returns_404(self, auth_client: AsyncClient) -> None:
+        response = await auth_client.get(f"{BASE_URL}/00000000-0000-0000-0000-000000000000")
+
+        assert response.status_code == 404, response.text
+
+    async def test_put_blank_text_is_rejected(self, auth_client: AsyncClient) -> None:
+        created = await create(auth_client)
+
+        response = await auth_client.put(f"{BASE_URL}/{created['id']}", json=payload(area_activity="   "))
+
+        assert response.status_code == 422, response.text

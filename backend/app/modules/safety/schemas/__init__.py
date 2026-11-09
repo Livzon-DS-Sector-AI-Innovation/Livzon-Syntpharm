@@ -294,6 +294,7 @@ __all__ = [
     "WorkActivityHazardListApiResponse",
     "WorkActivityHazardListMeta",
     "WorkActivityHazardResponse",
+    "WorkActivityHazardUpdate",
 ]
 
 from app.modules.safety.schemas.accidents import (
@@ -571,6 +572,7 @@ from app.modules.safety.schemas.risk_grading import (
     WorkActivityHazardListApiResponse,
     WorkActivityHazardListMeta,
     WorkActivityHazardResponse,
+    WorkActivityHazardUpdate,
 )
 from app.modules.safety.schemas.risk_reports import (
     REPORT_STATUS_OPTIONS,

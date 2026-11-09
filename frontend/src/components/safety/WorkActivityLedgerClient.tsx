@@ -11,15 +11,28 @@ import {
   Input,
   InputNumber,
   Modal,
+  Popconfirm,
   Select,
   Space,
   Table,
   Tag,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { PlusOutlined, QuestionCircleOutlined } from '@ant-design/icons'
+import {
+  DeleteOutlined,
+  DownloadOutlined,
+  EditOutlined,
+  PlusOutlined,
+  QuestionCircleOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons'
 
-import { createWorkActivityHazardAction } from '@/actions/risk-grading'
+import {
+  createWorkActivityHazardAction,
+  deleteWorkActivityHazardAction,
+  exportWorkActivityHazardsAction,
+  updateWorkActivityHazardAction,
+} from '@/actions/risk-grading'
 import { fetchWorkActivityHazards } from '@/lib/api/client/risk-grading'
 import {
   CONTROL_MEASURE_LABELS,
@@ -33,15 +46,34 @@ import {
   deriveEvaluationGrade,
   type WorkActivityHazard,
   type WorkActivityHazardCreate,
+  type WorkActivityHazardExportParams,
 } from '@/types/safety/risk-grading'
 
 const QUERY_KEY = 'work-activity-hazards'
+
+const GRADE_OPTIONS = [
+  { value: 1, label: '1级' },
+  { value: 2, label: '2级' },
+  { value: 3, label: '3级' },
+  { value: 4, label: '4级' },
+]
 
 function formatDecimal(value: string | null | undefined): string {
   if (value === null || value === undefined || value === '') return ''
   const number = Number(value)
   if (!Number.isFinite(number)) return value
   return String(Number(number.toFixed(6)))
+}
+
+function downloadBlob(blob: Blob, filename: string): void {
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  window.URL.revokeObjectURL(url)
 }
 
 function StandardLink({ href, label, field }: { href: string; label: string; field: string }) {
@@ -67,10 +99,33 @@ export default function WorkActivityLedgerClient() {
   const [pageSize, setPageSize] = useState(20)
   const [open, setOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [editing, setEditing] = useState<WorkActivityHazard | null>(null)
+  const [exporting, setExporting] = useState(false)
+
+  const [controlLevel, setControlLevel] = useState<string>()
+  const [evaluationGrade, setEvaluationGrade] = useState<number>()
+  const [residualRisk, setResidualRisk] = useState<string>()
+  const [keyword, setKeyword] = useState<string>()
+  const [keywordInput, setKeywordInput] = useState('')
+
+  const exportParams = useMemo<WorkActivityHazardExportParams>(
+    () => ({
+      control_level: controlLevel,
+      evaluation_grade: evaluationGrade,
+      residual_risk: residualRisk,
+      keyword,
+    }),
+    [controlLevel, evaluationGrade, residualRisk, keyword],
+  )
 
   const { data, isLoading } = useQuery({
-    queryKey: [QUERY_KEY, page, pageSize],
-    queryFn: () => fetchWorkActivityHazards({ page, page_size: pageSize }),
+    queryKey: [QUERY_KEY, page, pageSize, controlLevel, evaluationGrade, residualRisk, keyword],
+    queryFn: () =>
+      fetchWorkActivityHazards({
+        page,
+        page_size: pageSize,
+        ...exportParams,
+      }),
   })
 
   const rows = data?.data ?? []
@@ -91,13 +146,43 @@ export default function WorkActivityLedgerClient() {
   const previewGrade = previewD === null ? null : deriveEvaluationGrade(previewD)
   const belowGate = previewD !== null && previewD <= 20
 
+  const resetFilters = () => {
+    setControlLevel(undefined)
+    setEvaluationGrade(undefined)
+    setResidualRisk(undefined)
+    setKeyword(undefined)
+    setKeywordInput('')
+    setPage(1)
+  }
+
   const openCreate = () => {
+    setEditing(null)
     form.resetFields()
     setOpen(true)
   }
 
-  const closeCreate = () => {
+  const openEdit = (record: WorkActivityHazard) => {
+    setEditing(record)
+    form.setFieldsValue({
+      position_location: record.position_location,
+      area_activity: record.area_activity,
+      hazard_name_or_event: record.hazard_name_or_event,
+      possible_harm: record.possible_harm,
+      hazard_type: record.hazard_type,
+      likelihood_l: Number(record.likelihood_l),
+      exposure_e: Number(record.exposure_e),
+      consequence_c: Number(record.consequence_c),
+      control_measures: record.control_measures,
+      residual_risk: record.residual_risk,
+      control_level: record.control_level,
+      execution_level: record.execution_level,
+    })
+    setOpen(true)
+  }
+
+  const closeEditor = () => {
     setOpen(false)
+    setEditing(null)
     form.resetFields()
   }
 
@@ -115,14 +200,45 @@ export default function WorkActivityLedgerClient() {
     }
     setSubmitting(true)
     try {
-      await createWorkActivityHazardAction(values)
-      message.success('创建成功')
-      closeCreate()
+      if (editing) {
+        await updateWorkActivityHazardAction(editing.id, values)
+        message.success('更新成功')
+      } else {
+        await createWorkActivityHazardAction(values)
+        message.success('创建成功')
+      }
+      closeEditor()
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEY] })
     } catch (error: unknown) {
-      message.error(error instanceof Error ? error.message : '创建失败')
+      message.error(error instanceof Error ? error.message : editing ? '更新失败' : '创建失败')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleDelete = async (record: WorkActivityHazard) => {
+    try {
+      await deleteWorkActivityHazardAction(record.id)
+      message.success('删除成功')
+      if (rows.length === 1 && page > 1) {
+        setPage(page - 1)
+      }
+      await queryClient.invalidateQueries({ queryKey: [QUERY_KEY] })
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '删除失败')
+    }
+  }
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const { blob, filename } = await exportWorkActivityHazardsAction(exportParams)
+      downloadBlob(blob, filename)
+      message.success('导出成功')
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '导出失败')
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -161,23 +277,104 @@ export default function WorkActivityLedgerClient() {
       width: 100,
       render: (value: string) => EXECUTION_LEVEL_LABELS[value] ?? value,
     },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 150,
+      fixed: 'right',
+      render: (_value: unknown, record) => (
+        <Space size="small">
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>
+            编辑
+          </Button>
+          <Popconfirm
+            title="确认删除该记录？"
+            description="删除后列表不再显示，但数据行保留。"
+            okText="删除"
+            cancelText="取消"
+            onConfirm={() => handleDelete(record)}
+          >
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+              删除
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
   ]
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)]">作业活动危险源台账</h1>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-          新建
-        </Button>
+        <Space>
+          <Button icon={<DownloadOutlined />} loading={exporting} onClick={handleExport}>
+            导出当前筛选
+          </Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+            新建
+          </Button>
+        </Space>
       </div>
+
+      <Space size="middle" wrap>
+        <Select
+          allowClear
+          showSearch
+          optionFilterProp="label"
+          placeholder="管控层级"
+          style={{ width: 180 }}
+          value={controlLevel}
+          options={RISK_GRADING_DEPARTMENT_OPTIONS}
+          onChange={(value) => {
+            setControlLevel(value)
+            setPage(1)
+          }}
+        />
+        <Select
+          allowClear
+          placeholder="评价级别"
+          style={{ width: 130 }}
+          value={evaluationGrade}
+          options={GRADE_OPTIONS}
+          onChange={(value) => {
+            setEvaluationGrade(value)
+            setPage(1)
+          }}
+        />
+        <Select
+          allowClear
+          placeholder="残余风险"
+          style={{ width: 150 }}
+          value={residualRisk}
+          options={RESIDUAL_RISK_OPTIONS}
+          onChange={(value) => {
+            setResidualRisk(value)
+            setPage(1)
+          }}
+        />
+        <Input.Search
+          allowClear
+          placeholder="搜索岗位/地点、区域/活动、危险源名称等"
+          style={{ width: 300 }}
+          value={keywordInput}
+          onChange={(event) => setKeywordInput(event.target.value)}
+          onSearch={(value) => {
+            setKeyword(value.trim() || undefined)
+            setPage(1)
+          }}
+        />
+        <Button icon={<ReloadOutlined />} onClick={resetFilters}>
+          重置
+        </Button>
+      </Space>
 
       <Table<WorkActivityHazard>
         rowKey="id"
         loading={isLoading}
         columns={columns}
         dataSource={rows}
-        scroll={{ x: 2300 }}
+        scroll={{ x: 2450 }}
         locale={{ emptyText: <Empty description="暂无作业活动危险源台账记录" /> }}
         pagination={{
           current: page,
@@ -193,10 +390,10 @@ export default function WorkActivityLedgerClient() {
       />
 
       <Modal
-        title="新建作业活动危险源"
+        title={editing ? '编辑作业活动危险源' : '新建作业活动危险源'}
         open={open}
         width={880}
-        onCancel={closeCreate}
+        onCancel={closeEditor}
         onOk={handleSubmit}
         okText="保存"
         cancelText="取消"

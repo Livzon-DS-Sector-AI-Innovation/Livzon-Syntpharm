@@ -6550,7 +6550,7 @@ export interface paths {
         };
         /**
          * 获取作业活动危险源台账列表
-         * @description 按创建时间倒序返回作业活动危险源台账。
+         * @description 按创建时间倒序返回作业活动危险源台账，支持组合筛选与关键字搜索。
          */
         get: operations["list_work_activity_hazards_api_v1_safety_work_activity_hazards_get"];
         put?: never;
@@ -6563,6 +6563,55 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/work-activity-hazards/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 导出作业活动危险源台账 .xlsx
+         * @description 按与列表相同的筛选条件导出当前结果；导出被视为只读动作。
+         */
+        get: operations["export_work_activity_hazards_api_v1_safety_work_activity_hazards_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/work-activity-hazards/{hazard_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取作业活动危险源台账详情 */
+        get: operations["get_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__get"];
+        /**
+         * 完整更新作业活动危险源台账记录
+         * @description 完整更新（PUT）：所有创建规则重新生效，D 与评价级别由服务端重算。
+         */
+        put: operations["replace_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__put"];
+        post?: never;
+        /**
+         * 删除作业活动危险源台账记录（软删除）
+         * @description 软删除记录：列表与详情不再返回，但数据行保留。
+         */
+        delete: operations["delete_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * 部分更新作业活动危险源台账记录
+         * @description 部分更新（PATCH）：合并现有值后重新套用全部创建规则，并重算 D 与评价级别。
+         */
+        patch: operations["update_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__patch"];
         trace?: never;
     };
     "/api/v1/safety/scheduled-tasks/data-source-options": {
@@ -56408,6 +56457,40 @@ export interface components {
             updated_at: string;
         };
         /**
+         * WorkActivityHazardUpdate
+         * @description 部分更新作业活动危险源（PATCH）。
+         *
+         *     只提交需要修改的字段；服务端会把未提交字段与数据库现值合并后，再按
+         *     `WorkActivityHazardCreate` 的完整规则重新校验并重算 D / 评价级别。
+         *     客户端附带 D、评价级别等同名字段会被忽略。
+         */
+        WorkActivityHazardUpdate: {
+            /** Position Location */
+            position_location?: string | null;
+            /** Area Activity */
+            area_activity?: string | null;
+            /** Hazard Name Or Event */
+            hazard_name_or_event?: string | null;
+            /** Possible Harm */
+            possible_harm?: string | null;
+            /** Hazard Type */
+            hazard_type?: string | null;
+            /** Likelihood L */
+            likelihood_l?: number | string | null;
+            /** Exposure E */
+            exposure_e?: number | string | null;
+            /** Consequence C */
+            consequence_c?: number | string | null;
+            /** Control Measures */
+            control_measures?: string[] | null;
+            /** Residual Risk */
+            residual_risk?: string | null;
+            /** Control Level */
+            control_level?: string | null;
+            /** Execution Level */
+            execution_level?: string | null;
+        };
+        /**
          * WorkOrderAssign
          * @description 指派工单请求
          */
@@ -72902,6 +72985,14 @@ export interface operations {
             query?: {
                 page?: number;
                 page_size?: number;
+                /** @description 管控层级（部门） */
+                control_level?: string | null;
+                /** @description 评价级别 1–4 */
+                evaluation_grade?: number | null;
+                /** @description 残余风险 key */
+                residual_risk?: string | null;
+                /** @description 关键字（覆盖各文本字段） */
+                keyword?: string | null;
             };
             header?: never;
             path?: never;
@@ -72943,6 +73034,184 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["WorkActivityHazardCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["WorkActivityHazardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_work_activity_hazards_api_v1_safety_work_activity_hazards_export_get: {
+        parameters: {
+            query?: {
+                /** @description 管控层级（部门） */
+                control_level?: string | null;
+                /** @description 评价级别 1–4 */
+                evaluation_grade?: number | null;
+                /** @description 残余风险 key */
+                residual_risk?: string | null;
+                /** @description 关键字（覆盖各文本字段） */
+                keyword?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hazard_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["WorkActivityHazardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hazard_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkActivityHazardCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["WorkActivityHazardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hazard_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["WorkActivityHazardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_work_activity_hazard_api_v1_safety_work_activity_hazards__hazard_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hazard_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkActivityHazardUpdate"];
             };
         };
         responses: {

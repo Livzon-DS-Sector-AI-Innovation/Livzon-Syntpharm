@@ -892,16 +892,67 @@ class SafetyRepository:
 
     # ==================== 作业活动危险源台账 Operations ====================
 
-    async def get_work_activity_hazards(self, skip: int = 0, limit: int = 20) -> tuple[list[WorkActivityHazard], int]:
+    def _work_activity_hazard_conditions(
+        self,
+        control_level: str | None = None,
+        evaluation_grade: int | None = None,
+        residual_risk: str | None = None,
+        keyword: str | None = None,
+    ) -> list[Any]:
+        """构造作业活动台账的筛选条件（软删除 + 可选筛选，全部 AND 组合）。"""
+        conditions: list[Any] = [~WorkActivityHazard.is_deleted]
+        if control_level:
+            conditions.append(WorkActivityHazard.control_level == control_level)
+        if evaluation_grade is not None:
+            conditions.append(WorkActivityHazard.evaluation_grade == evaluation_grade)
+        if residual_risk:
+            conditions.append(WorkActivityHazard.residual_risk == residual_risk)
+        if keyword and keyword.strip():
+            like = f"%{keyword.strip()}%"
+            conditions.append(
+                or_(
+                    WorkActivityHazard.position_location.ilike(like),
+                    WorkActivityHazard.area_activity.ilike(like),
+                    WorkActivityHazard.hazard_name_or_event.ilike(like),
+                    WorkActivityHazard.possible_harm.ilike(like),
+                    WorkActivityHazard.hazard_type.ilike(like),
+                )
+            )
+        return conditions
+
+    async def get_work_activity_hazards(
+        self,
+        skip: int = 0,
+        limit: int = 20,
+        control_level: str | None = None,
+        evaluation_grade: int | None = None,
+        residual_risk: str | None = None,
+        keyword: str | None = None,
+    ) -> tuple[list[WorkActivityHazard], int]:
         """获取作业活动危险源台账列表（按创建时间倒序）。"""
-        base = select(WorkActivityHazard).where(~WorkActivityHazard.is_deleted)
-        count_query = select(func.count(WorkActivityHazard.id)).where(~WorkActivityHazard.is_deleted)
+        conditions = self._work_activity_hazard_conditions(
+            control_level=control_level,
+            evaluation_grade=evaluation_grade,
+            residual_risk=residual_risk,
+            keyword=keyword,
+        )
+        base = select(WorkActivityHazard).where(*conditions)
+        count_query = select(func.count(WorkActivityHazard.id)).where(*conditions)
         total = await self.session.scalar(count_query)
         query = (
             base.order_by(WorkActivityHazard.created_at.desc(), WorkActivityHazard.id.desc()).offset(skip).limit(limit)
         )
         result = await self.session.execute(query)
         return list(result.scalars().all()), total or 0
+
+    async def get_work_activity_hazard_by_id(self, hazard_id: uuid.UUID) -> WorkActivityHazard | None:
+        """按 id 获取未删除的作业活动危险源记录。"""
+        query = select(WorkActivityHazard).where(
+            WorkActivityHazard.id == hazard_id,
+            ~WorkActivityHazard.is_deleted,
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
 
     async def create_work_activity_hazard(self, data: dict[str, Any]) -> WorkActivityHazard:
         """创建作业活动危险源记录。"""
@@ -911,6 +962,29 @@ class SafetyRepository:
         stmt = select(WorkActivityHazard).where(WorkActivityHazard.id == item.id)
         result = await self.session.execute(stmt)
         return result.scalar_one()
+
+    async def update_work_activity_hazard(
+        self, hazard_id: uuid.UUID, data: dict[str, Any]
+    ) -> WorkActivityHazard | None:
+        """更新未删除的作业活动危险源记录。"""
+        query = (
+            update(WorkActivityHazard)
+            .where(WorkActivityHazard.id == hazard_id, ~WorkActivityHazard.is_deleted)
+            .values(**data, updated_at=func.now())
+            .returning(WorkActivityHazard)
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def delete_work_activity_hazard(self, hazard_id: uuid.UUID) -> bool:
+        """软删除作业活动危险源记录。"""
+        query = (
+            update(WorkActivityHazard)
+            .where(WorkActivityHazard.id == hazard_id, ~WorkActivityHazard.is_deleted)
+            .values(is_deleted=True, updated_at=func.now())
+        )
+        result = await self.session.execute(query)
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]
 
     # ==================== OperationRegulation Operations ====================
 
