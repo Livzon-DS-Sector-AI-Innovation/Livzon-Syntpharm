@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Alert, App, Button, Form, Input, Modal, Select, Spin, Tag,
+  Alert, App, Button, Form, Input, Modal, Select, Spin, Tag, Tooltip,
 } from 'antd'
 import { CloudUploadOutlined, EyeOutlined, ThunderboltOutlined } from '@ant-design/icons'
 import { createReport as createReportAction, updateReport } from '@/actions/research/rd-project'
@@ -15,8 +15,9 @@ import { useDocxPreview } from './useDocxPreview'
 import { KnowledgeBaseModal } from './KnowledgeBaseModal'
 import { useKnowledgeBase, useKbDocuments, summarizeKb } from './useKnowledgeBase'
 import {
-  RdDeliverableTemplate, RdReport, REPORT_TYPE_LABELS, STAGE_LABELS,
+  RdDeliverableTemplate, RdReport, REPORT_TYPE_LABELS, STAGE_LABELS, deliverableTypeLabel,
 } from '@/types/research/rd-project'
+import { TERMS } from '@/lib/ui/research-copy'
 
 interface Props {
   open: boolean
@@ -196,11 +197,11 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
       return
     }
     if (!selectedTpl) {
-      msgApi.warning('请先选择模板母本')
+      msgApi.warning('请先选一份 Word 模板文件')
       return
     }
     if (!selectedTpl.file_object_key) {
-      msgApi.warning('该模板还没有上传母本文件，无法生成')
+      msgApi.warning('这个模板还没有上传 Word 文件，不能生成。请先到「交付文档模板」页给它上传文件。')
       return
     }
     setSubmitting(true)
@@ -238,7 +239,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
         supplement_text: values.supplement?.trim() || null,
       })
 
-      msgApi.success('已提交生成任务，可在列表查看执行过程')
+      msgApi.success('已开始生成，可以到那份报告的「生成详情」里看进度')
       onCreated?.()
       onCancel()
     } catch (e: unknown) {
@@ -250,8 +251,8 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
   }
 
   const kbHint = kb
-    ? `已关联知识库 ${kb.name}（已解析 ${kbSummary.parsed} 份 / 共 ${kbSummary.total || kb.document_count} 份）`
-    : '该项目还没有项目知识库。AI 将只使用项目登记数据与补充信息，缺失项会标记为「待补充」。'
+    ? `会参考知识库「${kb.name}」里的资料（已入库 ${kbSummary.parsed} 份 / 共 ${kbSummary.total || kb.document_count} 份）`
+    : '这个项目还没有知识库。AI 只能用项目登记信息和下面的补充说明来写，找不到依据的项会标成「待补充」。'
 
   return (
     <>
@@ -264,17 +265,27 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
         destroyOnClose
         footer={[
           <Button key="cancel" onClick={onCancel}>取消</Button>,
-          <Button key="save" onClick={handleSave} loading={saving} disabled={submitting}>保存</Button>,
-          <Button
+          <Tooltip key="save" title="只登记这份报告，先不生成文档；以后可以再点「编辑」用 AI 生成">
+            <Button onClick={handleSave} loading={saving} disabled={submitting}>
+              只保存，暂不生成
+            </Button>
+          </Tooltip>,
+          <Tooltip
             key="generate"
-            type="primary"
-            icon={<ThunderboltOutlined />}
-            onClick={handleGenerate}
-            loading={submitting}
-            disabled={saving || !selectedTpl}
+            title={selectedTpl ? '选好模板文件后，AI 会在这份 Word 里填内容，生成可直接下载的文档' : '先在下面选一份 Word 模板文件'}
           >
-            AI 生成报告
-          </Button>,
+            <span>
+              <Button
+                type="primary"
+                icon={<ThunderboltOutlined />}
+                onClick={handleGenerate}
+                loading={submitting}
+                disabled={saving || !selectedTpl}
+              >
+                用 AI 生成文档
+              </Button>
+            </span>
+          </Tooltip>,
         ]}
       >
         {modelLabel && (
@@ -282,8 +293,8 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
             type="info"
             showIcon
             style={{ marginBottom: 16 }}
-            message={`本次生成使用模型：${modelLabel}`}
-            description="如需更换，请到报告列表页的「生成配置」调整；已提交的任务沿用提交时的模型。"
+            message={`这次生成会用模型：${modelLabel}`}
+            description="要换模型，请到报告列表页的「生成设置」里改。已经提交的任务会沿用提交那一刻的模型，不受影响。"
           />
         )}
         <Form form={form} layout="vertical" initialValues={{ report_type: 'summary', version: 'v1.0' }}>
@@ -295,7 +306,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
             <Form.Item name="report_type" label="报告类型" rules={[{ required: true }]} style={{ flex: 1 }}>
               <Select options={Object.entries(REPORT_TYPE_LABELS).map(([value, label]) => ({ value, label }))} />
             </Form.Item>
-            <Form.Item name="stage" label="关联阶段" style={{ flex: 1 }}>
+            <Form.Item name="stage" label="所属阶段" style={{ flex: 1 }}>
               <Select
                 allowClear
                 options={[{ value: '', label: '无' }, ...Object.entries(STAGE_LABELS).map(([value, label]) => ({ value, label }))]}
@@ -307,7 +318,12 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
           </div>
 
           <div style={{ display: 'flex', gap: 16 }}>
-            <Form.Item name="doc_code" label="受控编码" style={{ flex: 1 }}>
+            <Form.Item
+              name="doc_code"
+              label={TERMS.fileCode.name}
+              extra={TERMS.fileCode.hint}
+              style={{ flex: 1 }}
+            >
               <Input placeholder="如：RD-2024-001" />
             </Form.Item>
             <Form.Item name="drug_name" label="品种名称" style={{ flex: 1 }}>
@@ -317,17 +333,17 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
 
           <Form.Item
             name="template_id"
-            label="模板母本"
-            extra="仅列出已启用的交付物模板；AI 会在这份母本上按锚点回写内容，保留原排版"
-            rules={[{ required: true, message: '请选择模板母本' }]}
+            label={TERMS.templateFile.name}
+            extra={TERMS.templateFile.hint}
+            rules={[{ required: true, message: '请选一份 Word 模板文件' }]}
           >
             <Select
-              placeholder={templatesLoading ? '加载中…' : '选择交付物模板'}
+              placeholder={templatesLoading ? '加载中…' : '选一份 Word 模板文件'}
               showSearch
               allowClear
               loading={templatesLoading}
               optionFilterProp="label"
-              notFoundContent={templatesLoading ? <Spin size="small" /> : '暂无已启用的交付物模板'}
+              notFoundContent={templatesLoading ? <Spin size="small" /> : '还没有可用的交付文档模板，先到「交付文档模板」页上传'}
               options={templates.map((tpl) => ({ value: tpl.id, label: tpl.name }))}
             />
           </Form.Item>
@@ -350,7 +366,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
                     {selectedTpl.current_version_no ? (
                       <Tag color="green" style={{ marginLeft: 8 }}>v{selectedTpl.current_version_no}</Tag>
                     ) : (
-                      <Tag style={{ marginLeft: 8 }}>未上传母本</Tag>
+                      <Tag style={{ marginLeft: 8 }}>还没上传文件</Tag>
                     )}
                     <Tag color="blue" style={{ marginLeft: 4 }}>
                       {STAGE_LABELS[selectedTpl.stage as keyof typeof STAGE_LABELS] ?? selectedTpl.stage}
@@ -360,8 +376,8 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
                     <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>{selectedTpl.description}</div>
                   )}
                   <div style={{ display: 'flex', gap: 12, fontSize: 12, color: '#8c8c8c' }}>
-                    <span>交付物类型：{selectedTpl.deliverable_type}</span>
-                    <span>母本文件：{selectedTpl.file_name || '未上传'}</span>
+                    <span>交付文档类型：{deliverableTypeLabel(selectedTpl.deliverable_type)}</span>
+                    <span>模板文件：{selectedTpl.file_name || '还没上传'}</span>
                   </div>
                 </div>
                 <Button
@@ -371,7 +387,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
                   disabled={!selectedTpl.file_object_key}
                   onClick={() => openTplPreview(selectedTpl)}
                 >
-                  预览母本
+                  预览模板文件
                 </Button>
               </div>
             </div>
@@ -383,7 +399,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
               showIcon
               style={{ marginBottom: 16 }}
               message="未检测到项目知识库"
-              description="AI 将只用项目登记信息与下方补充信息生成，无资料支撑的槽位会标记为「待补充」。"
+              description="AI 只能用项目登记信息和下面的补充说明来写，找不到依据的填充项会标成「待补充」。"
             />
           )}
 
@@ -419,7 +435,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
 
       <Modal
         open={tplPreviewOpen}
-        title={`模板母本预览 - ${tplPreviewName}`}
+        title={`预览模板文件 - ${tplPreviewName}`}
         width={960}
         onCancel={closeTplPreview}
         footer={<Button onClick={closeTplPreview}>关闭</Button>}

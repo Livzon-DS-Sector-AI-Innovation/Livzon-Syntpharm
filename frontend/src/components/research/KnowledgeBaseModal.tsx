@@ -22,7 +22,7 @@ export function KnowledgeBaseModal({ open, projectId, onClose, onChanged }: Prop
   return (
     <Modal
       open={open}
-      title="项目知识库"
+      title="项目资料库"
       width={960}
       footer={null}
       destroyOnClose

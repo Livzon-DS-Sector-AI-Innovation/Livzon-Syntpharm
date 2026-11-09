@@ -155,16 +155,16 @@ async def create_knowledge_base(
 
     existing = await get_project_knowledge_base(session, project_id)
     if existing is not None:
-        raise BadRequestException("该项目已关联知识库，请直接进入知识库页面使用")
+        raise BadRequestException("这个项目已经有知识库了，直接进入知识库页面上传资料即可")
 
     settings = get_settings().ragflow
     if not (settings.base_url and settings.api_key):
-        raise BadRequestException("知识库服务未配置，请联系管理员设置 RAGFLOW__BASE_URL 与 RAGFLOW__API_KEY")
+        raise BadRequestException("知识库服务还没有开通，请联系系统管理员开通后再使用")
 
     display_name = name.strip() or f"{project.name}-项目知识库"
     client = RagflowClient()
     dataset = await _remote_call(
-        "创建知识库失败",
+        "建知识库失败",
         client.create_dataset(
             display_name,
             description=description.strip() or f"研发项目「{project.name}」的项目知识库",
@@ -319,11 +319,11 @@ async def upload_documents(
     逐份读取上传以避免一次性把所有文件读进内存。
     """
     if kb.status != "active" or not kb.ragflow_dataset_id:
-        raise BadRequestException("知识库尚未就绪，无法上传资料")
+        raise BadRequestException("知识库还没准备好，暂时不能上传资料。请稍等一会儿再试")
     if not files:
-        raise BadRequestException("请选择要上传的文件")
+        raise BadRequestException("还没有选择文件")
     if len(files) > MAX_FILES_PER_UPLOAD:
-        raise BadRequestException(f"单次最多上传 {MAX_FILES_PER_UPLOAD} 个文件")
+        raise BadRequestException(f"一次最多上传 {MAX_FILES_PER_UPLOAD} 个文件，请分几次上传")
 
     client = RagflowClient()
     uploaded: list[str] = []
@@ -335,7 +335,7 @@ async def upload_documents(
         name = (upload.filename or "").strip() or "未命名文件"
         ext = Path(name).suffix.lower()
         if ext not in ALLOWED_EXTENSIONS:
-            skipped.append({"file_name": name, "reason": f"不支持的文件类型（{ext or '无扩展名'}）"})
+            skipped.append({"file_name": name, "reason": f"这种文件不能入库（{ext or '没有扩展名'}）"})
             continue
         content = await upload.read()
         if not content:
@@ -397,7 +397,7 @@ async def delete_document(
     """删除知识库中的一份文档（远端删除成功后才软删本地记录）。"""
     row = await session.get(RdKbDocument, document_row_id)
     if row is None or row.is_deleted or row.kb_id != kb.id:
-        raise NotFoundException("文档")
+        raise NotFoundException("这份资料")
     if kb.ragflow_dataset_id:
         await _remote_call(
             "删除失败",
@@ -415,11 +415,11 @@ async def reparse_document(
     """重新解析一份文档（清空旧切片后重跑，用于解析失败或资料更新）。"""
     row = await session.get(RdKbDocument, document_row_id)
     if row is None or row.is_deleted or row.kb_id != kb.id:
-        raise NotFoundException("文档")
+        raise NotFoundException("这份资料")
     if not kb.ragflow_dataset_id:
-        raise BadRequestException("知识库尚未就绪，无法重新解析")
+        raise BadRequestException("知识库还没准备好，暂时不能重新处理")
     await _remote_call(
-        "重新解析失败",
+        "重新处理失败",
         RagflowClient().parse_documents(kb.ragflow_dataset_id, [row.ragflow_document_id]),
     )
     row.run_status = "RUNNING"
@@ -440,13 +440,13 @@ async def get_document(session: AsyncSession, kb_id: uuid.UUID, document_row_id:
     """取本知识库下的一份文档记录（校验归属，避免跨库读取）。"""
     row = await session.get(RdKbDocument, document_row_id)
     if row is None or row.is_deleted or row.kb_id != kb_id:
-        raise NotFoundException("文档")
+        raise NotFoundException("这份资料")
     return row
 
 
 def _require_dataset(kb: RdKnowledgeBase) -> str:
     if kb.status != "active" or not kb.ragflow_dataset_id:
-        raise BadRequestException("知识库尚未就绪，无法查看资料")
+        raise BadRequestException("知识库还没准备好，暂时不能查看资料")
     return kb.ragflow_dataset_id
 
 
@@ -461,9 +461,9 @@ async def document_file(kb: RdKnowledgeBase, row: RdKbDocument, *, as_pdf: bool 
     """
     dataset_id = _require_dataset(kb)
     if not row.ragflow_document_id:
-        raise BadRequestException("该资料尚未同步到知识库服务，无法获取文件")
+        raise BadRequestException("这份资料还没入库完成，暂时拿不到原文件。等它处理完再试")
     content, content_type, _ = await _remote_call(
-        "获取资料文件失败",
+        "下载原文件失败",
         RagflowClient().download_document(dataset_id, row.ragflow_document_id),
     )
     # RAGFlow 多数情况下回正确的 MIME；异常时按本地记录的扩展名兜底
@@ -486,9 +486,9 @@ async def document_chunks(
     """解析切片分页（预览「解析内容」；docx/xls 等无法在浏览器直接渲染时靠它看内容）。"""
     dataset_id = _require_dataset(kb)
     if not row.ragflow_document_id:
-        raise BadRequestException("该资料尚未同步到知识库服务，无法查看解析内容")
+        raise BadRequestException("这份资料还没入库完成，暂时看不了提取出来的文字。等它处理完再试")
     total, chunks = await _remote_call(
-        "获取解析内容失败",
+        "读取文字分段失败",
         RagflowClient().list_document_chunks(dataset_id, row.ragflow_document_id, page=page, page_size=page_size),
     )
     return {
@@ -509,7 +509,7 @@ async def document_image(kb: RdKnowledgeBase, image_id: str) -> tuple[bytes, str
     if not image_id or not image_id.startswith(f"{dataset_id}-"):
         raise NotFoundException("图片")
     content, content_type = await _remote_call(
-        "获取图片失败",
+        "读取图片失败",
         RagflowClient().download_image(image_id),
     )
     if not content:

@@ -38,18 +38,18 @@ export function SlotCandidatePanel({ candidates, usedIds, disabled, onPick }: Pr
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       <Input.Search
         allowClear
-        placeholder="搜索位置或母本内容"
+        placeholder="搜索位置名称，或粘贴一段原文来找"
         value={keyword}
         onChange={(e) => setKeyword(e.target.value)}
         style={{ marginBottom: 8 }}
       />
       <Typography.Text type="secondary" style={{ fontSize: 12, marginBottom: 8 }}>
-        共 {candidates.length} 个位置，当前显示 {filtered.length} 个
+        共 {candidates.length} 个可填位置，当前显示 {filtered.length} 个
         {filtered.length > RENDER_LIMIT ? `（仅前 ${RENDER_LIMIT} 个可点选）` : ''}
       </Typography.Text>
       <div style={{ flex: 1, overflowY: 'auto', border: '1px solid #f0f0f0', borderRadius: 6 }}>
         {visible.length === 0 ? (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有匹配的位置" style={{ margin: 24 }} />
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有找到匹配的位置，换个关键词试试" style={{ margin: 24 }} />
         ) : (
           visible.map((item) => {
             const used = usedIds.has(item.candidate_id)
@@ -71,7 +71,7 @@ export function SlotCandidatePanel({ candidates, usedIds, disabled, onPick }: Pr
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                   <span style={{ fontSize: 12, fontWeight: 500 }}>{item.label}</span>
-                  {used ? <Tag style={{ marginInlineEnd: 0 }}>已使用</Tag> : null}
+                  {used ? <Tag style={{ marginInlineEnd: 0 }}>已有填充项</Tag> : null}
                 </div>
                 <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 2 }}>
                   {(item.text || item.context || '（空白位置）').slice(0, 60)}

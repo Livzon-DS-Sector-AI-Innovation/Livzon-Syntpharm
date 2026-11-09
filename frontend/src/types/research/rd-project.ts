@@ -6,6 +6,8 @@
  * Per AGENTS.md: "允许手写前端 UI 类型，例如表单状态、筛选条件、表格状态、下拉选项、ViewModel/display 类型"
  */
 
+import type { components } from '@/types/generated/schema'
+
 // RdProject 类型定义（对齐后端 RdProject 模型）
 
 export type RdProjectStage = 'initiation' | 'route_dev' | 'optimization' | 'pilot' | 'validation' | 'filing'
@@ -227,6 +229,9 @@ export interface RdRegistrationFiling {
 
 export type RdDeliverableStatus = 'draft' | 'in_progress' | 'completed' | 'approved'
 
+/** 行内「生成中 62% / 待核对 3 项」徽标数据；直接用后端生成的类型，避免手写漂移 */
+export type RdStageDeliverableGenerationBrief = components['schemas']['RdStageDeliverableGenerationBrief']
+
 export interface RdStageDeliverable {
   id: string
   project_id: string
@@ -243,7 +248,19 @@ export interface RdStageDeliverable {
   created_by: string | null
   created_at: string
   updated_at: string
+  /** AI 生成对应的研发报告 */
+  report_id?: string | null
+  /** 最近一次 AI 生成任务 */
+  report_gen_job_id?: string | null
+  generation?: RdStageDeliverableGenerationBrief | null
 }
+
+// AI 生成链路：接口出入参一律取自 OpenAPI 生成物，避免前后端漂移
+export type RdDeliverableGenerationOptions = components['schemas']['RdStageDeliverableGenerationOptions']
+export type RdDeliverableGenerateResult = components['schemas']['RdStageDeliverableGenerateResult']
+export type RdDeliverableGenerationStatus = components['schemas']['RdStageDeliverableGenerationStatus']
+export type RdDeliverableTemplateOption = components['schemas']['RdDeliverableTemplateOption']
+export type RdDeliverableReportLink = components['schemas']['RdStageDeliverableReportLink']
 
 // 18 种交付物类型配置（与后端 DELIVERABLE_TYPES 同步）
 export const DELIVERABLE_TYPES: Record<RdProjectStage, { type: string; label: string }[]> = {
@@ -277,6 +294,20 @@ export const DELIVERABLE_TYPES: Record<RdProjectStage, { type: string; label: st
     { type: 'crystal_form_study', label: '晶型和粒度研究报告' },
     { type: 'impurity_study', label: '杂质研究报告' },
   ],
+}
+
+/** 交付文档类型：把 development_plan 这类英文键翻成中文，界面上不直接显示英文 */
+const DELIVERABLE_TYPE_LABELS: Record<string, string> = Object.values(DELIVERABLE_TYPES)
+  .flat()
+  .reduce<Record<string, string>>((acc, item) => {
+    acc[item.type] = item.label
+    return acc
+  }, {})
+
+export function deliverableTypeLabel(type?: string | null): string {
+  if (!type) return '-'
+  // 后端新增、前端还没同步的类型：显示「其他类型」，不让英文键名直接露给用户
+  return DELIVERABLE_TYPE_LABELS[type] ?? '其他类型'
 }
 
 export const DELIVERABLE_STATUS_LABELS: Record<RdDeliverableStatus, string> = {

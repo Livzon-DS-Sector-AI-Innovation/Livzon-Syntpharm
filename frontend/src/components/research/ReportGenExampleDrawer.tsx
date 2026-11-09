@@ -105,7 +105,7 @@ export function ReportGenExampleDrawer({ open, templateId, templateName, onClose
 
   const columns: TableProps<ReportGenExample>['columns'] = [
     {
-      title: '槽位',
+      title: '填充项',
       dataIndex: 'slot_key',
       width: 190,
       render: (_: unknown, row) => (
@@ -157,7 +157,7 @@ export function ReportGenExampleDrawer({ open, templateId, templateName, onClose
       render: (value: number) => `${value} 次`,
     },
     {
-      title: '启用',
+      title: '使用',
       dataIndex: 'is_active',
       width: 80,
       render: (value: boolean, row) => (
@@ -173,9 +173,10 @@ export function ReportGenExampleDrawer({ open, templateId, templateName, onClose
             编辑
           </Button>
           <Popconfirm
-            title="删除这条示例？"
-            description="删除后不再参与生成；停用则保留记录可追。"
+            title="删除这条示例写法？"
+            description="删掉后下次生成不再参考它，记录也一并消失。如果只是想暂时不用，把「使用」关掉即可。"
             okText="删除"
+            okButtonProps={{ danger: true }}
             cancelText="取消"
             onConfirm={() => void handleDelete(row)}
           >
@@ -190,7 +191,7 @@ export function ReportGenExampleDrawer({ open, templateId, templateName, onClose
 
   return (
     <Drawer
-      title={`槽位示例：${templateName}`}
+      title={`示例写法：${templateName}`}
       open={open}
       onClose={onClose}
       destroyOnHidden
@@ -199,12 +200,12 @@ export function ReportGenExampleDrawer({ open, templateId, templateName, onClose
       <Alert
         type="info"
         showIcon
-        title="示例是下次生成要照抄的写法"
-        description="来源只有人工修正与评审意见沉淀两种。写错了就停用或删除，否则同一处错法会被一次次教给模型。"
+        title="示例写法是下次生成时 AI 要照着写的样板"
+        description="只来自两种情况：人工改过的写法、评审时采纳的意见。发现写错了就关掉「使用」或删掉，否则同一个错法会被反复教给 AI。"
         style={{ marginBottom: 12 }}
       />
       <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 8, fontSize: 12 }}>
-        共 {items.length} 条，启用 {activeTotal} 条（只有启用的会被注入下一次生成）
+        共 {items.length} 条，其中 {activeTotal} 条在用（只有「使用」打开的下次生成才会参考）
       </Typography.Text>
       <Table<ReportGenExample>
         rowKey="id"
@@ -214,10 +215,12 @@ export function ReportGenExampleDrawer({ open, templateId, templateName, onClose
         dataSource={items}
         pagination={false}
         scroll={{ x: 880 }}
-        locale={{ emptyText: error instanceof Error ? error.message : '该模板还没有沉淀示例' }}
+        locale={{
+          emptyText: error instanceof Error ? error.message : '这个模板还没有示例写法。人工改过一次内容、或采纳过评审意见后，这里就会自动出现。',
+        }}
       />
       <Modal
-        title={`编辑示例：${editing?.slot_label || editing?.slot_key || ''}`}
+        title={`编辑示例写法：${editing?.slot_label || editing?.slot_key || ''}`}
         open={Boolean(editing)}
         onCancel={() => setEditing(null)}
         onOk={() => void submitEdit()}
@@ -230,12 +233,12 @@ export function ReportGenExampleDrawer({ open, templateId, templateName, onClose
           <Form.Item
             name="value"
             label="示例写法"
-            rules={[{ required: true, message: '示例写法不能为空；要撤掉就停用这条示例' }]}
+            rules={[{ required: true, message: '内容不能为空；不想用了就把「使用」关掉' }]}
           >
-            <Input.TextArea rows={4} placeholder="这一处应该怎么写" />
+            <Input.TextArea rows={4} placeholder="这一处应该怎么写，最好照着想要的成品写完整" />
           </Form.Item>
-          <Form.Item name="evidence_text" label="依据" extra="写清为什么这么写，下次有人质疑时不用重新查">
-            <Input.TextArea rows={3} placeholder="可选：出处、评审意见原文" />
+          <Form.Item name="evidence_text" label="依据" extra="写清为什么这么写，以后有人质疑时不用重新查">
+            <Input.TextArea rows={3} placeholder="可选：出自哪份资料、或评审意见原文" />
           </Form.Item>
         </Form>
       </Modal>

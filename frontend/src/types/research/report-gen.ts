@@ -35,27 +35,27 @@ interface StatusMeta {
 }
 
 export const REPORT_GEN_STATUS_META: Record<ReportGenJobStatus, StatusMeta> = {
-  queued: { label: '排队中', color: 'default', stroke: '#8C8C8C' },
-  running: { label: '执行中', color: 'processing', stroke: '#1677FF' },
+  queued: { label: '等待开始', color: 'default', stroke: '#8C8C8C' },
+  running: { label: '生成中', color: 'processing', stroke: '#1677FF' },
   completed: { label: '已完成', color: 'success', stroke: '#52C41A' },
-  failed: { label: '失败', color: 'error', stroke: '#FF4D4F' },
-  cancelled: { label: '已终止', color: 'warning', stroke: '#FAAD14' },
+  failed: { label: '生成失败', color: 'error', stroke: '#FF4D4F' },
+  cancelled: { label: '已停止', color: 'warning', stroke: '#FAAD14' },
 }
 
 export const REPORT_GEN_SLOT_STATE_META: Record<ReportGenSlotState, { label: string; color: string }> = {
-  filled: { label: '已填', color: 'success' },
-  conflict: { label: '多源冲突', color: 'warning' },
+  filled: { label: '已填写', color: 'success' },
+  conflict: { label: '资料不一致', color: 'warning' },
   pending: { label: '待确认', color: 'processing' },
-  gap: { label: '缺口', color: 'default' },
-  anchor_unresolved: { label: '锚点未定位', color: 'error' },
+  gap: { label: '未填写', color: 'default' },
+  anchor_unresolved: { label: '未找到对应位置', color: 'error' },
 }
 
 export const REPORT_GEN_STEP_KIND_META: Record<ReportGenStepKind, { label: string; color: string }> = {
   think: { label: '思考', color: '#1677FF' },
-  tool_call: { label: '工具调用', color: '#13C2C2' },
-  tool_result: { label: '工具结果', color: '#52C41A' },
-  error: { label: '失败', color: '#FF4D4F' },
-  status: { label: '状态', color: '#8C8C8C' },
+  tool_call: { label: '执行动作', color: '#13C2C2' },
+  tool_result: { label: '动作结果', color: '#52C41A' },
+  error: { label: '出错', color: '#FF4D4F' },
+  status: { label: '状态变化', color: '#8C8C8C' },
 }
 
 const TERMINAL: ReportGenJobStatus[] = ['completed', 'failed', 'cancelled']
@@ -144,9 +144,13 @@ export function formatSeconds(seconds: number | null | undefined): string {
 
 /** 三个模型档位；顺序即配置页卡片顺序。 */
 export const REPORT_GEN_MODEL_SLOTS = [
-  { slot: 'main', title: '正文生成', description: 'Agent 循环里的检索与填写调用都走这一档。' },
-  { slot: 'structure', title: '结构识别', description: '读母本、判槽位用；留空复用正文生成档。' },
-  { slot: 'fallback', title: '兜底', description: '主模型报错或超时后自动切换，只切一次。' },
+  { slot: 'main', title: '正文生成', description: '写正文用的模型：查资料、填内容的调用都走这一档。' },
+  {
+    slot: 'structure',
+    title: '分析结构',
+    description: '分析 Word 模板文件、判断填充项时使用；留空则与正文生成用同一个模型。',
+  },
+  { slot: 'fallback', title: '自动补齐', description: '主模型报错或超时后自动换用，只切换一次。' },
 ] as const
 
 export type ReportGenModelSlot = (typeof REPORT_GEN_MODEL_SLOTS)[number]['slot']
@@ -161,12 +165,33 @@ export interface ReportGenToolMeta {
 
 /** 工具开关清单；name 必须与后端 TOOL_NAMES 一致。 */
 export const REPORT_GEN_TOOLS: ReportGenToolMeta[] = [
-  { name: 'read_template_outline', label: '读取母本大纲', description: '取模板缓存的槽位清单与章节顺序。' },
-  { name: 'read_project_context', label: '读取项目上下文', description: '读项目、品种、阶段等结构化字段，避免编造。' },
-  { name: 'search_knowledge_base', label: '检索知识库', description: '在绑定知识库里找依据，返回片段与出处。' },
-  { name: 'fill_slot', label: '填写槽位', description: '把带出处的正文写进指定槽位，冲突标为多源。' },
-  { name: 'mark_gap', label: '标记缺口', description: '证据不足时明确标缺口，不臆测填充。' },
-  { name: 'finalize', label: '结束并成稿', description: '声明任务完成并触发成品渲染。', locked: true },
+  { name: 'read_template_outline', label: '读取模板大纲', description: '读取模板里已分析好的填充项清单和章节顺序。' },
+  {
+    name: 'read_project_context',
+    label: '读取项目信息',
+    description: '读取项目、品种、阶段等已有信息，避免 AI 编造。',
+  },
+  {
+    name: 'search_knowledge_base',
+    label: '检索知识库',
+    description: '在项目知识库里找依据，并给出来源。',
+  },
+  {
+    name: 'fill_slot',
+    label: '填写填充项',
+    description: '把有依据的内容写进指定填充项；多处资料不一致时标出来。',
+  },
+  {
+    name: 'mark_gap',
+    label: '标记未填写',
+    description: '没有依据时明确留空并标注，不猜着写。',
+  },
+  {
+    name: 'finalize',
+    label: '结束并生成文档',
+    description: '声明任务完成并生成最终 Word 文档。',
+    locked: true,
+  },
 ]
 
 /** 逗号清单 → 工具名数组；空串表示全部启用。 */

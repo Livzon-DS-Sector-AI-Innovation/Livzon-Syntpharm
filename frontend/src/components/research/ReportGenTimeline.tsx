@@ -83,13 +83,13 @@ export function ReportGenTimeline({ steps, running }: Props) {
         {running ? (
           <div style={{ textAlign: 'center', color: '#5A6472' }}>
             <Spin indicator={<LoadingOutlined spin />} />
-            <div style={{ marginTop: 12, fontSize: 13 }}>Agent 正在准备…</div>
+            <div style={{ marginTop: 12, fontSize: 13 }}>AI 正在准备工作…</div>
             <div style={{ marginTop: 4, fontSize: 12, color: '#8C8C8C' }}>
-              解析母本结构、加载项目上下文、检索知识库
+              正在分析模板结构、读取项目信息、检索知识库
             </div>
           </div>
         ) : (
-          <Empty description="没有执行记录" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          <Empty description="还没有生成记录" image={Empty.PRESENTED_IMAGE_SIMPLE} />
         )}
       </div>
     )
@@ -132,7 +132,7 @@ export function ReportGenTimeline({ steps, running }: Props) {
     <>
       <Timeline items={items} style={{ paddingTop: 8 }} />
       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-        共 {steps.length} 条执行记录
+        共 {steps.length} 条记录
       </Typography.Text>
     </>
   )

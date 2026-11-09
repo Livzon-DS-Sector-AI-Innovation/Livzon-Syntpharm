@@ -169,7 +169,7 @@ export function KbDocumentPreviewModal({ kbId, document: doc, open, onClose }: P
 
   return (
     <Modal
-      title={`资料预览：${doc?.file_name ?? ''}`}
+      title={`查看资料：${doc?.file_name ?? ''}`}
       open={open}
       onCancel={onClose}
       width={900}
@@ -307,7 +307,7 @@ function KbPreviewBody({ kbId, doc }: { kbId: string; doc: KbDocumentItem }) {
     void renderDocx(docxBlob, docxContainer)
   }, [mode, docxBlob, docxContainer, renderDocx])
 
-  // 切到「解析内容」页签时加载一次（不可渲染的格式默认就在这个页签）
+  // 切到「提取的文字」页签时加载一次（浏览器打不开的格式默认就在这个页签）
   const loadChunks = useCallback(
     async (page: number) => {
       setChunkLoading(true)
@@ -318,7 +318,7 @@ function KbPreviewBody({ kbId, doc }: { kbId: string; doc: KbDocumentItem }) {
         setChunkTotal(data.total ?? 0)
         setChunkPage(data.page ?? page)
       } catch (e: unknown) {
-        setChunkError(e instanceof Error ? e.message : '加载解析内容失败')
+        setChunkError(e instanceof Error ? e.message : '提取的文字没能加载出来，请稍后重试')
       } finally {
         setChunkLoading(false)
       }
@@ -341,7 +341,7 @@ function KbPreviewBody({ kbId, doc }: { kbId: string; doc: KbDocumentItem }) {
         kind === 'office'
           ? '正在转换文档（首次较慢，请稍候）…'
           : kind === 'sheet'
-            ? '正在解析表格…'
+            ? '正在读取表格…'
             : '正在加载原文…'
       return (
         <div style={{ textAlign: 'center', padding: 60 }}>
@@ -354,11 +354,11 @@ function KbPreviewBody({ kbId, doc }: { kbId: string; doc: KbDocumentItem }) {
         <Alert
           type="info"
           showIcon
-          message="该格式无法在线预览"
+          message="这份文件没法在浏览器里直接打开"
           description={
             kind === 'office'
-              ? '服务端转换未成功，可切换到「解析内容」查看解析出的文字，或下载原件后用本地软件打开。'
-              : '可切换到「解析内容」查看解析出来的文字，或直接下载原件后用本地软件打开。'
+              ? '服务器转换没有成功。可以切到「提取的文字」看系统识别出的内容，或者下载原件再用本地软件打开。'
+              : '可以切到「提取的文字」看系统识别出的内容，或者下载原件再用本地软件打开。'
           }
         />
       )
@@ -454,7 +454,7 @@ function KbPreviewBody({ kbId, doc }: { kbId: string; doc: KbDocumentItem }) {
 
   const chunksPane = (
     <div>
-      {chunkError ? <Alert type="error" showIcon message="解析内容加载失败" description={chunkError} /> : null}
+      {chunkError ? <Alert type="error" showIcon message="提取的文字没能加载出来" description={chunkError} /> : null}
       <Spin spinning={chunkLoading}>
         {chunks.length ? (
           <Space direction="vertical" size={8} style={{ width: '100%' }}>
@@ -462,7 +462,7 @@ function KbPreviewBody({ kbId, doc }: { kbId: string; doc: KbDocumentItem }) {
               <div key={chunk.id || index} style={{ border: '1px solid #f0f0f0', borderRadius: 6, padding: 10 }}>
                 <div style={{ marginBottom: 6 }}>
                   <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                    片段 {(chunkPage - 1) * CHUNK_PAGE_SIZE + index + 1}
+                    第 {(chunkPage - 1) * CHUNK_PAGE_SIZE + index + 1} 段
                     {chunk.document_keyword ? ` · ${chunk.document_keyword}` : ''}
                   </Typography.Text>
                   {chunkPages(chunk).map((page) => (
@@ -490,7 +490,7 @@ function KbPreviewBody({ kbId, doc }: { kbId: string; doc: KbDocumentItem }) {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={kbImageUrl(kbId, chunk.image_id)}
-                        alt="切片配图"
+                        alt="文字分段附带的图片"
                         loading="lazy"
                         onError={() =>
                           setBrokenImages((prev) => new Set(prev).add(chunk.id))
@@ -510,7 +510,7 @@ function KbPreviewBody({ kbId, doc }: { kbId: string; doc: KbDocumentItem }) {
             ))}
           </Space>
         ) : (
-          !chunkLoading && !chunkError && <Empty description="还没有解析内容，解析完成后可在此查看" />
+          !chunkLoading && !chunkError && <Empty description="这份资料还没处理完，处理好之后可以在这里看到提取出的文字" />
         )}
       </Spin>
       {chunkTotal > CHUNK_PAGE_SIZE ? (
@@ -533,8 +533,8 @@ function KbPreviewBody({ kbId, doc }: { kbId: string; doc: KbDocumentItem }) {
       activeKey={tab}
       onChange={setTab}
       items={[
-        { key: 'source', label: '原文预览', children: sourcePane },
-        { key: 'chunks', label: '解析内容', children: chunksPane },
+        { key: 'source', label: '原文', children: sourcePane },
+        { key: 'chunks', label: '提取的文字', children: chunksPane },
       ]}
     />
   )

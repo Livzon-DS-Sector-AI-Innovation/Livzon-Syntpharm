@@ -118,12 +118,12 @@ class ReportGenRuntime:
             items.append(item)
         return ToolOutcome(
             ok=True,
-            summary=f"返回槽位 {offset + 1}-{offset + len(items)} / 共 {len(slots)} 个",
+            summary=f"返回填充项 {offset + 1}-{offset + len(items)} / 共 {len(slots)} 个",
             payload={
                 "total": len(slots),
                 "offset": offset,
                 "slots": items,
-                "note": "未列出的槽位用更大的 offset 继续读取" if offset + limit < len(slots) else None,
+                "note": "还有没列出的填充项，用更大的 offset 继续读取" if offset + limit < len(slots) else None,
             },
         )
 
@@ -225,8 +225,8 @@ class ReportGenRuntime:
         if kb is None:
             return ToolOutcome(
                 ok=False,
-                summary="该项目未挂知识库，未能检索资料",
-                payload={"error": "项目未挂知识库", "items": []},
+                summary="这个项目还没有知识库，没查到资料",
+                payload={"error": "这个项目还没有知识库", "items": []},
             )
 
         items: list[dict[str, Any]] = []
@@ -269,9 +269,7 @@ class ReportGenRuntime:
             RdKbFact.value.ilike(pattern),
         ]
         if len(terms) > 1:
-            conditions.extend(
-                or_(RdKbFact.subject.ilike(f"%{t}%"), RdKbFact.predicate.ilike(f"%{t}%")) for t in terms
-            )
+            conditions.extend(or_(RdKbFact.subject.ilike(f"%{t}%"), RdKbFact.predicate.ilike(f"%{t}%")) for t in terms)
         try:
             result = await self.session.execute(
                 select(RdKbFact)
@@ -345,9 +343,9 @@ class ReportGenRuntime:
         value = str(arguments.get("value") or "").strip()
         row = self.slot_rows.get(slot_key)
         if row is None:
-            return ToolOutcome(ok=False, summary=f"未知槽位 {slot_key}", payload={"error": "未知槽位"})
+            return ToolOutcome(ok=False, summary=f"没有叫 {slot_key} 的填充项", payload={"error": "没有这个填充项"})
         if not value:
-            return ToolOutcome(ok=False, summary=f"{slot_key} 的 value 为空", payload={"error": "value 不能为空"})
+            return ToolOutcome(ok=False, summary=f"{slot_key} 没有填内容", payload={"error": "value 不能为空"})
 
         evidence = str(arguments.get("evidence") or "").strip()
         source_name = str(arguments.get("source_name") or "").strip()
@@ -385,7 +383,7 @@ class ReportGenRuntime:
         slot_key = str(arguments.get("slot_key") or "").strip()
         row = self.slot_rows.get(slot_key)
         if row is None:
-            return ToolOutcome(ok=False, summary=f"未知槽位 {slot_key}", payload={"error": "未知槽位"})
+            return ToolOutcome(ok=False, summary=f"没有叫 {slot_key} 的填充项", payload={"error": "没有这个填充项"})
         owner = str(arguments.get("owner_hint") or "").strip() or (row.owner_hint or "")
         reason = str(arguments.get("reason") or "").strip()
         row.state = "gap"
@@ -394,7 +392,7 @@ class ReportGenRuntime:
         row.evidence = _cut(reason, 2000) if reason else row.evidence
         return ToolOutcome(
             ok=True,
-            summary=f"{row.slot_label or slot_key} 标记缺口（{owner or '责任方待定'}）",
+            summary=f"{row.slot_label or slot_key} 标为待补充（{owner or '责任方待定'}）",
             payload={"slot_key": slot_key, "state": "gap", "owner_hint": row.owner_hint},
         )
 
@@ -405,7 +403,7 @@ class ReportGenRuntime:
         gaps = sum(1 for row in self.slot_rows.values() if row.state in ("gap", "pending"))
         return ToolOutcome(
             ok=True,
-            summary=f"生成结束：已填 {filled}，缺口/待确认 {gaps}",
+            summary=f"生成结束：已填 {filled} 项，待补充/待确认 {gaps} 项",
             payload={"filled": filled, "gaps": gaps, "summary": self.final_summary},
         )
 

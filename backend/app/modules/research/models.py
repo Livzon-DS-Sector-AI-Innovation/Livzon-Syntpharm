@@ -533,7 +533,12 @@ class RdStageDeliverable(BaseModel):
     """阶段交付物"""
 
     __tablename__ = "rd_stage_deliverables"
-    __table_args__ = {"schema": "research"}
+    __table_args__ = (
+        # 生成入口按「这条交付文档最近一次生成」取状态，列表页会按 report_id 反查
+        Index("ix_research_rd_stage_deliverables_report", "report_id"),
+        Index("ix_research_rd_stage_deliverables_job", "report_gen_job_id"),
+        {"schema": "research"},
+    )
 
     project_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("research.rd_projects.id"), comment="项目ID"
@@ -554,6 +559,20 @@ class RdStageDeliverable(BaseModel):
         comment="负责人",
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
+    # AI 生成链路：交付文档指向生成它的研发报告与任务。FK 不带 ON DELETE，
+    # 删除被引用的报告/任务前要先解除这里的关联，避免连带删掉交付文档
+    report_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_reports.id"),
+        nullable=True,
+        comment="AI 生成对应的研发报告",
+    )
+    report_gen_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_report_gen_jobs.id"),
+        nullable=True,
+        comment="最近一次 AI 生成任务",
+    )
 
 
 class RdExperimentLog(BaseModel):
@@ -774,6 +793,12 @@ class RdDeliverableTemplateVersion(BaseModel):
     template_code: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="槽位定义 code 快照")
     template_structure: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="槽位结构定义快照")
     change_note: Mapped[str | None] = mapped_column(Text, nullable=True, comment="版本说明（变更备注）")
+    # 版本类型：母本（template）与填充示例稿（sample）共表留档，但语义完全不同。
+    # 示例稿由已保存的填充项在母本上写标记生成，永远 is_current=False、不改主表，
+    # 也不能被回滚成母本——用这一列把两者隔开，避免示例稿混进正式版本链。
+    kind: Mapped[str] = mapped_column(
+        String(16), default="template", server_default="template", comment="版本类型：template 母本 / sample 填充示例稿"
+    )
     is_current: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", comment="是否当前生效版本")
 
 
@@ -922,6 +947,53 @@ class RdReportGenSlot(BaseModel):
     evidence: Mapped[str | None] = mapped_column(Text, nullable=True, comment="原文证据（引文）")
     confidence: Mapped[float | None] = mapped_column(Float, nullable=True, comment="置信度 0~1")
     owner_hint: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="缺口责任方提示")
+
+
+class RdReportGenDocumentVersion(BaseModel):
+    """成品文档版本：AI 初稿、人工重渲、人工上传各留一条，保证改稿可回退。
+
+    为什么单独建版本表而不是只留任务上的 document_object_key：任务上的键只能表示
+    「当前这一版」，重新渲染或上传一覆盖，就再也拿不回 AI 初稿，用户改坏后既无法
+    对比也无法证明哪一版是 AI 出的。
+    """
+
+    __tablename__ = "rd_report_gen_document_versions"
+    __table_args__ = (
+        UniqueConstraint(
+            "job_id", "version_no", name="uq_research_rd_report_gen_doc_versions_no"
+        ),
+        Index(
+            "ix_research_rd_report_gen_doc_versions_job", "job_id", "version_no"
+        ),
+        Index(
+            "ix_research_rd_report_gen_doc_versions_current", "job_id", "is_current"
+        ),
+        CheckConstraint(
+            "kind IN ('ai_draft', 'manual_render', 'manual_upload')",
+            name="ck_research_rd_report_gen_doc_versions_kind",
+        ),
+        {"schema": "research"},
+    )
+
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("research.rd_report_gen_jobs.id"), comment="所属生成任务"
+    )
+    version_no: Mapped[int] = mapped_column(Integer, comment="任务内递增版本号，从 1 起")
+    kind: Mapped[str] = mapped_column(
+        String(20), comment="ai_draft=AI 初稿 / manual_render=按槽位重渲 / manual_upload=人工上传"
+    )
+    object_key: Mapped[str] = mapped_column(String(500), comment="docx 存储键")
+    comparison_object_key: Mapped[str | None] = mapped_column(
+        String(500), nullable=True, comment="同版本对照表存储键（人工上传为空）"
+    )
+    file_name: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="文件名")
+    file_size: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="文件字节数")
+    note: Mapped[str | None] = mapped_column(
+        String(300), nullable=True, comment="版本说明，如「按当前槽位重渲染」"
+    )
+    is_current: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", comment="是否为当前生效版本"
+    )
 
 
 class RdReportGenExample(BaseModel):

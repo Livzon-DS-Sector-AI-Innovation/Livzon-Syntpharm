@@ -10,9 +10,24 @@ import type { components } from '@/types/generated/schema'
 const DOC_TEMPLATE_BASE = '/api/v1/research/doc-gen/deliverable-templates'
 
 type DocGenTemplateVersionRestoreData = components['schemas']['DocGenTemplateVersionRestoreData']
+type DocGenTemplateSampleData = components['schemas']['DocGenTemplateSampleData']
 type DocGenSlotsSaveData = components['schemas']['DocGenTemplateSlotsSaveData']
 type DocGenSlotsReparseData = components['schemas']['DocGenTemplateSlotsReparseData']
 type DocGenSlot = components['schemas']['DocGenSlotItem']
+
+/**
+ * 按已保存的填充项在母本上就地标注，生成一份填充示例稿。
+ *
+ * 返回的是模板新增的一个「示例稿」版本（不成为当前母本），前端拿 version_id
+ * 走历史版本下载接口取回 docx 预览；示例稿不影响生成链路用的母本。
+ */
+export async function generateDeliverableTemplateSample(templateId: string): Promise<DocGenTemplateSampleData> {
+  const result = await apiFetch<components['schemas']['DocGenTemplateSampleResponse']>(
+    `${getApiBaseUrl()}${DOC_TEMPLATE_BASE}/${templateId}/sample`,
+    { method: 'POST' },
+  )
+  return result.data
+}
 
 /**
  * 回滚交付物模板到指定历史版本。

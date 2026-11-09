@@ -92,9 +92,9 @@ export function ReportGenFeedbackPanel({ jobId, slots, disabled }: Props) {
     setPromoting(item.id)
     try {
       await promoteReportGenFeedback(item.id)
-      msgApi.success('已沉淀为示例，下次同模板生成会参考这个写法')
+      msgApi.success('已存成示例写法，下次用同一个模板生成时会参考它')
     } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : '沉淀失败')
+      msgApi.error(e instanceof Error ? e.message : '存成示例失败，请稍后重试')
     } finally {
       setPromoting('')
     }
@@ -112,8 +112,8 @@ export function ReportGenFeedbackPanel({ jobId, slots, disabled }: Props) {
     >
       <Flex vertical gap={12}>
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-          意见写成「哪里不对 + 要改成什么」最有效。未落实的意见会在下次生成（含右上角「重新生成」）时自动带给
-          Agent，并在缺口说明里逐条交代；被落实且认可的槽位级意见可以「沉淀为示例」，下次同模板生成直接照这个写法填。
+          意见写成「哪里不对 + 要改成什么」最有用。还没落实的意见，会在下次生成（包括点「重新生成」）时自动交给
+          AI 处理，并在「待补充」说明里逐条回应。已经落实、你也认可的意见，可以点「存成示例写法」，下次用同一个模板生成就照这个写法填。
         </Typography.Text>
 
         <Flex gap={8} wrap>
@@ -137,7 +137,7 @@ export function ReportGenFeedbackPanel({ jobId, slots, disabled }: Props) {
             disabled={disabled || submitting}
             style={{ flex: 1, minWidth: 260 }}
           />
-          <Button type="primary" loading={submitting} disabled={disabled} onClick={handleSubmit}>
+          <Button loading={submitting} disabled={disabled} onClick={handleSubmit}>
             提意见
           </Button>
         </Flex>
@@ -181,7 +181,7 @@ export function ReportGenFeedbackPanel({ jobId, slots, disabled }: Props) {
                         loading={promoting === item.id}
                         onClick={() => handlePromote(item)}
                       >
-                        沉淀为示例
+                        存成示例写法
                       </Button>
                     )}
                     {item.status === 'open' ? (

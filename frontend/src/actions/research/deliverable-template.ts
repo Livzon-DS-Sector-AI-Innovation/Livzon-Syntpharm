@@ -4,12 +4,14 @@ import { revalidatePath } from 'next/cache'
 import type { components } from '@/types/generated/schema'
 import {
   deleteDeliverableTemplateVersion as deleteDeliverableTemplateVersionApi,
+  generateDeliverableTemplateSample as generateDeliverableTemplateSampleApi,
   reparseDeliverableTemplateSlots as reparseDeliverableTemplateSlotsApi,
   restoreDeliverableTemplateVersion as restoreDeliverableTemplateVersionApi,
   saveDeliverableTemplateSlots as saveDeliverableTemplateSlotsApi,
 } from '@/lib/api/server/research/deliverable-template'
 
 type DocGenTemplateVersionRestoreData = components['schemas']['DocGenTemplateVersionRestoreData']
+type DocGenTemplateSampleData = components['schemas']['DocGenTemplateSampleData']
 type DocGenSlotsSaveData = components['schemas']['DocGenTemplateSlotsSaveData']
 type DocGenSlotsReparseData = components['schemas']['DocGenTemplateSlotsReparseData']
 type DocGenSlot = components['schemas']['DocGenSlotItem']
@@ -49,6 +51,17 @@ export async function saveDeliverableTemplateSlots(
   return data
 }
 
+/**
+ * 按已保存的填充项生成填充示例稿，返回新增的示例稿版本信息。
+ *
+ * 不做乐观更新：结果是一条新版本记录，由页面重新拉取版本历史即可看到。
+ */
+export async function generateDeliverableTemplateSample(templateId: string): Promise<DocGenTemplateSampleData> {
+  const data = await generateDeliverableTemplateSampleApi(templateId)
+  revalidatePath(DELIVERABLE_TEMPLATES_PATH)
+  return data
+}
+
 /** 强制重新识别槽位结构并按锚点合并人工修改 */
 export async function reparseDeliverableTemplateSlots(
   templateId: string,
@@ -57,4 +70,14 @@ export async function reparseDeliverableTemplateSlots(
   const data = await reparseDeliverableTemplateSlotsApi(templateId, token)
   revalidatePath(DELIVERABLE_TEMPLATES_PATH)
   return data
+}
+
+/**
+ * 流式重解析结束后只刷缓存。
+ *
+ * 分析本身已经由流式接口写库，这里不能再调同步接口（会白跑一次模型），
+ * 但仍要让模板列表看到新的分析时间。
+ */
+export async function revalidateDeliverableTemplates(): Promise<void> {
+  revalidatePath(DELIVERABLE_TEMPLATES_PATH)
 }

@@ -10,12 +10,12 @@ from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException, BadRequestException, NotFoundException
 from app.core.response import DataResponse
-from app.modules.research import service
+from app.modules.research import deliverable_files, deliverable_generation, service
+from app.modules.research.report_gen import versions as report_gen_versions
 from app.modules.research.schemas import (
     ConclusionPublishResult,
     ConclusionVersionItem,
@@ -70,6 +70,11 @@ from app.modules.research.schemas import (
     RdResearchTrackResponse,
     RdResearchTrackUpdate,
     RdStageDeliverableCreate,
+    RdStageDeliverableGenerateRequest,
+    RdStageDeliverableGenerateResult,
+    RdStageDeliverableGenerationOptions,
+    RdStageDeliverableGenerationStatus,
+    RdStageDeliverableReportLink,
     RdStageDeliverableResponse,
     RdStageDeliverableUpdate,
     RdStageRecordCreate,
@@ -97,20 +102,7 @@ logger = logging.getLogger(__name__)
 
 router = create_module_router(MODULES_BY_CODE["research"])
 
-# 交付物附件目录：由配置派生，不再硬编码 /tmp（容器重启即丢）。
-# 历史版本写在 /tmp 下，读取时保留兜底（LEGACY_UPLOAD_DIR，可置空关闭），避免升级后旧附件直接 404。
-_DELIVERABLE_SUBDIR: tuple[str, ...] = ("research", "deliverables")
-
-
-def _deliverable_upload_dir() -> str:
-    """交付物附件的落盘目录（UPLOAD_DIR/research/deliverables）。"""
-    return os.path.join(get_settings().UPLOAD_DIR, *_DELIVERABLE_SUBDIR)
-
-
-def _legacy_deliverable_dir() -> str | None:
-    """历史版本附件目录（LEGACY_UPLOAD_DIR/research/deliverables），未配置则不兜底。"""
-    legacy_root = get_settings().LEGACY_UPLOAD_DIR
-    return os.path.join(legacy_root, *_DELIVERABLE_SUBDIR) if legacy_root else None
+# 交付物附件目录与落盘规则统一放在 deliverable_files：AI 生成完成后的回写也要用同一套
 
 
 @router.post("/projects", summary="创建研发项目")
@@ -2309,6 +2301,97 @@ async def update_filing(
 
 # ===== RdStageDeliverable API Endpoints =====
 
+# 注意：带静态段的路径（generation/options、generate）必须定义在 /{deliverable_id} 之前，
+# 否则 "generation" 会被当作 UUID 解析并返回 422。
+
+
+@router.get(
+    "/rd-stage-deliverables/generation/options",
+    summary="获取阶段交付文档「AI 生成报告」的预填项与模板候选",
+)
+async def get_stage_deliverable_generation_options_api(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:stage-deliverable:read")),
+    project_id: UUID = Query(..., description="研发项目 ID"),
+    stage: str = Query(..., description="研发阶段，如 initiation"),
+    deliverable_type: str = Query(..., description="交付物类型，如 development_plan"),
+    deliverable_id: UUID | None = Query(None, description="指定已有交付文档；不传则取同阶段同类型最新一条"),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[RdStageDeliverableGenerationOptions]:
+    """向导第 1、2 步的全部预填值：模板候选、默认标题/版本/编码、在跑的任务。
+
+    一次请求拿齐，前端不需要再串行请求模板列表与任务列表。
+    """
+    options = await deliverable_generation.build_options(
+        db,
+        project_id=project_id,
+        stage=stage,
+        deliverable_type=deliverable_type,
+        deliverable_id=deliverable_id,
+    )
+
+    return DataResponse[RdStageDeliverableGenerationOptions](data=options)
+
+
+@router.get(
+    "/rd-stage-deliverables/report-links",
+    summary="按报告批量反查来源交付文档",
+)
+async def list_stage_deliverable_report_links_api(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:stage-deliverable:read")),
+    report_ids: str = Query(..., description="报告 ID，逗号分隔（最多 200 个）"),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[list[RdStageDeliverableReportLink]]:
+    """研发报告列表要显示「来源交付文档」，一条请求批量取回，避免每行查一次。"""
+    parsed: list[UUID] = []
+    for raw in report_ids.split(",")[:200]:
+        try:
+            parsed.append(UUID(raw.strip()))
+        except ValueError:
+            continue
+
+    links = await deliverable_generation.list_report_links(db, parsed)
+
+    return DataResponse[list[RdStageDeliverableReportLink]](data=links)
+
+
+@router.post(
+    "/rd-stage-deliverables/generate",
+    summary="在阶段交付文档中直接生成研发报告",
+)
+async def generate_stage_deliverable_report_api(
+    data: RdStageDeliverableGenerateRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:stage-deliverable:create")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[RdStageDeliverableGenerateResult]:
+    """一次编排：补建/复用交付文档 → 找/建报告记录 → 提交现有生成任务 → 回写关联。
+
+    接口本身只做提交（毫秒级），生成在后台任务里跑；前端按 job 轮询进度。
+    """
+    result = await deliverable_generation.generate(db, data, current_user.id)
+
+    return DataResponse[RdStageDeliverableGenerateResult](
+        data=result,
+        message="已提交生成，完成后会自动归档到该交付文档",
+    )
+
+
+@router.get(
+    "/rd-stage-deliverables/{deliverable_id}/generation",
+    summary="查询阶段交付文档的生成进度",
+)
+async def get_stage_deliverable_generation_status_api(
+    deliverable_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:stage-deliverable:read")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[RdStageDeliverableGenerationStatus]:
+    status = await deliverable_generation.get_status(db, deliverable_id)
+
+    return DataResponse[RdStageDeliverableGenerationStatus](data=status)
+
 
 @router.post(
     "/rd-stage-deliverables",
@@ -2362,6 +2445,8 @@ async def list_rd_stage_deliverables_api(
     items, total = await service.list_rd_stage_deliverables(
         db, project_id, stage, deliverable_type, status, page, page_size
     )
+    # 行内「生成中 62%」徽标：一次批量查询挂上去，避免每行再请求一次
+    await deliverable_generation.attach_generation_briefs(db, items)
 
     return DataResponse[list[RdStageDeliverableResponse]](
         data=[RdStageDeliverableResponse.model_validate(i.__dict__) for i in items],
@@ -2418,26 +2503,15 @@ async def upload_deliverable_file(
 ) -> DataResponse[DeliverableUploadResult]:
     """上传交付物附件文件（本地存储）"""
 
-    UPLOAD_DIR = _deliverable_upload_dir()  # noqa: N806
-
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-
     content = await file.read()
 
-    file_size = len(content)
+    filename = deliverable_files.safe_file_name(file.filename or "unknown")
 
-    filename = os.path.basename(file.filename or "unknown")
-
-    # 保存文件到本地
-
-    file_path = os.path.join(UPLOAD_DIR, f"{deliverable_id}_{filename}")
-
-    with open(file_path, "wb") as f:
-        f.write(content)
+    file_size = deliverable_files.save_deliverable_bytes(deliverable_id, filename, content)
 
     # 更新交付物记录
 
-    file_url = f"/api/v1/research/rd-stage-deliverables/{deliverable_id}/download"
+    file_url = deliverable_files.deliverable_download_url(deliverable_id)
 
     await service.update_rd_stage_deliverable(
         db,
@@ -2445,6 +2519,26 @@ async def upload_deliverable_file(
         RdStageDeliverableUpdate(file_url=file_url, file_name=filename, file_size=file_size),
         current_user.id,
     )
+
+    # 这份交付物若是 AI 生成的产物，把这次上传也记进报告版本时间线，
+    # 用户回到报告详情就能看到「AI 初稿 / 人工上传」并互相切换。
+    deliverable = await service.get_rd_stage_deliverable(db, deliverable_id)
+    if deliverable.report_gen_job_id and filename.lower().endswith(".docx"):
+        try:
+            await file.seek(0)
+            await report_gen_versions.upload_version(
+                db,
+                deliverable.report_gen_job_id,
+                file,
+                current_user.id if current_user else None,
+            )
+        except AppException as exc:
+            # 版本留档是增益项：失败只记日志，不能让附件上传整体失败
+            logger.warning(
+                "deliverable upload: record report gen version failed: deliverable=%s err=%s",
+                deliverable_id,
+                exc,
+            )
 
     return DataResponse[DeliverableUploadResult](
         data=DeliverableUploadResult(file_url=file_url, file_name=filename, file_size=file_size)
@@ -2468,19 +2562,10 @@ async def download_deliverable_file(
     if not deliverable.file_name:
         raise AppException(status_code=404, message="未找到附件文件")
 
-    file_name = f"{deliverable_id}_{deliverable.file_name}"
+    # 取附件路径时兼容历史版本写在 /tmp 下的文件
+    file_path = deliverable_files.resolve_deliverable_path(deliverable_id, deliverable.file_name)
 
-    file_path = os.path.join(_deliverable_upload_dir(), file_name)
-
-    if not os.path.exists(file_path):
-        # 兼容历史版本写在 /tmp 下的附件
-        legacy_dir = _legacy_deliverable_dir()
-        if legacy_dir:
-            legacy_path = os.path.join(legacy_dir, file_name)
-            if os.path.exists(legacy_path):
-                file_path = legacy_path
-
-    if not os.path.exists(file_path):
+    if file_path is None:
         raise NotFoundException("文件")
 
     return FileResponse(file_path, filename=deliverable.file_name, media_type="application/octet-stream")

@@ -147,9 +147,9 @@ async def create_job(
     """建任务并立刻提交后台执行；同一报告已有进行中的任务时直接复用。"""
     report = await session.get(RdReport, payload.report_id)
     if report is None or report.is_deleted:
-        raise NotFoundException("研发报告不存在")
+        raise NotFoundException("报告")
     if report.project_id != payload.project_id:
-        raise BadRequestException("报告与项目不匹配")
+        raise BadRequestException("这份报告不属于当前项目，请刷新页面后重试")
 
     running = await session.execute(
         select(RdReportGenJob)
@@ -167,9 +167,9 @@ async def create_job(
 
     template = await session.get(RdDeliverableTemplate, payload.deliverable_template_id)
     if template is None or template.is_deleted:
-        raise NotFoundException("交付物模板不存在")
+        raise NotFoundException("模板")
     if not template.file_object_key:
-        raise BadRequestException("该模板尚未上传 Word 母本，无法生成报告")
+        raise BadRequestException("这个模板还没有上传 Word 文件，没法生成报告。请先给模板上传文件")
 
     # 模型快照：任务发起时固定三档原值，执行期间改配置不影响本任务
     config = await load_config()
@@ -217,7 +217,7 @@ async def create_job(
     if submitted is None:
         # 登记失败：任务不会被执行，直接落失败态，避免列表里永远「排队中」
         job.status = "failed"
-        job.error_message = "任务调度失败，请稍后重试"
+        job.error_message = "系统正忙，这次没能开始生成。请过一会儿再点一次「用 AI 生成文档」"
         job.finished_at = _now()
         await session.commit()
         logger.error("report-gen job submit failed", extra={"job_id": str(job.id)})
@@ -227,8 +227,7 @@ async def create_job(
         extra={"job_id": str(job.id), "report_id": str(payload.report_id), "template_id": str(template.id)},
     )
     applied = [
-        ReportGenFeedbackBrief(id=item.id, slot_key=item.slot_key, content=item.content)
-        for item in pending_feedback
+        ReportGenFeedbackBrief(id=item.id, slot_key=item.slot_key, content=item.content) for item in pending_feedback
     ]
     return _to_job_data(job, report.title, applied)
 
@@ -275,7 +274,7 @@ async def _applied_feedback(session: AsyncSession, job_id: UUID) -> list[ReportG
 async def get_job(session: AsyncSession, job_id: UUID) -> ReportGenJobData:
     job = await session.get(RdReportGenJob, job_id)
     if job is None or job.is_deleted:
-        raise NotFoundException("生成任务不存在")
+        raise NotFoundException("生成任务")
     titles = await _titles(session, [job.report_id])
     applied = await _applied_feedback(session, job_id)
     return _to_job_data(job, titles.get(job.report_id), applied)
@@ -318,9 +317,7 @@ async def list_steps(
 
 async def list_slots(session: AsyncSession, job_id: UUID) -> ReportGenSlotListData:
     result = await session.execute(
-        select(RdReportGenSlot).where(
-            RdReportGenSlot.job_id == job_id, RdReportGenSlot.is_deleted.is_(False)
-        )
+        select(RdReportGenSlot).where(RdReportGenSlot.job_id == job_id, RdReportGenSlot.is_deleted.is_(False))
     )
     rows = sorted(result.scalars().all(), key=lambda row: _anchor_sort_key(row.anchor))
     items = [
@@ -362,7 +359,7 @@ async def update_slot(
     )
     row = result.scalars().first()
     if row is None:
-        raise NotFoundException("槽位不存在")
+        raise NotFoundException("填充项")
 
     value = (payload.value or "").strip()
     if value:
@@ -416,9 +413,9 @@ async def update_slot(
 async def cancel_job(session: AsyncSession, job_id: UUID, user_id: UUID | None) -> ReportGenJobData:
     job = await session.get(RdReportGenJob, job_id)
     if job is None or job.is_deleted:
-        raise NotFoundException("生成任务不存在")
+        raise NotFoundException("生成任务")
     if job.status in TERMINAL_STATUSES:
-        raise BadRequestException("任务已结束，无需终止")
+        raise BadRequestException("这次生成已经结束了，不用再停止")
 
     job.cancel_requested = True
     job.updated_by = user_id
@@ -435,14 +432,14 @@ async def cancel_job(session: AsyncSession, job_id: UUID, user_id: UUID | None) 
 async def _artifact(session: AsyncSession, job_id: UUID, field: str) -> tuple[str, bytes, str]:
     job = await session.get(RdReportGenJob, job_id)
     if job is None or job.is_deleted:
-        raise NotFoundException("生成任务不存在")
+        raise NotFoundException("生成任务")
     key = getattr(job, field, None)
     if not key:
-        raise NotFoundException("该任务的成品还未生成")
+        raise BadRequestException("这次生成还没出结果，等它跑完再来下载")
 
     data = store.load_bytes(str(key))
     if data is None:
-        raise NotFoundException("成品文件已丢失，请重新生成")
+        raise BadRequestException("生成好的文件找不到了，请重新生成一次")
 
     if field == "document_object_key":
         return job.document_file_name or "report.docx", data, DOCX_CONTENT_TYPE
@@ -489,32 +486,23 @@ async def agent_metrics(session: AsyncSession, days: int = 30) -> ReportGenMetri
     is_completed = RdReportGenJob.status == "completed"
     duration_seconds = func.extract("epoch", RdReportGenJob.finished_at - RdReportGenJob.started_at)
 
-    statement = (
-        select(
-            func.count().label("total"),
-            func.coalesce(func.sum(case((is_completed, 1), else_=0)), 0).label("completed"),
-            func.coalesce(func.sum(case((RdReportGenJob.status == "failed", 1), else_=0)), 0).label("failed"),
-            func.coalesce(func.sum(case((RdReportGenJob.status == "cancelled", 1), else_=0)), 0).label(
-                "cancelled"
-            ),
-            func.avg(case((is_completed, RdReportGenJob.rounds), else_=None)).label("avg_rounds"),
-            func.avg(case((is_completed, duration_seconds), else_=None)).label("avg_duration_seconds"),
-            func.coalesce(func.sum(case((is_completed, RdReportGenJob.slot_total), else_=0)), 0).label(
-                "slot_total"
-            ),
-            func.coalesce(func.sum(case((is_completed, RdReportGenJob.slot_gap), else_=0)), 0).label(
-                "slot_gap"
-            ),
-            # 降级只对跑完的任务有意义：失败任务走兜底也说明不了模型质量
-            func.coalesce(
-                func.sum(case((is_completed & RdReportGenJob.used_fallback.is_(True), 1), else_=0)), 0
-            ).label("fallback_completed"),
-        )
-        .where(
-            RdReportGenJob.is_deleted.is_(False),
-            RdReportGenJob.status.in_(TERMINAL_STATUSES),
-            finished >= since,
-        )
+    statement = select(
+        func.count().label("total"),
+        func.coalesce(func.sum(case((is_completed, 1), else_=0)), 0).label("completed"),
+        func.coalesce(func.sum(case((RdReportGenJob.status == "failed", 1), else_=0)), 0).label("failed"),
+        func.coalesce(func.sum(case((RdReportGenJob.status == "cancelled", 1), else_=0)), 0).label("cancelled"),
+        func.avg(case((is_completed, RdReportGenJob.rounds), else_=None)).label("avg_rounds"),
+        func.avg(case((is_completed, duration_seconds), else_=None)).label("avg_duration_seconds"),
+        func.coalesce(func.sum(case((is_completed, RdReportGenJob.slot_total), else_=0)), 0).label("slot_total"),
+        func.coalesce(func.sum(case((is_completed, RdReportGenJob.slot_gap), else_=0)), 0).label("slot_gap"),
+        # 降级只对跑完的任务有意义：失败任务走兜底也说明不了模型质量
+        func.coalesce(func.sum(case((is_completed & RdReportGenJob.used_fallback.is_(True), 1), else_=0)), 0).label(
+            "fallback_completed"
+        ),
+    ).where(
+        RdReportGenJob.is_deleted.is_(False),
+        RdReportGenJob.status.in_(TERMINAL_STATUSES),
+        finished >= since,
     )
     row = (await session.execute(statement)).one()
 
@@ -594,7 +582,7 @@ async def list_structure_runs(
     """母本解析留痕 + 与当前结构的差异（漏选/多选）。只读，不改结构。"""
     template = await session.get(RdDeliverableTemplate, template_id)
     if template is None or template.is_deleted:
-        raise NotFoundException("交付物模板不存在")
+        raise NotFoundException("模板")
     current_slots = normalize_structure(template.template_structure).get("slots") or []
     rows = await _list_structure_runs(
         session,
@@ -642,7 +630,7 @@ async def create_feedback(
     """对某一版报告提一条意见；槽位级意见必须落在本任务真实存在的槽位上。"""
     job = await session.get(RdReportGenJob, job_id)
     if job is None or job.is_deleted:
-        raise NotFoundException("生成任务不存在")
+        raise NotFoundException("生成任务")
 
     slot_key = (payload.slot_key or "").strip() or None
     if slot_key:
@@ -654,11 +642,11 @@ async def create_feedback(
             )
         )
         if slot_exists.first() is None:
-            raise BadRequestException("该槽位不在本任务里，请刷新后重试")
+            raise BadRequestException("这个填充项不属于这次生成，请刷新页面后重试")
 
     content = " ".join((payload.content or "").split())
     if not content:
-        raise BadRequestException("意见内容不能为空")
+        raise BadRequestException("还没有填写意见内容")
 
     row = RdReportGenFeedback(
         job_id=job_id,
@@ -679,7 +667,7 @@ async def list_feedback(session: AsyncSession, job_id: UUID) -> ReportGenFeedbac
     """列出该任务上提过的意见；新提的在前，便于评审时先看最近一条。"""
     job = await session.get(RdReportGenJob, job_id)
     if job is None or job.is_deleted:
-        raise NotFoundException("生成任务不存在")
+        raise NotFoundException("生成任务")
     result = await session.execute(
         select(RdReportGenFeedback)
         .where(
@@ -707,7 +695,7 @@ async def update_feedback(
     """人工处置：标不采纳，或把误标不采纳的重新打开（下次生成会再带上）。"""
     row = await session.get(RdReportGenFeedback, feedback_id)
     if row is None or row.is_deleted:
-        raise NotFoundException("修改意见不存在")
+        raise NotFoundException("修改意见")
     row.status = payload.status
     if payload.status == "open":
         row.applied_job_id = None
@@ -729,11 +717,11 @@ async def promote_feedback(
     """
     row = await session.get(RdReportGenFeedback, feedback_id)
     if row is None or row.is_deleted:
-        raise NotFoundException("修改意见不存在")
+        raise NotFoundException("修改意见")
     if not row.slot_key:
-        raise BadRequestException("整篇意见没有对应槽位，无法沉淀为示例")
+        raise BadRequestException("这条意见讲的是整篇内容，没有对应的填充项，存不成示例写法")
     if row.status != "applied" or row.applied_job_id is None:
-        raise BadRequestException("该意见还没被生成落实，先重新生成一次再沉淀")
+        raise BadRequestException("这条意见还没在文档里落实。请先点「重新生成」，落实后再存成示例写法")
 
     slot_result = await session.execute(
         select(RdReportGenSlot).where(
@@ -744,14 +732,14 @@ async def promote_feedback(
     )
     slot = slot_result.scalars().first()
     if slot is None:
-        raise BadRequestException("落实该意见的任务里找不到这个槽位")
+        raise BadRequestException("在落实这条意见的那次生成里，找不到对应的填充项")
     value = (slot.value or "").strip()
     if not value:
-        raise BadRequestException("该槽位这次没有内容，没有可沉淀的写法")
+        raise BadRequestException("这个填充项这次没有填内容，没有可以存成示例的写法")
 
     job = await session.get(RdReportGenJob, row.applied_job_id)
     if job is None:
-        raise BadRequestException("落实该意见的任务已不存在")
+        raise BadRequestException("落实这条意见的那次生成记录已经被删除了")
 
     template_id = job.deliverable_template_id
     existing = await session.execute(
@@ -818,9 +806,7 @@ async def list_examples(
     )
     if not include_inactive:
         statement = statement.where(RdReportGenExample.is_active.is_(True))
-    result = await session.execute(
-        statement.order_by(RdReportGenExample.updated_at.desc()).limit(min(limit, 500))
-    )
+    result = await session.execute(statement.order_by(RdReportGenExample.updated_at.desc()).limit(min(limit, 500)))
     items = [_to_example_data(row) for row in result.scalars().all()]
     return ReportGenExampleListData(
         items=items,
@@ -841,7 +827,7 @@ async def update_example(
     """
     row = await session.get(RdReportGenExample, example_id)
     if row is None or row.is_deleted:
-        raise NotFoundException("槽位示例不存在")
+        raise NotFoundException("示例写法")
     cleaned = (payload.value or "").strip()
     if cleaned:
         row.value = cleaned
@@ -867,7 +853,7 @@ async def delete_example(
     """软删除：这条示例彻底不再参与注入，但保留痕迹可追。"""
     row = await session.get(RdReportGenExample, example_id)
     if row is None or row.is_deleted:
-        raise NotFoundException("槽位示例不存在")
+        raise NotFoundException("示例写法")
     row.is_deleted = True
     row.is_active = False
     row.updated_by = user_id

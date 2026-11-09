@@ -66,6 +66,79 @@ export async function uploadDeliverableTemplateFile(
   return result.data
 }
 
+/** 重解析流式事件：与后端 ``/slots/reparse/stream`` 的 data.type 一一对应 */
+export type SlotsReparseStreamEvent =
+  | { type: 'phase'; phase: string; message?: string; elapsed_ms?: number }
+  | {
+      type: 'candidates'
+      candidate_count: number
+      prompt_chars: number
+      estimate_seconds: number
+      elapsed_ms?: number
+    }
+  | { type: 'reasoning'; text: string; elapsed_ms?: number }
+  | { type: 'content'; text: string; elapsed_ms?: number }
+  | { type: 'result'; data: components['schemas']['DocGenTemplateSlotsReparseData']; elapsed_ms?: number }
+  | { type: 'error'; message: string; elapsed_ms?: number }
+  | { type: 'done'; elapsed_ms?: number }
+
+/**
+ * 流式重新分析模板结构（AGENTS.md 流式例外：SSE 无法走 Server Actions）。
+ *
+ * 逐帧回调给调用方：阶段、思考增量、最终结果。调用方负责在 ``error`` 时抛错，
+ * 这里只做传输与分帧，不解释业务含义。
+ */
+export async function streamReparseDeliverableTemplateSlots(
+  templateId: string,
+  token: string | null,
+  onEvent: (event: SlotsReparseStreamEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const response = await fetch(`${DOC_TEMPLATE_BASE}/${templateId}/slots/reparse/stream`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+    credentials: 'include',
+    cache: 'no-store',
+    signal,
+  })
+
+  if (!response.ok || !response.body) {
+    const body = (await response.json().catch(() => null)) as { message?: string; detail?: unknown } | null
+    const detail = typeof body?.detail === 'string' ? body.detail : ''
+    throw new Error(body?.message || detail || `重新分析失败: ${response.status}`)
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  const flushFrames = (chunk: string) => {
+    buffer += chunk
+    let boundary = buffer.indexOf('\n\n')
+    while (boundary >= 0) {
+      const frame = buffer.slice(0, boundary)
+      buffer = buffer.slice(boundary + 2)
+      const line = frame.split('\n').find((item) => item.startsWith('data: '))
+      if (line) {
+        try {
+          onEvent(JSON.parse(line.slice(6).trim()) as SlotsReparseStreamEvent)
+        } catch {
+          // 心跳或被截断的半帧：忽略，等下一帧
+        }
+      }
+      boundary = buffer.indexOf('\n\n')
+    }
+  }
+
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    flushFrames(decoder.decode(value, { stream: true }))
+  }
+  flushFrames(decoder.decode())
+}
+
 /** 下载交付物模板文件 */
 export async function downloadDeliverableTemplate(id: string): Promise<Blob> {
   const response = await fetch(`${DOC_TEMPLATE_BASE}/${id}/download`, { credentials: 'include' })
@@ -117,7 +190,7 @@ export async function fetchDeliverableTemplateSlots(templateId: string): Promise
     `${DOC_TEMPLATE_BASE}/${templateId}/slots`,
   )
   if (!data) {
-    throw new Error('槽位结构返回为空，请稍后重试')
+    throw new Error('没有取到填充项设置，请稍后重试')
   }
   return data
 }

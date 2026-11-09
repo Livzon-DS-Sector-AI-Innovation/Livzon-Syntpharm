@@ -50,6 +50,7 @@ import {
 } from '@/actions/research/knowledge-base'
 import { KbDocumentPreviewModal } from './KbDocumentPreviewModal'
 import {
+  chunkMethodLabel,
   formatBytes,
   KB_RUN_COLORS,
   KB_RUN_LABELS,
@@ -59,6 +60,7 @@ import {
   type KbDocumentItem,
 } from '@/types/research/knowledge-base'
 import { summarizeKb, useKbDocuments, useKnowledgeBase } from './useKnowledgeBase'
+import { KB_COPY } from '@/lib/ui/research-copy'
 
 interface Props {
   projectId: string
@@ -127,7 +129,7 @@ export function KnowledgeBaseManager({ projectId, variant, onChanged }: Props) {
       const result = await uploadKbDocuments(kb.id, files)
       // 逐条说明哪份文件为什么没进去，避免用户反复重试同一个不支持的文件
       result.skipped?.forEach((item) => msgApi.warning(`${item.file_name}：${item.reason}`))
-      msgApi.success(`已上传 ${result.uploaded?.length ?? 0} 份资料，正在解析`)
+      msgApi.success(`已上传 ${result.uploaded?.length ?? 0} 份资料，正在入库处理`)
       setFileList([])
       invalidate()
     } catch (e: unknown) {
@@ -165,10 +167,10 @@ export function KnowledgeBaseManager({ projectId, variant, onChanged }: Props) {
     setReparsingId(record.id)
     try {
       await reparseKbDocument(kb.id, record.id)
-      msgApi.success('已重新提交解析')
+      msgApi.success('已重新提交处理，稍等一会儿再看状态')
       invalidate()
     } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : '重新解析失败')
+      msgApi.error(e instanceof Error ? e.message : '重新提交失败，请稍后重试')
     } finally {
       setReparsingId('')
     }
@@ -187,7 +189,7 @@ export function KnowledgeBaseManager({ projectId, variant, onChanged }: Props) {
 
   const columns = [
     {
-      title: '文件名',
+      title: '资料名称',
       dataIndex: 'file_name',
       key: 'file_name',
       ellipsis: true,
@@ -201,7 +203,7 @@ export function KnowledgeBaseManager({ projectId, variant, onChanged }: Props) {
       render: (value: number) => formatBytes(value),
     },
     {
-      title: '解析状态',
+      title: '处理状态',
       key: 'run',
       width: 200,
       render: (_: unknown, record: KbDocumentItem) => (
@@ -218,7 +220,7 @@ export function KnowledgeBaseManager({ projectId, variant, onChanged }: Props) {
         </Space>
       ),
     },
-    { title: '切片', dataIndex: 'chunk_count', key: 'chunk_count', width: 70 },
+    { title: '文字分段', dataIndex: 'chunk_count', key: 'chunk_count', width: 90 },
     {
       title: '操作',
       key: 'action',
@@ -244,12 +246,15 @@ export function KnowledgeBaseManager({ projectId, variant, onChanged }: Props) {
             onClick={() => handleReparse(record)}
             loading={reparsingId === record.id}
             disabled={!['DONE', 'FAIL', 'CANCEL'].includes(record.run)}
+            title={['DONE', 'FAIL', 'CANCEL'].includes(record.run) ? '重新处理这份资料' : '正在处理中，处理完才能重新提交'}
           >
-            重新解析
+            重新处理
           </Button>
           <Popconfirm
-            title="确定从知识库移除这份资料？"
-            description="移除后 AI 生成报告时将不再参考它"
+            title={KB_COPY.removeDocTitle}
+            description={KB_COPY.removeDocDescription}
+            okText="移除"
+            okButtonProps={{ danger: true }}
             onConfirm={() => handleDeleteDocument(record)}
           >
             <Button type="link" size="small" danger icon={<DeleteOutlined />}>
@@ -264,14 +269,14 @@ export function KnowledgeBaseManager({ projectId, variant, onChanged }: Props) {
   if (!projectId) {
     return (
       <Card>
-        <Empty description="请先选择研发项目" />
+        <Empty description="先在上面选一个项目，再来管理它的资料" />
       </Card>
     )
   }
 
   const uploadCard = (
     <Card
-      title="上传资料"
+      title={KB_COPY.uploadTitle}
       size={variant === 'modal' ? 'small' : 'default'}
       style={{ marginBottom: 16 }}
       extra={
@@ -290,12 +295,14 @@ export function KnowledgeBaseManager({ projectId, variant, onChanged }: Props) {
         <p className="ant-upload-drag-icon">
           <CloudUploadOutlined />
         </p>
-        <p className="ant-upload-text">点击或拖拽文件到此处</p>
-        <p className="ant-upload-hint">支持 PDF、Word、Excel、PPT、文本、图片等；上传后自动开始解析</p>
+        <p className="ant-upload-text">点击或把资料拖到这里</p>
+        <p className="ant-upload-hint">
+          支持 PDF、Word、Excel、PPT、文本、图片等。选好文件后点下面的按钮，系统会自动处理成可检索的文字。
+        </p>
       </Upload.Dragger>
       <Space style={{ marginTop: 12 }}>
         <Button type="primary" icon={<FileSearchOutlined />} loading={uploading} onClick={handleUpload}>
-          上传并解析
+          上传并处理
         </Button>
         <Button disabled={!fileList.length || uploading} onClick={() => setFileList([])}>
           清空选择
@@ -311,25 +318,26 @@ export function KnowledgeBaseManager({ projectId, variant, onChanged }: Props) {
           type="warning"
           showIcon
           style={{ marginBottom: 16 }}
-          message="知识库服务尚未配置"
-          description="请联系管理员在后端环境变量中配置 RAGFLOW__BASE_URL 与 RAGFLOW__API_KEY 后再使用本页功能。"
+          title={KB_COPY.notConfiguredTitle}
+          description={KB_COPY.notConfiguredDescription}
         />
       ) : null}
 
       {!kb ? (
-        <Card title="该项目还没有知识库" size={variant === 'modal' ? 'small' : 'default'}>
+        <Card title="这个项目还没有知识库，先创建一个" size={variant === 'modal' ? 'small' : 'default'}>
           <Alert
             type="info"
             showIcon
             style={{ marginBottom: 16 }}
-            message="一个项目只能有一个知识库，创建后会同步在知识库服务中生成对应数据集"
+            title="一个项目只需要建一个知识库"
+            description="建好之后，这个项目的资料都传到里面，AI 写报告时会自动到这里找依据。"
           />
           <Form form={form} layout="vertical" style={{ maxWidth: 480 }}>
-            <Form.Item name="name" label="知识库名称">
-              <Input placeholder="留空则按项目名自动生成" maxLength={200} />
+            <Form.Item name="name" label="知识库名称（可以不填）">
+              <Input placeholder="留空就用项目名，例如「米诺地尔项目知识库」" maxLength={200} />
             </Form.Item>
-            <Form.Item name="description" label="用途说明">
-              <Input.TextArea rows={2} placeholder="例如：米诺地尔项目工艺与注册资料" maxLength={1000} />
+            <Form.Item name="description" label="用途说明（可以不填）">
+              <Input.TextArea rows={2} placeholder="简单写一句这里放什么资料，例如：工艺与注册资料" maxLength={1000} />
             </Form.Item>
             <Button type="primary" icon={<PlusOutlined />} loading={creating} onClick={handleCreate}>
               创建知识库
@@ -349,8 +357,10 @@ export function KnowledgeBaseManager({ projectId, variant, onChanged }: Props) {
                     {KB_STATUS_LABELS[kb.status] ?? kb.status}
                   </Tag>
                   <Popconfirm
-                    title="删除知识库？"
-                    description="会同时删除知识库服务中的数据集与全部已解析内容，不可恢复"
+                    title={KB_COPY.deleteTitle}
+                    description={KB_COPY.deleteDescription}
+                    okText="删除"
+                    okButtonProps={{ danger: true }}
                     onConfirm={handleDeleteKb}
                   >
                     <Button type="link" size="small" danger>
@@ -360,13 +370,15 @@ export function KnowledgeBaseManager({ projectId, variant, onChanged }: Props) {
                 </Space>
               }
             >
-              <Descriptions.Item label="文档数">{summary.total || kb.document_count}</Descriptions.Item>
-              <Descriptions.Item label="已解析">{summary.parsed}</Descriptions.Item>
-              <Descriptions.Item label="解析中">{summary.pending}</Descriptions.Item>
-              <Descriptions.Item label="解析失败">{summary.failed}</Descriptions.Item>
-              <Descriptions.Item label="切片数">{kb.chunk_count}</Descriptions.Item>
-              <Descriptions.Item label="切片方式">{kb.chunk_method}</Descriptions.Item>
-              <Descriptions.Item label="向量模型" span={2}>
+              <Descriptions.Item label="资料数">{summary.total || kb.document_count}</Descriptions.Item>
+              <Descriptions.Item label="已入库">{summary.parsed}</Descriptions.Item>
+              <Descriptions.Item label="入库中">{summary.parsing}</Descriptions.Item>
+              <Descriptions.Item label="排队中">{summary.queued}</Descriptions.Item>
+              <Descriptions.Item label="处理失败">{summary.failed}</Descriptions.Item>
+              <Descriptions.Item label="已取消">{summary.cancelled}</Descriptions.Item>
+              <Descriptions.Item label="文字分段数">{kb.chunk_count}</Descriptions.Item>
+              <Descriptions.Item label="分段方式">{chunkMethodLabel(kb.chunk_method)}</Descriptions.Item>
+              <Descriptions.Item label="检索模型" span={2}>
                 {kb.embedding_model || '-'}
               </Descriptions.Item>
             </Descriptions>
@@ -380,11 +392,11 @@ export function KnowledgeBaseManager({ projectId, variant, onChanged }: Props) {
           {uploadCard}
 
           <Card
-            title="资料与解析进度"
+            title="资料与处理进度"
             size={variant === 'modal' ? 'small' : 'default'}
             extra={
               <Space>
-                {summary.pending > 0 ? <Tag color="processing">{summary.pending} 份解析中</Tag> : null}
+                {summary.pending > 0 ? <Tag color="processing">{summary.pending} 份处理中</Tag> : null}
                 <Button size="small" icon={<ReloadOutlined />} loading={documentsLoading} onClick={invalidate}>
                   刷新
                 </Button>
@@ -398,7 +410,11 @@ export function KnowledgeBaseManager({ projectId, variant, onChanged }: Props) {
               dataSource={documents}
               columns={columns}
               pagination={{ pageSize: variant === 'modal' ? 5 : 20, hideOnSinglePage: true }}
-              locale={{ emptyText: <Empty description="还没有资料，上传后自动开始解析" /> }}
+              locale={{
+                emptyText: (
+                  <Empty description="还没有上传资料。上传后会排队自动处理，处理完 AI 就能检索到里面的内容。" />
+                ),
+              }}
             />
           </Card>
         </>

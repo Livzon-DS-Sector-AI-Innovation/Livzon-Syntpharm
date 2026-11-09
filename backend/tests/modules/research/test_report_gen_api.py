@@ -100,7 +100,7 @@ async def test_create_job_returns_201_with_envelope(client: AsyncClient, monkeyp
 
     assert response.status_code == 201
     body = response.json()
-    assert body["message"] == "已提交生成任务"
+    assert body["message"] == "已开始生成，进度可以在列表里看"
     assert body["data"]["status"] == "running"
     assert created and created[0]["report_id"] == report_id
 

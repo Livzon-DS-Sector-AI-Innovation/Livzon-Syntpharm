@@ -47,7 +47,7 @@ export function KnowledgeBaseOverview({ onSelectProject }: Props) {
       render: (v: string, record: KnowledgeBaseItem) => v || record.project_id,
     },
     {
-      title: '知识库',
+      title: '知识库名称',
       dataIndex: 'name',
       key: 'name',
       width: 240,
@@ -62,23 +62,23 @@ export function KnowledgeBaseOverview({ onSelectProject }: Props) {
         <Tag color={KB_STATUS_COLORS[v] ?? 'default'}>{KB_STATUS_LABELS[v] ?? v}</Tag>
       ),
     },
-    { title: '文档数', dataIndex: 'document_count', key: 'document_count', width: 90 },
+    { title: '资料数', dataIndex: 'document_count', key: 'document_count', width: 90 },
     {
-      title: '已解析',
+      title: '已入库',
       dataIndex: 'parsed_count',
       key: 'parsed_count',
       width: 90,
       render: (v: number) => <span style={{ color: v > 0 ? '#389e0d' : '#bfbfbf' }}>{v}</span>,
     },
     {
-      title: '解析中',
+      title: '处理中',
       dataIndex: 'parsing_count',
       key: 'parsing_count',
       width: 90,
       render: (v: number) => (v > 0 ? <Tag color="processing">{v}</Tag> : <span style={{ color: '#bfbfbf' }}>0</span>),
     },
     {
-      title: '失败',
+      title: '处理失败',
       dataIndex: 'failed_count',
       key: 'failed_count',
       width: 80,
@@ -99,7 +99,7 @@ export function KnowledgeBaseOverview({ onSelectProject }: Props) {
       fixed: 'right' as const,
       render: (_: unknown, record: KnowledgeBaseItem) => (
         <Button type="link" size="small" onClick={() => onSelectProject(record.project_id)}>
-          查看
+          管理资料
         </Button>
       ),
     },
@@ -109,10 +109,10 @@ export function KnowledgeBaseOverview({ onSelectProject }: Props) {
     <Card
       title={
         <span>
-          知识库总览
+          全部项目知识库
           <span style={{ fontSize: 13, color: '#8c8c8c', fontWeight: 400, marginLeft: 8 }}>
-            共 {items.length} 个 · 覆盖 {summary.projectCount} 个项目
-            {summary.parsing > 0 ? ` · ${summary.parsing} 份解析中` : ''}
+            共 {items.length} 个知识库 · 覆盖 {summary.projectCount} 个项目
+            {summary.parsing > 0 ? ` · ${summary.parsing} 份正在处理` : ''}
           </span>
         </span>
       }
@@ -128,7 +128,7 @@ export function KnowledgeBaseOverview({ onSelectProject }: Props) {
         locale={{
           emptyText: (
             <Empty
-              description="还没有任何项目知识库：在上方选择一个项目，即可为它创建知识库并上传资料"
+              description="还没有任何知识库。先在上方「选择项目」里挑一个项目，就能为它创建知识库、上传资料。也可以直接点表格里任意一行进入管理。"
             />
           ),
         }}

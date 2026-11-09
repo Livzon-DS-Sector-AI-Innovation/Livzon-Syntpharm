@@ -45,6 +45,7 @@ import {
 import {
   DELIVERABLE_TYPES,
   STAGE_LABELS,
+  deliverableTypeLabel,
   RdDeliverableTemplate,
   RdProjectStage,
 } from '@/types/research/rd-project'
@@ -55,6 +56,8 @@ import {
 } from '@/actions/research/rd-project'
 import { DeliverableTemplateVersionDrawer } from './DeliverableTemplateVersionDrawer'
 import { DeliverableTemplateSlotsDrawer } from './DeliverableTemplateSlotsDrawer'
+import { ModuleGuide } from './ModuleGuide'
+import { TEMPLATE_COPY, TERMS } from '@/lib/ui/research-copy'
 import { PermissionGate } from '@/components/auth/PermissionGate'
 import { PERM } from '@/lib/permissions/codes'
 
@@ -119,7 +122,7 @@ export function DeliverableTemplatePage() {
   /** .doc 是旧二进制格式，docx-preview 无法渲染，由渲染分支直接给出提示 */
   const previewUnsupported = previewSource?.ext === '.doc'
   const previewNotice = previewUnsupported
-    ? '该模板文件是 .doc 旧格式，浏览器无法在线预览，请下载后用 Word 打开'
+    ? '这份文件是旧的 .doc 格式，浏览器无法在线预览，请下载后用 Word 打开'
     : previewError
 
   /** 预览：拉取模板原件字节流后交给 docx-preview 渲染（事件驱动，不放在 effect 里避免级联渲染） */
@@ -207,7 +210,7 @@ export function DeliverableTemplatePage() {
         msgApi.success('更新成功')
       } else {
         await createDeliverableTemplate(values)
-        msgApi.success('创建成功，请在列表中为该模板上传 Word 模板')
+        msgApi.success('模板已建好，接下来在列表里给它上传 Word 模板文件')
       }
       setDrawerOpen(false)
       invalidateTemplates()
@@ -250,11 +253,11 @@ export function DeliverableTemplatePage() {
     try {
       const result = await uploadDeliverableTemplates(pendingFiles)
       if (result.created.length > 0) {
-        msgApi.success(`已识别并创建 ${result.created.length} 个模板，可直接用于 AI 生成`)
+        msgApi.success(`已创建 ${result.created.length} 个模板，现在就能用来生成文档`)
       }
       // 同名文件不再跳过，而是归档为已有模板的新版本，需要明确告知用户「更新」而非「新建」
       if (result.versioned.length > 0) {
-        msgApi.info(`${result.versioned.length} 个同名文件已作为已有模板的新版本归档`)
+        msgApi.info(`有 ${result.versioned.length} 个同名文件，已存成已有模板的新版本`)
       }
       result.skipped.forEach((reason) => msgApi.warning(reason))
       setPendingFiles([])
@@ -336,9 +339,15 @@ export function DeliverableTemplatePage() {
       width: 100,
       render: (stage: string) => <Tag>{STAGE_LABELS[stage as RdProjectStage] || stage}</Tag>,
     },
-    { title: '交付物类型', dataIndex: 'deliverable_type', key: 'deliverable_type', width: 180 },
     {
-      title: 'Word 模板原件',
+      title: '交付文档类型',
+      dataIndex: 'deliverable_type',
+      key: 'deliverable_type',
+      width: 180,
+      render: (value: string) => deliverableTypeLabel(value),
+    },
+    {
+      title: 'Word 模板文件',
       key: 'file',
       width: 400,
       render: (_: unknown, record: RdDeliverableTemplate) =>
@@ -351,15 +360,15 @@ export function DeliverableTemplatePage() {
             <Button type="link" size="small" icon={<DownloadOutlined />} onClick={() => void handleDownload(record)}>
               下载
             </Button>
-            <Tooltip title="查看历史版本，可回滚或删除留档">
+            <Tooltip title={`每次上传都会自动存一份${TERMS.version.name}，可随时恢复`}>
               <Button type="link" size="small" icon={<HistoryOutlined />} onClick={() => setVersionDrawer(record)}>
-                版本历史
+                历史版本
               </Button>
             </Tooltip>
             <PermissionGate code={PERM.researchDeliverableTemplateUpdate}>
-              <Tooltip title="查看并人工调整 AI 识别出的可填位置，改完下次生成生效">
+              <Tooltip title={`查看并调整系统找出的可填位置，保存后下次生成生效`}>
                 <Button type="link" size="small" icon={<NodeIndexOutlined />} onClick={() => setSlotsDrawer(record)}>
-                  槽位结构
+                  {TERMS.templateStructure.name}
                 </Button>
               </Tooltip>
             </PermissionGate>
@@ -380,7 +389,7 @@ export function DeliverableTemplatePage() {
         // 没上传母本的模板不存在版本链，用占位符而不是 v1，避免看起来已经有版本
         if (!record.file_object_key || !record.current_version_no) return <span style={{ color: '#bbb' }}>—</span>
         return (
-          <Tooltip title={`共 ${record.version_count ?? 1} 个版本，点「版本历史」可查看与回滚`}>
+          <Tooltip title={`共 ${record.version_count ?? 1} 个${TERMS.version.name}，点「历史版本」可以查看或恢复`}>
             <Tag color="blue">v{record.current_version_no}</Tag>
           </Tooltip>
         )
@@ -407,7 +416,13 @@ export function DeliverableTemplatePage() {
             <Button type="link" icon={<DownloadOutlined />} onClick={() => void handleDownload(record)} />
           )}
           <PermissionGate code={PERM.researchDeliverableTemplateDelete}>
-            <Popconfirm title="确定删除该模板？" onConfirm={() => void handleDelete(record.id)}>
+            <Popconfirm
+              title={TEMPLATE_COPY.deleteTitle}
+              description={TEMPLATE_COPY.deleteDescription}
+              okText="删除"
+              okButtonProps={{ danger: true }}
+              onConfirm={() => void handleDelete(record.id)}
+            >
               <Button type="link" danger icon={<DeleteOutlined />} />
             </Popconfirm>
           </PermissionGate>
@@ -419,14 +434,18 @@ export function DeliverableTemplatePage() {
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>交付物模板管理</h1>
-        <p style={{ color: '#666', margin: '4px 0 0 0' }}>
-          管理各阶段交付物的 Word 报告模板（docx/dotx/doc），用于 AI 生成初版文档
-        </p>
+        <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>{TEMPLATE_COPY.title}</h1>
+        <p style={{ color: '#666', margin: '4px 0 0 0' }}>{TEMPLATE_COPY.subtitle}</p>
       </div>
 
+      <ModuleGuide
+        title={TEMPLATE_COPY.guideTitle}
+        steps={TEMPLATE_COPY.guideSteps}
+        compact={templates.length > 0}
+      />
+
       <Card
-        title="批量上传 Word 模板"
+        title={TEMPLATE_COPY.uploadTitle}
         extra={
           <PermissionGate code={PERM.researchDeliverableTemplateCreate}>
             <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
@@ -440,8 +459,8 @@ export function DeliverableTemplatePage() {
           type="info"
           showIcon
           style={{ marginBottom: 12 }}
-          title="上传后自动识别可填位置"
-          description="系统按母本里的表格与标签结构自动识别可填位置，识别结果在列表中显示；上传完成即可用于 AI 生成。"
+          title="上传后会自动找出可填位置，不需要手工标注"
+          description={`系统会读这份 Word 里的表格和标签，找出该填内容的地方（${TERMS.candidate.name}）。上传完成就能在研发报告页用它生成文档。`}
         />
         <Upload.Dragger
           multiple
@@ -453,9 +472,9 @@ export function DeliverableTemplatePage() {
           <p className="ant-upload-drag-icon">
             <InboxOutlined style={{ fontSize: 30, color: '#1677ff' }} />
           </p>
-          <p className="ant-upload-text">点击或拖拽 Word 模板文件到此区域</p>
+          <p className="ant-upload-text">点击或把 Word 文件拖到这里</p>
           <p className="ant-upload-hint">
-            支持 .docx、.dotx、.doc；文件名即模板名称，同名不会覆盖；可一次选多个，选完点「提交上传」
+            支持 .docx / .dotx / .doc，可一次选多个。文件名会作为模板名称；同名文件不会覆盖已有模板，会存成它的新版本。选完点「提交上传」。
           </p>
         </Upload.Dragger>
         {pendingFiles.length > 0 && (
@@ -469,7 +488,7 @@ export function DeliverableTemplatePage() {
         )}
       </Card>
 
-      <Card title="模板列表">
+      <Card title="全部模板">
         <Table
           rowKey="id"
           dataSource={templates}
@@ -482,7 +501,7 @@ export function DeliverableTemplatePage() {
       </Card>
 
       <Drawer
-        title={editingTemplate ? '编辑交付物模板' : '新建交付物模板'}
+        title={editingTemplate ? '编辑模板' : '新建模板'}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         styles={{ wrapper: { width: 720 } }}
@@ -507,7 +526,7 @@ export function DeliverableTemplatePage() {
             <Form.Item name="stage" label="所属阶段" rules={[{ required: true, message: '请选择阶段' }]}>
               <Select style={{ width: 220 }} options={stageOptions} placeholder="选择阶段" />
             </Form.Item>
-            <Form.Item name="deliverable_type" label="交付物类型" rules={[{ required: true, message: '请选择类型' }]}>
+            <Form.Item name="deliverable_type" label="交付文档类型" rules={[{ required: true, message: '请选择交付文档类型' }]}>
               <Select style={{ width: 300 }} options={deliverableOptions} placeholder="选择类型" showSearch optionFilterProp="label" />
             </Form.Item>
           </Space>
@@ -515,7 +534,7 @@ export function DeliverableTemplatePage() {
             <TextArea rows={2} placeholder="模板用途说明" />
           </Form.Item>
           {editingTemplate && (
-            <Form.Item label="Word 模板原件">
+            <Form.Item label={TERMS.templateFile.name} extra={TERMS.templateFile.hint}>
               <Space wrap>
                 <Upload
                   beforeUpload={(f) => handleUploadToTemplate(editingTemplate, f)}
@@ -524,7 +543,7 @@ export function DeliverableTemplatePage() {
                   disabled={uploadingFile}
                 >
                   <Button icon={<UploadOutlined />} loading={uploadingFile}>
-                    {editingTemplate.file_object_key ? '替换 Word 模板' : '上传 Word 模板'}
+                    {editingTemplate.file_object_key ? '替换文件' : '上传文件'}
                   </Button>
                 </Upload>
                 {editingTemplate.file_object_key ? (
@@ -546,12 +565,12 @@ export function DeliverableTemplatePage() {
                     </Button>
                   </>
                 ) : (
-                  <span style={{ color: '#999' }}>尚未上传</span>
+                  <span style={{ color: '#999' }}>还没有上传文件</span>
                 )}
               </Space>
             </Form.Item>
           )}
-          <Form.Item name="template_content" label="文本备份（可选）" extra="一般无需填写。AI 生成只读取上方上传的 Word 模板原件">
+          <Form.Item name="template_content" label="文字备份（可选）" extra="一般不用填。AI 生成时只读上面那份 Word 文件，这里只是留一份文字底稿。">
             <TextArea rows={5} placeholder="可留空" style={{ fontFamily: 'monospace' }} />
           </Form.Item>
           <Form.Item name="is_active" label="是否启用" valuePropName="checked">
@@ -561,7 +580,7 @@ export function DeliverableTemplatePage() {
       </Drawer>
 
       <Modal
-        title={`模板预览：${previewSource?.title ?? ''}`}
+        title={`预览：${previewSource?.title ?? ''}`}
         open={previewOpen}
         onCancel={() => setPreviewOpen(false)}
         afterOpenChange={(visible) => {
@@ -617,7 +636,7 @@ export function DeliverableTemplatePage() {
       />
 
       <Modal
-        title={`上传新版本：${pendingNote?.record.name ?? ''}`}
+        title={`替换 ${TERMS.templateFile.name}：${pendingNote?.record.name ?? ''}`}
         open={pendingNote !== null}
         onCancel={() => setPendingNote(null)}
         onOk={() => {
@@ -626,12 +645,12 @@ export function DeliverableTemplatePage() {
           setPendingNote(null)
           void doUploadToTemplate(record, file, pendingNoteText.trim() || undefined)
         }}
-        okText="上传"
+        okText="替换"
         okButtonProps={{ loading: uploadingFile }}
         destroyOnHidden
       >
         <p style={{ color: '#666', marginTop: 0 }}>
-          原母本会留档为历史版本，可随时回滚。填写版本说明便于日后追溯本次改了什么。
+          原来的文件会自动存成{TERMS.version.name}，随时可以恢复。下面的说明可以不填，填了便于以后查这次改了什么。
         </p>
         <TextArea
           rows={3}

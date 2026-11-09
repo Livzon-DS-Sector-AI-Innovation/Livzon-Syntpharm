@@ -78,6 +78,29 @@ async def load_examples(
     return examples
 
 
+async def load_all_examples(session: AsyncSession, template_id: UUID | None) -> dict[str, str]:
+    """只读取该模板全部启用的示例写法（``slot_key -> value``）。
+
+    与 :func:`load_examples` 分开是有意的：那个用于生成链路的 few-shot 注入，
+    会累计 ``usage_count`` 并按条数截断；填充示例稿只是把示例「显示」到对应位置，
+    既不该影响使用统计，也不该被 ``limit`` 截掉。
+    """
+    if template_id is None:
+        return {}
+    statement = select(RdReportGenExample.slot_key, RdReportGenExample.value).where(
+        RdReportGenExample.template_id == template_id,
+        RdReportGenExample.is_active.is_(True),
+        RdReportGenExample.is_deleted.is_(False),
+    )
+    rows = (await session.execute(statement)).all()
+    examples: dict[str, str] = {}
+    for slot_key, value in rows:
+        cleaned = (value or "").strip()
+        if slot_key and cleaned:
+            examples.setdefault(slot_key, cleaned)
+    return examples
+
+
 async def record_manual_example(
     session: AsyncSession,
     *,
@@ -146,4 +169,4 @@ async def record_manual_example(
     return changed
 
 
-__all__ = ["load_examples", "record_manual_example"]
+__all__ = ["load_all_examples", "load_examples", "record_manual_example"]

@@ -116,6 +116,42 @@ class ReportGenSlotListData(BaseModel):
     gaps: int = 0
 
 
+class ReportGenDocumentVersionData(BaseModel):
+    """一版成品文档：AI 初稿 / 人工重渲 / 人工上传。
+
+    ``is_current`` 表示当前生效版本——交付物附件、列表页预览与下载都取它。
+    """
+
+    id: uuid.UUID
+    job_id: uuid.UUID
+    version_no: int
+    kind: str = Field(..., description="ai_draft / manual_render / manual_upload")
+    file_name: str | None = None
+    file_size: int | None = None
+    note: str | None = None
+    is_current: bool = False
+    created_at: datetime
+
+
+class ReportGenDocumentVersionListData(BaseModel):
+    items: list[ReportGenDocumentVersionData]
+    total: int = 0
+
+
+class ReportGenRenderData(BaseModel):
+    """按当前槽位重渲染的结果：版本信息 + 本次填充情况。"""
+
+    version: ReportGenDocumentVersionData
+    filled: int = 0
+    gaps: int = 0
+    unresolved: list[str] = Field(default_factory=list, description="母本里没找到锚点的槽位")
+    synced_deliverable: bool = Field(False, description="是否已同步回写阶段交付物附件")
+
+
+class ReportGenVersionUploadData(ReportGenRenderData):
+    """上传改稿的返回：结构同重渲染，便于前端复用同一处理逻辑。"""
+
+
 class ReportGenSlotUpdateRequest(BaseModel):
     """人工修正槽位：只改结果与对照表，不重新渲染成品（按需求确认的口径）。"""
 

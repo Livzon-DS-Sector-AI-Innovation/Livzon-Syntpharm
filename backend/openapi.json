@@ -53257,6 +53257,289 @@
         }
       }
     },
+    "/api/v1/research/rd-stage-deliverables/generation/options": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u9636\u6bb5\u4ea4\u4ed8\u6587\u6863\u300cAI \u751f\u6210\u62a5\u544a\u300d\u7684\u9884\u586b\u9879\u4e0e\u6a21\u677f\u5019\u9009",
+        "description": "\u5411\u5bfc\u7b2c 1\u30012 \u6b65\u7684\u5168\u90e8\u9884\u586b\u503c\uff1a\u6a21\u677f\u5019\u9009\u3001\u9ed8\u8ba4\u6807\u9898/\u7248\u672c/\u7f16\u7801\u3001\u5728\u8dd1\u7684\u4efb\u52a1\u3002\n\n\u4e00\u6b21\u8bf7\u6c42\u62ff\u9f50\uff0c\u524d\u7aef\u4e0d\u9700\u8981\u518d\u4e32\u884c\u8bf7\u6c42\u6a21\u677f\u5217\u8868\u4e0e\u4efb\u52a1\u5217\u8868\u3002",
+        "operationId": "get_stage_deliverable_generation_options_api_api_v1_research_rd_stage_deliverables_generation_options_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "\u7814\u53d1\u9879\u76ee ID",
+              "title": "Project Id"
+            },
+            "description": "\u7814\u53d1\u9879\u76ee ID"
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "\u7814\u53d1\u9636\u6bb5\uff0c\u5982 initiation",
+              "title": "Stage"
+            },
+            "description": "\u7814\u53d1\u9636\u6bb5\uff0c\u5982 initiation"
+          },
+          {
+            "name": "deliverable_type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "\u4ea4\u4ed8\u7269\u7c7b\u578b\uff0c\u5982 development_plan",
+              "title": "Deliverable Type"
+            },
+            "description": "\u4ea4\u4ed8\u7269\u7c7b\u578b\uff0c\u5982 development_plan"
+          },
+          {
+            "name": "deliverable_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6307\u5b9a\u5df2\u6709\u4ea4\u4ed8\u6587\u6863\uff1b\u4e0d\u4f20\u5219\u53d6\u540c\u9636\u6bb5\u540c\u7c7b\u578b\u6700\u65b0\u4e00\u6761",
+              "title": "Deliverable Id"
+            },
+            "description": "\u6307\u5b9a\u5df2\u6709\u4ea4\u4ed8\u6587\u6863\uff1b\u4e0d\u4f20\u5219\u53d6\u540c\u9636\u6bb5\u540c\u7c7b\u578b\u6700\u65b0\u4e00\u6761"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_RdStageDeliverableGenerationOptions_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/rd-stage-deliverables/report-links": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406"
+        ],
+        "summary": "\u6309\u62a5\u544a\u6279\u91cf\u53cd\u67e5\u6765\u6e90\u4ea4\u4ed8\u6587\u6863",
+        "description": "\u7814\u53d1\u62a5\u544a\u5217\u8868\u8981\u663e\u793a\u300c\u6765\u6e90\u4ea4\u4ed8\u6587\u6863\u300d\uff0c\u4e00\u6761\u8bf7\u6c42\u6279\u91cf\u53d6\u56de\uff0c\u907f\u514d\u6bcf\u884c\u67e5\u4e00\u6b21\u3002",
+        "operationId": "list_stage_deliverable_report_links_api_api_v1_research_rd_stage_deliverables_report_links_get",
+        "parameters": [
+          {
+            "name": "report_ids",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "\u62a5\u544a ID\uff0c\u9017\u53f7\u5206\u9694\uff08\u6700\u591a 200 \u4e2a\uff09",
+              "title": "Report Ids"
+            },
+            "description": "\u62a5\u544a ID\uff0c\u9017\u53f7\u5206\u9694\uff08\u6700\u591a 200 \u4e2a\uff09"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_RdStageDeliverableReportLink__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/rd-stage-deliverables/generate": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406"
+        ],
+        "summary": "\u5728\u9636\u6bb5\u4ea4\u4ed8\u6587\u6863\u4e2d\u76f4\u63a5\u751f\u6210\u7814\u53d1\u62a5\u544a",
+        "description": "\u4e00\u6b21\u7f16\u6392\uff1a\u8865\u5efa/\u590d\u7528\u4ea4\u4ed8\u6587\u6863 \u2192 \u627e/\u5efa\u62a5\u544a\u8bb0\u5f55 \u2192 \u63d0\u4ea4\u73b0\u6709\u751f\u6210\u4efb\u52a1 \u2192 \u56de\u5199\u5173\u8054\u3002\n\n\u63a5\u53e3\u672c\u8eab\u53ea\u505a\u63d0\u4ea4\uff08\u6beb\u79d2\u7ea7\uff09\uff0c\u751f\u6210\u5728\u540e\u53f0\u4efb\u52a1\u91cc\u8dd1\uff1b\u524d\u7aef\u6309 job \u8f6e\u8be2\u8fdb\u5ea6\u3002",
+        "operationId": "generate_stage_deliverable_report_api_api_v1_research_rd_stage_deliverables_generate_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RdStageDeliverableGenerateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_RdStageDeliverableGenerateResult_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/rd-stage-deliverables/{deliverable_id}/generation": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406"
+        ],
+        "summary": "\u67e5\u8be2\u9636\u6bb5\u4ea4\u4ed8\u6587\u6863\u7684\u751f\u6210\u8fdb\u5ea6",
+        "operationId": "get_stage_deliverable_generation_status_api_api_v1_research_rd_stage_deliverables__deliverable_id__generation_get",
+        "parameters": [
+          {
+            "name": "deliverable_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Deliverable Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_RdStageDeliverableGenerationStatus_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/research/rd-stage-deliverables": {
       "post": {
         "tags": [
@@ -56047,7 +56330,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u4ea4\u4ed8\u7269\u6a21\u677f"
         ],
-        "summary": "\u4e0a\u4f20 Word \u6a21\u677f\u539f\u4ef6",
+        "summary": "\u4e0a\u4f20 Word \u6a21\u677f\u6587\u4ef6",
         "description": "\u7ed9\u5df2\u5b58\u5728\u7684\u4ea4\u4ed8\u7269\u6a21\u677f\u6302\u8f7d/\u66ff\u6362 Word \u6a21\u677f\u539f\u4ef6\uff0c\u5e76\u81ea\u52a8\u7559\u6863\u4e3a\u4e00\u4e2a\u65b0\u7248\u672c\u3002\n\n\u4e0a\u4f20\u4e0d\u4f1a\u81ea\u52a8\u542f\u7528\u6a21\u677f\uff1a\u7531\u7528\u6237\u786e\u8ba4\u6bcd\u672c\u65e0\u8bef\u540e\u624b\u52a8\u5f00\u542f\u3002",
         "operationId": "upload_template_file_api_v1_research_doc_gen_deliverable_templates__template_id__upload_post",
         "parameters": [
@@ -56118,7 +56401,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u4ea4\u4ed8\u7269\u6a21\u677f"
         ],
-        "summary": "\u4e0b\u8f7d Word \u6a21\u677f\u539f\u4ef6",
+        "summary": "\u4e0b\u8f7d Word \u6a21\u677f\u6587\u4ef6",
         "description": "\u4e0b\u8f7d\u6a21\u677f\u7684 Word \u539f\u4ef6\uff08\u4fdd\u7559\u539f\u59cb\u6269\u5c55\u540d\uff09\u3002",
         "operationId": "download_template_file_api_v1_research_doc_gen_deliverable_templates__template_id__download_get",
         "parameters": [
@@ -56177,7 +56460,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u4ea4\u4ed8\u7269\u6a21\u677f"
         ],
-        "summary": "\u4ea4\u4ed8\u7269\u6a21\u677f\u7248\u672c\u5386\u53f2",
+        "summary": "\u4ea4\u4ed8\u6587\u6863\u6a21\u677f\u7684\u7248\u672c\u5386\u53f2",
         "description": "\u6a21\u677f\u7684\u7559\u6863\u7248\u672c\uff08\u65b0\u7248\u672c\u5728\u524d\uff09\uff0c\u636e\u6b64\u53ef\u4e0b\u8f7d\u6216\u56de\u6eda\u4efb\u4e00\u4e2a\u5386\u53f2\u7248\u672c\u3002",
         "operationId": "list_template_versions_api_v1_research_doc_gen_deliverable_templates__template_id__versions_get",
         "parameters": [
@@ -56238,7 +56521,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u4ea4\u4ed8\u7269\u6a21\u677f"
         ],
-        "summary": "\u4e0b\u8f7d\u5386\u53f2\u7248\u672c Word \u539f\u4ef6",
+        "summary": "\u4e0b\u8f7d\u5386\u53f2\u7248\u672c\u7684 Word \u6587\u4ef6",
         "description": "\u4e0b\u8f7d\u6307\u5b9a\u5386\u53f2\u7248\u672c\u7684 Word \u539f\u4ef6\uff08\u6587\u4ef6\u540d\u5e26\u7248\u672c\u53f7\uff0c\u907f\u514d\u591a\u6b21\u4e0b\u8f7d\u4e92\u76f8\u8986\u76d6\uff09\u3002",
         "operationId": "download_template_version_api_v1_research_doc_gen_deliverable_templates__template_id__versions__version_id__download_get",
         "parameters": [
@@ -56307,7 +56590,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u4ea4\u4ed8\u7269\u6a21\u677f"
         ],
-        "summary": "\u56de\u6eda\u5230\u6307\u5b9a\u5386\u53f2\u7248\u672c",
+        "summary": "\u6062\u590d\u5230\u6307\u5b9a\u5386\u53f2\u7248\u672c",
         "description": "\u56de\u6eda = \u4ee5\u8be5\u7248\u672c\u5185\u5bb9\u65b0\u5efa\u4e00\u4e2a\u7248\u672c\u5e76\u8bbe\u4e3a\u5f53\u524d\uff1a\u7248\u672c\u53f7\u5355\u8c03\u9012\u589e\uff0c\u5386\u53f2\u4e0d\u53ef\u6539\u5199\u3002\n\n\u4e0d\u5c31\u5730\u6539\u5199\u5386\u53f2\u7248\u672c\uff08\u7c7b\u4f3c git revert\uff09\uff0c\u56e0\u6b64\u5ba1\u8ba1\u94fe\u5b8c\u6574\uff0c\u4e14\u53ef\u518d\u6b21\u56de\u6eda\u56de\u6765\u3002",
         "operationId": "restore_template_version_api_v1_research_doc_gen_deliverable_templates__template_id__versions__version_id__restore_post",
         "parameters": [
@@ -56443,13 +56726,74 @@
         }
       }
     },
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/sample": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u4ea4\u4ed8\u7269\u6a21\u677f"
+        ],
+        "summary": "\u751f\u6210\u586b\u5145\u793a\u4f8b\u7a3f",
+        "description": "\u6309\u5df2\u4fdd\u5b58\u7684\u586b\u5145\u9879\u5728\u6bcd\u672c\u4e0a\u5c31\u5730\u6807\u6ce8\uff0c\u751f\u6210\u4e00\u4efd\u53ef\u9884\u89c8/\u4e0b\u8f7d\u7684\u793a\u4f8b\u7a3f\u3002\n\n\u793a\u4f8b\u7a3f\u5355\u72ec\u7559\u6863\u4e3a\u4e00\u4e2a\u7248\u672c\uff08\u4e0d\u6210\u4e3a\u5f53\u524d\u6bcd\u672c\uff09\uff0c\u636e\u6b64\u53ef\u5bf9\u7167\u6bcf\u5904\u8be5\u586b\u4ec0\u4e48\u3001\u586b\u5728\u54ea\u3002",
+        "operationId": "generate_template_sample_api_v1_research_doc_gen_deliverable_templates__template_id__sample_post",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenTemplateSampleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots": {
       "get": {
         "tags": [
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u4ea4\u4ed8\u7269\u6a21\u677f"
         ],
-        "summary": "\u4ea4\u4ed8\u7269\u6a21\u677f\u69fd\u4f4d\u7ed3\u6784",
+        "summary": "\u4ea4\u4ed8\u6587\u6863\u6a21\u677f\u7684\u586b\u5145\u9879\u8bbe\u7f6e",
         "description": "\u8fd4\u56de\u69fd\u4f4d\u6e05\u5355\u4e0e\u6bcd\u672c\u5019\u9009\u4f4d\u7f6e\uff1b\u53ea\u8bfb\u6587\u4ef6\uff0c\u4e0d\u89e6\u53d1\u6a21\u578b\u8bc6\u522b\u3002",
         "operationId": "get_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_get",
         "parameters": [
@@ -56508,7 +56852,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u4ea4\u4ed8\u7269\u6a21\u677f"
         ],
-        "summary": "\u4fdd\u5b58\u69fd\u4f4d\u7ed3\u6784",
+        "summary": "\u4fdd\u5b58\u586b\u5145\u9879\u8bbe\u7f6e",
         "description": "\u5168\u91cf\u8986\u76d6\u69fd\u4f4d\u7ed3\u6784\uff08\u4eba\u5de5\u589e\u5220\u6539\uff09\uff1b\u951a\u70b9\u5fc5\u987b\u5728\u5f53\u524d\u6bcd\u672c\u91cc\uff0c\u6362\u7248\u540e\u987b\u5148\u91cd\u65b0\u8bc6\u522b\u3002",
         "operationId": "save_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_put",
         "parameters": [
@@ -56579,7 +56923,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u4ea4\u4ed8\u7269\u6a21\u677f"
         ],
-        "summary": "\u91cd\u65b0\u8bc6\u522b\u69fd\u4f4d\u7ed3\u6784",
+        "summary": "\u91cd\u65b0\u5206\u6790\u6a21\u677f\u7ed3\u6784",
         "description": "\u5f3a\u5236\u91cd\u89e3\u6790\u5e76\u6309\u4f4d\u7f6e\u5408\u5e76\uff1a\u4eba\u5de5\u6539\u8fc7\u7684\u5b57\u6bb5\u4fdd\u7559\uff0c\u53ea\u8865 AI \u65b0\u8bc6\u522b\u7684\u4f4d\u7f6e\u3002",
         "operationId": "reparse_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_reparse_post",
         "parameters": [
@@ -56650,7 +56994,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
         ],
-        "summary": "\u77e5\u8bc6\u5e93\u4e0a\u4f20\u9650\u5236",
+        "summary": "\u80fd\u4e0a\u4f20\u591a\u5927\u7684\u6587\u4ef6",
         "description": "\u524d\u7aef\u636e\u6b64\u505a\u63d0\u4ea4\u524d\u6821\u9a8c\uff0c\u5e76\u53ef\u63d0\u524d\u63d0\u793a\u300c\u77e5\u8bc6\u5e93\u670d\u52a1\u672a\u914d\u7f6e\u300d\u3002",
         "operationId": "read_limits_api_v1_research_knowledge_bases_limits_get",
         "parameters": [
@@ -56769,7 +57113,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
         ],
-        "summary": "\u4e3a\u9879\u76ee\u65b0\u5efa\u77e5\u8bc6\u5e93",
+        "summary": "\u7ed9\u9879\u76ee\u5efa\u4e00\u4e2a\u77e5\u8bc6\u5e93",
         "description": "\u5728 RAGFlow \u5efa\u6570\u636e\u96c6\u5e76\u843d\u672c\u5730\u6620\u5c04\uff1b\u4e00\u4e2a\u9879\u76ee\u81f3\u591a\u4e00\u4e2a\u6709\u6548\u77e5\u8bc6\u5e93\u3002",
         "operationId": "create_knowledge_base_api_v1_research_knowledge_bases_post",
         "parameters": [
@@ -56950,7 +57294,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
         ],
-        "summary": "\u6587\u6863\u5217\u8868\uff08\u542b\u89e3\u6790\u8fdb\u5ea6\uff09",
+        "summary": "\u8d44\u6599\u5217\u8868\uff08\u542b\u5165\u5e93\u8fdb\u5ea6\uff09",
         "description": "\u524d\u7aef\u8f6e\u8be2\u6b64\u7aef\u70b9\u5c55\u793a\u89e3\u6790\u8fdb\u5ea6\uff1brefresh=false \u65f6\u53ea\u8bfb\u672c\u5730\u955c\u50cf\uff08\u79bb\u7ebf\u4e5f\u4e0d\u62a5\u9519\uff09\u3002",
         "operationId": "list_documents_api_v1_research_knowledge_bases__kb_id__documents_get",
         "parameters": [
@@ -56970,11 +57314,11 @@
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "\u662f\u5426\u56de\u6e90 RAGFlow \u5237\u65b0\u89e3\u6790\u8fdb\u5ea6",
+              "description": "\u662f\u5426\u5230\u77e5\u8bc6\u5e93\u670d\u52a1\u5237\u65b0\u5165\u5e93\u8fdb\u5ea6",
               "default": true,
               "title": "Refresh"
             },
-            "description": "\u662f\u5426\u56de\u6e90 RAGFlow \u5237\u65b0\u89e3\u6790\u8fdb\u5ea6"
+            "description": "\u662f\u5426\u5230\u77e5\u8bc6\u5e93\u670d\u52a1\u5237\u65b0\u5165\u5e93\u8fdb\u5ea6"
           },
           {
             "name": "auth_token",
@@ -57021,7 +57365,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
         ],
-        "summary": "\u4e0a\u4f20\u8d44\u6599\u5e76\u89e6\u53d1\u89e3\u6790",
+        "summary": "\u4e0a\u4f20\u8d44\u6599\u5e76\u5f00\u59cb\u5165\u5e93\u5904\u7406",
         "description": "\u4e0a\u4f20\u540e\u7acb\u5373\u89e6\u53d1 RAGFlow \u89e3\u6790\uff1b\u5355\u4efd\u5931\u8d25\u4e0d\u5f71\u54cd\u5176\u4f59\u6587\u4ef6\uff0c\u8df3\u8fc7\u539f\u56e0\u9010\u6761\u8fd4\u56de\u3002",
         "operationId": "upload_documents_api_v1_research_knowledge_bases__kb_id__documents_post",
         "parameters": [
@@ -57092,7 +57436,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
         ],
-        "summary": "\u5220\u9664\u6587\u6863",
+        "summary": "\u5220\u9664\u8d44\u6599",
         "description": "\u4ece\u77e5\u8bc6\u5e93\u79fb\u9664\u4e00\u4efd\u6587\u6863\uff08\u8fdc\u7aef\u5220\u9664\u6210\u529f\u540e\u624d\u5220\u672c\u5730\u8bb0\u5f55\uff09\u3002",
         "operationId": "delete_document_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__delete",
         "parameters": [
@@ -57163,7 +57507,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
         ],
-        "summary": "\u91cd\u65b0\u89e3\u6790\u6587\u6863",
+        "summary": "\u91cd\u65b0\u5904\u7406\u8fd9\u4efd\u8d44\u6599",
         "description": "\u6e05\u7a7a\u65e7\u5207\u7247\u540e\u91cd\u8dd1\u89e3\u6790\uff0c\u7528\u4e8e\u89e3\u6790\u5931\u8d25\u6216\u8d44\u6599\u5df2\u66f4\u65b0\u7684\u573a\u666f\u3002",
         "operationId": "reparse_document_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__reparse_post",
         "parameters": [
@@ -57234,7 +57578,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
         ],
-        "summary": "\u4e0b\u8f7d\u8d44\u6599\u539f\u4ef6",
+        "summary": "\u4e0b\u8f7d\u8d44\u6599\u6587\u4ef6",
         "description": "\u6d41\u5f0f\u56de\u6e90 RAGFlow \u7684\u8d44\u6599\u539f\u4ef6\uff08\u4e0b\u8f7d\u7528\u539f\u4ef6\u5b57\u8282\uff1b\u9884\u89c8\u53ef\u8981\u6c42\u8f6c PDF\uff09\u3002\n\n\u6587\u4ef6\u672c\u4f53\u53ea\u5b58\u5728\u77e5\u8bc6\u5e93\u670d\u52a1\uff0c\u672c\u5730\u4e0d\u843d\u526f\u672c\uff0c\u6545\u6bcf\u6b21\u5b9e\u65f6\u53d6\uff1b\n\u56e0\u6b64\u672c\u7aef\u70b9\u4e0d\u5957\u7edf\u4e00\u54cd\u5e94\u4fe1\u5c01\uff0c\u76f4\u63a5\u8fd4\u56de\u5b57\u8282\u6d41\uff08\u4e0e\u5176\u5b83\u6a21\u5757\u7684\u6587\u4ef6\u4e0b\u8f7d\u4e00\u81f4\uff09\u3002",
         "operationId": "download_document_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__download_get",
         "parameters": [
@@ -57276,11 +57620,11 @@
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "true \u65f6\u628a Office \u6587\u6863\u8f6c\u6210 PDF \u8fd4\u56de\uff08\u6d4f\u89c8\u5668\u65e0\u6cd5\u539f\u751f\u6e32\u67d3 .doc/.xls/.ppt\uff09",
+              "description": "true \u65f6\u628a Office \u6587\u6863\u8f6c\u6210 PDF \u8fd4\u56de\uff08\u6d4f\u89c8\u5668\u6253\u4e0d\u5f00 .doc/.xls/.ppt \u539f\u6587\u4ef6\uff09",
               "default": false,
               "title": "As Pdf"
             },
-            "description": "true \u65f6\u628a Office \u6587\u6863\u8f6c\u6210 PDF \u8fd4\u56de\uff08\u6d4f\u89c8\u5668\u65e0\u6cd5\u539f\u751f\u6e32\u67d3 .doc/.xls/.ppt\uff09"
+            "description": "true \u65f6\u628a Office \u6587\u6863\u8f6c\u6210 PDF \u8fd4\u56de\uff08\u6d4f\u89c8\u5668\u6253\u4e0d\u5f00 .doc/.xls/.ppt \u539f\u6587\u4ef6\uff09"
           },
           {
             "name": "auth_token",
@@ -57329,7 +57673,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
         ],
-        "summary": "\u5207\u7247\u5173\u8054\u56fe\u7247",
+        "summary": "\u6587\u672c\u5206\u6bb5\u91cc\u7684\u56fe\u7247",
         "description": "\u4ee3\u7406\u77e5\u8bc6\u5e93\u670d\u52a1\u91cc\u7684\u5207\u7247\u56fe\u7247\uff08PDF \u9875\u56fe / \u56fe\u6ce8\u914d\u56fe\uff09\u3002\n\n\u524d\u7aef\u7528 ``<img>`` \u76f4\u63a5\u5f15\u7528\u672c\u5730\u5740\uff1a\u540c\u6e90\u8bf7\u6c42\u4f1a\u5e26\u4e0a auth_token Cookie\uff0c\n\u540e\u7aef\u9274\u6743\u672c\u8eab\u5c31\u652f\u6301 Cookie\uff0c\u56e0\u6b64\u4e0d\u9700\u8981\u524d\u7aef\u518d\u8f6c\u6210 blob\u3002",
         "operationId": "read_document_image_api_v1_research_knowledge_bases__kb_id__images__image_id__get",
         "parameters": [
@@ -57399,7 +57743,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
         ],
-        "summary": "\u89e3\u6790\u5207\u7247\uff08\u9884\u89c8\u89e3\u6790\u5185\u5bb9\uff09",
+        "summary": "\u67e5\u770b\u63d0\u53d6\u51fa\u6765\u7684\u6587\u5b57\u5206\u6bb5",
         "description": "docx / xls \u7b49\u6d4f\u89c8\u5668\u65e0\u6cd5\u76f4\u63a5\u6e32\u67d3\uff0c\u9884\u89c8\u65f6\u7528\u5207\u7247\u770b\u89e3\u6790\u7ed3\u679c\u3002",
         "operationId": "list_document_chunks_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__chunks_get",
         "parameters": [
@@ -57444,11 +57788,11 @@
               "type": "integer",
               "maximum": 200,
               "minimum": 1,
-              "description": "\u6bcf\u9875\u5207\u7247\u6570",
+              "description": "\u6bcf\u9875\u663e\u793a\u591a\u5c11\u6bb5",
               "default": 50,
               "title": "Page Size"
             },
-            "description": "\u6bcf\u9875\u5207\u7247\u6570"
+            "description": "\u6bcf\u9875\u663e\u793a\u591a\u5c11\u6bb5"
           },
           {
             "name": "auth_token",
@@ -57497,7 +57841,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u63d0\u4ea4 AI \u62a5\u544a\u751f\u6210\u4efb\u52a1",
+        "summary": "\u63d0\u4ea4 AI \u751f\u6210\u6587\u6863\u4efb\u52a1",
         "description": "\u5efa\u4efb\u52a1\u5e76\u7acb\u523b\u8fd4\u56de\uff1b\u771f\u6b63\u7684 Agent \u6267\u884c\u5728\u540e\u53f0 worker \u5185\u8fdb\u884c\uff0c\u4e0d\u963b\u585e\u672c\u8bf7\u6c42\u3002",
         "operationId": "create_report_gen_job_api_v1_research_report_gen_jobs_post",
         "parameters": [
@@ -57556,7 +57900,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "AI \u62a5\u544a\u751f\u6210\u4efb\u52a1\u5217\u8868",
+        "summary": "AI \u751f\u6210\u4efb\u52a1\u5217\u8868",
         "description": "\u5217\u8868\u9875\u4e00\u6b21\u53d6\u56de\u6574\u9879\u76ee\u7684\u4efb\u52a1\uff0c\u907f\u514d\u9010\u62a5\u544a\u8bf7\u6c42\u3002",
         "operationId": "list_report_gen_jobs_api_v1_research_report_gen_jobs_get",
         "parameters": [
@@ -57657,7 +58001,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "AI \u62a5\u544a\u751f\u6210\u4efb\u52a1\u8be6\u60c5",
+        "summary": "AI \u751f\u6210\u4efb\u52a1\u8be6\u60c5",
         "operationId": "get_report_gen_job_api_v1_research_report_gen_jobs__job_id__get",
         "parameters": [
           {
@@ -57717,7 +58061,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u6267\u884c\u8fc7\u7a0b\uff08\u6309 seq \u589e\u91cf\uff09",
+        "summary": "\u751f\u6210\u8fc7\u7a0b\u8bb0\u5f55\uff08\u6309\u5e8f\u53f7\u589e\u91cf\u62c9\u53d6\uff09",
         "operationId": "list_report_gen_steps_api_v1_research_report_gen_jobs__job_id__steps_get",
         "parameters": [
           {
@@ -57802,7 +58146,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u69fd\u4f4d\u586b\u5145\u7ed3\u679c",
+        "summary": "\u586b\u5145\u9879\u7ed3\u679c",
         "operationId": "list_report_gen_slots_api_v1_research_report_gen_jobs__job_id__slots_get",
         "parameters": [
           {
@@ -57862,7 +58206,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u4eba\u5de5\u4fee\u6b63\u69fd\u4f4d",
+        "summary": "\u624b\u52a8\u4fee\u6539\u586b\u5145\u5185\u5bb9",
         "description": "\u53ea\u6539\u7ed3\u679c\u533a\u4e0e\u5bf9\u7167\u8868\u53e3\u5f84\uff1b\u6210\u54c1 docx \u4e0d\u91cd\u6e32\u67d3\uff08\u6309\u5df2\u786e\u8ba4\u7684\u9700\u6c42\u53e3\u5f84\uff09\u3002",
         "operationId": "update_report_gen_slot_api_v1_research_report_gen_jobs__job_id__slots__slot_key__put",
         "parameters": [
@@ -57942,7 +58286,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u7ec8\u6b62\u751f\u6210\u4efb\u52a1",
+        "summary": "\u505c\u6b62\u751f\u6210",
         "description": "\u7f6e\u53d6\u6d88\u6807\u8bb0\uff1a\u6392\u961f\u4e2d\u76f4\u63a5\u843d\u7ec8\u6001\uff0c\u6267\u884c\u4e2d\u7531 Agent \u5faa\u73af\u5728\u4e0b\u4e00\u8f6e\u81ea\u884c\u9000\u51fa\u3002",
         "operationId": "cancel_report_gen_job_api_v1_research_report_gen_jobs__job_id__cancel_post",
         "parameters": [
@@ -58003,7 +58347,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u5bf9\u67d0\u4e00\u7248\u62a5\u544a\u63d0\u4fee\u6539\u610f\u89c1",
+        "summary": "\u5bf9\u67d0\u4e00\u7248\u6587\u6863\u63d0\u4fee\u6539\u610f\u89c1",
         "description": "\u610f\u89c1\u53ea\u8bb0\u5f55\u4e0d\u7acb\u5373\u6267\u884c\uff1a\u4e0b\u6b21\u751f\u6210\uff08\u542b\u672c\u9875\u300c\u91cd\u65b0\u751f\u6210\u300d\uff09\u4f1a\u81ea\u52a8\u5e26\u4e0a\u672a\u843d\u5b9e\u7684\u6761\u76ee\u3002",
         "operationId": "create_report_gen_feedback_api_v1_research_report_gen_jobs__job_id__feedback_post",
         "parameters": [
@@ -58072,7 +58416,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u67d0\u4e00\u7248\u62a5\u544a\u4e0a\u63d0\u8fc7\u7684\u4fee\u6539\u610f\u89c1",
+        "summary": "\u67d0\u4e00\u7248\u6587\u6863\u4e0a\u63d0\u8fc7\u7684\u4fee\u6539\u610f\u89c1",
         "operationId": "list_report_gen_feedback_api_v1_research_report_gen_jobs__job_id__feedback_get",
         "parameters": [
           {
@@ -58132,7 +58476,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u5904\u7f6e\u4fee\u6539\u610f\u89c1\uff08\u4e0d\u91c7\u7eb3 / \u91cd\u65b0\u6253\u5f00\uff09",
+        "summary": "\u5904\u7406\u4fee\u6539\u610f\u89c1\uff08\u4e0d\u91c7\u7eb3 / \u91cd\u65b0\u6253\u5f00\uff09",
         "description": "\u6807\u4e3a\u4e0d\u91c7\u7eb3\u540e\u4e0d\u518d\u5e26\u5165\u4e0b\u4e00\u6b21\u751f\u6210\uff1b\u91cd\u65b0\u6253\u5f00\u5219\u6062\u590d\u5e26\u5165\u3002",
         "operationId": "update_report_gen_feedback_api_v1_research_report_gen_feedback__feedback_id__patch",
         "parameters": [
@@ -58203,7 +58547,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u628a\u5df2\u843d\u5b9e\u7684\u610f\u89c1\u6c89\u6dc0\u6210\u69fd\u4f4d\u793a\u4f8b",
+        "summary": "\u628a\u5df2\u843d\u5b9e\u7684\u610f\u89c1\u5b58\u6210\u793a\u4f8b\u5199\u6cd5",
         "description": "\u628a\u8fd9\u6b21\u88ab\u91c7\u7eb3\u7684\u5199\u6cd5\u6536\u8fdb\u793a\u4f8b\u5e93\uff0c\u4e0b\u6b21\u540c\u6a21\u677f\u751f\u6210\u76f4\u63a5\u5f53 few-shot \u53c2\u7167\u3002",
         "operationId": "promote_report_gen_feedback_api_v1_research_report_gen_feedback__feedback_id__promote_post",
         "parameters": [
@@ -58322,7 +58666,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u4e0b\u8f7d\u69fd\u4f4d\u5bf9\u7167\u8868",
+        "summary": "\u4e0b\u8f7d\u586b\u5145\u9879\u5bf9\u7167\u8868",
         "operationId": "download_report_gen_comparison_api_v1_research_report_gen_jobs__job_id__comparison_get",
         "parameters": [
           {
@@ -58374,13 +58718,324 @@
         }
       }
     },
+    "/api/v1/research/report-gen/jobs/{job_id}/render": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u6309\u5f53\u524d\u586b\u5145\u5185\u5bb9\u91cd\u65b0\u751f\u6210 Word\uff08\u4e0d\u91cd\u8dd1 AI\uff09",
+        "description": "\u69fd\u4f4d\u6539\u5b8c\u540e\u6309\u5f53\u524d\u5185\u5bb9\u91cd\u51fa docx\uff1a\u7eaf\u672c\u5730\u6309\u951a\u70b9\u56de\u586b\uff0c\u4e0d\u8c03\u7528\u5927\u6a21\u578b\u3001\u79d2\u7ea7\u8fd4\u56de\u3002",
+        "operationId": "rerender_report_gen_document_api_v1_research_report_gen_jobs__job_id__render_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ReportGenRenderData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/report-gen/jobs/{job_id}/versions": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u6587\u6863\u7248\u672c\u5217\u8868\uff08AI \u521d\u7a3f / \u4eba\u5de5\u91cd\u6e32 / \u4eba\u5de5\u4e0a\u4f20\uff09",
+        "operationId": "list_report_gen_versions_api_v1_research_report_gen_jobs__job_id__versions_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ReportGenDocumentVersionListData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/report-gen/jobs/{job_id}/versions/upload": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u4e0a\u4f20\u4eba\u5de5\u4fee\u6539\u540e\u7684 Word\uff08\u515c\u5e95\u6539\u7a3f\uff09",
+        "description": "\u4e0b\u8f7d\u6539\u5b8c\u518d\u4f20\u56de\u6765\uff1a\u843d\u4e00\u4e2a\u65b0\u7248\u672c\u5e76\u7f6e\u4e3a\u5f53\u524d\uff0cAI \u521d\u7a3f\u4ecd\u7136\u4fdd\u7559\u3002",
+        "operationId": "upload_report_gen_version_api_v1_research_report_gen_jobs__job_id__versions_upload_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_report_gen_version_api_v1_research_report_gen_jobs__job_id__versions_upload_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ReportGenRenderData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/report-gen/versions/{version_id}/document": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u4e0b\u8f7d\u67d0\u4e2a\u7248\u672c\u7684 Word \u6587\u6863",
+        "operationId": "download_report_gen_version_document_api_v1_research_report_gen_versions__version_id__document_get",
+        "parameters": [
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/report-gen/versions/{version_id}/activate": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u628a\u67d0\u4e2a\u5386\u53f2\u7248\u672c\u8bbe\u4e3a\u5f53\u524d",
+        "description": "\u6539\u574f\u4e86\u53ef\u4ee5\u9000\u56de\u4efb\u610f\u4e00\u7248\uff1b\u5f53\u524d\u7248\u51b3\u5b9a\u4ea4\u4ed8\u7269\u9644\u4ef6\u4e0e\u9884\u89c8\u5185\u5bb9\u3002",
+        "operationId": "activate_report_gen_version_api_v1_research_report_gen_versions__version_id__activate_post",
+        "parameters": [
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ReportGenRenderData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/research/report-gen/settings/test-model": {
       "post": {
         "tags": [
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u6d4b\u8bd5\u62a5\u544a\u751f\u6210\u6a21\u578b\u6863\u4f4d\u8fde\u901a\u6027",
+        "summary": "\u6d4b\u8bd5\u8fd9\u4e2a\u6a21\u578b\u80fd\u4e0d\u80fd\u7528",
         "description": "\u53ea\u53d1\u4e00\u6b21\u6781\u77ed\u5bf9\u8bdd\u9a8c\u8bc1\u8be5\u6863\u4f4d\u53ef\u7528\uff0c\u4e0d\u4fee\u6539\u4efb\u4f55\u914d\u7f6e\u3001\u4e0d\u5f71\u54cd\u5168\u5c40\u6d3b\u8dc3\u6a21\u578b\u3002",
         "operationId": "test_report_gen_model_api_v1_research_report_gen_settings_test_model_post",
         "parameters": [
@@ -58441,7 +59096,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u62a5\u544a\u751f\u6210 Agent \u8fd0\u884c\u6307\u6807",
+        "summary": "\u751f\u6210\u4efb\u52a1\u8fd0\u884c\u6307\u6807",
         "description": "\u914d\u7f6e\u9875\u300cAgent \u8fd0\u884c\u60c5\u51b5\u300d\uff1a\u53ea\u8bfb\u805a\u5408\uff0c\u8fd4\u56de\u6210\u529f\u7387/\u5e73\u5747\u8f6e\u6b21/\u5e73\u5747\u8017\u65f6/\u7f3a\u53e3\u7387\u4e0e\u63d0\u793a\u8bcd\u6307\u7eb9\u3002",
         "operationId": "get_report_gen_metrics_api_v1_research_report_gen_settings_metrics_get",
         "parameters": [
@@ -58453,11 +59108,11 @@
               "type": "integer",
               "maximum": 90,
               "minimum": 1,
-              "description": "\u7edf\u8ba1\u7a97\u53e3\u5929\u6570\uff08\u8fd1 N \u5929\u5df2\u7ec8\u6001\u4efb\u52a1\uff09",
+              "description": "\u7edf\u8ba1\u6700\u8fd1\u591a\u5c11\u5929\uff08\u53ea\u7b97\u5df2\u7ecf\u7ed3\u675f\u7684\u4efb\u52a1\uff09",
               "default": 30,
               "title": "Days"
             },
-            "description": "\u7edf\u8ba1\u7a97\u53e3\u5929\u6570\uff08\u8fd1 N \u5929\u5df2\u7ec8\u6001\u4efb\u52a1\uff09"
+            "description": "\u7edf\u8ba1\u6700\u8fd1\u591a\u5c11\u5929\uff08\u53ea\u7b97\u5df2\u7ecf\u7ed3\u675f\u7684\u4efb\u52a1\uff09"
           },
           {
             "name": "auth_token",
@@ -58506,7 +59161,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u6bcd\u672c\u89e3\u6790\u7559\u75d5\u4e0e\u6f0f\u9009/\u591a\u9009\u7edf\u8ba1",
+        "summary": "\u6a21\u677f\u7ed3\u6784\u5206\u6790\u8bb0\u5f55\uff08\u8bc6\u522b\u5230\u591a\u5c11\u3001\u4eba\u5de5\u53c8\u6539\u4e86\u591a\u5c11\uff09",
         "description": "\u770b\u6bcf\u6b21\u89e3\u6790\u9009\u4e86\u591a\u5c11\u69fd\u4f4d\u3001\u4ee5\u53ca\u4eba\u5de5\u968f\u540e\u540e\u8865/\u5426\u6389\u4e86\u591a\u5c11\uff08\u53ea\u8bfb\uff09\u3002",
         "operationId": "list_report_gen_structure_runs_api_v1_research_report_gen_templates__template_id__structure_runs_get",
         "parameters": [
@@ -58528,11 +59183,11 @@
               "type": "integer",
               "maximum": 50,
               "minimum": 1,
-              "description": "\u6700\u8fd1 N \u6b21\u89e3\u6790",
+              "description": "\u770b\u6700\u8fd1 N \u6b21\u5206\u6790\u8bb0\u5f55",
               "default": 10,
               "title": "Limit"
             },
-            "description": "\u6700\u8fd1 N \u6b21\u89e3\u6790"
+            "description": "\u770b\u6700\u8fd1 N \u6b21\u5206\u6790\u8bb0\u5f55"
           },
           {
             "name": "auth_token",
@@ -58581,7 +59236,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u6a21\u677f\u4e0b\u5df2\u6c89\u6dc0\u7684\u69fd\u4f4d\u793a\u4f8b",
+        "summary": "\u8fd9\u4e2a\u6a21\u677f\u4e0b\u5df2\u5b58\u7684\u793a\u4f8b\u5199\u6cd5",
         "description": "\u793a\u4f8b\u5e93\u7ba1\u7406\u7528\uff1a\u8fd9\u4e2a\u6a21\u677f\u4e0b\u6709\u54ea\u4e9b\u793a\u4f8b\u3001\u5404\u81ea\u4ece\u54ea\u6765\u3001\u88ab\u5f15\u7528\u8fc7\u51e0\u6b21\u3002",
         "operationId": "list_report_gen_examples_api_v1_research_report_gen_templates__template_id__examples_get",
         "parameters": [
@@ -58666,7 +59321,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u4eba\u5de5\u7ef4\u62a4\u69fd\u4f4d\u793a\u4f8b",
+        "summary": "\u624b\u52a8\u7ef4\u62a4\u793a\u4f8b\u5199\u6cd5",
         "description": "\u6539\u5199\u6cd5 / \u8865\u4f9d\u636e / \u505c\u7528\u9519\u4f8b\uff1b\u505c\u7528\u540e\u4e0d\u518d\u6ce8\u5165\u4e0b\u4e00\u6b21\u751f\u6210\u3002",
         "operationId": "update_report_gen_example_api_v1_research_report_gen_examples__example_id__patch",
         "parameters": [
@@ -58735,7 +59390,7 @@
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u5220\u9664\u69fd\u4f4d\u793a\u4f8b\uff08\u8f6f\u5220\u9664\uff09",
+        "summary": "\u5220\u9664\u793a\u4f8b\u5199\u6cd5\uff08\u53ef\u6062\u590d\uff09",
         "description": "\u5f7b\u5e95\u4e0d\u518d\u53c2\u4e0e\u6ce8\u5165\uff0c\u4f46\u4fdd\u7559\u8bb0\u5f55\u53ef\u8ffd\u300c\u4ee5\u524d\u4e3a\u4ec0\u4e48\u8fd9\u4e48\u5199\u300d\u3002",
         "operationId": "delete_report_gen_example_api_v1_research_report_gen_examples__example_id__delete",
         "parameters": [
@@ -100391,18 +101046,18 @@
             },
             "type": "array",
             "title": "Files",
-            "description": "Word \u6a21\u677f\u6587\u4ef6\uff08docx/dotx/doc\uff09"
+            "description": "Word \u6a21\u677f\u6587\u4ef6\uff08.docx / .dotx / .doc\uff09"
           },
           "stage": {
             "type": "string",
             "title": "Stage",
-            "description": "\u6240\u5c5e\u9636\u6bb5\uff0c\u53ef\u7a7a",
+            "description": "\u6240\u5c5e\u9636\u6bb5\uff0c\u53ef\u4ee5\u4e0d\u586b",
             "default": ""
           },
           "deliverable_type": {
             "type": "string",
             "title": "Deliverable Type",
-            "description": "\u4ea4\u4ed8\u7269\u7c7b\u578b\uff0c\u53ef\u7a7a",
+            "description": "\u4ea4\u4ed8\u6587\u6863\u7c7b\u578b\uff0c\u53ef\u4ee5\u4e0d\u586b",
             "default": ""
           }
         },
@@ -101777,6 +102432,20 @@
         ],
         "title": "Body_upload_report_api_v1_quality_deviation_report_upload_post"
       },
+      "Body_upload_report_gen_version_api_v1_research_report_gen_jobs__job_id__versions_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_report_gen_version_api_v1_research_report_gen_jobs__job_id__versions_upload_post"
+      },
       "Body_upload_task_photo_api_v1_equipment_inspection_tasks__task_id__photos_post": {
         "properties": {
           "file": {
@@ -101798,12 +102467,12 @@
             "type": "string",
             "contentMediaType": "application/octet-stream",
             "title": "File",
-            "description": "Word \u6a21\u677f\u6587\u4ef6\uff08docx/dotx/doc\uff09"
+            "description": "Word \u6a21\u677f\u6587\u4ef6\uff08.docx / .dotx / .doc\uff09"
           },
           "change_note": {
             "type": "string",
             "title": "Change Note",
-            "description": "\u7248\u672c\u8bf4\u660e\uff08\u53d8\u66f4\u5907\u6ce8\uff0c\u53ef\u7a7a\uff09",
+            "description": "\u8fd9\u4e2a\u7248\u672c\u6539\u4e86\u4ec0\u4e48\uff0c\u53ef\u4ee5\u4e0d\u586b",
             "default": ""
           }
         },
@@ -112838,6 +113507,114 @@
         "type": "object",
         "title": "DataResponse[RdReportResponse]"
       },
+      "DataResponse_RdStageDeliverableGenerateResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RdStageDeliverableGenerateResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[RdStageDeliverableGenerateResult]"
+      },
+      "DataResponse_RdStageDeliverableGenerationOptions_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RdStageDeliverableGenerationOptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[RdStageDeliverableGenerationOptions]"
+      },
+      "DataResponse_RdStageDeliverableGenerationStatus_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RdStageDeliverableGenerationStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[RdStageDeliverableGenerationStatus]"
+      },
       "DataResponse_ReferenceStandardResponse_": {
         "properties": {
           "code": {
@@ -112873,6 +113650,42 @@
         },
         "type": "object",
         "title": "DataResponse[ReferenceStandardResponse]"
+      },
+      "DataResponse_ReportGenDocumentVersionListData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportGenDocumentVersionListData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ReportGenDocumentVersionListData]"
       },
       "DataResponse_ReportGenExampleData_": {
         "properties": {
@@ -113197,6 +114010,42 @@
         },
         "type": "object",
         "title": "DataResponse[ReportGenModelTestData]"
+      },
+      "DataResponse_ReportGenRenderData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportGenRenderData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ReportGenRenderData]"
       },
       "DataResponse_ReportGenSlotData_": {
         "properties": {
@@ -115037,6 +115886,46 @@
         },
         "type": "object",
         "title": "DataResponse[list[RdReportResponse]]"
+      },
+      "DataResponse_list_RdStageDeliverableReportLink__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RdStageDeliverableReportLink"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[RdStageDeliverableReportLink]]"
       },
       "DataResponse_list_RdStageDeliverableResponse__": {
         "properties": {
@@ -121173,6 +122062,80 @@
         "title": "DocGenTemplateFileResponse",
         "description": "POST /deliverable-templates/{id}/upload \u54cd\u5e94\u3002"
       },
+      "DocGenTemplateSampleData": {
+        "properties": {
+          "version_id": {
+            "type": "string",
+            "title": "Version Id"
+          },
+          "version_no": {
+            "type": "integer",
+            "title": "Version No"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Name"
+          },
+          "slot_count": {
+            "type": "integer",
+            "title": "Slot Count",
+            "default": 0
+          },
+          "skipped_count": {
+            "type": "integer",
+            "title": "Skipped Count",
+            "default": 0
+          },
+          "unresolved_count": {
+            "type": "integer",
+            "title": "Unresolved Count",
+            "default": 0
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version_id",
+          "version_no",
+          "generated_at"
+        ],
+        "title": "DocGenTemplateSampleData",
+        "description": "\u586b\u5145\u793a\u4f8b\u7a3f\u751f\u6210\u7ed3\u679c\uff1a\u7248\u672c\u6807\u8bc6 + \u8986\u76d6\u7387\u7edf\u8ba1\u3002"
+      },
+      "DocGenTemplateSampleResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DocGenTemplateSampleData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DocGenTemplateSampleResponse",
+        "description": "POST /deliverable-templates/{id}/sample \u54cd\u5e94\u3002"
+      },
       "DocGenTemplateSlotsData": {
         "properties": {
           "template_id": {
@@ -121593,6 +122556,11 @@
               }
             ],
             "title": "Change Note"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "default": "template"
           },
           "is_current": {
             "type": "boolean",
@@ -156435,6 +157403,77 @@
         ],
         "title": "RdDeliverableTemplateCreate"
       },
+      "RdDeliverableTemplateOption": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "deliverable_type": {
+            "type": "string",
+            "title": "Deliverable Type"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage"
+          },
+          "version_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version No",
+            "description": "\u5f53\u524d\u751f\u6548\u6587\u4ef6\u7248\u672c\u53f7"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Name"
+          },
+          "has_file": {
+            "type": "boolean",
+            "title": "Has File",
+            "description": "\u6bcd\u672c Word \u6587\u4ef6\u662f\u5426\u5df2\u4e0a\u4f20",
+            "default": false
+          },
+          "is_exact_match": {
+            "type": "boolean",
+            "title": "Is Exact Match",
+            "description": "\u9636\u6bb5 + \u4ea4\u4ed8\u7269\u7c7b\u578b\u662f\u5426\u4e0e\u5f53\u524d\u884c\u5339\u914d",
+            "default": false
+          },
+          "is_recommended": {
+            "type": "boolean",
+            "title": "Is Recommended",
+            "description": "\u662f\u5426\u4e3a\u7cfb\u7edf\u63a8\u8350\u9879",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "deliverable_type",
+          "stage"
+        ],
+        "title": "RdDeliverableTemplateOption",
+        "description": "\u5411\u5bfc\u7b2c 1 \u6b65\u5c55\u793a\u7684\u6a21\u677f\u5019\u9009\u3002"
+      },
       "RdDeliverableTemplateResponse": {
         "properties": {
           "name": {
@@ -161219,6 +162258,537 @@
         ],
         "title": "RdStageDeliverableCreate"
       },
+      "RdStageDeliverableGenerateRequest": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "stage": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Stage"
+          },
+          "deliverable_type": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Deliverable Type"
+          },
+          "deliverable_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deliverable Id",
+            "description": "\u4f20\u4e86\u5c31\u590d\u7528/\u5347\u7ea7\u8be5\u6761\u4ea4\u4ed8\u6587\u6863"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id",
+            "description": "\u4e0d\u4f20\u5219\u6309\u9636\u6bb5+\u7c7b\u578b\u81ea\u52a8\u5339\u914d"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          },
+          "doc_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Doc Code"
+          },
+          "drug_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drug Name"
+          },
+          "supplement_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplement Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id",
+          "stage",
+          "deliverable_type"
+        ],
+        "title": "RdStageDeliverableGenerateRequest",
+        "description": "\u63d0\u4ea4\u4e00\u6b21\u751f\u6210\uff1a\u9664\u5b9a\u4f4d\u7528\u7684\u4e09\u4e2a\u5b57\u6bb5\u5916\u5168\u90e8\u53ef\u9009\uff0c\u7f3a\u7701\u7531\u540e\u7aef\u6309\u9879\u76ee\u4fe1\u606f\u63a8\u5bfc\u3002"
+      },
+      "RdStageDeliverableGenerateResult": {
+        "properties": {
+          "deliverable_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Deliverable Id"
+          },
+          "report_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Report Id"
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "job_status": {
+            "type": "string",
+            "title": "Job Status"
+          },
+          "reused": {
+            "type": "boolean",
+            "title": "Reused",
+            "description": "true = \u590d\u7528\u4e86\u5df2\u5728\u8dd1\u7684\u751f\u6210\u4efb\u52a1\uff0c\u672c\u6b21\u6ca1\u6709\u65b0\u5efa",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "deliverable_id",
+          "report_id",
+          "job_id",
+          "job_status"
+        ],
+        "title": "RdStageDeliverableGenerateResult"
+      },
+      "RdStageDeliverableGenerationBrief": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "queued/running/completed/failed/cancelled"
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress",
+            "description": "\u8fdb\u5ea6\u767e\u5206\u6bd4 0~100",
+            "default": 0
+          },
+          "current_step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Step"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "slot_total": {
+            "type": "integer",
+            "title": "Slot Total",
+            "default": 0
+          },
+          "slot_filled": {
+            "type": "integer",
+            "title": "Slot Filled",
+            "default": 0
+          },
+          "slot_gap": {
+            "type": "integer",
+            "title": "Slot Gap",
+            "description": "\u5f85\u8865\u5145\u69fd\u4f4d\u6570",
+            "default": 0
+          },
+          "document_ready": {
+            "type": "boolean",
+            "title": "Document Ready",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status"
+        ],
+        "title": "RdStageDeliverableGenerationBrief",
+        "description": "\u884c\u5185\u300c\u751f\u6210\u4e2d 62% / \u5f85\u6838\u5bf9 3 \u9879\u300d\u5fbd\u6807\u7528\u7684\u7b80\u62a5\uff0c\u4e0d\u8fd4\u56de\u6574\u4efd\u4efb\u52a1\u3002"
+      },
+      "RdStageDeliverableGenerationOptions": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "project_name": {
+            "type": "string",
+            "title": "Project Name",
+            "description": "\u54c1\u79cd\u540d\u79f0"
+          },
+          "api_name": {
+            "type": "string",
+            "title": "Api Name",
+            "description": "API \u5168\u79f0",
+            "default": ""
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage"
+          },
+          "stage_label": {
+            "type": "string",
+            "title": "Stage Label"
+          },
+          "deliverable_type": {
+            "type": "string",
+            "title": "Deliverable Type"
+          },
+          "deliverable_type_label": {
+            "type": "string",
+            "title": "Deliverable Type Label"
+          },
+          "deliverable_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deliverable Id",
+            "description": "\u672c\u6b21\u8981\u5199\u5165/\u5347\u7ea7\u7684\u4ea4\u4ed8\u6587\u6863\u8bb0\u5f55\uff1b\u7a7a=\u8fd8\u6ca1\u6709\u8bb0\u5f55"
+          },
+          "report_type": {
+            "type": "string",
+            "title": "Report Type",
+            "description": "\u62a5\u544a\u7c7b\u578b\u56fa\u5b9a\u4e3a stage",
+            "default": "stage"
+          },
+          "default_title": {
+            "type": "string",
+            "title": "Default Title"
+          },
+          "default_version": {
+            "type": "string",
+            "title": "Default Version"
+          },
+          "default_doc_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Doc Code"
+          },
+          "default_drug_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Drug Name"
+          },
+          "templates": {
+            "items": {
+              "$ref": "#/components/schemas/RdDeliverableTemplateOption"
+            },
+            "type": "array",
+            "title": "Templates"
+          },
+          "recommended_template_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended Template Id"
+          },
+          "existing_report_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existing Report Id"
+          },
+          "active_job": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RdStageDeliverableGenerationBrief"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "\u8be5\u4ea4\u4ed8\u6587\u6863\u6b63\u5728\u8dd1\u7684\u751f\u6210\u4efb\u52a1\uff1b\u6709\u503c\u65f6\u5411\u5bfc\u76f4\u63a5\u8df3\u5230\u7b2c 3 \u6b65"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id",
+          "project_name",
+          "stage",
+          "stage_label",
+          "deliverable_type",
+          "deliverable_type_label",
+          "default_title",
+          "default_version"
+        ],
+        "title": "RdStageDeliverableGenerationOptions",
+        "description": "\u5411\u5bfc\u7b2c 1\u30012 \u6b65\u7684\u5168\u90e8\u9884\u586b\u503c\uff1a\u4e00\u6b21\u8bf7\u6c42\u62ff\u9f50\uff0c\u524d\u7aef\u4e0d\u9700\u8981\u518d\u4e32\u884c\u53d6\u6570\u3002"
+      },
+      "RdStageDeliverableGenerationStatus": {
+        "properties": {
+          "deliverable_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Deliverable Id"
+          },
+          "report_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Id"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "idle/queued/running/completed/failed/cancelled",
+            "default": "idle"
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress",
+            "default": 0
+          },
+          "current_step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Step"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "slot_total": {
+            "type": "integer",
+            "title": "Slot Total",
+            "default": 0
+          },
+          "slot_filled": {
+            "type": "integer",
+            "title": "Slot Filled",
+            "default": 0
+          },
+          "slot_gap": {
+            "type": "integer",
+            "title": "Slot Gap",
+            "default": 0
+          },
+          "document_file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document File Name"
+          },
+          "document_ready": {
+            "type": "boolean",
+            "title": "Document Ready",
+            "default": false
+          },
+          "comparison_ready": {
+            "type": "boolean",
+            "title": "Comparison Ready",
+            "default": false
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deliverable_id"
+        ],
+        "title": "RdStageDeliverableGenerationStatus",
+        "description": "\u5411\u5bfc\u7b2c 3 \u6b65\u7684\u8f6e\u8be2\u7ed3\u679c\u3002"
+      },
+      "RdStageDeliverableReportLink": {
+        "properties": {
+          "report_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Report Id"
+          },
+          "deliverable_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Deliverable Id"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage"
+          },
+          "stage_label": {
+            "type": "string",
+            "title": "Stage Label"
+          },
+          "deliverable_type": {
+            "type": "string",
+            "title": "Deliverable Type"
+          },
+          "deliverable_type_label": {
+            "type": "string",
+            "title": "Deliverable Type Label"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_id",
+          "deliverable_id",
+          "project_id",
+          "stage",
+          "stage_label",
+          "deliverable_type",
+          "deliverable_type_label",
+          "version"
+        ],
+        "title": "RdStageDeliverableReportLink",
+        "description": "\u62a5\u544a \u2192 \u6765\u6e90\u4ea4\u4ed8\u6587\u6863 \u7684\u53cd\u5411\u6307\u9488\uff0c\u4f9b\u7814\u53d1\u62a5\u544a\u5217\u8868\u663e\u793a\u300c\u6765\u6e90\u300d\u5217\u3002"
+      },
       "RdStageDeliverableResponse": {
         "properties": {
           "project_id": {
@@ -161360,6 +162930,43 @@
               }
             ],
             "title": "Updated By"
+          },
+          "report_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Id",
+            "description": "AI \u751f\u6210\u5bf9\u5e94\u7684\u7814\u53d1\u62a5\u544a"
+          },
+          "report_gen_job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Gen Job Id",
+            "description": "\u6700\u8fd1\u4e00\u6b21 AI \u751f\u6210\u4efb\u52a1"
+          },
+          "generation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RdStageDeliverableGenerationBrief"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "\u6700\u8fd1\u4e00\u6b21\u751f\u6210\u4efb\u52a1\u7684\u72b6\u6001\u7b80\u62a5\uff1b\u4ece\u672a\u751f\u6210\u8fc7\u4e3a\u7a7a"
           }
         },
         "type": "object",
@@ -164405,6 +166012,103 @@
         "title": "ReportCreate",
         "description": "\u62a5\u544a\u5355\u521b\u5efa"
       },
+      "ReportGenDocumentVersionData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "version_no": {
+            "type": "integer",
+            "title": "Version No"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "description": "ai_draft / manual_render / manual_upload"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Name"
+          },
+          "file_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Size"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "is_current": {
+            "type": "boolean",
+            "title": "Is Current",
+            "default": false
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "job_id",
+          "version_no",
+          "kind",
+          "created_at"
+        ],
+        "title": "ReportGenDocumentVersionData",
+        "description": "\u4e00\u7248\u6210\u54c1\u6587\u6863\uff1aAI \u521d\u7a3f / \u4eba\u5de5\u91cd\u6e32 / \u4eba\u5de5\u4e0a\u4f20\u3002\n\n``is_current`` \u8868\u793a\u5f53\u524d\u751f\u6548\u7248\u672c\u2014\u2014\u4ea4\u4ed8\u7269\u9644\u4ef6\u3001\u5217\u8868\u9875\u9884\u89c8\u4e0e\u4e0b\u8f7d\u90fd\u53d6\u5b83\u3002"
+      },
+      "ReportGenDocumentVersionListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportGenDocumentVersionData"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "ReportGenDocumentVersionListData"
+      },
       "ReportGenExampleData": {
         "properties": {
           "id": {
@@ -165360,6 +167064,43 @@
         ],
         "title": "ReportGenModelTestRequest",
         "description": "\u914d\u7f6e\u9875\u7684\u300c\u6d4b\u8bd5\u8fde\u901a\u300d\uff1a\u53ea\u9a8c\u8bc1\u67d0\u4e00\u6863\u80fd\u4e0d\u80fd\u51fa\u5b57\uff0c\u4e0d\u6539\u4efb\u4f55\u914d\u7f6e\u3002"
+      },
+      "ReportGenRenderData": {
+        "properties": {
+          "version": {
+            "$ref": "#/components/schemas/ReportGenDocumentVersionData"
+          },
+          "filled": {
+            "type": "integer",
+            "title": "Filled",
+            "default": 0
+          },
+          "gaps": {
+            "type": "integer",
+            "title": "Gaps",
+            "default": 0
+          },
+          "unresolved": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unresolved",
+            "description": "\u6bcd\u672c\u91cc\u6ca1\u627e\u5230\u951a\u70b9\u7684\u69fd\u4f4d"
+          },
+          "synced_deliverable": {
+            "type": "boolean",
+            "title": "Synced Deliverable",
+            "description": "\u662f\u5426\u5df2\u540c\u6b65\u56de\u5199\u9636\u6bb5\u4ea4\u4ed8\u7269\u9644\u4ef6",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "ReportGenRenderData",
+        "description": "\u6309\u5f53\u524d\u69fd\u4f4d\u91cd\u6e32\u67d3\u7684\u7ed3\u679c\uff1a\u7248\u672c\u4fe1\u606f + \u672c\u6b21\u586b\u5145\u60c5\u51b5\u3002"
       },
       "ReportGenSlotData": {
         "properties": {

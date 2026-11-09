@@ -346,7 +346,7 @@ async def test_create_feedback_endpoint_returns_201(
     assert response.status_code == 201
     body = response.json()
     assert body["data"]["status"] == "open"
-    assert body["message"] == "已记录意见"
+    assert body["message"] == "意见已记录，下次生成会参考"
 
 
 async def test_list_feedback_endpoint_returns_open_count(
@@ -406,4 +406,4 @@ async def test_promote_endpoint_returns_promoted_source(
     assert response.status_code == 200
     body = response.json()
     assert body["data"]["source"] == "feedback_promoted"
-    assert body["message"] == "已沉淀为示例"
+    assert body["message"] == "已存成示例写法，以后生成会参考"

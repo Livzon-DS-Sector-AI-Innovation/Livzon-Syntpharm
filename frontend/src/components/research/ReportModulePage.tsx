@@ -14,6 +14,8 @@ import type { RdProject } from '@/types/research/rd-project'
 import { ReportPage } from './ReportPage'
 import { ReportProjectOverview } from './ReportProjectOverview'
 import { ALL_PROJECTS_VALUE, useProjectFilter } from './useProjectFilter'
+import { ModuleGuide } from './ModuleGuide'
+import { REPORT_COPY } from '@/lib/ui/research-copy'
 
 const BASE_PATH = '/research/reports'
 const STORAGE_KEY = 'research:reports:projectId'
@@ -49,15 +51,13 @@ export function ReportModulePage({ initialProjectId = '' }: Props) {
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>研发报告</h1>
-        <p style={{ color: '#666', margin: '4px 0 0 0' }}>
-          生成和管理研发总结报告、阶段报告、年度报告等
-        </p>
+        <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>{REPORT_COPY.title}</h1>
+        <p style={{ color: '#666', margin: '4px 0 0 0' }}>{REPORT_COPY.subtitle}</p>
       </div>
 
       <Card style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span>项目：</span>
+          <span>选择项目：</span>
           <Select
             style={{ minWidth: 320 }}
             loading={isLoading}
@@ -68,18 +68,25 @@ export function ReportModulePage({ initialProjectId = '' }: Props) {
             optionFilterProp="label"
           />
           <span style={{ color: '#999' }}>
-            {projectId ? '仅显示该项目的报告' : '按项目汇总，点击某个项目查看它的全部报告'}
+            {projectId ? '只看这个项目的报告' : '下面按项目汇总，点某个项目可以看它的全部报告'}
           </span>
         </div>
       </Card>
+
+      <ModuleGuide
+        title={REPORT_COPY.guideTitle}
+        steps={REPORT_COPY.guideSteps}
+        compact={Boolean(projectId)}
+      />
 
       {!isLoading && projects.length === 0 ? (
         <Card>
           <Empty
             description={
               <span>
-                还没有研发项目，请先
+                还没有研发项目。报告要挂在项目下，先
                 <Link href="/research/projects"> 创建研发项目</Link>
+                ，再回来生成报告
               </span>
             }
           />

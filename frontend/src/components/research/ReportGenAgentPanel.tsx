@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Alert, Card, Col, Row, Segmented, Space, Statistic, Tag, Typography, theme } from 'antd'
+import { Alert, Col, Collapse, Row, Segmented, Space, Statistic, Tag, Typography, theme } from 'antd'
 import { fetchReportGenMetrics } from '@/lib/api/client/research/report-gen'
 import {
   REPORT_GEN_METRIC_DEFAULT_WINDOW,
@@ -21,9 +21,10 @@ interface Props {
 }
 
 /**
- * 配置页的「Agent 运行情况」：不点进单个任务也能看出这个 Agent 最近跑得怎么样。
+ * 配置页的「高级信息」：给管理员看这个 AI 生成器最近跑得怎么样。
  *
- * 只读：不写配置、不改任务；口径全部由后端聚合接口给定，前端只做展示换算。
+ * 默认折叠：这些数字（成功率、轮次、未填比例、提示词版本）对普通用户没有意义，
+ * 铺在页面上只会增加困惑。只读，不写配置、不改任务。
  */
 export function ReportGenAgentPanel({ initialMetrics }: Props) {
   const { token } = theme.useToken()
@@ -46,56 +47,68 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
   const stats = metrics
     ? [
         {
-          label: '任务数',
+          label: '生成次数',
           value: String(metrics.total),
-          hint: `完成 ${metrics.completed} · 失败 ${metrics.failed} · 终止 ${metrics.cancelled}`,
+          hint: `已完成 ${metrics.completed} · 失败 ${metrics.failed} · 已停止 ${metrics.cancelled}`,
         },
-        { label: '成功率', value: formatRate(metrics.success_rate), hint: '完成 ÷ 终态任务' },
+        {
+          label: '成功率',
+          value: formatRate(metrics.success_rate),
+          hint: '已完成 ÷ 已结束的生成任务',
+        },
         {
           label: '平均轮次',
           value: metrics.avg_rounds === null || metrics.avg_rounds === undefined ? '—' : String(metrics.avg_rounds),
-          hint: '仅统计已完成任务',
+          hint: 'AI 平均来回几轮把内容填完，只看已完成的任务',
         },
-        { label: '平均耗时', value: formatSeconds(metrics.avg_duration_seconds), hint: '起止时间差，仅已完成' },
-        { label: '缺口率', value: formatRate(metrics.gap_rate), hint: '缺口槽位 ÷ 槽位总数' },
-        { label: '降级率', value: formatRate(metrics.fallback_rate), hint: '已完成任务里触发兜底的比例' },
+        {
+          label: '平均用时',
+          value: formatSeconds(metrics.avg_duration_seconds),
+          hint: '从开始到结束的平均时间，只看已完成的任务',
+        },
+        { label: '未填比例', value: formatRate(metrics.gap_rate), hint: '找不到依据的填充项 ÷ 全部填充项' },
+        {
+          label: '自动补齐比例',
+          value: formatRate(metrics.fallback_rate),
+          hint: '已完成的任务里，主模型失败、改用自动补齐的比例',
+        },
         {
           label: '意见采纳率',
           value: formatRate(metrics.feedback_adoption_rate),
-          hint: `已落实 ${metrics.feedback_applied} · 不采纳 ${metrics.feedback_ignored}`,
+          hint: `已落实 ${metrics.feedback_applied} · 未采纳 ${metrics.feedback_ignored}`,
         },
         {
           label: '待落实意见',
           value: String(metrics.feedback_open),
-          hint: `窗口内共提 ${metrics.feedback_total} 条`,
+          hint: `这段时间共提了 ${metrics.feedback_total} 条别人写的意见`,
         },
       ]
     : []
 
-  return (
-    <Card
-      size="small"
-      title="Agent 运行情况"
-      extra={
-        <Space size={8}>
-          {isFetching && <Typography.Text type="secondary" style={{ fontSize: 12 }}>统计中…</Typography.Text>}
-          <Segmented
-            size="small"
-            value={days}
-            options={REPORT_GEN_METRIC_WINDOWS.map((value) => ({ value, label: `近 ${value} 天` }))}
-            onChange={(value) => setDays(value as ReportGenMetricWindow)}
-          />
-        </Space>
-      }
-    >
-      <Space size={6} wrap>
+  const panel = (
+    <>
+      <Space size={8} wrap>
+        <Segmented
+          size="small"
+          value={days}
+          options={REPORT_GEN_METRIC_WINDOWS.map((value) => ({ value, label: `近 ${value} 天` }))}
+          onChange={(value) => setDays(value as ReportGenMetricWindow)}
+        />
+        {isFetching && (
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+            正在统计…
+          </Typography.Text>
+        )}
+      </Space>
+
+      <Space size={6} wrap style={{ marginTop: 12 }}>
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-          提示词版本
+          规则版本
         </Typography.Text>
         <Tag>正文 {metrics?.agent_prompt_version ?? '—'}</Tag>
-        <Tag>结构 {metrics?.structure_prompt_version ?? '—'}</Tag>
+        <Tag>分析结构 {metrics?.structure_prompt_version ?? '—'}</Tag>
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-          由提示词与工具清单内容自动生成，文字一改就会变
+          由提示词和动作清单内容自动生成，内容一改就会变，用来确认线上跑的是哪一版
         </Typography.Text>
       </Space>
 
@@ -104,8 +117,8 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
           style={{ marginTop: 12 }}
           type="warning"
           showIcon
-          message="指标暂时取不到"
-          description="后端聚合接口调用失败，可稍后切一次时间窗重试；不影响生成任务本身。"
+          message="暂时取不到这些统计"
+          description="统计接口调用失败，可以换个时间范围再试一次；不影响报告生成本身。"
         />
       )}
 
@@ -114,8 +127,8 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
           style={{ marginTop: 12 }}
           type="info"
           showIcon
-          message={`近 ${metrics.window_days} 天还没有已结束的任务`}
-          description="跑一次生成后，这里会显示成功率、平均轮次、平均耗时、缺口率与评审意见的采纳情况。"
+          message={`近 ${metrics.window_days} 天还没有跑完过生成任务`}
+          description="生成过一次之后，这里会显示成功率、平均轮次、平均用时、未填比例和意见采纳情况。"
         />
       )}
 
@@ -130,11 +143,7 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
                   borderRadius: token.borderRadius,
                 }}
               >
-                <Statistic
-                  title={item.label}
-                  value={item.value}
-                  valueStyle={{ fontSize: 20, fontWeight: 600 }}
-                />
+                <Statistic title={item.label} value={item.value} valueStyle={{ fontSize: 20, fontWeight: 600 }} />
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                   {item.hint}
                 </Typography.Text>
@@ -147,7 +156,7 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
       {!unavailable && slotTop.length > 0 && (
         <Space size={6} wrap style={{ marginTop: 12 }}>
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            意见集中槽位
+            意见集中在这些填充项
           </Typography.Text>
           {slotTop.map((item) => (
             <Tag key={item.slot_key}>
@@ -155,15 +164,28 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
             </Tag>
           ))}
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            同一槽位反复被提，说明该改提示词或补示例，而不是逐篇改
+            同一个填充项总被提意见，说明该改规则或补示例写法，而不是一篇篇改
           </Typography.Text>
         </Space>
       )}
 
       <Typography.Paragraph type="secondary" style={{ fontSize: 12, margin: '12px 0 0' }}>
-        窗口按任务结束时间落（历史任务没有结束时间则按创建时间）；成功率、轮次、耗时、缺口率、降级率都只算已完成任务，避免失败任务拉偏均值。
-        历史任务无法追溯当时用的提示词版本，这里只显示当前在用的版本。
+        时间范围按任务结束时间算（老任务没有结束时间就按创建时间）。成功率、轮次、用时、未填比例、自动补齐比例都只统计已完成的任务，避免失败任务把平均值拉偏。
+        老任务没法追溯当时用的规则版本，这里只显示当前正在用的版本。
       </Typography.Paragraph>
-    </Card>
+    </>
+  )
+
+  return (
+    <Collapse
+      items={[
+        {
+          key: 'advanced',
+          label: '高级信息（管理员查看）',
+          children: panel,
+        },
+      ]}
+      defaultActiveKey={[]}
+    />
   )
 }

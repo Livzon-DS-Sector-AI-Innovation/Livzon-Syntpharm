@@ -107,14 +107,14 @@ export function ReportProjectOverview({ onSelectProject }: Props) {
       render: (v: number) => `${v} 份`,
     },
     {
-      title: '最近更新',
+      title: '最近一次新建',
       dataIndex: 'lastReportAt',
       key: 'lastReportAt',
       width: 170,
       render: (v: string) => dayjs(v).format('YYYY-MM-DD HH:mm'),
     },
     {
-      title: '最近生成状态',
+      title: '最近一次生成',
       key: 'gen_status',
       width: 220,
       render: (_: unknown, record: ProjectSummary) => {
@@ -130,7 +130,7 @@ export function ReportProjectOverview({ onSelectProject }: Props) {
             </Space>
           )
         }
-        if (!record.latestJob) return <span style={{ color: '#bfbfbf' }}>未生成</span>
+        if (!record.latestJob) return <span style={{ color: '#bfbfbf' }}>还没生成过</span>
         const meta = statusMeta(record.latestJob.status)
         return (
           <Space size={6}>
@@ -157,7 +157,7 @@ export function ReportProjectOverview({ onSelectProject }: Props) {
             onSelectProject(record.projectId)
           }}
         >
-          查看
+          查看报告
         </Button>
       ),
     },
@@ -167,10 +167,10 @@ export function ReportProjectOverview({ onSelectProject }: Props) {
     <Card
       title={
         <span>
-          项目报告总览
+          全部项目报告
           <span style={{ fontSize: 13, color: '#8c8c8c', fontWeight: 400, marginLeft: 8 }}>
             共 {rows.length} 个项目 · {totalReports} 份报告
-            {truncated ? '（按最近 200 份统计）' : ''}
+            {truncated ? '（只统计了最近 200 份）' : ''}
           </span>
         </span>
       }
@@ -184,7 +184,9 @@ export function ReportProjectOverview({ onSelectProject }: Props) {
         pagination={{ pageSize: 20, hideOnSinglePage: true }}
         scroll={{ x: 850 }}
         locale={{
-          emptyText: <Empty description="还没有任何项目报告：在上方选择一个项目，即可为它新建报告" />,
+          emptyText: (
+            <Empty description="还没有任何报告。先在上方「选择项目」里挑一个项目，进去点「新建报告」就能生成第一份。也可以直接点表格里任意一行进入。" />
+          ),
         }}
         onRow={(record) => ({
           onClick: () => onSelectProject(record.projectId),

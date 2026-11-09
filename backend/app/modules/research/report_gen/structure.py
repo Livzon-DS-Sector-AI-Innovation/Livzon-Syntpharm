@@ -13,6 +13,7 @@ import json
 import logging
 import re
 import time
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from io import BytesIO
@@ -44,6 +45,14 @@ MAX_PROMPT_CHARS = 24000
 _MAX_PARAGRAPH_TEXT = 80
 _MAX_CELL_TEXT = 200
 _VALUE_TYPES = ("text", "long_text", "number", "date", "list")
+# 结构识别一次可能输出上百个槽位：16k token 会在中途截断，截断后 JSON 解析必然失败
+_STRUCTURE_MAX_OUTPUT_TOKENS = 32768
+# 候选条数与耗时的粗估：实测 5 条候选 27s、11 条候选 61s，按固定 40s + 每条 1s 拟合，
+# 宁高勿低（估低了用户会在半程就开始怀疑卡死）。只给数量级，不作为承诺。
+_ESTIMATE_BASE_SECONDS = 40
+_SECONDS_PER_CANDIDATE = 1.0
+_ESTIMATE_FLOOR_SECONDS = 20
+_ESTIMATE_CEILING_SECONDS = 300
 
 _SYSTEM_PROMPT = STRUCTURE_SYSTEM_PROMPT  # 提示词本体与覆盖逻辑在 prompts.py
 
@@ -213,15 +222,24 @@ def _render_candidate_lines(candidates: list[dict[str, Any]]) -> str:
     used = 0
     for item in sorted(candidates, key=lambda c: (bool(c["text"]), len(c["text"]))):
         line = (
-            f'{item["candidate_id"]} | {item["label"]} | 样式:{item["style"] or "-"} | '
-            f'当前内容:{"（空）" if not item["text"] else item["text"]} | '
-            f'上一行:{item["context"] or "（无）"}'
+            f"{item['candidate_id']} | {item['label']} | 样式:{item['style'] or '-'} | "
+            f"当前内容:{'（空）' if not item['text'] else item['text']} | "
+            f"上一行:{item['context'] or '（无）'}"
         )
         used += len(line) + 1
         if used > MAX_PROMPT_CHARS:
             break
         lines.append(line)
     return "\n".join(lines)
+
+
+def _estimate_seconds(candidate_count: int) -> int:
+    """给前端一个「大概还要多久」的数量级，不作为承诺。
+
+    宁可估高：估低了用户会在 20 秒后开始怀疑卡死，估高了提前完成不会有负面感受。
+    """
+    base = _ESTIMATE_BASE_SECONDS + candidate_count * _SECONDS_PER_CANDIDATE
+    return int(max(_ESTIMATE_FLOOR_SECONDS, min(base, _ESTIMATE_CEILING_SECONDS)))
 
 
 def _slug(value: str, fallback: str) -> str:
@@ -517,6 +535,147 @@ async def _analyze_with_model(
     return slots
 
 
+async def _analyze_with_model_stream(
+    template: Any, candidates: list[dict[str, Any]], config: ReportGenConfig
+) -> AsyncIterator[dict[str, Any]]:
+    """``_analyze_with_model`` 的流式版本：边流边吐思考增量，最后给对齐后的槽位。
+
+    与非流式版本的差别只在传输方式：提示词、temperature、模型档位完全一致，
+    保证「流式看到的槽位」和「后台重跑得到的槽位」是同一个判断。
+    """
+    lines = _render_candidate_lines(candidates)
+    user_prompt = (
+        f"交付物类型：{template.deliverable_type}\n"
+        f"所属阶段：{template.stage}\n"
+        f"模板名称：{template.name}\n\n"
+        f"可填写位置清单（共 {len(candidates)} 条）：\n{lines}"
+    )
+    system_prompt = render_prompt(
+        config.structure_prompt,
+        {
+            "candidate_count": len(candidates),
+            "deliverable_type": template.deliverable_type,
+            "stage": template.stage,
+            "template_name": template.name,
+        },
+    )
+    async for event in llm_client.stream_json(
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        expected_keys=["slots"],
+        temperature=0.1,
+        max_tokens=_STRUCTURE_MAX_OUTPUT_TOKENS,
+        **config.structure_model.call_kwargs(),
+    ):
+        if event.get("type") != "result":
+            yield event
+            continue
+        slots = _align_model_slots(event.get("data") or {}, candidates)
+        if not slots:
+            raise BadRequestException("未能从母本中识别出可填写的槽位，请确认模板内容是否完整")
+        yield {"type": "aligned", "slots": slots}
+
+
+async def ensure_structure_stream(
+    session: AsyncSession,
+    template: Any,
+    config: ReportGenConfig,
+    *,
+    force: bool = False,
+) -> AsyncIterator[dict[str, Any]]:
+    """流式取槽位结构：阶段事件 + 思考增量 + 最终结构。
+
+    事件类型（SSE 端直接转发）：
+    - ``phase``：``read``（在解母本）/ ``cached``（命中缓存）/ ``align``（在对齐槽位）
+    - ``candidates``：候选条数与预计耗时，前端据此显示「大概多久」
+    - ``reasoning`` / ``content``：模型增量，由 ``llm_client.stream_json`` 原样带出
+    - ``result``：``{"structure": {...}}``，全流程只有一次，也是唯一可落库的结果
+    """
+    cached = template.template_structure
+    if (
+        not force
+        and isinstance(cached, dict)
+        and cached.get("source_key")
+        and cached.get("source_key") == template.file_object_key
+        and isinstance(cached.get("slots"), list)
+        and cached["slots"]
+    ):
+        yield {"type": "phase", "phase": "cached", "message": "母本没换版，直接复用上次的分析结果"}
+        yield {"type": "result", "structure": normalize_structure(cached)}
+        return
+
+    yield {"type": "phase", "phase": "read", "message": "正在读模板文件，整理可填位置"}
+    if not template.file_object_key:
+        raise BadRequestException("该交付物模板还没有上传 Word 母本，无法生成报告")
+    data = store.load_bytes(template.file_object_key)
+    if not data:
+        raise BadRequestException("母本文件已丢失，请重新上传模板")
+
+    document = open_document(data)
+    candidates = build_candidates(paragraph_refs(document), cell_refs(document))
+    if not candidates:
+        raise BadRequestException("母本中没有可填写的位置，无法生成报告")
+
+    prompt_chars = len(_render_candidate_lines(candidates))
+    yield {
+        "type": "candidates",
+        "candidate_count": len(candidates),
+        "prompt_chars": prompt_chars,
+        "estimate_seconds": _estimate_seconds(len(candidates)),
+    }
+
+    started = time.perf_counter()
+    slots: list[dict[str, Any]] = []
+    try:
+        async for event in _analyze_with_model_stream(template, candidates, config):
+            if event.get("type") == "aligned":
+                slots = list(event.get("slots") or [])
+                continue
+            yield event
+    except Exception as exc:
+        await record_structure_run(
+            session,
+            template_id=template.id,
+            source_key=template.file_object_key,
+            prompt_version=structure_prompt_version(config.structure_prompt),
+            model_name=getattr(config.structure_model, "model", None),
+            candidate_count=len(candidates),
+            slot_keys=[],
+            duration_ms=int((time.perf_counter() - started) * 1000),
+            status="failed",
+            error=str(exc),
+        )
+        raise
+
+    yield {"type": "phase", "phase": "align", "message": f"已识别 {len(slots)} 个填充项，正在合并"}
+
+    await record_structure_run(
+        session,
+        template_id=template.id,
+        source_key=template.file_object_key,
+        prompt_version=structure_prompt_version(config.structure_prompt),
+        model_name=getattr(config.structure_model, "model", None),
+        candidate_count=len(candidates),
+        slot_keys=[str(slot.get("slot_key") or "") for slot in slots],
+        duration_ms=int((time.perf_counter() - started) * 1000),
+    )
+    structure = {
+        "version": STRUCTURE_VERSION,
+        "source_key": template.file_object_key,
+        "analyzed_at": datetime.now(UTC).isoformat(),
+        "slots": slots,
+    }
+    template.template_structure = structure
+    await session.flush()
+    logger.info(
+        "report-gen template structure resolved (stream)",
+        extra={"template_id": str(template.id), "slot_count": len(slots)},
+    )
+    yield {"type": "result", "structure": structure}
+
+
 async def ensure_structure(
     session: AsyncSession,
     template: Any,
@@ -625,6 +784,7 @@ __all__ = [
     "edited_fields_between",
     "enabled_slots",
     "ensure_structure",
+    "ensure_structure_stream",
     "fingerprint",
     "merge_slots",
     "normalize_slot",

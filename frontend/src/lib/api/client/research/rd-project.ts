@@ -17,6 +17,9 @@ import {
   StageTransitionCheck,
   RdDeliverableTemplate,
   RdTrackConclusionVersion,
+  RdDeliverableGenerationOptions,
+  RdDeliverableGenerationStatus,
+  RdDeliverableReportLink,
 } from '@/types/research/rd-project'
 import { apiGet, apiFetchPaginated } from '@/lib/api/client'
 
@@ -93,6 +96,37 @@ export async function fetchDeliverables(projectId: string, params: { stage?: str
   if (params.status) qs.set('status', params.status)
   const result = await apiGet<RdStageDeliverable[]>(`${API_BASE}/research/rd-stage-deliverables?${qs}`)
   return result || []
+}
+
+/**
+ * 阶段交付文档 → AI 生成：向导第 1、2 步的预填值与模板候选。
+ * 一次请求拿齐标题、版本、编码、模板和「是否已有在跑的任务」，向导不必串行取数。
+ */
+export async function fetchDeliverableGenerationOptions(params: {
+  projectId: string
+  stage: string
+  deliverableType: string
+  deliverableId?: string | null
+}): Promise<RdDeliverableGenerationOptions> {
+  const qs = new URLSearchParams({
+    project_id: params.projectId,
+    stage: params.stage,
+    deliverable_type: params.deliverableType,
+  })
+  if (params.deliverableId) qs.set('deliverable_id', params.deliverableId)
+  return apiGet<RdDeliverableGenerationOptions>(`${API_BASE}/research/rd-stage-deliverables/generation/options?${qs}`)
+}
+
+/** 向导第 3 步轮询：只在任务 queued/running 时调用。 */
+export async function fetchDeliverableGenerationStatus(deliverableId: string): Promise<RdDeliverableGenerationStatus> {
+  return apiGet<RdDeliverableGenerationStatus>(`${API_BASE}/research/rd-stage-deliverables/${deliverableId}/generation`)
+}
+
+/** 研发报告列表显示「来源交付文档」：按报告 ID 批量反查，一次请求。 */
+export async function fetchDeliverableReportLinks(reportIds: string[]): Promise<RdDeliverableReportLink[]> {
+  if (!reportIds.length) return []
+  const qs = new URLSearchParams({ report_ids: reportIds.join(',') })
+  return apiGet<RdDeliverableReportLink[]>(`${API_BASE}/research/rd-stage-deliverables/report-links?${qs}`)
 }
 
 export async function fetchExperimentLogs(projectId: string): Promise<RdExperimentLog[]> {

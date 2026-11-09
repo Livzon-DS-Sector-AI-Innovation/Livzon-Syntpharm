@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import {App, Card, Tabs, Tag, Button, Descriptions, Table, Modal, Form, Input, Select, DatePicker, Typography} from 'antd'
-import { ArrowRightOutlined, PlusOutlined } from '@ant-design/icons'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import {App, Card, Tabs, Tag, Button, Descriptions, Table, Modal, Form, Input, Select, DatePicker, Tooltip, Typography} from 'antd'
+import { ArrowLeftOutlined, ArrowRightOutlined, PlusOutlined } from '@ant-design/icons'
 import {
   RdProject, RdProjectStage,
   STAGE_LABELS, STAGE_ORDER,
@@ -19,8 +20,13 @@ import dayjs from 'dayjs'
 import {createMilestone, doTransition} from '@/actions/research/rd-project'
 import { PermissionGate } from '@/components/auth/PermissionGate'
 import { PERM } from '@/lib/permissions/codes'
+import { withReturnTo } from '@/lib/navigation/returnTo'
+import { useSmartBack } from './useSmartBack'
 
 interface Props { project: RdProject }
+
+/** 页签白名单：?tab= 只接受这些值，避免外部链接把页面切到不存在的页签 */
+const TAB_KEYS = ['overview', 'knowledge-base', 'milestones', 'stages', 'deliverables', 'validation', 'filing']
 
 const stageColorMap: Record<string, { color: string; bg: string }> = {
   initiation: { color: '#1677ff', bg: '#e6f4ff' },
@@ -41,8 +47,24 @@ const statusColorMap: Record<string, { color: string; bg: string }> = {
 
 export function ProjectDetailPage({ project }: Props) {
   const { modal, message: msgApi } = App.useApp()
+  const router = useRouter()
+  const pathname = usePathname()
   const queryClient = useQueryClient()
-  const [tab, setTab] = useState('overview')
+  // 允许外部带 ?tab=deliverables 直接落到「阶段交付文档」页签（研发报告里的来源链接就靠它）
+  const searchParams = useSearchParams()
+  const requestedTab = searchParams.get('tab')
+  const [tab, setTab] = useState(
+    requestedTab && TAB_KEYS.includes(requestedTab) ? requestedTab : 'overview'
+  )
+  const smartBack = useSmartBack({ fallbackHref: '/research/projects', fallbackLabel: '项目列表' })
+
+  // 页签写回 URL：从知识库等子页面返回时才能落回原页签，而不是回到「项目总览」
+  const handleTabChange = (key: string) => {
+    setTab(key)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', key)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
 
   const { data: milestones = [], isLoading: milestonesLoading } = useQuery({
     queryKey: ['milestones', project.id],
@@ -159,9 +181,14 @@ export function ProjectDetailPage({ project }: Props) {
           <Card size="small" style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <Typography.Text type="secondary">
-                项目知识库是项目资料的统一入口：资料上传后自动解析，可在项目内检索查阅
+                项目知识库是项目资料的统一入口：资料上传后会自动处理成可检索的文字，可在项目内检索查阅
               </Typography.Text>
-              <Link href={`/research/knowledge-bases?projectId=${project.id}&from=project-detail`}>
+              <Link
+                href={withReturnTo(
+                  `/research/knowledge-bases?projectId=${project.id}&from=project-detail`,
+                  `${pathname}?tab=${tab}`,
+                )}
+              >
                 <Button type="primary" icon={<ArrowRightOutlined />}>
                   进入知识库页面
                 </Button>
@@ -211,7 +238,7 @@ export function ProjectDetailPage({ project }: Props) {
     },
     {
       key: 'deliverables',
-      label: '阶段交付物',
+      label: '阶段交付文档',
       children: <StageDeliverablesTab projectId={project.id} currentStage={project.current_stage} />,
     },
     {
@@ -230,11 +257,22 @@ export function ProjectDetailPage({ project }: Props) {
     <div>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
+          <Tooltip title={smartBack.hint}>
+            <Button
+              type="link"
+              size="small"
+              icon={<ArrowLeftOutlined />}
+              style={{ paddingLeft: 0 }}
+              onClick={smartBack.back}
+            >
+              {smartBack.label}
+            </Button>
+          </Tooltip>
           <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>{project.name}</h1>
           <p style={{ color: '#666', margin: '4px 0 0 0' }}>{project.api_name} {project.cas_number && `| CAS: ${project.cas_number}`}</p>
         </div>
       </div>
-      <Tabs activeKey={tab} onChange={setTab} items={tabs} />
+      <Tabs activeKey={tab} onChange={handleTabChange} items={tabs} />
 
       {/* 里程碑弹窗 */}
       <Modal title="添加里程碑" open={milestoneModalOpen} onOk={handleSaveMilestone} onCancel={() => setMilestoneModalOpen(false)} width={500}>

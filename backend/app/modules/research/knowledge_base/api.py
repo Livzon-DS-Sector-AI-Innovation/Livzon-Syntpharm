@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/limits", summary="知识库上传限制", response_model=KbLimitsResponse)
+@router.get("/limits", summary="能上传多大的文件", response_model=KbLimitsResponse)
 async def read_limits(current_user: RequiredUser) -> Any:
     """前端据此做提交前校验，并可提前提示「知识库服务未配置」。"""
     return build_response(data=await service.limits())
@@ -54,7 +54,7 @@ async def list_knowledge_bases(
     return build_response(data=data)
 
 
-@router.post("", summary="为项目新建知识库", response_model=KnowledgeBaseDataResponse, status_code=201)
+@router.post("", summary="给项目建一个知识库", response_model=KnowledgeBaseDataResponse, status_code=201)
 async def create_knowledge_base(
     payload: KnowledgeBaseCreateRequest,
     current_user: RequiredUser,
@@ -75,7 +75,7 @@ async def create_knowledge_base(
     logger.info("知识库创建完成", extra={"kb_id": str(kb.id), "module_name": "research"})
     return build_response(
         data=service.knowledge_base_payload(kb, project_name=project_name[0][1] if project_name else ""),
-        message="知识库已创建",
+        message="知识库已建好，接下来上传资料",
     )
 
 
@@ -110,11 +110,11 @@ async def delete_knowledge_base(
     return build_response(message="知识库已删除")
 
 
-@router.get("/{kb_id}/documents", summary="文档列表（含解析进度）", response_model=KbDocumentListResponse)
+@router.get("/{kb_id}/documents", summary="资料列表（含入库进度）", response_model=KbDocumentListResponse)
 async def list_documents(
     kb_id: UUID,
     current_user: RequiredUser,
-    refresh: bool = Query(True, description="是否回源 RAGFlow 刷新解析进度"),
+    refresh: bool = Query(True, description="是否到知识库服务刷新入库进度"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """前端轮询此端点展示解析进度；refresh=false 时只读本地镜像（离线也不报错）。"""
@@ -125,7 +125,7 @@ async def list_documents(
     return build_response(data=data)
 
 
-@router.post("/{kb_id}/documents", summary="上传资料并触发解析", response_model=KbUploadResponse)
+@router.post("/{kb_id}/documents", summary="上传资料并开始入库处理", response_model=KbUploadResponse)
 async def upload_documents(
     kb_id: UUID,
     current_user: RequiredUser,
@@ -155,7 +155,7 @@ async def upload_documents(
     )
 
 
-@router.delete("/{kb_id}/documents/{document_row_id}", summary="删除文档", response_model=KbDocumentListResponse)
+@router.delete("/{kb_id}/documents/{document_row_id}", summary="删除资料", response_model=KbDocumentListResponse)
 async def delete_document(
     kb_id: UUID,
     document_row_id: UUID,
@@ -166,11 +166,11 @@ async def delete_document(
     kb = await service.get_knowledge_base(db, kb_id)
     rows = await service.delete_document(db, kb, document_row_id, user_id=current_user.id if current_user else None)
     await db.commit()
-    return build_response(data=[service.document_payload(row) for row in rows], message="文档已删除")
+    return build_response(data=[service.document_payload(row) for row in rows], message="资料已删除")
 
 
 @router.post(
-    "/{kb_id}/documents/{document_row_id}/reparse", summary="重新解析文档", response_model=KbDocumentListResponse
+    "/{kb_id}/documents/{document_row_id}/reparse", summary="重新处理这份资料", response_model=KbDocumentListResponse
 )
 async def reparse_document(
     kb_id: UUID,
@@ -182,16 +182,19 @@ async def reparse_document(
     kb = await service.get_knowledge_base(db, kb_id)
     rows = await service.reparse_document(db, kb, document_row_id)
     await db.commit()
-    return build_response(data=[service.document_payload(row) for row in rows], message="已重新提交解析")
+    return build_response(
+        data=[service.document_payload(row) for row in rows],
+        message="已重新提交处理，稍等片刻看进度",
+    )
 
 
-@router.get("/{kb_id}/documents/{document_row_id}/download", summary="下载资料原件")
+@router.get("/{kb_id}/documents/{document_row_id}/download", summary="下载资料文件")
 async def download_document(
     kb_id: UUID,
     document_row_id: UUID,
     current_user: RequiredUser,
     inline: bool = Query(False, description="true 时以 inline 返回，供浏览器内直接打开预览"),
-    as_pdf: bool = Query(False, description="true 时把 Office 文档转成 PDF 返回（浏览器无法原生渲染 .doc/.xls/.ppt）"),
+    as_pdf: bool = Query(False, description="true 时把 Office 文档转成 PDF 返回（浏览器打不开 .doc/.xls/.ppt 原文件）"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """流式回源 RAGFlow 的资料原件（下载用原件字节；预览可要求转 PDF）。
@@ -217,7 +220,7 @@ async def download_document(
     )
 
 
-@router.get("/{kb_id}/images/{image_id}", summary="切片关联图片")
+@router.get("/{kb_id}/images/{image_id}", summary="文本分段里的图片")
 async def read_document_image(
     kb_id: UUID,
     image_id: str,
@@ -244,7 +247,7 @@ async def read_document_image(
 
 @router.get(
     "/{kb_id}/documents/{document_row_id}/chunks",
-    summary="解析切片（预览解析内容）",
+    summary="查看提取出来的文字分段",
     response_model=KbChunkListResponse,
 )
 async def list_document_chunks(
@@ -252,7 +255,7 @@ async def list_document_chunks(
     document_row_id: UUID,
     current_user: RequiredUser,
     page: int = Query(1, ge=1, description="页码，从 1 开始"),
-    page_size: int = Query(50, ge=1, le=200, description="每页切片数"),
+    page_size: int = Query(50, ge=1, le=200, description="每页显示多少段"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """docx / xls 等浏览器无法直接渲染，预览时用切片看解析结果。"""

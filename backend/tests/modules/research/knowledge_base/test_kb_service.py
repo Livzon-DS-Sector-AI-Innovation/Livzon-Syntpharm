@@ -256,4 +256,4 @@ async def test_document_file_requires_ready_kb() -> None:
     with pytest.raises(BadRequestException) as exc:
         await service.document_file(kb, _doc("DONE"))
 
-    assert "尚未就绪" in str(exc.value)
+    assert "还没准备好" in str(exc.value)

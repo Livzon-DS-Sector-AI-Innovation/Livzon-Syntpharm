@@ -193,9 +193,7 @@ def _markdown_cell(text: str | None, limit: int = 200) -> str:
     return cleaned.replace("|", "／")
 
 
-def _build_comparison(
-    slots: list[SlotFill], unresolved: list[str], meta: dict[str, Any]
-) -> str:
+def _build_comparison(slots: list[SlotFill], unresolved: list[str], meta: dict[str, Any]) -> str:
     lines = [
         "# 槽位对照表",
         "",

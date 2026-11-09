@@ -287,51 +287,47 @@ class LLMClient:
             model_override=model_override,
             config_name=config_name,
         )
+        return _parse_json_payload(raw, expected_keys)
 
-        # Strip markdown code fences if present
-        cleaned = raw.strip()
-        if cleaned.startswith("```"):
-            lines = cleaned.split("\n")
-            for i, line in enumerate(lines):
-                if not line.strip().startswith("```"):
-                    cleaned = "\n".join(lines[i:])
-                    break
-            if cleaned.endswith("```"):
-                cleaned = cleaned[:-3].strip()
+    async def stream_json(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        expected_keys: list[str] | None = None,
+        temperature: float | None = None,
+        max_tokens: int = 16384,
+        config_type: str = "text",
+        model_override: str | None = None,
+        config_name: str | None = None,
+    ) -> Any:
+        """流式请求 JSON：边流边给增量，流完给解析结果。
 
-        try:
-            parsed = json.loads(cleaned)
-        except json.JSONDecodeError as e:
-            raise LLMOutputError("LLM response is not valid JSON", raw) from e
+        yield 三类事件（调用方可以直接转成 SSE）：
+        - ``{"type": "reasoning", "text": "..."}`` 思考增量，模型不透传时没有这类事件
+        - ``{"type": "content", "text": "..."}`` 正文增量（JSON 文本片段）
+        - ``{"type": "result", "data": dict, "raw": str}`` 完整解析结果，只在最后出现一次
 
-        # Handle array responses - merge into single dict
-        if isinstance(parsed, list):
-            if len(parsed) == 0:
-                raise LLMOutputError("LLM returned empty list", raw)
-            if isinstance(parsed[0], dict):
-                merged = {}  # type: ignore[var-annotated]
-                for item in parsed:
-                    for k, v in item.items():
-                        if k in merged and isinstance(v, str):
-                            merged[k] = merged[k] + "；" + v
-                        else:
-                            merged[k] = v
-                parsed = merged
-            else:
-                parsed = {"_raw": raw}
+        与 ``chat_json`` 的区别：不传 ``response_format``（流式下网关支持差异大），
+        改用提示词兜底要求 JSON；解析仍走同一套清洗逻辑，避免两条链路行为不一致。
+        """
+        msgs = _with_json_hint(messages)
+        parts: list[str] = []
+        async for chunk in self.stream_chat(
+            msgs,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            model_override=model_override,
+            config_name=config_name,
+            config_type=config_type,
+        ):
+            if chunk.get("type") == "content":
+                parts.append(str(chunk.get("text") or ""))
+            yield chunk
 
-        # Coerce boolean strings
-        for k, v in parsed.items():
-            if isinstance(v, str) and v.lower() in ("true", "false"):
-                parsed[k] = v.lower() == "true"
-
-        # Validate expected keys
-        if expected_keys:
-            missing = [k for k in expected_keys if k not in parsed]
-            if missing:
-                raise LLMOutputError(f"LLM response missing keys: {missing}", raw)
-
-        return parsed  # type: ignore[no-any-return]
+        raw = "".join(parts)
+        if not raw.strip():
+            raise LLMOutputError("LLM 流式响应为空，没有可解析的 JSON", raw)
+        yield {"type": "result", "data": _parse_json_payload(raw, expected_keys), "raw": raw}
 
     async def chat_vision(
         self,
@@ -524,16 +520,22 @@ class LLMClient:
         temperature: float | None = None,
         max_tokens: int = 4096,
         model_override: str | None = None,
+        config_name: str | None = None,
+        config_type: str = "text",
     ) -> Any:
         """Stream chat completion tokens.
 
         Yields dicts with keys:
             - type: "reasoning" | "content"
             - text: the token text
+
+        ``config_name`` 与 ``model_override`` 语义见 ``chat``：前者整份切换配置，
+        后者只换模型名。流式请求的 httpx timeout 是「两帧之间的读间隔」，
+        因此长文本不再受配置里那个总时长限制。
         """
         import json as json_module
 
-        config = await get_config("text")
+        client, config = await self._get_client_and_config(config_type, config_name)
         temp = temperature if temperature is not None else config.temperature
 
         body = {
@@ -544,48 +546,105 @@ class LLMClient:
             "stream": True,
         }
 
-        async with httpx.AsyncClient(
-            base_url=config.api_base_url.rstrip("/"),
-            headers={
-                "Authorization": f"Bearer {config.api_key}",
-                "Content-Type": "application/json",
-            },
-            timeout=config.timeout_seconds,
-        ) as client:
-            async with client.stream("POST", "/chat/completions", json=body) as resp:
-                if resp.status_code == 429:
-                    raise LLMRateLimitError("Rate limit exceeded", status_code=429)
+        async with client.stream("POST", "/chat/completions", json=body) as resp:
+            if resp.status_code == 429:
+                raise LLMRateLimitError("Rate limit exceeded", status_code=429)
 
-                if resp.is_error:
-                    error_text = await resp.aread()
-                    raise LLMProviderError(
-                        f"Stream API error: {resp.status_code} - {error_text.decode()[:500]}",
-                        status_code=resp.status_code,
-                    )
+            if resp.is_error:
+                error_text = await resp.aread()
+                raise LLMProviderError(
+                    f"Stream API error: {resp.status_code} - {error_text.decode()[:500]}",
+                    status_code=resp.status_code,
+                )
 
-                async for line in resp.aiter_lines():
-                    if not line or not line.startswith("data: "):
+            async for line in resp.aiter_lines():
+                if not line or not line.startswith("data: "):
+                    continue
+
+                data = line[6:]  # Remove "data: " prefix
+                if data == "[DONE]":
+                    break
+
+                try:
+                    chunk = json_module.loads(data)
+                    if not chunk.get("choices"):
                         continue
 
-                    data = line[6:]  # Remove "data: " prefix
-                    if data == "[DONE]":
-                        break
+                    delta = chunk["choices"][0].get("delta", {})
+                    reasoning = delta.get("reasoning_content")
+                    content = delta.get("content")
 
-                    try:
-                        chunk = json_module.loads(data)
-                        if not chunk.get("choices"):
-                            continue
+                    if reasoning:
+                        yield {"type": "reasoning", "text": reasoning}
+                    if content:
+                        yield {"type": "content", "text": content}
+                except json_module.JSONDecodeError:
+                    continue
 
-                        delta = chunk["choices"][0].get("delta", {})
-                        reasoning = delta.get("reasoning_content")
-                        content = delta.get("content")
 
-                        if reasoning:
-                            yield {"type": "reasoning", "text": reasoning}
-                        if content:
-                            yield {"type": "content", "text": content}
-                    except json_module.JSONDecodeError:
-                        continue
+def _with_json_hint(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """流式请求没有 response_format，用提示词兜底要求 JSON（与 chat 的行为一致）。"""
+    msgs = [dict(m) for m in messages]
+    if not msgs:
+        return msgs
+    last = msgs[-1]
+    if isinstance(last.get("content"), str) and "json" not in last["content"].lower():
+        last["content"] = last["content"] + "\n\n请以 JSON 格式返回结果。"
+    return msgs
+
+
+def _parse_json_payload(raw: str, expected_keys: list[str] | None = None) -> dict[str, Any]:
+    """把模型输出的 JSON 文本解析成 dict。
+
+    ``chat_json`` 与 ``stream_json`` 共用这一段：两条链路如果各写一份清洗逻辑，
+    出现「非流式能解析、流式解析不了」这类问题时很难定位。
+    """
+    cleaned = raw.strip()
+    if cleaned.startswith("```"):
+        lines = cleaned.split("\n")
+        for i, line in enumerate(lines):
+            if not line.strip().startswith("```"):
+                cleaned = "\n".join(lines[i:])
+                break
+        if cleaned.endswith("```"):
+            cleaned = cleaned[:-3].strip()
+
+    try:
+        parsed = json.loads(cleaned)
+    except json.JSONDecodeError as e:
+        raise LLMOutputError("LLM response is not valid JSON", raw) from e
+
+    # Handle array responses - merge into single dict
+    if isinstance(parsed, list):
+        if len(parsed) == 0:
+            raise LLMOutputError("LLM returned empty list", raw)
+        if isinstance(parsed[0], dict):
+            merged: dict[str, Any] = {}
+            for item in parsed:
+                for k, v in item.items():
+                    if k in merged and isinstance(v, str):
+                        merged[k] = merged[k] + "；" + v
+                    else:
+                        merged[k] = v
+            parsed = merged
+        else:
+            parsed = {"_raw": raw}
+
+    if not isinstance(parsed, dict):
+        raise LLMOutputError("LLM response is not a JSON object", raw)
+
+    # Coerce boolean strings
+    for k, v in parsed.items():
+        if isinstance(v, str) and v.lower() in ("true", "false"):
+            parsed[k] = v.lower() == "true"
+
+    # Validate expected keys
+    if expected_keys:
+        missing = [k for k in expected_keys if k not in parsed]
+        if missing:
+            raise LLMOutputError(f"LLM response missing keys: {missing}", raw)
+
+    return parsed
 
 
 def _looks_like_tools_unsupported(error_text: str) -> bool:

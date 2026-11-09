@@ -34,6 +34,7 @@ class DocGenTemplateVersionItem(BaseModel):
     file_size: int | None = None
     template_code: str | None = None
     change_note: str | None = None
+    kind: str = "template"
     is_current: bool = False
     created_by: UUID | None = None
     created_by_name: str | None = None
@@ -72,6 +73,26 @@ class DocGenOperationResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
+
+
+class DocGenTemplateSampleData(BaseModel):
+    """填充示例稿生成结果：版本标识 + 覆盖率统计。"""
+
+    version_id: str
+    version_no: int
+    file_name: str | None = None
+    slot_count: int = 0
+    skipped_count: int = 0
+    unresolved_count: int = 0
+    generated_at: datetime
+
+
+class DocGenTemplateSampleResponse(BaseModel):
+    """POST /deliverable-templates/{id}/sample 响应。"""
+
+    code: int = 200
+    message: str = "success"
+    data: DocGenTemplateSampleData
 
 
 class DocGenBatchUploadResult(BaseModel):

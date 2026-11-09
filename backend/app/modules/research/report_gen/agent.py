@@ -36,15 +36,17 @@ from app.modules.research.models import (
     RdReportGenSlot,
     RdReportGenStep,
 )
+from app.modules.research.report_gen import versions
 from app.modules.research.report_gen.config import ReportGenConfig, load_config
 from app.modules.research.report_gen.examples import load_examples
+from app.modules.research.report_gen.fills import slot_fill
 from app.modules.research.report_gen.model_binding import ModelBinding, resolve_bindings
 from app.modules.research.report_gen.prompts import (
     AGENT_JSON_PROTOCOL_PROMPT,
     AGENT_SYSTEM_PROMPT,
     render_prompt,
 )
-from app.modules.research.report_gen.render import SlotFill, render_document
+from app.modules.research.report_gen.render import render_document
 from app.modules.research.report_gen.structure import enabled_slots, ensure_structure
 from app.modules.research.report_gen.tools import (
     ReportGenRuntime,
@@ -186,20 +188,6 @@ async def _ensure_slot_rows(
     return rows
 
 
-def _slot_fill(row: RdReportGenSlot) -> SlotFill:
-    return SlotFill(
-        slot_key=row.slot_key,
-        label=row.slot_label,
-        anchor=row.anchor,
-        location=str((row.anchor or {}).get("location") or "") or None,
-        value=row.value,
-        state=row.state,
-        source_name=row.source_name,
-        evidence=row.evidence,
-        owner_hint=row.owner_hint,
-    )
-
-
 def _system_prompt_for(
     config: ReportGenConfig,
     *,
@@ -304,7 +292,7 @@ async def _call_llm[T](
         )
         await steps.add(
             "status",
-            f"主模型 {switch.main.display or '默认'} 调用失败，已切换兜底模型 {switch.fallback.display}",
+            f"主模型 {switch.main.display or '默认'} 调用失败，已换用自动补齐模型 {switch.fallback.display}",
             status="failed",
         )
         return await call(switch.current)
@@ -339,9 +327,7 @@ async def _run_tools_round(
 
     if not response.tool_calls:
         messages.append({"role": "assistant", "content": response.content or ""})
-        messages.append(
-            {"role": "user", "content": "请继续：要填写槽位就调用工具；全部处理完调用 finalize。"}
-        )
+        messages.append({"role": "user", "content": "请继续：要填写槽位就调用工具；全部处理完调用 finalize。"})
         return runtime.finalized
 
     messages.append(
@@ -492,12 +478,12 @@ async def _render_and_store(
     steps: _StepWriter,
 ) -> None:
     if not job.template_file_key:
-        raise RuntimeError("任务缺少母本存储键，无法出稿")
+        raise RuntimeError("这次生成没有记录用哪份 Word 模板文件，没法出稿。请回到报告列表点「编辑」重新选模板再生成。")
     template_bytes = store.load_bytes(job.template_file_key)
     if not template_bytes:
-        raise RuntimeError("母本文件已丢失，无法出稿")
+        raise RuntimeError("找不到这次生成要用的 Word 模板文件，可能已经被删除。请重新选一份模板再生成。")
 
-    fills = [_slot_fill(row) for row in slot_rows.values()]
+    fills = [slot_fill(row) for row in slot_rows.values()]
     meta = {
         "title": report.title,
         "doc_code": job.doc_code,
@@ -519,14 +505,21 @@ async def _render_and_store(
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
     job.comparison_object_key = store.save_bytes(
-        f"{safe_title}-槽位对照表.md",
+        f"{safe_title}-填充项对照表.md",
         output.comparison_markdown.encode("utf-8"),
         "text/markdown; charset=utf-8",
     )
     await steps.add(
         "status",
-        f"成品已生成：写入 {output.filled} 个槽位，缺口 {output.gaps} 个",
-        result=f"未定位槽位：{', '.join(output.unresolved) if output.unresolved else '无'}",
+        f"文档已生成：写入 {output.filled} 个填充项，未填 {output.gaps} 个",
+        result=f"没找到对应位置的填充项：{', '.join(output.unresolved) if output.unresolved else '无'}",
+    )
+    # 留一版 ai_draft：后续人工重渲/上传都会新增版本，初稿始终可回溯
+    await versions.record_ai_draft(
+        session,
+        job,
+        file_name=job.document_file_name,
+        file_size=len(output.document),
     )
     await session.commit()
 
@@ -535,22 +528,22 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
     report = await session.get(RdReport, job.report_id)
     project = await session.get(RdProject, job.project_id)
     if report is None or project is None:
-        raise RuntimeError("报告或研发项目不存在，无法生成")
+        raise RuntimeError("找不到这份报告或它所属的项目，可能已经被删除。")
 
     template = None
     if job.deliverable_template_id:
         template = await session.get(RdDeliverableTemplate, job.deliverable_template_id)
     if template is None:
-        raise RuntimeError("该报告没有关联交付物模板，无法生成")
+        raise RuntimeError("这份报告还没有选 Word 模板文件，先点「编辑」选一份再生成。")
 
     job.status = "running"
     job.started_at = _utcnow()
     job.progress = 2
-    job.current_step = "解析 Word 母本结构"
+    job.current_step = "分析 Word 模板结构"
     await session.commit()
 
     steps = _StepWriter(session, job, config.max_steps)
-    await steps.add("status", "任务开始：解析 Word 母本结构")
+    await steps.add("status", "任务开始：分析 Word 模板结构")
 
     structure = await ensure_structure(session, template, config)
     await session.commit()
@@ -562,11 +555,9 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
     disabled_count = len(structure.get("slots") or []) - len(enabled_structure["slots"])
     await steps.add(
         "status",
-        f"母本解析完成，识别到 {len(enabled_structure['slots'])} 个槽位"
+        f"模板分析完成，识别到 {len(enabled_structure['slots'])} 个填充项"
         + (f"（已按配置停用 {disabled_count} 个）" if disabled_count else ""),
-        result=json.dumps(
-            [slot.get("label") for slot in enabled_structure["slots"]][:40], ensure_ascii=False
-        ),
+        result=json.dumps([slot.get("label") for slot in enabled_structure["slots"]][:40], ensure_ascii=False),
     )
     if disabled_count:
         logger.info(
@@ -633,9 +624,7 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
 
         try:
             if mode == "tools":
-                finished = await _run_tools_round(
-                    session, messages, runtime, steps, config, switch, tool_specs
-                )
+                finished = await _run_tools_round(session, messages, runtime, steps, config, switch, tool_specs)
             else:
                 finished = await _run_json_round(messages, runtime, steps, config, switch)
         except LLMToolsUnsupportedError:
@@ -655,7 +644,7 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
 
     await _close_untouched_slots(slot_rows)
     _apply_slot_progress(job, slot_rows)
-    job.current_step = "回写 Word 母本"
+    job.current_step = "写入 Word 模板文件"
     job.progress = 92
     await session.commit()
 
@@ -667,6 +656,13 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
     job.current_step = "已完成"
     job.finished_at = _utcnow()
     await steps.add("status", "任务完成")
+
+    # 若这次生成是从「阶段交付文档」发起的，把 docx 落进该交付文档的附件并回写关联。
+    # 内部吞异常：附件复制失败不能让已出稿的任务判成失败，用户仍可从报告详情下载。
+    from app.modules.research.deliverable_generation import sync_job_result
+
+    await sync_job_result(session, job)
+
     await session.commit()
     logger.info(
         "report-gen job completed",

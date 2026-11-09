@@ -209,7 +209,7 @@ async def test_main_model_failure_switches_to_fallback_once() -> None:
     assert switch.switched is True
     assert job.used_fallback is True
     assert steps.records[0][0] == "status"
-    assert "兜底" in steps.records[0][1]
+    assert "自动补齐" in steps.records[0][1]
 
 
 @pytest.mark.asyncio

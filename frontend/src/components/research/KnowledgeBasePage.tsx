@@ -7,15 +7,17 @@
  * - 未选项目：KnowledgeBaseOverview 一览各项目知识库状态，点行即切到该项目
  * - 选中项目：KnowledgeBaseManager 管理该项目的资料（与新建报告弹窗内的弹窗版共用）
  */
-import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
-import { Button, Card, Select, Space } from 'antd'
+import { Button, Card, Select, Space, Tooltip } from 'antd'
 import { RollbackOutlined } from '@ant-design/icons'
 import { fetchRdProjects } from '@/lib/api/client/research/rd-project'
 import type { RdProject } from '@/types/research/rd-project'
 import { KnowledgeBaseManager } from './KnowledgeBaseManager'
 import { KnowledgeBaseOverview } from './KnowledgeBaseOverview'
 import { ALL_PROJECTS_VALUE, useProjectFilter } from './useProjectFilter'
+import { ModuleGuide } from './ModuleGuide'
+import { useSmartBack } from './useSmartBack'
+import { KB_COPY } from '@/lib/ui/research-copy'
 
 const STORAGE_KEY = 'research:knowledge-bases:projectId'
 
@@ -51,6 +53,12 @@ export function KnowledgeBasePage({
     soleProjectId: projects[0]?.id,
   })
 
+  // 回项目详情：优先按来源签名回到原页签，无来源时落回知识库页签
+  const smartBack = useSmartBack({
+    fallbackHref: `/research/projects/${projectId}?tab=knowledge-base`,
+    fallbackLabel: '项目详情',
+  })
+
   const options = [
     { value: ALL_PROJECTS_VALUE, label: '全部项目（知识库总览）' },
     ...projects.map((p) => ({ value: p.id, label: `${p.name} (${p.api_name})` })),
@@ -60,23 +68,23 @@ export function KnowledgeBasePage({
     <div>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>项目知识库</h1>
-          <p style={{ color: '#666', margin: '4px 0 0 0' }}>
-            每个研发项目一个知识库：上传项目资料后自动解析，供项目内检索与资料查阅
-          </p>
+          <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>{KB_COPY.title}</h1>
+          <p style={{ color: '#666', margin: '4px 0 0 0' }}>{KB_COPY.subtitle}</p>
         </div>
         {fromProjectDetail && projectId ? (
           <Space>
-            <Link href={`/research/projects/${projectId}`}>
-              <Button icon={<RollbackOutlined />}>返回项目详情</Button>
-            </Link>
+            <Tooltip title={smartBack.hint}>
+              <Button icon={<RollbackOutlined />} onClick={smartBack.back}>
+                {smartBack.label}
+              </Button>
+            </Tooltip>
           </Space>
         ) : null}
       </div>
 
       <Card style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span>项目：</span>
+          <span>选择项目：</span>
           <Select
             style={{ minWidth: 320 }}
             loading={isLoading}
@@ -87,10 +95,12 @@ export function KnowledgeBasePage({
             optionFilterProp="label"
           />
           <span style={{ color: '#999' }}>
-            {projectId ? '正在管理该项目的知识库' : '已汇总全部项目，可选择项目进行管理'}
+            {projectId ? '正在管理这个项目的知识库' : '下面汇总了所有项目的情况，选中某个项目可以上传和管理资料'}
           </span>
         </div>
       </Card>
+
+      <ModuleGuide title={KB_COPY.guideTitle} steps={KB_COPY.guideSteps} compact={Boolean(projectId)} />
 
       {projectId ? (
         <KnowledgeBaseManager projectId={projectId} variant="page" />

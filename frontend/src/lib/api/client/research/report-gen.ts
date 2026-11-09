@@ -105,9 +105,15 @@ function pickFileName(disposition: string | null, fallback: string): string {
   return plain ? plain[1] : fallback
 }
 
-/** 取成品 docx 的 Blob，用于在线预览（预览组件自己渲染）。 */
-export async function fetchReportGenDocumentBlob(jobId: string): Promise<Blob> {
-  const response = await fetch(`${API_BASE}/jobs/${jobId}/document`, {
+/**
+ * 取成品 docx（或对照表 Markdown）的 Blob，用于在线预览。
+ * @param kind document=成品 Word；comparison=槽位填充对照表（纯文本 Markdown）
+ */
+export async function fetchReportGenDocumentBlob(
+  jobId: string,
+  kind: 'document' | 'comparison' = 'document',
+): Promise<Blob> {
+  const response = await fetch(`${API_BASE}/jobs/${jobId}/${kind}`, {
     method: 'GET',
     headers: authHeaders(),
     credentials: 'include',

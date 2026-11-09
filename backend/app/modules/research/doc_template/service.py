@@ -1,13 +1,15 @@
-"""交付物模板服务层：Word 母本的上传留档、版本历史、下载与回滚。
+"""交付物模板服务层：Word 母本的上传留档、版本历史、下载、回滚与填充示例稿。
 
 上传路径刻意不解析母本结构、不推断填充项：模板在这里只是一份带版本历史的 Word 原件。
 只有「槽位结构」相关接口会临时扁平化母本（认位置，不调模型），供人工核对与重解析。
+示例稿同样不调模型：拿已保存的槽位在母本上就地写标记，再作为 ``kind='sample'`` 留档。
 """
 
 from __future__ import annotations
 
 import logging
 import uuid
+from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -27,6 +29,20 @@ _ZIP_MAGIC = b"PK\x03\x04"
 _OLE_MAGIC = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
 MAX_TEMPLATE_BYTES = 50 * 1024 * 1024
 
+# 版本类型：母本与填充示例稿共表留档，靠该列区分；示例稿永不成为当前版本
+VERSION_KIND_TEMPLATE = "template"
+VERSION_KIND_SAMPLE = "sample"
+
+# 无示例写法、也没写填写说明时，按字段类型给一个格式样例，让人知道该填什么形状
+_SAMPLE_FORMAT_HINTS = {
+    "text": "填写文本",
+    "long_text": "填写段落说明",
+    "number": "填数字",
+    "date": "YYYY-MM-DD",
+    "list": "条目1；条目2",
+}
+_SAMPLE_VALUE_MAX = 200
+
 
 def sniff_word_ext(filename: str, data: bytes) -> str:
     """校验文件内容与扩展名一致，返回规范化扩展名。
@@ -36,16 +52,25 @@ def sniff_word_ext(filename: str, data: bytes) -> str:
     """
     ext = Path(filename).suffix.lower()
     if ext not in WORD_EXTENSIONS:
-        raise BadRequestException(f"不支持的模板格式：{ext or '未知'}（仅支持 {'、'.join(sorted(WORD_EXTENSIONS))}）")
+        raise BadRequestException(
+            f"这个文件不是 Word 文档（{ext or '未知格式'}）。请上传 {'、'.join(sorted(WORD_EXTENSIONS))} 格式的文件"
+        )
     if not data:
-        raise BadRequestException(f"模板文件为空：{filename}")
+        raise BadRequestException(f"这个文件是空的：{filename}，请换一个文件再上传")
     if len(data) > MAX_TEMPLATE_BYTES:
-        raise BadRequestException(f"模板文件超过 {MAX_TEMPLATE_BYTES // 1024 // 1024}MB 上限：{filename}")
+        raise BadRequestException(
+            f"这个文件太大了：{filename}（上限 {MAX_TEMPLATE_BYTES // 1024 // 1024}MB），请压缩后再上传"
+        )
     head = data[:8]
     if ext in {".docx", ".dotx"} and not head.startswith(_ZIP_MAGIC):
-        raise BadRequestException(f"文件内容与扩展名不符（{filename} 不是真正的 Word XML 文档）")
+        raise BadRequestException(
+            f"这个文件打不开：{filename} 只是改了后缀名，内容不是 Word 文档。请在 Word 里另存为 .docx 再上传"
+        )
     if ext == ".doc" and not head.startswith(_OLE_MAGIC):
-        raise BadRequestException(f"文件内容与扩展名不符（{filename} 不是真正的 Word 97-2003 文档）")
+        raise BadRequestException(
+            f"这个文件打不开：{filename} 只是改了后缀名，内容不是 Word 97-2003 文档。"
+            "请在 Word 里另存为 .doc 或 .docx 再上传"
+        )
     return ext
 
 
@@ -102,12 +127,18 @@ async def _record_template_version(
     key: str,
     change_note: str | None,
     user_id: uuid.UUID | None,
+    kind: str = VERSION_KIND_TEMPLATE,
+    make_current: bool = True,
 ) -> Any:
-    """把刚挂载的母本留档为模板的新版本，并置为当前生效版本。
+    """把一份文件留档为模板的新版本。
 
     版本号在模板行锁内取 ``max(version_no) + 1``：并发上传同一模板不会算出同一个号，
     ``UniqueConstraint(template_id, version_no)`` 是最后一道保险。软删的版本仍占号，
     因此版本号单调递增、永不复用。
+
+    ``make_current=False`` 用于填充示例稿（``kind='sample'``）：只占号留档，
+    不把正在使用的母本版本挤下去，也不参与部分唯一索引。此时调用方必须自行保证
+    不修改模板主表的文件指向。
     """
     from sqlalchemy import func, select, update
 
@@ -126,16 +157,17 @@ async def _record_template_version(
     ).scalar_one_or_none()
     version_no = int(current_max or 0) + 1
 
-    # 旧的当前版本退位；连软删记录一并清掉，保证部分唯一索引不被占用
-    await session.execute(
-        update(RdDeliverableTemplateVersion)
-        .where(
-            RdDeliverableTemplateVersion.template_id == template.id,
-            RdDeliverableTemplateVersion.is_current.is_(True),
+    if make_current:
+        # 旧的当前版本退位；连软删记录一并清掉，保证部分唯一索引不被占用
+        await session.execute(
+            update(RdDeliverableTemplateVersion)
+            .where(
+                RdDeliverableTemplateVersion.template_id == template.id,
+                RdDeliverableTemplateVersion.is_current.is_(True),
+            )
+            .values(is_current=False)
+            .execution_options(synchronize_session=False)
         )
-        .values(is_current=False)
-        .execution_options(synchronize_session=False)
-    )
 
     version = RdDeliverableTemplateVersion(
         template_id=template.id,
@@ -147,7 +179,8 @@ async def _record_template_version(
         template_code=template.template_code,
         template_structure=template.template_structure,
         change_note=(change_note or "").strip() or None,
-        is_current=True,
+        kind=kind,
+        is_current=make_current,
         created_by=user_id,
         updated_by=user_id,
     )
@@ -173,7 +206,7 @@ async def batch_upload_templates(
     from app.modules.research.models import RdDeliverableTemplate
 
     if not uploads:
-        raise BadRequestException("请选择至少一个模板文件")
+        raise BadRequestException("还没有选择文件，请先选择要上传的 Word 文档")
 
     created: list[dict[str, str | int]] = []
     versioned: list[dict[str, str | int]] = []
@@ -256,7 +289,7 @@ async def _load_template_or_404(
         stmt = stmt.with_for_update()
     template = (await session.execute(stmt)).scalar_one_or_none()
     if template is None or template.is_deleted:
-        raise NotFoundException("模板不存在")
+        raise NotFoundException("模板")
     return template
 
 
@@ -285,10 +318,10 @@ async def template_download_payload(session: AsyncSession, template_id: uuid.UUI
     """取模板「当前生效版本」的母本字节流，返回 (data, 下载文件名, MIME)。"""
     template = await _load_template_or_404(session, template_id)
     if not template.file_object_key:
-        raise NotFoundException("该模板尚未上传 Word 模板原件")
+        raise BadRequestException("这个模板还没有上传 Word 文件，请先上传")
     data = store.load_bytes(template.file_object_key)
     if data is None:
-        raise NotFoundException("模板文件读取失败（存储不可用或文件已被清理）")
+        raise BadRequestException("打不开这个 Word 文件，可能已被清理，请重新上传")
     ext = template.file_ext or ".docx"
     return data, f"{template.name}{ext}", _template_mime(ext)
 
@@ -302,7 +335,7 @@ async def _get_template_version(
     template = await _load_template_or_404(session, template_id)
     version = await session.get(RdDeliverableTemplateVersion, version_id)
     if version is None or version.is_deleted or version.template_id != template.id:
-        raise NotFoundException("模板版本不存在")
+        raise NotFoundException("历史版本")
     return template, version
 
 
@@ -316,8 +349,10 @@ async def template_version_download_payload(
     template, version = await _get_template_version(session, template_id, version_id)
     data = store.load_bytes(version.file_object_key)
     if data is None:
-        raise NotFoundException("该版本文件读取失败（存储不可用或文件已被清理）")
+        raise BadRequestException("打不开这个历史版本的文件，可能已被清理")
     ext = version.file_ext or ".docx"
+    if getattr(version, "kind", VERSION_KIND_TEMPLATE) == VERSION_KIND_SAMPLE:
+        return data, f"{template.name}-填充示例-v{version.version_no}{ext}", _template_mime(ext)
     return data, f"{template.name}-v{version.version_no}{ext}", _template_mime(ext)
 
 
@@ -364,6 +399,7 @@ async def list_template_versions(session: AsyncSession, template_id: uuid.UUID) 
             "file_size": row.file_size,
             "template_code": row.template_code,
             "change_note": row.change_note,
+            "kind": row.kind,
             "is_current": row.is_current,
             "created_by": row.created_by,
             "created_by_name": names.get(row.created_by) if row.created_by is not None else None,
@@ -386,8 +422,12 @@ async def restore_template_version(
     避免出现「旧母本 + 新槽位」的错配。
     """
     template, version = await _get_template_version(session, template_id, version_id)
+    if version.kind == VERSION_KIND_SAMPLE:
+        raise BadRequestException(
+            "这是填充示例稿，不是母本文件，不能恢复成当前版本。它只用于对照填写位置，用完可以删掉"
+        )
     if version.is_current:
-        raise BadRequestException(f"v{version.version_no} 已是当前生效版本，无需回滚")
+        raise BadRequestException(f"v{version.version_no} 就是正在使用的版本，不用再恢复")
     # 先让主表等于目标版本，_record_template_version 才能快照到正确的槽位定义
     template.file_object_key = version.file_object_key
     template.file_name = version.file_name
@@ -440,22 +480,156 @@ async def delete_template_version(
 
     template, version = await _get_template_version(session, template_id, version_id)
     if version.is_current:
-        raise BadRequestException("当前生效版本不能删除；如需替换请上传新版本，或先回滚到其他版本")
+        raise BadRequestException("正在使用的版本不能删除。要换掉它，请上传一个新版本；或先恢复别的版本，再删这一个")
     total = (
         await session.execute(
             select(func.count())
             .select_from(RdDeliverableTemplateVersion)
             .where(
                 RdDeliverableTemplateVersion.template_id == template.id,
+                # 只数母本版本：示例稿再多也不该让「唯一母本不能删」的判定失效
+                RdDeliverableTemplateVersion.kind == VERSION_KIND_TEMPLATE,
                 RdDeliverableTemplateVersion.is_deleted.is_(False),
             )
         )
     ).scalar_one()
-    if total <= 1:
-        raise BadRequestException("这是该模板的唯一版本，不能删除")
+    # 示例稿不是母本，删它不会让模板失去可用文件，不受「唯一版本」限制
+    if version.kind == VERSION_KIND_TEMPLATE and total <= 1:
+        raise BadRequestException("这是这个模板唯一的一份文件，删掉就没有可用的模板了，不能删除")
     version.is_deleted = True
     version.updated_by = user_id
     await session.flush()
+
+
+# ===== 填充示例稿：按已保存的填充项在母本上就地写标记 =====
+
+
+def _one_line(text: str) -> str:
+    """把可能的多行内容折成一行：多行值会触发渲染器插段，改变母本版式。"""
+    return "；".join(part.strip() for part in text.splitlines() if part.strip())
+
+
+def _sample_text(slot: dict[str, Any], example: str | None) -> str:
+    """构造单个填充项在示例稿里的标记文本。
+
+    母本常自带「品种名称：____」这类标签，此时省略标记里的 label，
+    否则会渲染成「品种名称：【品种名称｜示例：…】」。
+    """
+    label = str(slot.get("label") or slot.get("slot_key") or "").strip()
+    value = _one_line(str(example or ""))[:_SAMPLE_VALUE_MAX]
+    if value:
+        body = f"示例：{value}"
+    else:
+        hint = _one_line(str(slot.get("hint") or ""))[:120]
+        if not hint:
+            value_type = str(slot.get("value_type") or "text")
+            hint = _SAMPLE_FORMAT_HINTS.get(value_type, _SAMPLE_FORMAT_HINTS["text"])
+        body = f"必填：{hint}"
+        owner = str(slot.get("owner_hint") or "").strip()
+        if owner:
+            body += f"（责任：{owner}）"
+    anchor_text = str((slot.get("anchor") or {}).get("text") or "")
+    prefix = f"{label}｜" if label and label not in anchor_text else ""
+    return f"【{prefix}{body}】"
+
+
+def _sample_fills(slots: list[dict[str, Any]], examples: dict[str, str]) -> list[Any]:
+    """把已启用且绑定位置的槽位转成渲染器入参；未启用/未绑定的一律跳过。"""
+    from app.modules.research.report_gen.render import SlotFill
+
+    fills: list[Any] = []
+    for slot in slots:
+        if slot.get("is_enabled") is False:
+            continue
+        anchor = slot.get("anchor")
+        if not isinstance(anchor, dict) or not anchor:
+            continue
+        slot_key = str(slot.get("slot_key") or "").strip()
+        if not slot_key:
+            continue
+        fills.append(
+            SlotFill(
+                slot_key=slot_key,
+                label=str(slot.get("label") or slot_key),
+                anchor=anchor,
+                location=slot.get("location"),
+                # state=filled 才会写值；否则渲染器会写「待补充（部门）」
+                value=_sample_text(slot, examples.get(slot_key)),
+                state="filled",
+                source_name="示例稿",
+            )
+        )
+    return fills
+
+
+async def generate_sample_document(
+    session: AsyncSession,
+    template_id: uuid.UUID,
+    user_id: uuid.UUID | None = None,
+) -> dict[str, Any]:
+    """按已保存的填充项，在母本原件上就地标注，生成一份可对照的示例稿。
+
+    只读模板主表的结构与母本字节，产出单独存为新版本（``kind='sample'``、
+    ``is_current=False``），不修改模板主表指向的文件——母本当前版本必须保持不变。
+    """
+    from app.modules.research.report_gen.examples import load_all_examples
+    from app.modules.research.report_gen.render import render_document
+
+    template = await _load_template_or_404(session, template_id)
+    if not template.file_object_key:
+        raise BadRequestException("这个模板还没有上传 Word 文件，请先上传母本")
+    ext = template.file_ext or ".docx"
+    if ext == ".doc":
+        raise BadRequestException("这份母本是旧的 .doc 格式，无法生成示例稿，请先换一份 .docx 再上传")
+    template_bytes = store.load_bytes(template.file_object_key)
+    if template_bytes is None:
+        raise BadRequestException("打不开这个 Word 文件，可能已被清理，请重新上传")
+
+    structure = template.template_structure if isinstance(template.template_structure, dict) else {}
+    raw_slots = structure.get("slots") or []
+    slots = [item for item in raw_slots if isinstance(item, dict)]
+    examples = await load_all_examples(session, template.id)
+    fills = _sample_fills(slots, examples)
+    if not fills:
+        raise BadRequestException("这个模板还没有可用的填充项：请先识别填充项并保存，且确认它们已启用并绑定位置")
+
+    rendered = render_document(
+        template_bytes,
+        fills,
+        meta={"template_name": template.name, "title": f"{template.name} 填充示例稿"},
+    )
+    key = store.save_bytes(f"sample{ext}", rendered.document, _template_mime(ext))
+    version = await _record_template_version(
+        session,
+        template,
+        filename=f"{template.name}-填充示例{ext}",
+        ext=ext,
+        size=len(rendered.document),
+        key=key,
+        change_note=f"填充示例稿：共标注 {len(fills)} 项",
+        user_id=user_id,
+        kind=VERSION_KIND_SAMPLE,
+        make_current=False,
+    )
+    await session.flush()
+    logger.info(
+        "template sample document generated",
+        extra={
+            "template_id": str(template.id),
+            "version_no": version.version_no,
+            "slot_count": len(fills),
+            "unresolved": len(rendered.unresolved),
+        },
+    )
+    return {
+        "version_id": str(version.id),
+        "version_no": version.version_no,
+        "file_name": version.file_name,
+        "slot_count": len(fills),
+        "skipped_count": len(slots) - len(fills),
+        "unresolved_count": len(rendered.unresolved),
+        "generated_at": datetime.now(UTC),
+    }
 
 
 # ===== 槽位结构：AI 识别结果的人工查看与编辑 =====
@@ -486,7 +660,7 @@ def _load_candidates(template: Any) -> list[dict[str, Any]]:
         return []
     data = store.load_bytes(template.file_object_key)
     if not data:
-        raise BadRequestException("母本文件已丢失，请重新上传模板")
+        raise BadRequestException("这个模板的 Word 文件丢了，请重新上传")
     document = open_document(data)
     return build_candidates(paragraph_refs(document), cell_refs(document))
 
@@ -520,7 +694,7 @@ async def template_slots_payload(session: AsyncSession, template_id: uuid.UUID) 
 
     template = await _load_template_or_404(session, template_id)
     if not template.file_object_key:
-        raise BadRequestException("该模板还没有上传 Word 母本，无法查看槽位结构")
+        raise BadRequestException("这个模板还没有上传 Word 文件，暂时看不到可填位置")
 
     structure = normalize_structure(template.template_structure)
     candidates = _load_candidates(template)
@@ -574,7 +748,9 @@ def _resolve_slots(raw_slots: list[dict[str, Any]], candidates: list[dict[str, A
         elif isinstance(raw.get("anchor"), dict):
             candidate = by_anchor.get(anchor_key(raw["anchor"]))
         if candidate is None:
-            raise BadRequestException(f"{key} 绑定的位置不在当前母本中，请重新识别或换个位置")
+            raise BadRequestException(
+                f"「{key}」用到的位置在当前 Word 文件里找不到了。请点「重新分析结构」，或改选另一个可填位置"
+            )
         resolved.append(
             normalize_slot({**raw, "anchor": candidate["anchor"], "location": candidate["label"]})
         )
@@ -631,19 +807,19 @@ async def save_template_slots(
 
     template = await _load_template_or_404(session, template_id, for_update=True)
     if not template.file_object_key:
-        raise BadRequestException("该模板还没有上传 Word 母本，无法保存槽位结构")
+        raise BadRequestException("这个模板还没有上传 Word 文件，没法保存填充项")
 
     current = normalize_structure(template.template_structure)
     if structure_is_stale(current, template.file_object_key):
-        raise BadRequestException("母本已换版，请先「重新识别」槽位结构再保存，避免把旧位置写到新母本上")
+        raise BadRequestException("Word 文件换了新版本，请先点「重新分析结构」，再把填充项保存到新文件上")
 
     candidates = _load_candidates(template)
     if not candidates:
-        raise BadRequestException("母本中没有可填写的位置，无法保存槽位结构")
+        raise BadRequestException("这个 Word 文件里没有找到可填的位置，请换一个文件或手动分析后再试")
 
     stored_token = _structure_token(current)
     if stored_token and token != stored_token:
-        raise BadRequestException("槽位结构已被其他人修改，请关闭抽屉重新打开后再改")
+        raise BadRequestException("填充项已被其他人改过，请关闭这个面板重新打开后再改")
 
     slots = _stamp_manual_edits(_resolve_slots(raw_slots, candidates), current["slots"])
     now = _now_iso()
@@ -669,6 +845,31 @@ async def save_template_slots(
     return _save_result(structure, slots, now)
 
 
+async def _prepare_reparse(
+    session: AsyncSession,
+    template_id: uuid.UUID,
+    token: str | None,
+) -> tuple[Any, dict[str, Any], Any]:
+    """重解析的前置校验：模板可读、令牌未过期、运行配置已加载。
+
+    同步与流式两个入口共用，避免「同步能过、流式忘了校验令牌」这类分叉。
+    """
+    from app.modules.research.report_gen.config import load_config
+    from app.modules.research.report_gen.structure import normalize_structure
+
+    template = await _load_template_or_404(session, template_id, for_update=True)
+    if not template.file_object_key:
+        raise BadRequestException("这个模板还没有上传 Word 文件，没法分析结构")
+
+    current = normalize_structure(template.template_structure)
+    stored_token = _structure_token(current)
+    if stored_token and token != stored_token:
+        raise BadRequestException("填充项已被其他人改过，请关闭这个面板重新打开后再改")
+
+    config = await load_config()
+    return template, current, config
+
+
 async def reparse_template_slots(
     session: AsyncSession,
     template_id: uuid.UUID,
@@ -680,24 +881,13 @@ async def reparse_template_slots(
     返回里同时带 ``ai_slots``（本次识别原始结果）与 ``slots``（合并后结果），
     差异展示只走响应，不落库。
     """
-    from app.modules.research.report_gen.config import load_config
     from app.modules.research.report_gen.structure import (
         STRUCTURE_VERSION,
         ensure_structure,
         merge_slots,
-        normalize_structure,
     )
 
-    template = await _load_template_or_404(session, template_id, for_update=True)
-    if not template.file_object_key:
-        raise BadRequestException("该模板还没有上传 Word 母本，无法识别槽位结构")
-
-    current = normalize_structure(template.template_structure)
-    stored_token = _structure_token(current)
-    if stored_token and token != stored_token:
-        raise BadRequestException("槽位结构已被其他人修改，请关闭抽屉重新打开后再改")
-
-    config = await load_config()
+    template, current, config = await _prepare_reparse(session, template_id, token)
     fresh = await ensure_structure(session, template, config, force=True)
     ai_slots: list[dict[str, Any]] = list(fresh.get("slots") or [])
     merged, stats = merge_slots(current["slots"], ai_slots)
@@ -728,4 +918,64 @@ async def reparse_template_slots(
         **_save_result(structure, merged, now),
         "ai_slots": ai_slots,
         "stats": stats,
+    }
+
+
+async def reparse_template_slots_stream(
+    session: AsyncSession,
+    template_id: uuid.UUID,
+    token: str | None,
+    user_id: uuid.UUID | None = None,
+) -> AsyncIterator[dict[str, Any]]:
+    """重解析的流式版本：边分析边推事件，最后给合并结果。
+
+    与同步版共用 ``_prepare_reparse`` 和 ``merge_slots``，只是把等待过程暴露出来。
+    收尾必须自己 commit：SSE 生成器在响应体内运行，API 层拿不到它的返回值，
+    依赖注入的 session 也不会替它提交。
+    """
+    from app.modules.research.report_gen.structure import (
+        STRUCTURE_VERSION,
+        ensure_structure_stream,
+        merge_slots,
+    )
+
+    template, current, config = await _prepare_reparse(session, template_id, token)
+
+    ai_slots: list[dict[str, Any]] = []
+    async for event in ensure_structure_stream(session, template, config, force=True):
+        if event.get("type") != "result":
+            yield event
+            continue
+        ai_slots = list((event.get("structure") or {}).get("slots") or [])
+
+    merged, stats = merge_slots(current["slots"], ai_slots)
+    now = _now_iso()
+    structure = {
+        "version": STRUCTURE_VERSION,
+        "source_key": template.file_object_key,
+        "analyzed_at": now,
+        "edited_at": now,
+        "edited_by": str(user_id) if user_id else None,
+        "slots": merged,
+    }
+    template.template_structure = structure
+    template.updated_by = user_id
+    await session.flush()
+    await session.commit()
+    logger.info(
+        "template slots reparsed (stream)",
+        extra={
+            "template_id": str(template.id),
+            "ai_slots": len(ai_slots),
+            "merged_slots": len(merged),
+            **stats,
+        },
+    )
+    yield {
+        "type": "result",
+        "data": {
+            **_save_result(structure, merged, now),
+            "ai_slots": ai_slots,
+            "stats": stats,
+        },
     }

@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchRaw, getApiBaseUrl } from '@/lib/api/server/base'
+import { apiFetch, apiFetchData, apiFetchRaw, getApiBaseUrl } from '@/lib/api/server/base'
 import type { OptimizationCreate, OptimizationUpdate, ProcessOptimization, RouteCreate, RouteUpdate, RouteDevelopment } from '@/types/research'
 import type { components } from '@/types/generated/schema'
 
@@ -76,6 +76,25 @@ export async function deleteDeliverable(id: string) {
 
 export async function uploadDeliverableFile(deliverableId: string, formData: FormData) {
   return uploadFetch(`${getApiBaseUrl()}/api/v1/research/rd-stage-deliverables/${deliverableId}/upload`, formData)
+}
+
+/** 在阶段交付文档里直接发起一次 AI 生成；生成在后台任务里跑，这里只拿回三个 id。 */
+export async function generateDeliverableReport(data: {
+  project_id: string
+  stage: string
+  deliverable_type: string
+  deliverable_id?: string | null
+  template_id?: string | null
+  title?: string | null
+  version?: string | null
+  doc_code?: string | null
+  drug_name?: string | null
+  supplement_text?: string | null
+}) {
+  return apiFetchData<components['schemas']['RdStageDeliverableGenerateResult']>(
+    `${getApiBaseUrl()}/api/v1/research/rd-stage-deliverables/generate`,
+    { method: 'POST', body: JSON.stringify(data) },
+  )
 }
 
 // ===== modules.ts - Pilot Studies =====

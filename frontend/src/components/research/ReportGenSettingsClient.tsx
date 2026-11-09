@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeftOutlined } from '@ant-design/icons'
 import {
@@ -36,6 +35,7 @@ import {
   type ReportGenModelSlot,
 } from '@/types/research/report-gen'
 import { ReportGenAgentPanel } from './ReportGenAgentPanel'
+import { useSmartBack } from './useSmartBack'
 
 const MODULE = 'research'
 
@@ -55,15 +55,15 @@ const EXAMPLES_ENABLED_KEY = 'REPORT_GEN_EXAMPLES_ENABLED'
 const PROMPT_FIELDS = [
   {
     key: AGENT_PROMPT_KEY,
-    label: '正文生成提示词',
+    label: '正文生成规则',
     variables: '$drug_name / $doc_code / $report_title / $template_name / $slot_total / $max_rounds',
-    hint: '控制 Agent 怎么找资料、怎么填槽位、什么时候标缺口。留空使用内置版本。',
+    hint: '写给 AI 的规则：怎么找资料、怎么填每个填充项、什么时候标「待补充」。留空使用系统内置版本。',
   },
   {
     key: STRUCTURE_PROMPT_KEY,
-    label: '母本结构识别提示词',
+    label: '模板结构分析规则',
     variables: '$template_name / $deliverable_type / $stage / $candidate_count',
-    hint: '控制从母本里挑哪些位置当槽位。改完对下一次「重新识别结构」生效。',
+    hint: '写给 AI 的规则：从 Word 模板文件里挑哪些位置当填充项。改完对下一次「重新分析结构」生效。',
   },
 ] as const
 
@@ -77,14 +77,14 @@ interface NumericField {
 }
 
 const NUMERIC_FIELDS: NumericField[] = [
-  { key: 'REPORT_GEN_MAX_ROUNDS', label: '最大轮次', unit: '轮', min: 2, max: 60, hint: 'Agent 循环上限，超过即收成稿。' },
+  { key: 'REPORT_GEN_MAX_ROUNDS', label: '最多来回几轮', unit: '轮', min: 2, max: 60, hint: 'AI 反复查资料、填内容的上限，超过就收尾成稿。' },
   {
     key: 'REPORT_GEN_JOB_TIMEOUT_SECONDS',
-    label: '整任务超时',
+    label: '整次生成超时',
     unit: '秒',
     min: 120,
     max: 10800,
-    hint: '超时判失败；含解析、检索、渲染全过程。',
+    hint: '超过这个时间就算失败。包含分析模板、检索资料、生成文档的全过程。',
   },
   {
     key: 'REPORT_GEN_LLM_TIMEOUT_SECONDS',
@@ -92,23 +92,23 @@ const NUMERIC_FIELDS: NumericField[] = [
     unit: '秒',
     min: 30,
     max: 900,
-    hint: '单次模型请求上限，超时触发兜底档位。',
+    hint: '单次问模型的等待上限，超时会自动换用「自动补齐」的模型。',
   },
-  { key: 'REPORT_GEN_KB_TOP_K', label: '检索条数', unit: '条', min: 1, max: 30, hint: '每次知识库检索返回的最大片段数。' },
+  { key: 'REPORT_GEN_KB_TOP_K', label: '每次检索几条', unit: '条', min: 1, max: 30, hint: '每次在知识库里找依据，最多取回多少段文字。' },
   {
     key: 'REPORT_GEN_EXAMPLES_LIMIT',
-    label: '示例注入条数',
+    label: '示例写法使用条数',
     unit: '条',
     min: 0,
     max: 200,
-    hint: '每次生成最多注入多少条「人工改过的槽位写法」；0 等于不注入。',
+    hint: '每次生成最多参考多少条「人工改过的示例写法」；填 0 表示不使用。',
   },
 ]
 
 const TOOL_MODE_OPTIONS = [
-  { value: 'auto', label: 'auto（先试 tools，不支持则降级 JSON）' },
-  { value: 'tools', label: 'tools（只走 function calling）' },
-  { value: 'json', label: 'json（只走 JSON 协议）' },
+  { value: 'auto', label: '自动（先试调用工具，模型不支持时改用 JSON）' },
+  { value: 'tools', label: '只用工具调用（function calling）' },
+  { value: 'json', label: '只用 JSON 协议' },
 ]
 
 interface Props {
@@ -146,6 +146,7 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
   const router = useRouter()
   const { message } = App.useApp()
   const { token } = theme.useToken()
+  const smartBack = useSmartBack({ fallbackHref: '/research/reports', fallbackLabel: '报告列表' })
 
   const existingKeys = useMemo(() => new Set(settings.map((item) => item.key)), [settings])
   const savedModels = useMemo(() => initialModels(settings), [settings])
@@ -290,23 +291,29 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
           <div>
             <Typography.Title level={4} style={{ margin: 0 }}>
-              报告生成配置
+              报告生成设置
             </Typography.Title>
             <Space size={6} wrap style={{ marginTop: 8 }}>
               <Typography.Text type="secondary">当前：</Typography.Text>
               <Tag color="blue">正文生成 {modelLabel(savedModels.main)}</Tag>
-              <Tag color="cyan">结构识别 {modelLabel(savedModels.structure)}</Tag>
-              <Tag color={savedModels.fallback ? 'orange' : 'default'}>兜底 {modelLabel(savedModels.fallback)}</Tag>
+              <Tag color="cyan">分析结构 {modelLabel(savedModels.structure)}</Tag>
+              <Tag color={savedModels.fallback ? 'orange' : 'default'}>自动补齐 {modelLabel(savedModels.fallback)}</Tag>
             </Space>
             <div style={{ marginTop: 6 }}>
               <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                保存后只影响之后新建的任务；已在跑或已结束的任务沿用创建时的模型快照。
+                保存后只影响之后新建的报告；已经生成过或正在生成的报告，仍用当时选定的模型。
               </Typography.Text>
             </div>
           </div>
-          <Link href="/research/reports">
-            <ArrowLeftOutlined /> 返回报告列表
-          </Link>
+          <Button
+            type="link"
+            style={{ paddingRight: 0 }}
+            icon={<ArrowLeftOutlined />}
+            onClick={smartBack.back}
+            title={smartBack.hint}
+          >
+            {smartBack.label}
+          </Button>
         </div>
       </Card>
 
@@ -321,8 +328,8 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
 
       <Card
         size="small"
-        title="模型档位"
-        extra={<Typography.Text type="secondary">留空 = 继承（结构档复用正文生成档）</Typography.Text>}
+        title="用哪个模型"
+        extra={<Typography.Text type="secondary">留空就用默认：分析结构这一档会跟随正文生成</Typography.Text>}
       >
         <Row gutter={[16, 16]}>
           {REPORT_GEN_MODEL_SLOTS.map((item) => (
@@ -352,7 +359,7 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
                   value={models[item.slot]}
                   options={modelOptions}
                   allowClear
-                  placeholder={item.slot === 'structure' ? '留空 = 复用正文生成档' : '留空 = 全局默认'}
+                  placeholder={item.slot === 'structure' ? '留空就跟正文用同一个' : '留空就用系统默认'}
                   onChange={(value: string) => setModels((prev) => ({ ...prev, [item.slot]: value ?? '' }))}
                   filterOption={(input, option) => {
                     const text = `${option?.label ?? ''}${option?.value ?? ''}`.toLowerCase()
@@ -368,7 +375,7 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
                   {savedModels[item.slot]
                     ? savedModels[item.slot]
                     : item.slot === 'structure'
-                      ? `复用正文生成档（${modelLabel(savedModels.main)}）`
+                      ? `跟正文同一个（${modelLabel(savedModels.main)}）`
                       : modelLabel(savedModels[item.slot])}
                 </Typography.Text>
               </Card>
@@ -376,7 +383,7 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
           ))}
         </Row>
         <Typography.Paragraph type="secondary" style={{ fontSize: 12, margin: '12px 0 0' }}>
-          测试连通使用「已保存」的配置；未保存的下拉修改不会参与测试。结构识别模型改动后，需在模板侧重新解析才会重识别已有母本。
+          「测试连通」用的是已经保存的配置，改了没保存不会生效。换了分析结构的模型后，已有模板需要到「填充项设置」里点一次「重新分析结构」，才会用新模型重新分析。
         </Typography.Paragraph>
       </Card>
 
@@ -414,7 +421,7 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
                 onChange={(value) => setToolMode(value)}
               />
               <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                模型不支持 function calling 时建议保持 auto。
+                不确定模型的能力时保持「自动」即可，它会自己挑能用的方式。
               </Typography.Text>
             </div>
           </Col>
@@ -425,8 +432,8 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
 
       <Card
         size="small"
-        title="提示词（高级）"
-        extra={<Typography.Text type="secondary">留空即使用内置版本；改完对新任务生效</Typography.Text>}
+        title="生成规则（高级，管理员）"
+        extra={<Typography.Text type="secondary">留空就用系统内置的；改完对之后新建的报告生效</Typography.Text>}
       >
         <Row gutter={[16, 12]}>
           {PROMPT_FIELDS.map((field) => (
@@ -437,7 +444,7 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
                   value={prompts[field.key] ?? ''}
                   disabled={!canManage}
                   autoSize={{ minRows: 3, maxRows: 12 }}
-                  placeholder={`留空使用内置提示词。可用变量：${field.variables}`}
+                  placeholder={`留空使用系统内置规则。可以插的变量：${field.variables}`}
                   onChange={(event) => setPrompts((prev) => ({ ...prev, [field.key]: event.target.value }))}
                 />
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>
@@ -454,10 +461,10 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
                   disabled={!canManage}
                   onChange={(checked) => setExamplesEnabled(checked)}
                 />
-                <Typography.Text>注入人工修正示例</Typography.Text>
+                <Typography.Text>参考人工改过的示例写法</Typography.Text>
               </Space>
               <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                打开后，人工在任务详情里改过的槽位写法会作为参考下发给模型；条数上限见上方「示例注入条数」。
+                打开后，人工在生成详情里改过的写法会当作样板一起交给 AI 参考；最多用几条见上方「示例写法使用条数」。
               </Typography.Text>
             </div>
           </Col>
@@ -466,8 +473,8 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
 
       <Card
         size="small"
-        title="Agent 工具"
-        extra={<Typography.Text type="secondary">关闭后模型看不到该工具，也无法调用</Typography.Text>}
+        title="AI 可以做的动作"
+        extra={<Typography.Text type="secondary">关掉后 AI 看不到、也用不了这个动作</Typography.Text>}
       >
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {REPORT_GEN_TOOLS.map((tool, index) => (

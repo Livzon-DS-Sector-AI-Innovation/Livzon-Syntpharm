@@ -25,7 +25,7 @@ const keysText = (keys?: string[]) => (keys && keys.length ? keys.slice(0, 5).jo
 
 const columns: TableProps<ReportGenStructureRun>['columns'] = [
   {
-    title: '解析时间',
+    title: '分析时间',
     dataIndex: 'created_at',
     width: 170,
     render: (value: string, row) => (
@@ -51,13 +51,13 @@ const columns: TableProps<ReportGenStructureRun>['columns'] = [
     ),
   },
   {
-    title: '候选 → 槽位',
+    title: '可填位置 → 填充项',
     dataIndex: 'slot_count',
     width: 110,
     render: (_: unknown, row) => `${row.candidate_count} → ${row.slot_count}`,
   },
   {
-    title: '人工改动（保留 / 后补 / 否掉）',
+    title: '人工改动（保留 / 后补 / 去掉）',
     dataIndex: 'missing_count',
     render: (_: unknown, row) => (
       <div>
@@ -66,7 +66,7 @@ const columns: TableProps<ReportGenStructureRun>['columns'] = [
           <Typography.Text type="danger">{row.diff.extra_count}</Typography.Text>
         </div>
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-          后补：{keysText(row.diff.missing_keys)}；否掉：{keysText(row.diff.extra_keys)}
+          后补：{keysText(row.diff.missing_keys)}；去掉：{keysText(row.diff.extra_keys)}
         </Typography.Text>
       </div>
     ),
@@ -106,7 +106,7 @@ export function TemplateStructureRunsDrawer({ open, templateId, templateName, on
 
   return (
     <Drawer
-      title={`解析历史：${templateName}`}
+      title={`分析记录：${templateName}`}
       open={open}
       onClose={onClose}
       destroyOnHidden
@@ -115,8 +115,8 @@ export function TemplateStructureRunsDrawer({ open, templateId, templateName, on
       <Alert
         type="info"
         showIcon
-        title="AI 选了什么，人改了什么"
-        description="后补 = 当前启用但解析当时没选（人工加的槽位）；否掉 = 解析当时选了、现在被停用。数字是「当前结构」对比「解析当时」，跨多次人工编辑会混在一起，只看趋势。"
+        title="每次系统挑了哪些位置，人又改了什么"
+        description="后补 = 现在用着、但那次分析没找到的填充项（人工加的）；去掉 = 那次分析找到了、现在被停用的。数字是「现在的填充项」对比「那次分析结果」，中间多次人工修改会混在一起，看趋势即可。"
         style={{ marginBottom: 12 }}
       />
       <Table<ReportGenStructureRun>
@@ -128,7 +128,7 @@ export function TemplateStructureRunsDrawer({ open, templateId, templateName, on
         pagination={false}
         scroll={{ x: 720 }}
         locale={{
-          emptyText: error instanceof Error ? error.message : '该模板还没有解析记录',
+          emptyText: error instanceof Error ? error.message : '这个模板还没有分析记录',
         }}
       />
     </Drawer>

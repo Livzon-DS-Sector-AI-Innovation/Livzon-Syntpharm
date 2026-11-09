@@ -23,7 +23,7 @@ export function ReportGenSlotTable({ jobId, slots, loading, editable }: Props) {
     setSavingKey(slot.slot_key)
     try {
       await saveReportGenSlot(jobId, slot.slot_key, { value })
-      msgApi.success('已保存（成品 docx 不重渲染，可下载对照表查看最新口径）')
+      msgApi.success('已保存。Word 文档不会自动重写，需要最新内容请下载对照表，或点「重新生成」。')
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '保存失败')
       throw e
@@ -34,7 +34,7 @@ export function ReportGenSlotTable({ jobId, slots, loading, editable }: Props) {
 
   const columns = [
     {
-      title: '槽位',
+      title: '填充项',
       key: 'slot',
       width: 210,
       render: (_: unknown, slot: ReportGenSlot) => (
@@ -60,7 +60,7 @@ export function ReportGenSlotTable({ jobId, slots, loading, editable }: Props) {
       },
     },
     {
-      title: '填充值',
+      title: '填入内容',
       key: 'value',
       width: 260,
       render: (_: unknown, slot: ReportGenSlot) => {
@@ -81,7 +81,7 @@ export function ReportGenSlotTable({ jobId, slots, loading, editable }: Props) {
             editable={{
               maxLength: 4000,
               text: text,
-              tooltip: '修正填充值',
+              tooltip: '手动改这里的内容',
               onChange: (next) => { void handleSave(slot, next) },
             }}
             disabled={savingKey === slot.slot_key}
@@ -92,7 +92,7 @@ export function ReportGenSlotTable({ jobId, slots, loading, editable }: Props) {
       },
     },
     {
-      title: '来源',
+      title: '内容来源',
       dataIndex: 'source_name',
       key: 'source_name',
       width: 160,
@@ -100,7 +100,7 @@ export function ReportGenSlotTable({ jobId, slots, loading, editable }: Props) {
       render: (v: string | null) => v || '-',
     },
     {
-      title: '证据',
+      title: '原文依据',
       dataIndex: 'evidence',
       key: 'evidence',
       width: 90,

@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { App, Card, Table, Tag, Button, Modal, Form, Input, Select, Collapse, Space, Popconfirm, Progress, Empty, Upload } from 'antd'
-import {EditOutlined, DeleteOutlined, FileTextOutlined, CheckCircleOutlined, UploadOutlined, DownloadOutlined, HistoryOutlined, RobotOutlined} from '@ant-design/icons'
+import { App, Card, Table, Tag, Button, Modal, Form, Input, Select, Collapse, Space, Progress, Empty, Upload, Dropdown, type MenuProps } from 'antd'
+import {EditOutlined, DeleteOutlined, FileTextOutlined, CheckCircleOutlined, UploadOutlined, DownloadOutlined, HistoryOutlined, RobotOutlined, SyncOutlined, DownOutlined, FileWordOutlined} from '@ant-design/icons'
 import {
   RdStageDeliverable, RdProjectStage, RdDeliverableStatus,
   DELIVERABLE_TYPES, DELIVERABLE_STATUS_LABELS, STAGE_LABELS, STAGE_ORDER,
@@ -11,8 +11,14 @@ import {
 import { fetchDeliverables } from '@/lib/api/client/research/rd-project'
 import { createDeliverable, updateDeliverable, deleteDeliverable, uploadDeliverableFile } from '@/actions/research/deliverables'
 import { VersionHistoryDrawer } from './VersionHistoryDrawer'
+import { DeliverableGenerateWizard } from './DeliverableGenerateWizard'
+import { DocxPreviewModal } from './DocxPreviewModal'
+import { MarkdownPreviewModal } from './MarkdownPreviewModal'
 import { PermissionGate } from '@/components/auth/PermissionGate'
+import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
+import { withReturnTo } from '@/lib/navigation/returnTo'
+import { fetchBlob } from '@/lib/api/client/blob'
 
 interface Props {
 
@@ -54,6 +60,8 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
   const { message: msgApi } = App.useApp()
   const queryClient = useQueryClient()
 
+  const { can, loading: permLoading } = usePermission()
+
   const { data: deliverables = [], isLoading: loading } = useQuery({
     queryKey: ['deliverables', projectId],
     queryFn: async () => {
@@ -61,13 +69,27 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
       return data || []
     },
     enabled: !!projectId,
+    // 有任务在跑时才 3 秒回源一次，全部落定后自动停；避免空闲时打后端
+    refetchInterval: (query) => {
+      const rows = query.state.data ?? []
+      return rows.some((row) => row.generation?.status === 'queued' || row.generation?.status === 'running')
+        ? 3000
+        : false
+    },
   })
   const [editModalOpen, setEditModalOpen] = useState(false)
+  // AI 生成向导：记录当前操作的是哪个阶段的哪类交付文档
+  const [genTarget, setGenTarget] = useState<{ stage: string; type: string; label: string; deliverableId?: string | null } | null>(null)
   const [editingItem, setEditingItem] = useState<RdStageDeliverable | null>(null)
   const [uploadingId, setUploadingId] = useState<string | null>(null)
   const [versionDrawerOpen, setVersionDrawerOpen] = useState(false)
   const [versionDrawerData, setVersionDrawerData] = useState<{stage: string; type: string; title: string; versions: RdStageDeliverable[]} | null>(null)
+  // 附件预览：只对 Word 走弹层渲染，其他格式直接新窗口打开
+  const [attachmentPreview, setAttachmentPreview] = useState<{ id: string; name: string } | null>(null)
+  // 正文预览：表格行「查看内容」与编辑弹窗「预览」共用
+  const [contentPreview, setContentPreview] = useState<{ title: string; markdown: string } | null>(null)
   const [form] = Form.useForm()
+  const formContent = Form.useWatch('content', form)
 
 
   const handleExport = (record: RdStageDeliverable) => {
@@ -223,7 +245,7 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
           pagination={false}
           columns={[
             {
-              title: '交付物',
+              title: '交付文档',
               dataIndex: 'label',
               key: 'label',
               render: (label: string, row: DeliverableRow) => (
@@ -239,10 +261,22 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
               width: 100,
               render: (_: unknown, row: DeliverableRow) => {
                 if (!row.record) return <Tag>未创建</Tag>
+                const generation = row.record.generation
                 return (
-                  <Tag color={statusColorMap[row.record.status as RdDeliverableStatus] || 'default'}>
-                    {DELIVERABLE_STATUS_LABELS[row.record.status as RdDeliverableStatus] || row.record.status}
-                  </Tag>
+                  <Space size={4} wrap>
+                    <Tag color={statusColorMap[row.record.status as RdDeliverableStatus] || 'default'}>
+                      {DELIVERABLE_STATUS_LABELS[row.record.status as RdDeliverableStatus] || row.record.status}
+                    </Tag>
+                    {generation?.status === 'queued' || generation?.status === 'running' ? (
+                      <Tag color="processing" icon={<SyncOutlined spin />}>
+                        {generation.progress ? `生成中 ${generation.progress}%` : '生成中'}
+                      </Tag>
+                    ) : generation?.status === 'failed' ? (
+                      <Tag color="error">生成失败</Tag>
+                    ) : generation?.status === 'completed' ? (
+                      <Tag color="gold">{generation.slot_gap > 0 ? `待补充 ${generation.slot_gap} 项` : '已出稿待核对'}</Tag>
+                    ) : null}
+                  </Space>
                 )
               },
             },
@@ -258,101 +292,172 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
               width: 200,
               render: (_: unknown, row: DeliverableRow) => {
                 if (!row.record) return '-'
-                if (row.record.file_name) {
+                const sourceJobId = row.record.report_gen_job_id
+                const sourceLink = sourceJobId ? (
+                  <a
+                    href={withReturnTo(
+                      `/research/reports/generation/${sourceJobId}`,
+                      `/research/projects/${projectId}?tab=deliverables`,
+                    )}
+                    style={{ fontSize: 11, color: '#1677ff' }}
+                  >
+                    源报告
+                  </a>
+                ) : null
+                const fileName = row.record.file_name
+                if (fileName) {
+                  const record = row.record
+                  const previewable = /\.docx?$/i.test(fileName)
                   return (
-                    <Space>
-                      <a href={row.record.file_url || undefined} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12 }}>
-                        <DownloadOutlined /> {row.record.file_name}
-                      </a>
+                    <Space size={4} wrap>
+                      {previewable ? (
+                        <Button
+                          type="link"
+                          size="small"
+                          icon={<FileWordOutlined />}
+                          style={{ padding: 0, fontSize: 12, height: 'auto' }}
+                          title="点击在线预览"
+                          onClick={() => setAttachmentPreview({ id: record.id, name: record.file_name as string })}
+                        >
+                          {record.file_name}
+                        </Button>
+                      ) : (
+                        <a href={record.file_url || undefined} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12 }}>
+                          <FileWordOutlined /> {record.file_name}
+                        </a>
+                      )}
                       <span style={{ fontSize: 11, color: '#999' }}>
-                        {formatFileSize(row.record.file_size)}
+                        {formatFileSize(record.file_size)}
                       </span>
+                      {sourceLink}
                     </Space>
                   )
                 }
+                if (sourceLink) return sourceLink
                 return <span style={{ color: '#999', fontSize: 12 }}>未上传</span>
               },
             },
             {
               title: '操作',
               key: 'actions',
-              width: 180,
-              render: (_: unknown, row: DeliverableRow) => (
-                <Space size="small">
-                  {(() => {
-                    const allVersions = deliverables.filter(d => d.stage === stage && d.deliverable_type === row.type)
-                    const hasMultiple = allVersions.length > 1
-                    return (
-                      <>
-                        <PermissionGate
-                          code={row.record ? PERM.researchStageDeliverableUpdate : PERM.researchStageDeliverableCreate}
-                        >
-                          <Button
-                            type="link"
-                            size="small"
-                            icon={<EditOutlined />}
-                            onClick={() => row.record ? handleEdit(row.record) : handleCreate(stage as RdProjectStage, row.type, row.label)}
-                          >
-                            {row.record ? '编辑' : '创建'}
-                          </Button>
-                        </PermissionGate>
-                        {hasMultiple && (
-                          <Button
-                            type="link"
-                            size="small"
-                            icon={<HistoryOutlined />}
-                            onClick={() => handleShowVersions(stage as string, row.type, row.label)}
-                          >
-                            历史({allVersions.length})
-                          </Button>
-                        )}
-                        <Button
-                          type="link"
-                          size="small"
-                          icon={<RobotOutlined />}
-                          onClick={() => msgApi.info('AI 生成报告功能已下线')}
-                        >
-                          AI生成
-                        </Button>
-                      </>
-                    )
-                  })()}
-                  {row.record && (
-                    <>
-                      <Button
-                          type="link"
-                          size="small"
-                          icon={<DownloadOutlined />}
-                          onClick={() => row.record && handleExport(row.record)}
-                          disabled={!row.record.content}
-                        >
-                          导出
-                        </Button>
-                      <PermissionGate code={PERM.researchStageDeliverableCreate}>
+              width: 190,
+              render: (_: unknown, row: DeliverableRow) => {
+                const allVersions = deliverables.filter(d => d.stage === stage && d.deliverable_type === row.type)
+                const generation = row.record?.generation
+                const generating = generation?.status === 'queued' || generation?.status === 'running'
+                const produced = !!row.record?.file_name || !!row.record?.report_gen_job_id
+                const recordId = row.record?.id
+
+                // 「查看」下拉：编辑/导出/上传/删除按权限逐项过滤，避免每行堆 6 个按钮
+                const viewItems: MenuProps['items'] = []
+                if (!permLoading) {
+                  const canEdit = can(
+                    row.record ? PERM.researchStageDeliverableUpdate : PERM.researchStageDeliverableCreate,
+                  )
+                  if (canEdit) {
+                    viewItems.push({
+                      key: 'edit',
+                      icon: <EditOutlined />,
+                      label: row.record ? '编辑' : '创建',
+                      onClick: () =>
+                        row.record
+                          ? handleEdit(row.record)
+                          : handleCreate(stage as RdProjectStage, row.type, row.label),
+                    })
+                  }
+                  if (row.record?.content) {
+                    viewItems.push({
+                      key: 'preview',
+                      icon: <FileTextOutlined />,
+                      label: '查看内容',
+                      onClick: () => row.record && setContentPreview({
+                        title: `${row.record.title} · 内容`,
+                        markdown: row.record.content ?? '',
+                      }),
+                    })
+                    viewItems.push({
+                      key: 'export',
+                      icon: <DownloadOutlined />,
+                      label: '导出 Markdown',
+                      onClick: () => row.record && handleExport(row.record),
+                    })
+                  }
+                  if (recordId && can(PERM.researchStageDeliverableCreate)) {
+                    viewItems.push({
+                      key: 'upload',
+                      icon: <UploadOutlined />,
+                      label: (
                         <Upload
                           showUploadList={false}
-                          beforeUpload={(file) => { if (row.record) handleUpload(file, row.record.id); return false }}
-                          disabled={!row.record || uploadingId === row.record.id}
+                          beforeUpload={(file) => {
+                            handleUpload(file, recordId)
+                            return false
+                          }}
                         >
-                          <Button
-                            type="link"
-                            size="small"
-                            icon={<UploadOutlined />}
-                            loading={!!row.record && uploadingId === row.record.id}
-                          >
-                            上传
-                          </Button>
+                          <span>{uploadingId === recordId ? '上传中…' : '上传附件'}</span>
                         </Upload>
-                      </PermissionGate>
-                      <PermissionGate code={PERM.researchStageDeliverableDelete}>
-                        <Popconfirm title="确认删除？" onConfirm={() => row.record && handleDelete(row.record.id)} okText="删除" cancelText="取消">
-                          <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-                        </Popconfirm>
-                      </PermissionGate>
-                    </>
-                  )}
-                </Space>
-              ),
+                      ),
+                    })
+                  }
+                  if (recordId && can(PERM.researchStageDeliverableDelete)) {
+                    viewItems.push({
+                      key: 'delete',
+                      danger: true,
+                      icon: <DeleteOutlined />,
+                      label: '删除',
+                      onClick: () => {
+                        Modal.confirm({
+                          title: '删除这条交付文档记录？',
+                          content: '会连同它的历史版本一起删除，已下载到本地的文件不受影响。删除后不可恢复。',
+                          okText: '删除',
+                          okButtonProps: { danger: true },
+                          cancelText: '取消',
+                          onOk: () => handleDelete(recordId),
+                        })
+                      },
+                    })
+                  }
+                }
+
+                return (
+                  <Space size="small">
+                    <PermissionGate code={PERM.researchStageDeliverableCreate}>
+                      <Button
+                        type="link"
+                        size="small"
+                        icon={generating ? <SyncOutlined spin /> : <RobotOutlined />}
+                        onClick={() =>
+                          setGenTarget({
+                            stage: stage as string,
+                            type: row.type,
+                            label: row.label,
+                            deliverableId: recordId ?? null,
+                          })
+                        }
+                      >
+                        {generating ? '查看进度' : produced ? '重新生成' : 'AI 生成'}
+                      </Button>
+                    </PermissionGate>
+                    {viewItems.length > 0 && (
+                      <Dropdown menu={{ items: viewItems }} trigger={['click']}>
+                        <Button type="link" size="small">
+                          查看 <DownOutlined />
+                        </Button>
+                      </Dropdown>
+                    )}
+                    {allVersions.length > 1 && (
+                      <Button
+                        type="link"
+                        size="small"
+                        icon={<HistoryOutlined />}
+                        onClick={() => handleShowVersions(stage as string, row.type, row.label)}
+                      >
+                        历史({allVersions.length})
+                      </Button>
+                    )}
+                  </Space>
+                )
+              },
             },
           ]}
         />
@@ -362,13 +467,13 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
 
   return (
     <div>
-      <Card title="阶段交付物管理" extra={
+      <Card title="各阶段交付文档" extra={
         <span style={{ fontSize: 13, color: '#666' }}>
           共 {deliverables.length}/18 项 · 已完成 {deliverables.filter(d => d.status === 'completed' || d.status === 'approved').length} 项
         </span>
       }>
         {deliverables.length === 0 && !loading ? (
-          <Empty description="暂无交付物记录，请在各阶段中创建" />
+          <Empty description="还没有任何交付文档。展开下面某个阶段，点该阶段里的「新建」即可添加。" />
         ) : null}
         <Collapse
           items={collapseItems}
@@ -378,7 +483,7 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
       </Card>
 
       <Modal
-        title={editingItem ? '编辑交付物' : '创建交付物'}
+        title={editingItem ? '编辑交付文档' : '新建交付文档'}
         open={editModalOpen}
         onOk={handleSave}
         onCancel={() => { setEditModalOpen(false); form.resetFields() }}
@@ -409,11 +514,42 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
             </Upload>
           </Form.Item>
 
-          <Form.Item name="content" label="内容摘要">
-            <Input.TextArea rows={4} placeholder="交付物内容摘要或备注..." />
+          <Form.Item
+            name="content"
+            label={(
+              <Space size={8}>
+                <span>内容摘要</span>
+                <Button
+                  type="link"
+                  size="small"
+                  style={{ padding: 0, height: 'auto', fontSize: 12 }}
+                  onClick={() => setContentPreview({
+                    title: `${form.getFieldValue('title') || '交付文档'} · 内容预览`,
+                    markdown: formContent ?? '',
+                  })}
+                >
+                  预览
+                </Button>
+              </Space>
+            )}
+          >
+            <Input.TextArea rows={4} placeholder="这份交付文档写了什么，简单备注一下…" />
           </Form.Item>
         </Form>
       </Modal>
+
+      {genTarget && (
+        <DeliverableGenerateWizard
+          open
+          onClose={() => setGenTarget(null)}
+          projectId={projectId}
+          stage={genTarget.stage}
+          deliverableType={genTarget.type}
+          deliverableLabel={genTarget.label}
+          deliverableId={genTarget.deliverableId ?? null}
+          onSubmitted={invalidateDeliverables}
+        />
+      )}
 
       {versionDrawerData && (
         <VersionHistoryDrawer
@@ -427,6 +563,36 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
           onRefresh={invalidateDeliverables}
         />
       )}
+
+      <DocxPreviewModal
+        open={!!attachmentPreview}
+        title={attachmentPreview?.name ?? '附件预览'}
+        loadBlob={() =>
+          fetchBlob(
+            `/api/v1/research/rd-stage-deliverables/${attachmentPreview?.id}/download`,
+            '附件还没有生成',
+          )
+        }
+        onDownload={() => {
+          if (!attachmentPreview) return
+          const url = `/api/v1/research/rd-stage-deliverables/${attachmentPreview.id}/download`
+          // 后端仍是 attachment 响应，这里用隐藏 <a> 触发浏览器原生下载
+          const link = document.createElement('a')
+          link.href = url
+          link.download = attachmentPreview.name
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+        }}
+        onClose={() => setAttachmentPreview(null)}
+      />
+
+      <MarkdownPreviewModal
+        open={!!contentPreview}
+        title={contentPreview?.title ?? '内容预览'}
+        markdown={contentPreview?.markdown ?? ''}
+        onClose={() => setContentPreview(null)}
+      />
 
     </div>
   )

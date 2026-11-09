@@ -1,14 +1,16 @@
 'use client'
 
 import { useState, useMemo, ReactNode } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import {App, Card, Table, Tag, Button, Input} from 'antd'
+import {App, Card, Table, Tag, Button, Input, Tooltip} from 'antd'
 import { ArrowLeftOutlined, SearchOutlined, EnterOutlined } from '@ant-design/icons'
 import { fetchRdProjects } from '@/lib/api/client/research/rd-project'
 import {
   RdProject, RdProjectStage,
   STAGE_LABELS,
 } from '@/types/research/rd-project'
+import { useSmartBack } from './useSmartBack'
 
 const PRIORITY_LABELS: Record<string, { label: string; color: string }> = {
   low: { label: '低', color: 'default' },
@@ -34,8 +36,20 @@ interface StageModuleLayoutProps {
 
 export function StageModuleLayout({ title, description, stage, children }: StageModuleLayoutProps) {
   const { message: msgApi } = App.useApp()
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  // 进入项目要把 projectId 写进 URL：只存在 state 里的话浏览器后退会直接跳出模块，
+  // 刷新也会退回列表，用户没法通过链接分享当前项目。
+  const selectedProjectId = searchParams.get('projectId')
   const [keyword, setKeyword] = useState('')
+  const smartBack = useSmartBack({ fallbackHref: pathname, fallbackLabel: `${title}列表` })
+
+  const enterProject = (projectId: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('projectId', projectId)
+    router.push(`${pathname}?${params.toString()}`)
+  }
 
   const { data: queryData, isLoading: loading } = useQuery({
     queryKey: ['rd-projects', stage],
@@ -68,12 +82,11 @@ export function StageModuleLayout({ title, description, stage, children }: Stage
     return (
       <div>
         <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={() => setSelectedProjectId(null)}
-          >
-            返回{title}列表
-          </Button>
+          <Tooltip title={smartBack.hint}>
+            <Button icon={<ArrowLeftOutlined />} onClick={smartBack.back}>
+              {smartBack.label}
+            </Button>
+          </Tooltip>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>{title}</h1>
             <p style={{ color: '#666', margin: '2px 0 0 0', fontSize: 13 }}>{description}</p>
@@ -152,7 +165,7 @@ export function StageModuleLayout({ title, description, stage, children }: Stage
         <Button
           type="link"
           icon={<EnterOutlined />}
-          onClick={() => setSelectedProjectId(record.id)}
+          onClick={() => enterProject(record.id)}
           style={{ padding: 0 }}
         >
           进入
@@ -194,7 +207,7 @@ export function StageModuleLayout({ title, description, stage, children }: Stage
             showTotal: (t) => `共 ${t} 条`,
           } : false}
           onRow={(record) => ({
-            onClick: () => setSelectedProjectId(record.id),
+            onClick: () => enterProject(record.id),
             style: { cursor: 'pointer' },
           })}
         />

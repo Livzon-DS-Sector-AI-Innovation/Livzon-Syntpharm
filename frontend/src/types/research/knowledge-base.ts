@@ -13,10 +13,37 @@ export type KbUploadResult = components['schemas']['KbUploadResult']
 
 export const KB_RUN_LABELS: Record<string, string> = {
   UNSTART: '排队中',
-  RUNNING: '解析中',
-  DONE: '解析完成',
-  FAIL: '解析失败',
+  RUNNING: '入库中',
+  DONE: '已入库',
+  FAIL: '处理失败',
   CANCEL: '已取消',
+}
+
+/** 每个状态的一句话解释：悬停或列头说明用，避免「已取消」被当成失败 */
+export const KB_RUN_HINTS: Record<string, string> = {
+  UNSTART: '已提交，等待系统处理；前面的资料处理完就开始。',
+  RUNNING: '正在把资料转换成可检索的文字，通常几分钟内完成。',
+  DONE: '资料已处理完，AI 写报告时可以检索到里面的内容。',
+  FAIL: '这次没处理成功，可以点「重新处理」再试，或换一份文件。',
+  CANCEL: '这次处理被取消了，不算失败；需要的话可以点「重新处理」。',
+}
+
+/** 分段方式：把后端的技术取值翻成人话，界面上不直接显示 naive 这类英文 */
+export const KB_CHUNK_METHOD_LABELS: Record<string, string> = {
+  naive: '按段落切分（默认）',
+  manual: '按人工标记切分',
+  qa: '按问答对切分',
+  table: '按表格切分',
+  paper: '按论文章节切分',
+  book: '按书籍章节切分',
+  laws: '按法条切分',
+  one: '整篇不分段',
+  knowledge_graph: '抽成知识图谱',
+}
+
+export function chunkMethodLabel(method?: string | null): string {
+  if (!method) return '按段落切分（默认）'
+  return KB_CHUNK_METHOD_LABELS[method] ?? '按段落切分（默认）'
 }
 
 export const KB_RUN_COLORS: Record<string, string> = {

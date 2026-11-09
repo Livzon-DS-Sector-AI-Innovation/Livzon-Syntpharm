@@ -109,11 +109,12 @@ export function DeliverableTemplateVersionDrawer({
         <Space size={4}>
           <span style={{ fontWeight: 600 }}>v{record.version_no}</span>
           {record.is_current && <Tag color="green">当前生效</Tag>}
+          {record.kind === 'sample' && <Tag color="purple">示例稿</Tag>}
         </Space>
       ),
     },
     {
-      title: 'Word 母本',
+      title: 'Word 模板文件',
       key: 'file',
       width: 240,
       render: (_: unknown, record: DocGenTemplateVersion) => (
@@ -164,25 +165,29 @@ export function DeliverableTemplateVersionDrawer({
           <Button type="link" size="small" icon={<DownloadOutlined />} onClick={() => onDownload(record)}>
             下载
           </Button>
+          {/* 示例稿不是母本，不能恢复成当前版本；只留预览/下载/删除 */}
+          {!record.is_current && record.kind !== 'sample' && (
+            <Popconfirm
+              title={`恢复到这个版本（v${record.version_no}）？`}
+              description="会以这个版本的文件为基础存成一个新的当前版本，原有历史记录都会保留，随时还能再切回来。"
+              okText="恢复"
+              onConfirm={() => void handleRestore(record)}
+            >
+              <Button type="link" size="small" icon={<UndoOutlined />} loading={busyId === record.id}>
+                恢复
+              </Button>
+            </Popconfirm>
+          )}
           {!record.is_current && (
-            <>
-              <Popconfirm
-                title={`回滚到 v${record.version_no}？`}
-                description="将以该版本内容生成一个新的当前生效版本，历史记录不会被改写。"
-                onConfirm={() => void handleRestore(record)}
-              >
-                <Button type="link" size="small" icon={<UndoOutlined />} loading={busyId === record.id}>
-                  回滚
-                </Button>
-              </Popconfirm>
-              <Popconfirm
-                title={`删除 v${record.version_no}？`}
-                description="仅移除该留档记录，不影响当前生效母本。"
-                onConfirm={() => void handleDelete(record)}
-              >
-                <Button type="link" size="small" danger icon={<DeleteOutlined />} loading={busyId === record.id} />
-              </Popconfirm>
-            </>
+            <Popconfirm
+              title={`删除这条记录（v${record.version_no}）？`}
+              description="只删掉这条记录，不影响当前正在用的文件。删除后不可恢复。"
+              okText="删除"
+              okButtonProps={{ danger: true }}
+              onConfirm={() => void handleDelete(record)}
+            >
+              <Button type="link" size="small" danger icon={<DeleteOutlined />} loading={busyId === record.id} />
+            </Popconfirm>
           )}
         </Space>
       ),
@@ -191,7 +196,7 @@ export function DeliverableTemplateVersionDrawer({
 
   return (
     <Drawer
-      title={`版本历史：${templateName}`}
+      title={`历史版本：${templateName}`}
       open={open}
       onClose={onClose}
       styles={{ wrapper: { width: 1080 } }}
@@ -201,8 +206,8 @@ export function DeliverableTemplateVersionDrawer({
         type="info"
         showIcon
         style={{ marginBottom: 12 }}
-        title="每次上传或替换母本都会留档一个版本"
-        description="回滚会以所选版本的内容新建一个版本并设为当前生效，因此历史可追溯、也可再回滚回来。当前生效版本不能删除。"
+        title="每次上传或替换文件都会自动存一份，这里可以看到全部记录"
+        description="点「恢复」会用这个版本的内容新建一个当前版本，原来的记录都还在，所以覆盖错了也能找回。正在使用的版本不能删除。"
       />
       <Table
         rowKey="id"
@@ -212,7 +217,7 @@ export function DeliverableTemplateVersionDrawer({
         size="small"
         pagination={false}
         scroll={{ x: 1000 }}
-        locale={{ emptyText: '该模板尚未上传 Word 母本，暂无版本记录' }}
+        locale={{ emptyText: '这个模板还没有上传 Word 模板文件，所以没有历史版本' }}
       />
     </Drawer>
   )

@@ -1,10 +1,14 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { App } from 'antd'
-import { fetchDeliverableTemplateSlots } from '@/lib/api/client/research/deliverable-template'
-import { reparseDeliverableTemplateSlots, saveDeliverableTemplateSlots } from '@/actions/research/deliverable-template'
+import {
+  fetchDeliverableTemplateSlots,
+  streamReparseDeliverableTemplateSlots,
+} from '@/lib/api/client/research/deliverable-template'
+import { revalidateDeliverableTemplates, saveDeliverableTemplateSlots } from '@/actions/research/deliverable-template'
+import type { components } from '@/types/generated/schema'
 import {
   slotAnchorKey,
   type DocGenSlot,
@@ -16,6 +20,29 @@ import type { EditableSlot } from './SlotStructureTable'
 
 /** 一键补齐一次最多补多少个，避免母本上百个空位一次全塞进来 */
 const FILL_LIMIT = 60
+
+/** 重解析的可见进度：阶段 + 已用时长 + 思考增量，避免只转一个圈 */
+export interface ReparseProgress {
+  /** 当前阶段的人类可读描述 */
+  stage: string
+  /** 已等待秒数 */
+  elapsedSeconds: number
+  /** 后端按候选规模给的粗估秒数；0 表示还没拿到 */
+  estimateSeconds: number
+  /** 模型思考增量（部分模型不透传，此时为空） */
+  thinking: string
+  /** 模型已输出的正文字符数，用来证明「还在动」 */
+  contentChars: number
+}
+
+const PHASE_LABELS: Record<string, string> = {
+  start: '正在准备分析',
+  read: '正在读模板文件，整理可填位置',
+  cached: '复用上次的分析结果',
+  align: '正在合并填充项',
+}
+
+type DocGenSlotsReparseData = components['schemas']['DocGenTemplateSlotsReparseData']
 
 const SLOT_QUERY_KEY = 'deliverable-template-slots'
 
@@ -88,6 +115,11 @@ export function useTemplateSlotsEditor({ payload, templateId, onClose, onChanged
   const [aiSlots, setAiSlots] = useState<DocGenSlot[] | null>(null)
   const [beforeReparse, setBeforeReparse] = useState<DocGenSlot[]>([])
   const [stats, setStats] = useState<{ added: number; kept: number; removed: number } | null>(null)
+  /** 重解析的可见进度；null 表示当前没在分析 */
+  const [reparseProgress, setReparseProgress] = useState<ReparseProgress | null>(null)
+  /** 思考增量刷新很密（每帧一次），先攒在 ref 里，由计时器统一渲染 */
+  const thinkingRef = useRef('')
+  const contentCharsRef = useRef(0)
 
   const busy = saving || reparsing
 
@@ -149,11 +181,11 @@ export function useTemplateSlotsEditor({ payload, templateId, onClose, onChanged
     const target = selectedKeys.length === 1 ? slots.find((slot) => slot.uid === String(selectedKeys[0])) : undefined
     if (target) {
       patch(target.uid, { candidate_id: candidate.candidate_id, location: candidate.label })
-      msgApi.success(`已换绑到「${candidate.label}」`)
+      msgApi.success(`已改为写入「${candidate.label}」`)
       return
     }
     if (usedIds.has(candidate.candidate_id)) {
-      msgApi.warning('这个位置已经有槽位了')
+      msgApi.warning('这个位置已经被别的填充项用了')
       return
     }
     setSlots((prev) => [...prev, fromCandidate(candidate)])
@@ -162,19 +194,19 @@ export function useTemplateSlotsEditor({ payload, templateId, onClose, onChanged
   const fillUnused = () => {
     const unused = (payload.candidates ?? []).filter((item) => !usedIds.has(item.candidate_id))
     if (unused.length === 0) {
-      msgApi.info('母本里的位置都已经有槽位了')
+      msgApi.info('模板文件里的位置都已经有对应填充项了')
       return
     }
     const picked = unused.slice(0, FILL_LIMIT)
     setSlots((prev) => [...prev, ...picked.map(fromCandidate)])
     msgApi.success(
-      `已补充 ${picked.length} 个槽位${unused.length > picked.length ? `，还有 ${unused.length - picked.length} 个请再次点击补齐` : ''}`,
+      `已补充 ${picked.length} 个填充项${unused.length > picked.length ? `，还有 ${unused.length - picked.length} 个，再点一次继续补齐` : ''}`,
     )
   }
 
   const batchToggle = (enabled: boolean) => {
     if (selectedKeys.length === 0) {
-      msgApi.info('先勾选要操作的槽位')
+      msgApi.info('先勾选要操作的填充项')
       return
     }
     const keys = new Set(selectedKeys)
@@ -193,10 +225,10 @@ export function useTemplateSlotsEditor({ payload, templateId, onClose, onChanged
       setBeforeReparse([])
       setStats(null)
       setDiffOnly(false)
-      msgApi.success('槽位结构已保存，下次生成生效')
+      msgApi.success('填充项已保存，下次生成报告时生效')
       onChanged()
     } catch (e) {
-      msgApi.error(e instanceof Error ? e.message : '保存失败')
+      msgApi.error(e instanceof Error ? e.message : '保存失败，请稍后重试')
     } finally {
       setSaving(false)
     }
@@ -205,18 +237,85 @@ export function useTemplateSlotsEditor({ payload, templateId, onClose, onChanged
   const reparse = () => {
     if (dirty) {
       // 重识别以库里的结构为基准合并，未保存的修改会被覆盖且无痕迹
-      msgApi.warning('有未保存的修改，请先保存再重新识别')
+      msgApi.warning('有还没保存的修改，请先保存，再重新分析')
       return
     }
     modal.confirm({
-      title: '重新识别槽位结构？',
-      content: '会按位置合并：人工改过的字段保留，只补 AI 本次新识别的位置；未被修改且 AI 不再识别的位置会被移除。',
-      okText: '开始识别',
+      title: '重新分析结构？',
+      content:
+        '系统会重新读一遍模板文件：你手工改过的填充项会保留，只补上这次新找到的位置；没改过、这次又找不到的会被移除。分析结果需要点「保存」才生效。',
+      okText: '开始分析',
       cancelText: '取消',
       onOk: async () => {
         setReparsing(true)
+        thinkingRef.current = ''
+        contentCharsRef.current = 0
+        const startedAt = Date.now()
+        setReparseProgress({
+          stage: PHASE_LABELS.start,
+          elapsedSeconds: 0,
+          estimateSeconds: 0,
+          thinking: '',
+          contentChars: 0,
+        })
+        // 500ms 一次而不是每帧一次：思考增量可能每秒几十帧，逐帧 setState 会拖慢抽屉
+        const timer = window.setInterval(() => {
+          setReparseProgress((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  elapsedSeconds: Math.round((Date.now() - startedAt) / 1000),
+                  thinking: thinkingRef.current,
+                  contentChars: contentCharsRef.current,
+                }
+              : prev,
+          )
+        }, 500)
+        // 回调里赋值，用对象持有以避开 TS 的控制流收窄（否则 result 会被判成 never）
+        const outcome: { result: DocGenSlotsReparseData | null; failure: string | null } = {
+          result: null,
+          failure: null,
+        }
         try {
-          const result = await reparseDeliverableTemplateSlots(templateId, token)
+          await streamReparseDeliverableTemplateSlots(templateId, token, (event) => {
+            if (event.type === 'reasoning') {
+              thinkingRef.current += event.text
+              return
+            }
+            if (event.type === 'content') {
+              contentCharsRef.current += event.text.length
+              return
+            }
+            if (event.type === 'error') {
+              outcome.failure = event.message
+              return
+            }
+            if (event.type === 'result') {
+              outcome.result = event.data
+              return
+            }
+            if (event.type === 'candidates') {
+              setReparseProgress((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      stage: `已找到 ${event.candidate_count} 个可填位置，正在交给模型判断`,
+                      estimateSeconds: event.estimate_seconds,
+                    }
+                  : prev,
+              )
+              return
+            }
+            if (event.type === 'phase') {
+              setReparseProgress((prev) =>
+                prev ? { ...prev, stage: PHASE_LABELS[event.phase] ?? event.message ?? prev.stage } : prev,
+              )
+            }
+          })
+
+          if (outcome.failure) throw new Error(outcome.failure)
+          const result = outcome.result
+          if (!result) throw new Error('分析没有返回结果，请重试')
           const nextStats = result.stats ?? { added: 0, kept: 0, removed: 0 }
           setBeforeReparse(stripUid(slots))
           setSlots((result.slots ?? []).map(withUid))
@@ -227,11 +326,15 @@ export function useTemplateSlotsEditor({ payload, templateId, onClose, onChanged
           setSelectedKeys([])
           // 重识别写回的 source_key 就是当前母本，过期标记此刻已失效
           setStale(false)
-          msgApi.success(`识别完成：新增 ${nextStats.added}、保留 ${nextStats.kept}、移除 ${nextStats.removed}`)
+          msgApi.success(`分析完成：新增 ${nextStats.added}、保留 ${nextStats.kept}、移除 ${nextStats.removed}`)
           onChanged()
+          // 结果已经由流式接口写库，这里只刷列表缓存；刷失败不该覆盖掉成功提示
+          await revalidateDeliverableTemplates().catch(() => undefined)
         } catch (e) {
-          msgApi.error(e instanceof Error ? e.message : '重新识别失败')
+          msgApi.error(e instanceof Error ? e.message : '重新分析失败，请稍后重试')
         } finally {
+          window.clearInterval(timer)
+          setReparseProgress(null)
           setReparsing(false)
         }
       },
@@ -244,8 +347,8 @@ export function useTemplateSlotsEditor({ payload, templateId, onClose, onChanged
       return
     }
     modal.confirm({
-      title: '放弃未保存的修改？',
-      content: '关闭后本次对槽位名称、位置与启用状态的调整都会丢失。',
+      title: '放弃还没保存的修改？',
+      content: '关闭后，这次改的填充项名称、写入位置和启用状态都会丢失。',
       okText: '放弃修改',
       okButtonProps: { danger: true },
       cancelText: '继续编辑',
@@ -286,6 +389,7 @@ export function useTemplateSlotsEditor({ payload, templateId, onClose, onChanged
     batchToggle,
     save,
     reparse,
+    reparseProgress,
     requestClose,
   }
 }

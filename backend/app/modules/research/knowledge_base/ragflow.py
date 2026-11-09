@@ -92,7 +92,7 @@ class RagflowClient:
             RagflowError: 未配置 / 网络失败 / HTTP 非 2xx / 业务 code != 0
         """
         if not self.configured:
-            raise RagflowError("知识库服务未配置（缺少 RAGFLOW__BASE_URL 或 RAGFLOW__API_KEY）")
+            raise RagflowError("知识库服务还没有开通，请联系系统管理员开通后再使用")
         effective_timeout = timeout or self._settings.timeout_seconds
         last_error: Exception | None = None
         for attempt, delay in enumerate(_RETRY_DELAYS, start=1):
@@ -141,7 +141,7 @@ class RagflowClient:
             RagflowError: 未配置 / 网络失败（重试后仍失败）/ HTTP 非 2xx
         """
         if not self.configured:
-            raise RagflowError("知识库服务未配置（缺少 RAGFLOW__BASE_URL 或 RAGFLOW__API_KEY）")
+            raise RagflowError("知识库服务还没有开通，请联系系统管理员开通后再使用")
         effective_timeout = timeout or self._settings.timeout_seconds
         last_error: Exception | None = None
         for attempt, delay in enumerate(_RETRY_DELAYS, start=1):

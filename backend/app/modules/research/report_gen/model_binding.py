@@ -80,9 +80,7 @@ async def resolve_bindings(
     """一次解析三档；结构识别未单独配置时复用主档（读母本与写正文用同一模型即可）。"""
     main_binding = await resolve_binding(main, config_type=config_type)
     structure_binding = (
-        await resolve_binding(structure, config_type=config_type)
-        if (structure or "").strip()
-        else main_binding
+        await resolve_binding(structure, config_type=config_type) if (structure or "").strip() else main_binding
     )
     fallback_binding = await resolve_binding(fallback, config_type=config_type)
     return main_binding, structure_binding, fallback_binding
