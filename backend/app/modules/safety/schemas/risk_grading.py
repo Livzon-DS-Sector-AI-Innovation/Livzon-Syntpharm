@@ -264,6 +264,76 @@ class EquipmentFacilityHazardCreate(BaseModel):
         return _validate_execution_level_value(value)
 
 
+class EquipmentFacilityHazardUpdate(BaseModel):
+    """部分更新设备设施危险源（PATCH）。
+
+    只提交需要修改的字段；服务端把未提交字段与数据库现值合并后，再按
+    `EquipmentFacilityHazardCreate` 的完整规则重新校验，并按 L/S 重新查表得出 R。
+    客户端附带 risk_evaluation_r 会被忽略。
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    equipment_facility_tag: RequiredShortText | None = None
+    inspection_item: RequiredLongText | None = None
+    inspection_standard: RequiredLongText | None = None
+    nonconformity_consequence: RequiredLongText | None = None
+
+    likelihood_l: int | None = Field(None, ge=1, le=5)
+    severity_s: str | None = Field(None, min_length=1, max_length=1)
+
+    current_control_measures: list[str] | None = None
+    improvement_measures: list[str] | None = None
+    residual_risk: str | None = None
+    control_level: str | None = None
+    execution_level: str | None = None
+    remarks: RequiredLongText | None = None
+
+    @field_validator("severity_s")
+    @classmethod
+    def _validate_severity(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if value not in SEVERITY_LEVELS:
+            raise ValueError(f"严重性 S 必须是以下之一: {', '.join(SEVERITY_LEVELS)}")
+        return value
+
+    @field_validator("current_control_measures", "improvement_measures")
+    @classmethod
+    def _validate_measures(cls, value: list[str] | None) -> list[str] | None:
+        if value is None:
+            return None
+        return _validate_equipment_measures_value(value)
+
+    @field_validator("residual_risk")
+    @classmethod
+    def _validate_residual_risk(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _validate_residual_risk_value(value)
+
+    @field_validator("control_level")
+    @classmethod
+    def _validate_control_level(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _validate_control_level_value(value)
+
+    @field_validator("execution_level")
+    @classmethod
+    def _validate_execution_level(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _validate_execution_level_value(value)
+
+    @model_validator(mode="after")
+    def _reject_explicit_nulls(self) -> EquipmentFacilityHazardUpdate:
+        null_fields = [name for name in self.model_fields_set if getattr(self, name) is None]
+        if null_fields:
+            raise ValueError(f"以下字段不能为 null: {', '.join(sorted(null_fields))}")
+        return self
+
+
 class EquipmentFacilityHazardResponse(BaseModel):
     """设备设施危险源台账记录（含服务端计算字段）。"""
 

@@ -361,3 +361,280 @@ class TestLedgerIsolation:
         assert [row["id"] for row in equipment_list.json()["data"]] == [equipment["id"]]
         assert [row["id"] for row in work_list.json()["data"]] == [work_id]
         assert equipment["id"] != work_id
+
+
+# ── #182：编辑 / 软删除 / 筛选 / .xlsx 导出 ─────────────────────────────
+
+from io import BytesIO  # noqa: E402
+
+import openpyxl  # noqa: E402
+from sqlalchemy import select  # noqa: E402
+
+from app.modules.safety.api.permission_map import SAFETY_RESOURCE_CODES, resolve_code  # noqa: E402
+from app.modules.safety.models import EquipmentFacilityHazard  # noqa: E402
+
+EXPORT_URL = f"{BASE_URL}/export"
+
+EXPORT_HEADERS = [
+    "序号",
+    "设备设施/位号",
+    "检查项目",
+    "检查标准",
+    "不符合标准情况及后果",
+    "可能性L",
+    "严重性S",
+    "危险评价R",
+    "现有管控措施",
+    "建议改进（新增）措施",
+    "残余风险",
+    "管控层级",
+    "执行层级",
+    "备注",
+]
+
+
+async def create_variant(client: AsyncClient, **overrides: Any) -> dict[str, Any]:
+    """创建一条记录，用于筛选/导出用例。"""
+    return await create(client, **overrides)
+
+
+class TestEquipmentFacilityHazardDetail:
+    async def test_get_detail_returns_record(self, auth_client: AsyncClient) -> None:
+        created = await create(auth_client)
+
+        response = await auth_client.get(f"{BASE_URL}/{created['id']}")
+
+        assert response.status_code == 200, response.text
+        assert response.json()["data"]["id"] == created["id"]
+        assert response.json()["data"]["risk_evaluation_r"] == 11
+
+    async def test_get_missing_detail_returns_404(self, auth_client: AsyncClient) -> None:
+        response = await auth_client.get(f"{BASE_URL}/00000000-0000-0000-0000-000000000000")
+
+        assert response.status_code == 404, response.text
+
+
+class TestEquipmentFacilityHazardUpdate:
+    async def test_put_recomputes_r_and_ignores_client_value(self, auth_client: AsyncClient) -> None:
+        created = await create(auth_client)
+
+        response = await auth_client.put(
+            f"{BASE_URL}/{created['id']}",
+            json=payload(likelihood_l=5, severity_s="E", risk_evaluation_r=999),
+        )
+
+        assert response.status_code == 200, response.text
+        data = response.json()["data"]
+        assert data["likelihood_l"] == 5
+        assert data["severity_s"] == "E"
+        assert data["risk_evaluation_r"] == 100
+        assert data["equipment_facility_tag"] == created["equipment_facility_tag"]
+
+    async def test_put_reapplies_all_create_rules(self, auth_client: AsyncClient) -> None:
+        created = await create(auth_client)
+
+        blank = await auth_client.put(f"{BASE_URL}/{created['id']}", json=payload(remarks="   "))
+        assert blank.status_code == 422, blank.text
+
+        bad_option = await auth_client.put(f"{BASE_URL}/{created['id']}", json=payload(residual_risk="level_4"))
+        assert bad_option.status_code == 422, bad_option.text
+
+        empty_measures = await auth_client.put(f"{BASE_URL}/{created['id']}", json=payload(current_control_measures=[]))
+        assert empty_measures.status_code == 422, empty_measures.text
+
+    async def test_patch_partial_update_recomputes_from_merged_values(self, auth_client: AsyncClient) -> None:
+        created = await create(auth_client)
+
+        response = await auth_client.patch(f"{BASE_URL}/{created['id']}", json={"severity_s": "E"})
+
+        assert response.status_code == 200, response.text
+        data = response.json()["data"]
+        # L 仍为 2，S 改为 E → R = 32
+        assert data["likelihood_l"] == 2
+        assert data["severity_s"] == "E"
+        assert data["risk_evaluation_r"] == 32
+        assert data["inspection_item"] == created["inspection_item"]
+
+    async def test_patch_ignores_client_supplied_r(self, auth_client: AsyncClient) -> None:
+        created = await create(auth_client)
+
+        response = await auth_client.patch(
+            f"{BASE_URL}/{created['id']}", json={"likelihood_l": 4, "risk_evaluation_r": 1}
+        )
+
+        assert response.status_code == 200, response.text
+        # L=4、S=C → R = 23，客户端传入的 R 被忽略
+        assert response.json()["data"]["risk_evaluation_r"] == 23
+
+    async def test_update_missing_record_returns_404(self, auth_client: AsyncClient) -> None:
+        missing = "00000000-0000-0000-0000-000000000000"
+
+        response = await auth_client.put(f"{BASE_URL}/{missing}", json=payload())
+        assert response.status_code == 404, response.text
+
+        response = await auth_client.patch(f"{BASE_URL}/{missing}", json={"severity_s": "A"})
+        assert response.status_code == 404, response.text
+
+
+class TestEquipmentFacilityHazardSoftDelete:
+    async def test_deleted_record_leaves_list_and_detail_but_stays_in_table(
+        self,
+        auth_client: AsyncClient,
+        db_session: Any,
+    ) -> None:
+        created = await create(auth_client)
+
+        response = await auth_client.delete(f"{BASE_URL}/{created['id']}")
+        assert response.status_code == 200, response.text
+        assert response.json()["message"] == "删除成功"
+
+        list_response = await auth_client.get(BASE_URL)
+        assert list_response.status_code == 200
+        assert list_response.json()["meta"]["total"] == 0
+        assert list_response.json()["data"] == []
+
+        detail_response = await auth_client.get(f"{BASE_URL}/{created['id']}")
+        assert detail_response.status_code == 404
+
+        row = await db_session.scalar(
+            select(EquipmentFacilityHazard).where(EquipmentFacilityHazard.id == created["id"])
+        )
+        assert row is not None
+        assert row.is_deleted is True
+
+    async def test_delete_missing_record_returns_404(self, auth_client: AsyncClient) -> None:
+        response = await auth_client.delete(f"{BASE_URL}/00000000-0000-0000-0000-000000000000")
+
+        assert response.status_code == 404, response.text
+
+    async def test_delete_anonymous_is_rejected(self, anonymous_client: AsyncClient) -> None:
+        response = await anonymous_client.delete(f"{BASE_URL}/00000000-0000-0000-0000-000000000000")
+
+        assert response.status_code == 401
+
+
+class TestEquipmentFacilityHazardFilters:
+    async def test_each_filter_works_alone_and_combined(self, auth_client: AsyncClient) -> None:
+        await create_variant(
+            auth_client, equipment_facility_tag="101-EQ", control_level="101车间", residual_risk="level_1"
+        )
+        await create_variant(
+            auth_client,
+            equipment_facility_tag="201-EQ",
+            control_level="201车间",
+            residual_risk="level_2",
+            likelihood_l=5,
+            severity_s="E",
+        )
+        await create_variant(
+            auth_client,
+            equipment_facility_tag="301-EQ",
+            control_level="301车间",
+            residual_risk="level_3",
+        )
+
+        by_level = await auth_client.get(BASE_URL, params={"control_level": "201车间"})
+        assert by_level.status_code == 200
+        assert by_level.json()["meta"]["total"] == 1
+        assert by_level.json()["data"][0]["equipment_facility_tag"] == "201-EQ"
+
+        by_residual = await auth_client.get(BASE_URL, params={"residual_risk": "level_3"})
+        assert by_residual.status_code == 200
+        assert by_residual.json()["meta"]["total"] == 1
+        assert by_residual.json()["data"][0]["equipment_facility_tag"] == "301-EQ"
+
+        combined = await auth_client.get(BASE_URL, params={"control_level": "201车间", "residual_risk": "level_2"})
+        assert combined.status_code == 200
+        assert combined.json()["meta"]["total"] == 1
+        assert combined.json()["data"][0]["equipment_facility_tag"] == "201-EQ"
+
+        excluded = await auth_client.get(BASE_URL, params={"control_level": "201车间", "residual_risk": "level_3"})
+        assert excluded.status_code == 200
+        assert excluded.json()["meta"]["total"] == 0
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "equipment_facility_tag",
+            "inspection_item",
+            "inspection_standard",
+            "nonconformity_consequence",
+            "remarks",
+        ],
+    )
+    async def test_keyword_searches_every_text_field(self, auth_client: AsyncClient, field: str) -> None:
+        marker = f"KEYWORD-{field}"
+        await create_variant(auth_client, **{field: f"{marker} 文本"})
+        await create_variant(auth_client, equipment_facility_tag="无关键字设备")
+
+        response = await auth_client.get(BASE_URL, params={"keyword": marker})
+
+        assert response.status_code == 200
+        assert response.json()["meta"]["total"] == 1
+        assert response.json()["data"][0][field] == f"{marker} 文本"
+
+    async def test_keyword_combines_with_other_filters(self, auth_client: AsyncClient) -> None:
+        await create_variant(auth_client, equipment_facility_tag="MATCH-EQ", control_level="101车间")
+        await create_variant(auth_client, equipment_facility_tag="MATCH-EQ", control_level="201车间")
+
+        response = await auth_client.get(BASE_URL, params={"keyword": "MATCH-EQ", "control_level": "201车间"})
+
+        assert response.status_code == 200
+        assert response.json()["meta"]["total"] == 1
+        assert response.json()["data"][0]["control_level"] == "201车间"
+
+
+class TestEquipmentFacilityHazardExport:
+    async def test_export_returns_xlsx_with_chinese_headers_and_filtered_rows(self, auth_client: AsyncClient) -> None:
+        await create_variant(auth_client, equipment_facility_tag="导出命中设备", control_level="201车间")
+        await create_variant(auth_client, equipment_facility_tag="导出排除设备", control_level="101车间")
+
+        response = await auth_client.get(EXPORT_URL, params={"control_level": "201车间"})
+
+        assert response.status_code == 200, response.text
+        assert response.headers["content-type"].startswith(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        disposition = response.headers["content-disposition"]
+        assert "attachment" in disposition.lower()
+        assert ".xlsx" in disposition
+
+        workbook = openpyxl.load_workbook(BytesIO(response.content))
+        sheet = workbook.active
+        headers = [cell.value for cell in sheet[1]]
+        assert headers == EXPORT_HEADERS
+        assert sheet.max_row == 2
+        assert sheet.cell(row=2, column=2).value == "导出命中设备"
+        assert str(sheet.cell(row=2, column=8).value) == "11"
+
+    async def test_export_honors_keyword_and_combined_filters(self, auth_client: AsyncClient) -> None:
+        await create_variant(
+            auth_client,
+            equipment_facility_tag="组合命中设备",
+            inspection_item="组合关键字",
+            control_level="201车间",
+            residual_risk="level_2",
+        )
+        await create_variant(
+            auth_client,
+            equipment_facility_tag="组合排除设备",
+            inspection_item="组合关键字",
+            control_level="201车间",
+            residual_risk="level_3",
+        )
+
+        response = await auth_client.get(
+            EXPORT_URL,
+            params={"keyword": "组合关键字", "control_level": "201车间", "residual_risk": "level_2"},
+        )
+
+        assert response.status_code == 200, response.text
+        sheet = openpyxl.load_workbook(BytesIO(response.content)).active
+        assert sheet.max_row == 2
+        assert sheet.cell(row=2, column=2).value == "组合命中设备"
+
+    async def test_export_route_is_authorized_as_read_only(self) -> None:
+        read_code, _write_code = SAFETY_RESOURCE_CODES["equipment-facility-hazards"]
+
+        assert resolve_code("GET", "/api/v1/safety/equipment-facility-hazards/export") == read_code
+        assert resolve_code("GET", "/api/v1/safety/equipment-facility-hazards/export/") == read_code

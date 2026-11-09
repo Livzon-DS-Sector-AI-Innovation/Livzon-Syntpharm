@@ -30,15 +30,21 @@ export type WorkActivityHazardExportParams = NonNullable<
 
 export type EquipmentFacilityHazard = components['schemas']['EquipmentFacilityHazardResponse']
 export type EquipmentFacilityHazardCreate = components['schemas']['EquipmentFacilityHazardCreate']
+export type EquipmentFacilityHazardUpdate = components['schemas']['EquipmentFacilityHazardUpdate']
 export type EquipmentFacilityHazardListApiResponse =
   components['schemas']['EquipmentFacilityHazardListApiResponse']
 export type EquipmentFacilityHazardApiResponse = components['schemas']['EquipmentFacilityHazardApiResponse']
 
 type EquipmentFacilityHazardListOperation =
   operations['list_equipment_facility_hazards_api_v1_safety_equipment_facility_hazards_get']
+type EquipmentFacilityHazardExportOperation =
+  operations['export_equipment_facility_hazards_api_v1_safety_equipment_facility_hazards_export_get']
 
 export type EquipmentFacilityHazardListParams = NonNullable<
   EquipmentFacilityHazardListOperation['parameters']['query']
+>
+export type EquipmentFacilityHazardExportParams = NonNullable<
+  EquipmentFacilityHazardExportOperation['parameters']['query']
 >
 
 export interface OptionItem {

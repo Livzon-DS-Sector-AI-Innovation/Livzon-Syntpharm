@@ -18,6 +18,7 @@ from app.modules.safety.schemas.risk_grading import (
     EquipmentFacilityHazardListApiResponse,
     EquipmentFacilityHazardListMeta,
     EquipmentFacilityHazardResponse,
+    EquipmentFacilityHazardUpdate,
     WorkActivityHazardApiResponse,
     WorkActivityHazardCreate,
     WorkActivityHazardListApiResponse,
@@ -196,12 +197,21 @@ async def list_equipment_facility_hazards(
     current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
+    control_level: str | None = Query(None, description="管控层级（部门）"),
+    residual_risk: str | None = Query(None, description="残余风险 key"),
+    keyword: str | None = Query(None, description="关键字（覆盖各文本字段）"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """按创建时间倒序返回设备设施危险源台账。"""
+    """按创建时间倒序返回设备设施危险源台账，支持组合筛选与关键字搜索。"""
     service = EquipmentFacilityHazardService(db)
     skip = (page - 1) * page_size
-    items, total = await service.list_hazards(skip, page_size)
+    items, total = await service.list_hazards(
+        skip,
+        page_size,
+        control_level=control_level,
+        residual_risk=residual_risk,
+        keyword=keyword,
+    )
     return EquipmentFacilityHazardListApiResponse(
         data=[EquipmentFacilityHazardResponse.model_validate(item) for item in items],
         meta=EquipmentFacilityHazardListMeta(page=page, page_size=page_size, total=total),
@@ -223,3 +233,105 @@ async def create_equipment_facility_hazard(
     item = await service.create_hazard(data)
     await db.commit()
     return EquipmentFacilityHazardApiResponse(data=EquipmentFacilityHazardResponse.model_validate(item))
+
+
+@equipment_facility_hazards_router.get(
+    "/equipment-facility-hazards/export",
+    summary="导出设备设施危险源台账 .xlsx",
+    response_class=Response,
+)
+async def export_equipment_facility_hazards(
+    current_user: RequiredUser,
+    control_level: str | None = Query(None, description="管控层级（部门）"),
+    residual_risk: str | None = Query(None, description="残余风险 key"),
+    keyword: str | None = Query(None, description="关键字（覆盖各文本字段）"),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """按与列表相同的筛选条件导出当前结果；导出被视为只读动作。"""
+    service = EquipmentFacilityHazardService(db)
+    content = await service.export_hazards(
+        control_level=control_level,
+        residual_risk=residual_risk,
+        keyword=keyword,
+    )
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"设备设施危险源台账_{timestamp}.xlsx"
+    ascii_filename = f"equipment_facility_hazards_{timestamp}.xlsx"
+    disposition = f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{quote(filename)}"
+    return Response(
+        content=content,
+        media_type=XLSX_MEDIA_TYPE,
+        headers={"Content-Disposition": disposition},
+    )
+
+
+@equipment_facility_hazards_router.get(
+    "/equipment-facility-hazards/{hazard_id}",
+    response_model=EquipmentFacilityHazardApiResponse,
+    summary="获取设备设施危险源台账详情",
+)
+async def get_equipment_facility_hazard(
+    current_user: RequiredUser,
+    hazard_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    service = EquipmentFacilityHazardService(db)
+    item = await service.get_hazard(hazard_id)
+    return EquipmentFacilityHazardApiResponse(data=EquipmentFacilityHazardResponse.model_validate(item))
+
+
+@equipment_facility_hazards_router.put(
+    "/equipment-facility-hazards/{hazard_id}",
+    response_model=EquipmentFacilityHazardApiResponse,
+    summary="完整更新设备设施危险源台账记录",
+)
+async def replace_equipment_facility_hazard(
+    current_user: RequiredUser,
+    hazard_id: uuid.UUID,
+    data: EquipmentFacilityHazardCreate,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """完整更新（PUT）：所有创建规则重新生效，R 由服务端按 L/S 重新查表。"""
+    service = EquipmentFacilityHazardService(db)
+    item = await service.update_hazard(hazard_id, EquipmentFacilityHazardUpdate(**data.model_dump()))
+    await db.commit()
+    return EquipmentFacilityHazardApiResponse(
+        data=EquipmentFacilityHazardResponse.model_validate(item), message="更新成功"
+    )
+
+
+@equipment_facility_hazards_router.patch(
+    "/equipment-facility-hazards/{hazard_id}",
+    response_model=EquipmentFacilityHazardApiResponse,
+    summary="部分更新设备设施危险源台账记录",
+)
+async def update_equipment_facility_hazard(
+    current_user: RequiredUser,
+    hazard_id: uuid.UUID,
+    data: EquipmentFacilityHazardUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """部分更新（PATCH）：合并现有值后重新套用全部创建规则，并按 L/S 重算 R。"""
+    service = EquipmentFacilityHazardService(db)
+    item = await service.update_hazard(hazard_id, data)
+    await db.commit()
+    return EquipmentFacilityHazardApiResponse(
+        data=EquipmentFacilityHazardResponse.model_validate(item), message="更新成功"
+    )
+
+
+@equipment_facility_hazards_router.delete(
+    "/equipment-facility-hazards/{hazard_id}",
+    response_model=EquipmentFacilityHazardApiResponse,
+    summary="删除设备设施危险源台账记录（软删除）",
+)
+async def delete_equipment_facility_hazard(
+    current_user: RequiredUser,
+    hazard_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """软删除记录：列表与详情不再返回，但数据行保留。"""
+    service = EquipmentFacilityHazardService(db)
+    await service.delete_hazard(hazard_id)
+    await db.commit()
+    return EquipmentFacilityHazardApiResponse(code=200, message="删除成功", data=None)

@@ -5,12 +5,16 @@ import { revalidatePath } from 'next/cache'
 import {
   createEquipmentFacilityHazard as apiCreateEquipmentFacilityHazard,
   createWorkActivityHazard as apiCreateWorkActivityHazard,
+  deleteEquipmentFacilityHazard as apiDeleteEquipmentFacilityHazard,
   deleteWorkActivityHazard as apiDeleteWorkActivityHazard,
+  exportEquipmentFacilityHazards as apiExportEquipmentFacilityHazards,
   exportWorkActivityHazards as apiExportWorkActivityHazards,
+  updateEquipmentFacilityHazard as apiUpdateEquipmentFacilityHazard,
   updateWorkActivityHazard as apiUpdateWorkActivityHazard,
 } from '@/lib/api/server/risk-grading'
 import type {
   EquipmentFacilityHazardCreate,
+  EquipmentFacilityHazardExportParams,
   WorkActivityHazardCreate,
   WorkActivityHazardExportParams,
 } from '@/types/safety/risk-grading'
@@ -44,4 +48,20 @@ export async function createEquipmentFacilityHazardAction(data: EquipmentFacilit
   const result = await apiCreateEquipmentFacilityHazard(data)
   revalidatePath(EQUIPMENT_LEDGER_PATH)
   return result
+}
+
+export async function updateEquipmentFacilityHazardAction(id: string, data: EquipmentFacilityHazardCreate) {
+  const result = await apiUpdateEquipmentFacilityHazard(id, data)
+  revalidatePath(EQUIPMENT_LEDGER_PATH)
+  return result
+}
+
+export async function deleteEquipmentFacilityHazardAction(id: string) {
+  const result = await apiDeleteEquipmentFacilityHazard(id)
+  revalidatePath(EQUIPMENT_LEDGER_PATH)
+  return result
+}
+
+export async function exportEquipmentFacilityHazardsAction(params?: EquipmentFacilityHazardExportParams) {
+  return apiExportEquipmentFacilityHazards(params)
 }

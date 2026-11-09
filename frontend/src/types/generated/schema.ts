@@ -6623,7 +6623,7 @@ export interface paths {
         };
         /**
          * 获取设备设施危险源台账列表
-         * @description 按创建时间倒序返回设备设施危险源台账。
+         * @description 按创建时间倒序返回设备设施危险源台账，支持组合筛选与关键字搜索。
          */
         get: operations["list_equipment_facility_hazards_api_v1_safety_equipment_facility_hazards_get"];
         put?: never;
@@ -6636,6 +6636,55 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/equipment-facility-hazards/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 导出设备设施危险源台账 .xlsx
+         * @description 按与列表相同的筛选条件导出当前结果；导出被视为只读动作。
+         */
+        get: operations["export_equipment_facility_hazards_api_v1_safety_equipment_facility_hazards_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/equipment-facility-hazards/{hazard_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取设备设施危险源台账详情 */
+        get: operations["get_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__get"];
+        /**
+         * 完整更新设备设施危险源台账记录
+         * @description 完整更新（PUT）：所有创建规则重新生效，R 由服务端按 L/S 重新查表。
+         */
+        put: operations["replace_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__put"];
+        post?: never;
+        /**
+         * 删除设备设施危险源台账记录（软删除）
+         * @description 软删除记录：列表与详情不再返回，但数据行保留。
+         */
+        delete: operations["delete_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * 部分更新设备设施危险源台账记录
+         * @description 部分更新（PATCH）：合并现有值后重新套用全部创建规则，并按 L/S 重算 R。
+         */
+        patch: operations["update_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__patch"];
         trace?: never;
     };
     "/api/v1/safety/scheduled-tasks/data-source-options": {
@@ -32296,6 +32345,40 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /**
+         * EquipmentFacilityHazardUpdate
+         * @description 部分更新设备设施危险源（PATCH）。
+         *
+         *     只提交需要修改的字段；服务端把未提交字段与数据库现值合并后，再按
+         *     `EquipmentFacilityHazardCreate` 的完整规则重新校验，并按 L/S 重新查表得出 R。
+         *     客户端附带 risk_evaluation_r 会被忽略。
+         */
+        EquipmentFacilityHazardUpdate: {
+            /** Equipment Facility Tag */
+            equipment_facility_tag?: string | null;
+            /** Inspection Item */
+            inspection_item?: string | null;
+            /** Inspection Standard */
+            inspection_standard?: string | null;
+            /** Nonconformity Consequence */
+            nonconformity_consequence?: string | null;
+            /** Likelihood L */
+            likelihood_l?: number | null;
+            /** Severity S */
+            severity_s?: string | null;
+            /** Current Control Measures */
+            current_control_measures?: string[] | null;
+            /** Improvement Measures */
+            improvement_measures?: string[] | null;
+            /** Residual Risk */
+            residual_risk?: string | null;
+            /** Control Level */
+            control_level?: string | null;
+            /** Execution Level */
+            execution_level?: string | null;
+            /** Remarks */
+            remarks?: string | null;
         };
         /**
          * EquipmentImportRow
@@ -73425,6 +73508,12 @@ export interface operations {
             query?: {
                 page?: number;
                 page_size?: number;
+                /** @description 管控层级（部门） */
+                control_level?: string | null;
+                /** @description 残余风险 key */
+                residual_risk?: string | null;
+                /** @description 关键字（覆盖各文本字段） */
+                keyword?: string | null;
             };
             header?: never;
             path?: never;
@@ -73466,6 +73555,182 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EquipmentFacilityHazardCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["EquipmentFacilityHazardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_equipment_facility_hazards_api_v1_safety_equipment_facility_hazards_export_get: {
+        parameters: {
+            query?: {
+                /** @description 管控层级（部门） */
+                control_level?: string | null;
+                /** @description 残余风险 key */
+                residual_risk?: string | null;
+                /** @description 关键字（覆盖各文本字段） */
+                keyword?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hazard_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["EquipmentFacilityHazardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hazard_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EquipmentFacilityHazardCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["EquipmentFacilityHazardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hazard_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["EquipmentFacilityHazardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_equipment_facility_hazard_api_v1_safety_equipment_facility_hazards__hazard_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hazard_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EquipmentFacilityHazardUpdate"];
             };
         };
         responses: {

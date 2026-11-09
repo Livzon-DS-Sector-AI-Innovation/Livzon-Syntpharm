@@ -989,13 +989,45 @@ class SafetyRepository:
 
     # ==================== 设备设施危险源台账 Operations ====================
 
+    def _equipment_facility_hazard_conditions(
+        self,
+        control_level: str | None = None,
+        residual_risk: str | None = None,
+        keyword: str | None = None,
+    ) -> list[Any]:
+        """构造设备设施台账的筛选条件（软删除 + 可选筛选，全部 AND 组合）。"""
+        conditions: list[Any] = [~EquipmentFacilityHazard.is_deleted]
+        if control_level:
+            conditions.append(EquipmentFacilityHazard.control_level == control_level)
+        if residual_risk:
+            conditions.append(EquipmentFacilityHazard.residual_risk == residual_risk)
+        if keyword and keyword.strip():
+            like = f"%{keyword.strip()}%"
+            conditions.append(
+                or_(
+                    EquipmentFacilityHazard.equipment_facility_tag.ilike(like),
+                    EquipmentFacilityHazard.inspection_item.ilike(like),
+                    EquipmentFacilityHazard.inspection_standard.ilike(like),
+                    EquipmentFacilityHazard.nonconformity_consequence.ilike(like),
+                    EquipmentFacilityHazard.remarks.ilike(like),
+                )
+            )
+        return conditions
+
     async def get_equipment_facility_hazards(
         self,
         skip: int = 0,
         limit: int = 20,
+        control_level: str | None = None,
+        residual_risk: str | None = None,
+        keyword: str | None = None,
     ) -> tuple[list[EquipmentFacilityHazard], int]:
         """获取设备设施危险源台账列表（按创建时间倒序）。"""
-        conditions: list[Any] = [~EquipmentFacilityHazard.is_deleted]
+        conditions = self._equipment_facility_hazard_conditions(
+            control_level=control_level,
+            residual_risk=residual_risk,
+            keyword=keyword,
+        )
         base = select(EquipmentFacilityHazard).where(*conditions)
         count_query = select(func.count(EquipmentFacilityHazard.id)).where(*conditions)
         total = await self.session.scalar(count_query)
@@ -1010,6 +1042,15 @@ class SafetyRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all()), total or 0
 
+    async def get_equipment_facility_hazard_by_id(self, hazard_id: uuid.UUID) -> EquipmentFacilityHazard | None:
+        """按 id 获取未删除的设备设施危险源记录。"""
+        query = select(EquipmentFacilityHazard).where(
+            EquipmentFacilityHazard.id == hazard_id,
+            ~EquipmentFacilityHazard.is_deleted,
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
     async def create_equipment_facility_hazard(self, data: dict[str, Any]) -> EquipmentFacilityHazard:
         """创建设备设施危险源记录。"""
         item = EquipmentFacilityHazard(**data)
@@ -1018,6 +1059,35 @@ class SafetyRepository:
         stmt = select(EquipmentFacilityHazard).where(EquipmentFacilityHazard.id == item.id)
         result = await self.session.execute(stmt)
         return result.scalar_one()
+
+    async def update_equipment_facility_hazard(
+        self, hazard_id: uuid.UUID, data: dict[str, Any]
+    ) -> EquipmentFacilityHazard | None:
+        """更新未删除的设备设施危险源记录。"""
+        query = (
+            update(EquipmentFacilityHazard)
+            .where(
+                EquipmentFacilityHazard.id == hazard_id,
+                ~EquipmentFacilityHazard.is_deleted,
+            )
+            .values(**data, updated_at=func.now())
+            .returning(EquipmentFacilityHazard)
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def delete_equipment_facility_hazard(self, hazard_id: uuid.UUID) -> bool:
+        """软删除设备设施危险源记录。"""
+        query = (
+            update(EquipmentFacilityHazard)
+            .where(
+                EquipmentFacilityHazard.id == hazard_id,
+                ~EquipmentFacilityHazard.is_deleted,
+            )
+            .values(is_deleted=True, updated_at=func.now())
+        )
+        result = await self.session.execute(query)
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]
 
     # ==================== OperationRegulation Operations ====================
 

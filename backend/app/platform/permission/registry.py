@@ -1554,6 +1554,19 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("safety:hazard-identification:manage", "POST", "/api/v1/safety/hazard-identifications/{hid}/upload"),
     ApiBindingDef("safety:equipment-facility-hazard:read", "GET", "/api/v1/safety/equipment-facility-hazards"),
     ApiBindingDef("safety:equipment-facility-hazard:manage", "POST", "/api/v1/safety/equipment-facility-hazards"),
+    ApiBindingDef("safety:equipment-facility-hazard:read", "GET", "/api/v1/safety/equipment-facility-hazards/export"),
+    ApiBindingDef(
+        "safety:equipment-facility-hazard:read", "GET", "/api/v1/safety/equipment-facility-hazards/{hazard_id}"
+    ),
+    ApiBindingDef(
+        "safety:equipment-facility-hazard:manage", "PUT", "/api/v1/safety/equipment-facility-hazards/{hazard_id}"
+    ),
+    ApiBindingDef(
+        "safety:equipment-facility-hazard:manage", "PATCH", "/api/v1/safety/equipment-facility-hazards/{hazard_id}"
+    ),
+    ApiBindingDef(
+        "safety:equipment-facility-hazard:manage", "DELETE", "/api/v1/safety/equipment-facility-hazards/{hazard_id}"
+    ),
     ApiBindingDef("safety:work-activity-hazard:read", "GET", "/api/v1/safety/work-activity-hazards"),
     ApiBindingDef("safety:work-activity-hazard:manage", "POST", "/api/v1/safety/work-activity-hazards"),
     ApiBindingDef("safety:work-activity-hazard:read", "GET", "/api/v1/safety/work-activity-hazards/export"),
