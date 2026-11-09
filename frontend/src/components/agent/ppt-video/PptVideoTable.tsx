@@ -12,8 +12,10 @@ import {
   ReloadOutlined,
   RobotOutlined,
   SearchOutlined,
+  SettingOutlined,
 } from '@ant-design/icons'
 
+import AgentSettingsDrawer from './AgentSettingsDrawer'
 import AiConfigDrawer from './AiConfigDrawer'
 import PptUploadModal from './PptUploadModal'
 import VideoPreviewModal from './VideoPreviewModal'
@@ -93,6 +95,7 @@ export default function PptVideoTable({
   const [language, setLanguage] = useState<string | undefined>(undefined)
   const [uploadOpen, setUploadOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [aiConfigs, setAiConfigs] = useState<AiConfigListResponse | null>(initialAiConfigs ?? null)
   // 列表页只播最新版本：`preview_url` 由后端按 latest_version 派生，前端不拼路径
   const [preview, setPreview] = useState<{ src: string; title: string } | null>(null)
@@ -298,16 +301,24 @@ export default function PptVideoTable({
           <Button icon={<ReloadOutlined />} onClick={() => void load()} />
         </Space>
 
-        <PermissionGate code={PERM.pptVideoManage}>
-          <Space size={8}>
-            <Button icon={<RobotOutlined />} onClick={() => setAiOpen(true)}>
-              模型配置
+        <Space size={8}>
+          {/* 参数设置是平台级配置，门禁口径与后端一致：无「平台配置查看」权限不显示入口 */}
+          <PermissionGate code={PERM.configRead}>
+            <Button icon={<SettingOutlined />} onClick={() => setSettingsOpen(true)}>
+              参数设置
             </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setUploadOpen(true)}>
-              新建配音视频
-            </Button>
-          </Space>
-        </PermissionGate>
+          </PermissionGate>
+          <PermissionGate code={PERM.pptVideoManage}>
+            <Space size={8}>
+              <Button icon={<RobotOutlined />} onClick={() => setAiOpen(true)}>
+                模型配置
+              </Button>
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => setUploadOpen(true)}>
+                新建配音视频
+              </Button>
+            </Space>
+          </PermissionGate>
+        </Space>
       </div>
 
       {error && (
@@ -364,6 +375,8 @@ export default function PptVideoTable({
         configs={aiConfigs}
         onConfigsChange={setAiConfigs}
       />
+
+      <AgentSettingsDrawer open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       <VideoPreviewModal
         open={preview !== null}

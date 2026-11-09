@@ -8,8 +8,9 @@
 备选：**MeloTTS**（MIT），需 torch，音色数量远少于 Kokoro，仅作为兜底实现保留；
 其声线名与 Kokoro 不同，因此二者共用音色目录时按语言映射到该语言的默认说话人。
 
-所有重量级依赖（torch / kokoro / misaki / melo）都在函数内**惰性导入**：API 镜像不装 TTS
-依赖也能正常启动（试听接口会返回明确提示），worker 镜像安装 `[tts]` extra 后即可合成。
+所有重量级依赖（torch / kokoro / misaki / melo）都在函数内**惰性导入**：通用 API 镜像不装
+TTS 依赖也能正常启动（试听接口会返回明确提示），需要用 `backend/Dockerfile.worker`
+（依赖清单 `backend/requirements-tts.txt`）构建的镜像才具备合成能力。
 """
 
 import logging
@@ -109,7 +110,12 @@ class KokoroEngine:
         try:
             from kokoro import KPipeline
         except ImportError as exc:
-            raise TtsError("服务器未安装 Kokoro 运行时（pip install '.[tts]'），无法合成旁白") from exc
+            raise TtsError(
+                "当前进程缺少 Kokoro 运行时，无法合成旁白。"
+                "试听由 API 进程同步合成，需让后端容器使用含 TTS 依赖的镜像"
+                "（backend/Dockerfile.worker，依赖见 backend/requirements-tts.txt，"
+                "本机可直接用 docker-compose.dev.yml 覆盖，它会复用 worker 镜像），改后重试。"
+            ) from exc
 
         if language == "zh":
             pipeline = KPipeline(lang_code="z", repo_id=KOKORO_ZH_REPO, en_callable=_english_g2p())

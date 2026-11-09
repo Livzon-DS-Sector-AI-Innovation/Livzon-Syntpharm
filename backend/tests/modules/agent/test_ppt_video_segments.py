@@ -125,6 +125,8 @@ def test_page_audio_plan_uses_segments_when_bound() -> None:
             {"text": "第一句讲收率。", "targets": ["s0"]},
             {"text": "第二句讲产线。", "targets": []},
         ],
+        # 高亮改为项目级为准后，必须至少有一层开关放行才会逐段合成
+        highlight_override_enabled=True,
     )
     effective = _effective(script)
 
@@ -143,6 +145,7 @@ def test_page_audio_plan_falls_back_when_disabled_or_single_segment() -> None:
         slide_no=1,
         layout={"width": 12192000, "height": 6858000, "shapes": []},
         script_text=script,
+        highlight_override_enabled=True,
     )
     effective = _effective(script)
     base_key = cache.audio_key(effective.script_sha256, effective.voice_fingerprint)
@@ -159,6 +162,7 @@ def test_page_audio_plan_changes_with_pause() -> None:
         slide_no=1,
         layout={"width": 12192000, "height": 6858000, "shapes": []},
         script_text=script,
+        highlight_override_enabled=True,
     )
     effective = _effective(script)
     slower = replace(DEFAULTS, segment_pause_ms=400)
@@ -167,6 +171,46 @@ def test_page_audio_plan_changes_with_pause() -> None:
     _, _, slow_key = service.page_audio_plan(slide, effective, slower)
 
     assert fast_key != slow_key
+
+
+def test_page_audio_plan_requires_some_level_enabled() -> None:
+    """高亮改为「项目级为准」：两层都没勾选不分段，模块总闸关掉同样不分段。"""
+    script = "第一句讲收率。第二句讲产线。"
+    layout = {"width": 12192000, "height": 6858000, "shapes": []}
+    stored_segments = [
+        {"text": "第一句讲收率。", "targets": []},
+        {"text": "第二句讲产线。", "targets": []},
+    ]
+    effective = _effective(script)
+    base_key = cache.audio_key(effective.script_sha256, effective.voice_fingerprint)
+    slide_off = PptVideoSlide(
+        project_id=uuid.uuid4(),
+        slide_no=1,
+        layout=layout,
+        script_text=script,
+        script_segments=stored_segments,
+    )
+
+    project_on = SimpleNamespace(highlight_override_enabled=True)
+    project_off = SimpleNamespace(highlight_override_enabled=False)
+
+    # 项目开、本页不开 → 分段
+    assert len(service.page_audio_plan(slide_off, effective, DEFAULTS, project_on)[0]) == 2
+    # 两层都关 → 不分段，指纹与整页口径一致（老缓存继续命中）
+    assert service.page_audio_plan(slide_off, effective, DEFAULTS, project_off) == ([], 0, base_key)
+    # 项目关但本页单独开 → 该页仍分段
+    slide_on = PptVideoSlide(
+        project_id=uuid.uuid4(),
+        slide_no=1,
+        layout=layout,
+        script_text=script,
+        script_segments=stored_segments,
+        highlight_override_enabled=True,
+    )
+    assert len(service.page_audio_plan(slide_on, effective, DEFAULTS, project_off)[0]) == 2
+    # 模块总闸关 → 即使项目与本页都开也不分段
+    module_off = replace(DEFAULTS, highlight_enabled=False)
+    assert service.page_audio_plan(slide_on, effective, module_off, project_on) == ([], 0, base_key)
 
 
 def _effective(script: str) -> service.EffectiveVoice:
@@ -194,6 +238,8 @@ def _page_slide(script: str) -> PptVideoSlide:
             {"text": "第一句讲收率。", "targets": []},
             {"text": "第二句讲产线。", "targets": []},
         ],
+        # 逐段合成的前置条件：高亮至少有一层开关放行
+        highlight_override_enabled=True,
     )
 
 

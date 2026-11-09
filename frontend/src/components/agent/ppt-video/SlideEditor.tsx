@@ -394,7 +394,7 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
           <Typography.Text type="secondary" className="!ml-1 !text-[11px]">
             {highlightEnabled
               ? '本页按下面的样式与颜色高亮。'
-              : '未勾选时本页跟随项目设置；已选的样式与颜色会保留，勾选后立即恢复。'}
+              : '未勾选时本页跟随项目设置（项目未开启高亮则本页也不亮）；已选的样式与颜色会保留，勾选后立即恢复。'}
           </Typography.Text>
         </div>
 
@@ -426,7 +426,7 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
               <Typography.Text type="secondary" className="text-[12px]">
                 {highlightEnabled
                   ? (highlightColor ?? '未单独设置，使用项目的高亮颜色')
-                  : '未勾选，本页跟随项目设置'}
+                  : '未勾选，本页跟随项目设置（项目未开启则本页不亮）'}
               </Typography.Text>
               {highlightColor && (
                 <Button

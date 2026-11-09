@@ -34,12 +34,18 @@ interface ModuleSettingsClientProps {
   moduleCode: string
   moduleName: string
   moduleDescription: string
+  /**
+   * 嵌入模式：放进抽屉/弹窗时用。
+   * 只去掉页面级页头与大留白，配置项、权限判定与保存逻辑完全不变。
+   */
+  embedded?: boolean
 }
 
 export default function ModuleSettingsClient({
   moduleCode,
   moduleName,
   moduleDescription,
+  embedded = false,
 }: ModuleSettingsClientProps) {
   const { message } = App.useApp()
 
@@ -229,8 +235,14 @@ export default function ModuleSettingsClient({
   ]
 
   return (
-    <div className="settings-scope settings-enter mx-auto max-w-[1320px] md:px-6 md:py-6">
-      <SettingsPageHeader title={`${moduleName}配置`} description={moduleDescription} />
+    <div
+      className={
+        embedded
+          ? 'settings-scope'
+          : 'settings-scope settings-enter mx-auto max-w-[1320px] md:px-6 md:py-6'
+      }
+    >
+      {!embedded && <SettingsPageHeader title={`${moduleName}配置`} description={moduleDescription} />}
 
       <SettingsListCard>
         <Table

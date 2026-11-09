@@ -311,14 +311,21 @@ def page_audio_plan(
     slide: PptVideoSlide,
     effective: EffectiveVoice,
     settings: PptVideoSettings,
+    project: PptVideoProject | None = None,
 ) -> tuple[list[highlight.ScriptSegment], int, str]:
     """决定本页走逐段合成还是整页合成，并给出页音频指纹。
 
-    只有「高亮开启 + 逐段合成开启 + 段数 > 1」才分段；否则指纹与改造前完全一致，
-    老项目的音频缓存继续命中。
+    只有「本页真的出高亮 + 逐段合成开启 + 段数 > 1」才分段：高亮只看模块总闸、
+    项目级与本页级三个开关（`highlight.highlight_active`），项目没勾选且本页也没勾选时
+    不分段，指纹与改造前完全一致，老项目的音频缓存继续命中。
     """
     segments: list[highlight.ScriptSegment] = []
-    if settings.highlight_enabled and settings.segment_tts_enabled:
+    active = highlight.highlight_active(
+        settings.highlight_enabled,
+        bool(getattr(project, "highlight_override_enabled", False)),
+        bool(getattr(slide, "highlight_override_enabled", False)),
+    )
+    if active and settings.segment_tts_enabled:
         segments = highlight.resolve_segments(
             effective.script,
             slide.layout or {},
@@ -513,7 +520,7 @@ async def prepare_page_audio(
     if not effective.script:
         raise ServiceError("本页讲稿为空，请先填写后再试听")
 
-    segments, pause_ms, audio_fingerprint = page_audio_plan(slide, effective, settings)
+    segments, pause_ms, audio_fingerprint = page_audio_plan(slide, effective, settings, project)
     audio_path = work_dir / "audio" / f"{audio_fingerprint}.wav"
     sha_hint = (slide.audio_sha256 or "") if slide.audio_key == audio_fingerprint else ""
 
@@ -1433,7 +1440,7 @@ async def preview_slide(
     if not effective.script:
         raise ServiceError("本页讲稿为空，请先填写后再试听")
 
-    _segments, _pause_ms, fingerprint = page_audio_plan(slide, effective, settings)
+    _segments, _pause_ms, fingerprint = page_audio_plan(slide, effective, settings, project)
     if slide.audio_key == fingerprint and slide.audio_object_key:
         return (
             slide.slide_no,

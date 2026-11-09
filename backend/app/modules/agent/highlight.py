@@ -81,6 +81,20 @@ _KIND_LABELS = {
 }
 
 
+def highlight_active(module_enabled: bool, project_enabled: bool, slide_enabled: bool) -> bool:
+    """三级开关合成：本页是否真的出高亮。
+
+    - 模块级（参数设置里的总闸）关掉 → 任何层级都不亮；
+    - 总闸开着时，项目或本页任一层勾选即亮（单页可在项目关的情况下单独开启）；
+    - 两层都没勾选 → 不亮，成片是干净原图。
+
+    判定与「是否逐段合成旁白」共用：不亮就不必为对齐高亮而切段。
+    """
+    if not module_enabled:
+        return False
+    return bool(project_enabled or slide_enabled)
+
+
 @dataclass(frozen=True)
 class HighlightBox:
     """一个需要高亮的区域，坐标为 EMU，相对整页。

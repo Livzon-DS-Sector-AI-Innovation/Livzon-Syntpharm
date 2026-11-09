@@ -165,7 +165,7 @@ class PptVideoProject(BaseModel):
         default=False,
         server_default="false",
         nullable=False,
-        comment="项目级高亮是否启用；关闭=样式/颜色保留但不生效，回落到模块设置",
+        comment="项目级高亮是否启用；关闭=整项目成片无高亮（样式/颜色保留），单页仍可单独开启",
     )
     source_version: Mapped[int] = mapped_column(
         Integer, default=1, server_default="1", nullable=False, comment="源 PPT 版本号，对象 key 为 source-v{n}.pptx"
@@ -260,7 +260,7 @@ class PptVideoSlide(BaseModel):
         default=False,
         server_default="false",
         nullable=False,
-        comment="本页高亮是否启用；关闭=样式/颜色保留但不生效，回落到项目设置",
+        comment="本页高亮是否启用；关闭=跟随项目设置（项目也未开启则本页无高亮），样式/颜色保留",
     )
     #: none_as_null=True：清空配置要落成 SQL NULL，否则会存成 JSON 'null'，
     #: 「已配置的页」按 is not null 统计就会多算，读回来也得再判一次

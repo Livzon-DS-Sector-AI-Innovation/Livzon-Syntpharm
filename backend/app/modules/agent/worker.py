@@ -173,7 +173,16 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
                 slide, project, settings, engine_name, engine_version, work_dir
             )
             plan = _build_highlight_plan(
-                effective.script, slide.layout, page_audio, settings, getattr(slide, "highlight_regions", None)
+                effective.script,
+                slide.layout,
+                page_audio,
+                settings,
+                highlight.highlight_active(
+                    settings.highlight_enabled,
+                    bool(getattr(project, "highlight_override_enabled", False)),
+                    bool(getattr(slide, "highlight_override_enabled", False)),
+                ),
+                getattr(slide, "highlight_regions", None),
             )
             _log_fallback_usage(project.id, slide.slide_no, plan)
             # 有高亮时画面是多段静帧序列，页图 sha256 无法代表画面，必须叠加视觉指纹
@@ -379,15 +388,18 @@ def _build_highlight_plan(
     layout: Layout | None,
     page_audio: service.PageAudio,
     settings: PptVideoSettings,
+    active: bool,
     regions: Any = None,
 ) -> highlight.HighlightPlan:
     """按旁白音频与页面布局生成页内引导计划；未开启或失败时返回空计划。
 
+    `active` 是三级开关合成结果（见 `highlight.highlight_active`）：模块总闸、
+    项目级、本页级任一层没放行就返回空计划，成片保持原图。
     逐段合成时段时间轴直接用各段音频实测时长；退回整页合成时才按字数估算。
     `regions` 是落库的区域配置（区域三态 + 句级微调），坏配置只会退化成自动判定。
     """
     total_ms = page_audio.duration_ms
-    if not settings.highlight_enabled or not layout:
+    if not active or not layout:
         return highlight.HighlightPlan(steps=[], total_ms=total_ms)
     config = highlight.RegionConfig()
     try:

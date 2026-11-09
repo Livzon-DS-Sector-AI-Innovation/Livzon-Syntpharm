@@ -6,6 +6,7 @@
  * `'use client'` 必须留在 barrel 上：里面有使用 antd `App.useApp()` / hooks 的组件，
  * 服务端评估会直接报错（与各模块约定一致）。
  */
+export { default as AgentSettingsDrawer } from './AgentSettingsDrawer'
 export { default as AiConfigDrawer } from './AiConfigDrawer'
 export { default as AiGuidePanel } from './AiGuidePanel'
 export { default as AiKeyPanel } from './AiKeyPanel'

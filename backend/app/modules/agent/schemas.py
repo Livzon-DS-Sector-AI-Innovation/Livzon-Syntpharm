@@ -135,10 +135,10 @@ class SlideItem(BaseModel):
     language: LanguageCode | None = None
     voice_id: str | None = None
     speed: float | None = None
-    #: 本页高亮样式/主色覆盖；None 表示跟随模块设置
+    #: 本页高亮样式/主色覆盖；None 表示跟随项目设置（项目也没设则用模块设置）
     highlight_style: str | None = None
     highlight_color: str | None = None
-    #: 本页自定义高亮是否启用；关闭时上面两值保留但不生效，回落到项目设置
+    #: 本页独立开启高亮；关闭时跟随项目设置，项目也未开启则本页无高亮
     highlight_override_enabled: bool = False
     #: 区域级配置（区域三态 + 句级微调）；None 表示全部按讲稿自动判定
     highlight_regions: HighlightRegionsPayload | None = None
@@ -289,12 +289,12 @@ class ProjectDetail(BaseModel):
     llm_config_id: UUID | None = None
     #: 项目级模型名；空=沿用该配置的默认模型
     llm_model_name: str | None = None
-    #: 项目级高亮覆盖；None 表示跟随模块设置（单页设置优先级更高）
+    #: 项目级高亮覆盖；None 表示用模块设置（单页设置优先级更高）
     highlight_style: str | None = None
     highlight_color: str | None = None
-    #: 项目级自定义高亮是否启用；关闭时上面两值保留但不生效，回落到模块设置
+    #: 项目级高亮是否启用；关闭时整项目成片无高亮（上面两值保留），单页仍可单独开启
     highlight_override_enabled: bool = False
-    #: 模块设置当前生效值：前端用它展示「跟随默认」时的实际取值与色板预览
+    #: 模块设置当前生效值：前端用它展示样式/颜色兜底值与色板预览
     module_highlight_style: str = ""
     module_highlight_color: str = ""
     updated_at: datetime | None = None

@@ -45,16 +45,16 @@ function SummaryRow({ label, children }: { label: string; children: ReactNode })
  */
 export default function ProjectSettingsCard({ detail, voices, onOpenSettings, onOpenSource }: Props) {
   const currentVoice = voices.find((voice) => voice.voice_id === detail.default_voice_id)
+  // 项目级为准：未勾选 = 整条成片无高亮（不再是「回落到系统默认样式」）
   const highlightEnabled = detail.highlight_override_enabled
-  // 未启用时摘要展示真实生效的那一档（系统默认），避免用户以为自己配的颜色丢了
-  const color = highlightEnabled
-    ? detail.highlight_color ?? detail.module_highlight_color
-    : detail.module_highlight_color
-  const styleText = highlightEnabled
-    ? detail.highlight_style
-      ? highlightStyleLabel(detail.highlight_style)
-      : `跟随默认 · ${highlightStyleLabel(detail.module_highlight_style)}`
-    : `跟随系统默认 · ${highlightStyleLabel(detail.module_highlight_style)}`
+  // 模块总闸（参数设置）：关掉后任何层级都不出高亮
+  const moduleEnabled = detail.script_runtime?.highlight_enabled !== false
+  const hasSavedHighlight = Boolean(detail.highlight_style || detail.highlight_color)
+  const color = detail.highlight_color ?? detail.module_highlight_color
+  // 未启用时摘要展示「已保存但未生效」的值，避免用户以为自己配的样式丢了
+  const savedStyleText = detail.highlight_style
+    ? highlightStyleLabel(detail.highlight_style)
+    : `跟随默认 · ${highlightStyleLabel(detail.module_highlight_style)}`
 
   return (
     <div className="rounded-xl border border-[#E5E3DF] bg-white p-4">
@@ -74,10 +74,17 @@ export default function ProjectSettingsCard({ detail, voices, onOpenSettings, on
         <SummaryRow label="默认语速">{detail.speed.toFixed(2)} 倍</SummaryRow>
         <SummaryRow label="高亮效果">
           <span className={highlightEnabled ? 'text-[#37352F]' : 'text-[#A4A097]'}>
-            {highlightEnabled ? '已启用' : '未启用 · 跟随系统默认'}
+            {highlightEnabled ? '已启用' : '未启用 · 整项目无高亮'}
           </span>
         </SummaryRow>
-        <SummaryRow label="文稿高亮">{styleText}</SummaryRow>
+        {!moduleEnabled && (
+          <SummaryRow label="模块总闸">
+            <span className="text-[#AD6800]">已关闭，所有页都不高亮</span>
+          </SummaryRow>
+        )}
+        <SummaryRow label="文稿高亮">
+          {highlightEnabled ? savedStyleText : hasSavedHighlight ? `${savedStyleText}（未生效）` : '未设置'}
+        </SummaryRow>
         <SummaryRow label="高亮颜色">
           <span className="inline-flex items-center gap-2">
             <span
@@ -86,7 +93,7 @@ export default function ProjectSettingsCard({ detail, voices, onOpenSettings, on
               style={{ backgroundColor: color }}
             />
             <span className="tabular-nums">{color}</span>
-            {!highlightEnabled && <span className="text-[11px] text-[#A4A097]">系统默认</span>}
+            {!highlightEnabled && <span className="text-[11px] text-[#A4A097]">未生效</span>}
             {highlightEnabled && !detail.highlight_color && (
               <span className="text-[11px] text-[#A4A097]">跟随默认</span>
             )}

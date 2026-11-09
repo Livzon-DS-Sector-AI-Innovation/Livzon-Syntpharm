@@ -46,6 +46,25 @@ RUN uv sync --frozen --no-dev
 # --with-deps 安装运行 Chromium 所需的系统库（libatk、libnss3 等）
 RUN .venv/bin/playwright install --with-deps chromium
 
+# 可选 TTS 运行时：单页试听（POST .../preview）在 API 进程内同步合成，需要 kokoro/torch。
+# 交付镜像默认不装（体积大、只在开发机用），本机通过 docker-compose.dev.yml 传
+# WITH_TTS=true 构建出「既能 OCR/爬取、又能试听」的 API 镜像。
+# 依赖清单与安装方式刻意与 Dockerfile.worker 保持一致：先钉 CPU 版 torch，再装其余，
+# 否则 uv 的 first-index 策略会选到 CUDA 版 torch，多拉 2~3 GB 纯 CPU 用不上的依赖。
+ARG WITH_TTS=false
+COPY requirements-tts.txt ./
+RUN if [ "$WITH_TTS" = "true" ]; then \
+        env -u UV_INDEX_URL -u UV_EXTRA_INDEX_URL uv pip install --python /app/.venv/bin/python \
+            --index-strategy unsafe-best-match \
+            --index-url https://download.pytorch.org/whl/cpu \
+            "torch==2.15.0+cpu" \
+        && uv pip install --python /app/.venv/bin/python \
+            --index-url https://mirrors.aliyun.com/pypi/simple/ \
+            -r requirements-tts.txt; \
+    else \
+        echo "跳过 TTS 运行时（WITH_TTS=false）"; \
+    fi
+
 # Copy application code
 COPY . .
 
