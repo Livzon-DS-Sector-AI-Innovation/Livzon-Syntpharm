@@ -627,4 +627,4 @@ Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-
 
 ### Domain docs
 
-Single-context layout. `CONTEXT.md` and `docs/adr/` are created lazily by `/domain-modeling`. See `docs/agents/domain.md`.
+Single-context layout. `GLOSSARY.md` and `docs/adr/` are created lazily by `/domain-modeling`. See `docs/agents/domain.md`.
