@@ -1,7 +1,7 @@
 """safety equipment facility hazard ledger
 
-Revision ID: 0097_safety_equipment_facility_hazards
-Revises: 0096_safety_work_activity_hazards
+Revision ID: 0100_safety_equipment_facility_hazards
+Revises: 0099_safety_work_activity_hazards
 Create Date: 2026-11-09
 
 新增《设备设施危险源台账》空表：

@@ -3401,6 +3401,66 @@
         }
       }
     },
+    "/api/v1/permission/permissions/{code}/api-bindings": {
+      "get": {
+        "tags": [
+          "\u6743\u9650\u7ba1\u7406",
+          "\u6743\u9650\u7ba1\u7406"
+        ],
+        "summary": "List Permission Api Bindings",
+        "description": "\u5355\u4e2a\u6743\u9650\u7801\u7ed1\u5b9a\u7684\u63a5\u53e3\u6e05\u5355\uff0c\u4f9b\u89d2\u8272\u7ba1\u7406\u52fe\u9009\u6743\u9650\u65f6\u6309\u9700\u5c55\u5f00\u3002\n\n\u6743\u9650\u53e3\u5f84\u4e0e `/tree` \u4e00\u81f4\u53d6 `platform:role:read`\uff1a\u8fd9\u4efd\u6e05\u5355\u53ea\u670d\u52a1\u4e8e\u300c\u52fe\u8fd9\u4e2a\u6743\u9650\u4f1a\u653e\u5f00\u54ea\u4e9b\u63a5\u53e3\u300d\uff0c\n\u89d2\u8272\u7ba1\u7406\u5458\u901a\u5e38\u6ca1\u6709 `platform:api-binding:read`\uff0c\u590d\u7528\u767b\u8bb0\u7c3f\u7aef\u70b9\u4f1a 403\u3002\n\n\u7eaf\u6ce8\u518c\u8868\u6570\u636e\u3001\u4e0d\u67e5\u5e93\uff0c\u56e0\u6b64\u6743\u9650\u8868\u672a\u8fc1\u79fb\u65f6\u4e5f\u53ef\u6b63\u5e38\u8fd4\u56de\u3002",
+        "operationId": "list_permission_api_bindings_api_v1_permission_permissions__code__api_bindings_get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionApiBindingListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/permission/api-bindings": {
       "get": {
         "tags": [
@@ -26016,6 +26076,134 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/HazardCategoryApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/hazard-categories/{category_id}": {
+      "put": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u4fee\u6539\u9690\u60a3\u7c7b\u522b\u540d\u79f0\uff08\u5168\u516c\u53f8\u5171\u4eab\uff09",
+        "description": "\u7c7b\u522b\u6539\u540d\uff1a\u540c\u6b65\u5237\u65b0\u5386\u53f2\u53f0\u8d26\u91cc\u7684\u65e7\u540d\u79f0\uff1b\u5185\u7f6e\u7c7b\u522b\u4e0d\u5141\u8bb8\u6539\u540d",
+        "operationId": "put_hazard_category_api_v1_safety_hazard_categories__category_id__put",
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Category Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HazardCategoryUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/HazardCategoryApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u5220\u9664\u9690\u60a3\u7c7b\u522b\uff08\u8f6f\u5220\u9664\uff0c\u5168\u516c\u53f8\u5171\u4eab\uff09",
+        "description": "\u5220\u9664\u7c7b\u522b\uff1a\u8f6f\u5220\u9664\uff0c\u5386\u53f2\u53f0\u8d26\u4fdd\u7559\u539f\u7c7b\u522b\u540d\uff1b\u5185\u7f6e 7 \u7c7b\u4e0d\u53ef\u5220",
+        "operationId": "delete_hazard_category_api_v1_safety_hazard_categories__category_id__delete",
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Category Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -133089,6 +133277,23 @@
         "title": "HazardCategoryResponse",
         "description": "\u9690\u60a3\u7c7b\u522b\u9879"
       },
+      "HazardCategoryUpdate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name",
+            "description": "\u65b0\u7c7b\u522b\u540d\u79f0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "HazardCategoryUpdate",
+        "description": "\u9690\u60a3\u7c7b\u522b\u6539\u540d\u8bf7\u6c42"
+      },
       "HazardIdentificationApiResponse": {
         "properties": {
           "code": {
@@ -151073,6 +151278,60 @@
         "title": "PasswordResetRequest",
         "description": "\u7ba1\u7406\u5458\u91cd\u7f6e\u5bc6\u7801\u3002\n\n`password` \u7559\u7a7a = \u968f\u673a\u751f\u6210\uff1a\u751f\u6210\u7684\u660e\u6587\u5bc6\u7801\u53ea\u5728\u54cd\u5e94\u91cc\u8fd4\u56de\u4e00\u6b21\uff08\u4e00\u6b21\u6027\u5c55\u793a\uff09\uff0c\n\u6570\u636e\u5e93\u4ecd\u53ea\u5b58\u54c8\u5e0c\uff0c\u4e4b\u540e\u65e0\u6cd5\u518d\u6b21\u67e5\u770b\u3002\u4e24\u79cd\u60c5\u51b5\u90fd\u4f1a\u628a\u8d26\u53f7\u6807\u8bb0\u4e3a\u300c\u9996\u767b\u9700\u6539\u5bc6\u300d\u3002"
       },
+      "PermissionApiBindingItem": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "title": "Method",
+            "description": "HTTP \u65b9\u6cd5\uff0c\u5982 GET / POST"
+          },
+          "route_template": {
+            "type": "string",
+            "title": "Route Template",
+            "description": "\u63a5\u53e3\u8def\u7531\u6a21\u677f\uff0c\u8def\u5f84\u53c2\u6570\u4ee5 {name} \u5360\u4f4d"
+          },
+          "scope_required": {
+            "type": "boolean",
+            "title": "Scope Required",
+            "description": "\u8be5\u63a5\u53e3\u662f\u5426\u8981\u6c42\u6570\u636e\u8303\u56f4",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "method",
+          "route_template"
+        ],
+        "title": "PermissionApiBindingItem",
+        "description": "\u5355\u4e2a\u6743\u9650\u7801\u7ed1\u5b9a\u7684\u63a5\u53e3\uff08\u6765\u6e90\u4e3a registry \u5e38\u91cf\uff0c\u65e0 DB \u4e3b\u952e\uff09\u3002"
+      },
+      "PermissionApiBindingListResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionApiBindingItem"
+            },
+            "type": "array",
+            "title": "Data",
+            "description": "\u8be5\u6743\u9650\u7801\u7ed1\u5b9a\u7684\u63a5\u53e3\u6e05\u5355"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "PermissionApiBindingListResponse"
+      },
       "PermissionListResponse": {
         "properties": {
           "code": {
@@ -151146,6 +151405,42 @@
             "type": "boolean",
             "title": "Is Builtin",
             "default": true
+          },
+          "module_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Label",
+            "description": "\u6a21\u5757\u4e2d\u6587\u540d\uff08\u6ce8\u518c\u8868\u6d3e\u751f\uff09"
+          },
+          "resource_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Label",
+            "description": "\u8d44\u6e90\u4e2d\u6587\u540d\uff08\u6ce8\u518c\u8868\u6d3e\u751f\uff09"
+          },
+          "action_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Label",
+            "description": "\u52a8\u4f5c\u4e2d\u6587\u77ed\u8bcd\uff08\u6ce8\u518c\u8868\u6d3e\u751f\uff09"
           }
         },
         "type": "object",

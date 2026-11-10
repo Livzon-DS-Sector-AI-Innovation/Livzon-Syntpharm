@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from decimal import Decimal
 from io import BytesIO
@@ -142,7 +143,7 @@ class WorkActivityHazardService:
             residual_risk=residual_risk,
             keyword=keyword,
         )
-        return build_work_activity_hazard_workbook(items)
+        return await asyncio.to_thread(build_work_activity_hazard_workbook, items)
 
 
 def _format_decimal(value: Decimal) -> str:
@@ -292,7 +293,7 @@ class EquipmentFacilityHazardService:
             residual_risk=residual_risk,
             keyword=keyword,
         )
-        return build_equipment_facility_hazard_workbook(items)
+        return await asyncio.to_thread(build_equipment_facility_hazard_workbook, items)
 
 
 EQUIPMENT_EXPORT_HEADERS: tuple[str, ...] = (

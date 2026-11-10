@@ -10,6 +10,7 @@ export type RoleDetail = components['schemas']['RoleDetailResponse']
 export type GrantItem = components['schemas']['GrantResponse']
 export type PermissionItem = components['schemas']['PermissionResponse']
 export type ApiBindingItem = components['schemas']['ApiBindingResponse']
+export type PermissionApiBindingItem = components['schemas']['PermissionApiBindingItem']
 export type PermissionTreeNode = components['schemas']['PermissionTreeNode']
 export type PermissionTreeData = components['schemas']['PermissionTreeData']
 export type MyPermissions = components['schemas']['MyPermissionsData']
@@ -35,12 +36,3 @@ export type PermissionActionResult<T> = { ok: true; data: T } | { ok: false; mes
 
 export type RoleCategory = 'platform' | 'module'
 export type ScopeType = 'self' | 'department' | 'department_and_children' | 'all'
-
-export interface UserOption {
-  id: string
-  name: string
-  username: string | null
-  /** 飞书头像（授权下拉展示用），缺失时前端回退首字母 */
-  avatar_url?: string | null
-  avatar_thumb?: string | null
-}

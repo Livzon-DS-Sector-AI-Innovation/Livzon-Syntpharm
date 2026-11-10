@@ -313,6 +313,12 @@ class HazardCategoryCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=64, description="类别名称")
 
 
+class HazardCategoryUpdate(BaseModel):
+    """隐患类别改名请求"""
+
+    name: str = Field(..., min_length=1, max_length=64, description="新类别名称")
+
+
 class HazardCategoryResponse(BaseModel):
     """隐患类别项"""
 
