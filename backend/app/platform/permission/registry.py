@@ -500,6 +500,36 @@ SAFETY_PERMISSIONS: tuple[PermissionDef, ...] = (
         "training-record",
         "manage",
     ),
+    # equipment-facility-hazards（设备设施危险源台账，安全风险矩阵）
+    PermissionDef(
+        "safety:equipment-facility-hazard:read",
+        "查看设备设施危险源台账",
+        "safety",
+        "equipment-facility-hazard",
+        "read",
+    ),
+    PermissionDef(
+        "safety:equipment-facility-hazard:manage",
+        "管理设备设施危险源台账（创建/修改/删除）",
+        "safety",
+        "equipment-facility-hazard",
+        "manage",
+    ),
+    # work-activity-hazards（作业活动危险源台账，LEC）
+    PermissionDef(
+        "safety:work-activity-hazard:read",
+        "查看作业活动危险源台账",
+        "safety",
+        "work-activity-hazard",
+        "read",
+    ),
+    PermissionDef(
+        "safety:work-activity-hazard:manage",
+        "管理作业活动危险源台账（创建/修改/删除）",
+        "safety",
+        "work-activity-hazard",
+        "manage",
+    ),
 )
 
 
@@ -1526,6 +1556,25 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ),
     ApiBindingDef("safety:hazard-identification:manage", "POST", "/api/v1/safety/hazard-identifications/{hid}/submit"),
     ApiBindingDef("safety:hazard-identification:manage", "POST", "/api/v1/safety/hazard-identifications/{hid}/upload"),
+    ApiBindingDef("safety:equipment-facility-hazard:read", "GET", "/api/v1/safety/equipment-facility-hazards"),
+    ApiBindingDef("safety:equipment-facility-hazard:manage", "POST", "/api/v1/safety/equipment-facility-hazards"),
+    ApiBindingDef("safety:equipment-facility-hazard:read", "GET", "/api/v1/safety/equipment-facility-hazards/export"),
+    ApiBindingDef(
+        "safety:equipment-facility-hazard:read", "GET", "/api/v1/safety/equipment-facility-hazards/{hazard_id}"
+    ),
+    ApiBindingDef(
+        "safety:equipment-facility-hazard:manage", "PUT", "/api/v1/safety/equipment-facility-hazards/{hazard_id}"
+    ),
+    ApiBindingDef(
+        "safety:equipment-facility-hazard:manage", "DELETE", "/api/v1/safety/equipment-facility-hazards/{hazard_id}"
+    ),
+    ApiBindingDef("safety:work-activity-hazard:read", "GET", "/api/v1/safety/work-activity-hazards"),
+    ApiBindingDef("safety:work-activity-hazard:manage", "POST", "/api/v1/safety/work-activity-hazards"),
+    ApiBindingDef("safety:work-activity-hazard:read", "GET", "/api/v1/safety/work-activity-hazards/export"),
+    ApiBindingDef("safety:work-activity-hazard:read", "GET", "/api/v1/safety/work-activity-hazards/{hazard_id}"),
+    ApiBindingDef("safety:work-activity-hazard:manage", "PUT", "/api/v1/safety/work-activity-hazards/{hazard_id}"),
+    ApiBindingDef("safety:work-activity-hazard:manage", "DELETE", "/api/v1/safety/work-activity-hazards/{hazard_id}"),
+    ApiBindingDef("safety:module:read", "GET", "/api/v1/safety/enums/risk-grading"),
     ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazard-categories"),
     ApiBindingDef("safety:hazard:manage", "POST", "/api/v1/safety/hazard-categories"),
     ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazards"),
