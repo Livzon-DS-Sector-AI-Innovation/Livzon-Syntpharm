@@ -20,6 +20,8 @@ import {
 } from '@/actions/risk-grading'
 import { fetchEquipmentFacilityHazards, fetchRiskGradingOptions } from '@/lib/api/client/risk-grading'
 import {
+  deriveEquipmentEvaluationGrade,
+  EQUIPMENT_GRADE_TAG_STYLES,
   lookupRiskEvaluation,
   toNumberOptions,
   toValueLabelOptions,
@@ -54,6 +56,7 @@ export default function EquipmentLedgerClient() {
   const [exporting, setExporting] = useState(false)
 
   const [controlLevel, setControlLevel] = useState<string>()
+  const [evaluationGrade, setEvaluationGrade] = useState<number>()
   const [residualRisk, setResidualRisk] = useState<string>()
   const [keyword, setKeyword] = useState<string>()
   const [keywordInput, setKeywordInput] = useState('')
@@ -61,10 +64,11 @@ export default function EquipmentLedgerClient() {
   const exportParams = useMemo<EquipmentFacilityHazardExportParams>(
     () => ({
       control_level: controlLevel,
+      evaluation_grade: evaluationGrade,
       residual_risk: residualRisk,
       keyword,
     }),
-    [controlLevel, residualRisk, keyword],
+    [controlLevel, evaluationGrade, residualRisk, keyword],
   )
 
   const { data: options } = useQuery({
@@ -79,6 +83,14 @@ export default function EquipmentLedgerClient() {
   const executionLevelOptions = useMemo(() => options?.execution_levels ?? [], [options])
   const likelihoodOptions = useMemo(() => toNumberOptions(options?.likelihood_levels ?? []), [options])
   const severityOptions = useMemo(() => toValueLabelOptions(options?.severity_levels ?? []), [options])
+  const gradeOptions = useMemo(
+    () =>
+      (options?.equipment_grade_bands ?? [])
+        .slice()
+        .sort((a, b) => a.grade - b.grade)
+        .map((band) => ({ value: band.grade, label: band.label })),
+    [options],
+  )
   const equipmentMeasureLabels = useMemo(
     () => Object.fromEntries(equipmentMeasureOptions.map((item) => [item.value, item.label])),
     [equipmentMeasureOptions],
@@ -90,7 +102,7 @@ export default function EquipmentLedgerClient() {
   const safetyRiskMatrix = options?.safety_risk_matrix
 
   const { data, isLoading } = useQuery({
-    queryKey: [QUERY_KEY, page, pageSize, controlLevel, residualRisk, keyword],
+    queryKey: [QUERY_KEY, page, pageSize, controlLevel, evaluationGrade, residualRisk, keyword],
     queryFn: () =>
       fetchEquipmentFacilityHazards({
         page,
@@ -110,8 +122,14 @@ export default function EquipmentLedgerClient() {
     return lookupRiskEvaluation(safetyRiskMatrix, Number(watchedL), watchedS)
   }, [safetyRiskMatrix, watchedL, watchedS])
 
+  const previewGrade = useMemo(
+    () => deriveEquipmentEvaluationGrade(previewR, options?.equipment_grade_bands),
+    [previewR, options],
+  )
+
   const resetFilters = () => {
     setControlLevel(undefined)
+    setEvaluationGrade(undefined)
     setResidualRisk(undefined)
     setKeyword(undefined)
     setKeywordInput('')
@@ -214,6 +232,14 @@ export default function EquipmentLedgerClient() {
       render: (value: number) => <Tag color="volcano">{value}</Tag>,
     },
     {
+      title: '评价级别',
+      dataIndex: 'evaluation_grade',
+      width: 100,
+      render: (_value: number, record) => (
+        <Tag style={EQUIPMENT_GRADE_TAG_STYLES[record.evaluation_grade]}>{record.evaluation_grade_label}</Tag>
+      ),
+    },
+    {
       title: '现有管控措施',
       dataIndex: 'current_control_measures',
       width: 220,
@@ -295,6 +321,17 @@ export default function EquipmentLedgerClient() {
         />
         <Select
           allowClear
+          placeholder="评价级别"
+          style={{ width: 130 }}
+          value={evaluationGrade}
+          options={gradeOptions}
+          onChange={(value) => {
+            setEvaluationGrade(value)
+            setPage(1)
+          }}
+        />
+        <Select
+          allowClear
           placeholder="残余风险"
           style={{ width: 150 }}
           value={residualRisk}
@@ -325,7 +362,7 @@ export default function EquipmentLedgerClient() {
         loading={isLoading}
         columns={columns}
         dataSource={rows}
-        scroll={{ x: 2600 }}
+        scroll={{ x: 2700 }}
         locale={{ emptyText: <Empty description="暂无设备设施危险源台账记录" /> }}
         pagination={{
           current: page,
@@ -403,6 +440,15 @@ export default function EquipmentLedgerClient() {
                 placeholder="按 L/S 查安全风险矩阵"
                 style={{ width: 160 }}
               />
+            </Form.Item>
+            <Form.Item label="评价级别（自动计算）">
+              <div style={{ minHeight: 32, display: 'flex', alignItems: 'center' }}>
+                {previewGrade ? (
+                  <Tag style={EQUIPMENT_GRADE_TAG_STYLES[previewGrade.grade]}>{previewGrade.label}</Tag>
+                ) : (
+                  <span className="text-[var(--color-muted)]">未选择 L / S</span>
+                )}
+              </div>
             </Form.Item>
           </Space>
 

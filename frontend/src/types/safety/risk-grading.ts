@@ -46,7 +46,19 @@ export type RiskGradingOptions = components['schemas']['RiskGradingOptions']
 export type RiskGradingOptionsApiResponse = components['schemas']['RiskGradingOptionsApiResponse']
 export type RiskGradingValueLabel = components['schemas']['RiskGradingValueLabel']
 export type RiskGradeThreshold = components['schemas']['RiskGradeThreshold']
+export type EquipmentGradeBand = components['schemas']['EquipmentGradeBand']
 export type LecRange = components['schemas']['LecRange']
+
+/** 设备设施评价级别标签样式：黄底是唯一使用黑字的填充（白字对比度不足）。 */
+export const EQUIPMENT_GRADE_TAG_STYLES: Record<
+  number,
+  { backgroundColor: string; color: string; borderColor: string }
+> = {
+  1: { backgroundColor: '#1e88e5', color: '#ffffff', borderColor: '#1565c0' },
+  2: { backgroundColor: '#ffd400', color: '#000000', borderColor: '#c9a600' },
+  3: { backgroundColor: '#f57c00', color: '#ffffff', borderColor: '#c25e00' },
+  4: { backgroundColor: '#e53935', color: '#ffffff', borderColor: '#b71c1c' },
+}
 
 export const STANDARD_LINKS = {
   possibleHarm: {
@@ -83,6 +95,15 @@ export function lookupRiskEvaluation(
   const row = matrix?.[severity]
   if (!row || !Number.isInteger(likelihood) || likelihood < 1 || likelihood > 5) return null
   return row[likelihood - 1] ?? null
+}
+
+/** 按后端下发的分段查设备设施评价级别；仅用于表单即时预览。 */
+export function deriveEquipmentEvaluationGrade(
+  r: number | null,
+  bands: EquipmentGradeBand[] | undefined,
+): EquipmentGradeBand | null {
+  if (r === null || !bands) return null
+  return bands.find((band) => r >= band.min_r) ?? null
 }
 
 export function toValueLabelOptions(values: string[]): RiskGradingValueLabel[] {

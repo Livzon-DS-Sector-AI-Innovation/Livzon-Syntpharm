@@ -1162,6 +1162,7 @@ class SafetyRepository:
     def _equipment_facility_hazard_conditions(
         self,
         control_level: str | None = None,
+        evaluation_grade: int | None = None,
         residual_risk: str | None = None,
         keyword: str | None = None,
     ) -> list[Any]:
@@ -1169,6 +1170,7 @@ class SafetyRepository:
         return _risk_grading_filter_conditions(
             EquipmentFacilityHazard,
             control_level=control_level,
+            evaluation_grade=evaluation_grade,
             residual_risk=residual_risk,
             keyword=keyword,
             keyword_columns=(
@@ -1185,12 +1187,14 @@ class SafetyRepository:
         skip: int = 0,
         limit: int | None = 20,
         control_level: str | None = None,
+        evaluation_grade: int | None = None,
         residual_risk: str | None = None,
         keyword: str | None = None,
     ) -> tuple[list[EquipmentFacilityHazard], int]:
         """获取设备设施危险源台账列表（按创建时间倒序）。limit=None 表示导出全部。"""
         conditions = self._equipment_facility_hazard_conditions(
             control_level=control_level,
+            evaluation_grade=evaluation_grade,
             residual_risk=residual_risk,
             keyword=keyword,
         )
