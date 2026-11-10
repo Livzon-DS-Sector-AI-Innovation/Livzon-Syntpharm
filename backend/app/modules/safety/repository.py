@@ -464,6 +464,32 @@ class SafetyRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
+    async def get_hazard_category_by_id(self, category_id: uuid.UUID) -> HazardCategoryDict | None:
+        """按主键取隐患类别（含已软删除记录，供改名/删除前判定）"""
+        query = select(HazardCategoryDict).where(HazardCategoryDict.id == category_id)
+        result = await self.session.execute(query)
+        return result.scalars().first()
+
+    async def update_hazard_category(self, category_id: uuid.UUID, data: dict[str, Any]) -> HazardCategoryDict | None:
+        """按主键更新隐患类别字段"""
+        item = await self.get_hazard_category_by_id(category_id)
+        if item is None:
+            return None
+        for key, value in data.items():
+            setattr(item, key, value)
+        await self.session.flush()
+        return item
+
+    async def rename_hazard_category_in_hazards(self, old_name: str, new_name: str) -> int:
+        """把隐患台账中引用旧类别名的记录同步为新名，返回受影响行数"""
+        stmt = (
+            update(HazardReport)
+            .where(HazardReport.hazard_category == old_name, HazardReport.is_deleted.is_(False))
+            .values(hazard_category=new_name)
+        )
+        result = await self.session.execute(stmt)
+        return int(result.rowcount or 0)
+
     async def count_hazards_today(self, date_prefix: str) -> int:
         """统计指定日期前缀的隐患编号数量（含软删除），用于自动生成序号。"""
         query = select(func.count(HazardReport.id)).where(

@@ -893,10 +893,26 @@ export default function HazardLedgerDetailPage() {
                     />
                   </FieldEditor>
                 </Col>
+                <Col span={8}>
+                  <FieldLabel>目标完成日期</FieldLabel>
+                  <FieldTile>
+                    <Text style={{ fontSize: 14, fontWeight: 500 }}>
+                      {record.deadline ? fmtDate(record.deadline, 'YYYY-MM-DD') : deadlineDefault}
+                    </Text>
+                  </FieldTile>
+                </Col>
                 <Col span={24}>
                   <FieldEditor label="缺陷项描述">
                     <TextArea rows={3} value={fieldVal('description')}
                       onChange={(e) => setEdits((p) => ({ ...p, description: e.target.value }))} />
+                  </FieldEditor>
+                </Col>
+                <Col span={24}>
+                  <FieldEditor label="纠正预防措施（CAPA）">
+                    <TextArea rows={3}
+                      value={fieldVal('capa_measures')}
+                      onChange={(e) => setEdits((p) => ({ ...p, capa_measures: e.target.value }))}
+                      placeholder="针对该隐患制定的纠正与预防措施，如完善制度、增加巡检频次、加装防护设施等" />
                   </FieldEditor>
                 </Col>
               </Row>
@@ -970,11 +986,20 @@ export default function HazardLedgerDetailPage() {
                     </FieldTile>
                   </Col>
                   <Col span={8}>
-                    <FieldLabel>进度说明</FieldLabel>
+                    <FieldLabel>目标完成日期</FieldLabel>
                     <FieldTile>
-                      <Text style={{ fontSize: 14, color: record.rectification_progress_note ? '#1a1a1a' : '#a4a097' }}>
-                        {record.rectification_progress_note || '-'}
-                      </Text>
+                      {record.deadline ? (
+                        <span>
+                          <span style={{ fontSize: 14, color: dayjs(record.deadline).isBefore(dayjs()) ? '#e03131' : '#1a1a1a', fontWeight: dayjs(record.deadline).isBefore(dayjs()) ? 600 : 400 }}>
+                            {fmtDate(record.deadline, 'YYYY-MM-DD')}
+                          </span>
+                          {dayjs(record.deadline).isBefore(dayjs()) && (
+                            <StatusPill color="#e03131" bg="#fde0ec" icon={<ExclamationCircleOutlined />}>已逾期</StatusPill>
+                          )}
+                        </span>
+                      ) : (
+                        <Text style={{ fontSize: 14, color: '#5d5b54' }}>{deadlineDefault}</Text>
+                      )}
                     </FieldTile>
                   </Col>
                   <Col span={8}>
@@ -990,12 +1015,6 @@ export default function HazardLedgerDetailPage() {
                     <FieldLabel>责任部门</FieldLabel>
                     <FieldTile>
                       <Text style={{ fontSize: 14 }}>{record.department || '-'}</Text>
-                    </FieldTile>
-                  </Col>
-                  <Col span={8}>
-                    <FieldLabel>分管安全员</FieldLabel>
-                    <FieldTile>
-                      <Text style={{ fontSize: 14 }}>{safetyOfficerName || '-'}</Text>
                     </FieldTile>
                   </Col>
                   <Col span={8}>
@@ -1032,6 +1051,13 @@ export default function HazardLedgerDetailPage() {
                   </div>
                 )}
 
+                <div style={{ marginTop: 16 }}>
+                  <FieldLabel><EditOutlined style={{ marginRight: 4 }} />纠正预防措施（CAPA）</FieldLabel>
+                  <FieldTile>
+                    <Text style={{ fontSize: 14 }}>{record.capa_measures || '-'}</Text>
+                  </FieldTile>
+                </div>
+
                 {photos.defect.length > 0 && (
                   <div style={{ marginTop: 16 }}>
                     <FieldLabel><CameraOutlined style={{ marginRight: 4 }} />证据（整改前照片）</FieldLabel>
@@ -1063,20 +1089,6 @@ export default function HazardLedgerDetailPage() {
 
             {editSection === 'rectification' ? (
               <>
-                {/* 目标完成日期 — 只读，自动计算 */}
-                <Row gutter={[16, 12]} style={{ marginBottom: 16 }}>
-                  <Col span={12}>
-                    <FieldLabel>目标完成日期</FieldLabel>
-                    <FieldTile>
-                      <Text style={{ fontSize: 14, fontWeight: 500 }}>
-                        {record.deadline
-                          ? fmtDate(record.deadline, 'YYYY-MM-DD')
-                          : deadlineDefault}
-                      </Text>
-                    </FieldTile>
-                  </Col>
-                </Row>
-
                 <Row gutter={[16, 12]}>
                   <Col span={12}>
                     <FieldEditor label="整改完成时间">
@@ -1092,13 +1104,6 @@ export default function HazardLedgerDetailPage() {
                     value={fieldVal('rectification_reply')}
                     onChange={(e) => setEdits((p) => ({ ...p, rectification_reply: e.target.value }))}
                     placeholder="请详细描述整改过程、实施情况及完成情况" />
-                </FieldEditor>
-
-                <FieldEditor label="纠正预防措施（CAPA）">
-                  <TextArea rows={3}
-                    value={fieldVal('capa_measures')}
-                    onChange={(e) => setEdits((p) => ({ ...p, capa_measures: e.target.value }))}
-                    placeholder="针对该隐患制定的纠正与预防措施，如完善制度、增加巡检频次、加装防护设施等" />
                 </FieldEditor>
 
                 {/* 整改照片上传 */}
@@ -1122,24 +1127,21 @@ export default function HazardLedgerDetailPage() {
             ) : (
               <>
                 <Row gutter={[16, 12]}>
-                  <Col span={12}>
-                    <FieldLabel>目标完成日期</FieldLabel>
+                  <Col span={8}>
+                    <FieldLabel>进度说明</FieldLabel>
                     <FieldTile>
-                      {record.deadline ? (
-                        <span>
-                          <span style={{ fontSize: 14, color: dayjs(record.deadline).isBefore(dayjs()) ? '#e03131' : '#1a1a1a', fontWeight: dayjs(record.deadline).isBefore(dayjs()) ? 600 : 400 }}>
-                            {fmtDate(record.deadline, 'YYYY-MM-DD')}
-                          </span>
-                          {dayjs(record.deadline).isBefore(dayjs()) && (
-                            <StatusPill color="#e03131" bg="#fde0ec" icon={<ExclamationCircleOutlined />}>已逾期</StatusPill>
-                          )}
-                        </span>
-                      ) : (
-                        <Text style={{ fontSize: 14, color: '#5d5b54' }}>{deadlineDefault}</Text>
-                      )}
+                      <Text style={{ fontSize: 14, color: record.rectification_progress_note ? '#1a1a1a' : '#a4a097' }}>
+                        {record.rectification_progress_note || '-'}
+                      </Text>
                     </FieldTile>
                   </Col>
-                  <Col span={12}>
+                  <Col span={8}>
+                    <FieldLabel>分管安全员</FieldLabel>
+                    <FieldTile>
+                      <Text style={{ fontSize: 14 }}>{safetyOfficerName || '-'}</Text>
+                    </FieldTile>
+                  </Col>
+                  <Col span={8}>
                     <FieldLabel>整改完成时间</FieldLabel>
                     <FieldTile>
                       <Text style={{ fontSize: 14 }}>{fmtDate(record.actual_completion_date, 'YYYY-MM-DD')}</Text>
@@ -1151,13 +1153,6 @@ export default function HazardLedgerDetailPage() {
                   <FieldLabel><EditOutlined style={{ marginRight: 4 }} />整改回复</FieldLabel>
                   <FieldTile>
                     <Text style={{ fontSize: 14 }}>{record.rectification_reply || '-'}</Text>
-                  </FieldTile>
-                </div>
-
-                <div style={{ marginTop: 16 }}>
-                  <FieldLabel><EditOutlined style={{ marginRight: 4 }} />纠正预防措施（CAPA）</FieldLabel>
-                  <FieldTile>
-                    <Text style={{ fontSize: 14 }}>{record.capa_measures || '-'}</Text>
                   </FieldTile>
                 </div>
 
