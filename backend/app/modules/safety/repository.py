@@ -488,7 +488,7 @@ class SafetyRepository:
             .values(hazard_category=new_name)
         )
         result = await self.session.execute(stmt)
-        return int(result.rowcount or 0)
+        return int(result.rowcount or 0)  # type: ignore[attr-defined]
 
     async def count_hazards_today(self, date_prefix: str) -> int:
         """统计指定日期前缀的隐患编号数量（含软删除），用于自动生成序号。"""

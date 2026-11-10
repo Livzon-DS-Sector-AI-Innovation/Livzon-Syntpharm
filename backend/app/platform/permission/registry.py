@@ -1620,9 +1620,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("safety:module:read", "GET", "/api/v1/safety/enums/risk-grading"),
     ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazard-categories"),
     ApiBindingDef("safety:hazard-category:manage", "POST", "/api/v1/safety/hazard-categories"),
-    ApiBindingDef(
-        "safety:hazard-category:manage", "DELETE", "/api/v1/safety/hazard-categories/{category_id}"
-    ),
+    ApiBindingDef("safety:hazard-category:manage", "DELETE", "/api/v1/safety/hazard-categories/{category_id}"),
     ApiBindingDef("safety:hazard-category:manage", "PUT", "/api/v1/safety/hazard-categories/{category_id}"),
     ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazards"),
     ApiBindingDef("safety:hazard:manage", "POST", "/api/v1/safety/hazards"),
