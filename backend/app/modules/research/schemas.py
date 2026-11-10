@@ -551,12 +551,127 @@ class RdStageDeliverableUpdate(BaseModel):
     owner_id: UUID | None = None
 
 
+class RdStageDeliverableGenerationBrief(BaseModel):
+    """行内「生成中 62% / 待核对 3 项」徽标用的简报，不返回整份任务。"""
+
+    job_id: UUID
+    status: str = Field(..., description="queued/running/completed/failed/cancelled")
+    progress: int = Field(0, description="进度百分比 0~100")
+    current_step: str | None = None
+    error_message: str | None = None
+    slot_total: int = 0
+    slot_filled: int = 0
+    slot_gap: int = Field(0, description="待补充槽位数")
+    document_ready: bool = False
+
+
 class RdStageDeliverableResponse(RdStageDeliverableBase):
     id: UUID
     created_at: datetime
     updated_at: datetime
     created_by: UUID | None
     updated_by: UUID | None
+    report_id: UUID | None = Field(None, description="AI 生成对应的研发报告")
+    report_gen_job_id: UUID | None = Field(None, description="最近一次 AI 生成任务")
+    generation: RdStageDeliverableGenerationBrief | None = Field(
+        None, description="最近一次生成任务的状态简报；从未生成过为空"
+    )
+
+
+# ===== 阶段交付文档 → AI 生成研发报告 =====
+
+
+class RdDeliverableTemplateOption(BaseModel):
+    """向导第 1 步展示的模板候选。"""
+
+    id: UUID
+    name: str
+    deliverable_type: str
+    stage: str
+    version_no: int | None = Field(None, description="当前生效文件版本号")
+    file_name: str | None = None
+    has_file: bool = Field(False, description="母本 Word 文件是否已上传")
+    is_exact_match: bool = Field(False, description="阶段 + 交付物类型是否与当前行匹配")
+    is_recommended: bool = Field(False, description="是否为系统推荐项")
+
+
+class RdStageDeliverableGenerationOptions(BaseModel):
+    """向导第 1、2 步的全部预填值：一次请求拿齐，前端不需要再串行取数。"""
+
+    project_id: UUID
+    project_name: str = Field(..., description="品种名称")
+    api_name: str = Field("", description="API 全称")
+    stage: str
+    stage_label: str
+    deliverable_type: str
+    deliverable_type_label: str
+    deliverable_id: UUID | None = Field(None, description="本次要写入/升级的交付文档记录；空=还没有记录")
+    report_type: str = Field("stage", description="报告类型固定为 stage")
+    default_title: str
+    default_version: str
+    default_doc_code: str | None = None
+    default_drug_name: str | None = None
+    templates: list[RdDeliverableTemplateOption] = Field(default_factory=list)
+    recommended_template_id: UUID | None = None
+    existing_report_id: UUID | None = None
+    active_job: RdStageDeliverableGenerationBrief | None = Field(
+        None, description="该交付文档正在跑的生成任务；有值时向导直接跳到第 3 步"
+    )
+
+
+class RdStageDeliverableGenerateRequest(BaseModel):
+    """提交一次生成：除定位用的三个字段外全部可选，缺省由后端按项目信息推导。"""
+
+    project_id: UUID
+    stage: str = Field(..., max_length=50)
+    deliverable_type: str = Field(..., max_length=100)
+    deliverable_id: UUID | None = Field(None, description="传了就复用/升级该条交付文档")
+    template_id: UUID | None = Field(None, description="不传则按阶段+类型自动匹配")
+    title: str | None = Field(None, max_length=500)
+    version: str | None = Field(None, max_length=50)
+    doc_code: str | None = Field(None, max_length=100)
+    drug_name: str | None = Field(None, max_length=200)
+    supplement_text: str | None = None
+
+
+class RdStageDeliverableGenerateResult(BaseModel):
+    deliverable_id: UUID
+    report_id: UUID
+    job_id: UUID
+    job_status: str
+    reused: bool = Field(False, description="true = 复用了已在跑的生成任务，本次没有新建")
+
+
+class RdStageDeliverableReportLink(BaseModel):
+    """报告 → 来源交付文档 的反向指针，供研发报告列表显示「来源」列。"""
+
+    report_id: UUID
+    deliverable_id: UUID
+    project_id: UUID
+    stage: str
+    stage_label: str
+    deliverable_type: str
+    deliverable_type_label: str
+    version: str
+
+
+class RdStageDeliverableGenerationStatus(BaseModel):
+    """向导第 3 步的轮询结果。"""
+
+    deliverable_id: UUID
+    report_id: UUID | None = None
+    job_id: UUID | None = None
+    status: str = Field("idle", description="idle/queued/running/completed/failed/cancelled")
+    progress: int = 0
+    current_step: str | None = None
+    error_message: str | None = None
+    slot_total: int = 0
+    slot_filled: int = 0
+    slot_gap: int = 0
+    document_file_name: str | None = None
+    document_ready: bool = False
+    comparison_ready: bool = False
+    updated_at: datetime | None = None
 
 
 # ===== 交付物类型配置 =====
@@ -692,6 +807,7 @@ class RdReportResponse(RdReportBase):
     reviewed_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
+    project_name: str | None = Field(None, description="所属项目名称（列表查询时一并返回）")
     model_config = {"from_attributes": True}
 
 
@@ -789,43 +905,44 @@ class RdDeliverableTemplateBase(BaseModel):
     description: str | None = None
     template_content: str | None = None
     template_structure: dict[str, Any] | None = None
-    is_active: bool = True
+    # 新建默认不启用：母本与槽位经人工核对后才允许进入 AI 生成候选
+    is_active: bool = False
 
 
 class RdDeliverableTemplateCreate(RdDeliverableTemplateBase):
-    pass
+    # 关联的填充项 code（可留空，上传 Word 母本时由后端自动识别）
+    template_code: str | None = Field(None, max_length=100)
 
 
 class RdDeliverableTemplateUpdate(BaseModel):
+    # 注意：字段与编辑表单保持一致。此前缺少 stage/deliverable_type/template_code，
+    # Pydantic 会静默丢弃前端提交的这几项，导致「保存后无变化」。
     name: str | None = Field(None, max_length=200)
+    deliverable_type: str | None = Field(None, max_length=50)
+    stage: str | None = Field(None, max_length=50)
     description: str | None = None
     template_content: str | None = None
     template_structure: dict[str, Any] | None = None
+    template_code: str | None = Field(None, max_length=100)
     is_active: bool | None = None
 
 
 class RdDeliverableTemplateResponse(RdDeliverableTemplateBase):
     id: UUID
     creator_id: UUID | None = None
+    # 这几列由模板上传/自动匹配写入，必须在响应中回传：
+    # 否则前端列表拿不到 template_code/file_object_key，会误判为「尚未关联填充项」
+    # 并始终显示上传入口（而非预览/下载）。
+    template_code: str | None = None
+    file_object_key: str | None = None
+    file_name: str | None = None
+    file_ext: str | None = None
+    # 版本信息：由列表服务聚合填充（非数据库列），供列表直接展示当前版本号
+    current_version_no: int | None = None
+    version_count: int = 0
     created_at: datetime
     updated_at: datetime
     model_config = {"from_attributes": True}
-
-
-# ===== AI 报告生成 Schemas =====
-
-
-class RdReportGenerateRequest(BaseModel):
-    project_id: UUID
-    deliverable_type: str
-    template_id: UUID | None = None
-    additional_context: str | None = None
-
-
-class RdReportGenerateResponse(BaseModel):
-    content: str
-    structure: dict[str, Any] | None = None
-    data_sources: list[str] = []
 
 
 # ===== API Response Wrappers =====

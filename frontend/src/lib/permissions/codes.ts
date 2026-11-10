@@ -76,6 +76,10 @@ export const RESEARCH_PERM = {
   researchDeliverableTemplateCreate: 'research:deliverable-template:create',
   researchDeliverableTemplateUpdate: 'research:deliverable-template:update',
   researchDeliverableTemplateDelete: 'research:deliverable-template:delete',
+  researchKnowledgeBaseRead: 'research:knowledge-base:read',
+  researchKnowledgeBaseCreate: 'research:knowledge-base:create',
+  researchKnowledgeBaseUpdate: 'research:knowledge-base:update',
+  researchKnowledgeBaseDelete: 'research:knowledge-base:delete',
   researchStageDeliverableRead: 'research:stage-deliverable:read',
   researchStageDeliverableCreate: 'research:stage-deliverable:create',
   researchStageDeliverableUpdate: 'research:stage-deliverable:update',
@@ -90,6 +94,7 @@ export const RESEARCH_PERM = {
   researchLiteratureCreate: 'research:literature:create',
   researchReportRead: 'research:report:read',
   researchReportCreate: 'research:report:create',
+  researchReportReview: 'research:report:review',
   researchReportUpdate: 'research:report:update',
   researchReportDelete: 'research:report:delete',
 } as const

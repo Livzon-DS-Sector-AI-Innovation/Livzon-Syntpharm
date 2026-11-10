@@ -69,7 +69,16 @@ async def get_module_setting_int(module: str, key: str, default: int = 0) -> int
         return default
 
 
-async def _func_l72(module: str, key: str, default: dict[str, Any] | list[Any] | None = None) -> Any:
+async def get_module_setting_float(module: str, key: str, default: float = 0.0) -> float:
+    """Read a float runtime setting. Invalid value falls back to default."""
+    value = await get_module_setting(module, key, str(default))
+    try:
+        return float(value)
+    except ValueError:
+        return default
+
+
+async def get_module_setting_json(module: str, key: str, default: dict[str, Any] | list[Any] | None = None) -> Any:
     """Read a JSON runtime setting.
 
     Args:

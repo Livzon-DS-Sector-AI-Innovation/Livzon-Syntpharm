@@ -120,6 +120,7 @@ module = [
     "paddleocr.*",
     "pdf2image.*",
     "ordered_set.*",
+    "xlrd.*",
 ]
 ignore_missing_imports = true
 

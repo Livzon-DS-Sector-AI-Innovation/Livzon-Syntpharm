@@ -42,6 +42,28 @@ _Avoid_: CurrentUser, 必选用户
 允许未登录访问的接口所使用的依赖注入参数；仍会解析 JWT/cookie，端点可据其做条件逻辑。
 _Avoid_: 可选用户, 匿名用户
 
+### 报告生成 (Report Generation)
+
+**槽位** (Slot):
+交付物母本里「需要填写内容」的位置描述（`slot_key`、`label`、锚点、`is_enabled` 等），存于模板的 `template_structure` 缓存。停用的槽位既不下发给模型，也不写入生成结果。
+_Avoid_: 字段, 占位符
+
+**示例库** (Slot Example):
+供下次同模板生成当 few-shot 参照的槽位写法，来源三态：人工修正（`manual_edit`）、模型填充（`agent_filled`）、评审意见沉淀（`feedback_promoted`）；以 `(template_id, slot_key)` 唯一，重复写入覆盖。只能通过槽位结构抽屉里的「示例库」查看与维护：可改写法、补依据、停用（不再注入）、删除（软删留痕）——**写错必须能撤**，否则同一处错法会被一次次教给模型。示例只是措辞参考，不作为引用证据。
+_Avoid_: few-shot 库, 训练集, 语料
+
+**解析留痕** (Structure Run):
+每次母本结构识别的记录，保存解析当时选中的槽位标识。「后补」（漏选）与「否掉」（多选）是这批标识与当前启用结构的集合差，跨多次人工编辑会混在一起，只作趋势看。
+_Avoid_: 识别日志, 解析快照
+
+**提示词覆盖与指纹** (Prompt Override / Fingerprint):
+正文生成与母本识别各有一段 system prompt，库内 `REPORT_GEN_AGENT_PROMPT` / `REPORT_GEN_STRUCTURE_PROMPT` 可整段覆盖，留空则用 `report_gen/prompts.py` 的内置版本；变量用 `$name` 渲染。指纹是「生效文本 + 工具清单」的 sha256 前 8 位，用于判断提示词是否变过，不是版本号。
+_Avoid_: 提示词版本, prompt 模板（当指可覆盖的生效文本时）
+
+**评审意见** (Review Feedback):
+对某一版报告提出的逐条改法，可针对整篇或单个槽位。三态：待落实、已落实（被某次重生成带走并记下是哪次）、不采纳；未落实的会在下次生成时自动拼进补充说明，所以它不是一次性备注。已落实的槽位级意见可以「沉淀」，把那次生成的实际写法收进示例库，来源记为 `feedback_promoted`。提意见 / 处置 / 沉淀三个动作认 `research:report:review` 码，与改槽位、发起生成的 `research:report:update` 分开——只评审不动档案的人不该拿到改数据的能力。拼进 `supplement_text` 的意见是系统行为，详情页单独列出「本次带入 N 条上版意见」，避免与用户自己写的那段混为一谈。
+_Avoid_: 批注, 备注, 补充说明（supplement_text 是别的东西：发起生成时的交代，人写的和系统拼的都在里面）
+
 ### 设备台账 (Equipment Ledger)
 
 **增量更新策略** (Incremental Update Strategy):
@@ -63,3 +85,7 @@ _Avoid_: 设备编号（与 `asset_no` 混淆）
 - **Backend → Frontend**: 后端导出 OpenAPI 规范；前端据此生成 `Generated Types`。契约变更先于前端消费。
 - **Module → Module**: 模块之间只经 `Public API` 协作；`API Response Envelope` 是所有模块对外的统一响应形状。
 - **导入策略 → ADR**：设备导入的匹配与更新决策记录在 `backend/docs/adr/001-equipment-import-v3.md` 与 `backend/docs/adr/002-equipment-import-v4-incremental-update.md`；Excel 部门名称映射的真实来源是 `backend/app/modules/equipment/config/dept_mapping.py`。
+- **人工修正 → 示例库 → 下次生成**：人在详情页改槽位值即写 `Slot Example`；下次生成通过 `read_template_outline` 的 `manual_example` 下发，只影响措辞、不构成证据。
+- **解析留痕 → 槽位结构**：`Structure Run` 记录解析当时的槽位集合，与当前 `Slot` 的启用状态做差得出「后补/否掉」，用于判断识别提示词是否该调。
+- **评审意见 → 下次生成**：`Review Feedback` 未落实（open）的条目在新建生成任务时自动拼进 `supplement_text`，并标记为已落实、记下落实它的 job；标为不采纳则不再带入。
+- **评审意见 → 槽位示例**：已落实的槽位级意见可沉淀，值取落实它的那次生成里的槽位写法、`evidence_text` 存意见原文，`source` 记 `feedback_promoted`。与「人工修正 → 示例库」的区别是：那条是人工直接改的值，这条是 Agent 改对后的值经人认可。

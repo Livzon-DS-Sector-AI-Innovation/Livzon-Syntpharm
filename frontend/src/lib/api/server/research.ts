@@ -1,4 +1,4 @@
-import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
+import { apiFetch, apiFetchData, apiFetchRaw, getApiBaseUrl } from '@/lib/api/server/base'
 import type { OptimizationCreate, OptimizationUpdate, ProcessOptimization, RouteCreate, RouteUpdate, RouteDevelopment } from '@/types/research'
 import type { components } from '@/types/generated/schema'
 
@@ -63,7 +63,7 @@ export async function updateDeliverable(id: string, data: {
 }
 
 export async function deleteDeliverable(id: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/rd-stage-deliverables/${id}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/rd-stage-deliverables/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -76,6 +76,25 @@ export async function deleteDeliverable(id: string) {
 
 export async function uploadDeliverableFile(deliverableId: string, formData: FormData) {
   return uploadFetch(`${getApiBaseUrl()}/api/v1/research/rd-stage-deliverables/${deliverableId}/upload`, formData)
+}
+
+/** 在阶段交付文档里直接发起一次 AI 生成；生成在后台任务里跑，这里只拿回三个 id。 */
+export async function generateDeliverableReport(data: {
+  project_id: string
+  stage: string
+  deliverable_type: string
+  deliverable_id?: string | null
+  template_id?: string | null
+  title?: string | null
+  version?: string | null
+  doc_code?: string | null
+  drug_name?: string | null
+  supplement_text?: string | null
+}) {
+  return apiFetchData<components['schemas']['RdStageDeliverableGenerateResult']>(
+    `${getApiBaseUrl()}/api/v1/research/rd-stage-deliverables/generate`,
+    { method: 'POST', body: JSON.stringify(data) },
+  )
 }
 
 // ===== modules.ts - Pilot Studies =====
@@ -116,7 +135,7 @@ export async function updatePilotStudyDirect(id: string, data: {
 }
 
 export async function deletePilotStudyDirect(id: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/rd-pilot-studies/${id}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/rd-pilot-studies/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -159,7 +178,7 @@ export async function updateValidationDirect(id: string, data: {
 }
 
 export async function deleteValidationDirect(id: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/rd-process-validations/${id}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/rd-process-validations/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -199,7 +218,7 @@ export async function updateFilingDirect(id: string, data: {
 }
 
 export async function deleteFilingDirect(id: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/rd-registration-filings/${id}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/rd-registration-filings/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -212,7 +231,7 @@ export async function deleteFilingDirect(id: string) {
 // ===== modules.ts - Deletes =====
 
 export async function deleteExperimentLog(id: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/experiment-logs/${id}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/experiment-logs/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -223,7 +242,7 @@ export async function deleteExperimentLog(id: string) {
 }
 
 export async function deleteReport(id: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/reports/${id}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/reports/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -234,7 +253,7 @@ export async function deleteReport(id: string) {
 }
 
 export async function deleteInitiation(id: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/initiations/${id}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/initiations/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -245,7 +264,7 @@ export async function deleteInitiation(id: string) {
 }
 
 export async function deleteTrack(id: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/projects/tracks/${id}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/projects/tracks/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -256,7 +275,7 @@ export async function deleteTrack(id: string) {
 }
 
 export async function deleteFinding(id: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/findings/${id}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/findings/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -283,7 +302,7 @@ export async function updateOptimization(id: string, data: OptimizationUpdate) {
 }
 
 export async function deleteOptimization(id: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/optimizations/${id}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/optimizations/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -310,7 +329,7 @@ export async function updateRoute(id: string, data: RouteUpdate) {
 }
 
 export async function deleteRoute(id: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/routes/${id}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/routes/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -337,7 +356,7 @@ export async function updateRdProject(id: string, data: unknown) {
 }
 
 export async function deleteRdProject(id: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/rd-projects/${id}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/rd-projects/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -487,9 +506,10 @@ export async function updateExperimentLog(id: string, data: RdExperimentLogUpdat
 // ===== rd-project.ts - Reports =====
 
 export async function createReport(projectId: string, data: RdReportCreate) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}/reports`, {
+  // 后端契约是 POST /api/v1/research/reports，project_id 在请求体内（不是 /projects/{id}/reports）
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/reports`, {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify({ ...data, project_id: projectId }),
   })
 }
 
@@ -533,7 +553,7 @@ export async function updateDeliverableTemplate(id: string, data: unknown) {
 }
 
 export async function deleteDeliverableTemplate(id: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/deliverable-templates/${id}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/deliverable-templates/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -560,7 +580,7 @@ export async function updateStageDeliverable(id: string, data: unknown) {
 }
 
 export async function deleteStageDeliverable(id: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/stage-deliverables/${id}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/stage-deliverables/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -582,24 +602,6 @@ export async function publishConclusionVersion(
   })
 }
 
-// ===== rd-project.ts - AI Report Generation =====
-
-export async function submitReportJob(data: {
-  project_id: string
-  deliverable_type: string
-  template_id?: string
-  additional_context?: string
-}) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/research/generate-report`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function fetchResearchJob(jobId: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/research/jobs/${jobId}`)
-}
-
 // ===== research.ts - Projects =====
 
 export async function createResearchProject(data: unknown) {
@@ -617,7 +619,7 @@ export async function updateResearchProject(projectId: string, data: unknown) {
 }
 
 export async function deleteResearchProject(projectId: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/projects/${projectId}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -653,7 +655,7 @@ export async function uploadPilotWorkflowDocument(workflowId: string, formData: 
 }
 
 export async function deletePilotWorkflow(workflowId: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/pilot/workflow/${workflowId}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/pilot/workflow/${workflowId}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
@@ -708,7 +710,7 @@ export async function analyzeICHFile(formData: FormData) {
 }
 
 export async function deleteICHRecord(recordId: string) {
-  const response = await fetch(`${getApiBaseUrl()}/api/v1/research/ich/records/${recordId}`, {
+  const response = await apiFetchRaw(`${getApiBaseUrl()}/api/v1/research/ich/records/${recordId}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',

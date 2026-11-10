@@ -3,16 +3,20 @@
 import logging
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import AppException, DuplicateException, NotFoundException
+from app.core.exceptions import (
+    BadRequestException,
+    DuplicateException,
+    NotFoundException,
+)
 
 logger = logging.getLogger(__name__)
 from app.modules.research import repository as repo  # noqa: E402
 from app.modules.research.models import (  # noqa: E402
-    RdExperimentLog,
     RdMilestone,
     RdPilotStudy,
     RdProcessValidation,
@@ -35,6 +39,7 @@ from app.modules.research.schemas import (  # noqa: E402
     RdProjectUpdate,
     RdRegistrationFilingCreate,
     RdRegistrationFilingUpdate,
+    RdReportResponse,
     RdResearchFindingCreate,
     RdResearchFindingUpdate,
     RdResearchTrackCreate,
@@ -983,9 +988,18 @@ async def delete_experiment_log(db: AsyncSession, log_id: uuid.UUID, user_id: uu
 # ===== 研发报告 Service =====
 
 
-async def get_reports(db: AsyncSession, project_id: uuid.UUID):  # type: ignore[no-untyped-def]
-    """获取项目的所有研发报告"""
-    return await repo.get_reports_by_project(db, project_id)
+async def get_reports(db: AsyncSession, project_id: uuid.UUID | None = None, limit: int = 200):  # type: ignore[no-untyped-def]
+    """获取研发报告列表。
+
+    project_id 为空时跨项目返回（供「全部项目」视图），每行附带所属项目名称。
+    """
+    rows = await repo.list_reports_with_project(db, project_id=project_id, limit=limit)
+    reports: list[Any] = []
+    for report, project_name in rows:
+        item = RdReportResponse.model_validate(report)
+        item.project_name = project_name
+        reports.append(item)
+    return reports
 
 
 async def create_report(db: AsyncSession, data, user_id: uuid.UUID | None = None):  # type: ignore[no-untyped-def]
@@ -1010,7 +1024,7 @@ async def update_report(  # type: ignore[no-untyped-def]
 
 
 async def delete_report(db: AsyncSession, report_id: uuid.UUID, user_id: uuid.UUID | None = None) -> None:
-    """删除研发报告"""
+    """删除研发报告（软删）。"""
     await repo.delete_report(db, report_id, user_id)
     await db.commit()
 
@@ -1053,21 +1067,80 @@ async def delete_initiation(db: AsyncSession, initiation_id: uuid.UUID, user_id:
 # ===== 交付物模板 Service =====
 
 
+async def _attach_version_summary(db: AsyncSession, templates: list[Any]) -> None:
+    """给模板列表补上「当前版本号 / 版本数量」。
+
+    这两个值只服务于列表展示，一次聚合查完即可，不必让前端逐行请求版本接口；
+    因此挂在实例属性上，而不是新增数据库列。
+    """
+    if not templates:
+        return
+    from sqlalchemy import case, func, select
+
+    from app.modules.research.models import RdDeliverableTemplateVersion
+
+    rows = (
+        await db.execute(
+            select(
+                RdDeliverableTemplateVersion.template_id,
+                func.count().label("version_count"),
+                func.max(
+                    case(
+                        (
+                            RdDeliverableTemplateVersion.is_current.is_(True),
+                            RdDeliverableTemplateVersion.version_no,
+                        ),
+                        else_=None,
+                    )
+                ).label("current_version_no"),
+            )
+            .where(
+                RdDeliverableTemplateVersion.template_id.in_([t.id for t in templates]),
+                RdDeliverableTemplateVersion.is_deleted.is_(False),
+            )
+            .group_by(RdDeliverableTemplateVersion.template_id)
+        )
+    ).all()
+    summary = {row.template_id: row for row in rows}
+    for template in templates:
+        row = summary.get(template.id)
+        template.current_version_no = int(row.current_version_no) if row and row.current_version_no else None
+        template.version_count = int(row.version_count) if row else 0
+
+
 async def get_deliverable_templates(  # type: ignore[no-untyped-def]
     db: AsyncSession,
     stage: str | None = None,
     deliverable_type: str | None = None,
     is_active: bool | None = None,
 ):
-    """获取交付物模板列表"""
-    return await repo.get_deliverable_templates(db, stage, deliverable_type, is_active)
+    """获取交付物模板列表（附带当前版本号与版本数量）"""
+    templates = await repo.get_deliverable_templates(db, stage, deliverable_type, is_active)
+    await _attach_version_summary(db, templates)
+    return templates
+
+
+def _ensure_template_enableable(  # type: ignore[no-untyped-def]
+    template, update_data: dict[str, Any] | None = None
+) -> None:
+    """启用前的校验：必须有 Word 母本。
+
+    没有母本的模板启用后也没有可下载的原件，属明确的假状态，因此在启用时就拦下来。
+    """
+    patch = update_data or {}
+    file_object_key = patch.get("file_object_key", getattr(template, "file_object_key", None))
+    if not file_object_key:
+        raise BadRequestException("请先上传 Word 模板原件，再启用该模板")
 
 
 async def create_deliverable_template(  # type: ignore[no-untyped-def]
     db: AsyncSession, data, user_id: uuid.UUID | None = None
 ):
-    """创建交付物模板"""
+    """创建交付物模板（默认不启用：母本与槽位核对后才允许启用）。"""
     template_data = data.model_dump()
+    if template_data.get("is_active"):
+        # 新建时必然还没有母本，直接拒绝比静默改成「未启用」更不容易被误解
+        raise BadRequestException("新建模板默认不启用；请先上传 Word 模板原件后再启用")
     if user_id:
         template_data["creator_id"] = user_id
     return await repo.create_deliverable_template(db, template_data)
@@ -1081,6 +1154,8 @@ async def update_deliverable_template(  # type: ignore[no-untyped-def]
     if not template:
         raise NotFoundException("模板")
     update_data = data.model_dump(exclude_unset=True)
+    if update_data.get("is_active") is True:
+        _ensure_template_enableable(template, update_data)
     if user_id:
         update_data["updated_by"] = user_id
     return await repo.update_deliverable_template(db, template, update_data)
@@ -1092,179 +1167,3 @@ async def delete_deliverable_template(
     """删除交付物模板"""
     await repo.delete_deliverable_template(db, template_id, user_id)
     await db.commit()
-
-
-# ===== AI 报告生成 Service =====
-
-
-async def generate_report_with_ai(
-    db: AsyncSession,
-    project_id: uuid.UUID,
-    deliverable_type: str,
-    template_id: uuid.UUID | None = None,
-    additional_context: str | None = None,
-) -> dict:  # type: ignore[type-arg]
-    """使用 AI 生成报告"""
-    from app.core.llm import llm_client
-    from app.core.llm.exceptions import LLMOutputError, LLMProviderError, LLMRateLimitError
-    from app.modules.research.models import (
-        RdProject,
-        RdResearchFinding,
-        RdResearchTrack,
-    )
-
-    # 1. 获取项目信息
-    project_result = await db.execute(select(RdProject).where(RdProject.id == project_id, ~RdProject.is_deleted))
-    project = project_result.scalar_one_or_none()
-    if not project:
-        raise NotFoundException("项目")
-
-    # 2. 获取模板（如果有）
-    template_content = ""
-    if template_id:
-        template = await repo.get_deliverable_template_by_id(db, template_id)
-        if template and template.template_content:
-            template_content = template.template_content
-
-    # 3. 收集项目数据
-    data_sources = []
-
-    # 获取研究项
-    tracks_result = await db.execute(
-        select(RdResearchTrack).where(
-            RdResearchTrack.project_id == project_id,
-            ~RdResearchTrack.is_deleted,
-        )
-    )
-    tracks = tracks_result.scalars().all()
-
-    track_summaries = []
-    for track in tracks:
-        # 获取研究发现
-        findings_result = await db.execute(
-            select(RdResearchFinding).where(
-                RdResearchFinding.track_id == track.id,
-                ~RdResearchFinding.is_deleted,
-            )
-        )
-        findings = findings_result.scalars().all()
-
-        findings_text = "\n".join(
-            [f"- {f.finding_type}: {f.conclusion or '无结论'} (置信度: {f.confidence})" for f in findings]
-        )
-
-        track_summaries.append(f"""
-研究项: {track.name}
-类型: {track.type}
-状态: {track.status}
-当前结论: {track.current_conclusion or "暂无"}
-研究发现:
-{findings_text}
-""")
-        data_sources.append(f"研究项: {track.name}")
-
-    # 获取实验记录
-    experiments_result = await db.execute(
-        select(RdExperimentLog).where(
-            RdExperimentLog.project_id == project_id,
-            ~RdExperimentLog.is_deleted,
-        )
-    )
-    experiments = experiments_result.scalars().all()
-
-    experiment_summaries = []
-    for exp in experiments:
-        experiment_summaries.append(f"""
-实验: {exp.title}
-类型: {exp.experiment_type}
-日期: {exp.experiment_date}
-操作人: {exp.operator}
-目的: {exp.objective or "无"}
-步骤: {exp.procedure or "无"}
-现象: {exp.observations or "无"}
-结论: {exp.conclusion or "无"}
-""")
-        data_sources.append(f"实验: {exp.title}")
-
-    # 4. 构建提示词
-    deliverable_type_names = {
-        "literature_review": "技术调研报告",
-        "development_plan": "研发总方案",
-        "route_confirmation": "工艺路线确认报告",
-        "safety_assessment": "工艺安全评估报告",
-        "impurity_analysis": "理论杂质分析",
-        "optimization_plan": "小试工艺优化方案",
-        "optimization_report": "小试工艺优化报告",
-        "scale_up_summary": "公斤级放大总结报告",
-        "pilot_plan": "中试方案",
-        "pilot_report": "中试报告",
-        "supplier_development": "供应商开发报告",
-        "validation_plan": "工艺验证方案",
-        "validation_report": "工艺验证报告",
-        "cleaning_procedure": "清洁操作规程和记录",
-        "cleaning_validation": "清洁验证总结报告",
-        "structure_confirmation": "原料药结构确证报告",
-        "crystal_form_study": "晶型和粒度研究报告",
-        "impurity_study": "杂质研究报告",
-    }
-
-    deliverable_name = deliverable_type_names.get(deliverable_type, deliverable_type)
-
-    prompt = f"""你是一位专业的原料药研发专家。请根据以下项目信息，生成一份{deliverable_name}。
-
-项目信息:
-- 项目名称: {project.name}
-- API 名称: {project.api_name}
-- CAS 号: {project.cas_number or "无"}
-- 分子式: {project.molecular_formula or "无"}
-- 分子量: {project.molecular_weight or "无"}
-- 适应症: {project.indication or "无"}
-- 当前阶段: {project.current_stage}
-
-研究项数据:
-{"".join(track_summaries) if track_summaries else "暂无研究项数据"}
-
-实验记录数据:
-{"".join(experiment_summaries) if experiment_summaries else "暂无实验记录数据"}
-
-{f"模板参考:\n{template_content}" if template_content else ""}
-
-{f"额外要求:\n{additional_context}" if additional_context else ""}
-
-请生成一份专业、完整的{deliverable_name}，包含以下部分:
-1. 概述
-2. 项目背景
-3. 研究内容与方法
-4. 主要发现与结果
-5. 分析与讨论
-6. 结论与建议
-
-请使用 Markdown 格式输出。"""
-
-    # 5. 调用 LLM
-    try:
-        result = await llm_client.chat(
-            [
-                {
-                    "role": "system",
-                    "content": "你是一位专业的原料药研发专家，擅长撰写各类研发报告。",
-                },
-                {"role": "user", "content": prompt},
-            ]
-        )
-
-        return {
-            "content": result,
-            "structure": None,
-            "data_sources": data_sources,
-        }
-    except (LLMOutputError, LLMProviderError, LLMRateLimitError):
-        logger.exception("LLM call failed")
-        return {
-            "content": "AI 分析暂时不可用，请人工审核",
-            "structure": None,
-            "data_sources": data_sources,
-        }
-    except Exception as e:
-        logger.exception("LLM call failed")
-        raise AppException(status_code=500, message=f"AI 生成失败: {str(e)}")

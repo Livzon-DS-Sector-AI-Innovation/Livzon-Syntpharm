@@ -246,6 +246,7 @@ async def auth_callback(
     code: str = Query(...),
     state: str = Query(...),
     db: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
 ) -> RedirectResponse:
     """Handle the OAuth callback from Feishu.
 
@@ -261,6 +262,7 @@ async def auth_callback(
     ip_address = _client_ip(request)
     user_agent = request.headers.get("user-agent")
     log_repo = LoginLogRepository()
+    frontend_url = settings.FRONTEND_URL.rstrip("/")
 
     # Validate state for CSRF protection：签名/有效期 + 与本次会话的 cookie 比对
     cookie_state = request.cookies.get("oauth_state") or ""
@@ -275,7 +277,7 @@ async def auth_callback(
             error_message="invalid_state: 登录状态已过期",
         )
         await db.commit()
-        response = RedirectResponse(url="/login?error=invalid_state", status_code=302)
+        response = RedirectResponse(url=f"{frontend_url}/login?error=invalid_state", status_code=302)
         response.delete_cookie("oauth_state", path="/api/v1/identity/auth")
         return response
 
@@ -298,7 +300,7 @@ async def auth_callback(
         except Exception as log_exc:
             logger.error("Failed to record login failure: %s", log_exc)
         return RedirectResponse(
-            url="/login?error=callback_failed",
+            url=f"{frontend_url}/login?error=callback_failed",
             status_code=302,
         )
 
@@ -319,7 +321,7 @@ async def auth_callback(
 
     # Redirect to frontend with token
     return RedirectResponse(
-        url=f"/auth/callback?token={token}",
+        url=f"{frontend_url}/auth/callback?token={token}",
         status_code=302,
     )
 

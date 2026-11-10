@@ -74,6 +74,8 @@ class DocumentParser:
             from app.shared.ocr_service import get_ocr_service
 
             ocr_service = get_ocr_service()
+            if ocr_service is None:
+                return "[OCR服务未初始化，无法解析扫描件]"
 
             # Convert PDF to images with lower DPI for speed
             # 150 DPI is a good balance between speed and accuracy

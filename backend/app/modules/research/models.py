@@ -13,9 +13,12 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
+    UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -530,7 +533,12 @@ class RdStageDeliverable(BaseModel):
     """阶段交付物"""
 
     __tablename__ = "rd_stage_deliverables"
-    __table_args__ = {"schema": "research"}
+    __table_args__ = (
+        # 生成入口按「这条交付文档最近一次生成」取状态，列表页会按 report_id 反查
+        Index("ix_research_rd_stage_deliverables_report", "report_id"),
+        Index("ix_research_rd_stage_deliverables_job", "report_gen_job_id"),
+        {"schema": "research"},
+    )
 
     project_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("research.rd_projects.id"), comment="项目ID"
@@ -551,6 +559,20 @@ class RdStageDeliverable(BaseModel):
         comment="负责人",
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
+    # AI 生成链路：交付文档指向生成它的研发报告与任务。FK 不带 ON DELETE，
+    # 删除被引用的报告/任务前要先解除这里的关联，避免连带删掉交付文档
+    report_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_reports.id"),
+        nullable=True,
+        comment="AI 生成对应的研发报告",
+    )
+    report_gen_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_report_gen_jobs.id"),
+        nullable=True,
+        comment="最近一次 AI 生成任务",
+    )
 
 
 class RdExperimentLog(BaseModel):
@@ -707,7 +729,11 @@ class RdDeliverableTemplate(BaseModel):
     """交付物模板"""
 
     __tablename__ = "rd_deliverable_templates"
-    __table_args__ = {"schema": "research"}
+    __table_args__ = (
+        # 0059 建表时已建此索引，模型此前漏声明（alembic check 会报 removed index）
+        Index("ix_research_rd_deliverable_templates_template_code", "template_code"),
+        {"schema": "research"},
+    )
 
     name: Mapped[str] = mapped_column(String(200), comment="模板名称")
     deliverable_type: Mapped[str] = mapped_column(String(50), comment="交付物类型")
@@ -715,10 +741,373 @@ class RdDeliverableTemplate(BaseModel):
     description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="模板描述")
     template_content: Mapped[str | None] = mapped_column(Text, nullable=True, comment="模板内容")
     template_structure: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="模板结构定义")
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用")
+    # 新建默认不启用：母本与槽位经人工核对后才允许进入 AI 生成候选
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否启用")
+    file_object_key: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="模板文件存储键")
+    file_name: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="模板母本原始文件名")
+    file_ext: Mapped[str | None] = mapped_column(String(16), nullable=True, comment="模板母本扩展名（docx/dotx/doc）")
+    template_code: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="关联内置模板的槽位定义 code")
     creator_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("identity.users.id"),
         nullable=True,
         comment="创建者",
     )
+
+
+class RdDeliverableTemplateVersion(BaseModel):
+    """交付物模板的文件版本（含槽位定义快照）。
+
+    主表 rd_deliverable_templates 始终指向「当前生效版本」，因此生成链路
+    （可用模板列表、母本加载、任务创建）完全不需要感知版本表；版本表只服务于
+    留档、查看/下载历史版本与回滚。
+
+    回滚不在旧记录上原地生效，而是以目标版本的内容新建一条 v(N+1)，
+    版本号单调递增、历史不可改写（类似 git revert）。
+    """
+
+    __tablename__ = "rd_deliverable_template_versions"
+    __table_args__ = (
+        UniqueConstraint("template_id", "version_no", name="uq_rd_deliverable_template_versions_no"),
+        # 同一模板最多一条当前版本；软删记录不占用该位（部分唯一索引）
+        Index(
+            "uq_rd_deliverable_template_versions_current",
+            "template_id",
+            unique=True,
+            postgresql_where=text("is_current = true AND is_deleted = false"),
+        ),
+        {"schema": "research"},
+    )
+
+    template_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_deliverable_templates.id"),
+        comment="所属交付物模板",
+    )
+    version_no: Mapped[int] = mapped_column(Integer, comment="版本号，从 1 起单调递增")
+    file_object_key: Mapped[str] = mapped_column(String(500), comment="该版本模板文件存储键")
+    file_name: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="原始文件名")
+    file_ext: Mapped[str | None] = mapped_column(String(16), nullable=True, comment="扩展名（docx/dotx/doc）")
+    file_size: Mapped[int | None] = mapped_column(BigInteger, nullable=True, comment="文件字节数")
+    # 槽位定义快照：不回滚这两列会造成「旧母本 + 新槽位」错配
+    template_code: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="槽位定义 code 快照")
+    template_structure: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="槽位结构定义快照")
+    change_note: Mapped[str | None] = mapped_column(Text, nullable=True, comment="版本说明（变更备注）")
+    # 版本类型：母本（template）与填充示例稿（sample）共表留档，但语义完全不同。
+    # 示例稿由已保存的填充项在母本上写标记生成，永远 is_current=False、不改主表，
+    # 也不能被回滚成母本——用这一列把两者隔开，避免示例稿混进正式版本链。
+    kind: Mapped[str] = mapped_column(
+        String(16), default="template", server_default="template", comment="版本类型：template 母本 / sample 填充示例稿"
+    )
+    is_current: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", comment="是否当前生效版本")
+
+
+# ---------------------------------------------------------------------------
+# AI 报告生成（Agent 版）
+#
+# 三张表分工：job 承载「一次生成」的快照与终态，step 是只追加的执行轨迹，
+# slot 是 Agent 的填充结果。生成输入（受控编码/品种名称/补充说明）刻意挂在
+# job 上而不是 rd_reports：同一报告多次生成各留一份输入快照，且不改动已被
+# 多处在读的报告表结构。
+# ---------------------------------------------------------------------------
+
+REPORT_GEN_JOB_STATUS_VALUES = ("queued", "running", "completed", "failed", "cancelled")
+REPORT_GEN_STEP_KIND_VALUES = ("think", "tool_call", "tool_result", "error", "status")
+REPORT_GEN_SLOT_STATE_VALUES = ("filled", "conflict", "pending", "gap", "anchor_unresolved")
+
+
+class RdReportGenJob(BaseModel):
+    """AI 报告生成任务：一条记录对应「点一次 AI 生成」。"""
+
+    __tablename__ = "rd_report_gen_jobs"
+    __table_args__ = (
+        Index("ix_research_rd_report_gen_jobs_report", "report_id"),
+        Index("ix_research_rd_report_gen_jobs_project", "project_id"),
+        Index("ix_research_rd_report_gen_jobs_status", "status"),
+        CheckConstraint(
+            "status IN ('queued', 'running', 'completed', 'failed', 'cancelled')",
+            name="ck_research_rd_report_gen_jobs_status",
+        ),
+        {"schema": "research"},
+    )
+
+    report_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("research.rd_reports.id"), comment="关联研发报告"
+    )
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("research.rd_projects.id"), comment="关联研发项目"
+    )
+    deliverable_template_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_deliverable_templates.id"),
+        nullable=True,
+        comment="使用的交付物模板（Word 母本）",
+    )
+    # 母本存储键快照：模板在任务执行期间被换版时，仍按任务发起时的母本生成
+    template_file_key: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="母本存储键快照")
+    template_file_name: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="母本文件名快照")
+
+    status: Mapped[str] = mapped_column(
+        String(20), default="queued", comment="queued/running/completed/failed/cancelled"
+    )
+    progress: Mapped[int] = mapped_column(Integer, default=0, comment="进度百分比 0~100")
+    current_step: Mapped[str | None] = mapped_column(String(300), nullable=True, comment="当前步骤描述")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True, comment="失败原因")
+
+    doc_code: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="受控编码（输入快照）")
+    drug_name: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="品种名称（输入快照）")
+    supplement_text: Mapped[str | None] = mapped_column(Text, nullable=True, comment="补充说明（输入快照）")
+
+    document_object_key: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="成品 docx 存储键")
+    document_file_name: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="成品 docx 文件名")
+    comparison_object_key: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="槽位对照表存储键")
+
+    slot_total: Mapped[int] = mapped_column(Integer, default=0, comment="槽位总数")
+    slot_filled: Mapped[int] = mapped_column(Integer, default=0, comment="已填槽位数")
+    slot_gap: Mapped[int] = mapped_column(Integer, default=0, comment="缺口槽位数")
+
+    cancel_requested: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", comment="人工请求终止"
+    )
+    rounds: Mapped[int] = mapped_column(Integer, default=0, comment="已执行的 Agent 轮次")
+    tool_mode: Mapped[str | None] = mapped_column(String(16), nullable=True, comment="实际使用的协议：tools/json")
+
+    # 模型快照：任务发起时固定，执行期间改配置不影响本任务。
+    # 档位列存「配置里填的原值」（LLM 配置名或模型名），执行时按它重新解析；
+    # model_name 存解析后的实际模型名，只用于展示。
+    model_config_name: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, comment="正文生成档位原值（LLM 配置名或模型名）"
+    )
+    model_name: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="正文生成实际模型名")
+    structure_model_name: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, comment="结构识别档位原值"
+    )
+    fallback_model_name: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="兜底档位原值")
+    used_fallback: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", comment="是否已降级到兜底模型"
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="开始执行时间")
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="结束时间（含失败/终止）"
+    )
+
+
+class RdReportGenStep(BaseModel):
+    """执行轨迹：只追加，不更新。详情页按 (job_id, seq) 增量拉取。"""
+
+    __tablename__ = "rd_report_gen_steps"
+    __table_args__ = (
+        UniqueConstraint("job_id", "seq", name="uq_research_rd_report_gen_steps_seq"),
+        Index("ix_research_rd_report_gen_steps_job_seq", "job_id", "seq"),
+        CheckConstraint(
+            "kind IN ('think', 'tool_call', 'tool_result', 'error', 'status')",
+            name="ck_research_rd_report_gen_steps_kind",
+        ),
+        {"schema": "research"},
+    )
+
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("research.rd_report_gen_jobs.id"), comment="所属任务"
+    )
+    seq: Mapped[int] = mapped_column(Integer, comment="任务内自增序号，从 1 起")
+    kind: Mapped[str] = mapped_column(String(20), comment="think/tool_call/tool_result/error/status")
+    title: Mapped[str] = mapped_column(String(300), comment="一句话标题（列表直接展示）")
+    tool_name: Mapped[str | None] = mapped_column(String(60), nullable=True, comment="工具名")
+    args_summary: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="入参摘要（已截断）")
+    result_summary: Mapped[str | None] = mapped_column(Text, nullable=True, comment="结果摘要（已截断）")
+    status: Mapped[str] = mapped_column(String(12), default="ok", comment="ok/failed")
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="耗时毫秒")
+
+
+class RdReportGenSlot(BaseModel):
+    """一个模板槽位的填充结果（含出处与证据，供对照表与人工复核）。"""
+
+    __tablename__ = "rd_report_gen_slots"
+    __table_args__ = (
+        UniqueConstraint("job_id", "slot_key", name="uq_research_rd_report_gen_slots_key"),
+        Index("ix_research_rd_report_gen_slots_job_state", "job_id", "state"),
+        CheckConstraint(
+            "state IN ('filled', 'conflict', 'pending', 'gap', 'anchor_unresolved')",
+            name="ck_research_rd_report_gen_slots_state",
+        ),
+        {"schema": "research"},
+    )
+
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("research.rd_report_gen_jobs.id"), comment="所属任务"
+    )
+    slot_key: Mapped[str] = mapped_column(String(100), comment="槽位稳定标识")
+    slot_label: Mapped[str] = mapped_column(String(200), default="", comment="槽位名称（如「品种名称」）")
+    anchor: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="母本锚点定义")
+    value: Mapped[str | None] = mapped_column(Text, nullable=True, comment="填充值")
+    state: Mapped[str] = mapped_column(
+        String(20), default="pending", comment="filled/conflict/pending/gap/anchor_unresolved"
+    )
+    source_name: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="来源文件或数据表")
+    evidence: Mapped[str | None] = mapped_column(Text, nullable=True, comment="原文证据（引文）")
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True, comment="置信度 0~1")
+    owner_hint: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="缺口责任方提示")
+
+
+class RdReportGenDocumentVersion(BaseModel):
+    """成品文档版本：AI 初稿、人工重渲、人工上传各留一条，保证改稿可回退。
+
+    为什么单独建版本表而不是只留任务上的 document_object_key：任务上的键只能表示
+    「当前这一版」，重新渲染或上传一覆盖，就再也拿不回 AI 初稿，用户改坏后既无法
+    对比也无法证明哪一版是 AI 出的。
+    """
+
+    __tablename__ = "rd_report_gen_document_versions"
+    __table_args__ = (
+        UniqueConstraint(
+            "job_id", "version_no", name="uq_research_rd_report_gen_doc_versions_no"
+        ),
+        Index(
+            "ix_research_rd_report_gen_doc_versions_job", "job_id", "version_no"
+        ),
+        Index(
+            "ix_research_rd_report_gen_doc_versions_current", "job_id", "is_current"
+        ),
+        CheckConstraint(
+            "kind IN ('ai_draft', 'manual_render', 'manual_upload')",
+            name="ck_research_rd_report_gen_doc_versions_kind",
+        ),
+        {"schema": "research"},
+    )
+
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("research.rd_report_gen_jobs.id"), comment="所属生成任务"
+    )
+    version_no: Mapped[int] = mapped_column(Integer, comment="任务内递增版本号，从 1 起")
+    kind: Mapped[str] = mapped_column(
+        String(20), comment="ai_draft=AI 初稿 / manual_render=按槽位重渲 / manual_upload=人工上传"
+    )
+    object_key: Mapped[str] = mapped_column(String(500), comment="docx 存储键")
+    comparison_object_key: Mapped[str | None] = mapped_column(
+        String(500), nullable=True, comment="同版本对照表存储键（人工上传为空）"
+    )
+    file_name: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="文件名")
+    file_size: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="文件字节数")
+    note: Mapped[str | None] = mapped_column(
+        String(300), nullable=True, comment="版本说明，如「按当前槽位重渲染」"
+    )
+    is_current: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", comment="是否为当前生效版本"
+    )
+
+
+class RdReportGenExample(BaseModel):
+    """槽位填写示例：把人工修正沉淀成下次生成的 few-shot 参照。
+
+    为什么以 (template_id, slot_key) 为唯一键：同一模板的同一槽位只保留最新一条人工
+    答案，重复修正直接覆盖。示例库一旦攒出多条互相矛盾的答案，注入时模型只会更乱。
+    ``template_id`` 为空表示跨模板通用示例（按交付物类型共享），当前留作扩展位。
+    """
+
+    __tablename__ = "rd_report_gen_examples"
+    __table_args__ = (
+        UniqueConstraint("template_id", "slot_key", name="uq_research_rd_report_gen_examples_slot"),
+        Index("ix_research_rd_report_gen_examples_template", "template_id", "is_active"),
+        CheckConstraint(
+            "source IN ('manual_edit', 'agent_filled', 'feedback_promoted')",
+            name="ck_research_rd_report_gen_examples_source",
+        ),
+        {"schema": "research"},
+    )
+
+    template_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_deliverable_templates.id"),
+        nullable=True,
+        comment="所属交付物模板；空=跨模板通用",
+    )
+    slot_key: Mapped[str] = mapped_column(String(100), comment="槽位稳定标识")
+    slot_label: Mapped[str] = mapped_column(String(200), default="", comment="槽位名称")
+    source: Mapped[str] = mapped_column(
+        String(20),
+        default="manual_edit",
+        comment="manual_edit=人工修正 / agent_filled=模型填充 / feedback_promoted=评审意见沉淀",
+    )
+    value: Mapped[str] = mapped_column(Text, comment="该槽位的正确写法")
+    evidence_text: Mapped[str | None] = mapped_column(Text, nullable=True, comment="当时引用的原文证据")
+    query_text: Mapped[str | None] = mapped_column(Text, nullable=True, comment="当时用的检索词（给模型参考）")
+    usage_count: Mapped[int] = mapped_column(Integer, default=0, comment="被注入到生成任务的次数")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否参与注入")
+
+
+class RdReportGenStructureRun(BaseModel):
+    """母本结构解析留痕：每次真实解析一条，用来回答「这次解析漏选/多选了多少」。
+
+    为什么存 ``slot_keys`` 而不是只存数量：后补/误选只有在与「解析当时选了什么」逐条
+    比对时才算得准；只存计数的话，人工改了两轮就再也分不清谁改的。
+    """
+
+    __tablename__ = "rd_report_gen_structure_runs"
+    __table_args__ = (
+        Index("ix_research_rd_report_gen_structure_runs_template", "template_id", "created_at"),
+        {"schema": "research"},
+    )
+
+    template_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_deliverable_templates.id"),
+        comment="所属交付物模板",
+    )
+    source_key: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="母本存储键（换版即变）")
+    prompt_version: Mapped[str] = mapped_column(String(20), comment="解析所用提示词指纹")
+    model_name: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="解析所用模型档位")
+    candidate_count: Mapped[int] = mapped_column(Integer, default=0, comment="送模型的候选位置数")
+    slot_count: Mapped[int] = mapped_column(Integer, default=0, comment="模型判定出的槽位数")
+    slot_keys: Mapped[list[str] | None] = mapped_column(JSON, nullable=True, comment="模型判定出的槽位标识（有序）")
+    duration_ms: Mapped[int] = mapped_column(Integer, default=0, comment="解析耗时毫秒")
+    status: Mapped[str] = mapped_column(String(12), default="ok", comment="ok/failed")
+    error: Mapped[str | None] = mapped_column(Text, nullable=True, comment="失败原因（截断）")
+
+
+class RdReportGenFeedback(BaseModel):
+    """评审修改意见：报告生成出来后，人在详情页对某一版提的具体改法。
+
+    为什么单独成表而不是复用 ``supplement_text``：补充说明是「这次生成多给点料」，
+    意见是「上一版哪里不对」，事后再生成时要能逐条回答改没改、哪次改的。
+    ``applied_job_id`` 指向真正落实它的那次重生成，没有它就只能靠猜。
+    """
+
+    __tablename__ = "rd_report_gen_feedback"
+    __table_args__ = (
+        Index("ix_research_rd_report_gen_feedback_job", "job_id", "status"),
+        Index("ix_research_rd_report_gen_feedback_report", "report_id", "status"),
+        CheckConstraint(
+            "status IN ('open', 'applied', 'ignored')",
+            name="ck_research_rd_report_gen_feedback_status",
+        ),
+        {"schema": "research"},
+    )
+
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_report_gen_jobs.id"),
+        comment="提出意见时对应的生成任务",
+    )
+    report_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_reports.id"),
+        comment="所属研发报告（跨任务汇总用）",
+    )
+    slot_key: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="针对的槽位；空=整篇意见"
+    )
+    content: Mapped[str] = mapped_column(Text, comment="意见内容")
+    status: Mapped[str] = mapped_column(
+        String(12), default="open", comment="open=待落实 / applied=已被重生成带走 / ignored=不采纳"
+    )
+    applied_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_report_gen_jobs.id"),
+        nullable=True,
+        comment="落实该意见的重生成任务",
+    )
+
+
+# 子包 ORM 注册：Alembic 只 import app.modules.<code>.models，
+# 放在文件末尾避免子包反向引用时出现部分初始化
+from app.modules.research.knowledge_base import models as _kb_models  # noqa: E402,F401

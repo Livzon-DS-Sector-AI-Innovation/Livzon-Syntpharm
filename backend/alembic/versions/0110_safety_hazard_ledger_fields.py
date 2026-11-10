@@ -1,7 +1,7 @@
 """safety hazard ledger fields
 
-Revision ID: 0094_safety_hazard_ledger_fields
-Revises: 0093_quality_qms_deviation_flow_tables
+Revision ID: 0110_safety_hazard_ledger_fields
+Revises: 0109_quality_qms_deviation_flow_tables
 Create Date: 2026-11-04
 
 隐患台账字段对齐：
@@ -20,8 +20,8 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from alembic import op
 
-revision: str = "0094_safety_hazard_ledger_fields"
-down_revision: str = "0093_quality_qms_deviation_flow_tables"
+revision: str = "0110_safety_hazard_ledger_fields"
+down_revision: str = "0109_quality_qms_deviation_flow_tables"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

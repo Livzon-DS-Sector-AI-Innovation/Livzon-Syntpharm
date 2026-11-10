@@ -1,4 +1,4 @@
-import { RouteDevelopmentModulePage } from '@/components/research/RouteDevelopmentModulePage'
+import { RouteDevelopmentModulePage } from '@/components/research'
 
 export const dynamic = 'force-dynamic'
 

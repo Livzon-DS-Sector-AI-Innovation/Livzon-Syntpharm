@@ -1,0 +1,2113 @@
+{
+  "code": "tech_research_report",
+  "name": "技术调研报告",
+  "version": "01",
+  "stage": "initiation",
+  "master_asset": "tech_research_report.dotx",
+  "description": "原料药项目立项/技术调研阶段用受控报告",
+  "hint_colors": [
+    "00B0F0"
+  ],
+  "toc_notice": "[目录：请在 Word 中更新页码]",
+  "unfilled_notes": [
+    "第 1 章「可行性评估」网格（市场价格/自研成本/批量选择/知识产权/设备设施/人力/场地）需人工填写",
+    "第 8 章产能预期表的年度列随年份漂移，本版不自动填充",
+    "表5 项目工作计划、表6 项目预算表为固定行结构，本版不自动填充",
+    "表7 附件清单（附件编码来自其他受控文件）本版不自动填充",
+    "所有图示（结构式、反应路线图、杂质结构图）仅留文字占位，需人工贴图"
+  ],
+  "slots": [
+    {
+      "key": "drug_name",
+      "label": "药品名称（原料药）",
+      "section": "",
+      "kind": "field",
+      "required": true,
+      "overwrite_cell": false,
+      "from_meta": true,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 80,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "母本中以 XXXX/XXX 占位的品种名",
+      "search_terms": [],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "global_variable",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": "XXXX",
+          "header_contains": null,
+          "color": null
+        },
+        {
+          "type": "global_variable",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": "XXX",
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "doc_code",
+      "label": "受控编码",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": true,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 40,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "header_field",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": "编码",
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "doc_version",
+      "label": "版本号",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": true,
+      "from_meta": true,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 10,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "header_field",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": "版本号",
+          "color": null
+        },
+        {
+          "type": "table_cell",
+          "table_header": [
+            "版本",
+            "变更描述"
+          ],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": 1,
+          "col_index": 0,
+          "guard": "新制定",
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "changelog_editor",
+      "label": "变更历史起草/修订人",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": true,
+      "review_state": "auto",
+      "max_chars": 600,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "table_cell",
+          "table_header": [
+            "版本",
+            "变更描述"
+          ],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": 1,
+          "col_index": 2,
+          "guard": "新制定",
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "drafter",
+      "label": "起草人",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": true,
+      "review_state": "auto",
+      "max_chars": 600,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "table_cell",
+          "table_header": [
+            "起草人"
+          ],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": 0,
+          "col_index": 1,
+          "guard": "起草人",
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "reviewer",
+      "label": "审核人",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": true,
+      "review_state": "auto",
+      "max_chars": 600,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "table_cell",
+          "table_header": [
+            "起草人"
+          ],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": 3,
+          "col_index": 1,
+          "guard": "审核人",
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "approver",
+      "label": "批准人",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": true,
+      "review_state": "auto",
+      "max_chars": 600,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "table_cell",
+          "table_header": [
+            "起草人"
+          ],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": 9,
+          "col_index": 1,
+          "guard": "批准人",
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "product_spec",
+      "label": "商品名及规格",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 600,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "商品名",
+        "规格",
+        "商品规格"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "table_cell",
+          "table_header": [
+            "基本信息",
+            "药品名称"
+          ],
+          "row_label": "商品名及规格",
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "originator",
+      "label": "原研企业",
+      "section": "",
+      "kind": "field",
+      "required": true,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 600,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "原研厂家",
+        "原研公司",
+        "原研药厂",
+        "原创企业",
+        "原研"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "table_cell",
+          "table_header": [
+            "基本信息",
+            "药品名称"
+          ],
+          "row_label": "原研企业",
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "domestic_market",
+      "label": "国内上市情况",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 600,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "上市",
+        "上市情况",
+        "获批",
+        "国内上市"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "table_cell",
+          "table_header": [
+            "基本信息",
+            "药品名称"
+          ],
+          "row_label": "国内上市情况",
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "tech_opinion",
+      "label": "技术部意见",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": true,
+      "review_state": "auto",
+      "max_chars": 600,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "table_cell",
+          "table_header": [
+            "基本信息",
+            "药品名称"
+          ],
+          "row_label": "技术部意见",
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "quality_opinion",
+      "label": "质量部意见",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": true,
+      "review_state": "auto",
+      "max_chars": 600,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "table_cell",
+          "table_header": [
+            "基本信息",
+            "药品名称"
+          ],
+          "row_label": "质量部意见",
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "production_opinion",
+      "label": "生产部意见",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": true,
+      "review_state": "auto",
+      "max_chars": 600,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "table_cell",
+          "table_header": [
+            "基本信息",
+            "药品名称"
+          ],
+          "row_label": "生产部",
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "overall_opinion",
+      "label": "综合意见",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": true,
+      "review_state": "auto",
+      "max_chars": 600,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "table_cell",
+          "table_header": [
+            "基本信息",
+            "药品名称"
+          ],
+          "row_label": "综合意见",
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "variety_intro",
+      "label": "品种简介正文",
+      "section": "",
+      "kind": "paragraph",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 1200,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "品种简介",
+        "适应症",
+        "药理",
+        "品种概况",
+        "产品简介"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "replace_paragraph",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": "适应症、用法用量、原研厂家进行介绍",
+          "paragraph_match": "contains",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "preparation_spec",
+      "label": "制剂/规格",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 200,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "剂型",
+        "制剂规格",
+        "规格"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "paragraph_after_label",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": "制剂/规格：",
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "dosage_admin",
+      "label": "用法用量",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 300,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "用法",
+        "用量",
+        "给药途径",
+        "服用方法"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "paragraph_after_label",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": "用法用量：",
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "domestic_manufacturers",
+      "label": "国内生产厂家",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 400,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "国内厂家",
+        "生产厂家",
+        "生产企业",
+        "国产厂家",
+        "manufacturer"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "paragraph_after_label",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": "国内生产厂家：",
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "name_cn",
+      "label": "名称",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 100,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "中文名称",
+        "通用名",
+        "药品名称",
+        "品名"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "paragraph_after_label",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": "名称：",
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "name_other",
+      "label": "其他名称",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 200,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "别名",
+        "商品名",
+        "其他名称"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "paragraph_after_label",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": "其他名称：",
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "name_en",
+      "label": "英文名",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 200,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "英文名称",
+        "English Name",
+        "英文通用名",
+        "INN",
+        "generic name",
+        "English name"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "paragraph_after_label",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": "英文名：",
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "name_chemical",
+      "label": "化学名称",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 300,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "化学名",
+        "CAS 名称",
+        "化学结构名称",
+        "IUPAC",
+        "chemical name",
+        "IUPAC name"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "paragraph_after_label",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": "化学名称：",
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "structure_image",
+      "label": "结构式",
+      "section": "",
+      "kind": "image",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": true,
+      "review_state": "auto",
+      "max_chars": 600,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "image_placeholder",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": "结构式：",
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "filing_rows",
+      "label": "国内原料药申报情况",
+      "section": "",
+      "kind": "table",
+      "required": true,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 600,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "申报",
+        "登记",
+        "受理",
+        "注册",
+        "登记号",
+        "受理号",
+        "注册申报",
+        "原料药登记"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": {
+        "header_rows": 1,
+        "row_limit": 80,
+        "sequence_column": null,
+        "total_row_label": null,
+        "keep_existing_rows": true
+      },
+      "columns": [
+        {
+          "key": "reg_no",
+          "label": "登记号",
+          "max_chars": 40,
+          "expects": "text",
+          "compute": "none",
+          "operands": []
+        },
+        {
+          "key": "company",
+          "label": "企业名称",
+          "max_chars": 120,
+          "expects": "text",
+          "compute": "none",
+          "operands": []
+        },
+        {
+          "key": "source",
+          "label": "产品来源",
+          "max_chars": 60,
+          "expects": "text",
+          "compute": "none",
+          "operands": []
+        },
+        {
+          "key": "approval",
+          "label": "审批结果",
+          "max_chars": 60,
+          "expects": "text",
+          "compute": "none",
+          "operands": []
+        },
+        {
+          "key": "update_date",
+          "label": "更新日期",
+          "max_chars": 20,
+          "expects": "date",
+          "compute": "none",
+          "operands": []
+        },
+        {
+          "key": "on_sale",
+          "label": "是否销售",
+          "max_chars": 20,
+          "expects": "text",
+          "compute": "none",
+          "operands": []
+        }
+      ],
+      "anchors": [
+        {
+          "type": "table_rows",
+          "table_header": [
+            "登记号",
+            "企业名称",
+            "产品来源",
+            "审批结果"
+          ],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "route_design",
+      "label": "结构分块和路线设计思路",
+      "section": "",
+      "kind": "paragraph",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": true,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 1500,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "路线设计",
+        "合成路线",
+        "工艺路线",
+        "逆合成",
+        "路线思路"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "replace_paragraph",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": "结构分块和路线设计思路",
+          "paragraph_match": "contains",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "route_1",
+      "label": "工艺路线 1",
+      "section": "",
+      "kind": "paragraph",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": true,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 2000,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "路线",
+        "合成路线",
+        "反应路线",
+        "制备方法"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "section_body",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": "路线1",
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "route_2",
+      "label": "工艺路线 2",
+      "section": "",
+      "kind": "paragraph",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": true,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 2000,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "路线",
+        "合成路线",
+        "反应路线",
+        "制备方法"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "section_body",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": "路线2",
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "route_3",
+      "label": "工艺路线 3",
+      "section": "",
+      "kind": "paragraph",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": true,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 2000,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "路线",
+        "合成路线",
+        "反应路线",
+        "制备方法"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "section_body",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": "路线3",
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "route_4",
+      "label": "工艺路线 4",
+      "section": "",
+      "kind": "paragraph",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": true,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 2000,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "路线",
+        "合成路线",
+        "反应路线",
+        "制备方法"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "section_body",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": "路线4",
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "route_choice",
+      "label": "综合选择和说明",
+      "section": "",
+      "kind": "paragraph",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": true,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 2000,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "路线选择",
+        "路线比较",
+        "综合评价",
+        "路线优劣势"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "section_body",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": "综合选择和说明",
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "supplier_rows",
+      "label": "主要物料国内供应商信息",
+      "section": "",
+      "kind": "table",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 600,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "供应商",
+        "供应",
+        "采购",
+        "物料供应",
+        "厂家"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": {
+        "header_rows": 1,
+        "row_limit": 60,
+        "sequence_column": null,
+        "total_row_label": null,
+        "keep_existing_rows": true
+      },
+      "columns": [
+        {
+          "key": "plan",
+          "label": "方案",
+          "max_chars": 40,
+          "expects": "text",
+          "compute": "none",
+          "operands": []
+        },
+        {
+          "key": "material",
+          "label": "物料名称",
+          "max_chars": 100,
+          "expects": "text",
+          "compute": "none",
+          "operands": []
+        },
+        {
+          "key": "cas",
+          "label": "CAS号",
+          "max_chars": 40,
+          "expects": "text",
+          "compute": "none",
+          "operands": []
+        },
+        {
+          "key": "supplier",
+          "label": "参考供应商",
+          "max_chars": 200,
+          "expects": "text",
+          "compute": "none",
+          "operands": []
+        }
+      ],
+      "anchors": [
+        {
+          "type": "table_rows",
+          "table_header": [
+            "方案",
+            "物料名称",
+            "CAS号",
+            "参考供应商"
+          ],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "supplier_note",
+      "label": "供应信息备注",
+      "section": "",
+      "kind": "field",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 400,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "paragraph_after_label",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": "备注：",
+          "paragraph_match": "contains",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "material_cost_rows",
+      "label": "1kg 物料消耗表",
+      "section": "",
+      "kind": "table",
+      "required": true,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 600,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "物料",
+        "成本",
+        "价格",
+        "单价",
+        "消耗",
+        "原料成本",
+        "物料清单"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": {
+        "header_rows": 1,
+        "row_limit": 80,
+        "sequence_column": null,
+        "total_row_label": "1kg总价",
+        "keep_existing_rows": true
+      },
+      "columns": [
+        {
+          "key": "material",
+          "label": "物料名称",
+          "max_chars": 100,
+          "expects": "text",
+          "compute": "none",
+          "operands": []
+        },
+        {
+          "key": "usage",
+          "label": "用量",
+          "max_chars": 30,
+          "expects": "number",
+          "compute": "none",
+          "operands": []
+        },
+        {
+          "key": "price",
+          "label": "单价",
+          "max_chars": 30,
+          "expects": "number",
+          "compute": "none",
+          "operands": []
+        },
+        {
+          "key": "cost",
+          "label": "费用",
+          "max_chars": 30,
+          "expects": "number",
+          "compute": "product",
+          "operands": [
+            "usage",
+            "price"
+          ]
+        },
+        {
+          "key": "ratio",
+          "label": "费用占比",
+          "max_chars": 20,
+          "expects": "percent",
+          "compute": "ratio",
+          "operands": [
+            "cost"
+          ]
+        }
+      ],
+      "anchors": [
+        {
+          "type": "table_rows",
+          "table_header": [
+            "物料名称",
+            "用量",
+            "单价",
+            "费用占比"
+          ],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "quality_standard_info",
+      "label": "质量标准信息",
+      "section": "",
+      "kind": "paragraph",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 2000,
+      "source_roles": [
+        "material",
+        "literature"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "质量标准",
+        "质量研究",
+        "药典",
+        "标准",
+        "检验",
+        "ChP",
+        "USP",
+        "EP"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "section_body",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": "质量标准信息",
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "impurity_rows",
+      "label": "杂质谱",
+      "section": "",
+      "kind": "table",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": false,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 600,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "杂质",
+        "有关物质",
+        "降解产物",
+        "工艺杂质",
+        "杂质分析"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": {
+        "header_rows": 1,
+        "row_limit": 80,
+        "sequence_column": "seq",
+        "total_row_label": null,
+        "keep_existing_rows": true
+      },
+      "columns": [
+        {
+          "key": "seq",
+          "label": "序号",
+          "max_chars": 6,
+          "expects": "text",
+          "compute": "none",
+          "operands": []
+        },
+        {
+          "key": "structure",
+          "label": "结构",
+          "max_chars": 60,
+          "expects": "text",
+          "compute": "none",
+          "operands": []
+        },
+        {
+          "key": "origin",
+          "label": "来源",
+          "max_chars": 120,
+          "expects": "text",
+          "compute": "none",
+          "operands": []
+        },
+        {
+          "key": "impurity_type",
+          "label": "杂质类型",
+          "max_chars": 80,
+          "expects": "text",
+          "compute": "none",
+          "operands": []
+        },
+        {
+          "key": "note",
+          "label": "备注",
+          "max_chars": 200,
+          "expects": "text",
+          "compute": "none",
+          "operands": []
+        }
+      ],
+      "anchors": [
+        {
+          "type": "table_rows",
+          "table_header": [
+            "序号",
+            "结构",
+            "来源",
+            "杂质类型",
+            "备注"
+          ],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": null,
+          "paragraph_match": "exact",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "crystal_overview",
+      "label": "晶型方面概述",
+      "section": "",
+      "kind": "paragraph",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": true,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 1500,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "晶型",
+        "多晶型",
+        "结晶",
+        "晶癖",
+        "XRPD",
+        "X射线粉末衍射"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "replace_paragraph",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": "晶型方面的概述",
+          "paragraph_match": "contains",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "key": "process_evaluation",
+      "label": "工艺评价和可能存在的问题",
+      "section": "",
+      "kind": "paragraph",
+      "required": false,
+      "overwrite_cell": false,
+      "from_meta": false,
+      "draft_allowed": true,
+      "manual_only": false,
+      "review_state": "auto",
+      "max_chars": 2500,
+      "source_roles": [
+        "material"
+      ],
+      "query_hint": "",
+      "search_terms": [
+        "工艺评价",
+        "工艺问题",
+        "放大",
+        "工艺风险",
+        "工艺优化"
+      ],
+      "expects": "text",
+      "unit": "",
+      "enum_values": [],
+      "cardinality": "single",
+      "source_scope": "any",
+      "table": null,
+      "columns": [],
+      "anchors": [
+        {
+          "type": "replace_paragraph",
+          "table_header": [],
+          "row_label": null,
+          "row_match": "contains",
+          "column_header": null,
+          "row_index": null,
+          "col_index": null,
+          "guard": null,
+          "paragraph_label": "结合实际进行讨论",
+          "paragraph_match": "contains",
+          "heading": null,
+          "heading_level": null,
+          "after_heading": 0,
+          "keyword": null,
+          "header_contains": null,
+          "color": null
+        }
+      ]
+    }
+  ],
+  "extension_points": [],
+  "fragments": []
+}

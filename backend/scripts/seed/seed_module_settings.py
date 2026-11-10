@@ -4,17 +4,94 @@ import asyncio
 import os
 import sys
 
-# Add project root to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Import models to ensure tables are registered
 from sqlalchemy import select
 
-from app.core.config_model import ModuleSetting
-from app.core.database import async_session_factory
-from app.platform.identity.models import User  # noqa: F401
+# 本文件在 scripts/seed/ 下，需上溯三层到 backend/ 才能 import app.*
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+# 导入模型确保表已注册（路径补丁必须在 app.* 之前执行）
+from app.core.config_model import ModuleSetting  # noqa: E402
+from app.core.database import async_session_factory  # noqa: E402
+from app.platform.identity.models import User  # noqa: F401,E402
 
 DEFAULT_SETTINGS = [
+    # Research module — AI 报告生成（Agent 读母本 / 检索知识库 / 回写 docx）
+    ("research", "REPORT_GEN_MODEL", "", "string", "报告生成主模型；可填配置名或模型名，留空用全局默认"),
+    ("research", "REPORT_GEN_FALLBACK_MODEL", "", "string", "报告生成兜底模型；可填配置名或模型名，留空不切换"),
+    ("research", "REPORT_GEN_STRUCTURE_MODEL", "", "string", "母本结构识别模型；可填配置名或模型名，留空复用主模型"),
+    ("research", "REPORT_GEN_DISABLED_TOOLS", "", "string", "停用的 Agent 工具，逗号分隔，空=全启用"),
+    ("research", "REPORT_GEN_TOOL_MODE", "auto", "string", "工具协议：auto=先试 tools 再降级 JSON / tools / json"),
+    ("research", "REPORT_GEN_MAX_ROUNDS", "16", "int", "Agent 最大轮次上限"),
+    ("research", "REPORT_GEN_LLM_TIMEOUT_SECONDS", "180", "int", "单次模型调用超时（秒）"),
+    ("research", "REPORT_GEN_TOOL_TIMEOUT_SECONDS", "60", "int", "单个工具执行超时（秒）"),
+    ("research", "REPORT_GEN_JOB_TIMEOUT_SECONDS", "2400", "int", "整个生成任务超时（秒）"),
+    ("research", "REPORT_GEN_KB_TOP_K", "6", "int", "知识库检索默认返回条数"),
+    ("research", "REPORT_GEN_MAX_STEPS", "400", "int", "执行过程步骤数上限（超限只记状态行）"),
+    (
+        "research",
+        "REPORT_GEN_AGENT_PROMPT",
+        "",
+        "string",
+        "正文生成 system prompt 整段覆盖；留空用内置。变量见 report_gen/prompts.py",
+    ),
+    (
+        "research",
+        "REPORT_GEN_STRUCTURE_PROMPT",
+        "",
+        "string",
+        "母本结构识别 system prompt 整段覆盖；留空用内置。变量见 report_gen/prompts.py",
+    ),
+    ("research", "REPORT_GEN_EXAMPLES_ENABLED", "true", "bool", "是否把人工修正过的槽位当 few-shot 示例注入生成"),
+    ("research", "REPORT_GEN_EXAMPLES_LIMIT", "40", "int", "单次任务注入示例条数上限（按最近修正优先）"),
+    # Research module — 知识库后台富化（切片摸底 / 事实抽取）
+    ("research", "DOC_GEN_LLM_CALL_TIMEOUT_SECONDS", "180", "int", "单次模型调用硬超时（秒），超时按降级处理"),
+    (
+        "research",
+        "DOC_GEN_FALLBACK_MODEL",
+        "Qwen3.8-27B",
+        "string",
+        "辅助兜底模型：主模型重试仍失败后切换（强模型兜底）",
+    ),
+    (
+        "research",
+        "DOC_GEN_EXTRACT_MODEL",
+        "Local-DeepSeek-V4-Flash",
+        "string",
+        "提取模型：跑量主力（快模型），失败批次由兜底模型重试",
+    ),
+    # 性能优化配置
+    # 模板分析 / 文件分析 / 交叉校验配置
+    # 向量检索配置
+    # 项目知识库（RAGFlow）：项目挂知识库后，提取阶段按槽位从知识库召回片段
+    # 知识库摸底与事实抽取（把整个知识库先榨成结构化事实，填充更完整；增量、可跨任务复用）
+    ("research", "DOC_GEN_KB_SURVEY_CONCURRENCY", "4", "int", "摸底并发数（>1 时多文档同时拉取远端切片，写库仍串行）"),
+    (
+        "research",
+        "DOC_GEN_KB_BACKGROUND_ENRICH_ENABLED",
+        "true",
+        "bool",
+        "知识库后台富化开关：空闲时持续补齐切片索引与事实（任务内只做小额增量）",
+    ),
+    ("research", "DOC_GEN_KB_BACKGROUND_ENRICH_INTERVAL_SECONDS", "30", "int", "后台富化无活可干时的休眠间隔（秒）"),
+    (
+        "research",
+        "DOC_GEN_KB_BACKGROUND_ENRICH_MAX_CHUNKS",
+        "200",
+        "int",
+        "后台单轮抽事实的切片数上限（多轮累计覆盖全库）",
+    ),
+    ("research", "DOC_GEN_FACT_EXTRACT_BATCH_SIZE", "4", "int", "事实抽取每批送入模型的切片数"),
+    (
+        "research",
+        "DOC_GEN_FACT_EXTRACT_CONCURRENCY",
+        "4",
+        "int",
+        "事实抽取并发批次数（>1 时多批同时调模型，写库仍串行）",
+    ),
+    # 缺口闭环：对没填上的填充项换一套检索口径定向重试（只跑缺口槽位、只收确有提升的结果）
+    # 知识库覆盖预检：生成前算清「哪些填充项库里根本没料」，随 job.stats 落库供完成页/看板解释缺口
     # Identity / 平台账号：飞书首登自动建号时的本地用户名前缀
     # 最终用户名 = 前缀 + 6 位自增号（identity.user_username_seq），如 YTH000001
     (
