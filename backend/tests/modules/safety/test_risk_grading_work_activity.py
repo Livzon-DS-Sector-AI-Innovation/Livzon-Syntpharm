@@ -87,6 +87,12 @@ class TestRiskGradingOptionsContract:
             Decimal("70"),
             Decimal("20"),
         ]
+        assert data["equipment_grade_bands"] == [
+            {"grade": 4, "label": "4级", "min_r": 40},
+            {"grade": 3, "label": "3级", "min_r": 20},
+            {"grade": 2, "label": "2级", "min_r": 10},
+            {"grade": 1, "label": "1级", "min_r": 0},
+        ]
 
 
 class TestWorkActivityHazardCreate:
