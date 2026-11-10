@@ -1,13 +1,60 @@
 services:
   backend:
+    # 本机 API 需要 TTS 运行时：单页试听（POST .../preview）在 API 进程内同步合成。
+    # 不能直接复用 worker 镜像——worker 镜像没有 paddleocr，也没装 Playwright 的系统库，
+    # 会让 OCR 与法规追踪抓取一起失效；所以在主 API 镜像上加 WITH_TTS=true 那一层。
+    #
+    # 本机生成方式（registry 拉不动基础镜像，改用本地镜像加层 + commit，构建本身限内存/CPU）：
+    #   docker run --name tts-api-build --memory=4g --cpu-quota=200000 \
+    #     -v $PWD/backend/requirements-tts.txt:/tmp/requirements-tts.txt:ro \
+    #     -v $PWD/backend/scripts/ci/install_spacy_en_model.py:/tmp/install_spacy_en_model.py:ro \
+    #     livzon-syntpharm-backend:latest bash -c "cd /app \
+    #       && env -u UV_INDEX_URL -u UV_EXTRA_INDEX_URL uv pip install --python /app/.venv/bin/python \
+    #            --index-strategy unsafe-best-match --index-url https://download.pytorch.org/whl/cpu torch==2.15.0+cpu \
+    #       && uv pip install --python /app/.venv/bin/python -i https://mirrors.aliyun.com/pypi/simple/ \
+    #            -r /tmp/requirements-tts.txt \
+    #       && /app/.venv/bin/python /tmp/install_spacy_en_model.py"
+    #   docker commit tts-api-build livzon-syntpharm-backend:dev-tts && docker rm tts-api-build
+    # 网络正常时也可以直接构建（Dockerfile 支持 WITH_TTS 参数）：
+    #   docker compose -f docker-compose.yml -f docker-compose.dev.yml build backend
+    image: livzon-syntpharm-backend:dev-tts
     volumes:
     - ./backend/app:/app/app:ro
     # DATABASE_URL 的 host 是容器网络服务名，宿主机连不到 Postgres，DB 测试只能在容器内跑
     - ./backend/tests:/app/tests:ro
+    # 本机已校验过的 Kokoro 权重缓存（hexgrad/Kokoro-82M + v1.1-zh，11 个文件 sha256 对齐 tts_assets.py）
+    # 厂区不通 huggingface.co，容器内联网下载会失败，所以离线挂载 + HF_HUB_OFFLINE
+    - ${HOME}/.cache/kokoro-hub:/opt/tts-models/hub
     environment:
     - UVICORN_RELOAD=true
+    # worker 镜像把 HF_HOME 写进了 Dockerfile.worker，API 镜像没有；这里显式指到挂载点，
+    # 否则 huggingface_hub 去找 ~/.cache/huggingface，离线模式下必然 LocalEntryNotFound
+    - HF_HOME=/opt/tts-models
+    - HF_ENDPOINT=${HF_ENDPOINT:-https://hf-mirror.com}
+    - HF_HUB_OFFLINE=1
     command: "bash -c \"\n  cd /app &&\n  uv run uvicorn app.main:app --reload --host\
       \ 0.0.0.0 --port 8000\n\"\n"
+  # 智能体 - PPT 配音视频 worker
+  # 注意：Dockerfile.dev 没有 libreoffice/ffmpeg，本地调试渲染必须用 worker 镜像。
+  # 首次构建会拉 libreoffice + torch + 权重，镜像较大；只改业务代码时靠 bind mount 生效。
+  ppt-video-worker:
+    image: livzon-syntpharm-ppt-video-worker:dev
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    container_name: erp-ppt-video-worker-dev
+    restart: unless-stopped
+    env_file:
+    - .env
+    environment:
+    - PPT_VIDEO_WORKER_CONCURRENCY=1
+    - HF_ENDPOINT=${HF_ENDPOINT:-https://hf-mirror.com}
+    - HF_HUB_OFFLINE=1
+    volumes:
+    - ./backend/app:/app/app:ro
+    - ./uploads:/app/uploads
+    - ./storage:/app/storage
+    - ${HOME}/.cache/kokoro-hub:/opt/tts-models/hub
   frontend:
     volumes:
     - ./frontend:/app

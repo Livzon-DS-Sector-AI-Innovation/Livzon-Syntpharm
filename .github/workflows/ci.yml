@@ -206,18 +206,50 @@ jobs:
         name: frontend-image
         path: frontend-image.tar.gz
         retention-days: 1
+  backend-image:
+    # Builds the backend image ONCE per run, in parallel with the other checks,
+    # so the `e2e` job does not have to (that build took ~9.8 min per run,
+    # ~6.5 min of it `uv sync`).
+    # The buildx GHA layer cache makes repeat runs re-use the `uv sync` layer,
+    # which only re-executes when pyproject.toml / uv.lock change.
+    # Cache scope is separate from the pnpm/uv action caches.
+    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - uses: docker/setup-buildx-action@v3
+    - name: Build backend image
+      uses: docker/build-push-action@v6
+      with:
+        context: ./backend
+        load: true
+        tags: dazah-backend:latest
+        cache-from: type=gha,scope=dazah-backend-image
+        cache-to: type=gha,mode=max,scope=dazah-backend-image
+    - name: Save Docker image
+      run: docker save dazah-backend:latest | gzip > backend-image.tar.gz
+    - name: Upload Docker image artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: backend-image
+        path: backend-image.tar.gz
+        retention-days: 1
   e2e:
     if: github.event_name != 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v5
-    - name: Download Docker image artifact
+    - name: Download Docker image artifacts
       uses: actions/download-artifact@v8
       with:
-        name: frontend-image
+        pattern: '*-image'
         path: .
-    - name: Load Docker image
-      run: docker load < frontend-image.tar.gz
+        merge-multiple: true
+    - name: Load Docker images
+      run: |
+        docker load < frontend-image.tar.gz
+        docker load < backend-image.tar.gz
+        docker image ls --format '{{.Repository}}:{{.Tag}}\t{{.Size}}' | grep -E '^(frontend-production|dazah-backend):' || true
     - uses: actions/setup-python@v6
       with:
         python-version: '3.12'
@@ -231,6 +263,20 @@ jobs:
         cache-dependency-path: frontend/pnpm-lock.yaml
     - run: cd frontend && pnpm install --frozen-lockfile
     - run: cd backend && pip install uv && uv sync --dev
+    # Browser binaries are the same for every run of a given Playwright
+    # version — cache them instead of downloading (~1.5 min) every time.
+    # A cache miss just falls back to the plain install below.
+    - name: Resolve Playwright version
+      id: playwright
+      run: |
+        version=$(cd frontend && node -p "require('@playwright/test/package.json').version")
+        echo "resolved Playwright $version"
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
     - run: cd frontend && pnpm exec playwright install --with-deps chromium
     - run: bash scripts/ci.sh e2e
       env:
@@ -252,3 +298,4 @@ jobs:
           '
     needs:
     - frontend-build
+    - backend-image

@@ -557,7 +557,7 @@ async def trigger_sync_user_info(
     from app.platform.identity.service import sync_livzon_feishu_contacts_all
 
     await submit_job("identity.sync-user-info", lambda _job_id: sync_livzon_feishu_contacts_all())
-    logger.info("Feishu user info sync triggered", extra={"module": "identity"})
+    logger.info("Feishu user info sync triggered")
     return build_response(
         data={
             "status": "ok",

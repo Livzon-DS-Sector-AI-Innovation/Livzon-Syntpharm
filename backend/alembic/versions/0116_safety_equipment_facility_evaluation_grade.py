@@ -1,7 +1,7 @@
 """safety equipment facility hazard evaluation grade
 
-Revision ID: 0101_safety_equipment_facility_evaluation_grade
-Revises: 0100_safety_equipment_facility_hazards
+Revision ID: 0116_safety_equipment_facility_evaluation_grade
+Revises: 0115_agent_ppt_video_highlight_project_default
 Create Date: 2026-11-10
 
 《设备设施危险源台账》新增评价级别：
@@ -15,8 +15,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0101_safety_equipment_facility_evaluation_grade"
-down_revision: str = "0100_safety_equipment_facility_hazards"
+revision: str = "0116_safety_equipment_facility_evaluation_grade"
+down_revision: str = "0115_agent_ppt_video_highlight_project_default"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

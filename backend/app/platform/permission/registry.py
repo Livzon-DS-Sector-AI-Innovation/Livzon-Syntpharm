@@ -91,6 +91,9 @@ PLATFORM_PERMISSIONS: tuple[PermissionDef, ...] = (
 PLATFORM_DOMAIN_LABEL = "平台管理"
 
 RESOURCE_LABELS: dict[str, str] = {
+    # 每个业务模块各有一个 `<module>:module:read`（菜单可见性 + 页面准入），
+    # 资源码统一为 "module"，这里叫「模块准入」，避免资源节点显示成重复的模块名或英文码
+    "module": "模块准入",
     "user": "用户管理",
     "role": "角色管理",
     "permission": "权限目录",
@@ -99,6 +102,9 @@ RESOURCE_LABELS: dict[str, str] = {
     "audit": "审计日志",
     "api-binding": "接口绑定",
     "ops": "系统运维",
+    "hazard-category": "隐患类别字典",
+    "llm-config": "模型配置",
+    "module-setting": "模块配置",
     # ── research（研发管理）资源 ──
     "project": "研发项目",
     "track": "研究跟踪",
@@ -243,6 +249,33 @@ RESOURCE_LABELS: dict[str, str] = {
     "production:records": "生产记录",
     "production:steps": "工艺步骤",
     "production:tasks": "生产任务",
+    # ── safety（安全管理）资源 ──
+    # 此前 safety 的资源中文名一条都没登记，权限树里 25 个资源节点一直显示英文资源码
+    "safety:accident": "事故",
+    "safety:ai-workflow-config": "AI 工作流配置",
+    "safety:check": "安全检查",
+    "safety:contractor": "承包商",
+    "safety:daily-risk-report": "每日风险报告",
+    "safety:ehs-change": "EHS 变更",
+    "safety:equipment-facility-hazard": "设备设施危险源台账",
+    "safety:feishu": "飞书事件订阅管理",
+    "safety:hazard": "事故隐患",
+    "safety:hazard-identification": "危害辨识",
+    "safety:knowledge-article": "安全知识文章",
+    "safety:knowledge-graph": "安全知识图谱",
+    "safety:oh-hazard-monitor": "职业危害监测",
+    "safety:oh-health-exam": "职业健康体检",
+    "safety:regulation": "安全法规",
+    "safety:regulation-revision": "法规修订",
+    "safety:scheduled-task": "安全定时任务",
+    "safety:special-operation-ledger": "特殊作业台账",
+    "safety:special-operation-permit": "特殊作业许可",
+    "safety:special-operation-personnel": "特殊作业人员",
+    "safety:special-operation-report": "特殊作业报告",
+    "safety:training": "安全培训",
+    "safety:training-certificate": "培训证书",
+    "safety:training-record": "培训记录",
+    "safety:work-activity-hazard": "作业活动危险源台账",
 }
 
 # ── 业务模块访问权限码（菜单级：每个模块 1 个）─────────────────────
@@ -348,6 +381,16 @@ SAFETY_PERMISSIONS: tuple[PermissionDef, ...] = (
         "管理事故隐患（创建/修改/删除/审批）",
         "safety",
         "hazard",
+        "manage",
+    ),
+    # hazard-categories（隐患类别字典，全公司共享；仅模块管理员可维护）
+    # 注意：与 safety:hazard:manage 分开。能登记隐患的人必须有 hazard:manage，
+    # 若复用该码，则所有能登记隐患的普通用户都能改全公司共享的类别字典。
+    PermissionDef(
+        "safety:hazard-category:manage",
+        "管理隐患类别字典（新增/改名/删除）",
+        "safety",
+        "hazard-category",
         "manage",
     ),
     # knowledge-articles
@@ -1149,6 +1192,15 @@ PRODUCTION_PERMISSIONS: tuple[PermissionDef, ...] = (
 )
 
 
+# ── 智能体（agent）─────────────────────────────────────────────────
+# 首期能力为 PPT 配音视频：读接口（列表/详情/媒体/版本）与管理接口（上传/改稿/渲染/删除）分两个码。
+
+AGENT_PERMISSIONS: tuple[PermissionDef, ...] = (
+    PermissionDef("agent:ppt-video:read", "PPT 配音视频 - 查看", "agent", "ppt-video", "read"),
+    PermissionDef("agent:ppt-video:manage", "PPT 配音视频 - 管理", "agent", "ppt-video", "manage"),
+)
+
+
 # 全部权限码（业务模块接入存量接口时，把业务权限码合并进来即可，权限树会自动生长）
 ALL_PERMISSIONS: tuple[PermissionDef, ...] = (
     PLATFORM_PERMISSIONS
@@ -1164,6 +1216,7 @@ ALL_PERMISSIONS: tuple[PermissionDef, ...] = (
     + QUALITY_PERMISSIONS
     + HR_PERMISSIONS
     + PRODUCTION_PERMISSIONS
+    + AGENT_PERMISSIONS
 )
 
 
@@ -1576,7 +1629,9 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("safety:work-activity-hazard:manage", "DELETE", "/api/v1/safety/work-activity-hazards/{hazard_id}"),
     ApiBindingDef("safety:module:read", "GET", "/api/v1/safety/enums/risk-grading"),
     ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazard-categories"),
-    ApiBindingDef("safety:hazard:manage", "POST", "/api/v1/safety/hazard-categories"),
+    ApiBindingDef("safety:hazard-category:manage", "POST", "/api/v1/safety/hazard-categories"),
+    ApiBindingDef("safety:hazard-category:manage", "DELETE", "/api/v1/safety/hazard-categories/{category_id}"),
+    ApiBindingDef("safety:hazard-category:manage", "PUT", "/api/v1/safety/hazard-categories/{category_id}"),
     ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazards"),
     ApiBindingDef("safety:hazard:manage", "POST", "/api/v1/safety/hazards"),
     ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazards/catch-up/diagnose"),
@@ -3102,6 +3157,101 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "POST",
         "/api/v1/registration/dossier-writer/products/{dossier_id}/templates",
     ),
+    # 智能体 - PPT 配音视频
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/voices"),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos"),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/versions/{version_id}/manifest",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/versions/{version_id}/file",
+    ),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}"),
+    ApiBindingDef("agent:ppt-video:manage", "PATCH", "/api/v1/agent/ppt-videos/{project_id}"),
+    ApiBindingDef("agent:ppt-video:manage", "DELETE", "/api/v1/agent/ppt-videos/{project_id}"),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "PUT",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "POST",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/preview",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/image",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/audio",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/thumb",
+    ),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/render"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/script-ai"),
+    # 页图重生成与状态查询：重试属写操作，状态查询只读（左栏进度条轮询）
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/page-images"),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/page-images/status",
+    ),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/job"),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/versions"),
+    # 智能体 - AI 配置（自定义模型与全局默认模型；全局写入在函数内再校验平台管理员）
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ai-configs"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ai-configs"),
+    ApiBindingDef("agent:ppt-video:read", "PUT", "/api/v1/agent/ai-configs/global"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ai-configs/test"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ai-configs/models"),
+    ApiBindingDef("agent:ppt-video:manage", "PATCH", "/api/v1/agent/ai-configs/{config_id}"),
+    ApiBindingDef("agent:ppt-video:manage", "DELETE", "/api/v1/agent/ai-configs/{config_id}"),
+    # 智能体 - 项目级 AI 设置、讲稿改写与修订回滚
+    ApiBindingDef("agent:ppt-video:manage", "PUT", "/api/v1/agent/ppt-videos/{project_id}/ai"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/script-rewrite"),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/revisions"),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "POST",
+        "/api/v1/agent/ppt-videos/{project_id}/revisions/{revision_id}/rollback",
+    ),
+    # 智能体 - 换源
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/source"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/source/apply"),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/source/file"),
+    # 智能体 - 页级轻量编辑
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/regions",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/shapes",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "PUT",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/edit-text",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "POST",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/edit-image",
+    ),
 )
 # ── 登录入口 / 当前用户自取（豁免绑定兜底）─────────────────────────
 # 这些接口无法绑定权限码，若按「未登记即 403」处理，开启
@@ -3184,6 +3334,7 @@ ENFORCE_READY_MODULES: tuple[str, ...] = (
     "quality",
     "hr",
     "production",
+    "agent",
 )
 
 
