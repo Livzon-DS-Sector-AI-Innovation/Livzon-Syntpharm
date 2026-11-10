@@ -1,7 +1,7 @@
 """safety work activity hazard ledger
 
-Revision ID: 0096_safety_work_activity_hazards
-Revises: 0095_safety_hazard_identification_ledger_fields
+Revision ID: 0099_safety_work_activity_hazards
+Revises: 0098_safety_hazard_category_dict_align
 Create Date: 2026-11-09
 
 新增《作业活动危险源台账》空表：
