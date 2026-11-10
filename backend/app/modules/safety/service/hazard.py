@@ -601,7 +601,7 @@ class HazardService:
                 existing.is_deleted = False
                 existing.is_active = True
                 await self.session.flush()
-                logger.info("hazard category restored", extra={"module": "safety", "category": value})
+                logger.info("hazard category restored", extra={"hazard_category": value})
             return {
                 "id": str(existing.id),
                 "name": existing.name,
@@ -610,9 +610,59 @@ class HazardService:
             }
 
         row = await self.repo.create_hazard_category({"name": value, "sort_order": 100, "is_active": True})
-        logger.info("hazard category created", extra={"module": "safety", "category": value})
+        logger.info("hazard category created", extra={"hazard_category": value})
         await self._audit("create", "hazard_category", resource_id=row.id)
         return {"id": str(row.id), "name": row.name, "sort_order": row.sort_order, "is_builtin": False}
+
+    async def update_hazard_category(self, category_id: uuid.UUID, name: str) -> dict[str, Any]:
+        """隐患类别改名。
+
+        内置 7 类不落字典表（list 时以 id=None 合成），所以只可能改到用户新增项。
+        改名会同步刷新隐患台账里引用旧名的记录，避免台账出现孤儿类别名。
+        """
+        value = (name or "").strip()
+        if not value:
+            raise ValueError("类别名称不能为空")
+        if len(value) > 64:
+            raise ValueError("类别名称不能超过 64 个字符")
+        if value in BUILTIN_HAZARD_CATEGORIES:
+            raise ValueError(f"「{value}」是内置类别，请换一个名称")
+
+        row = await self.repo.get_hazard_category_by_id(category_id)
+        if row is None or row.is_deleted:
+            raise LookupError("隐患类别不存在")
+
+        row_id, old_name, sort_order = row.id, row.name, row.sort_order
+        if old_name == value:
+            return {"id": str(row_id), "name": old_name, "sort_order": sort_order, "is_builtin": False}
+
+        duplicate = await self.repo.get_hazard_category_by_name(value)
+        # 已软删除的同名记录不挡路：删除后想改回旧名字是合理操作
+        if duplicate is not None and duplicate.id != row_id and not duplicate.is_deleted:
+            raise ValueError(f"类别「{value}」已存在")
+
+        await self.repo.update_hazard_category(row_id, {"name": value, "is_deleted": False, "is_active": True})
+        changed = await self.repo.rename_hazard_category_in_hazards(old_name, value)
+        logger.info(
+            "hazard category renamed",
+            extra={"hazard_category_old": old_name, "hazard_category_new": value, "hazards_updated": changed},
+        )
+        await self._audit("update", "hazard_category", resource_id=row_id)
+        return {"id": str(row_id), "name": value, "sort_order": sort_order, "is_builtin": False}
+
+    async def delete_hazard_category(self, category_id: uuid.UUID) -> dict[str, Any]:
+        """删除隐患类别（软删除）。
+
+        内置 7 类不在字典表内，无法通过主键删除；历史台账保留原类别名，不做回填。
+        """
+        row = await self.repo.get_hazard_category_by_id(category_id)
+        if row is None or row.is_deleted:
+            raise LookupError("隐患类别不存在")
+        row_id, name, sort_order = row.id, row.name, row.sort_order
+        await self.repo.update_hazard_category(row_id, {"is_deleted": True, "is_active": False})
+        logger.info("hazard category deleted", extra={"hazard_category": name})
+        await self._audit("delete", "hazard_category", resource_id=row_id)
+        return {"id": str(row_id), "name": name, "sort_order": sort_order, "is_builtin": False}
 
     async def upload_hazard_photo(self, hazard_id: uuid.UUID, file_name: str, file_path: str) -> HazardReport | None:
         """保存隐患图片路径，追加到 defect_photos JSON 数组"""

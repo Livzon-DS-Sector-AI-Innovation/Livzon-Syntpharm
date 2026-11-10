@@ -192,6 +192,22 @@ export async function createHazardCategory(name: string): Promise<HazardCategory
   return response
 }
 
+/** 修改隐患类别名称（同步历史台账；需 safety:hazard-category:manage） */
+export async function updateHazardCategory(id: string, name: string): Promise<HazardCategoryApiResponse> {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.updateHazardCategory(id, name, authHeaders)
+  revalidatePath('/safety/hazard-ledger')
+  return response
+}
+
+/** 删除隐患类别（软删除；需 safety:hazard-category:manage） */
+export async function deleteHazardCategory(id: string): Promise<HazardCategoryApiResponse> {
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.deleteHazardCategory(id, authHeaders)
+  revalidatePath('/safety/hazard-ledger')
+  return response
+}
+
 export async function updateHazard(id: string, data: Partial<HazardReportFormData>): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateHazard(id, data, authHeaders)

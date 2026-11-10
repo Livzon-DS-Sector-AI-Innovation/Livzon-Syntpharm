@@ -288,7 +288,15 @@ class UserRepository:
             base = base.where(department_filter)
             count_stmt = count_stmt.where(department_filter)
         if keyword:
-            keyword_filter = User.name.ilike(f"%{keyword}%")
+            # 选人下拉的搜索框：除了姓名，还要能按登录账号 / 工号 / 手机号搜到人，
+            # 否则重名或只记得账号时根本找不到（NULL 参与 OR 结果为 NULL，会被 WHERE 自然过滤）。
+            pattern = f"%{keyword}%"
+            keyword_filter = or_(
+                User.name.ilike(pattern),
+                User.username.ilike(pattern),
+                User.employee_no.ilike(pattern),
+                User.mobile.ilike(pattern),
+            )
             base = base.where(keyword_filter)
             count_stmt = count_stmt.where(keyword_filter)
         if feishu_bound_only:

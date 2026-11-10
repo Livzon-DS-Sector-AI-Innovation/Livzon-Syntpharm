@@ -1015,6 +1015,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/permission/permissions/{code}/api-bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Permission Api Bindings
+         * @description 单个权限码绑定的接口清单，供角色管理勾选权限时按需展开。
+         *
+         *     权限口径与 `/tree` 一致取 `platform:role:read`：这份清单只服务于「勾这个权限会放开哪些接口」，
+         *     角色管理员通常没有 `platform:api-binding:read`，复用登记簿端点会 403。
+         *
+         *     纯注册表数据、不查库，因此权限表未迁移时也可正常返回。
+         */
+        get: operations["list_permission_api_bindings_api_v1_permission_permissions__code__api_bindings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/permission/api-bindings": {
         parameters: {
             query?: never;
@@ -5301,6 +5326,30 @@ export interface paths {
          */
         post: operations["post_hazard_category_api_v1_safety_hazard_categories_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/hazard-categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 修改隐患类别名称（全公司共享）
+         * @description 类别改名：同步刷新历史台账里的旧名称；内置类别不允许改名
+         */
+        put: operations["put_hazard_category_api_v1_safety_hazard_categories__category_id__put"];
+        post?: never;
+        /**
+         * 删除隐患类别（软删除，全公司共享）
+         * @description 删除类别：软删除，历史台账保留原类别名；内置 7 类不可删
+         */
+        delete: operations["delete_hazard_category_api_v1_safety_hazard_categories__category_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -35590,6 +35639,17 @@ export interface components {
             is_builtin: boolean;
         };
         /**
+         * HazardCategoryUpdate
+         * @description 隐患类别改名请求
+         */
+        HazardCategoryUpdate: {
+            /**
+             * Name
+             * @description 新类别名称
+             */
+            name: string;
+        };
+        /**
          * HazardIdentificationApiResponse
          * @description Single hazard identification response wrapper
          */
@@ -43147,6 +43207,46 @@ export interface components {
             /** Password */
             password?: string | null;
         };
+        /**
+         * PermissionApiBindingItem
+         * @description 单个权限码绑定的接口（来源为 registry 常量，无 DB 主键）。
+         */
+        PermissionApiBindingItem: {
+            /**
+             * Method
+             * @description HTTP 方法，如 GET / POST
+             */
+            method: string;
+            /**
+             * Route Template
+             * @description 接口路由模板，路径参数以 {name} 占位
+             */
+            route_template: string;
+            /**
+             * Scope Required
+             * @description 该接口是否要求数据范围
+             * @default false
+             */
+            scope_required: boolean;
+        };
+        /** PermissionApiBindingListResponse */
+        PermissionApiBindingListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /**
+             * Data
+             * @description 该权限码绑定的接口清单
+             */
+            data: components["schemas"]["PermissionApiBindingItem"][];
+        };
         /** PermissionListResponse */
         PermissionListResponse: {
             /**
@@ -43191,6 +43291,21 @@ export interface components {
              * @default true
              */
             is_builtin: boolean;
+            /**
+             * Module Label
+             * @description 模块中文名（注册表派生）
+             */
+            module_label?: string | null;
+            /**
+             * Resource Label
+             * @description 资源中文名（注册表派生）
+             */
+            resource_label?: string | null;
+            /**
+             * Action Label
+             * @description 动作中文短词（注册表派生）
+             */
+            action_label?: string | null;
         };
         /** PermissionTreeData */
         PermissionTreeData: {
@@ -61815,6 +61930,39 @@ export interface operations {
             };
         };
     };
+    list_permission_api_bindings_api_v1_permission_permissions__code__api_bindings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["PermissionApiBindingListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_api_bindings_api_v1_permission_api_bindings_get: {
         parameters: {
             query?: never;
@@ -73051,6 +73199,76 @@ export interface operations {
                 "application/json": components["schemas"]["HazardCategoryCreate"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["HazardCategoryApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_hazard_category_api_v1_safety_hazard_categories__category_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HazardCategoryUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["HazardCategoryApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_hazard_category_api_v1_safety_hazard_categories__category_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

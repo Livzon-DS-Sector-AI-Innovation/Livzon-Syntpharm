@@ -71,6 +71,10 @@ class PermissionResponse(BaseModel):
     description: str | None = None
     status: str = "active"
     is_builtin: bool = True
+    # 展示用中文派生字段：数据来自注册表；库里存在注册表已退役的码时为 None，前端回退英文原值
+    module_label: str | None = Field(None, description="模块中文名（注册表派生）")
+    resource_label: str | None = Field(None, description="资源中文名（注册表派生）")
+    action_label: str | None = Field(None, description="动作中文短词（注册表派生）")
 
 
 class PermissionListResponse(BaseModel):
@@ -158,6 +162,20 @@ class ApiBindingListResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: list[ApiBindingResponse]
+
+
+class PermissionApiBindingItem(BaseModel):
+    """单个权限码绑定的接口（来源为 registry 常量，无 DB 主键）。"""
+
+    method: str = Field(..., description="HTTP 方法，如 GET / POST")
+    route_template: str = Field(..., description="接口路由模板，路径参数以 {name} 占位")
+    scope_required: bool = Field(False, description="该接口是否要求数据范围")
+
+
+class PermissionApiBindingListResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[PermissionApiBindingItem] = Field(..., description="该权限码绑定的接口清单")
 
 
 # ── 当前用户权限 ──────────────────────────────────────────────────
