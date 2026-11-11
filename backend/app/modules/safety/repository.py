@@ -427,6 +427,7 @@ class SafetyRepository:
                     "repo.update_hazard 拦截空字符串: hazard_id=%s field=%s (已从 update_data 移除)",
                     hazard_id,
                     guard_field,
+                    extra={"hazard_id": str(hazard_id), "field": guard_field},
                 )
                 del data[guard_field]
 
@@ -841,14 +842,24 @@ class SafetyRepository:
                 query = query.where(HazardIdentification.created_at >= dfrom)
                 count_query = count_query.where(HazardIdentification.created_at >= dfrom)
             except ValueError:
-                logger.warning("忽略异常 @ %s", "SafetyRepository.get_hazard_identifications", exc_info=True)
+                logger.warning(
+                    "忽略异常 @ %s",
+                    "SafetyRepository.get_hazard_identifications",
+                    exc_info=True,
+                    extra={"repo_method": "get_hazard_identifications", "field": "date_from", "value": date_from},
+                )
         if date_to:
             try:
                 dto = dt_module.strptime(date_to + " 23:59:59", "%Y-%m-%d %H:%M:%S")
                 query = query.where(HazardIdentification.created_at <= dto)
                 count_query = count_query.where(HazardIdentification.created_at <= dto)
             except ValueError:
-                logger.warning("忽略异常 @ %s", "SafetyRepository.get_hazard_identifications", exc_info=True)
+                logger.warning(
+                    "忽略异常 @ %s",
+                    "SafetyRepository.get_hazard_identifications",
+                    exc_info=True,
+                    extra={"repo_method": "get_hazard_identifications", "field": "date_to", "value": date_to},
+                )
         if overall_status:
             query = query.where(HazardIdentification.overall_status == overall_status)
             count_query = count_query.where(HazardIdentification.overall_status == overall_status)
@@ -942,6 +953,11 @@ class SafetyRepository:
                     "忽略异常 @ %s",
                     "SafetyRepository.get_hazard_identification_ledger_stats",
                     exc_info=True,
+                    extra={
+                        "repo_method": "get_hazard_identification_ledger_stats",
+                        "field": "date_from",
+                        "value": date_from,
+                    },
                 )
         if date_to:
             try:
@@ -953,6 +969,11 @@ class SafetyRepository:
                     "忽略异常 @ %s",
                     "SafetyRepository.get_hazard_identification_ledger_stats",
                     exc_info=True,
+                    extra={
+                        "repo_method": "get_hazard_identification_ledger_stats",
+                        "field": "date_to",
+                        "value": date_to,
+                    },
                 )
 
         total = await self.session.scalar(base) or 0
@@ -977,6 +998,11 @@ class SafetyRepository:
                     "忽略异常 @ %s",
                     "SafetyRepository.get_hazard_identification_ledger_stats",
                     exc_info=True,
+                    extra={
+                        "repo_method": "get_hazard_identification_ledger_stats",
+                        "field": "date_from",
+                        "value": date_from,
+                    },
                 )
         if date_to:
             try:
@@ -988,6 +1014,11 @@ class SafetyRepository:
                     "忽略异常 @ %s",
                     "SafetyRepository.get_hazard_identification_ledger_stats",
                     exc_info=True,
+                    extra={
+                        "repo_method": "get_hazard_identification_ledger_stats",
+                        "field": "date_to",
+                        "value": date_to,
+                    },
                 )
 
         levels = {"level_1": 0, "level_2": 0, "level_3": 0, "level_4": 0}

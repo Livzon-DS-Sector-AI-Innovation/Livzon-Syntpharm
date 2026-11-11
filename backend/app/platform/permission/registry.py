@@ -1299,6 +1299,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:permission:read", "GET", "/api/v1/permission/permissions"),
     # 权限树只服务于「角色管理」勾选权限，跟随 role:read（与端点 require_permission 对齐）
     ApiBindingDef("platform:role:read", "GET", "/api/v1/permission/tree"),
+    # 单权限码接口清单同样跟随 role:read（与端点 require_permission 对齐）
+    ApiBindingDef("platform:role:read", "GET", "/api/v1/permission/permissions/{code}/api-bindings"),
     ApiBindingDef("platform:api-binding:read", "GET", "/api/v1/permission/api-bindings"),
     # 授权管理
     ApiBindingDef("platform:grant:read", "GET", "/api/v1/permission/departments"),
