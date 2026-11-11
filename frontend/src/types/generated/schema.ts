@@ -36407,6 +36407,16 @@ export interface components {
              */
             department?: string | null;
             /**
+             * Safety Officer Id
+             * @description 分管安全员（FK → identity.users）
+             */
+            safety_officer_id?: string | null;
+            /**
+             * Safety Officer Name
+             * @description 分管安全员姓名
+             */
+            safety_officer_name?: string | null;
+            /**
              * Major Hazard Basis
              * @description 隐患判定依据（AI）
              */
@@ -36555,6 +36565,16 @@ export interface components {
              * @description 责任部门
              */
             department?: string | null;
+            /**
+             * Safety Officer Id
+             * @description 分管安全员（FK → identity.users）
+             */
+            safety_officer_id?: string | null;
+            /**
+             * Safety Officer Name
+             * @description 分管安全员姓名
+             */
+            safety_officer_name?: string | null;
             /**
              * Major Hazard Basis
              * @description 隐患判定依据（AI）
@@ -36748,6 +36768,8 @@ export interface components {
              * @description 整改负责人（顺序与 rectification_responsible_person_names 一致）
              */
             rectification_responsible_persons?: components["schemas"]["PersonRef"][];
+            /** @description 分管安全员（含头像）；未单独指定时由详情页按责任部门配置回退 */
+            safety_officer_person?: components["schemas"]["PersonRef"] | null;
         };
         /**
          * HazardReportUpdate
@@ -36803,6 +36825,16 @@ export interface components {
              * @description 责任部门
              */
             department?: string | null;
+            /**
+             * Safety Officer Id
+             * @description 分管安全员（FK → identity.users）
+             */
+            safety_officer_id?: string | null;
+            /**
+             * Safety Officer Name
+             * @description 分管安全员姓名
+             */
+            safety_officer_name?: string | null;
             /**
              * Inspector Department
              * @description 检查人员部门（Bitable 多选，逗号分隔）
