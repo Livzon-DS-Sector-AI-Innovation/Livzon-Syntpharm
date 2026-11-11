@@ -462,6 +462,31 @@ export const dynamic = 'force-dynamic'
 ✓ import { BatchTable } from '@/components/production'
 ```
 
+## 人员选择（人员下拉）
+
+**凡是需要选择系统人员的地方，统一使用 `components/common/RemoteUserSelect.tsx`**（`@/components/common/RemoteUserSelect`，默认导出同名组件）。
+
+它提供与隐患台账一致的能力：展开即取首批系统用户（50 条/页）、300ms 防抖的服务端姓名搜索、请求序号防竞态、底部「加载更多」、选项「头像 + 姓名 + 部门」、已选标签小头像。
+
+**禁止**：
+
+- 再写页面级 `options={userOptions}` 的全量人员 `Select`（页码一次性拉全量用户既慢又会随人数增长线性变差）
+- 在 Client 组件里自己 `fetch` 人员接口（人员检索走 `lib/api/client/identity.ts` 的 `searchPersonnel` 只读封装）
+
+**必须**：
+
+- 值只存 UUID（单选 `string`，多选 `string[]`），姓名/头像通过 `fallbackOptions` 快照回显，保证未展开下拉时不显示 UUID
+- 多选场景传 `mode="multiple"`
+
+```tsx
+import { RemoteUserSelect } from '@/components/common/RemoteUserSelect'
+
+// 单选
+<RemoteUserSelect placeholder="搜索姓名选择人员" fallbackOptions={personFallback} />
+// 多选
+<RemoteUserSelect mode="multiple" placeholder="搜索姓名选择人员，可多选" fallbackOptions={personFallback} />
+```
+
 ## 命名规范
 
 - 组件文件：PascalCase（`BatchTable.tsx`）

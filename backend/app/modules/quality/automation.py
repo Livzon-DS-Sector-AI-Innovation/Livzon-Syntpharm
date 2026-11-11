@@ -104,7 +104,7 @@ async def check_unsubmitted_weekly_confirmations(db: AsyncSession) -> list[dict[
     workshop_query = select(DepartmentContact).where(
         and_(
             ~DepartmentContact.is_deleted,
-            DepartmentContact.is_production_workshop,
+            DepartmentContact.is_production_workshop.is_(True),
         )
     )
     result = await db.execute(workshop_query)

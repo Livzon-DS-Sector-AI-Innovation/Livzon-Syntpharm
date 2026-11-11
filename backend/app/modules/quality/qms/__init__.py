@@ -2,8 +2,8 @@
 
 from app.modules.quality.qms.api import router as quality_router
 from app.modules.quality.qms.capa_api import capa_router
-from app.modules.quality.qms.deviation_api import router as deviation_router
-from app.modules.quality.qms.deviation_settings_api import router as deviation_settings_router
+from app.modules.quality.qms.deviation_config_api import router as deviation_config_router
+from app.modules.quality.qms.deviation_ledger_api import router as deviation_ledger_router
 from app.modules.quality.qms.doc_check.api import router as doc_check_router
 from app.modules.quality.qms.fqc_api import router as fqc_router
 from app.modules.quality.qms.instrument_api import router as instrument_router
@@ -24,8 +24,8 @@ __all__ = [
     "ipqc_router",
     "fqc_router",
     "stability_router",
-    "deviation_router",
-    "deviation_settings_router",
+    "deviation_ledger_router",
+    "deviation_config_router",
     "quality_reagent_router",
     "doc_check_router",
     "static_data_router",

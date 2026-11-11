@@ -361,12 +361,14 @@ async def send_feishu_card_from_config(
                     "tag": "action",
                     "actions": [
                         {
-                            "tag": "a",
+                            # 卡片 v1 的 action 模块只支持 button，不支持 a（11310）
+                            "tag": "button",
                             "text": {
                                 "tag": "lark_md",
                                 "content": action.get("text", ""),
                             },
-                            "href": {"url": action.get("url", "")},
+                            "type": "primary",
+                            "url": action.get("url", ""),
                         }
                     ],
                 }

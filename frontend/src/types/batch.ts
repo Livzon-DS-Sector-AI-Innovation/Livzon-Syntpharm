@@ -9,6 +9,6 @@ import type { components } from '@/types/generated/schema'
 export type BatchFailureItem = components['schemas']['BatchFailure']
 
 export type BatchResult = {
-  succeeded: NonNullable<components['schemas']['BatchResultData']['succeeded']>
-  failed: NonNullable<components['schemas']['BatchResultData']['failed']>
+  succeeded: NonNullable<components['schemas']['app__platform__permission__schemas__BatchResultData']['succeeded']>
+  failed: NonNullable<components['schemas']['app__platform__permission__schemas__BatchResultData']['failed']>
 }

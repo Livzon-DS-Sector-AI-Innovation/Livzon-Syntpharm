@@ -13,6 +13,10 @@ from app.modules.quality.qms.deviation_automation_models import (
     DevTask,
     SOPRule,
 )
+from app.modules.quality.qms.deviation_department_models import (
+    DepartmentContact,
+    DepartmentWeeklyConfirmation,
+)
 from app.modules.quality.qms.deviation_flow_models import (
     QmsDeviation,
     QmsDeviationAttachment,
@@ -20,6 +24,9 @@ from app.modules.quality.qms.deviation_flow_models import (
     QmsDeviationFeishuBotConfig,
     QmsDeviationLog,
     QmsDeviationMessageTemplate,
+)
+from app.modules.quality.qms.deviation_ledger_models import (
+    DeviationLedger,
 )
 from app.modules.quality.qms.deviation_settings_models import (
     DeviationLeaderConfig,
@@ -61,6 +68,9 @@ from app.modules.quality.sop_ai.models import (
 )
 
 __all__ = [
+    "DepartmentContact",
+    "DepartmentWeeklyConfirmation",
+    "DeviationLedger",
     "DeviationLeaderConfig",
     "DeviationQAConfig",
     "InspectionTable",

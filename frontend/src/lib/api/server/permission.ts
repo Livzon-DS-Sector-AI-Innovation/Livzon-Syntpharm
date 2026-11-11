@@ -98,7 +98,7 @@ export function deleteGrant(id: string, token?: string) {
 // ── 批量操作 ───────────────────────────────────────────────────────
 
 export function batchUpdateRoleStatus(data: Schemas['StatusBatchRequest'], token?: string) {
-  return apiFetch<Schemas['BatchResultApiResponse']>(P('/roles/batch-status'), {
+  return apiFetch<Schemas['app__platform__permission__schemas__BatchResultApiResponse']>(P('/roles/batch-status'), {
     method: 'POST',
     headers: auth(token),
     body: JSON.stringify(data),
@@ -106,7 +106,7 @@ export function batchUpdateRoleStatus(data: Schemas['StatusBatchRequest'], token
 }
 
 export function batchDeleteRoles(data: Schemas['IdsBatchRequest'], token?: string) {
-  return apiFetch<Schemas['BatchResultApiResponse']>(P('/roles/batch-delete'), {
+  return apiFetch<Schemas['app__platform__permission__schemas__BatchResultApiResponse']>(P('/roles/batch-delete'), {
     method: 'POST',
     headers: auth(token),
     body: JSON.stringify(data),
@@ -114,7 +114,7 @@ export function batchDeleteRoles(data: Schemas['IdsBatchRequest'], token?: strin
 }
 
 export function batchUpdateGrantStatus(data: Schemas['StatusBatchRequest'], token?: string) {
-  return apiFetch<Schemas['BatchResultApiResponse']>(P('/grants/batch-status'), {
+  return apiFetch<Schemas['app__platform__permission__schemas__BatchResultApiResponse']>(P('/grants/batch-status'), {
     method: 'POST',
     headers: auth(token),
     body: JSON.stringify(data),
@@ -122,7 +122,7 @@ export function batchUpdateGrantStatus(data: Schemas['StatusBatchRequest'], toke
 }
 
 export function batchDeleteGrants(data: Schemas['IdsBatchRequest'], token?: string) {
-  return apiFetch<Schemas['BatchResultApiResponse']>(P('/grants/batch-delete'), {
+  return apiFetch<Schemas['app__platform__permission__schemas__BatchResultApiResponse']>(P('/grants/batch-delete'), {
     method: 'POST',
     headers: auth(token),
     body: JSON.stringify(data),

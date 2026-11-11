@@ -403,18 +403,9 @@ const procurementRoutes: RouteCase[] = [
 
 const qualityRoutes: RouteCase[] = [
   { path: '/quality', module: 'quality', kind: 'normal', expected: heading('质量管理中心') },
-  { path: '/quality/deviation', module: 'quality', kind: 'normal', expected: text('AI智能偏差管理系统') },
-  { path: '/quality/deviation/report', module: 'quality', kind: 'normal', expected: text('偏差报告编辑器') },
-  // Disabled: /api/v1/quality/deviation-flow endpoint returns 404/500
-  // { path: '/quality/deviation-flow/settings', module: 'quality', kind: 'normal', expected: heading('偏差提醒设置') },
-  // { path: '/quality/deviation-flow/query', module: 'quality', kind: 'normal', expected: heading('偏差任务查询') },
-  // { path: '/quality/deviation-flow/progress', module: 'quality', kind: 'normal', expected: heading('偏差详情') },
-  // Disabled: calls /api/v1/quality/deviation-automation/templates (returns 404)
-  // { path: '/quality/deviation-automation/templates', module: 'quality', kind: 'normal', expected: text('报告模板管理') },
-  // Disabled: calls /api/v1/quality/deviation-automation/templates (returns 404)
-  // { path: '/quality/deviation-automation/history', module: 'quality', kind: 'normal', expected: text('历史任务查询') },
-  // Disabled: calls /api/v1/quality/deviation-automation/templates (returns 404)
-  // { path: '/quality/deviation-automation/sop', module: 'quality', kind: 'normal', expected: text('SOP规则管理') },
+  { path: '/quality/deviation', module: 'quality', kind: 'normal', expected: heading('偏差管理') },
+  { path: '/quality/deviation/ledger', module: 'quality', kind: 'normal', expected: heading('偏差台账') },
+  { path: '/quality/deviation/new', module: 'quality', kind: 'normal', expected: heading('新建偏差') },
   { path: '/quality/calculator', module: 'quality', kind: 'normal', expected: heading('计算器') },
   { path: '/quality/cpv', module: 'quality', kind: 'normal', expected: heading('CPV') },
   // Disabled: endpoint /api/v1/quality/department-contacts not implemented (returns 404)

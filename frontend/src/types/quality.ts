@@ -72,56 +72,6 @@ export interface ReviewOpinion {
   createTime: string;
 }
 
-export interface DeviationListItem {
-  id: string;
-  deviation_code: string;
-  final_code: string | null;
-  title: string;
-  department: string | null;
-  discovery_date: string | null;
-  status: DeviationStatus;
-  level: DeviationLevel | null;
-  root_cause_category: ReasonCategory | null;
-  reporter_id: string | null;
-  handler: string | null;
-  status_updated_at: string | null;
-  returned_step: ApprovalStep | null;
-  created_at: string;
-}
-
-export interface DeviationDetail {
-  id: string;
-  deviation_code: string;
-  final_code: string | null;
-  title: string;
-  department: string | null;
-  discovery_date: string | null;
-  discovery_time: string | null;
-  discovery_location: string | null;
-  status: DeviationStatus;
-  level: DeviationLevel | null;
-  root_cause_category: ReasonCategory | null;
-  description: string | null;
-  immediate_actions: string | null;
-  reporter_id: string | null;
-  handler: string | null;
-  discoverer: string | null;
-  ai_analysis: AiAnalysis | null;
-  investigation_records: InvestigationRecord[] | null;
-  review_opinions: ReviewOpinion[] | null;
-  attachments: string[] | null;
-  needs_cross_dept_review: boolean | null;
-  cross_dept_reviewers: CrossDeptReviewer[] | null;
-  affected_items: string | null;
-  batch_number: string | null;
-  returned_step: ApprovalStep | null;
-  status_updated_at: string | null;
-  report_content: string | null;
-  report_versions: unknown[] | null;
-  created_at: string;
-  updated_at: string;
-}
-
 // ============ CAPA Types ============
 export type CapaWorkflowStatus =
   | 'draft'
@@ -232,46 +182,28 @@ export interface CapaDetail {
 }
 
 // ============ Department Contact Types ============
-export interface DepartmentContact {
-  id: string;
-  department: string;
-  dept_head_id: string | null;
-  qa_staff_ids: string[] | null;
-  gmp_staff_ids: string[] | null;
-  production_head_id: string | null;
-  quality_head_id: string | null;
-  additional_contacts: string[] | null;
-  is_production_workshop: boolean | null;
-  created_at: string;
-  updated_at: string;
-}
+export type DepartmentContact = components['schemas']['DepartmentContactItem']
+export type DepartmentContactListData = components['schemas']['DepartmentContactListData']
+export type CreateDepartmentContactRequest = components['schemas']['DepartmentContactCreateRequest']
+export type UpdateDepartmentContactRequest = components['schemas']['DepartmentContactUpdateRequest']
+export type DepartmentMemberOption = components['schemas']['MemberOption']
 
 // ============ Department Weekly Confirmation Types ============
-export type ProductionStatus = 'production' | 'stopped';
-export type DeviationConfirmationStatus = 'submitted' | 'unsubmitted';
+export type ProductionStatus = 'production' | 'stopped'
+export type DeviationConfirmationStatus = 'submitted' | 'unsubmitted'
 
-export interface DepartmentWeeklyConfirmation {
-  id: string;
-  department: string;
-  week_key: string;
-  production_status: ProductionStatus;
-  deviation_status: DeviationConfirmationStatus;
-  confirmed_by_id: string | null;
-  confirmed_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
+export type WeeklyConfirmationItem = components['schemas']['WeeklyConfirmationItem']
+export type WeeklyConfirmationListData = components['schemas']['WeeklyConfirmationListData']
+export type WeeklyConfirmationInput = components['schemas']['WeeklyConfirmationUpsertRequest']
+
+// ============ Deviation Notify Settings ============
+export type DeviationNotifySettings = components['schemas']['NotifySettingsItem']
+export type DeviationNotifyEvents = components['schemas']['NotifyEvents']
+export type DeviationNotifySettingsUpdate = components['schemas']['NotifySettingsUpdateRequest']
+export type DeviationNotifyTarget = components['schemas']['NotifyTargetItem']
+export type DeviationNotifyTestResult = components['schemas']['NotifyTestResultData']
 
 // ============ Filter Types ============
-export interface DeviationFilters {
-  status?: DeviationStatus | '';
-  level?: DeviationLevel | '';
-  department?: string | '';
-  keyword?: string;
-  page?: number;
-  page_size?: number;
-}
-
 export interface CapaFilters {
   status?: CapaWorkflowStatus | '';
   source?: CapaSource | '';
@@ -281,33 +213,7 @@ export interface CapaFilters {
   page_size?: number;
 }
 
-// ============ List Response Types ============
-export interface DepartmentContactListResponse {
-  items: DepartmentContact[];
-  total: number;
-  page: number;
-  page_size: number;
-}
 
-// ============ Create/Update Request Types ============
-export interface CreateDepartmentContactRequest {
-  department: string;
-  dept_head_id?: string | null;
-  qa_staff_ids?: string[] | null;
-  gmp_staff_ids?: string[] | null;
-  production_head_id?: string | null;
-  quality_head_id?: string | null;
-}
-
-export interface UpdateDepartmentContactRequest {
-  dept_head_id?: string | null;
-  qa_staff_ids?: string[] | null;
-  gmp_staff_ids?: string[] | null;
-  production_head_id?: string | null;
-  quality_head_id?: string | null;
-  additional_contacts?: string[] | null;
-  is_production_workshop?: boolean | null;
-}
 
 
 // ============ File Attachment Types ============
@@ -626,20 +532,46 @@ export interface AiLogFilter {
   keyword?: string
 }
 
-/** 偏差报告 Word 模板上传并解析后的结果（来自后端 OpenAPI 契约） */
-export type DeviationReportUploadResult = components['schemas']['DeviationReportUploadData']
-
-/** 偏差报告 AI 优化结果（来自后端 OpenAPI 契约） */
-/** AI 优化任务受理结果（202：任务已入队） */
-export type DeviationOptimizeJob = components['schemas']['DeviationOptimizeJobData']
-
-/** AI 优化任务轮询结果 */
-export type DeviationOptimizeJobResult = components['schemas']['DeviationOptimizeJobResultData']
+// ============ 偏差台账（quality.deviation_ledger） ============
 
 /**
- * 偏差报告 AI 优化类型。
+ * 偏差台账（quality.deviation_ledger）视图类型。
  *
- * 取值集合由后端 `OptimizeTextRequest.optimize_type` 的 `Literal` 定义，
- * 经 OpenAPI 输出为 enum，因此这里直接取生成类型，不再手写联合类型。
+ * 全部来自后端 OpenAPI 契约，禁止手写重复字段；前端只额外保留查询参数形态。
  */
-export type DeviationReportOptimizeType = components['schemas']['OptimizeTextRequest']['optimize_type']
+export type DeviationLedgerItem = components['schemas']['LedgerItem']
+export type DeviationLedgerDetail = components['schemas']['LedgerDetail']
+export type DeviationLedgerListResult = components['schemas']['LedgerListData']
+export type DeviationLedgerStatistics = components['schemas']['LedgerStatisticsData']
+export type DeviationLedgerDistributionItem = components['schemas']['DistributionItem']
+export type DeviationLedgerStatusDistributionItem = components['schemas']['StatusDistributionItem']
+export type DeviationLedgerOption = components['schemas']['OptionItem']
+export type DeviationLedgerCreateInput = components['schemas']['LedgerCreateRequest']
+export type DeviationLedgerUpdateInput = components['schemas']['LedgerUpdateRequest']
+export type DeviationLedgerBatchStatusInput = components['schemas']['BatchStatusRequest']
+export type DeviationAiAnalysisInput = components['schemas']['CompleteAiAnalysisRequest']
+export type DeviationAiAnalysisData = components['schemas']['AiAnalysisData']
+export type DeviationInvestigationInput = components['schemas']['InvestigationRequest']
+export type DeviationInvestigationRecord = components['schemas']['InvestigationRecordItem']
+export type DeviationReviewInput = components['schemas']['ReviewRequest']
+export type DeviationReviewOpinion = components['schemas']['ReviewOpinionItem']
+export type DeviationResubmitInput = components['schemas']['ResubmitRequest']
+export type DeviationFinalCodeInput = components['schemas']['FinalCodeRequest']
+export type DeviationReportSaveInput = components['schemas']['ReportSaveRequest']
+export type DeviationReportVersion = components['schemas']['ReportVersionItem']
+export type DeviationAttachment = components['schemas']['AttachmentItem']
+export type DeviationLedgerStep = components['schemas']['LedgerStep']
+export type DeviationCrossDeptReviewer = components['schemas']['CrossDeptReviewerItem']
+export type DeviationLedgerOptionResult = components['schemas']['OptionListData']
+export type DeviationBatchResult =
+  components['schemas']['app__modules__quality__qms__deviation_ledger_schemas__BatchResultData']
+export type DeviationDeleteResult = components['schemas']['DeleteResultData']
+
+/** 台账查询参数：只在前端 URL / 请求 query 上使用 */
+export interface DeviationLedgerFilters {
+  reason_category?: string
+  status?: string
+  department?: string
+  page?: number
+  page_size?: number
+}
