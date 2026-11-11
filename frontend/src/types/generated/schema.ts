@@ -30914,6 +30914,10 @@ export interface components {
             severity_s: string;
             /** Risk Evaluation R */
             risk_evaluation_r: number;
+            /** Evaluation Grade */
+            evaluation_grade: number;
+            /** Evaluation Grade Label */
+            evaluation_grade_label: string;
             /** Current Control Measures */
             current_control_measures: string[];
             /** Improvement Measures */
@@ -30942,6 +30946,18 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /**
+         * EquipmentGradeBand
+         * @description 设备设施评价级别分段：R ≥ min_r 时取该 grade（按 min_r 从高到低排列）。
+         */
+        EquipmentGradeBand: {
+            /** Grade */
+            grade: number;
+            /** Label */
+            label: string;
+            /** Min R */
+            min_r: number;
         };
         /**
          * EquipmentImportRow
@@ -47472,6 +47488,8 @@ export interface components {
             };
             /** Grade Thresholds */
             grade_thresholds: components["schemas"]["RiskGradeThreshold"][];
+            /** Equipment Grade Bands */
+            equipment_grade_bands: components["schemas"]["EquipmentGradeBand"][];
             likelihood_range: components["schemas"]["LecRange"];
             exposure_range: components["schemas"]["LecRange"];
             consequence_range: components["schemas"]["LecRange"];
@@ -73178,6 +73196,8 @@ export interface operations {
                 page_size?: number;
                 /** @description 管控层级（部门） */
                 control_level?: string | null;
+                /** @description 评价级别 1–4 */
+                evaluation_grade?: number | null;
                 /** @description 残余风险 key */
                 residual_risk?: string | null;
                 /** @description 关键字（覆盖各文本字段） */
@@ -73251,6 +73271,8 @@ export interface operations {
             query?: {
                 /** @description 管控层级（部门） */
                 control_level?: string | null;
+                /** @description 评价级别 1–4 */
+                evaluation_grade?: number | null;
                 /** @description 残余风险 key */
                 residual_risk?: string | null;
                 /** @description 关键字（覆盖各文本字段） */

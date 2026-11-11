@@ -179,6 +179,7 @@ async def list_equipment_facility_hazards(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     control_level: str | None = Query(None, description="管控层级（部门）"),
+    evaluation_grade: int | None = Query(None, ge=1, le=4, description="评价级别 1–4"),
     residual_risk: str | None = Query(None, description="残余风险 key"),
     keyword: str | None = Query(None, description="关键字（覆盖各文本字段）"),
     db: AsyncSession = Depends(get_db),
@@ -190,6 +191,7 @@ async def list_equipment_facility_hazards(
         skip,
         page_size,
         control_level=control_level,
+        evaluation_grade=evaluation_grade,
         residual_risk=residual_risk,
         keyword=keyword,
     )
@@ -224,6 +226,7 @@ async def create_equipment_facility_hazard(
 async def export_equipment_facility_hazards(
     current_user: RequiredUser,
     control_level: str | None = Query(None, description="管控层级（部门）"),
+    evaluation_grade: int | None = Query(None, ge=1, le=4, description="评价级别 1–4"),
     residual_risk: str | None = Query(None, description="残余风险 key"),
     keyword: str | None = Query(None, description="关键字（覆盖各文本字段）"),
     db: AsyncSession = Depends(get_db),
@@ -232,6 +235,7 @@ async def export_equipment_facility_hazards(
     service = EquipmentFacilityHazardService(db)
     content = await service.export_hazards(
         control_level=control_level,
+        evaluation_grade=evaluation_grade,
         residual_risk=residual_risk,
         keyword=keyword,
     )

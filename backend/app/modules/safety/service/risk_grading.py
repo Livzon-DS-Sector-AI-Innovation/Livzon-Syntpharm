@@ -21,6 +21,7 @@ from app.modules.safety.risk_grading import (
     MIN_RISK_VALUE,
     RESIDUAL_RISK_LABELS,
     compute_risk_value,
+    derive_equipment_evaluation_grade,
     derive_evaluation_grade,
     lookup_risk_evaluation,
     quantize_decimal,
@@ -230,6 +231,7 @@ class EquipmentFacilityHazardService:
         skip: int,
         limit: int | None,
         control_level: str | None = None,
+        evaluation_grade: int | None = None,
         residual_risk: str | None = None,
         keyword: str | None = None,
     ) -> tuple[list[EquipmentFacilityHazard], int]:
@@ -237,6 +239,7 @@ class EquipmentFacilityHazardService:
             skip,
             limit,
             control_level=control_level,
+            evaluation_grade=evaluation_grade,
             residual_risk=residual_risk,
             keyword=keyword,
         )
@@ -249,10 +252,14 @@ class EquipmentFacilityHazardService:
 
     @staticmethod
     def _compute_payload(values: EquipmentFacilityHazardCreate) -> dict[str, Any]:
-        """按完整字段重新查矩阵得出 R，并派生残余风险标签。"""
+        """按完整字段重新查矩阵得出 R 与评价级别，并派生残余风险标签。"""
+        risk_evaluation_r = lookup_risk_evaluation(values.likelihood_l, values.severity_s)
+        evaluation_grade, evaluation_grade_label = derive_equipment_evaluation_grade(risk_evaluation_r)
         payload = values.model_dump()
         payload.update(
-            risk_evaluation_r=lookup_risk_evaluation(values.likelihood_l, values.severity_s),
+            risk_evaluation_r=risk_evaluation_r,
+            evaluation_grade=evaluation_grade,
+            evaluation_grade_label=evaluation_grade_label,
             residual_risk_label=RESIDUAL_RISK_LABELS[values.residual_risk],
         )
         return payload
@@ -282,6 +289,7 @@ class EquipmentFacilityHazardService:
     async def export_hazards(
         self,
         control_level: str | None = None,
+        evaluation_grade: int | None = None,
         residual_risk: str | None = None,
         keyword: str | None = None,
     ) -> bytes:
@@ -290,6 +298,7 @@ class EquipmentFacilityHazardService:
             skip=0,
             limit=None,
             control_level=control_level,
+            evaluation_grade=evaluation_grade,
             residual_risk=residual_risk,
             keyword=keyword,
         )
@@ -305,6 +314,7 @@ EQUIPMENT_EXPORT_HEADERS: tuple[str, ...] = (
     "可能性L",
     "严重性S",
     "危险评价R",
+    "评价级别",
     "现有管控措施",
     "建议改进（新增）措施",
     "残余风险",
@@ -330,6 +340,7 @@ def build_equipment_facility_hazard_workbook(items: list[EquipmentFacilityHazard
                 item.likelihood_l,
                 item.severity_s,
                 item.risk_evaluation_r,
+                item.evaluation_grade_label,
                 current_measures,
                 improvement_measures,
                 item.residual_risk_label,

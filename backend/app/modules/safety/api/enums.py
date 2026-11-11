@@ -10,6 +10,7 @@ from app.modules.safety.risk_grading import (
     CONSEQUENCE_MAX,
     CONSEQUENCE_MIN,
     CONTROL_MEASURE_OPTIONS,
+    EQUIPMENT_EVALUATION_GRADE_BANDS,
     EQUIPMENT_MEASURE_OPTIONS,
     EVALUATION_GRADE_THRESHOLDS,
     EXECUTION_LEVEL_OPTIONS,
@@ -70,6 +71,7 @@ from app.modules.safety.schemas import (
     SafetyEnumsApiResponse,
 )
 from app.modules.safety.schemas.risk_grading import (
+    EquipmentGradeBand,
     LecRange,
     RiskGradeThreshold,
     RiskGradingOptions,
@@ -157,6 +159,10 @@ async def get_risk_grading_options(current_user: RequiredUser) -> Any:
             grade_thresholds=[
                 RiskGradeThreshold(grade=grade, lower_bound_exclusive=lower_bound)
                 for grade, lower_bound in EVALUATION_GRADE_THRESHOLDS
+            ],
+            equipment_grade_bands=[
+                EquipmentGradeBand(grade=grade, label=label, min_r=min_r)
+                for grade, label, min_r in EQUIPMENT_EVALUATION_GRADE_BANDS
             ],
             likelihood_range=LecRange(min=LIKELIHOOD_MIN, max=LIKELIHOOD_MAX),
             exposure_range=LecRange(min=EXPOSURE_MIN, max=EXPOSURE_MAX),
