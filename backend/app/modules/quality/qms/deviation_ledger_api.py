@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.response import ApiResponse, build_response
 
 from .deviation_ledger_schemas import (
     AttachmentListApiResponse,
@@ -70,7 +71,7 @@ async def list_ledger(
     end_date: date | None = Query(None, description="发现日期止"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
-) -> LedgerListApiResponse:
+) -> ApiResponse:
     """按原因分类 / 状态 / 发生部门筛选，按发现日期倒序。"""
     service = DeviationLedgerService(db)
     items, total = await service.list_items(
@@ -82,7 +83,7 @@ async def list_ledger(
         page=page,
         page_size=page_size,
     )
-    return LedgerListApiResponse(
+    return build_response(
         data=LedgerListData(items=items, total=total, page=page, page_size=page_size),
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -93,10 +94,10 @@ async def ledger_statistics(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_READ)),
     db: AsyncSession = Depends(get_db),
-) -> LedgerStatisticsApiResponse:
+) -> ApiResponse:
     """统计卡 + 部门分布 + 状态分布 + 环节分布（不含 CAPA 看盘）。"""
     service = DeviationLedgerService(db)
-    return LedgerStatisticsApiResponse(data=await service.statistics())
+    return build_response(data=await service.statistics())
 
 
 @router.get("/department-options", response_model=LedgerOptionsApiResponse, summary="发生部门候选")
@@ -104,10 +105,10 @@ async def ledger_department_options(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_READ)),
     db: AsyncSession = Depends(get_db),
-) -> LedgerOptionsApiResponse:
+) -> ApiResponse:
     """筛选栏部门下拉（覆盖台账已有部门，含未配置联系人的历史部门）。"""
     service = DeviationLedgerService(db)
-    return LedgerOptionsApiResponse(data=OptionListData(items=await service.department_options()))
+    return build_response(data=OptionListData(items=await service.department_options()))
 
 
 @router.get(
@@ -119,10 +120,10 @@ async def ledger_department_contact_options(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_READ)),
     db: AsyncSession = Depends(get_db),
-) -> LedgerOptionsApiResponse:
+) -> ApiResponse:
     """新建与编辑表单的部门下拉：只列已配置联系人的部门，保证节点负责人可解析。"""
     service = DeviationLedgerService(db)
-    return LedgerOptionsApiResponse(data=OptionListData(items=await service.contact_department_options()))
+    return build_response(data=OptionListData(items=await service.contact_department_options()))
 
 
 @router.get("/investigator-options", response_model=LedgerOptionsApiResponse, summary="调查人候选")
@@ -131,19 +132,19 @@ async def ledger_investigator_options(
     ctx: PermissionContext = Depends(require_permission(_READ)),
     db: AsyncSession = Depends(get_db),
     keyword: str | None = Query(None, description="姓名关键字"),
-) -> LedgerOptionsApiResponse:
+) -> ApiResponse:
     """新建与编辑表单的调查人选择器候选。"""
     service = DeviationLedgerService(db)
-    return LedgerOptionsApiResponse(data=OptionListData(items=await service.investigator_options(keyword)))
+    return build_response(data=OptionListData(items=await service.investigator_options(keyword)))
 
 
 @router.get("/status-options", response_model=LedgerOptionsApiResponse, summary="状态候选")
 async def ledger_status_options(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_READ)),
-) -> LedgerOptionsApiResponse:
+) -> ApiResponse:
     """筛选栏与批量操作的状态下拉，避免前端硬编码 12 态。"""
-    return LedgerOptionsApiResponse(data=OptionListData(items=status_options()))
+    return build_response(data=OptionListData(items=status_options()))
 
 
 @router.patch("/batch-status", response_model=BatchResultApiResponse, summary="批量更新状态")
@@ -152,11 +153,11 @@ async def batch_update_status(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_UPDATE)),
     db: AsyncSession = Depends(get_db),
-) -> BatchResultApiResponse:
+) -> ApiResponse:
     """勾选多行批量改状态（管理动作，需二次确认）。"""
     service = DeviationLedgerService(db)
     updated = await service.batch_update_status(payload, actor_id=current_user.id)
-    return BatchResultApiResponse(data=BatchResultData(updated=updated), message=f"已更新 {updated} 条")
+    return build_response(data=BatchResultData(updated=updated), message=f"已更新 {updated} 条")
 
 
 @router.get("/{ledger_id}", response_model=LedgerDetailApiResponse, summary="偏差详情")
@@ -165,7 +166,7 @@ async def get_ledger(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_READ)),
     db: AsyncSession = Depends(get_db),
-) -> LedgerDetailApiResponse:
+) -> ApiResponse:
     """整页详情：主表 + AI 分析 + 调查报告 + 调查记录 + 审核全过程 + 附件 + 步骤条。"""
     service = DeviationLedgerService(db)
     detail = await service.get_detail(
@@ -173,7 +174,7 @@ async def get_ledger(
         viewer_id=current_user.id,
         viewer_is_superuser=_is_superuser(ctx),
     )
-    return LedgerDetailApiResponse(data=detail)
+    return build_response(data=detail)
 
 
 @router.post("", response_model=LedgerDetailApiResponse, summary="新建偏差")
@@ -182,11 +183,11 @@ async def create_ledger(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_CREATE)),
     db: AsyncSession = Depends(get_db),
-) -> LedgerDetailApiResponse:
+) -> ApiResponse:
     """新建偏差：发现人 / 上报人取当前登录人，初始状态为待 AI 分析。"""
     service = DeviationLedgerService(db)
     detail = await service.create(payload, user_id=current_user.id)
-    return LedgerDetailApiResponse(data=detail, message="偏差创建成功")
+    return build_response(data=detail, message="偏差创建成功")
 
 
 @router.put("/{ledger_id}", response_model=LedgerDetailApiResponse, summary="修改基础信息")
@@ -196,7 +197,7 @@ async def update_ledger(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_UPDATE)),
     db: AsyncSession = Depends(get_db),
-) -> LedgerDetailApiResponse:
+) -> ApiResponse:
     """仅在待 AI 分析 / 已退回状态可修改，含调查人与跨部门配置。"""
     service = DeviationLedgerService(db)
     detail = await service.update(
@@ -205,7 +206,7 @@ async def update_ledger(
         actor_id=current_user.id,
         actor_name=current_user.name or "-",
     )
-    return LedgerDetailApiResponse(data=detail, message="保存成功")
+    return build_response(data=detail, message="保存成功")
 
 
 @router.delete("/{ledger_id}", response_model=DeleteResultApiResponse, summary="删除偏差")
@@ -214,11 +215,11 @@ async def delete_ledger(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_DELETE)),
     db: AsyncSession = Depends(get_db),
-) -> DeleteResultApiResponse:
+) -> ApiResponse:
     """软删除，仅限「待AI分析」与「已取消」。"""
     service = DeviationLedgerService(db)
     await service.delete(ledger_id, actor_id=current_user.id)
-    return DeleteResultApiResponse(data=DeleteResultData(id=ledger_id), message="删除成功")
+    return build_response(data=DeleteResultData(id=ledger_id), message="删除成功")
 
 
 @router.post("/{ledger_id}/ai-analysis", response_model=LedgerDetailApiResponse, summary="生成 AI 分析")
@@ -227,13 +228,13 @@ async def generate_ai_analysis(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_UPDATE)),
     db: AsyncSession = Depends(get_db),
-) -> LedgerDetailApiResponse:
+) -> ApiResponse:
     """调用大模型生成结构化分析（只返回，不落库）。"""
     service = DeviationLedgerService(db)
     analysis = await service.generate_ai_analysis(ledger_id)
     detail = await service.get_detail(ledger_id, viewer_id=current_user.id)
     detail.ai_analysis = analysis
-    return LedgerDetailApiResponse(data=detail, message="AI 分析已生成")
+    return build_response(data=detail, message="AI 分析已生成")
 
 
 @router.post(
@@ -247,7 +248,7 @@ async def complete_ai_analysis(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_UPDATE)),
     db: AsyncSession = Depends(get_db),
-) -> LedgerDetailApiResponse:
+) -> ApiResponse:
     """保存确认后的分析结果，状态推进到待调查。"""
     service = DeviationLedgerService(db)
     detail = await service.complete_ai_analysis(
@@ -257,7 +258,7 @@ async def complete_ai_analysis(
         actor_name=current_user.name or "-",
         actor_is_superuser=_is_superuser(ctx),
     )
-    return LedgerDetailApiResponse(data=detail, message="已进入调查环节")
+    return build_response(data=detail, message="已进入调查环节")
 
 
 @router.post("/{ledger_id}/investigation", response_model=LedgerDetailApiResponse, summary="提交调查")
@@ -267,7 +268,7 @@ async def submit_investigation(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_SUBMIT)),
     db: AsyncSession = Depends(get_db),
-) -> LedgerDetailApiResponse:
+) -> ApiResponse:
     """追加一条调查记录并提交部门负责人审核。"""
     service = DeviationLedgerService(db)
     detail = await service.submit_investigation(
@@ -277,7 +278,7 @@ async def submit_investigation(
         actor_name=current_user.name or "-",
         actor_is_superuser=_is_superuser(ctx),
     )
-    return LedgerDetailApiResponse(data=detail, message="调查已提交")
+    return build_response(data=detail, message="调查已提交")
 
 
 @router.post("/{ledger_id}/review", response_model=LedgerDetailApiResponse, summary="审核通过 / 退回")
@@ -287,7 +288,7 @@ async def review_ledger(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_APPROVE)),
     db: AsyncSession = Depends(get_db),
-) -> LedgerDetailApiResponse:
+) -> ApiResponse:
     """按当前环节审核：通过推进下一环节，退回回到本环节并通知上报人。"""
     service = DeviationLedgerService(db)
     detail = await service.review(
@@ -298,7 +299,7 @@ async def review_ledger(
         actor_is_superuser=_is_superuser(ctx),
     )
     message = "已通过" if payload.result == "approved" else "已退回"
-    return LedgerDetailApiResponse(data=detail, message=message)
+    return build_response(data=detail, message=message)
 
 
 @router.post("/{ledger_id}/resubmit", response_model=LedgerDetailApiResponse, summary="退回后重新提交")
@@ -308,7 +309,7 @@ async def resubmit_ledger(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_SUBMIT)),
     db: AsyncSession = Depends(get_db),
-) -> LedgerDetailApiResponse:
+) -> ApiResponse:
     """回到被退回的环节，审核人不变。"""
     service = DeviationLedgerService(db)
     detail = await service.resubmit(
@@ -318,7 +319,7 @@ async def resubmit_ledger(
         actor_name=current_user.name or "-",
         actor_is_superuser=_is_superuser(ctx),
     )
-    return LedgerDetailApiResponse(data=detail, message="已重新提交")
+    return build_response(data=detail, message="已重新提交")
 
 
 @router.post("/{ledger_id}/final-code", response_model=LedgerDetailApiResponse, summary="输入最终编号")
@@ -328,7 +329,7 @@ async def submit_final_code(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_UPDATE)),
     db: AsyncSession = Depends(get_db),
-) -> LedgerDetailApiResponse:
+) -> ApiResponse:
     """录入最终编号，偏差关闭。"""
     service = DeviationLedgerService(db)
     detail = await service.submit_final_code(
@@ -338,7 +339,7 @@ async def submit_final_code(
         actor_name=current_user.name or "-",
         actor_is_superuser=_is_superuser(ctx),
     )
-    return LedgerDetailApiResponse(data=detail, message="偏差已关闭")
+    return build_response(data=detail, message="偏差已关闭")
 
 
 @router.put("/{ledger_id}/report", response_model=LedgerDetailApiResponse, summary="保存调查报告")
@@ -348,7 +349,7 @@ async def save_report(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_UPDATE)),
     db: AsyncSession = Depends(get_db),
-) -> LedgerDetailApiResponse:
+) -> ApiResponse:
     """保存报告正文并按需追加版本记录。"""
     service = DeviationLedgerService(db)
     detail = await service.save_report(
@@ -358,7 +359,7 @@ async def save_report(
         actor_name=current_user.name or "-",
         actor_is_superuser=_is_superuser(ctx),
     )
-    return LedgerDetailApiResponse(data=detail, message="报告已保存")
+    return build_response(data=detail, message="报告已保存")
 
 
 @router.post("/{ledger_id}/attachments", response_model=LedgerDetailApiResponse, summary="上传附件")
@@ -368,7 +369,7 @@ async def upload_attachment(
     ctx: PermissionContext = Depends(require_permission(_UPDATE)),
     db: AsyncSession = Depends(get_db),
     file: UploadFile = File(..., description="附件文件"),
-) -> LedgerDetailApiResponse:
+) -> ApiResponse:
     """单个附件上限 20MB，二进制进对象存储，DB 只存元数据。"""
     service = DeviationLedgerService(db)
     detail = await service.add_attachment(
@@ -377,7 +378,7 @@ async def upload_attachment(
         actor_id=current_user.id,
         actor_name=current_user.name or "-",
     )
-    return LedgerDetailApiResponse(data=detail, message="附件已上传")
+    return build_response(data=detail, message="附件已上传")
 
 
 @router.delete(
@@ -391,11 +392,11 @@ async def delete_attachment(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_UPDATE)),
     db: AsyncSession = Depends(get_db),
-) -> LedgerDetailApiResponse:
+) -> ApiResponse:
     """删除附件元数据并清理对象存储。"""
     service = DeviationLedgerService(db)
     detail = await service.remove_attachment(ledger_id, file_id, actor_id=current_user.id)
-    return LedgerDetailApiResponse(data=detail, message="附件已删除")
+    return build_response(data=detail, message="附件已删除")
 
 
 @router.get(
@@ -433,8 +434,8 @@ async def list_attachments(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_READ)),
     db: AsyncSession = Depends(get_db),
-) -> AttachmentListApiResponse:
+) -> ApiResponse:
     """详情页附件卡片使用（详情接口已内联，此端点供局部刷新）。"""
     service = DeviationLedgerService(db)
     detail = await service.get_detail(ledger_id, viewer_id=current_user.id)
-    return AttachmentListApiResponse(data=AttachmentListData(items=detail.attachments))
+    return build_response(data=AttachmentListData(items=detail.attachments))

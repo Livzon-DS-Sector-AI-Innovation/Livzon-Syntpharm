@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import uuid
 from collections.abc import Iterable
 from datetime import UTC, date, datetime
@@ -494,7 +495,7 @@ class DeviationLedgerService:
             raise NotFoundException("偏差记录不存在")
         self._assert_can_edit_reports(row, actor_id)
 
-        filename = (upload.filename or "attachment").strip()
+        filename = os.path.basename((upload.filename or "attachment").strip()) or "attachment"
         content = await upload.read()
         if not content:
             raise BadRequestException("附件内容为空")

@@ -448,8 +448,6 @@ const qualityRoutes: RouteCase[] = [
   // { path: '/quality/ai-config', module: 'quality', kind: 'normal', expected: text('AI 配置设置') },
   { path: '/quality/ai-log', module: 'quality', kind: 'normal', expected: heading('AI交互日志') },
   // Excluded (form/create pages):
-  // /quality/deviation-automation/create
-  // /quality/deviation-flow/create
   // /quality/material-report/create
   // /quality/doc-check/new
   // /quality/instrument/list/create

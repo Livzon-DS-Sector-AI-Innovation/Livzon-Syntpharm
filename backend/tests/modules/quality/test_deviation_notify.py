@@ -154,7 +154,7 @@ async def test_send_to_users_uses_matching_receive_id_type(monkeypatch: pytest.M
         [open_ref, legacy_ref, unbound_ref, open_ref],
         title="待你处理",
         content="正文",
-        url="http://localhost:3000/quality/deviation/x#review",
+        url="http://testserver/quality/deviation/x#review",
     )
 
     assert delivered == 2

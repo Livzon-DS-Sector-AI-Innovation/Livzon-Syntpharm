@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.response import ApiResponse, build_response
 
 from .deviation_config_schemas import (
     ConfigDeleteResultApiResponse,
@@ -63,10 +64,10 @@ async def list_department_contacts(
     ctx: PermissionContext = Depends(require_permission(_READ)),
     db: AsyncSession = Depends(get_db),
     keyword: str | None = Query(None, description="部门名称关键字"),
-) -> DepartmentContactListApiResponse:
+) -> ApiResponse:
     """列出全部部门联系人（含部门负责人 / QA / 质量负责人姓名）。"""
     items = await DeviationConfigService(db).list_contacts(keyword=keyword)
-    return DepartmentContactListApiResponse(data=DepartmentContactListData(items=items, total=len(items)))
+    return build_response(data=DepartmentContactListData(items=items, total=len(items)))
 
 
 @router.get(
@@ -80,10 +81,10 @@ async def list_member_options(
     db: AsyncSession = Depends(get_db),
     keyword: str | None = Query(None, description="姓名或部门关键字"),
     limit: int = Query(50, ge=1, le=200, description="返回条数"),
-) -> MemberOptionListApiResponse:
+) -> ApiResponse:
     """配置页下拉的人员候选。"""
     items = await DeviationConfigService(db).member_options(keyword=keyword, limit=limit)
-    return MemberOptionListApiResponse(data=MemberOptionListData(items=items))
+    return build_response(data=MemberOptionListData(items=items))
 
 
 @router.post(
@@ -96,10 +97,10 @@ async def create_department_contact(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_UPDATE)),
     db: AsyncSession = Depends(get_db),
-) -> DepartmentContactApiResponse:
+) -> ApiResponse:
     """新增部门联系人；同名配置已存在时提示改为编辑。"""
     item = await DeviationConfigService(db).create_contact(payload, actor_id=_actor_id(ctx, current_user))
-    return DepartmentContactApiResponse(message="添加成功", data=item)
+    return build_response(message="添加成功", data=item)
 
 
 @router.put(
@@ -113,10 +114,10 @@ async def update_department_contact(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_UPDATE)),
     db: AsyncSession = Depends(get_db),
-) -> DepartmentContactApiResponse:
+) -> ApiResponse:
     """编辑部门联系人（部门名称为唯一键，不在本接口修改）。"""
     item = await DeviationConfigService(db).update_contact(contact_id, payload, actor_id=_actor_id(ctx, current_user))
-    return DepartmentContactApiResponse(message="更新成功", data=item)
+    return build_response(message="更新成功", data=item)
 
 
 @router.delete(
@@ -129,10 +130,10 @@ async def delete_department_contact(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_UPDATE)),
     db: AsyncSession = Depends(get_db),
-) -> ConfigDeleteResultApiResponse:
+) -> ApiResponse:
     """软删除部门联系人。"""
     deleted_id = await DeviationConfigService(db).delete_contact(contact_id, actor_id=_actor_id(ctx, current_user))
-    return ConfigDeleteResultApiResponse(message="删除成功", data=ConfigDeleteResultData(id=deleted_id, deleted=True))
+    return build_response(message="删除成功", data=ConfigDeleteResultData(id=deleted_id, deleted=True))
 
 
 # ── 通知设置 ──────────────────────────────────────────────────────────
@@ -143,9 +144,9 @@ async def get_notify_settings(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_READ)),
     db: AsyncSession = Depends(get_db),
-) -> NotifySettingsApiResponse:
+) -> ApiResponse:
     """读取群聊接收方与各类通知开关。"""
-    return NotifySettingsApiResponse(data=await DeviationConfigService(db).get_notify_settings())
+    return build_response(data=await DeviationConfigService(db).get_notify_settings())
 
 
 @router.put("/deviation/notify", response_model=NotifySettingsApiResponse, summary="更新偏差通知设置")
@@ -154,10 +155,10 @@ async def update_notify_settings(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_UPDATE)),
     db: AsyncSession = Depends(get_db),
-) -> NotifySettingsApiResponse:
+) -> ApiResponse:
     """写入群聊接收方与各类通知开关（下次通知即时生效）。"""
     settings = await DeviationConfigService(db).update_notify_settings(payload, actor_id=_actor_id(ctx, current_user))
-    return NotifySettingsApiResponse(message="更新成功", data=settings)
+    return build_response(message="更新成功", data=settings)
 
 
 @router.post(
@@ -169,13 +170,13 @@ async def send_notify_test(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_READ)),
     db: AsyncSession = Depends(get_db),
-) -> NotifyTestResultApiResponse:
+) -> ApiResponse:
     """给当前登录人发一张测试卡片，并返回飞书凭证 / 各处理人绑定情况的自检结果。"""
     data = await DeviationConfigService(db).send_notify_test(
         actor_id=_actor_id(ctx, current_user),
         actor_name=getattr(current_user, "name", "") or "",
     )
-    return NotifyTestResultApiResponse(message=data.message, data=data)
+    return build_response(message=data.message, data=data)
 
 
 # ── 部门周确认 ────────────────────────────────────────────────────────
@@ -191,10 +192,10 @@ async def list_weekly_confirmations(
     ctx: PermissionContext = Depends(require_permission(_READ)),
     db: AsyncSession = Depends(get_db),
     week_key: str | None = Query(None, description="周标识，如 2026-W46；留空取当前周"),
-) -> WeeklyConfirmationListApiResponse:
+) -> ApiResponse:
     """按周列出所有部门的确认情况（未确认的部门也会返回）。"""
     data = await DeviationConfigService(db).list_weekly_confirmations(week_key)
-    return WeeklyConfirmationListApiResponse(data=data)
+    return build_response(data=data)
 
 
 @router.post(
@@ -207,7 +208,7 @@ async def upsert_weekly_confirmation(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_UPDATE)),
     db: AsyncSession = Depends(get_db),
-) -> WeeklyConfirmationApiResponse:
+) -> ApiResponse:
     """提交 / 覆盖本部门本周的生产状态与偏差提交状态。"""
     item = await DeviationConfigService(db).upsert_weekly_confirmation(payload, actor_id=_actor_id(ctx, current_user))
-    return WeeklyConfirmationApiResponse(message="确认成功", data=item)
+    return build_response(message="确认成功", data=item)
