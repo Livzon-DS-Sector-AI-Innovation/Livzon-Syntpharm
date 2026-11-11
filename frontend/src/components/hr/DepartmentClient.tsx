@@ -7,21 +7,15 @@ import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, TeamOutline
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Department } from '@/types/hr'
 import { fetchDepartmentsAction, deleteDepartment } from '@/actions/hr'
-import { fetchNewDepartments } from '@/lib/api/client/hr'
 import DepartmentForm from './DepartmentForm'
 import TeamClient from './TeamClient'
 
 interface DepartmentClientProps {
   initialDepartments: Department[]
   initialTotal: number
-  factory?: 'new'
 }
 
-export default function DepartmentClient({
-  initialDepartments,
-  initialTotal,
-  factory,
-}: DepartmentClientProps) {
+export default function DepartmentClient({ initialDepartments, initialTotal }: DepartmentClientProps) {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [formOpen, setFormOpen] = useState(false)
@@ -32,12 +26,10 @@ export default function DepartmentClient({
   const [teamModalOpen, setTeamModalOpen] = useState(false)
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null)
 
-  const doFetch = factory === 'new' ? fetchNewDepartments : fetchDepartmentsAction
-
   const { data, isLoading: loading } = useQuery({
-    queryKey: ['hr-departments', { factory, searchKeyword, page, pageSize }],
+    queryKey: ['hr-departments', { searchKeyword, page, pageSize }],
     queryFn: async () => {
-      const res = await doFetch({
+      const res = await fetchDepartmentsAction({
         keyword: searchKeyword || undefined,
         page,
         page_size: pageSize,
@@ -149,7 +141,7 @@ export default function DepartmentClient({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)]">
-          {factory === 'new' ? '新厂部门管理' : '老厂部门管理'}
+          部门管理
         </h1>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
           新增部门

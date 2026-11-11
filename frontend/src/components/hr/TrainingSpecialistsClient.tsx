@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Button, Card, Form, Input, Modal, Popconfirm, Radio, Select, Space, Table, Tabs, message } from 'antd'
+import { Button, Card, Form, Input, Modal, Popconfirm, Select, Space, Table, Tabs, message } from 'antd'
 import { PlusOutlined, DeleteOutlined, EditOutlined, SyncOutlined } from '@ant-design/icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { TrainingTeam, TrainingTeamCreateInput, TrainingTeamUpdateInput, TrainingSpecialist, Employee } from '@/types/hr'
@@ -9,9 +9,7 @@ import {
   fetchTrainingSpecialists,
   fetchTrainingTeams,
   fetchDepartments,
-  fetchNewDepartments,
   fetchEmployees,
-  fetchNewEmployees,
 } from '@/lib/api/client/hr'
 import {
   upsertTrainingSpecialistAction,
@@ -28,7 +26,7 @@ export default function TrainingSpecialistsClient() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<TrainingSpecialist | null>(null)
   const [form] = Form.useForm()
-  const [factory, setFactory] = useState<'old' | 'new'>('old')
+  const factory = 'old'
   const [employees, setEmployees] = useState<{ value: string; label: string; number: string }[]>([])
   const [saving, setSaving] = useState(false)
 
@@ -36,7 +34,7 @@ export default function TrainingSpecialistsClient() {
   const [teamModalOpen, setTeamModalOpen] = useState(false)
   const [editingTeam, setEditingTeam] = useState<TrainingTeam | null>(null)
   const [teamForm] = Form.useForm()
-  const [teamFactory, setTeamFactory] = useState<'old' | 'new'>('old')
+  const teamFactory = 'old'
   const [teamSpecialists, setTeamSpecialists] = useState<{ value: string; label: string; department: string; number: string }[]>([])
   const [teamEmployees, setTeamEmployees] = useState<{ value: string; label: string; number: string }[]>([])
   const [teamSaving, setTeamSaving] = useState(false)
@@ -52,10 +50,9 @@ export default function TrainingSpecialistsClient() {
   const data: TrainingSpecialist[] = specialistsData || []
 
   const { data: departments = [] } = useQuery<{ value: string; label: string }[]>({
-    queryKey: ['hr-departments-options', { factory }],
+    queryKey: ['hr-departments-options'],
     queryFn: async () => {
-      const fn = factory === 'new' ? fetchNewDepartments : fetchDepartments
-      const res = await fn({ page_size: 200 })
+      const res = await fetchDepartments({ page_size: 200 })
       return (res.data || []).map((d: { name: string }) => ({ value: d.name, label: d.name }))
     },
   })
@@ -85,9 +82,8 @@ export default function TrainingSpecialistsClient() {
 
   const loadEmployees = async (dept: string) => {
     if (!dept) { setEmployees([]); return }
-    const fn = factory === 'new' ? fetchNewEmployees : fetchEmployees
     try {
-      const res = await fn({ department: dept, page_size: 200 })
+      const res = await fetchEmployees({ department: dept, page_size: 200 })
       const list = (res.data || []).map((e: Employee) => ({
         value: e.name,
         label: `${e.name} (${e.employee_number})`,
@@ -97,10 +93,9 @@ export default function TrainingSpecialistsClient() {
     } catch { /* ignore */ }
   }
 
-  const loadEmployeesForEdit = async (dept: string, f: 'old' | 'new') => {
-    const fn = f === 'new' ? fetchNewEmployees : fetchEmployees
+  const loadEmployeesForEdit = async (dept: string) => {
     try {
-      const res = await fn({ department: dept, page_size: 200 })
+      const res = await fetchEmployees({ department: dept, page_size: 200 })
       const list = (res.data || []).map((e: Employee) => ({
         value: e.name,
         label: `${e.name} (${e.employee_number})`,
@@ -112,7 +107,6 @@ export default function TrainingSpecialistsClient() {
 
   const handleAdd = () => {
     setEditingRecord(null)
-    setFactory('old')
     form.resetFields()
     form.setFieldsValue({ factory: 'old' })
     setEmployees([])
@@ -121,8 +115,7 @@ export default function TrainingSpecialistsClient() {
 
   const handleEdit = (record: TrainingSpecialist) => {
     setEditingRecord(record)
-    const f = (record.factory as 'old' | 'new') || 'old'
-    setFactory(f)
+    const f = 'old'
     form.setFieldsValue({
       factory: f,
       department: record.department,
@@ -131,7 +124,7 @@ export default function TrainingSpecialistsClient() {
     })
     setEmployees([{ value: record.employee_name || "", label: `${record.employee_name || ""} (${record.employee_number || ""})`, number: record.employee_number || "" }])
     setModalOpen(true)
-    loadEmployeesForEdit(record.department || "", f)
+    loadEmployeesForEdit(record.department || "")
   }
 
   const handleDelete = async (id: string) => {
@@ -165,14 +158,8 @@ export default function TrainingSpecialistsClient() {
     }
   }
 
-  const handleTeamFactoryChange = (value: 'old' | 'new') => {
-    setTeamFactory(value)
-    queryClient.invalidateQueries({ queryKey: ['hr-training-teams'] })
-  }
-
   const handleTeamAdd = () => {
     setEditingTeam(null)
-    setTeamFactory('old')
     teamForm.resetFields()
     teamForm.setFieldsValue({ factory: 'old', employee_names: [], employee_numbers: [] })
     setTeamEmployees([])
@@ -182,8 +169,7 @@ export default function TrainingSpecialistsClient() {
 
   const handleTeamEdit = (record: TrainingTeam) => {
     setEditingTeam(record)
-    const f = (record.factory as 'old' | 'new') || 'old'
-    setTeamFactory(f)
+    const f = 'old'
     teamForm.setFieldsValue({
       factory: f,
       name: record.name,
@@ -213,9 +199,8 @@ export default function TrainingSpecialistsClient() {
 
   const loadTeamEmployees = async (dept: string) => {
     if (!dept) { setTeamEmployees([]); return }
-    const fn = teamFactory === 'new' ? fetchNewEmployees : fetchEmployees
     try {
-      const res = await fn({ department: dept, page_size: 200 })
+      const res = await fetchEmployees({ department: dept, page_size: 200 })
       const list = (res.data || []).map((e: Employee) => ({
         value: e.name,
         label: `${e.name} (${e.employee_number})`,
@@ -273,7 +258,6 @@ export default function TrainingSpecialistsClient() {
   }
 
   const specialistColumns = [
-    { title: '厂区', dataIndex: 'factory', key: 'factory', width: 80, render: (f: string) => f === 'new' ? '新厂' : '旧厂' },
     { title: '部门', dataIndex: 'department', key: 'department', width: 150 },
     { title: '姓名', dataIndex: 'employee_name', key: 'employee_name', width: 120 },
     { title: '工号', dataIndex: 'employee_number', key: 'employee_number', width: 120 },
@@ -326,11 +310,6 @@ export default function TrainingSpecialistsClient() {
 
           <Modal title={editingRecord ? '编辑培训专员' : '新增培训专员'} open={modalOpen} onCancel={() => setModalOpen(false)} onOk={handleSave} confirmLoading={saving} destroyOnHidden>
             <Form form={form} layout="vertical" className="mt-4" initialValues={{ factory: 'old' }}>
-              <Form.Item label="厂区" name="factory" rules={[{ required: true }]}>
-                <Radio.Group onChange={(e) => { setFactory(e.target.value); form.setFieldsValue({ department: undefined, employee_name: undefined, employee_number: undefined }); setEmployees([]) }} optionType="button"
-                  options={[{ label: '旧厂', value: 'old' }, { label: '新厂', value: 'new' }]}
-                  disabled={!!editingRecord} />
-              </Form.Item>
               <Form.Item label="部门" name="department" rules={[{ required: true, message: '请选择部门' }]}>
                 <Select showSearch placeholder="选择部门" options={departments}
                   onChange={(dept: string) => { form.setFieldsValue({ employee_name: undefined, employee_number: undefined }); loadEmployees(dept) }} />
@@ -357,8 +336,6 @@ export default function TrainingSpecialistsClient() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">受训班组列表</h2>
             <Space>
-              <Radio.Group value={teamFactory} onChange={(e) => { handleTeamFactoryChange(e.target.value) }} optionType="button"
-                options={[{ label: '旧厂', value: 'old' }, { label: '新厂', value: 'new' }]} />
               <Button type="primary" icon={<PlusOutlined />} onClick={handleTeamAdd}>新增班组</Button>
             </Space>
           </div>
@@ -366,11 +343,6 @@ export default function TrainingSpecialistsClient() {
 
           <Modal title={editingTeam ? '编辑受训班组' : '新增受训班组'} open={teamModalOpen} onCancel={() => setTeamModalOpen(false)} onOk={handleTeamSave} confirmLoading={teamSaving} destroyOnHidden width={600}>
             <Form form={teamForm} layout="vertical" className="mt-4" initialValues={{ factory: 'old', employee_names: [], employee_numbers: [] }}>
-              <Form.Item label="厂区" name="factory" rules={[{ required: true }]}>
-                <Radio.Group onChange={(e) => handleTeamFactoryChange(e.target.value)} optionType="button"
-                  options={[{ label: '旧厂', value: 'old' }, { label: '新厂', value: 'new' }]}
-                  disabled={!!editingTeam} />
-              </Form.Item>
               <Form.Item label="班组名称" name="name" rules={[{ required: true, message: '请输入班组名称' }]}>
                 <Input placeholder="如：提取车间班组A" />
               </Form.Item>

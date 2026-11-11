@@ -9,23 +9,16 @@ import {
   PlusOutlined,
 } from '@ant-design/icons'
 import { OnboardingRecord } from '@/types/hr'
-import { fetchOnboardingRecords,
-  fetchNewOnboardingRecords,
- } from '@/lib/api/client/hr'
+import { fetchOnboardingRecords } from '@/lib/api/client/hr'
 import OnboardingDetailModal from './OnboardingDetailModal'
 import EmployeeForm from './EmployeeForm'
 
 interface OnboardingClientProps {
   initialRecords: OnboardingRecord[]
   initialTotal: number
-  factory?: 'new'
 }
 
-export default function OnboardingClient({
-  initialRecords,
-  initialTotal,
-  factory,
-}: OnboardingClientProps) {
+export default function OnboardingClient({ initialRecords, initialTotal }: OnboardingClientProps) {
   const [records, setRecords] = useState<OnboardingRecord[]>(initialRecords)
   const [total, setTotal] = useState(initialTotal)
   const [page, setPage] = useState(1)
@@ -39,13 +32,6 @@ export default function OnboardingClient({
   const [detailRecord, setDetailRecord] = useState<OnboardingRecord | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
 
-  const handleFormSuccess = () => {
-    setCreateOpen(false)
-    loadData()
-  }
-
-  const doFetch = factory === 'new' ? fetchNewOnboardingRecords : fetchOnboardingRecords
-
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
@@ -53,13 +39,11 @@ export default function OnboardingClient({
         department: filterDepartment || undefined,
         position: filterPosition || undefined,
         keyword: searchKeyword || undefined,
+        is_employed: filterIsEmployed || undefined,
         page,
         page_size: pageSize,
       }
-      if (factory !== 'new') {
-        params.is_employed = filterIsEmployed || undefined
-      }
-      const res = await doFetch(params)
+      const res = await fetchOnboardingRecords(params)
       setRecords(res.data)
       setTotal(res.meta?.total || 0)
     } catch (err: unknown) {
@@ -67,7 +51,12 @@ export default function OnboardingClient({
     } finally {
       setLoading(false)
     }
-  }, [filterDepartment, filterPosition, filterIsEmployed, searchKeyword, page, pageSize, doFetch, factory])
+  }, [filterDepartment, filterPosition, filterIsEmployed, searchKeyword, page, pageSize])
+
+  const handleFormSuccess = () => {
+    setCreateOpen(false)
+    loadData()
+  }
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage)
@@ -80,8 +69,9 @@ export default function OnboardingClient({
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loadData sets loading/records for a filter-driven fetch
     loadData()
-  }, [filterDepartment, filterPosition, filterIsEmployed, searchKeyword, page, pageSize, factory, loadData])
+  }, [filterDepartment, filterPosition, filterIsEmployed, searchKeyword, page, pageSize, loadData])
 
   const employedColorMap = useMemo<Record<string, string>>(() => ({
     '是': 'success',
@@ -153,22 +143,20 @@ export default function OnboardingClient({
       },
     ]
 
-    if (factory !== 'new') {
-      baseColumns.push({
-        title: '是否在职',
-        dataIndex: 'is_employed',
-        key: 'is_employed',
-        width: 90,
-        render: (val: string) => (
-          <Tag color={employedColorMap[val] || 'default'}>{val || '-'}</Tag>
-        ),
-        filters: [
-          { text: '是', value: '是' },
-          { text: '否', value: '否' },
-        ],
-        onFilter: (value, record: OnboardingRecord) => record.is_employed === String(value),
-      })
-    }
+    baseColumns.push({
+      title: '是否在职',
+      dataIndex: 'is_employed',
+      key: 'is_employed',
+      width: 90,
+      render: (val: string) => (
+        <Tag color={employedColorMap[val] || 'default'}>{val || '-'}</Tag>
+      ),
+      filters: [
+        { text: '是', value: '是' },
+        { text: '否', value: '否' },
+      ],
+      onFilter: (value, record: OnboardingRecord) => record.is_employed === String(value),
+    })
 
     baseColumns.push(
       {
@@ -198,13 +186,13 @@ export default function OnboardingClient({
     )
 
     return baseColumns
-  }, [factory, employedColorMap])
+  }, [employedColorMap])
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)]">
-          {factory === 'new' ? '新厂入职台账' : '老厂入职台账'}
+          入职台账
         </h1>
       </div>
 
@@ -232,15 +220,13 @@ export default function OnboardingClient({
           className="w-40"
           allowClear
         />
-        {factory !== 'new' && (
-          <Input
-            placeholder="是否在职"
-            value={filterIsEmployed ? "是" : "否"}
-            onChange={(e) => setFilterIsEmployed(e.target.value === "是")}
-            className="w-32"
-            allowClear
-          />
-        )}
+        <Input
+          placeholder="是否在职"
+          value={filterIsEmployed ? "是" : "否"}
+          onChange={(e) => setFilterIsEmployed(e.target.value === "是")}
+          className="w-32"
+          allowClear
+        />
       </div>
 
       <Table

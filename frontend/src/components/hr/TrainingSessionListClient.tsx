@@ -20,7 +20,6 @@ import {
   fetchTrainingSessionSelectTasks,
   fetchTrainingLedgerPages,
   fetchEmployees,
-  fetchNewEmployees,
 } from '@/lib/api/client/hr'
 import type { TrainingSession, SelectTask, TrainingLedgerPageRecord } from '@/types/hr'
 
@@ -69,10 +68,8 @@ export default function TrainingSessionListClient({
 
   // Dynamically load employee names from trainee departments
   const loadEmployeeNamesFromDepts = async (
-    depts: string[],
-    factory: 'old' | 'new'
+    depts: string[]
   ): Promise<{ names: string[]; numberMap: Record<string, string> }> => {
-    const fetchFn = factory === 'new' ? fetchNewEmployees : fetchEmployees
     const namesSet = new Set<string>()
     const numberMap: Record<string, string> = {}
     for (const dept of depts) {
@@ -80,7 +77,7 @@ export default function TrainingSessionListClient({
         // paginate to handle departments with >200 employees
         let page = 1
         while (true) {
-          const res = await fetchFn({ department: dept, page_size: 200, page })
+          const res = await fetchEmployees({ department: dept, page_size: 200, page })
           const data = res.data || []
           if (data.length === 0) break
           for (const e of data) {
@@ -215,7 +212,7 @@ export default function TrainingSessionListClient({
       }
       // 仍为空但有受训部门，从受训部门动态加载员工姓名
       if (employeeNames.length === 0 && record.trainee_departments && record.trainee_departments.length > 0) {
-        const result = await loadEmployeeNamesFromDepts(record.trainee_departments, factory)
+        const result = await loadEmployeeNamesFromDepts(record.trainee_departments)
         employeeNames = result.names
       }
       // 受训部门取第一个（与独立签到表模块一致）
@@ -258,7 +255,7 @@ export default function TrainingSessionListClient({
       }
       // 仍为空但有受训部门，从受训部门动态加载员工姓名
       if (employeeNames.length === 0 && record.trainee_departments && record.trainee_departments.length > 0) {
-        const result = await loadEmployeeNamesFromDepts(record.trainee_departments, factory)
+        const result = await loadEmployeeNamesFromDepts(record.trainee_departments)
         employeeNames = result.names
       }
       let durationHours: number | undefined = undefined
@@ -318,8 +315,7 @@ export default function TrainingSessionListClient({
 
     // If still empty, try to load employees from trainee departments dynamically
     if (selectedNames.length === 0 && record.trainee_departments?.length) {
-      const factory = (record.factory as 'old' | 'new') || 'old'
-      const { names: loadedNames, numberMap } = await loadEmployeeNamesFromDepts(record.trainee_departments, factory)
+      const { names: loadedNames, numberMap } = await loadEmployeeNamesFromDepts(record.trainee_departments)
       selectedNames = loadedNames
       // Rebuild number map from the loaded names
       const nums: string[] = []
@@ -587,12 +583,6 @@ export default function TrainingSessionListClient({
           </div>
         )
       },
-    },
-    {
-      title: '厂区',
-      dataIndex: 'factory',
-      width: 80,
-      render: (v: string) => (v === 'new' ? <Tag color="blue">新厂</Tag> : <Tag>旧厂</Tag>),
     },
     {
       title: '培训时间',

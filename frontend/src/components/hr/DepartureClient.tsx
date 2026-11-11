@@ -12,22 +12,14 @@ import { fetchDepartments } from '@/lib/api/client/hr'
 import { apiGet } from '@/lib/api/client'
 import {createDepartureRecord} from '@/actions/hr'
 import { DepartureRecord } from '@/types/hr'
-import {
-  fetchDepartureRecords,
-  fetchNewDepartureRecords,
-} from '@/lib/api/client/hr'
+import { fetchDepartureRecords } from '@/lib/api/client/hr'
 
 interface DepartureClientProps {
   initialRecords: DepartureRecord[]
   initialTotal: number
-  factory?: 'new'
 }
 
-export default function DepartureClient({
-  initialRecords,
-  initialTotal,
-  factory,
-}: DepartureClientProps) {
+export default function DepartureClient({ initialRecords, initialTotal }: DepartureClientProps) {
   const [records, setRecords] = useState<DepartureRecord[]>(initialRecords)
   const [total, setTotal] = useState(initialTotal)
   const [page, setPage] = useState(1)
@@ -84,12 +76,10 @@ export default function DepartureClient({
     finally { setCreateLoading(false) }
   }
 
-  const doFetch = factory === 'new' ? fetchNewDepartureRecords : fetchDepartureRecords
-
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await doFetch({
+      const res = await fetchDepartureRecords({
         department: filterDepartment || undefined,
         offboarding_type: filterOffboardingType || undefined,
         keyword: searchKeyword || undefined,
@@ -103,7 +93,7 @@ export default function DepartureClient({
     } finally {
       setLoading(false)
     }
-  }, [filterDepartment, filterOffboardingType, searchKeyword, page, pageSize, doFetch])
+  }, [filterDepartment, filterOffboardingType, searchKeyword, page, pageSize])
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage)
@@ -245,7 +235,7 @@ export default function DepartureClient({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)]">
-          {factory === 'new' ? '新厂离职台账' : '老厂离职台账'}
+          离职台账
         </h1>
       </div>
 

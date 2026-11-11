@@ -86,13 +86,6 @@ export default function TrainingSelectTasksClient({ initialTasks }: TrainingSele
       width: 140,
     },
     {
-      title: '厂区',
-      dataIndex: 'factory',
-      key: 'factory',
-      width: 80,
-      render: (v: string) => (v === 'new' ? '新厂' : '旧厂'),
-    },
-    {
       title: '状态',
       key: 'status',
       width: 120,

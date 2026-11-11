@@ -414,7 +414,6 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "onboarding", label: "入职管理", path: "/hr/onboarding" },
       { key: "offboarding", label: "离职管理", path: "/hr/offboarding" },
       { key: "attendance", label: "考勤管理", path: "/hr/attendance" },
-      { key: "roster", label: "排班管理", path: "/hr/roster" },
       { key: "system-settings", label: "系统设置", path: "/hr/system/settings" },
       {
         key: "training",

@@ -10,12 +10,7 @@ import {
   TeamOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons'
-import {
-  fetchDepartments,
-  fetchNewDepartments,
-  fetchEmployees,
-  fetchNewEmployees,
-} from '@/lib/api/client/hr'
+import { fetchDepartments, fetchEmployees } from '@/lib/api/client/hr'
 import { submitTrainingSelectTaskAction } from '@/actions/hr'
 import type { Employee } from '@/types/hr'
 
@@ -35,29 +30,24 @@ export default function TrainingSelectClient({
   const [submitted, setSubmitted] = useState(false)
   const [resultData, setResultData] = useState<Record<string, unknown> | null>(null)
 
-  const factory = (initialData?.factory as string) || 'old'
-  const isNew = factory === 'new'
-
-const { data: departments = [] } = useQuery({
-    queryKey: ['departments', isNew],
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments'],
     queryFn: async () => {
-      const fetchFn = isNew ? fetchNewDepartments : fetchDepartments
-      const res = await fetchFn({ page_size: 100 })
+      const res = await fetchDepartments({ page_size: 100 })
       return (res.data || []).map((d: { name: string }) => ({ value: d.name, label: d.name }))
     },
   })
 
   const { data: employees = [] } = useQuery({
-    queryKey: ['employees', selectedDepts, isNew],
+    queryKey: ['employees', selectedDepts],
     queryFn: async () => {
       if (!selectedDepts || selectedDepts.length === 0) {
         return []
       }
-      const fetchFn = isNew ? fetchNewEmployees : fetchEmployees
       const all: { value: string; label: string; number: string }[] = []
       for (const dept of selectedDepts) {
         try {
-          const res = await fetchFn({ department: dept, page_size: 100 })
+          const res = await fetchEmployees({ department: dept, page_size: 100 })
           const list = (res.data || []).map((e: Employee) => ({
             value: e.employee_number,
             label: `${e.name} (${e.employee_number || ''})`,

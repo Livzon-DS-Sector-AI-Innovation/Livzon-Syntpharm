@@ -6,7 +6,7 @@ const VALUE = { border: "1px solid #000", padding: "4px" }
 const LABEL = { border: "1px solid #000", padding: "4px", backgroundColor: "#f0f0f0" }
 
 import { useState } from 'react'
-import { App, Radio, Button, Card, Select, Space, } from 'antd'
+import { App, Button, Card, Select, Space, } from 'antd'
 import {
   PrinterOutlined,
   DownloadOutlined
@@ -15,7 +15,6 @@ import { useQuery } from '@tanstack/react-query'
 import { Employee, SopCatalogItem } from '@/types/hr'
 import {
   fetchEmployees,
-  fetchNewEmployees,
   fetchOnboardingEvaluationByEmployeeId,
 } from '@/lib/api/client/hr'
 import { apiGet } from '@/lib/api/client'
@@ -56,14 +55,10 @@ export default function OnboardingPrejobClient() {
   const [downloadingWord, setDownloadingWord] = useState(false)
   const [downloadingExcel, setDownloadingExcel] = useState(false)
   const [downloadingEval, setDownloadingEval] = useState(false)
-  const [factory, setFactory] = useState<'old' | 'new'>('old')
-
-  const fetcher = factory === 'old' ? fetchEmployees : fetchNewEmployees
-
   const { data: employees = [] } = useQuery<Employee[]>({
-    queryKey: ['hr-employees-list', { factory, page_size: 200 }],
+    queryKey: ['hr-employees-list', { page_size: 200 }],
     queryFn: async () => {
-      const res = await fetcher({ page_size: 200 })
+      const res = await fetchEmployees({ page_size: 200 })
       return (res.data || []) as Employee[]
     },
   })
@@ -194,13 +189,9 @@ export default function OnboardingPrejobClient() {
 
   return (
     <div className="space-y-6">
-      {/* 顶部选择器和厂区切换 */}
+      {/* 顶部选择器 */}
       <Card>
         <Space wrap size="middle" align="center">
-          <Radio.Group value={factory} onChange={(e) => { setFactory(e.target.value); setSelectedEmployeeId(null) }} optionType="button">
-            <Radio.Button value="old">旧厂</Radio.Button>
-            <Radio.Button value="new">新厂</Radio.Button>
-          </Radio.Group>
           <Select
             showSearch
             placeholder="选择员工"

@@ -8,7 +8,6 @@ import {
   TeamOutlined,
   BookOutlined,
   BankOutlined,
-  SolutionOutlined,
   LoginOutlined,
   LogoutOutlined,
   UserDeleteOutlined,
@@ -22,13 +21,6 @@ const modules = [
     desc: '管理员工基本信息、入职离职、岗位变动等',
     icon: <TeamOutlined className="text-2xl text-[var(--color-primary)]" />,
     path: '/hr/profile',
-  },
-  {
-    key: 'roster',
-    title: '员工花名册',
-    desc: '查看全体员工花名册信息',
-    icon: <SolutionOutlined className="text-2xl text-[var(--color-primary)]" />,
-    path: '/hr/roster',
   },
   {
     key: 'departments',

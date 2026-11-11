@@ -8,7 +8,6 @@ import {
   Form,
   Input,
   Modal,
-  Radio,
   Select,
   Space,
   Tag,
@@ -17,14 +16,9 @@ import {
 } from 'antd'
 import dayjs from 'dayjs'
 import { useQuery } from '@tanstack/react-query'
-import {
-  fetchDepartments,
-  fetchNewDepartments,
-  fetchEmployees,
-  fetchNewEmployees,
-} from '@/lib/api/client/hr'
+import { fetchDepartments } from '@/lib/api/client/hr'
 import { createTrainingSession, updateTrainingSession, sendTrainingSessionSelectTasksAction } from '@/actions/hr'
-import type { TrainingSessionExtended as TrainingSession, TrainingSessionCreateInput, TrainingSessionUpdateInput, Employee } from '@/types/hr'
+import type { TrainingSessionExtended as TrainingSession, TrainingSessionCreateInput, TrainingSessionUpdateInput } from '@/types/hr'
 
 const TRAINING_METHODS = [
   { value: '面授', label: '面授' },
@@ -63,21 +57,13 @@ export default function TrainingSessionDetailModal({
   // Create mode or explicit startEditing: begin in edit mode; View mode: start read-only
   const [editing, setEditing] = useState(isCreate || startEditing)
   const [saving, setSaving] = useState(false)
-  const [_employees, setEmployees] = useState<{ value: string; label: string }[]>([])
-  const [nameToNumberMap, setNameToNumberMap] = useState<Record<string, string>>({})
-  const [factory, setFactory] = useState<'old' | 'new'>(() => {
-    if (record) {
-      return (record.factory as 'old' | 'new') || 'old'
-    }
-    return 'old'
-  })
+  const nameToNumberMap: Record<string, string> = {}
+  const factory = (record?.factory as 'old' | 'new') || 'old'
 
-  // Load departments when factory changes
   const { data: departments = [] } = useQuery<{ value: string; label: string }[]>({
-    queryKey: ['hr-departments-options', { factory }],
+    queryKey: ['hr-departments-options'],
     queryFn: async () => {
-      const fetchFn = factory === 'new' ? fetchNewDepartments : fetchDepartments
-      const res = await fetchFn({ page_size: 100 })
+      const res = await fetchDepartments({ page_size: 100 })
       return (res.data || []).map((d: { name: string }) => ({ value: d.name, label: d.name }))
     },
   })
@@ -111,51 +97,6 @@ export default function TrainingSessionDetailModal({
       }
     }
   }, [record])
-
-  const _loadEmployees = async (
-    depts: string[],
-    factoryOverride: 'old' | 'new' = factory,
-    preselectNames: string[] = []
-  ) => {
-    if (!depts || depts.length === 0) {
-      setEmployees([])
-      setNameToNumberMap({})
-      form.setFieldsValue({ employee_names: [] })
-      return
-    }
-    const fetchFn = factoryOverride === 'new' ? fetchNewEmployees : fetchEmployees
-    const all: { value: string; label: string }[] = []
-    const numberMap: Record<string, string> = {}
-    for (const dept of depts) {
-      try {
-        const res = await fetchFn({ department: dept, page_size: 100 })
-        const list = (res.data || []).map((e: Employee) => ({
-          value: e.name,
-          label: `${e.name} (${e.employee_number || ''})`,
-        }))
-        all.push(...list)
-        for (const e of res.data || []) {
-          if (e.name && e.employee_number) {
-            numberMap[e.name] = e.employee_number
-          }
-        }
-      } catch {
-        // ignore
-      }
-    }
-    setEmployees(all)
-    setNameToNumberMap(numberMap)
-    if (preselectNames.length > 0) {
-      form.setFieldsValue({ employee_names: preselectNames })
-    }
-  }
-
-  const handleFactoryChange = (value: 'old' | 'new') => {
-    setFactory(value)
-    form.setFieldsValue({ department: undefined, trainee_departments: [], employee_names: [] })
-    setEmployees([])
-    setNameToNumberMap({})
-  }
 
   const handleSave = async () => {
     try {
@@ -247,7 +188,6 @@ export default function TrainingSessionDetailModal({
       {/* View mode */}
       {!editing && record && (
         <Descriptions bordered size="small" column={2}>
-          <Descriptions.Item label="厂区">{record.factory === 'new' ? '新厂' : '旧厂'}</Descriptions.Item>
           <Descriptions.Item label="状态">
             <Tag color={STATUS_MAP[record.status || 'draft']?.color || 'default'}>
               {STATUS_MAP[record.status || 'draft']?.label || record.status}
@@ -290,21 +230,6 @@ export default function TrainingSessionDetailModal({
       {/* Editable form */}
       {editing && (
         <Form key={open ? (record?.id || "new") : "closed"} form={form} layout="vertical" className="mt-4" initialValues={initialFormValues}>
-          {/* Factory selector: always visible in create, hidden in edit (read from record) */}
-          {isCreate && (
-            <Form.Item label="选择厂区">
-              <Radio.Group
-                value={factory}
-                onChange={(e) => handleFactoryChange(e.target.value)}
-                options={[
-                  { label: '旧厂', value: 'old' },
-                  { label: '新厂', value: 'new' },
-                ]}
-                optionType="button"
-              />
-            </Form.Item>
-          )}
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
             <Form.Item
               name="department"

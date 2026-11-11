@@ -8,7 +8,6 @@ import { Button, message, Tabs } from 'antd'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Employee, Department } from '@/types/hr'
 import { fetchEmployeesAction, uploadEmployeesAction } from '@/actions/hr'
-import { fetchNewEmployees, fetchNewDepartments } from '@/lib/api/client/hr'
 import { fetchDepartments } from '@/lib/api/client/hr'
 import { useHrStore } from '@/stores/hr'
 import EmployeeTable from './EmployeeTable'
@@ -19,7 +18,6 @@ interface EmployeeProfileClientProps {
   initialEmployees: Employee[]
   initialTotal: number
   initialDepartment?: string
-  factory?: 'new'
 }
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -37,7 +35,6 @@ export default function EmployeeProfileClient({
   initialEmployees,
   initialDepartment,
   initialTotal,
-  factory,
 }: EmployeeProfileClientProps) {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
@@ -49,13 +46,10 @@ export default function EmployeeProfileClient({
   const { searchKeyword, filterStatus } = useHrStore()
   const debouncedSearchKeyword = useDebounce(searchKeyword, 300)
 
-  const doFetch = factory === 'new' ? fetchNewEmployees : fetchEmployeesAction
-
   const { data: departments = [] } = useQuery<Department[]>({
-    queryKey: ['hr-departments-list', { factory }],
+    queryKey: ['hr-departments-list'],
     queryFn: async () => {
-      const doFetchDepartments = factory === 'new' ? fetchNewDepartments : fetchDepartments
-      const res = await doFetchDepartments({ page_size: 100 })
+      const res = await fetchDepartments({ page_size: 100 })
       return res.data
     },
   })
@@ -66,9 +60,9 @@ export default function EmployeeProfileClient({
       : departments.find((d) => d.id === activeTab)?.name || ''
 
   const { data, isLoading: _loading } = useQuery({
-    queryKey: ['hr-employees', { factory, debouncedSearchKeyword, activeDepartment, filterStatus, page, pageSize }],
+    queryKey: ['hr-employees', { debouncedSearchKeyword, activeDepartment, filterStatus, page, pageSize }],
     queryFn: async () => {
-      const res = await doFetch({
+      const res = await fetchEmployeesAction({
         keyword: debouncedSearchKeyword || undefined,
         department: activeDepartment || undefined,
         status: filterStatus || undefined,
@@ -126,7 +120,7 @@ export default function EmployeeProfileClient({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)]">
-          {factory === 'new' ? '新厂员工档案' : '老厂员工档案'}
+          员工档案
         </h1>
         <Upload accept=".xlsx,.xls" showUploadList={false} customRequest={async ({file}) => {
           try {

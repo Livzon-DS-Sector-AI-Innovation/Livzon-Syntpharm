@@ -81,11 +81,6 @@ import {
   fetchEmployeeByIdApi,
   fetchCandidateByIdApi,
   fetchCandidatesApi,
-  fetchNewEmployeesApi,
-  fetchNewDepartmentsApi,
-  fetchNewOnboardingRecordsApi,
-  fetchNewDepartureRecordsApi,
-  fetchNewOffboardingRecordsApi,
   fetchAnnualTrainingPlanByIdApi,
   fetchPlanItemsApi,
   fetchTrainingRecordsApi,
@@ -453,26 +448,6 @@ export async function fetchCandidateById(id: string): Promise<CandidateResponse>
 
 export async function fetchCandidates(params: CandidateListParams = {}): Promise<CandidateListResponse> {
   return fetchCandidatesApi(params).catch(() => ({ code: 0, message: '', data: [] as Candidate[], meta: { page: 1, page_size: 20, total: 0 } }) as CandidateListResponse)
-}
-
-export async function fetchNewEmployees(params: Record<string, unknown> = {}): Promise<EmployeeListResponse> {
-  return fetchNewEmployeesApi(params) as Promise<EmployeeListResponse>
-}
-
-export async function fetchNewDepartments(params: Record<string, unknown> = {}): Promise<DepartmentListResponse> {
-  return fetchNewDepartmentsApi(params) as Promise<DepartmentListResponse>
-}
-
-export async function fetchNewOnboardingRecords(params: Record<string, unknown> = {}): Promise<OnboardingRecordListResponse> {
-  return fetchNewOnboardingRecordsApi(params) as Promise<OnboardingRecordListResponse>
-}
-
-export async function fetchNewDepartureRecords(params: Record<string, unknown> = {}): Promise<DepartureRecordListResponse> {
-  return fetchNewDepartureRecordsApi(params) as Promise<DepartureRecordListResponse>
-}
-
-export async function fetchNewOffboardingRecords(params: Record<string, unknown> = {}): Promise<OffboardingRecordListResponse> {
-  return fetchNewOffboardingRecordsApi(params) as Promise<OffboardingRecordListResponse>
 }
 
 export async function fetchAnnualTrainingPlanById(id: string): Promise<TrainingPlanResponse> {
