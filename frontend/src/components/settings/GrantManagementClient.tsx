@@ -500,8 +500,7 @@ export default function GrantManagementClient() {
               label="用户"
               rules={[{ required: true, message: '请选择用户' }]}
               style={{ width: '100%', maxWidth: 320 }}
-              // 组件回传 { id, name }，表单里只存 id：授权接口只认 id，姓名由组件内部快照回显
-              getValueFromEvent={(person: { id: string } | null) => person?.id}
+              // 组件回传 UUID，表单直接存 id：授权接口只认 id，姓名由组件内部快照回显
             >
               <RemoteUserSelect
                 // 授权要覆盖未绑定飞书的本地账号，故不限制 feishu_bound_only
@@ -585,7 +584,7 @@ export default function GrantManagementClient() {
           showUsername
           placeholder="选择用户，查看其当前权限下能访问的模块 / 页面"
           value={previewUserId}
-          onChange={(person) => setPreviewUserId(person?.id)}
+          onChange={(next) => setPreviewUserId(typeof next === 'string' ? next : undefined)}
         />
         <div className="mt-4">
           {previewData && (

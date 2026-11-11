@@ -216,36 +216,14 @@ export const moduleMenus: ModuleMenu[] = [
           { key: "ai-log", label: "AI日志", path: "/quality/ai-log" },
         ],
       },
-      // ── 偏差管理 ──
+      // ── 偏差管理（父节点本身可点击进入看盘） ──
       {
         key: "deviation-mgmt",
         label: "偏差管理",
-        path: "",
+        path: "/quality/deviation",
         children: [
-          { key: "deviation", label: "偏差管理", path: "/quality/deviation" },
-          { key: "deviation-report", label: "偏差报告", path: "/quality/deviation/report" },
-          { 
-            key: "deviation-automation",
-            label: "偏差自动化",
-            path: "",
-            children: [
-              { key: "deviation-automation-create", label: "创建偏差自动化", path: "/quality/deviation-automation/create" },
-              { key: "deviation-automation-history", label: "偏差自动化历史", path: "/quality/deviation-automation/history" },
-              { key: "deviation-automation-sop", label: "偏差自动化SOP", path: "/quality/deviation-automation/sop" },
-              { key: "deviation-automation-templates", label: "偏差自动化模板", path: "/quality/deviation-automation/templates" },
-            ]
-          },
-          {
-            key: "deviation-flow",
-            label: "偏差流程",
-            path: "",
-            children: [
-              { key: "deviation-flow-create", label: "创建偏差流程", path: "/quality/deviation-flow/create" },
-              { key: "deviation-flow-progress", label: "偏差流程进度", path: "/quality/deviation-flow/progress" },
-              { key: "deviation-flow-query", label: "偏差流程查询", path: "/quality/deviation-flow/query" },
-              { key: "deviation-flow-settings", label: "偏差流程设置", path: "/quality/deviation-flow/settings" },
-            ]
-          },
+          { key: "deviation-ledger", label: "偏差台账", path: "/quality/deviation/ledger" },
+          { key: "deviation-new", label: "新建偏差", path: "/quality/deviation/new" },
         ],
       },
       // ── 文档检查 ──
