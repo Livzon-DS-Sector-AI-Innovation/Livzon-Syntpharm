@@ -1,7 +1,8 @@
 """偏差模块组织配置 API：部门联系人 / 通知设置 / 部门周确认。
 
-路由注册顺序要求：本 router 必须早于旧偏差 router（``/quality/deviation/{deviation_id}``）
-注册，否则 ``/quality/deviation/notify`` 会被旧动态段吞掉。
+路由与台账 router 同级无冲突：台账占 ``/quality/deviation/ledger/*``，
+本 router 占 ``/quality/department-contacts`` 与 ``/quality/deviation/notify``、
+``/quality/deviation/weekly-confirmations``，均无动态段互相吞并。
 """
 
 from __future__ import annotations

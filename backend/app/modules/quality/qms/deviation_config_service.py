@@ -221,7 +221,7 @@ class DeviationConfigService:
                 key=notify.SETTING_KEY,
                 value=value,
                 value_type="json",
-                description="偏差流程通知开关与群聊接收方",
+                description="偏差台账通知开关与群聊接收方",
                 created_by=actor_id,
                 updated_by=actor_id,
             )

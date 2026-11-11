@@ -19,8 +19,6 @@ const CARD_CLASS =
 export function DeviationDistributionCharts({ statistics }: DeviationDistributionChartsProps) {
   const departments = statistics?.department_distribution ?? []
   const statuses = statistics?.status_distribution ?? []
-  const stepBreakdown = statistics?.step_breakdown ?? []
-  const maxStepCount = stepBreakdown.reduce((max, item) => Math.max(max, item.count), 0)
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -56,45 +54,7 @@ export function DeviationDistributionCharts({ statistics }: DeviationDistributio
         )}
       </section>
 
-      <section className={`${CARD_CLASS} lg:col-span-2`}>
-        <header className="mb-3">
-          <h2 className="text-[15px] font-semibold text-[var(--color-ink)]">环节分布</h2>
-          <p className="mt-1 text-[12px] text-[var(--color-stone)]">
-            流转各环节当前在办数量，用于判断卡点在调查、部门审核还是 QA 审核
-          </p>
-        </header>
-        {stepBreakdown.length === 0 ? (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无数据" />
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {stepBreakdown.map((item) => {
-              const width = maxStepCount > 0 ? Math.max(4, Math.round((item.count / maxStepCount) * 100)) : 0
-              return (
-                <li key={item.step} className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-[96px] shrink-0 sm:w-[190px]">
-                    <p className="truncate text-[13px] text-[var(--color-ink)]" title={item.label}>
-                      {item.label}
-                    </p>
-                    <p className="truncate text-[11px] text-[var(--color-stone)]" title={item.role_label}>
-                      {item.role_label}
-                    </p>
-                  </div>
-                  <div className="h-2.5 flex-1 rounded-full bg-[var(--color-surface-soft)]">
-                    <div
-                      className="h-full rounded-full bg-[var(--color-primary)]"
-                      style={{ width: `${width}%` }}
-                    />
-                  </div>
-                  <span className="w-10 shrink-0 text-right text-[13px] tabular-nums text-[var(--color-slate)]">
-                    {item.count}
-                  </span>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </section>
-    </div>
+      </div>
   )
 }
 

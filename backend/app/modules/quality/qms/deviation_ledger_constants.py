@@ -1,8 +1,8 @@
 """偏差台账常量：状态机、中文标签、超期阈值、分级与原因分类。
 
 口径与妙搭偏差应用对齐（12 态串行状态机 + 8 个待办环节超期阈值）。
-本文件是台账（deviation_ledger）唯一的状态定义处，不与旧 14 态偏差模型
-（``deviation_models.DeviationStatus``）混用，也不读写 ``automation.py`` 的同名配置。
+本文件是台账（deviation_ledger）唯一的状态定义处；旧 14 态偏差模型与其状态枚举
+已随偏差流程下线一并移除，历史表仅保留数据，不再有任何代码读取。
 """
 
 from __future__ import annotations

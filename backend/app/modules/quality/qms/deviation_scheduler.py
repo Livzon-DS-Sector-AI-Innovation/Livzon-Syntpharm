@@ -1,4 +1,4 @@
-"""偏差流程的三个定时扫描任务。
+"""偏差台账的三个定时扫描任务。
 
 | 任务 | 触发时间 | 行为 |
 |---|---|---|
@@ -279,4 +279,4 @@ def register() -> None:
     scheduler_registry.register_task(overdue_reminder_task)
     scheduler_registry.register_task(weekly_confirm_task)
     scheduler_registry.register_task(workshop_submit_task)
-    logger.info("偏差流程定时任务已注册：超期提醒 / 周确认提醒 / 生产车间未提交通报")
+    logger.info("偏差台账定时任务已注册：超期提醒 / 周确认提醒 / 生产车间未提交通报")

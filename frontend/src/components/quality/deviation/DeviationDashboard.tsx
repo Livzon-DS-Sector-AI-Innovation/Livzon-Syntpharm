@@ -35,7 +35,7 @@ export function DeviationDashboard({ initialStatistics }: DeviationDashboardProp
           />
           <h1 className="text-[22px] font-semibold text-[var(--color-ink)]">偏差管理</h1>
           <p className="mt-1 text-[13px] text-[var(--color-slate)]">
-            偏差从发现到关闭的看盘入口，看整体态势后可直接下钻台账或发起新偏差
+            偏差从发现到关闭的看盘入口，看整体态势后可直接下钻台账或新建偏差
           </p>
         </div>
         <div className="flex items-center gap-2">

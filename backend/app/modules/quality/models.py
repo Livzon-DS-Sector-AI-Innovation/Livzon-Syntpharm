@@ -9,28 +9,12 @@ from app.modules.quality.ai.config_model import (
 from app.modules.quality.ai.models import (
     QmsAiLog,
 )
-from app.modules.quality.qms.deviation_automation_models import (
-    DevTask,
-    SOPRule,
-)
 from app.modules.quality.qms.deviation_department_models import (
     DepartmentContact,
     DepartmentWeeklyConfirmation,
 )
-from app.modules.quality.qms.deviation_flow_models import (
-    QmsDeviation,
-    QmsDeviationAttachment,
-    QmsDeviationAutoTrigger,
-    QmsDeviationFeishuBotConfig,
-    QmsDeviationLog,
-    QmsDeviationMessageTemplate,
-)
 from app.modules.quality.qms.deviation_ledger_models import (
     DeviationLedger,
-)
-from app.modules.quality.qms.deviation_settings_models import (
-    DeviationLeaderConfig,
-    DeviationQAConfig,
 )
 from app.modules.quality.qms.inspection_table_models import (
     InspectionTable,
@@ -71,16 +55,12 @@ __all__ = [
     "DepartmentContact",
     "DepartmentWeeklyConfirmation",
     "DeviationLedger",
-    "DeviationLeaderConfig",
-    "DeviationQAConfig",
     "InspectionTable",
     "InspectionTableRow",
     "MaterialReport",
     "MaterialReportItem",
     "ReportTemplate",
     "ReportImage",
-    "DevTask",
-    "SOPRule",
     "SopAiConfig",
     "SopAiCheckMain",
     "SopAiCheckProblem",
@@ -88,12 +68,6 @@ __all__ = [
     "ReagentQuality",
     "QmsDeviationReminderRule",
     "QmsReagentItemReminderConfig",
-    "QmsDeviation",
-    "QmsDeviationAttachment",
-    "QmsDeviationAutoTrigger",
-    "QmsDeviationFeishuBotConfig",
-    "QmsDeviationLog",
-    "QmsDeviationMessageTemplate",
     "StorageCondition",
     "Unit",
     "HplcReference",

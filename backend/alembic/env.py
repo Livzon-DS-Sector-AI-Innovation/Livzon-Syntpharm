@@ -47,12 +47,41 @@ TARGET_SCHEMA = os.environ.get("ALEMBIC_TARGET_SCHEMA")
 RAW_SQL_ONLY_TABLES: frozenset[tuple[str | None, str]] = frozenset()
 
 
+# 已下线功能遗留的表（2026-11 偏差流程/自动化/报告下线，代码侧模型已删除）：
+# 历史数据仍按「保留」处理，物理删除须走 AGENTS.md「Orphan Table 处理规则」单独评审。
+# 列入本集合后 autogenerate / alembic check 不会把它们当成「数据库多余的表」而生成 DROP。
+RETIRED_TABLES: frozenset[tuple[str | None, str]] = frozenset(
+    {
+        # 第 0 代「偏差管理」
+        ("quality", "quality_deviations"),
+        ("quality", "quality_deviation_investigations"),
+        ("quality", "quality_deviation_corrections"),
+        ("quality", "quality_deviation_closings"),
+        ("quality", "quality_deviation_approvals"),
+        # 偏差流程及其附件 / 日志 / 触发器 / 消息模板
+        ("qms", "qms_deviation"),
+        ("qms", "qms_deviation_attachment"),
+        ("qms", "qms_deviation_log"),
+        ("qms", "qms_deviation_feishu_bot_config"),
+        ("qms", "qms_deviation_auto_trigger"),
+        ("qms", "qms_deviation_message_template"),
+        # 偏差流程设置的提醒人配置
+        ("qms", "qms_deviation_qa_config"),
+        ("qms", "qms_deviation_leader_config"),
+        # 偏差自动化 / 偏差报告
+        ("quality", "sop_rule"),
+        ("quality", "dev_task"),
+        ("quality", "report_template"),
+    }
+)
+
+
 def include_object(object, name, type_, reflected, compare_to):
     """Limit autogenerate to specific schema.
 
     If ALEMBIC_TARGET_SCHEMA is set, only include objects in that schema.
     """
-    if type_ == "table" and (getattr(object, "schema", None), name) in RAW_SQL_ONLY_TABLES:
+    if type_ == "table" and (getattr(object, "schema", None), name) in RAW_SQL_ONLY_TABLES | RETIRED_TABLES:
         return False
 
     if not TARGET_SCHEMA:

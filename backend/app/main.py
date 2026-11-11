@@ -160,13 +160,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception:
         logger.exception("Failed to register reagent reminder scheduler")
 
-    # 偏差流程定时扫描：超期提醒 / 周确认提醒 / 生产车间未提交通报
+    # 偏差台账定时扫描：超期提醒 / 周确认提醒 / 生产车间未提交通报
     try:
         from app.modules.quality.qms.deviation_scheduler import register as register_deviation_scheduler
 
         register_deviation_scheduler()
     except Exception:
-        logger.exception("偏差流程定时任务注册失败")
+        logger.exception("偏差台账定时任务注册失败")
 
     # SOP AI 定时巡检任务（此前 register() 从未被调用，动态任务永远不触发）
     try:

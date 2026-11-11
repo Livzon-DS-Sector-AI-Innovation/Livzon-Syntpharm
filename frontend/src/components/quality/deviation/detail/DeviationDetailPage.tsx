@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Alert, Button } from 'antd'
+import { Alert, Breadcrumb, Button } from 'antd'
 import { ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons'
 import type { DeviationLedgerDetail, DeviationLedgerOption } from '@/types/quality'
 import { DEVIATION_LEDGER_PATH } from '../constants'
@@ -38,6 +38,14 @@ export function DeviationDetailPage({
 
   return (
     <div className="flex flex-col gap-4">
+      <Breadcrumb
+        items={[
+          { title: <Link href="/quality">质量管理</Link> },
+          { title: <Link href="/quality/deviation">偏差管理</Link> },
+          { title: <Link href={DEVIATION_LEDGER_PATH}>偏差台账</Link> },
+          { title: '偏差详情' },
+        ]}
+      />
       {/* 顶部只放页面级操作：编号与标题统一由下方摘要条承载，避免同一信息在一屏内出现两次 */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Link href={DEVIATION_LEDGER_PATH}>

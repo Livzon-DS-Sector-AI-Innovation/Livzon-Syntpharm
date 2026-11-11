@@ -2383,6 +2383,11 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/ledger/department-options"),
     ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/ledger/investigator-options"),
     ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/ledger/status-options"),
+    ApiBindingDef(
+        "quality:deviation:read",
+        "GET",
+        "/api/v1/quality/deviation/ledger/department-contact-options",
+    ),
     ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/ledger/{id}"),
     ApiBindingDef("quality:deviation:update", "PUT", "/api/v1/quality/deviation/ledger/{id}"),
     ApiBindingDef("quality:deviation:delete", "DELETE", "/api/v1/quality/deviation/ledger/{id}"),
@@ -2418,6 +2423,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("quality:deviation:update", "DELETE", "/api/v1/quality/department-contacts/{contact_id}"),
     ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/notify"),
     ApiBindingDef("quality:deviation:update", "PUT", "/api/v1/quality/deviation/notify"),
+    # 与接口实现一致：测试消息接口用的是 read 权限
+    ApiBindingDef("quality:deviation:read", "POST", "/api/v1/quality/deviation/notify/test"),
     ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/weekly-confirmations"),
     ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/weekly-confirmations"),
     ApiBindingDef("quality:export:read", "GET", "/api/v1/quality/export/{record_id}"),
