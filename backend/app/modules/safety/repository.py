@@ -395,6 +395,7 @@ class SafetyRepository:
         {
             "discovered_by_name",
             "rectification_responsible_person_name",
+            "safety_officer_name",
         }
     )
 

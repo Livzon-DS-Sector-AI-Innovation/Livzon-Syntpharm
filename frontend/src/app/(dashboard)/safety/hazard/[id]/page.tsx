@@ -456,15 +456,18 @@ export default function HazardLedgerDetailPage() {
     enabled: !!id,
   })
 
-  // Dependent query for safety officer info
-  const { data: safetyOfficerName } = useQuery({
+  // 部门配置的分管安全员：隐患未单独指定时作为默认值回退
+  const { data: departmentSafetyOfficer } = useQuery({
     queryKey: ['safety-hazard-officer', record?.department],
     queryFn: async () => {
       if (!record?.department) return null
       try {
         const soRes = await getDepartmentSafetyOfficer(record.department)
         if (soRes.code === 200 && soRes.data?.safety_officer_name) {
-          return soRes.data.safety_officer_name
+          return {
+            name: soRes.data.safety_officer_name,
+            id: soRes.data.safety_officer_id ?? null,
+          }
         }
       } catch {
         // silent
@@ -473,6 +476,8 @@ export default function HazardLedgerDetailPage() {
     },
     enabled: !!record?.department,
   })
+  const safetyOfficerName =
+    record?.safety_officer_name ?? record?.safety_officer_person?.name ?? departmentSafetyOfficer?.name ?? null
 
   // 加载失败时提示并退回台账（渲染期不能有副作用：message / router.push 必须在 effect 内）
   useEffect(() => {
@@ -508,7 +513,18 @@ export default function HazardLedgerDetailPage() {
     const responsibleIds = allResponsibleResolved
       ? responsiblePersons.map((person) => person.id as string)
       : []
+    // 分管安全员：优先用本条隐患已保存的值，历史数据回退部门配置
+    const officerId =
+      record?.safety_officer_id ?? record?.safety_officer_person?.id ?? departmentSafetyOfficer?.id ?? null
+    const officerName =
+      record?.safety_officer_name ?? record?.safety_officer_person?.name ?? departmentSafetyOfficer?.name ?? null
     setEdits({
+      ...(officerName
+        ? {
+            safety_officer_name: officerName,
+            ...(officerId ? { safety_officer_id: officerId } : {}),
+          }
+        : {}),
       ...(discoveredId
         ? {
             discovered_by: discoveredId,
@@ -556,12 +572,16 @@ export default function HazardLedgerDetailPage() {
       try {
         const soRes = await getDepartmentSafetyOfficer(dept)
         if (soRes.code === 200 && soRes.data?.safety_officer_name) {
-          
-        } else {
-          
+          const officerName = soRes.data.safety_officer_name
+          const officerId = soRes.data.safety_officer_id || null
+          setEdits((p) => ({
+            ...p,
+            safety_officer_name: officerName,
+            ...(officerId ? { safety_officer_id: officerId } : {}),
+          }))
         }
       } catch {
-        
+        // 部门未配置安全员时保持用户手动选择
       }
     } catch {
       // silently ignore — user can search manually
@@ -612,41 +632,25 @@ export default function HazardLedgerDetailPage() {
 
     setSaving(true)
     try {
-      // 数据库存储的是原始路径（不经过 URL 转换），先取出已保存的照片
-      let existingPaths: string[] = []
-      if (record.rectification_photos) {
-        try {
-          const raw = JSON.parse(record.rectification_photos)
-          if (Array.isArray(raw)) existingPaths = raw.filter((p: unknown) => typeof p === 'string')
-        } catch { /* 历史数据非 JSON 数组时忽略 */ }
-      }
-
-      // 逐张上传新增照片，后端返回的最新记录里取本次新增路径
-      const newPaths: string[] = []
+      // 逐张上传新增照片：后端接口内部会把路径 append 到 rectification_photos，
+      // 这里不能再回写整段照片数组，否则会用旧快照覆盖掉刚上传的结果。
       for (const file of pendingFiles) {
-        try {
-          const uploadRes = await uploadRectificationPhoto(id, file.originFileObj as File)
-          const uploaded = uploadRes.data as HazardReport | undefined
-          if (uploadRes.code === 200 && uploaded?.rectification_photos) {
-            try {
-              const list = JSON.parse(uploaded.rectification_photos)
-              if (Array.isArray(list) && list.length > 0) newPaths.push(list[list.length - 1])
-            } catch { /* ignore */ }
-          }
-        } catch {
-          message.error('照片上传失败')
+        const uploadRes = await uploadRectificationPhoto(id, file.originFileObj as File)
+        if (uploadRes.code !== 200) {
+          throw new Error(uploadRes.message || '照片上传失败')
         }
       }
 
-      const allPaths = [...existingPaths, ...newPaths]
-      const payload = {
-        ...edits,
-        ...(pendingFiles.length > 0 && allPaths.length > 0
-          ? { rectification_photos: JSON.stringify(allPaths) }
-          : {}),
-      } as unknown as Partial<HazardReportFormData>
+      if (Object.keys(edits).length === 0) {
+        message.success('照片已上传')
+        queryClient.invalidateQueries({ queryKey: ['safety-hazard'] })
+        setEditSection(null)
+        setEdits({})
+        setReplyFiles([])
+        return
+      }
 
-      const res = await updateHazard(id, payload)
+      const res = await updateHazard(id, edits as unknown as Partial<HazardReportFormData>)
       if (res.code === 200) {
         message.success('修改已保存')
         queryClient.invalidateQueries({ queryKey: ['safety-hazard'] })
@@ -1090,7 +1094,36 @@ export default function HazardLedgerDetailPage() {
             {editSection === 'rectification' ? (
               <>
                 <Row gutter={[16, 12]}>
-                  <Col span={12}>
+                  <Col span={8}>
+                    <FieldEditor label="进度说明">
+                      <TextArea rows={2}
+                        value={fieldVal('rectification_progress_note')}
+                        onChange={(e) => setEdits((p) => ({ ...p, rectification_progress_note: e.target.value }))}
+                        placeholder="补充当前整改进度说明" />
+                    </FieldEditor>
+                  </Col>
+                  <Col span={8}>
+                    <FieldEditor label="分管安全员">
+                      <PersonnelSelect
+                        value={fieldVal('safety_officer_id') || null}
+                        label={fieldVal('safety_officer_name')}
+                        avatarSrc={
+                          fieldVal('safety_officer_id') === record.safety_officer_person?.id
+                            ? record.safety_officer_person?.avatar_url
+                            : undefined
+                        }
+                        placeholder="搜索姓名选择分管安全员"
+                        onChange={(p) => {
+                          setEdits((prev) => ({
+                            ...prev,
+                            safety_officer_id: p?.id ?? '',
+                            safety_officer_name: p?.name ?? '',
+                          }))
+                        }}
+                      />
+                    </FieldEditor>
+                  </Col>
+                  <Col span={8}>
                     <FieldEditor label="整改完成时间">
                       <DatePicker style={{ width: '100%' }}
                         value={fieldVal('actual_completion_date') ? dayjs(fieldVal('actual_completion_date')) : null}
@@ -1109,6 +1142,17 @@ export default function HazardLedgerDetailPage() {
                 {/* 整改照片上传 */}
                 <div style={{ marginTop: 8 }}>
                   <FieldLabel><CameraOutlined style={{ marginRight: 4 }} />整改后照片</FieldLabel>
+
+                  {/* 已落库的整改后照片：编辑态只读展示，保存时只追加、不覆盖 */}
+                  {photos.rectification.length > 0 && (
+                    <div style={{ marginBottom: 12 }}>
+                      <Text type="secondary" style={{ fontSize: 12, display: 'inline-block', marginBottom: 6 }}>
+                        已上传 {photos.rectification.length} 张
+                      </Text>
+                      <PhotoGallery photos={photos.rectification} />
+                    </div>
+                  )}
+
                   <Upload.Dragger
                     multiple
                     fileList={replyFiles}
@@ -1120,7 +1164,7 @@ export default function HazardLedgerDetailPage() {
                   >
                     <p className="ant-upload-drag-icon"><InboxOutlined /></p>
                     <p className="ant-upload-text">点击或拖拽图片到此区域上传</p>
-                    <p className="ant-upload-hint">支持多张整改后照片（提交时统一上传）</p>
+                    <p className="ant-upload-hint">可继续追加整改后照片（保存时统一上传）</p>
                   </Upload.Dragger>
                 </div>
               </>
@@ -1138,7 +1182,18 @@ export default function HazardLedgerDetailPage() {
                   <Col span={8}>
                     <FieldLabel>分管安全员</FieldLabel>
                     <FieldTile>
-                      <Text style={{ fontSize: 14 }}>{safetyOfficerName || '-'}</Text>
+                      {safetyOfficerName ? (
+                        <PersonNameWithBadge
+                          name={safetyOfficerName}
+                          src={record.safety_officer_person?.avatar_url}
+                          pending={record.safety_officer_person?.pending}
+                          bound={record.safety_officer_person?.id ?? record.safety_officer_id}
+                          fontSize={14}
+                          avatarSize={22}
+                        />
+                      ) : (
+                        <Text style={{ fontSize: 14, color: '#a4a097' }}>-</Text>
+                      )}
                     </FieldTile>
                   </Col>
                   <Col span={8}>

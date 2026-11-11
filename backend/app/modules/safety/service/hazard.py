@@ -486,6 +486,12 @@ class HazardService:
             if bound is not None:
                 data["discovered_by"] = bound
 
+        # 分管安全员：只给了姓名（历史数据/接口直传）时补 UUID，同名多人则保留姓名待确认
+        if not data.get("safety_officer_id") and data.get("safety_officer_name"):
+            bound = await self._resolve_person_uuid(str(data["safety_officer_name"]), department_hint)
+            if bound is not None:
+                data["safety_officer_id"] = bound
+
         # 整改负责人多选：任一人未唯一命中则整条不写 ids，避免 ids 与 names 错位
         if not data.get("rectification_responsible_person_ids"):
             names = split_person_names(data.get("rectification_responsible_person_names"))
