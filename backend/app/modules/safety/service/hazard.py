@@ -1381,10 +1381,10 @@ class HazardService:
                             ),
                         )
                     logger.info(
-                    "AI 初审通过 → 通知一级复核人: hazard_id=%s",
-                    hazard_id,
-                    extra={"hazard_id": str(hazard_id)},
-                )
+                        "AI 初审通过 → 通知一级复核人: hazard_id=%s",
+                        hazard_id,
+                        extra={"hazard_id": str(hazard_id)},
+                    )
                 elif conclusion == "不通过":
                     # AI 判定不通过 → 自动驳回，通知责任人重新整改
                     await bg_service.repo.update_hazard(hazard_id, {"rectification_status": "rejected"})
@@ -1917,19 +1917,19 @@ async def _send_verify_notification(hazard: HazardReport, level: int) -> None:
             )
 
             logger.info(
-                                "复核通知: hazard_no=%s level=%s target=%s user_id=%s open_id=%s",
-                                hazard.hazard_no,
-                                level,
-                                person.name,
-                                person.user_id,
-                                person.open_id,
-                                extra={
-                                    "hazard_no": hazard.hazard_no,
-                                    "level": level,
-                                    "target_name": person.name,
-                                    "user_id": str(person.user_id),
-                                },
-                            )
+                "复核通知: hazard_no=%s level=%s target=%s user_id=%s open_id=%s",
+                hazard.hazard_no,
+                level,
+                person.name,
+                person.user_id,
+                person.open_id,
+                extra={
+                    "hazard_no": hazard.hazard_no,
+                    "level": level,
+                    "target_name": person.name,
+                    "user_id": str(person.user_id),
+                },
+            )
 
             title, content, elements = await _build_verify_card_content(
                 hazard,

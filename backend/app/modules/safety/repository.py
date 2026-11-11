@@ -50,7 +50,6 @@ def _like_pattern(keyword: str) -> str:
     return f"%{escaped}%"
 
 
-
 def _risk_grading_filter_conditions(
     model: Any,
     *,
