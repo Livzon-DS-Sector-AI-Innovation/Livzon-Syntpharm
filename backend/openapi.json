@@ -32355,6 +32355,26 @@
             "description": "\u7ba1\u63a7\u5c42\u7ea7\uff08\u90e8\u95e8\uff09"
           },
           {
+            "name": "evaluation_grade",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 4,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u8bc4\u4ef7\u7ea7\u522b 1\u20134",
+              "title": "Evaluation Grade"
+            },
+            "description": "\u8bc4\u4ef7\u7ea7\u522b 1\u20134"
+          },
+          {
             "name": "residual_risk",
             "in": "query",
             "required": false,
@@ -32515,6 +32535,26 @@
               "title": "Control Level"
             },
             "description": "\u7ba1\u63a7\u5c42\u7ea7\uff08\u90e8\u95e8\uff09"
+          },
+          {
+            "name": "evaluation_grade",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 4,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u8bc4\u4ef7\u7ea7\u522b 1\u20134",
+              "title": "Evaluation Grade"
+            },
+            "description": "\u8bc4\u4ef7\u7ea7\u522b 1\u20134"
           },
           {
             "name": "residual_risk",
@@ -124822,6 +124862,14 @@
             "type": "integer",
             "title": "Risk Evaluation R"
           },
+          "evaluation_grade": {
+            "type": "integer",
+            "title": "Evaluation Grade"
+          },
+          "evaluation_grade_label": {
+            "type": "string",
+            "title": "Evaluation Grade Label"
+          },
           "current_control_measures": {
             "items": {
               "type": "string"
@@ -124901,6 +124949,8 @@
           "likelihood_l",
           "severity_s",
           "risk_evaluation_r",
+          "evaluation_grade",
+          "evaluation_grade_label",
           "current_control_measures",
           "improvement_measures",
           "residual_risk",
@@ -124913,6 +124963,30 @@
         ],
         "title": "EquipmentFacilityHazardResponse",
         "description": "\u8bbe\u5907\u8bbe\u65bd\u5371\u9669\u6e90\u53f0\u8d26\u8bb0\u5f55\uff08\u542b\u670d\u52a1\u7aef\u8ba1\u7b97\u5b57\u6bb5\uff09\u3002"
+      },
+      "EquipmentGradeBand": {
+        "properties": {
+          "grade": {
+            "type": "integer",
+            "title": "Grade"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "min_r": {
+            "type": "integer",
+            "title": "Min R"
+          }
+        },
+        "type": "object",
+        "required": [
+          "grade",
+          "label",
+          "min_r"
+        ],
+        "title": "EquipmentGradeBand",
+        "description": "\u8bbe\u5907\u8bbe\u65bd\u8bc4\u4ef7\u7ea7\u522b\u5206\u6bb5\uff1aR \u2265 min_r \u65f6\u53d6\u8be5 grade\uff08\u6309 min_r \u4ece\u9ad8\u5230\u4f4e\u6392\u5217\uff09\u3002"
       },
       "EquipmentImportRow": {
         "properties": {
@@ -162841,6 +162915,13 @@
             "type": "array",
             "title": "Grade Thresholds"
           },
+          "equipment_grade_bands": {
+            "items": {
+              "$ref": "#/components/schemas/EquipmentGradeBand"
+            },
+            "type": "array",
+            "title": "Equipment Grade Bands"
+          },
           "likelihood_range": {
             "$ref": "#/components/schemas/LecRange"
           },
@@ -162867,6 +162948,7 @@
           "severity_levels",
           "safety_risk_matrix",
           "grade_thresholds",
+          "equipment_grade_bands",
           "likelihood_range",
           "exposure_range",
           "consequence_range",

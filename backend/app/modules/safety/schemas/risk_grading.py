@@ -227,6 +227,8 @@ class EquipmentFacilityHazardResponse(BaseModel):
     likelihood_l: int
     severity_s: str
     risk_evaluation_r: int
+    evaluation_grade: int
+    evaluation_grade_label: str
     current_control_measures: list[str]
     improvement_measures: list[str]
     residual_risk: str
@@ -283,6 +285,14 @@ class RiskGradeThreshold(BaseModel):
     lower_bound_exclusive: Decimal
 
 
+class EquipmentGradeBand(BaseModel):
+    """设备设施评价级别分段：R ≥ min_r 时取该 grade（按 min_r 从高到低排列）。"""
+
+    grade: int
+    label: str
+    min_r: int
+
+
 class RiskGradingOptions(BaseModel):
     """两张危险源台账前端所需的权威选项、矩阵与阈值。"""
 
@@ -295,6 +305,7 @@ class RiskGradingOptions(BaseModel):
     severity_levels: list[str]
     safety_risk_matrix: dict[str, list[int]]
     grade_thresholds: list[RiskGradeThreshold]
+    equipment_grade_bands: list[EquipmentGradeBand]
     likelihood_range: LecRange
     exposure_range: LecRange
     consequence_range: LecRange
