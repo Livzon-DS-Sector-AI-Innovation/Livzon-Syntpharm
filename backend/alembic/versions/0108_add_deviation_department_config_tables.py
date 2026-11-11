@@ -1,7 +1,7 @@
 """add deviation department config tables
 
-Revision ID: 0103_add_deviation_department_config_tables
-Revises: 0102_add_deviation_ledger_detail_fields
+Revision ID: 0108_add_deviation_department_config_tables
+Revises: 0107_add_deviation_ledger_detail_fields
 Create Date: 2026-11-10
 
 补齐偏差流转依赖的两张组织配置表：部门联系人、部门每周确认。
@@ -18,8 +18,8 @@ from sqlalchemy.dialects.postgresql import ARRAY, TEXT
 
 from alembic import op
 
-revision: str = "0103_add_deviation_department_config_tables"
-down_revision: str = "0102_add_deviation_ledger_detail_fields"
+revision: str = "0108_add_deviation_department_config_tables"
+down_revision: str = "0107_add_deviation_ledger_detail_fields"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

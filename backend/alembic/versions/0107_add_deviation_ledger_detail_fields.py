@@ -1,7 +1,7 @@
 """add deviation ledger detail fields
 
-Revision ID: 0102_add_deviation_ledger_detail_fields
-Revises: 0101_add_quality_deviation_ledger
+Revision ID: 0107_add_deviation_ledger_detail_fields
+Revises: 0106_add_quality_deviation_ledger
 Create Date: 2026-11-10
 
 为《偏差台账》补齐详情所需字段：调查报告正文与版本、AI 分析、调查记录、审核意见、
@@ -18,8 +18,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 from alembic import op
 
-revision: str = "0102_add_deviation_ledger_detail_fields"
-down_revision: str = "0101_add_quality_deviation_ledger"
+revision: str = "0107_add_deviation_ledger_detail_fields"
+down_revision: str = "0106_add_quality_deviation_ledger"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

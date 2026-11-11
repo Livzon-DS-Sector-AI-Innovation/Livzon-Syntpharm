@@ -1,6 +1,6 @@
 """add quality deviation ledger
 
-Revision ID: 0101_add_quality_deviation_ledger
+Revision ID: 0106_add_quality_deviation_ledger
 Revises: 0100_safety_equipment_facility_hazards
 Create Date: 2026-11-10
 
@@ -16,8 +16,8 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 from alembic import op
 
-revision: str = "0101_add_quality_deviation_ledger"
-down_revision: str = "0100_safety_equipment_facility_hazards"
+revision: str = "0106_add_quality_deviation_ledger"
+down_revision: str = "0101_safety_equipment_facility_evaluation_grade"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
