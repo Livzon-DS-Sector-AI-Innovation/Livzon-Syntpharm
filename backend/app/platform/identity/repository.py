@@ -229,13 +229,14 @@ class UserRepository:
             count_stmt = count_stmt.where(User.id.not_in(exclude_user_ids))
 
         if keyword:
-            pattern = f"%{keyword}%"
+            # 用户管理搜索：与 list_all 同一套转义口径，避免 `%`/`_` 被当通配符
+            pattern = _like_pattern(keyword)
             filter_expr = or_(
-                User.name.ilike(pattern),
-                User.username.ilike(pattern),
-                User.email.ilike(pattern),
-                User.mobile.ilike(pattern),
-                User.employee_no.ilike(pattern),
+                User.name.ilike(pattern, escape="\\"),
+                User.username.ilike(pattern, escape="\\"),
+                User.email.ilike(pattern, escape="\\"),
+                User.mobile.ilike(pattern, escape="\\"),
+                User.employee_no.ilike(pattern, escape="\\"),
             )
             base = base.where(filter_expr)
             count_stmt = count_stmt.where(filter_expr)
@@ -416,7 +417,7 @@ class LoginLogRepository:
         if status:
             conditions.append(LoginLog.status == status)
         if keyword:
-            conditions.append(LoginLog.user_name.ilike(f"%{keyword}%"))
+            conditions.append(LoginLog.user_name.ilike(_like_pattern(keyword), escape="\\"))
 
         # 用 COUNT(*) 统计总数（原来把符合条件的全部 id 拉回内存再取长度，数据量增长后很慢）
         total = (await session.execute(select(func.count()).select_from(LoginLog).where(*conditions))).scalar_one()
