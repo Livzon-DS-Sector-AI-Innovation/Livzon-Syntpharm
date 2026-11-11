@@ -97,16 +97,20 @@ async def run_overdue_reminder() -> None:
             for status, days in constants.STEP_OVERDUE_DAYS.items()
         ]
         rows = (
-            await db.execute(
-                select(DeviationLedger)
-                .where(
-                    DeviationLedger.is_deleted.is_(False),  # noqa: E712
-                    or_(*conditions),
+            (
+                await db.execute(
+                    select(DeviationLedger)
+                    .where(
+                        DeviationLedger.is_deleted.is_(False),  # noqa: E712
+                        or_(*conditions),
+                    )
+                    .order_by(DeviationLedger.status_updated_at.asc())
+                    .limit(_MAX_ITEMS_PER_RUN)
                 )
-                .order_by(DeviationLedger.status_updated_at.asc())
-                .limit(_MAX_ITEMS_PER_RUN)
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         if not rows:
             return {"notified": 0}
 

@@ -91,9 +91,7 @@ class DeviationLedger(BaseModel):
         server_default=func.now(),
         comment="状态变更时间（超期判定基准）",
     )
-    deviation_level: Mapped[str | None] = mapped_column(
-        String(20), nullable=True, comment="分级 minor/moderate/major"
-    )
+    deviation_level: Mapped[str | None] = mapped_column(String(20), nullable=True, comment="分级 minor/moderate/major")
     reason_category: Mapped[str | None] = mapped_column(String(50), nullable=True, comment="原因分类")
     reporter_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True),

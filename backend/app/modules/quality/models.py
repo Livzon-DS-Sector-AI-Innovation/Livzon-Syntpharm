@@ -9,6 +9,10 @@ from app.modules.quality.ai.config_model import (
 from app.modules.quality.ai.models import (
     QmsAiLog,
 )
+
+# 第 0 代偏差表的模型只为 capas.deviation_id 的外键目标而保留（业务代码不用），
+# 表本身已列入 alembic/env.py 的 RETIRED_TABLES，autogenerate 不会碰它们。
+from app.modules.quality.qms import deviation_models as _legacy_deviation_models  # noqa: F401
 from app.modules.quality.qms.deviation_department_models import (
     DepartmentContact,
     DepartmentWeeklyConfirmation,

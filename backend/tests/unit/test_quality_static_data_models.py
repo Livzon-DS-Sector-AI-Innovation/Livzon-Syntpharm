@@ -1,4 +1,4 @@
-"""Registration tests for the eleven quality legacy tables.
+"""Registration tests for the eight quality legacy tables.
 
 These tables were dropped by migration 0033 because their models declared private
 declarative bases and never reached the shared `Base.metadata`. Autogenerate then
@@ -8,6 +8,10 @@ These tests assert the consequence of inheriting the shared `BaseModel`: every
 table is registered in the shared metadata, carries a UUID primary key and the
 five shared audit columns. They need no database — registration only requires the
 model modules to be imported.
+
+`quality.dev_task` / `quality.report_template` / `quality.sop_rule`（偏差自动化与
+偏差报告的旧表）已随功能下线删除模型，表本身按 Orphan Table 规则保留在库里，
+不再由模型注册，故不在此清单内。
 """
 
 from __future__ import annotations
@@ -30,9 +34,6 @@ LEGACY_TABLES = [
     ("qms.t_qs_standard", "id"),
     ("qms.t_qs_medium", "id"),
     ("qms.qms_reagent_reminder_config", "id"),
-    ("quality.dev_task", "task_id"),
-    ("quality.report_template", "id"),
-    ("quality.sop_rule", "id"),
 ]
 
 SHARED_COLUMNS = ["id", "created_at", "updated_at", "created_by", "updated_by", "is_deleted"]

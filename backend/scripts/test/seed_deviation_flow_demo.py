@@ -371,8 +371,8 @@ async def seed_demo_ledgers(db: Any) -> dict[str, int]:
 
 async def cleanup(db: Any) -> int:
     rows = (
-        await db.execute(select(DeviationLedger).where(DeviationLedger.code.like(f"{DEMO_PREFIX}%")))
-    ).scalars().all()
+        (await db.execute(select(DeviationLedger).where(DeviationLedger.code.like(f"{DEMO_PREFIX}%")))).scalars().all()
+    )
     for row in rows:
         row.is_deleted = True
     return len(rows)
@@ -381,12 +381,16 @@ async def cleanup(db: Any) -> int:
 async def report(db: Any) -> None:
     """回读：打印每个待办节点解析到的负责人，作为脚本自检。"""
     rows = (
-        await db.execute(
-            select(DeviationLedger)
-            .where(DeviationLedger.code.like(f"{DEMO_PREFIX}%"), DeviationLedger.is_deleted.is_(False))
-            .order_by(DeviationLedger.code)
+        (
+            await db.execute(
+                select(DeviationLedger)
+                .where(DeviationLedger.code.like(f"{DEMO_PREFIX}%"), DeviationLedger.is_deleted.is_(False))
+                .order_by(DeviationLedger.code)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     for row in rows:
         context = await build_flow_context(db, row)
         payloads = {item["step"]: item for item in step_payloads(context, row)}
