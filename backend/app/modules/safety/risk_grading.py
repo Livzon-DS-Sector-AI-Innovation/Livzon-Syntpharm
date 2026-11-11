@@ -109,6 +109,24 @@ def lookup_risk_evaluation(likelihood: int, severity: str) -> int:
     return row[likelihood - 1]
 
 
+# ── 设备设施台账分级：按 R 分段，R < 10 → 1级，10 ≤ R < 20 → 2级，
+#    20 ≤ R < 40 → 3级，R ≥ 40 → 4级；按 min_r 从高到低排列，取首个满足项。
+EQUIPMENT_EVALUATION_GRADE_BANDS: Final[tuple[tuple[int, str, int], ...]] = (
+    (4, "4级", 40),
+    (3, "3级", 20),
+    (2, "2级", 10),
+    (1, "1级", 0),
+)
+
+
+def derive_equipment_evaluation_grade(risk_evaluation_r: int) -> tuple[int, str]:
+    """按 R 分段返回设备设施评价级别与标签；矩阵 R 最小为 3，必然命中 1级。"""
+    for grade, label, min_r in EQUIPMENT_EVALUATION_GRADE_BANDS:
+        if risk_evaluation_r >= min_r:
+            return grade, label
+    raise ValueError(f"危险评价 R={risk_evaluation_r} 不满足分级下限")
+
+
 # ── LEC 校验区间 ──
 LIKELIHOOD_MIN: Final[Decimal] = Decimal("0.1")
 LIKELIHOOD_MAX: Final[Decimal] = Decimal("10")
