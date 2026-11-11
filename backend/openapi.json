@@ -131608,6 +131608,32 @@
             "title": "Department",
             "description": "\u8d23\u4efb\u90e8\u95e8"
           },
+          "safety_officer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Officer Id",
+            "description": "\u5206\u7ba1\u5b89\u5168\u5458\uff08FK \u2192 identity.users\uff09"
+          },
+          "safety_officer_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Officer Name",
+            "description": "\u5206\u7ba1\u5b89\u5168\u5458\u59d3\u540d"
+          },
           "major_hazard_basis": {
             "anyOf": [
               {
@@ -131945,6 +131971,32 @@
             ],
             "title": "Department",
             "description": "\u8d23\u4efb\u90e8\u95e8"
+          },
+          "safety_officer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Officer Id",
+            "description": "\u5206\u7ba1\u5b89\u5168\u5458\uff08FK \u2192 identity.users\uff09"
+          },
+          "safety_officer_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Officer Name",
+            "description": "\u5206\u7ba1\u5b89\u5168\u5458\u59d3\u540d"
           },
           "major_hazard_basis": {
             "anyOf": [
@@ -132464,6 +132516,17 @@
             "type": "array",
             "title": "Rectification Responsible Persons",
             "description": "\u6574\u6539\u8d1f\u8d23\u4eba\uff08\u987a\u5e8f\u4e0e rectification_responsible_person_names \u4e00\u81f4\uff09"
+          },
+          "safety_officer_person": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "\u5206\u7ba1\u5b89\u5168\u5458\uff08\u542b\u5934\u50cf\uff09\uff1b\u672a\u5355\u72ec\u6307\u5b9a\u65f6\u7531\u8be6\u60c5\u9875\u6309\u8d23\u4efb\u90e8\u95e8\u914d\u7f6e\u56de\u9000"
           }
         },
         "type": "object",
@@ -132620,6 +132683,32 @@
             ],
             "title": "Department",
             "description": "\u8d23\u4efb\u90e8\u95e8"
+          },
+          "safety_officer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Officer Id",
+            "description": "\u5206\u7ba1\u5b89\u5168\u5458\uff08FK \u2192 identity.users\uff09"
+          },
+          "safety_officer_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Officer Name",
+            "description": "\u5206\u7ba1\u5b89\u5168\u5458\u59d3\u540d"
           },
           "inspector_department": {
             "anyOf": [

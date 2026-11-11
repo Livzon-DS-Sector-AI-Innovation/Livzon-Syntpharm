@@ -172,9 +172,13 @@ export async function getDepartmentLeader(departmentName: string): Promise<ApiRe
 }
 
 /** 根据部门名称查询分管安全员 */
-export async function getDepartmentSafetyOfficer(departmentName: string): Promise<ApiResponse<{ safety_officer_name: string }>> {
+export async function getDepartmentSafetyOfficer(
+  departmentName: string,
+): Promise<ApiResponse<{ safety_officer_name: string; safety_officer_id?: string | null }>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getDepartmentSafetyOfficer(departmentName, authHeaders) as Promise<ApiResponse<{ safety_officer_name: string }>>
+  return safetyApi.getDepartmentSafetyOfficer(departmentName, authHeaders) as Promise<
+    ApiResponse<{ safety_officer_name: string; safety_officer_id?: string | null }>
+  >
 }
 
 export async function createHazard(data: HazardReportFormData): Promise<ApiResponse<HazardReport>> {
@@ -285,12 +289,20 @@ export async function deleteHazards(ids: string[]) {
 
 export async function uploadHazardPhoto(id: string, file: File): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.uploadHazardPhoto(`/safety/hazards/${id}/upload-photo`, file, authHeaders) as Promise<ApiResponse<HazardReport>>
+  return safetyApi.uploadHazardPhoto(
+    `/api/v1/safety/hazards/${id}/upload-photo`,
+    file,
+    authHeaders,
+  ) as Promise<ApiResponse<HazardReport>>
 }
 
 export async function uploadRectificationPhoto(id: string, file: File): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.uploadHazardPhoto(`/safety/hazards/${id}/upload-rectification-photo`, file, authHeaders) as Promise<ApiResponse<HazardReport>>
+  return safetyApi.uploadHazardPhoto(
+    `/api/v1/safety/hazards/${id}/upload-rectification-photo`,
+    file,
+    authHeaders,
+  ) as Promise<ApiResponse<HazardReport>>
 }
 
 export async function runHazardAI(hazardId: string, scriptNumber: number): Promise<ApiResponse<HazardAiRunData>> {

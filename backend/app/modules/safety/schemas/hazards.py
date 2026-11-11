@@ -65,6 +65,8 @@ class HazardReportBase(BaseModel):
     inspector_department: str | None = Field(None, max_length=500, description="检查人员部门（Bitable 多选，逗号分隔）")
     discovered_at: datetime = Field(..., description="检查日期")
     department: str | None = Field(None, max_length=100, description="责任部门")
+    safety_officer_id: uuid.UUID | None = Field(None, description="分管安全员（FK → identity.users）")
+    safety_officer_name: str | None = Field(None, max_length=100, description="分管安全员姓名")
     major_hazard_basis: str | None = Field(None, description="隐患判定依据（AI）")
     key_defect: str | None = Field(None, description="隐患描述（AI）")
     defect_photos: str | None = Field(None, description="缺陷图片JSON数组")
@@ -113,6 +115,8 @@ class HazardReportUpdate(BaseModel):
     discovered_by_name: str | None = Field(None, max_length=100, description="检查人员姓名")
     discovered_at: datetime | None = Field(None, description="检查日期")
     department: str | None = Field(None, max_length=100, description="责任部门")
+    safety_officer_id: uuid.UUID | None = Field(None, description="分管安全员（FK → identity.users）")
+    safety_officer_name: str | None = Field(None, max_length=100, description="分管安全员姓名")
     inspector_department: str | None = Field(None, max_length=500, description="检查人员部门（Bitable 多选，逗号分隔）")
     major_hazard_basis: str | None = Field(None, description="隐患判定依据（AI）")
     key_defect: str | None = Field(None, description="隐患描述（AI）")
@@ -187,6 +191,9 @@ class HazardReportResponse(HazardReportBase):
     discovered_by_person: PersonRef | None = Field(None, description="检查人员/审批人（含头像）")
     rectification_responsible_persons: list[PersonRef] = Field(
         default_factory=list, description="整改负责人（顺序与 rectification_responsible_person_names 一致）"
+    )
+    safety_officer_person: PersonRef | None = Field(
+        None, description="分管安全员（含头像）；未单独指定时由详情页按责任部门配置回退"
     )
 
     class Config:
