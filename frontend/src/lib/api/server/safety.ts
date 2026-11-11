@@ -163,7 +163,7 @@ export async function getDepartmentSafetyOfficer(departmentName: string, authHea
 }
 
 export async function createHazard(data: unknown, authHeaders?: Record<string, string>) {
-  return apiFetch<HazardListApiResponse>('/api/v1/safety/hazards', {
+  return apiFetch<HazardApiResponse>('/api/v1/safety/hazards', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),

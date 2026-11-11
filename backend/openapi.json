@@ -940,7 +940,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "title": "Response List Departments Api V1 Identity Departments Get"
+                  "$ref": "#/components/schemas/DepartmentListApiResponse"
                 }
               }
             }
@@ -1000,7 +1000,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "title": "Response Get Department Api V1 Identity Departments  Dept Id  Get"
+                  "$ref": "#/components/schemas/DepartmentApiResponse"
                 }
               }
             }
@@ -1173,9 +1173,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Test Login Api V1 Identity Auth Test Login Post"
+                  "$ref": "#/components/schemas/TestLoginResponse"
                 }
               }
             }
@@ -1831,7 +1829,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "title": "Response List Login Logs Api V1 Identity Login Logs Get"
+                  "$ref": "#/components/schemas/LoginLogListApiResponse"
                 }
               }
             }
@@ -26919,7 +26917,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/HazardApiResponse"
+                  "$ref": "#/components/schemas/HazardDiagnoseApiResponse"
                 }
               }
             }
@@ -114090,6 +114088,33 @@
         "title": "DeliverableUploadResult",
         "description": "\u4ea4\u4ed8\u7269\u9644\u4ef6\u4e0a\u4f20\u7ed3\u679c"
       },
+      "DepartmentApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DepartmentApiResponse",
+        "description": "\u90e8\u95e8\u8be6\u60c5\u54cd\u5e94\u4fe1\u5c01\u3002"
+      },
       "DepartmentCreate": {
         "properties": {
           "name": {
@@ -114223,6 +114248,136 @@
         "title": "DepartmentLeaderResponse",
         "description": "\u90e8\u95e8\u8d1f\u8d23\u4eba\u67e5\u8be2\u54cd\u5e94"
       },
+      "DepartmentListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentListItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "DepartmentListApiResponse",
+        "description": "\u90e8\u95e8\u5217\u8868\u54cd\u5e94\u4fe1\u5c01\uff08`?tree=true` \u65f6\u4e3a\u6811\u5f62\u7ed3\u6784\uff09\u3002"
+      },
+      "DepartmentListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "feishu_department_id": {
+            "type": "string",
+            "title": "Feishu Department Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "parent_feishu_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Feishu Department Id"
+          },
+          "leader_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leader User Id"
+          },
+          "member_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Count"
+          },
+          "status_is_deleted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Is Deleted"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order"
+          },
+          "children": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentListItem"
+            },
+            "type": "array",
+            "title": "Children",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "feishu_department_id",
+          "name"
+        ],
+        "title": "DepartmentListItem",
+        "description": "\u90e8\u95e8\u5217\u8868\u9879\uff08`GET /identity/departments` \u7684 data \u5143\u7d20\uff09\u3002\n\n\u8be5\u7aef\u70b9\u4f20 `?tree=true` \u8fd4\u56de\u6811\u8282\u70b9\u3001\u5426\u5219\u8fd4\u56de\u6241\u5e73\u90e8\u95e8\uff0c\u4e24\u79cd\u7ed3\u6784\u5b57\u6bb5\u4e0d\u540c\u3002\n\u8fd9\u91cc\u7528\u4e24\u8005\u7684\u5e76\u96c6\u5efa\u4e00\u4e2a\u6a21\u578b\uff0c\u907f\u514d `list[TreeNode] | list[DepartmentResponse]`\n\u7684\u8054\u5408\u6821\u9a8c\uff1a\u8054\u5408\u547d\u4e2d\u54ea\u4e00\u4e2a\u90fd\u4f1a\u4e22\u6389\u53e6\u4e00\u5206\u652f\u7684\u5b57\u6bb5\uff08\u6811\u8282\u70b9\u4e22 `path`\uff0c\n\u6241\u5e73\u9879\u4e22 `children`\uff09\u3002"
+      },
       "DepartmentOption": {
         "properties": {
           "code": {
@@ -114266,6 +114421,96 @@
           "data"
         ],
         "title": "DepartmentOptionListResponse"
+      },
+      "DepartmentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "feishu_department_id": {
+            "type": "string",
+            "title": "Feishu Department Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "parent_feishu_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Feishu Department Id"
+          },
+          "leader_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leader User Id"
+          },
+          "member_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Count"
+          },
+          "status_is_deleted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Is Deleted"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "feishu_department_id",
+          "name"
+        ],
+        "title": "DepartmentResponse"
       },
       "DepartmentSafetyOfficerApiResponse": {
         "properties": {
@@ -129468,6 +129713,101 @@
         "title": "HazardCategoryUpdate",
         "description": "\u9690\u60a3\u7c7b\u522b\u6539\u540d\u8bf7\u6c42"
       },
+      "HazardDiagnoseApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HazardDiagnoseData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "HazardDiagnoseApiResponse",
+        "description": "Bitable \u6f0f\u5355\u8bca\u65ad\u54cd\u5e94\u5305\u88c5"
+      },
+      "HazardDiagnoseData": {
+        "properties": {
+          "cutoff_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cutoff Time",
+            "description": "\u68c0\u6d4b\u65f6\u95f4\u4e0b\u754c\uff08\u672c\u5730\u6700\u65b0 updated_at\uff0cISO \u683c\u5f0f\uff09"
+          },
+          "bitable_matched": {
+            "type": "integer",
+            "title": "Bitable Matched",
+            "description": "\u67e5\u8be2\u7a97\u53e3\u5185 Bitable \u8fd4\u56de\u7684\u8bb0\u5f55\u6570",
+            "default": 0
+          },
+          "local_total": {
+            "type": "integer",
+            "title": "Local Total",
+            "description": "\u672c\u5730\u5df2\u5173\u8054 feishu_record_id \u7684\u8bb0\u5f55\u6570",
+            "default": 0
+          },
+          "missed": {
+            "type": "integer",
+            "title": "Missed",
+            "description": "\u6f0f\u5355\u6570\uff1b-1 \u8868\u793a\u8bca\u65ad\u5931\u8d25",
+            "default": 0
+          },
+          "existing": {
+            "type": "integer",
+            "title": "Existing",
+            "description": "\u4e24\u8fb9\u90fd\u5b58\u5728\u7684\u8bb0\u5f55\u6570",
+            "default": 0
+          },
+          "missed_records": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Missed Records",
+            "description": "\u6f0f\u5355\u8be6\u60c5\uff08\u6700\u591a 50 \u6761\uff0cBitable \u539f\u59cb\u5b57\u6bb5\u503c\uff09"
+          },
+          "diagnostic_ran_at": {
+            "type": "string",
+            "title": "Diagnostic Ran At",
+            "description": "\u8bca\u65ad\u6267\u884c\u65f6\u95f4\uff08ISO \u683c\u5f0f\uff09"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error",
+            "description": "\u8bca\u65ad\u5931\u8d25\u539f\u56e0\uff1b\u6210\u529f\u65f6\u4e3a null"
+          }
+        },
+        "type": "object",
+        "required": [
+          "diagnostic_ran_at"
+        ],
+        "title": "HazardDiagnoseData",
+        "description": "Bitable \u6f0f\u5355\u8bca\u65ad\u7ed3\u679c\uff08`GET /hazards/catch-up/diagnose` \u7684 data\uff09\u3002\n\n\u5b57\u6bb5\u4e0e `feishu/catch_up.py:diagnose_missed_records()` \u7684\u8fd4\u56de dict \u4e00\u4e00\u5bf9\u5e94\uff1b\n\u6b64\u524d\u8be5\u7aef\u70b9\u8bef\u58f0\u660e\u4e3a `HazardApiResponse`\uff08\u9690\u60a3\u5355\u5bf9\u8c61\uff09\uff0c\u8bca\u65ad\u5b57\u6bb5\u4f1a\u88ab\u54cd\u5e94\u6821\u9a8c\u4e22\u5f03\u3002"
+      },
       "HazardIdentificationApiResponse": {
         "properties": {
           "code": {
@@ -142407,6 +142747,149 @@
           "message"
         ],
         "title": "LogItemModel"
+      },
+      "LoginLogListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LoginLogListResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "LoginLogListApiResponse",
+        "description": "\u767b\u5f55\u8bb0\u5f55\u5206\u9875\u54cd\u5e94\u4fe1\u5c01\u3002"
+      },
+      "LoginLogListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LoginLogResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "LoginLogListResponse"
+      },
+      "LoginLogResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "user_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Name"
+          },
+          "login_type": {
+            "type": "string",
+            "title": "Login Type"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "ip_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip Address"
+          },
+          "user_agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Agent"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "login_type",
+          "status",
+          "created_at"
+        ],
+        "title": "LoginLogResponse"
       },
       "LogsClearResponse": {
         "properties": {
@@ -176131,6 +176614,44 @@
           "status"
         ],
         "title": "TemplateUploadItem"
+      },
+      "TestLoginResponse": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "user": {
+            "$ref": "#/components/schemas/TestLoginUser"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "user"
+        ],
+        "title": "TestLoginResponse",
+        "description": "E2E \u6d4b\u8bd5\u767b\u5f55\u54cd\u5e94\u3002\n\n\u8be5\u7aef\u70b9\u53ea\u7ed9 e2e \u7528\u4f8b\u6362 token\uff0c\u8fd4\u56de\u4f53\u4e0d\u5e26 {code,data,message} \u4fe1\u5c01\uff0c\n\u56e0\u6b64\u6a21\u578b\u76f4\u63a5\u63cf\u8ff0 `{\"token\": ..., \"user\": ...}`\u3002"
+      },
+      "TestLoginUser": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "TestLoginUser",
+        "description": "E2E \u6d4b\u8bd5\u8d26\u53f7\u4fe1\u606f\u3002"
       },
       "TokenResponse": {
         "properties": {

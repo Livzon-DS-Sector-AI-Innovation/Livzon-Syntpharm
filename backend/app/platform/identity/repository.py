@@ -12,6 +12,16 @@ from app.platform.identity.models import (
 )
 
 
+def _like_pattern(keyword: str) -> str:
+    """构造 ILIKE 包含匹配模式。
+
+    用户输入里的 ``\\``、``%``、``_`` 都是 LIKE 元字符，直接拼进模式会被当成通配符；
+    这里统一转义，配合 ``escape="\\"`` 使用。
+    """
+    escaped = keyword.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
 class UserRepository:
     async def get_by_id(
         self,
@@ -290,12 +300,12 @@ class UserRepository:
         if keyword:
             # 选人下拉的搜索框：除了姓名，还要能按登录账号 / 工号 / 手机号搜到人，
             # 否则重名或只记得账号时根本找不到（NULL 参与 OR 结果为 NULL，会被 WHERE 自然过滤）。
-            pattern = f"%{keyword}%"
+            pattern = _like_pattern(keyword)
             keyword_filter = or_(
-                User.name.ilike(pattern),
-                User.username.ilike(pattern),
-                User.employee_no.ilike(pattern),
-                User.mobile.ilike(pattern),
+                User.name.ilike(pattern, escape="\\"),
+                User.username.ilike(pattern, escape="\\"),
+                User.employee_no.ilike(pattern, escape="\\"),
+                User.mobile.ilike(pattern, escape="\\"),
             )
             base = base.where(keyword_filter)
             count_stmt = count_stmt.where(keyword_filter)

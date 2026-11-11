@@ -28213,6 +28213,23 @@ export interface components {
              */
             file_size: number;
         };
+        /**
+         * DepartmentApiResponse
+         * @description 部门详情响应信封。
+         */
+        DepartmentApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DepartmentResponse"] | null;
+        };
         /** DepartmentCreate */
         DepartmentCreate: {
             /**
@@ -28285,6 +28302,61 @@ export interface components {
              */
             leader_id?: string | null;
         };
+        /**
+         * DepartmentListApiResponse
+         * @description 部门列表响应信封（`?tree=true` 时为树形结构）。
+         */
+        DepartmentListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["DepartmentListItem"][] | null;
+        };
+        /**
+         * DepartmentListItem
+         * @description 部门列表项（`GET /identity/departments` 的 data 元素）。
+         *
+         *     该端点传 `?tree=true` 返回树节点、否则返回扁平部门，两种结构字段不同。
+         *     这里用两者的并集建一个模型，避免 `list[TreeNode] | list[DepartmentResponse]`
+         *     的联合校验：联合命中哪一个都会丢掉另一分支的字段（树节点丢 `path`，
+         *     扁平项丢 `children`）。
+         */
+        DepartmentListItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Feishu Department Id */
+            feishu_department_id: string;
+            /** Name */
+            name: string;
+            /** Parent Feishu Department Id */
+            parent_feishu_department_id?: string | null;
+            /** Leader User Id */
+            leader_user_id?: string | null;
+            /** Member Count */
+            member_count?: number | null;
+            /** Status Is Deleted */
+            status_is_deleted?: boolean | null;
+            /** Path */
+            path?: string | null;
+            /** Order */
+            order?: number | null;
+            /**
+             * Children
+             * @default []
+             */
+            children: components["schemas"]["DepartmentListItem"][];
+        };
         /** DepartmentOption */
         DepartmentOption: {
             /** Code */
@@ -28306,6 +28378,30 @@ export interface components {
             message: string;
             /** Data */
             data: components["schemas"]["DepartmentOption"][];
+        };
+        /** DepartmentResponse */
+        DepartmentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Feishu Department Id */
+            feishu_department_id: string;
+            /** Name */
+            name: string;
+            /** Parent Feishu Department Id */
+            parent_feishu_department_id?: string | null;
+            /** Leader User Id */
+            leader_user_id?: string | null;
+            /** Member Count */
+            member_count?: number | null;
+            /** Status Is Deleted */
+            status_is_deleted?: boolean | null;
+            /** Path */
+            path?: string | null;
+            /** Order */
+            order?: number | null;
         };
         /**
          * DepartmentSafetyOfficerApiResponse
@@ -34514,6 +34610,78 @@ export interface components {
             name: string;
         };
         /**
+         * HazardDiagnoseApiResponse
+         * @description Bitable 漏单诊断响应包装
+         */
+        HazardDiagnoseApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["HazardDiagnoseData"];
+        };
+        /**
+         * HazardDiagnoseData
+         * @description Bitable 漏单诊断结果（`GET /hazards/catch-up/diagnose` 的 data）。
+         *
+         *     字段与 `feishu/catch_up.py:diagnose_missed_records()` 的返回 dict 一一对应；
+         *     此前该端点误声明为 `HazardApiResponse`（隐患单对象），诊断字段会被响应校验丢弃。
+         */
+        HazardDiagnoseData: {
+            /**
+             * Cutoff Time
+             * @description 检测时间下界（本地最新 updated_at，ISO 格式）
+             */
+            cutoff_time?: string | null;
+            /**
+             * Bitable Matched
+             * @description 查询窗口内 Bitable 返回的记录数
+             * @default 0
+             */
+            bitable_matched: number;
+            /**
+             * Local Total
+             * @description 本地已关联 feishu_record_id 的记录数
+             * @default 0
+             */
+            local_total: number;
+            /**
+             * Missed
+             * @description 漏单数；-1 表示诊断失败
+             * @default 0
+             */
+            missed: number;
+            /**
+             * Existing
+             * @description 两边都存在的记录数
+             * @default 0
+             */
+            existing: number;
+            /**
+             * Missed Records
+             * @description 漏单详情（最多 50 条，Bitable 原始字段值）
+             */
+            missed_records?: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Diagnostic Ran At
+             * @description 诊断执行时间（ISO 格式）
+             */
+            diagnostic_ran_at: string;
+            /**
+             * Error
+             * @description 诊断失败原因；成功时为 null
+             */
+            error?: string | null;
+        };
+        /**
          * HazardIdentificationApiResponse
          * @description Single hazard identification response wrapper
          */
@@ -39768,6 +39936,58 @@ export interface components {
              * @default -
              */
             request_id: string;
+        };
+        /**
+         * LoginLogListApiResponse
+         * @description 登录记录分页响应信封。
+         */
+        LoginLogListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["LoginLogListResponse"] | null;
+        };
+        /** LoginLogListResponse */
+        LoginLogListResponse: {
+            /** Items */
+            items: components["schemas"]["LoginLogResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** LoginLogResponse */
+        LoginLogResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** User Id */
+            user_id?: string | null;
+            /** User Name */
+            user_name?: string | null;
+            /** Login Type */
+            login_type: string;
+            /** Status */
+            status: string;
+            /** Ip Address */
+            ip_address?: string | null;
+            /** User Agent */
+            user_agent?: string | null;
+            /** Error Message */
+            error_message?: string | null;
+            /** Created At */
+            created_at: string;
         };
         /** LogsClearResponse */
         LogsClearResponse: {
@@ -54340,6 +54560,31 @@ export interface components {
             /** File Size */
             file_size?: string | null;
         };
+        /**
+         * TestLoginResponse
+         * @description E2E 测试登录响应。
+         *
+         *     该端点只给 e2e 用例换 token，返回体不带 {code,data,message} 信封，
+         *     因此模型直接描述 `{"token": ..., "user": ...}`。
+         */
+        TestLoginResponse: {
+            /** Token */
+            token: string;
+            user: components["schemas"]["TestLoginUser"];
+        };
+        /**
+         * TestLoginUser
+         * @description E2E 测试账号信息。
+         */
+        TestLoginUser: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
         /** TokenResponse */
         TokenResponse: {
             /** Access Token */
@@ -58446,7 +58691,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DepartmentListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58479,7 +58724,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DepartmentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58550,9 +58795,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["TestLoginResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58931,7 +59174,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["LoginLogListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71559,7 +71802,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardDiagnoseApiResponse"];
                 };
             };
             /** @description Validation Error */

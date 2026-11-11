@@ -266,6 +266,35 @@ class DepartmentSafetyOfficerApiResponse(BaseModel):
     data: DepartmentSafetyOfficerResponse | None = None
 
 
+class HazardDiagnoseData(BaseModel):
+    """Bitable 漏单诊断结果（`GET /hazards/catch-up/diagnose` 的 data）。
+
+    字段与 `feishu/catch_up.py:diagnose_missed_records()` 的返回 dict 一一对应；
+    此前该端点误声明为 `HazardApiResponse`（隐患单对象），诊断字段会被响应校验丢弃。
+    """
+
+    cutoff_time: str | None = Field(None, description="检测时间下界（本地最新 updated_at，ISO 格式）")
+    bitable_matched: int = Field(0, description="查询窗口内 Bitable 返回的记录数")
+    local_total: int = Field(0, description="本地已关联 feishu_record_id 的记录数")
+    missed: int = Field(0, description="漏单数；-1 表示诊断失败")
+    existing: int = Field(0, description="两边都存在的记录数")
+    # 漏单详情取 Bitable 原始字段值，列类型决定实际类型（日期为时间戳、人员列为数组），
+    # 因此保持字典结构：收紧成固定标量类型会让响应校验在真实数据上抛 500。
+    missed_records: list[dict[str, Any]] = Field(
+        default_factory=list, description="漏单详情（最多 50 条，Bitable 原始字段值）"
+    )
+    diagnostic_ran_at: str = Field(..., description="诊断执行时间（ISO 格式）")
+    error: str | None = Field(None, description="诊断失败原因；成功时为 null")
+
+
+class HazardDiagnoseApiResponse(BaseModel):
+    """Bitable 漏单诊断响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: HazardDiagnoseData
+
+
 class HazardVerifyNotifyData(BaseModel):
     """复核通知发送结果"""
 

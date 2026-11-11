@@ -27,6 +27,24 @@ class LocalLoginApiResponse(BaseModel):
     data: TokenResponse
 
 
+class TestLoginUser(BaseModel):
+    """E2E 测试账号信息。"""
+
+    id: UUID
+    name: str
+
+
+class TestLoginResponse(BaseModel):
+    """E2E 测试登录响应。
+
+    该端点只给 e2e 用例换 token，返回体不带 {code,data,message} 信封，
+    因此模型直接描述 `{"token": ..., "user": ...}`。
+    """
+
+    token: str
+    user: TestLoginUser
+
+
 class LocalLoginRequest(BaseModel):
     username: str = Field(..., min_length=1, max_length=255)
     password: str = Field(..., min_length=1, max_length=255)
@@ -275,6 +293,45 @@ class DepartmentTreeNode(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class DepartmentListItem(BaseModel):
+    """部门列表项（`GET /identity/departments` 的 data 元素）。
+
+    该端点传 `?tree=true` 返回树节点、否则返回扁平部门，两种结构字段不同。
+    这里用两者的并集建一个模型，避免 `list[TreeNode] | list[DepartmentResponse]`
+    的联合校验：联合命中哪一个都会丢掉另一分支的字段（树节点丢 `path`，
+    扁平项丢 `children`）。
+    """
+
+    id: UUID
+    feishu_department_id: str
+    name: str
+    parent_feishu_department_id: str | None = None
+    leader_user_id: str | None = None
+    member_count: int | None = None
+    status_is_deleted: bool | None = None
+    path: str | None = None
+    order: int | None = None
+    children: list["DepartmentListItem"] = []
+
+    model_config = {"from_attributes": True}
+
+
+class DepartmentListApiResponse(BaseModel):
+    """部门列表响应信封（`?tree=true` 时为树形结构）。"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[DepartmentListItem] | None = None
+
+
+class DepartmentApiResponse(BaseModel):
+    """部门详情响应信封。"""
+
+    code: int = 200
+    message: str = "success"
+    data: DepartmentResponse | None = None
+
+
 # ── Personnel ───────────────────────────────────────────────────────
 
 
@@ -373,6 +430,14 @@ class LoginLogListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class LoginLogListApiResponse(BaseModel):
+    """登录记录分页响应信封。"""
+
+    code: int = 200
+    message: str = "success"
+    data: LoginLogListResponse | None = None
 
 
 # ── Livzon Assistant Feishu Config ─────────────────────────────────
