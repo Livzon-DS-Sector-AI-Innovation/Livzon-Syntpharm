@@ -256,8 +256,8 @@ async def sync_org_departments(
             extra={
                 "biz_module": "hr",
                 "department_count": stats.total,
-                "created": stats.created,
-                "updated": stats.updated,
+                "created_count": stats.created,
+                "updated_count": stats.updated,
                 "hidden": stats.hidden,
                 "people_count": stats.people,
             },
