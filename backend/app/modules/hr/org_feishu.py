@@ -19,7 +19,6 @@ import httpx
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.core.secrets import decrypt_secret
 from app.modules.hr.feishu_values import int_value
 from app.modules.hr.org_domain import DEFAULT_SYNC_ROOT_DEPARTMENT_ID
@@ -53,7 +52,7 @@ REQUIRED_DETAIL_FIELDS = (
 
 
 async def load_hr_platform_credentials(session: AsyncSession) -> tuple[str, str]:
-    """Resolve the 主 Bot credentials from HR settings, then deployment env."""
+    """Resolve the 主 Bot credentials from HR system settings only; fail when unset."""
     app_id = ""
     app_secret = ""
     result = await session.execute(
@@ -73,13 +72,7 @@ async def load_hr_platform_credentials(session: AsyncSession) -> tuple[str, str]
         try:
             app_secret = decrypt_secret(str(raw_secret)).strip()
         except RuntimeError:
-            logger.warning("HR 组织同步：飞书 App Secret 解密失败，回退到部署配置")
-
-    settings = get_settings()
-    if not app_id:
-        app_id = settings.feishu.platform.app_id
-    if not app_secret:
-        app_secret = settings.feishu.platform.app_secret
+            raise RuntimeError("HR 组织同步：飞书 App Secret 解密失败，请在系统设置中重新保存") from None
 
     if not app_id or not app_secret:
         raise RuntimeError("HR 组织同步未配置飞书平台应用凭证（主 Bot App ID / App Secret）")
