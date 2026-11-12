@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, Drawer, Empty, Input, Table, Tag, message } from 'antd'
+import { Avatar, Button, Drawer, Empty, Input, Table, Tag, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { SearchOutlined } from '@ant-design/icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -124,9 +124,23 @@ export default function DepartmentOrgClient({ initialTree, initialStatus }: Depa
     },
     {
       title: '负责人',
-      width: 140,
-      dataIndex: 'leader_display',
-      render: (value: string) => value || '—',
+      width: 180,
+      render: (_value: unknown, record) => {
+        const names = record.leader_names ?? []
+        if (names.length === 0) return '—'
+        return (
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {names.map((name, index) => (
+              <span key={`${record.id}-leader-${index}`} className="inline-flex items-center gap-1.5">
+                <Avatar size={22} src={record.leader_avatars?.[index] || undefined} style={{ fontSize: 10 }}>
+                  {name.slice(0, 1)}
+                </Avatar>
+                <span>{name}</span>
+              </span>
+            ))}
+          </span>
+        )
+      },
     },
     {
       title: '查看',

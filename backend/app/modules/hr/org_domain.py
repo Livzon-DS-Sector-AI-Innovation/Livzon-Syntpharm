@@ -190,10 +190,13 @@ def _node(
     level: int,
     parent: OrgDepartmentRecord | None,
     leader_names: dict[str, str],
+    leader_avatars: dict[str, str],
     scope: OrgScope,
     children: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    resolved = [leader_names[leader_id] for leader_id in record.leader_ids if leader_names.get(leader_id)]
+    resolved_ids = [leader_id for leader_id in record.leader_ids if leader_names.get(leader_id)]
+    resolved = [leader_names[leader_id] for leader_id in resolved_ids]
+    avatars = [leader_avatars.get(leader_id, "") for leader_id in resolved_ids]
     return {
         "id": record.id,
         "name": record.name,
@@ -202,6 +205,7 @@ def _node(
         "parent_name": parent.name if parent else scope.department_name,
         "leader_ids": record.leader_ids,
         "leader_names": resolved,
+        "leader_avatars": avatars,
         "leader_display": "、".join(resolved) if resolved else "—",
         "recursive_members_count": record.recursive_members_count,
         "direct_members_count": record.direct_members_count,
@@ -220,6 +224,7 @@ def build_org_tree(
     records: list[OrgDepartmentRecord],
     *,
     leader_names: dict[str, str] | None = None,
+    leader_avatars: dict[str, str] | None = None,
     scope: OrgScope = DEFAULT_ORG_SCOPE,
 ) -> list[dict[str, Any]]:
     """Build the two-level tree: 一级部门 under the configured scope root.
@@ -229,6 +234,7 @@ def build_org_tree(
     is ignored.
     """
     names = leader_names or {}
+    avatars = leader_avatars or {}
     visible = [record for record in records if record.id and not record.hidden]
 
     level_one = sorted(
@@ -246,9 +252,27 @@ def build_org_tree(
     for parent in level_one:
         children = sorted(children_by_parent.get(parent.id or "", []), key=_sort_key)
         child_nodes = [
-            _node(child, level=SECOND_LEVEL, parent=parent, leader_names=names, scope=scope) for child in children
+            _node(
+                child,
+                level=SECOND_LEVEL,
+                parent=parent,
+                leader_names=names,
+                leader_avatars=avatars,
+                scope=scope,
+            )
+            for child in children
         ]
-        tree.append(_node(parent, level=ROOT_LEVEL, parent=None, leader_names=names, scope=scope, children=child_nodes))
+        tree.append(
+            _node(
+                parent,
+                level=ROOT_LEVEL,
+                parent=None,
+                leader_names=names,
+                leader_avatars=avatars,
+                scope=scope,
+                children=child_nodes,
+            )
+        )
     return tree
 
 
