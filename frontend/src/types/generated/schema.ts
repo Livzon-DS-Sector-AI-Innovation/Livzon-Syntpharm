@@ -13789,7 +13789,7 @@ export interface paths {
         post?: never;
         /**
          * 删除偏差
-         * @description 软删除，仅限「待AI分析」与「已取消」。
+         * @description 软删除：任意状态均可删除，仅标记删除位，数据仍可追溯。
          */
         delete: operations["delete_ledger_api_v1_quality_deviation_ledger__ledger_id__delete"];
         options?: never;
@@ -13827,8 +13827,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * 确认 AI 分析并进入调查
-         * @description 保存确认后的分析结果，状态推进到待调查。
+         * 保存 AI 分析结果
+         * @description 保存分析结果：只写库、不推进流程，流程由「提交调查报告」驱动。
          */
         post: operations["complete_ai_analysis_api_v1_quality_deviation_ledger__ledger_id__complete_ai_analysis_post"];
         delete?: never;
@@ -13857,6 +13857,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quality/deviation/ledger/{ledger_id}/investigation-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 追加调查记录（不流转）
+         * @description 审核阶段补充调查：只追加调查记录，不改变流程状态。
+         */
+        post: operations["append_investigation_record_api_v1_quality_deviation_ledger__ledger_id__investigation_records_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quality/deviation/ledger/{ledger_id}/review": {
         parameters: {
             query?: never;
@@ -13871,6 +13891,26 @@ export interface paths {
          * @description 按当前环节审核：通过推进下一环节，退回回到本环节并通知上报人。
          */
         post: operations["review_ledger_api_v1_quality_deviation_ledger__ledger_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation/ledger/{ledger_id}/cross-dept-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 跨部门逐行审批通过
+         * @description 该行审核人通过后仅完成该部门节点；全部跨部门行通过后进入所属 QA 审核。
+         */
+        post: operations["approve_cross_dept_row_api_v1_quality_deviation_ledger__ledger_id__cross_dept_review_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13993,6 +14033,94 @@ export interface paths {
          * @description 下载前校验附件归属该偏差；中文文件名按 RFC 5987 编码。
          */
         get: operations["download_attachment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation/ledger/{ledger_id}/attachments/{file_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 在线预览附件
+         * @description pdf / docx / 图片直出；``.doc`` 服务端转 docx 后返回（结果缓存到对象存储）。
+         */
+        get: operations["preview_attachment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation/ledger/{ledger_id}/attachments/{file_id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 附件批注列表
+         * @description 按时间正序返回该附件全部有效批注，并给出未处理条数。
+         */
+        get: operations["list_attachment_comments_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__comments_get"];
+        put?: never;
+        /**
+         * 新增附件批注
+         * @description 能查看该偏差即可留批注；已关闭 / 已取消的偏差拒绝写入。
+         */
+        post: operations["create_attachment_comment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__comments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation/ledger/{ledger_id}/attachments/{file_id}/comments/{comment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * 删除附件批注
+         * @description 软删除，仅作者本人或超管。
+         */
+        delete: operations["delete_attachment_comment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__comments__comment_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * 修改附件批注
+         * @description 改内容仅限作者或超管；标记已解决 / 重新打开对所有读者开放。
+         */
+        patch: operations["update_attachment_comment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__comments__comment_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/quality/deviation/ledger/{ledger_id}/attachment-comments/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 附件批注汇总
+         * @description 详情页附件角标：按附件聚合未处理 / 全部批注数。
+         */
+        get: operations["attachment_comment_summary_api_v1_quality_deviation_ledger__ledger_id__attachment_comments_summary_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -20693,6 +20821,207 @@ export interface components {
             message: string;
             data: components["schemas"]["AsyncJobState"];
         };
+        /** AttachmentCommentApiResponse */
+        AttachmentCommentApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["AttachmentCommentItem"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * AttachmentCommentCreateRequest
+         * @description 新增文档批注。
+         */
+        AttachmentCommentCreateRequest: {
+            /**
+             * Content
+             * @description 批注正文
+             */
+            content: string;
+            /**
+             * Page No
+             * @description 页码（1 起），文档级批注留空
+             */
+            page_no?: number | null;
+            /**
+             * Anchor Text
+             * @description 选中文本锚点（预留）
+             */
+            anchor_text?: string | null;
+        };
+        /**
+         * AttachmentCommentItem
+         * @description 一条文档批注。
+         */
+        AttachmentCommentItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Ledger Id
+             * Format: uuid
+             */
+            ledger_id: string;
+            /**
+             * File Id
+             * Format: uuid
+             */
+            file_id: string;
+            /** File Name */
+            file_name: string;
+            /**
+             * Page No
+             * @description 页码（1 起）
+             */
+            page_no?: number | null;
+            /** Anchor Text */
+            anchor_text?: string | null;
+            /** Content */
+            content: string;
+            /**
+             * Status
+             * @description open / resolved
+             * @default open
+             */
+            status: string;
+            /** Author Id */
+            author_id?: string | null;
+            /** Author Name */
+            author_name?: string | null;
+            /**
+             * Author Avatar
+             * @description 作者头像地址
+             */
+            author_avatar?: string | null;
+            /** Resolved By */
+            resolved_by?: string | null;
+            /** Resolved By Name */
+            resolved_by_name?: string | null;
+            /** Resolved At */
+            resolved_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AttachmentCommentListApiResponse */
+        AttachmentCommentListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["AttachmentCommentListData"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * AttachmentCommentListData
+         * @description 某附件的批注列表。
+         */
+        AttachmentCommentListData: {
+            /** Items */
+            items?: components["schemas"]["AttachmentCommentItem"][];
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Open Count
+             * @default 0
+             */
+            open_count: number;
+        };
+        /** AttachmentCommentSummaryApiResponse */
+        AttachmentCommentSummaryApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["AttachmentCommentSummaryData"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * AttachmentCommentSummaryData
+         * @description 详情页附件角标用的批注汇总。
+         */
+        AttachmentCommentSummaryData: {
+            /** Items */
+            items?: components["schemas"]["AttachmentCommentSummaryItem"][];
+        };
+        /**
+         * AttachmentCommentSummaryItem
+         * @description 单个附件的批注计数（未处理 / 全部）。
+         */
+        AttachmentCommentSummaryItem: {
+            /**
+             * File Id
+             * Format: uuid
+             */
+            file_id: string;
+            /**
+             * Open Count
+             * @default 0
+             */
+            open_count: number;
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * AttachmentCommentUpdateRequest
+         * @description 修改批注内容或处理状态（两者至少一个）。
+         */
+        AttachmentCommentUpdateRequest: {
+            /**
+             * Content
+             * @description 批注正文
+             */
+            content?: string | null;
+            /**
+             * Status
+             * @description 处理状态：open / resolved
+             */
+            status?: ("open" | "resolved") | null;
+        };
         /**
          * AttachmentItem
          * @description 附件元数据（二进制存 MinIO）。
@@ -22909,6 +23238,33 @@ export interface components {
             } | null;
         };
         /**
+         * CapaProposalItem
+         * @description CAPA 改进建议条目（内容简述 + 执行人 + 预计完成日期）。
+         */
+        CapaProposalItem: {
+            /**
+             * Sequence
+             * @description 序号，请求方不传时由服务端按顺序回填
+             * @default 0
+             */
+            sequence: number;
+            /**
+             * Summary
+             * @description CAPA 内容简述
+             */
+            summary: string;
+            /**
+             * Executor
+             * @description 执行人
+             */
+            executor?: string | null;
+            /**
+             * Expected Completion Date
+             * @description 预计完成日期
+             */
+            expected_completion_date?: string | null;
+        };
+        /**
          * CapaResponse
          * @description CAPA 响应
          */
@@ -23957,16 +24313,10 @@ export interface components {
         };
         /**
          * CompleteAiAnalysisRequest
-         * @description 确认 AI 分析结果并进入调查；可带人工修正后的内容。
+         * @description 保存 AI 分析结果：只落库，不流转流程。
          */
         CompleteAiAnalysisRequest: {
-            ai_analysis?: components["schemas"]["AiAnalysisData"] | null;
-            /**
-             * Content
-             * @description 确认说明
-             * @default
-             */
-            content: string;
+            ai_analysis: components["schemas"]["AiAnalysisData"];
         };
         /**
          * CompletionMethod
@@ -25714,8 +26064,25 @@ export interface components {
             unit: string;
         };
         /**
+         * CrossDeptApproveRequest
+         * @description 跨部门逐行审批请求体。
+         */
+        CrossDeptApproveRequest: {
+            /**
+             * Department
+             * @description 跨部门部门名（行标识）
+             */
+            department: string;
+            /**
+             * Opinion
+             * @description 审核意见（可选）
+             * @default
+             */
+            opinion: string;
+        };
+        /**
          * CrossDeptReviewerItem
-         * @description 跨部门调查配置：部门 + 调查人。
+         * @description 跨部门审核行：部门 + 行内调查人 + 逐行审核状态。
          */
         CrossDeptReviewerItem: {
             /** Department */
@@ -25724,6 +26091,56 @@ export interface components {
             investigator_ids?: string[];
             /** Investigator Names */
             investigator_names?: string[];
+            /**
+             * Reviewer Names
+             * @description 该行实际审核人（调查人为空时回退部门负责人）
+             */
+            reviewer_names?: string[];
+            /**
+             * Review State
+             * @description 行审核状态：pending / approved
+             * @default pending
+             */
+            review_state: string;
+            /** Approved By */
+            approved_by?: string | null;
+            /** Approved Name */
+            approved_name?: string | null;
+            /** Approved At */
+            approved_at?: string | null;
+            /**
+             * Opinion
+             * @description 该行审核意见
+             */
+            opinion?: string | null;
+            /**
+             * Can Approve
+             * @description 当前查看人可对该行执行通过操作
+             * @default false
+             */
+            can_approve: boolean;
+        };
+        /**
+         * CrossDeptStepSubItem
+         * @description 步骤条跨部门环节的逐行子节点。
+         */
+        CrossDeptStepSubItem: {
+            /** Department */
+            department: string;
+            /** Reviewer Names */
+            reviewer_names?: string[];
+            /**
+             * State
+             * @description pending / approved
+             * @default pending
+             */
+            state: string;
+            /** Approved By Name */
+            approved_by_name?: string | null;
+            /** Approved At */
+            approved_at?: string | null;
+            /** Opinion */
+            opinion?: string | null;
         };
         /** CurrentUserApiResponse */
         CurrentUserApiResponse: {
@@ -28434,6 +28851,23 @@ export interface components {
              */
             file_size: number;
         };
+        /**
+         * DepartmentApiResponse
+         * @description 部门详情响应信封。
+         */
+        DepartmentApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DepartmentResponse"] | null;
+        };
         /** DepartmentContactApiResponse */
         DepartmentContactApiResponse: {
             /**
@@ -28734,6 +29168,61 @@ export interface components {
              */
             leader_id?: string | null;
         };
+        /**
+         * DepartmentListApiResponse
+         * @description 部门列表响应信封（`?tree=true` 时为树形结构）。
+         */
+        DepartmentListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["DepartmentListItem"][] | null;
+        };
+        /**
+         * DepartmentListItem
+         * @description 部门列表项（`GET /identity/departments` 的 data 元素）。
+         *
+         *     该端点传 `?tree=true` 返回树节点、否则返回扁平部门，两种结构字段不同。
+         *     这里用两者的并集建一个模型，避免 `list[TreeNode] | list[DepartmentResponse]`
+         *     的联合校验：联合命中哪一个都会丢掉另一分支的字段（树节点丢 `path`，
+         *     扁平项丢 `children`）。
+         */
+        DepartmentListItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Feishu Department Id */
+            feishu_department_id: string;
+            /** Name */
+            name: string;
+            /** Parent Feishu Department Id */
+            parent_feishu_department_id?: string | null;
+            /** Leader User Id */
+            leader_user_id?: string | null;
+            /** Member Count */
+            member_count?: number | null;
+            /** Status Is Deleted */
+            status_is_deleted?: boolean | null;
+            /** Path */
+            path?: string | null;
+            /** Order */
+            order?: number | null;
+            /**
+             * Children
+             * @default []
+             */
+            children: components["schemas"]["DepartmentListItem"][];
+        };
         /** DepartmentOption */
         DepartmentOption: {
             /** Code */
@@ -28755,6 +29244,30 @@ export interface components {
             message: string;
             /** Data */
             data: components["schemas"]["DepartmentOption"][];
+        };
+        /** DepartmentResponse */
+        DepartmentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Feishu Department Id */
+            feishu_department_id: string;
+            /** Name */
+            name: string;
+            /** Parent Feishu Department Id */
+            parent_feishu_department_id?: string | null;
+            /** Leader User Id */
+            leader_user_id?: string | null;
+            /** Member Count */
+            member_count?: number | null;
+            /** Status Is Deleted */
+            status_is_deleted?: boolean | null;
+            /** Path */
+            path?: string | null;
+            /** Order */
+            order?: number | null;
         };
         /**
          * DepartmentSafetyOfficerApiResponse
@@ -34182,6 +34695,78 @@ export interface components {
             name: string;
         };
         /**
+         * HazardDiagnoseApiResponse
+         * @description Bitable 漏单诊断响应包装
+         */
+        HazardDiagnoseApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["HazardDiagnoseData"];
+        };
+        /**
+         * HazardDiagnoseData
+         * @description Bitable 漏单诊断结果（`GET /hazards/catch-up/diagnose` 的 data）。
+         *
+         *     字段与 `feishu/catch_up.py:diagnose_missed_records()` 的返回 dict 一一对应；
+         *     此前该端点误声明为 `HazardApiResponse`（隐患单对象），诊断字段会被响应校验丢弃。
+         */
+        HazardDiagnoseData: {
+            /**
+             * Cutoff Time
+             * @description 检测时间下界（本地最新 updated_at，ISO 格式）
+             */
+            cutoff_time?: string | null;
+            /**
+             * Bitable Matched
+             * @description 查询窗口内 Bitable 返回的记录数
+             * @default 0
+             */
+            bitable_matched: number;
+            /**
+             * Local Total
+             * @description 本地已关联 feishu_record_id 的记录数
+             * @default 0
+             */
+            local_total: number;
+            /**
+             * Missed
+             * @description 漏单数；-1 表示诊断失败
+             * @default 0
+             */
+            missed: number;
+            /**
+             * Existing
+             * @description 两边都存在的记录数
+             * @default 0
+             */
+            existing: number;
+            /**
+             * Missed Records
+             * @description 漏单详情（最多 50 条，Bitable 原始字段值）
+             */
+            missed_records?: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Diagnostic Ran At
+             * @description 诊断执行时间（ISO 格式）
+             */
+            diagnostic_ran_at: string;
+            /**
+             * Error
+             * @description 诊断失败原因；成功时为 null
+             */
+            error?: string | null;
+        };
+        /**
          * HazardIdentificationApiResponse
          * @description Single hazard identification response wrapper
          */
@@ -38488,11 +39073,48 @@ export interface components {
         };
         /**
          * InvestigationRecordItem
-         * @description 一条调查记录。
+         * @description 一条调查记录（结构化；旧记录仅 content，前端降级纯文本展示）。
          */
         InvestigationRecordItem: {
-            /** Content */
+            /**
+             * Content
+             * @description 旧格式纯文本内容；新记录为空串
+             * @default
+             */
             content: string;
+            /**
+             * Nonconformity Description
+             * @description 不符合事项描述
+             * @default
+             */
+            nonconformity_description: string;
+            /**
+             * Root Cause Analysis
+             * @description 根本原因分析
+             * @default
+             */
+            root_cause_analysis: string;
+            /**
+             * Risk Assessment
+             * @description 风险评估
+             * @default
+             */
+            risk_assessment: string;
+            /**
+             * Capa Proposals
+             * @description 改进建议（CAPA）
+             */
+            capa_proposals?: components["schemas"]["CapaProposalItem"][];
+            /**
+             * Urgent Measures
+             * @description 紧急处理措施（有值时黄色高亮展示）
+             */
+            urgent_measures?: string | null;
+            /**
+             * Attachments
+             * @description 记录级附件（台账附件引用快照）
+             */
+            attachments?: components["schemas"]["AttachmentItem"][];
             /** Author Id */
             author_id?: string | null;
             /** Author Name */
@@ -38507,14 +39129,39 @@ export interface components {
         };
         /**
          * InvestigationRequest
-         * @description 提交调查记录。
+         * @description 结构化调查记录（「提交调查」与「追加调查记录」共用）。
          */
         InvestigationRequest: {
             /**
-             * Content
-             * @description 调查内容
+             * Nonconformity Description
+             * @description 不符合事项描述
              */
-            content: string;
+            nonconformity_description: string;
+            /**
+             * Root Cause Analysis
+             * @description 根本原因分析
+             */
+            root_cause_analysis: string;
+            /**
+             * Risk Assessment
+             * @description 风险评估
+             */
+            risk_assessment: string;
+            /**
+             * Capa Proposals
+             * @description 改进建议（CAPA），至少一条
+             */
+            capa_proposals: components["schemas"]["CapaProposalItem"][];
+            /**
+             * Urgent Measures
+             * @description 紧急处理措施，勾选后必填
+             */
+            urgent_measures?: string | null;
+            /**
+             * Attachment File Ids
+             * @description 记录附件（已上传台账的 file_id）
+             */
+            attachment_file_ids?: string[];
         };
         /** InvoiceLineItem */
         InvoiceLineItem: {
@@ -39352,6 +39999,18 @@ export interface components {
              * @default false
              */
             editable: boolean;
+            /**
+             * Can Edit Investigation
+             * @description 调查人/上报人可否新增调查记录、上传或删除调查文档（调查中与审核阶段均开放）
+             * @default false
+             */
+            can_edit_investigation: boolean;
+            /**
+             * Can Edit Cross Dept
+             * @description 可否增删改跨部门行（基础信息可编辑；或待调查时由调查人+上报人动态添加审核节点）
+             * @default false
+             */
+            can_edit_cross_dept: boolean;
         };
         /** LedgerDetailApiResponse */
         LedgerDetailApiResponse: {
@@ -39692,6 +40351,11 @@ export interface components {
              * @default false
              */
             auto_skip: boolean;
+            /**
+             * Sub Items
+             * @description 跨部门环节逐行子节点（其余环节为空）
+             */
+            sub_items?: components["schemas"]["CrossDeptStepSubItem"][];
         };
         /** LedgerSummary */
         LedgerSummary: {
@@ -39714,7 +40378,7 @@ export interface components {
         };
         /**
          * LedgerUpdateRequest
-         * @description 基础信息修改（仅待 AI 分析 / 已退回状态可编辑）。
+         * @description 基础信息修改（待 AI 分析 / 已退回可改全部；待调查仅可改跨部门两字段）。
          */
         LedgerUpdateRequest: {
             /** Title */
@@ -39883,6 +40547,58 @@ export interface components {
              * @default -
              */
             request_id: string;
+        };
+        /**
+         * LoginLogListApiResponse
+         * @description 登录记录分页响应信封。
+         */
+        LoginLogListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["LoginLogListResponse"] | null;
+        };
+        /** LoginLogListResponse */
+        LoginLogListResponse: {
+            /** Items */
+            items: components["schemas"]["LoginLogResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** LoginLogResponse */
+        LoginLogResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** User Id */
+            user_id?: string | null;
+            /** User Name */
+            user_name?: string | null;
+            /** Login Type */
+            login_type: string;
+            /** Status */
+            status: string;
+            /** Ip Address */
+            ip_address?: string | null;
+            /** User Agent */
+            user_agent?: string | null;
+            /** Error Message */
+            error_message?: string | null;
+            /** Created At */
+            created_at: string;
         };
         /** LogsClearResponse */
         LogsClearResponse: {
@@ -55580,6 +56296,31 @@ export interface components {
             /** File Size */
             file_size?: string | null;
         };
+        /**
+         * TestLoginResponse
+         * @description E2E 测试登录响应。
+         *
+         *     该端点只给 e2e 用例换 token，返回体不带 {code,data,message} 信封，
+         *     因此模型直接描述 `{"token": ..., "user": ...}`。
+         */
+        TestLoginResponse: {
+            /** Token */
+            token: string;
+            user: components["schemas"]["TestLoginUser"];
+        };
+        /**
+         * TestLoginUser
+         * @description E2E 测试账号信息。
+         */
+        TestLoginUser: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
         /** TokenResponse */
         TokenResponse: {
             /** Access Token */
@@ -59897,7 +60638,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DepartmentListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59930,7 +60671,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DepartmentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60001,9 +60742,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["TestLoginResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60382,7 +61121,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["LoginLogListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73010,7 +73749,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardDiagnoseApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -94009,6 +94748,43 @@ export interface operations {
             };
         };
     };
+    append_investigation_record_api_v1_quality_deviation_ledger__ledger_id__investigation_records_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvestigationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["LedgerDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     review_ledger_api_v1_quality_deviation_ledger__ledger_id__review_post: {
         parameters: {
             query?: never;
@@ -94023,6 +94799,43 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["LedgerDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_cross_dept_row_api_v1_quality_deviation_ledger__ledger_id__cross_dept_review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrossDeptApproveRequest"];
             };
         };
         responses: {
@@ -94282,6 +95095,219 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_attachment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+                file_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_attachment_comments_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__comments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+                file_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AttachmentCommentListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_attachment_comment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__comments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+                file_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttachmentCommentCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AttachmentCommentApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_attachment_comment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__comments__comment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+                file_id: string;
+                comment_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DeleteResultApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_attachment_comment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__comments__comment_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+                file_id: string;
+                comment_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttachmentCommentUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AttachmentCommentApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attachment_comment_summary_api_v1_quality_deviation_ledger__ledger_id__attachment_comments_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AttachmentCommentSummaryApiResponse"];
                 };
             };
             /** @description Validation Error */

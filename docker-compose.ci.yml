@@ -6,6 +6,9 @@ services:
     # only builds when the named image is missing locally.
     # `build:` is kept on purpose: on a machine without the prebuilt image,
     # compose falls back to building exactly like before.
+    # Note: under GitHub Actions that fallback never runs — `scripts/ci.sh`
+    # fails hard when this image is missing, because it means the artifact
+    # hand-off broke and a silent rebuild would be masked (~3 min, invisible).
     image: frontend-production:latest
     build:
       context: ./frontend
@@ -31,7 +34,8 @@ services:
     # Same pattern as ci-build: the `backend-image` CI job builds and saves this
     # image, the `e2e` job loads it. When it is absent (local run, or the
     # artifact is unavailable), `build:` produces it in place — the old
-    # behaviour — so this is a pure speed-up, never a new failure mode.
+    # behaviour — so this is a pure speed-up, never a new failure mode
+    # (`scripts/ci.sh` only logs a warning for a missing backend image).
     image: dazah-backend:latest
     build: ./backend
     volumes:

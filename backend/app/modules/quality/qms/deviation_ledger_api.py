@@ -20,12 +20,18 @@ from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import ApiResponse, build_response
 
 from .deviation_ledger_schemas import (
+    AttachmentCommentApiResponse,
+    AttachmentCommentCreateRequest,
+    AttachmentCommentListApiResponse,
+    AttachmentCommentSummaryApiResponse,
+    AttachmentCommentUpdateRequest,
     AttachmentListApiResponse,
     AttachmentListData,
     BatchResultApiResponse,
     BatchResultData,
     BatchStatusRequest,
     CompleteAiAnalysisRequest,
+    CrossDeptApproveRequest,
     DeleteResultApiResponse,
     DeleteResultData,
     FinalCodeRequest,
@@ -205,6 +211,7 @@ async def update_ledger(
         payload,
         actor_id=current_user.id,
         actor_name=current_user.name or "-",
+        actor_is_superuser=_is_superuser(ctx),
     )
     return build_response(data=detail, message="保存成功")
 
@@ -216,7 +223,7 @@ async def delete_ledger(
     ctx: PermissionContext = Depends(require_permission(_DELETE)),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    """软删除，仅限「待AI分析」与「已取消」。"""
+    """软删除：任意状态均可删除，仅标记删除位，数据仍可追溯。"""
     service = DeviationLedgerService(db)
     await service.delete(ledger_id, actor_id=current_user.id)
     return build_response(data=DeleteResultData(id=ledger_id), message="删除成功")
@@ -240,7 +247,7 @@ async def generate_ai_analysis(
 @router.post(
     "/{ledger_id}/complete-ai-analysis",
     response_model=LedgerDetailApiResponse,
-    summary="确认 AI 分析并进入调查",
+    summary="保存 AI 分析结果",
 )
 async def complete_ai_analysis(
     ledger_id: UUID,
@@ -249,16 +256,16 @@ async def complete_ai_analysis(
     ctx: PermissionContext = Depends(require_permission(_UPDATE)),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    """保存确认后的分析结果，状态推进到待调查。"""
+    """保存分析结果：只写库、不推进流程，流程由「提交调查报告」驱动。"""
     service = DeviationLedgerService(db)
-    detail = await service.complete_ai_analysis(
+    detail = await service.save_ai_analysis(
         ledger_id,
         payload,
         actor_id=current_user.id,
         actor_name=current_user.name or "-",
         actor_is_superuser=_is_superuser(ctx),
     )
-    return build_response(data=detail, message="已进入调查环节")
+    return build_response(data=detail, message="分析结果已保存")
 
 
 @router.post("/{ledger_id}/investigation", response_model=LedgerDetailApiResponse, summary="提交调查")
@@ -281,6 +288,30 @@ async def submit_investigation(
     return build_response(data=detail, message="调查已提交")
 
 
+@router.post(
+    "/{ledger_id}/investigation-records",
+    response_model=LedgerDetailApiResponse,
+    summary="追加调查记录（不流转）",
+)
+async def append_investigation_record(
+    ledger_id: UUID,
+    payload: InvestigationRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_SUBMIT)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """审核阶段补充调查：只追加调查记录，不改变流程状态。"""
+    service = DeviationLedgerService(db)
+    detail = await service.append_investigation_record(
+        ledger_id,
+        payload,
+        actor_id=current_user.id,
+        actor_name=current_user.name or "-",
+        actor_is_superuser=_is_superuser(ctx),
+    )
+    return build_response(data=detail, message="调查记录已追加")
+
+
 @router.post("/{ledger_id}/review", response_model=LedgerDetailApiResponse, summary="审核通过 / 退回")
 async def review_ledger(
     ledger_id: UUID,
@@ -300,6 +331,31 @@ async def review_ledger(
     )
     message = "已通过" if payload.result == "approved" else "已退回"
     return build_response(data=detail, message=message)
+
+
+@router.post(
+    "/{ledger_id}/cross-dept-review",
+    response_model=LedgerDetailApiResponse,
+    summary="跨部门逐行审批通过",
+)
+async def approve_cross_dept_row(
+    ledger_id: UUID,
+    payload: CrossDeptApproveRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_APPROVE)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """该行审核人通过后仅完成该部门节点；全部跨部门行通过后进入所属 QA 审核。"""
+    service = DeviationLedgerService(db)
+    detail = await service.approve_cross_dept(
+        ledger_id,
+        payload,
+        actor_id=current_user.id,
+        actor_name=current_user.name or "-",
+        actor_is_superuser=_is_superuser(ctx),
+    )
+    advanced = detail.current_step != "cross_dept_head_review"
+    return build_response(data=detail, message="该部门已审核通过" + ("，跨部门审核全部完成" if advanced else ""))
 
 
 @router.post("/{ledger_id}/resubmit", response_model=LedgerDetailApiResponse, summary="退回后重新提交")
@@ -377,6 +433,7 @@ async def upload_attachment(
         file,
         actor_id=current_user.id,
         actor_name=current_user.name or "-",
+        actor_is_superuser=_is_superuser(ctx),
     )
     return build_response(data=detail, message="附件已上传")
 
@@ -395,7 +452,12 @@ async def delete_attachment(
 ) -> ApiResponse:
     """删除附件元数据并清理对象存储。"""
     service = DeviationLedgerService(db)
-    detail = await service.remove_attachment(ledger_id, file_id, actor_id=current_user.id)
+    detail = await service.remove_attachment(
+        ledger_id,
+        file_id,
+        actor_id=current_user.id,
+        actor_is_superuser=_is_superuser(ctx),
+    )
     return build_response(data=detail, message="附件已删除")
 
 
@@ -439,3 +501,140 @@ async def list_attachments(
     service = DeviationLedgerService(db)
     detail = await service.get_detail(ledger_id, viewer_id=current_user.id)
     return build_response(data=AttachmentListData(items=detail.attachments))
+
+
+@router.get(
+    "/{ledger_id}/attachments/{file_id}/preview",
+    summary="在线预览附件",
+    response_model=None,
+)
+async def preview_attachment(
+    ledger_id: UUID,
+    file_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    """pdf / docx / 图片直出；``.doc`` 服务端转 docx 后返回（结果缓存到对象存储）。"""
+    service = DeviationLedgerService(db)
+    file_name, content, content_type = await service.get_attachment_preview(ledger_id, file_id)
+    return StreamingResponse(
+        BytesIO(content),
+        media_type=content_type,
+        headers={
+            "Content-Disposition": f"inline; filename*=UTF-8''{quote(file_name)}",
+            "Content-Length": str(len(content)),
+            "Cache-Control": "private, max-age=600",
+        },
+    )
+
+
+@router.get(
+    "/{ledger_id}/attachments/{file_id}/comments",
+    response_model=AttachmentCommentListApiResponse,
+    summary="附件批注列表",
+)
+async def list_attachment_comments(
+    ledger_id: UUID,
+    file_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """按时间正序返回该附件全部有效批注，并给出未处理条数。"""
+    service = DeviationLedgerService(db)
+    return build_response(data=await service.list_attachment_comments(ledger_id, file_id))
+
+
+@router.post(
+    "/{ledger_id}/attachments/{file_id}/comments",
+    response_model=AttachmentCommentApiResponse,
+    summary="新增附件批注",
+)
+async def create_attachment_comment(
+    ledger_id: UUID,
+    file_id: UUID,
+    payload: AttachmentCommentCreateRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """能查看该偏差即可留批注；已关闭 / 已取消的偏差拒绝写入。"""
+    service = DeviationLedgerService(db)
+    item = await service.add_attachment_comment(
+        ledger_id,
+        file_id,
+        payload,
+        actor_id=current_user.id,
+        actor_name=current_user.name or "-",
+    )
+    return build_response(data=item, message="批注已添加")
+
+
+@router.patch(
+    "/{ledger_id}/attachments/{file_id}/comments/{comment_id}",
+    response_model=AttachmentCommentApiResponse,
+    summary="修改附件批注",
+)
+async def update_attachment_comment(
+    ledger_id: UUID,
+    file_id: UUID,
+    comment_id: UUID,
+    payload: AttachmentCommentUpdateRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """改内容仅限作者或超管；标记已解决 / 重新打开对所有读者开放。"""
+    service = DeviationLedgerService(db)
+    item = await service.update_attachment_comment(
+        ledger_id,
+        file_id,
+        comment_id,
+        payload,
+        actor_id=current_user.id,
+        actor_name=current_user.name or "-",
+        actor_is_superuser=_is_superuser(ctx),
+    )
+    return build_response(data=item, message="批注已更新")
+
+
+@router.delete(
+    "/{ledger_id}/attachments/{file_id}/comments/{comment_id}",
+    response_model=DeleteResultApiResponse,
+    summary="删除附件批注",
+)
+async def delete_attachment_comment(
+    ledger_id: UUID,
+    file_id: UUID,
+    comment_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """软删除，仅作者本人或超管。"""
+    service = DeviationLedgerService(db)
+    result = await service.delete_attachment_comment(
+        ledger_id,
+        file_id,
+        comment_id,
+        actor_id=current_user.id,
+        actor_is_superuser=_is_superuser(ctx),
+    )
+    return build_response(data=result, message="批注已删除")
+
+
+@router.get(
+    "/{ledger_id}/attachment-comments/summary",
+    response_model=AttachmentCommentSummaryApiResponse,
+    summary="附件批注汇总",
+)
+async def attachment_comment_summary(
+    ledger_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """详情页附件角标：按附件聚合未处理 / 全部批注数。"""
+    service = DeviationLedgerService(db)
+    return build_response(data=await service.attachment_comment_summary(ledger_id))

@@ -1304,6 +1304,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:permission:read", "GET", "/api/v1/permission/permissions"),
     # 权限树只服务于「角色管理」勾选权限，跟随 role:read（与端点 require_permission 对齐）
     ApiBindingDef("platform:role:read", "GET", "/api/v1/permission/tree"),
+    # 单权限码接口清单同样跟随 role:read（与端点 require_permission 对齐）
+    ApiBindingDef("platform:role:read", "GET", "/api/v1/permission/permissions/{code}/api-bindings"),
     ApiBindingDef("platform:api-binding:read", "GET", "/api/v1/permission/api-bindings"),
     # 授权管理
     ApiBindingDef("platform:grant:read", "GET", "/api/v1/permission/departments"),
@@ -2454,6 +2456,12 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "/api/v1/quality/deviation/ledger/{id}/complete-ai-analysis",
     ),
     ApiBindingDef("quality:deviation:submit", "POST", "/api/v1/quality/deviation/ledger/{id}/investigation"),
+    ApiBindingDef("quality:deviation:submit", "POST", "/api/v1/quality/deviation/ledger/{id}/investigation-records"),
+    ApiBindingDef(
+        "quality:deviation:approve",
+        "POST",
+        "/api/v1/quality/deviation/ledger/{id}/cross-dept-review",
+    ),
     ApiBindingDef("quality:deviation:approve", "POST", "/api/v1/quality/deviation/ledger/{id}/review"),
     ApiBindingDef("quality:deviation:submit", "POST", "/api/v1/quality/deviation/ledger/{id}/resubmit"),
     ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/ledger/{id}/final-code"),
@@ -2469,6 +2477,37 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "quality:deviation:read",
         "GET",
         "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/download",
+    ),
+    ApiBindingDef(
+        "quality:deviation:read",
+        "GET",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/preview",
+    ),
+    # 文档批注：能查看该偏差即可读写批注（改正文限作者/超管，在 service 层判定）
+    ApiBindingDef(
+        "quality:deviation:read",
+        "GET",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/comments",
+    ),
+    ApiBindingDef(
+        "quality:deviation:read",
+        "POST",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/comments",
+    ),
+    ApiBindingDef(
+        "quality:deviation:read",
+        "PATCH",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/comments/{comment_id}",
+    ),
+    ApiBindingDef(
+        "quality:deviation:read",
+        "DELETE",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/comments/{comment_id}",
+    ),
+    ApiBindingDef(
+        "quality:deviation:read",
+        "GET",
+        "/api/v1/quality/deviation/ledger/{id}/attachment-comments/summary",
     ),
     # 偏差组织配置：部门联系人 / 通知设置 / 部门周确认
     ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/department-contacts"),

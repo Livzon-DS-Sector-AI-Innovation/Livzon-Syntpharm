@@ -29,6 +29,8 @@ from app.platform.identity.schemas import (
     ChangePasswordData,
     ChangePasswordRequest,
     CurrentUserApiResponse,
+    DepartmentApiResponse,
+    DepartmentListApiResponse,
     DepartmentResponse,
     DepartmentTreeNode,
     FeishuBindRequest,
@@ -38,6 +40,7 @@ from app.platform.identity.schemas import (
     LocalLoginApiResponse,
     LocalLoginRequest,
     LocalUserCreate,
+    LoginLogListApiResponse,
     PasswordResetApiResponse,
     PasswordResetData,
     PasswordResetRequest,
@@ -50,6 +53,8 @@ from app.platform.identity.schemas import (
     SyncDepartmentsTriggerApiResponse,
     SyncMembersTriggerApiResponse,
     SyncUserInfoTriggerApiResponse,
+    TestLoginResponse,
+    TestLoginUser,
     TokenResponse,
     UserBatchFailure,
     UserBatchStatusApiResponse,
@@ -99,12 +104,12 @@ def _client_ip(request: Request) -> str | None:
 # ── Auth (SSO) ──────────────────────────────────────────────────────
 
 
-@auth_router.post("/test-login", summary="E2E 测试登录（仅开发/测试环境）")
+@auth_router.post("/test-login", summary="E2E 测试登录（仅开发/测试环境）", response_model=TestLoginResponse)
 async def test_login(
     db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
     x_e2e_secret: str | None = Header(None, alias="X-E2E-Secret"),
-) -> dict[str, Any]:
+) -> TestLoginResponse:
     """Return a JWT for the e2e test user. Requires APP_ENV=test/e2e + X-E2E-Secret header."""
     if settings.APP_ENV not in ("test", "e2e"):
         raise AppException(status_code=404)
@@ -126,7 +131,7 @@ async def test_login(
         await ensure_superadmin(db, user.username)
     await db.commit()
     token = generate_jwt(user)
-    return {"token": token, "user": {"id": str(user.id), "name": user.name}}
+    return TestLoginResponse(token=token, user=TestLoginUser(id=user.id, name=user.name))
 
 
 @auth_router.post("/local/login", summary="本地账号密码登录", response_model=LocalLoginApiResponse)
@@ -400,7 +405,7 @@ def _build_department_tree(
     return result
 
 
-@dept_router.get("", summary="获取部门列表 / 组织架构树")
+@dept_router.get("", summary="获取部门列表 / 组织架构树", response_model=DepartmentListApiResponse)
 async def list_departments(
     current_user: RequiredUser,
     tree: bool = Query(False, description="是否返回树形结构"),
@@ -419,7 +424,7 @@ async def list_departments(
     )
 
 
-@dept_router.get("/{dept_id}", summary="获取部门详情")
+@dept_router.get("/{dept_id}", summary="获取部门详情", response_model=DepartmentApiResponse)
 async def get_department(
     dept_id: str,
     current_user: RequiredUser,
@@ -615,7 +620,7 @@ async def test_feishu_config(
 login_log_router = APIRouter(prefix="/login-logs", tags=["登录记录"])
 
 
-@login_log_router.get("", summary="查询登录记录")
+@login_log_router.get("", summary="查询登录记录", response_model=LoginLogListApiResponse)
 async def list_login_logs(
     ctx: PermissionContext = Depends(require_permission("platform:audit:read")),
     status: str | None = Query(None, description="筛选状态：success / failed"),

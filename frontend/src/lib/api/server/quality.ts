@@ -23,7 +23,11 @@ import type {
   DepartmentContactListData,
   DepartmentMemberOption,
   DeviationAiAnalysisInput,
+  DeviationAttachmentComment,
+  DeviationAttachmentCommentCreateInput,
+  DeviationAttachmentCommentUpdateInput,
   DeviationBatchResult,
+  DeviationCrossDeptApproveInput,
   DeviationFinalCodeInput,
   DeviationInvestigationInput,
   DeviationLedgerBatchStatusInput,
@@ -37,7 +41,6 @@ import type {
   DeviationNotifySettings,
   DeviationNotifySettingsUpdate,
   DeviationNotifyTestResult,
-  DeviationReportSaveInput,
   DeviationResubmitInput,
   DeviationReviewInput,
   WeeklyConfirmationInput,
@@ -846,7 +849,7 @@ export async function startDeviationAiAnalysis(id: string): Promise<DeviationLed
   })
 }
 
-/** 确认保存 AI 分析并转入调查 */
+/** 保存 AI 分析结果（只落库，不流转流程） */
 export async function completeDeviationAiAnalysis(
   id: string,
   data: DeviationAiAnalysisInput,
@@ -863,6 +866,28 @@ export async function submitDeviationInvestigation(
   data: DeviationInvestigationInput,
 ): Promise<DeviationLedgerDetail> {
   return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/investigation`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 审核阶段追加调查记录（不推进流程） */
+export async function appendDeviationInvestigationRecord(
+  id: string,
+  data: DeviationInvestigationInput,
+): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/investigation-records`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 跨部门会签：逐行审批（任一审核人通过即该行通过，全部行通过后流转所属QA审核） */
+export async function approveDeviationCrossDeptRow(
+  id: string,
+  data: DeviationCrossDeptApproveInput,
+): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/cross-dept-review`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -901,17 +926,6 @@ export async function submitDeviationFinalCode(
   })
 }
 
-/** 保存调查报告正文（追加版本） */
-export async function saveDeviationReport(
-  id: string,
-  data: DeviationReportSaveInput,
-): Promise<DeviationLedgerDetail> {
-  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/report`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  })
-}
-
 /** 上传附件 */
 export async function uploadDeviationAttachment(
   id: string,
@@ -934,6 +948,42 @@ export async function deleteDeviationAttachment(
   )
 }
 
+/** 新增附件批注 */
+export async function createDeviationAttachmentComment(
+  id: string,
+  fileId: string,
+  data: DeviationAttachmentCommentCreateInput,
+): Promise<DeviationAttachmentComment> {
+  return apiFetchData<DeviationAttachmentComment>(
+    `/api/v1/quality/deviation/ledger/${id}/attachments/${fileId}/comments`,
+    { method: 'POST', body: JSON.stringify(data) },
+  )
+}
+
+/** 修改附件批注（正文或处理状态） */
+export async function updateDeviationAttachmentComment(
+  id: string,
+  fileId: string,
+  commentId: string,
+  data: DeviationAttachmentCommentUpdateInput,
+): Promise<DeviationAttachmentComment> {
+  return apiFetchData<DeviationAttachmentComment>(
+    `/api/v1/quality/deviation/ledger/${id}/attachments/${fileId}/comments/${commentId}`,
+    { method: 'PATCH', body: JSON.stringify(data) },
+  )
+}
+
+/** 删除附件批注（软删除，仅作者/超管） */
+export async function deleteDeviationAttachmentComment(
+  id: string,
+  fileId: string,
+  commentId: string,
+): Promise<{ id: string; deleted: boolean } | null> {
+  return fetchDeleteOrNull<{ id: string; deleted: boolean }>(
+    `/api/v1/quality/deviation/ledger/${id}/attachments/${fileId}/comments/${commentId}`,
+  )
+}
+
 /** 批量更新状态 */
 export async function batchUpdateDeviationStatus(
   data: DeviationLedgerBatchStatusInput,
@@ -944,7 +994,7 @@ export async function batchUpdateDeviationStatus(
   })
 }
 
-/** 删除偏差（仅待 AI 分析 / 已取消，软删除） */
+/** 删除偏差（任意状态软删除，数据仍可追溯） */
 export async function removeDeviationLedger(id: string): Promise<void> {
   await apiFetchRaw(`/api/v1/quality/deviation/ledger/${id}`, { method: 'DELETE' })
 }

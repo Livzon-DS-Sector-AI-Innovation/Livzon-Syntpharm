@@ -38,6 +38,7 @@ export function FlowPanel({ ledger }: FlowPanelProps) {
           items={steps.map((step, index) => {
             const applicable = step.applicable !== false
             const handlers = step.handlers ?? []
+            const subItems = step.sub_items ?? []
             const description = !applicable ? (
               step.skip_reason ?? '本环节不适用'
             ) : handlers.length > 0 ? (
@@ -59,7 +60,26 @@ export function FlowPanel({ ledger }: FlowPanelProps) {
                   )}
                 </span>
               ),
-              content: <span className="text-[12px] text-[var(--color-slate)]">{description}</span>,
+              content: (
+                <span className="flex flex-col gap-1 text-[12px] text-[var(--color-slate)]">
+                  <span>{description}</span>
+                  {subItems.map((row) => (
+                    <span key={row.department} className="flex flex-wrap items-center gap-1">
+                      <Tag color={row.state === 'approved' ? 'success' : 'gold'} className="!mr-0">
+                        {row.department}
+                      </Tag>
+                      <span className="truncate">{(row.reviewer_names ?? []).join('、') || '部门负责人'}</span>
+                      {row.state === 'approved' ? (
+                        <span className="text-[var(--color-success)]">
+                          已通过{row.approved_by_name ? ` · ${row.approved_by_name}` : ''}
+                        </span>
+                      ) : (
+                        <span>待审核</span>
+                      )}
+                    </span>
+                  ))}
+                </span>
+              ),
               status: applicable ? stepStatus(ledger, index) : ('wait' as const),
             }
           })}

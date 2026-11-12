@@ -14,6 +14,9 @@ type HazardRectificationNotifyData = components['schemas']['HazardRectificationN
 type RegulationContentUpdateData = components['schemas']['RegulationContentUpdateData']
 type HazardAiRunData = components['schemas']['HazardAiRunData']
 type HazardCategoryApiResponse = components['schemas']['HazardCategoryApiResponse']
+type DepartmentLeaderResponse = components['schemas']['DepartmentLeaderResponse']
+type DepartmentSafetyOfficerResponse = components['schemas']['DepartmentSafetyOfficerResponse']
+type VerifyMonitorRequest = components['schemas']['VerifyMonitorRequest']
 import type {
   AccidentFormData,
   AccidentQueryParams,
@@ -166,19 +169,20 @@ export async function getHazard(id: string): Promise<ApiResponse<HazardReport>> 
 }
 
 /** 根据部门名称查询部门负责人 */
-export async function getDepartmentLeader(departmentName: string): Promise<ApiResponse<{ leader_name: string; leader_id: string }>> {
+export async function getDepartmentLeader(departmentName: string): Promise<ApiResponse<DepartmentLeaderResponse>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getDepartmentLeader(departmentName, authHeaders) as Promise<ApiResponse<{ leader_name: string; leader_id: string }>>
+  return safetyApi.getDepartmentLeader(departmentName, authHeaders) as Promise<ApiResponse<DepartmentLeaderResponse>>
 }
 
 /** 根据部门名称查询分管安全员 */
 export async function getDepartmentSafetyOfficer(
   departmentName: string,
-): Promise<ApiResponse<{ safety_officer_name: string; safety_officer_id?: string | null }>> {
+): Promise<ApiResponse<DepartmentSafetyOfficerResponse>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getDepartmentSafetyOfficer(departmentName, authHeaders) as Promise<
-    ApiResponse<{ safety_officer_name: string; safety_officer_id?: string | null }>
-  >
+  return safetyApi.getDepartmentSafetyOfficer(
+    departmentName,
+    authHeaders,
+  ) as Promise<ApiResponse<DepartmentSafetyOfficerResponse>>
 }
 
 export async function createHazard(data: HazardReportFormData): Promise<ApiResponse<HazardReport>> {
@@ -1475,7 +1479,7 @@ export async function completeMonitor(id: string): Promise<ApiResponse<OhHazardM
   return res as unknown as ApiResponse<OhHazardMonitor>
 }
 
-export async function verifyMonitor(id: string, data: { verified_by?: string; comments?: string }): Promise<ApiResponse<OhHazardMonitor>> {
+export async function verifyMonitor(id: string, data: VerifyMonitorRequest): Promise<ApiResponse<OhHazardMonitor>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.verifyMonitor(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')

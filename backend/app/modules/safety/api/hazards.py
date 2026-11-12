@@ -32,6 +32,7 @@ from app.modules.safety.schemas import (
     HazardCategoryListApiResponse,
     HazardCategoryResponse,
     HazardCategoryUpdate,
+    HazardDiagnoseApiResponse,
     HazardListApiResponse,
     HazardRectificationNotifyApiResponse,
     HazardRectificationNotifyData,
@@ -691,7 +692,7 @@ async def handler(  # noqa: F811
 
 @hazards_router.get(  # type: ignore[no-redef]
     "/hazards/catch-up/diagnose",
-    response_model=HazardApiResponse,
+    response_model=HazardDiagnoseApiResponse,
     summary="Bitable 漏单诊断",
 )
 async def handler(  # noqa: F811
