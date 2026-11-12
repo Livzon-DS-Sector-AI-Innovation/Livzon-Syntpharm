@@ -1,15 +1,18 @@
 'use client'
 
-import { useDeferredValue, useMemo, useState } from 'react'
-import { Avatar, Drawer, Empty, Input, Select, Spin, Table, Tag, Tree } from 'antd'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { Avatar, Drawer, Empty, Input, Select, Spin, Table, Tag, Tree, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { DataNode } from 'antd/es/tree'
 import { SearchOutlined } from '@ant-design/icons'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import dayjs from 'dayjs'
 
 import { fetchEmployeeProfileDetail, fetchEmployeeProfiles } from '@/lib/api/client/hr'
-import type { EmployeeProfileDetail, EmployeeProfileListItem, OrgDepartmentNode } from '@/types/hr'
+import { fetchOrgSyncStatus, triggerOrgSync } from '@/actions/hr'
+import { OrgSyncLine } from './OrgSyncLine'
+import type { EmployeeProfileDetail, EmployeeProfileListItem, OrgDepartmentNode, OrgSyncStatusData } from '@/types/hr'
 
 interface EmployeeDirectoryClientProps {
   initialTree: OrgDepartmentNode[]
@@ -17,6 +20,7 @@ interface EmployeeDirectoryClientProps {
   initialTotal: number
   initialLastSyncedAt: string | null
   initialCompanyName: string
+  initialStatus: OrgSyncStatusData
 }
 
 function display(value: string | number | null | undefined): string {
@@ -171,7 +175,10 @@ export default function EmployeeDirectoryClient({
   initialTotal,
   initialLastSyncedAt,
   initialCompanyName,
+  initialStatus,
 }: EmployeeDirectoryClientProps) {
+  const router = useRouter()
+  const queryClient = useQueryClient()
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null)
   const [keyword, setKeyword] = useState('')
   const deferredKeyword = useDeferredValue(keyword)
@@ -179,6 +186,38 @@ export default function EmployeeDirectoryClient({
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  const statusQuery = useQuery({
+    queryKey: ['hr-org-sync-status'],
+    queryFn: fetchOrgSyncStatus,
+    initialData: { code: 200, message: 'success', data: initialStatus, meta: null },
+    refetchInterval: (query) => (query.state.data?.data.status === 'running' ? 2000 : false),
+  })
+  const syncStatus = statusQuery.data.data
+  const running = syncStatus.status === 'running'
+  const syncing = submitting || running
+  const wasRunning = useRef(running)
+
+  useEffect(() => {
+    if (wasRunning.current && !running) router.refresh()
+    wasRunning.current = running
+  }, [running, router])
+
+  const handleSync = async () => {
+    if (running) return
+    setSubmitting(true)
+    try {
+      const result = await triggerOrgSync()
+      queryClient.setQueryData(['hr-org-sync-status'], result)
+      message.success(result.data.status === 'running' ? '组织架构同步已开始' : '组织架构同步完成')
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '组织架构同步失败')
+      await queryClient.invalidateQueries({ queryKey: ['hr-org-sync-status'] })
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   const treeData: DataNode[] = useMemo(
     () => [
@@ -221,7 +260,6 @@ export default function EmployeeDirectoryClient({
 
   const items = data?.items ?? []
   const total = data?.total ?? 0
-  const lastSyncedAt = data?.last_synced_at ?? initialLastSyncedAt
 
   const columns: ColumnsType<EmployeeProfileListItem> = [
     {
@@ -287,17 +325,8 @@ export default function EmployeeDirectoryClient({
 
       <div className="min-w-0 flex-1 space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="m-0 text-[22px] font-semibold text-[var(--color-charcoal)]">员工档案</h1>
-              <Tag color="default" variant="filled">
-                只读
-              </Tag>
-            </div>
-            <div className="mt-1 text-[12.5px] text-[var(--color-stone)]">
-              来自飞书通讯录 · 共 {total} 人 · 上次同步 {lastSyncedAt ? dayjs(lastSyncedAt).format('YYYY-MM-DD HH:mm') : '—'}
-            </div>
-          </div>
+          <h1 className="m-0 text-[22px] font-semibold text-[var(--color-charcoal)]">员工档案</h1>
+          <OrgSyncLine status={syncStatus} syncing={syncing} onSync={handleSync} />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

@@ -4,21 +4,16 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Drawer, Empty, Input, Table, Tag, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { ReloadOutlined, SearchOutlined } from '@ant-design/icons'
-import dayjs from 'dayjs'
+import { SearchOutlined } from '@ant-design/icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { fetchOrgSyncStatus, triggerOrgSync } from '@/actions/hr'
+import { OrgSyncLine } from './OrgSyncLine'
 import type { OrgDepartmentNode, OrgSyncStatusData } from '@/types/hr'
 
 interface DepartmentOrgClientProps {
   initialTree: OrgDepartmentNode[]
   initialStatus: OrgSyncStatusData
-}
-
-function formatTime(value?: string | null): string {
-  if (!value) return '—'
-  return dayjs(value).format('YYYY-MM-DD HH:mm')
 }
 
 function formatCustomField(field: Record<string, unknown>): string {
@@ -52,70 +47,6 @@ function searchExpandedKeys(nodes: OrgDepartmentNode[]): string[] {
   return nodes
     .filter((node) => (node.children ?? []).length > 0)
     .map((node) => node.id)
-}
-
-function SyncLine({
-  status,
-  syncing,
-  onSync,
-}: {
-  status: OrgSyncStatusData
-  syncing: boolean
-  onSync: () => void
-}) {
-  const failed = status.status === 'failed'
-  const running = status.status === 'running'
-  const never = status.status === 'never'
-  const label = never
-    ? '尚未同步'
-    : running
-      ? '同步中'
-      : failed
-        ? '失败'
-        : '成功'
-  const dotColor = never
-    ? 'var(--color-stone)'
-    : failed
-      ? 'var(--color-error)'
-      : running
-        ? 'var(--color-warning)'
-        : 'var(--color-success)'
-  const labelColor = failed
-    ? 'var(--color-error)'
-    : running
-      ? 'var(--color-warning)'
-      : never
-        ? 'var(--color-steel)'
-        : 'var(--color-success)'
-
-  return (
-    <div className="flex items-start gap-3">
-      <div className="text-right">
-        <div className="text-xs text-[var(--color-steel)]">上次同步 {formatTime(status.last_synced_at)}</div>
-        <div className="mt-0.5 text-xs">
-          <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: dotColor }} />
-          <span style={{ color: labelColor }}>{label}</span>
-          {!never && (
-            <span className="ml-1 text-[var(--color-stone)]">
-              · 部门 {status.department_count} · 人员 {status.people_count}
-            </span>
-          )}
-        </div>
-        {failed && status.error_message && (
-          <div
-            className="mt-0.5 max-w-[360px] truncate text-xs"
-            style={{ color: 'var(--color-error)' }}
-            title={status.error_message}
-          >
-            {status.error_message}
-          </div>
-        )}
-      </div>
-      <Button size="small" icon={<ReloadOutlined />} loading={syncing} disabled={running} onClick={onSync}>
-        立即同步
-      </Button>
-    </div>
-  )
 }
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -255,17 +186,9 @@ export default function DepartmentOrgClient({ initialTree, initialStatus }: Depa
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="m-0 text-[22px] font-semibold text-[var(--color-charcoal)]">部门管理</h1>
-            <Tag color="default" variant="filled">
-              只读
-            </Tag>
-          </div>
-          <div className="mt-1 text-[12.5px] text-[var(--color-stone)]">
-            来自飞书组织架构，两级结构；仅浏览，不可新增或编辑
-          </div>
+          <h1 className="m-0 text-[22px] font-semibold text-[var(--color-charcoal)]">部门管理</h1>
         </div>
-        <SyncLine status={status} syncing={syncing} onSync={handleSync} />
+        <OrgSyncLine status={status} syncing={syncing} onSync={handleSync} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

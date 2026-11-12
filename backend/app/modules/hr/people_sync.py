@@ -121,7 +121,7 @@ async def sync_employee_profiles(
         extra={
             "biz_module": "hr",
             "people_count": total,
-            "created": created,
+            "created_count": created,
             "batches": batches,
         },
     )
