@@ -37,24 +37,21 @@ _COLUMN_COMMENTS: dict[str, str] = {
 
 def upgrade() -> None:
     for column_name, comment in _COLUMN_COMMENTS.items():
-        op.execute(
-            sa.text(
-                "COMMENT ON COLUMN quality.deviation_ledger."
-                f'"{column_name}" IS :comment'
-            ).bindparams(comment=comment)
-        )
+        # COMMENT ON 不支持绑定参数（pg8000 下会报 syntax error），只能内联字面量
+        escaped = comment.replace("'", "''")
+        op.execute(sa.text(f"COMMENT ON COLUMN quality.deviation_ledger.\"{column_name}\" IS '{escaped}'"))
 
 
 def downgrade() -> None:
     op.execute(
         sa.text(
-            "COMMENT ON COLUMN quality.deviation_ledger.\"cross_dept_reviewers\" "
+            'COMMENT ON COLUMN quality.deviation_ledger."cross_dept_reviewers" '
             "IS '跨部门调查人 [{department, investigators[]}]'"
         )
     )
     op.execute(
         sa.text(
-            "COMMENT ON COLUMN quality.deviation_ledger.\"investigation_records\" "
+            'COMMENT ON COLUMN quality.deviation_ledger."investigation_records" '
             "IS '调查记录 [{content, author_id, author_name, create_time}]'"
         )
     )

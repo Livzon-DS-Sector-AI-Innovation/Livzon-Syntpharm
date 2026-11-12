@@ -16,7 +16,6 @@ Create Date: 2026-11-11
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
@@ -68,19 +67,22 @@ _COMMENT_CHANGES: list[tuple[str, str, str, str]] = [
 ]
 
 
+def _escape(comment: str) -> str:
+    """转义单引号，COMMENT ON 不支持绑定参数（pg8000 下会报 syntax error）。"""
+    return comment.replace("'", "''")
+
+
+def _set_comment(table_name: str, column_name: str, comment: str) -> None:
+    op.execute(sa.text(f'COMMENT ON COLUMN {_SCHEMA}."{table_name}"."{column_name}" IS \'{_escape(comment)}\''))
+
+
 def upgrade() -> None:
     """Sync column comments with the ORM model definitions."""
     for table_name, column_name, new_comment, _old_comment in _COMMENT_CHANGES:
-        existing_type: sa.types.TypeEngine[object] = (
-            postgresql.ARRAY(sa.TEXT()) if column_name == "qa_staff_ids" else postgresql.JSONB()
-        )
-        op.alter_column(table_name, column_name, schema=_SCHEMA, existing_type=existing_type, comment=new_comment)
+        _set_comment(table_name, column_name, new_comment)
 
 
 def downgrade() -> None:
     """Restore the comments that 0106 / 0107 / 0110 originally wrote."""
     for table_name, column_name, _new_comment, old_comment in _COMMENT_CHANGES:
-        existing_type: sa.types.TypeEngine[object] = (
-            postgresql.ARRAY(sa.TEXT()) if column_name == "qa_staff_ids" else postgresql.JSONB()
-        )
-        op.alter_column(table_name, column_name, schema=_SCHEMA, existing_type=existing_type, comment=old_comment)
+        _set_comment(table_name, column_name, old_comment)
