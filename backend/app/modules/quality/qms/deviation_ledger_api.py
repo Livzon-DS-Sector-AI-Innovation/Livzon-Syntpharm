@@ -20,6 +20,11 @@ from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import ApiResponse, build_response
 
 from .deviation_ledger_schemas import (
+    AttachmentCommentApiResponse,
+    AttachmentCommentCreateRequest,
+    AttachmentCommentListApiResponse,
+    AttachmentCommentSummaryApiResponse,
+    AttachmentCommentUpdateRequest,
     AttachmentListApiResponse,
     AttachmentListData,
     BatchResultApiResponse,
@@ -496,3 +501,140 @@ async def list_attachments(
     service = DeviationLedgerService(db)
     detail = await service.get_detail(ledger_id, viewer_id=current_user.id)
     return build_response(data=AttachmentListData(items=detail.attachments))
+
+
+@router.get(
+    "/{ledger_id}/attachments/{file_id}/preview",
+    summary="在线预览附件",
+    response_model=None,
+)
+async def preview_attachment(
+    ledger_id: UUID,
+    file_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    """pdf / docx / 图片直出；``.doc`` 服务端转 docx 后返回（结果缓存到对象存储）。"""
+    service = DeviationLedgerService(db)
+    file_name, content, content_type = await service.get_attachment_preview(ledger_id, file_id)
+    return StreamingResponse(
+        BytesIO(content),
+        media_type=content_type,
+        headers={
+            "Content-Disposition": f"inline; filename*=UTF-8''{quote(file_name)}",
+            "Content-Length": str(len(content)),
+            "Cache-Control": "private, max-age=600",
+        },
+    )
+
+
+@router.get(
+    "/{ledger_id}/attachments/{file_id}/comments",
+    response_model=AttachmentCommentListApiResponse,
+    summary="附件批注列表",
+)
+async def list_attachment_comments(
+    ledger_id: UUID,
+    file_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """按时间正序返回该附件全部有效批注，并给出未处理条数。"""
+    service = DeviationLedgerService(db)
+    return build_response(data=await service.list_attachment_comments(ledger_id, file_id))
+
+
+@router.post(
+    "/{ledger_id}/attachments/{file_id}/comments",
+    response_model=AttachmentCommentApiResponse,
+    summary="新增附件批注",
+)
+async def create_attachment_comment(
+    ledger_id: UUID,
+    file_id: UUID,
+    payload: AttachmentCommentCreateRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """能查看该偏差即可留批注；已关闭 / 已取消的偏差拒绝写入。"""
+    service = DeviationLedgerService(db)
+    item = await service.add_attachment_comment(
+        ledger_id,
+        file_id,
+        payload,
+        actor_id=current_user.id,
+        actor_name=current_user.name or "-",
+    )
+    return build_response(data=item, message="批注已添加")
+
+
+@router.patch(
+    "/{ledger_id}/attachments/{file_id}/comments/{comment_id}",
+    response_model=AttachmentCommentApiResponse,
+    summary="修改附件批注",
+)
+async def update_attachment_comment(
+    ledger_id: UUID,
+    file_id: UUID,
+    comment_id: UUID,
+    payload: AttachmentCommentUpdateRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """改内容仅限作者或超管；标记已解决 / 重新打开对所有读者开放。"""
+    service = DeviationLedgerService(db)
+    item = await service.update_attachment_comment(
+        ledger_id,
+        file_id,
+        comment_id,
+        payload,
+        actor_id=current_user.id,
+        actor_name=current_user.name or "-",
+        actor_is_superuser=_is_superuser(ctx),
+    )
+    return build_response(data=item, message="批注已更新")
+
+
+@router.delete(
+    "/{ledger_id}/attachments/{file_id}/comments/{comment_id}",
+    response_model=DeleteResultApiResponse,
+    summary="删除附件批注",
+)
+async def delete_attachment_comment(
+    ledger_id: UUID,
+    file_id: UUID,
+    comment_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """软删除，仅作者本人或超管。"""
+    service = DeviationLedgerService(db)
+    result = await service.delete_attachment_comment(
+        ledger_id,
+        file_id,
+        comment_id,
+        actor_id=current_user.id,
+        actor_is_superuser=_is_superuser(ctx),
+    )
+    return build_response(data=result, message="批注已删除")
+
+
+@router.get(
+    "/{ledger_id}/attachment-comments/summary",
+    response_model=AttachmentCommentSummaryApiResponse,
+    summary="附件批注汇总",
+)
+async def attachment_comment_summary(
+    ledger_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """详情页附件角标：按附件聚合未处理 / 全部批注数。"""
+    service = DeviationLedgerService(db)
+    return build_response(data=await service.attachment_comment_summary(ledger_id))

@@ -1,11 +1,14 @@
 'use client'
 
-import { useState } from 'react'
-import { App, Button, Card, Empty, Modal, Popconfirm, Space, Timeline, Upload } from 'antd'
-import { DeleteOutlined, EyeOutlined, UploadOutlined, WarningOutlined } from '@ant-design/icons'
+import { useCallback, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { App, Button, Card, Empty, Popconfirm, Space, Timeline, Tooltip, Upload } from 'antd'
+import { DeleteOutlined, EyeOutlined, MessageOutlined, UploadOutlined, WarningOutlined } from '@ant-design/icons'
 import { deleteDeviationAttachment, uploadDeviationAttachment } from '@/actions/quality'
+import { fetchDeviationAttachmentCommentSummary } from '@/lib/api/client/quality'
 import type { DeviationAttachment, DeviationInvestigationRecord, DeviationLedgerDetail } from '@/types/quality'
 import { PersonInline } from '../PersonInline'
+import { AttachmentPreviewDrawer } from './AttachmentPreviewDrawer'
 import { InvestigationRecordForm } from './InvestigationRecordForm'
 
 interface InvestigationCardProps {
@@ -35,7 +38,13 @@ function formatTime(value?: string | null): string {
 }
 
 /** 记录正文：不符合事项 → 根因 → 风险 → CAPA → 紧急措施 → 记录附件；旧纯文本记录降级为段落展示 */
-function RecordBody({ record, ledgerId }: { record: DeviationInvestigationRecord; ledgerId: string }) {
+function RecordBody({
+  record,
+  onPreview,
+}: {
+  record: DeviationInvestigationRecord
+  onPreview: (attachment: DeviationAttachment) => void
+}) {
   const capaRows = record.capa_proposals ?? []
   const recordAttachments = record.attachments ?? []
   const isStructured = Boolean(
@@ -104,7 +113,7 @@ function RecordBody({ record, ledgerId }: { record: DeviationInvestigationRecord
               type="link"
               size="small"
               className="!h-auto !px-0 !text-[12px]"
-              href={attachmentUrl(ledgerId, attachment.file_id)}
+              onClick={() => onPreview(attachment)}
             >
               {attachment.file_name}
             </Button>
@@ -121,7 +130,36 @@ export function InvestigationCard({ ledger, onUpdated }: InvestigationCardProps)
   // 结构化调查表单：submit=提交调查（流转），append=追加记录（不流转），null=收起
   const [formMode, setFormMode] = useState<'submit' | 'append' | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [preview, setPreview] = useState<{ url: string; type: string; name: string } | null>(null)
+  // 当前正在预览的附件：非空即打开预览抽屉（左文档 + 右批注）
+  const [previewAttachment, setPreviewAttachment] = useState<DeviationAttachment | null>(null)
+  // 抽屉内批注变化后的即时覆盖值，避免关闭再开详情才刷新角标
+  const [commentOverrides, setCommentOverrides] = useState<Record<string, { open: number; total: number }>>({})
+
+  const { data: commentSummary } = useQuery({
+    queryKey: ['deviation-attachment-comment-summary', ledger.id],
+    queryFn: () => fetchDeviationAttachmentCommentSummary(ledger.id),
+    staleTime: 30_000,
+  })
+
+  const commentCounts = useMemo(() => {
+    const merged: Record<string, { open: number; total: number }> = {}
+    for (const item of commentSummary?.items ?? []) {
+      merged[item.file_id] = { open: item.open_count ?? 0, total: item.total_count ?? 0 }
+    }
+    return { ...merged, ...commentOverrides }
+  }, [commentSummary, commentOverrides])
+
+  const handleCommentCountChange = useCallback((fileId: string, openCount: number, total: number) => {
+    setCommentOverrides((prev) => ({ ...prev, [fileId]: { open: openCount, total } }))
+  }, [])
+
+  const handlePreview = useCallback((attachment: DeviationAttachment) => {
+    setPreviewAttachment(attachment)
+  }, [])
+
+  const closePreview = useCallback(() => setPreviewAttachment(null), [])
+  // 已关闭 / 已取消的偏差：批注只读存档
+  const commentsFrozen = ledger.status === 'closed' || ledger.status === 'cancelled'
 
   const actions = ledger.allowed_actions ?? []
   const canInvestigate = actions.includes('investigate')
@@ -160,27 +198,6 @@ export function InvestigationCard({ ledger, onUpdated }: InvestigationCardProps)
     }
   }
 
-  const handlePreview = async (attachment: DeviationAttachment) => {
-    try {
-      const response = await fetch(attachmentUrl(ledger.id, attachment.file_id))
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-      const blob = await response.blob()
-      setPreview({
-        url: URL.createObjectURL(blob),
-        type: attachment.content_type || blob.type,
-        name: attachment.file_name,
-      })
-    } catch (error) {
-      console.error('调查文档预览失败', error)
-      message.error('文档预览失败，请改用下载')
-    }
-  }
-
-  const closePreview = () => {
-    if (preview) URL.revokeObjectURL(preview.url)
-    setPreview(null)
-  }
-
   return (
     <Card
       id="investigation"
@@ -215,7 +232,7 @@ export function InvestigationCard({ ledger, onUpdated }: InvestigationCardProps)
                       : '-'}
                   </span>
                 </span>
-                <RecordBody record={record} ledgerId={ledger.id} />
+                <RecordBody record={record} onPreview={handlePreview} />
               </div>
             ),
           }))}
@@ -272,49 +289,53 @@ export function InvestigationCard({ ledger, onUpdated }: InvestigationCardProps)
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无文档" />
         ) : (
           <div className="flex flex-col divide-y divide-[var(--color-hairline-soft)]">
-            {attachments.map((attachment) => (
-              <div key={attachment.file_id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                <div className="min-w-0">
-                  <p className="truncate text-[13px] text-[var(--color-ink)]">{attachment.file_name}</p>
-                  <span className="flex flex-wrap items-center gap-1 text-[12px] text-[var(--color-stone)]">
-                    <span>{formatSize(attachment.size)} ·</span>
-                    <PersonInline
-                      person={{
-                        id: attachment.uploaded_by,
-                        name: attachment.uploaded_by_name,
-                        avatar_url: attachment.uploaded_by_avatar,
-                      }}
-                      avatarSize={20}
-                    />
-                    <span>· {formatTime(attachment.uploaded_at)}</span>
-                  </span>
+            {attachments.map((attachment) => {
+              const openComments = commentCounts[attachment.file_id]?.open ?? 0
+              return (
+                <div key={attachment.file_id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-1.5 text-[13px] text-[var(--color-ink)]">
+                      <span className="truncate">{attachment.file_name}</span>
+                      {openComments > 0 && (
+                        <Tooltip title={`${openComments} 条待处理批注`}>
+                          <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-[#f1efff] px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-primary,#5645d4)]">
+                            <MessageOutlined className="text-[10px]" />
+                            {openComments}
+                          </span>
+                        </Tooltip>
+                      )}
+                    </p>
+                    <span className="flex flex-wrap items-center gap-1 text-[12px] text-[var(--color-stone)]">
+                      <span>{formatSize(attachment.size)} ·</span>
+                      <PersonInline
+                        person={{
+                          id: attachment.uploaded_by,
+                          name: attachment.uploaded_by_name,
+                          avatar_url: attachment.uploaded_by_avatar,
+                        }}
+                        avatarSize={20}
+                      />
+                      <span>· {formatTime(attachment.uploaded_at)}</span>
+                    </span>
+                  </div>
+                  <Space size={4} className="shrink-0">
+                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handlePreview(attachment)}>
+                      预览
+                    </Button>
+                    <Button type="link" size="small" href={attachmentUrl(ledger.id, attachment.file_id)}>
+                      下载
+                    </Button>
+                    {canEditInvestigation && (
+                      <Popconfirm title="删除该文档？" onConfirm={() => handleDelete(attachment.file_id)}>
+                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+                          删除
+                        </Button>
+                      </Popconfirm>
+                    )}
+                  </Space>
                 </div>
-                <Space size={4} className="shrink-0">
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<EyeOutlined />}
-                    onClick={() => handlePreview(attachment)}
-                  >
-                    预览
-                  </Button>
-                  <Button
-                    type="link"
-                    size="small"
-                    href={attachmentUrl(ledger.id, attachment.file_id)}
-                  >
-                    下载
-                  </Button>
-                  {canEditInvestigation && (
-                    <Popconfirm title="删除该文档？" onConfirm={() => handleDelete(attachment.file_id)}>
-                      <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-                        删除
-                      </Button>
-                    </Popconfirm>
-                  )}
-                </Space>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
@@ -325,27 +346,14 @@ export function InvestigationCard({ ledger, onUpdated }: InvestigationCardProps)
         </p>
       )}
 
-      <Modal
-        open={preview !== null}
-        title={preview?.name}
-        footer={null}
-        width={880}
-        style={{ maxWidth: 'calc(100vw - 24px)' }}
-        onCancel={closePreview}
-      >
-        {preview && preview.type.startsWith('image/') && (
-          // eslint-disable-next-line @next/next/no-img-element -- 附件是鉴权后的 blob URL，无法走 next/image 优化
-          <img src={preview.url} alt={preview.name} className="mx-auto max-h-[70vh] w-auto" />
-        )}
-        {preview && preview.type === 'application/pdf' && (
-          <iframe src={preview.url} title={preview.name} className="h-[70vh] w-full" />
-        )}
-        {preview && !preview.type.startsWith('image/') && preview.type !== 'application/pdf' && (
-          <p className="py-6 text-center text-[13px] text-[var(--color-slate)]">
-            该文件类型不支持在线预览，请使用「下载」查看。
-          </p>
-        )}
-      </Modal>
+      <AttachmentPreviewDrawer
+        open={previewAttachment !== null}
+        ledgerId={ledger.id}
+        attachment={previewAttachment}
+        frozen={commentsFrozen}
+        onClose={closePreview}
+        onCommentCountChange={handleCommentCountChange}
+      />
     </Card>
   )
 }

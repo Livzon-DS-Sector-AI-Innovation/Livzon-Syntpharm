@@ -18,6 +18,9 @@ import type {
   AiLogFilter,
   UploadLcResponse,
   DeviationAiAnalysisInput,
+  DeviationAttachmentComment,
+  DeviationAttachmentCommentCreateInput,
+  DeviationAttachmentCommentUpdateInput,
   DeviationBatchResult,
   DeviationCrossDeptApproveInput,
   DeviationFinalCodeInput,
@@ -842,6 +845,63 @@ export async function deleteDeviationAttachment(
     id,
     () => QualityServer.deleteDeviationAttachment(id, fileId),
     '附件删除失败',
+  )
+}
+
+/** 批注写操作独立收敛：返回批注对象，不复用要求返回台账详情的 runDeviationAction */
+async function runAttachmentCommentAction<T>(
+  id: string,
+  call: () => Promise<T>,
+  fallbackMessage: string,
+): Promise<ApiResponse<T | null>> {
+  try {
+    const data = await call()
+    revalidatePath(`/quality/deviation/${id}`)
+    return { code: 200, message: '操作成功', data }
+  } catch (error) {
+    console.error(fallbackMessage, error)
+    return {
+      code: 500,
+      message: error instanceof Error ? error.message : fallbackMessage,
+      data: null,
+    }
+  }
+}
+
+export async function createDeviationAttachmentComment(
+  id: string,
+  fileId: string,
+  input: DeviationAttachmentCommentCreateInput,
+): Promise<ApiResponse<DeviationAttachmentComment | null>> {
+  return runAttachmentCommentAction(
+    id,
+    () => QualityServer.createDeviationAttachmentComment(id, fileId, input),
+    '批注提交失败',
+  )
+}
+
+export async function updateDeviationAttachmentComment(
+  id: string,
+  fileId: string,
+  commentId: string,
+  input: DeviationAttachmentCommentUpdateInput,
+): Promise<ApiResponse<DeviationAttachmentComment | null>> {
+  return runAttachmentCommentAction(
+    id,
+    () => QualityServer.updateDeviationAttachmentComment(id, fileId, commentId, input),
+    '批注更新失败',
+  )
+}
+
+export async function deleteDeviationAttachmentComment(
+  id: string,
+  fileId: string,
+  commentId: string,
+): Promise<ApiResponse<{ id: string; deleted: boolean } | null>> {
+  return runAttachmentCommentAction(
+    id,
+    () => QualityServer.deleteDeviationAttachmentComment(id, fileId, commentId),
+    '批注删除失败',
   )
 }
 

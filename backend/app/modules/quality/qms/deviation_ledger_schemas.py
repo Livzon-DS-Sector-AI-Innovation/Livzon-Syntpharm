@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
@@ -530,6 +530,89 @@ class AttachmentListData(BaseModel):
     items: list[AttachmentItem] = Field(default_factory=list)
 
 
+class AttachmentCommentCreateRequest(BaseModel):
+    """新增文档批注。"""
+
+    content: str = Field(..., min_length=1, max_length=2000, description="批注正文")
+    page_no: int | None = Field(None, ge=1, description="页码（1 起），文档级批注留空")
+    anchor_text: str | None = Field(None, max_length=500, description="选中文本锚点（预留）")
+
+    @field_validator("content")
+    @classmethod
+    def _strip_content(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("批注内容不能为空")
+        return cleaned
+
+    @field_validator("anchor_text")
+    @classmethod
+    def _strip_anchor(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value.strip() or None
+
+
+class AttachmentCommentUpdateRequest(BaseModel):
+    """修改批注内容或处理状态（两者至少一个）。"""
+
+    content: str | None = Field(None, min_length=1, max_length=2000, description="批注正文")
+    status: Literal["open", "resolved"] | None = Field(None, description="处理状态：open / resolved")
+
+    @field_validator("content")
+    @classmethod
+    def _strip_content(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("批注内容不能为空")
+        return cleaned
+
+
+class AttachmentCommentItem(BaseModel):
+    """一条文档批注。"""
+
+    id: UUID
+    ledger_id: UUID
+    file_id: UUID
+    file_name: str
+    page_no: int | None = Field(None, description="页码（1 起）")
+    anchor_text: str | None = None
+    content: str
+    status: str = Field("open", description="open / resolved")
+    author_id: UUID | None = None
+    author_name: str | None = None
+    author_avatar: str | None = Field(None, description="作者头像地址")
+    resolved_by: UUID | None = None
+    resolved_by_name: str | None = None
+    resolved_at: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class AttachmentCommentListData(BaseModel):
+    """某附件的批注列表。"""
+
+    items: list[AttachmentCommentItem] = Field(default_factory=list)
+    total: int = 0
+    open_count: int = 0
+
+
+class AttachmentCommentSummaryItem(BaseModel):
+    """单个附件的批注计数（未处理 / 全部）。"""
+
+    file_id: UUID
+    open_count: int = 0
+    total_count: int = 0
+
+
+class AttachmentCommentSummaryData(BaseModel):
+    """详情页附件角标用的批注汇总。"""
+
+    items: list[AttachmentCommentSummaryItem] = Field(default_factory=list)
+
+
 class BatchResultData(BaseModel):
     """批量操作结果。"""
 
@@ -578,6 +661,27 @@ class AttachmentListApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: AttachmentListData
+    meta: dict[str, Any] | None = None
+
+
+class AttachmentCommentApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: AttachmentCommentItem
+    meta: dict[str, Any] | None = None
+
+
+class AttachmentCommentListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: AttachmentCommentListData
+    meta: dict[str, Any] | None = None
+
+
+class AttachmentCommentSummaryApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: AttachmentCommentSummaryData
     meta: dict[str, Any] | None = None
 
 

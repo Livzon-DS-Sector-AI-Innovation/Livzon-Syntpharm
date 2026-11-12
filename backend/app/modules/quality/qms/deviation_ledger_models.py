@@ -18,6 +18,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     String,
     Text,
     func,
@@ -156,3 +157,50 @@ class DeviationLedger(BaseModel):
         server_default=text("'[]'::jsonb"),
         comment="报告版本 [{content, editor_id, editor_name, edit_time, change_summary}]",
     )
+
+
+class DeviationAttachmentComment(BaseModel):
+    """附件文档批注。
+
+    与 ``review_opinions`` 严格区分：批注只描述「文档某处的问题」，不推进流程。
+    关联键用 ``file_id``（上传后不变），不使用下载 URL（签名会变，批注会漂移）。
+    """
+
+    __tablename__ = "deviation_attachment_comment"
+    __table_args__ = (
+        CheckConstraint("status IN ('open', 'resolved')", name="ck_deviation_attachment_comment_status"),
+        Index("ix_deviation_attachment_comment_file", "ledger_id", "file_id", "is_deleted"),
+        Index("ix_deviation_attachment_comment_ledger", "ledger_id", "is_deleted"),
+        {"schema": "quality"},
+    )
+
+    ledger_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("quality.deviation_ledger.id"),
+        nullable=False,
+        comment="所属偏差台账",
+    )
+    file_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        nullable=False,
+        comment="附件 file_id（稳定关联键，非 URL）",
+    )
+    file_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="附件名快照（附件删除后仍可追溯）")
+    page_no: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="页码（1 起，文档级批注为空）")
+    anchor_text: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        comment="选中文本锚点（预留，Phase 2 高亮用）",
+    )
+    content: Mapped[str] = mapped_column(Text, nullable=False, comment="批注正文")
+    status: Mapped[str] = mapped_column(
+        String(16),
+        nullable=False,
+        default="open",
+        server_default=text("'open'"),
+        comment="处理状态 open / resolved",
+    )
+    author_name: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="作者姓名快照")
+    resolved_by: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True, comment="解决人")
+    resolved_by_name: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="解决人姓名快照")
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="解决时间")

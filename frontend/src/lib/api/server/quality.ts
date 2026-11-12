@@ -23,6 +23,9 @@ import type {
   DepartmentContactListData,
   DepartmentMemberOption,
   DeviationAiAnalysisInput,
+  DeviationAttachmentComment,
+  DeviationAttachmentCommentCreateInput,
+  DeviationAttachmentCommentUpdateInput,
   DeviationBatchResult,
   DeviationCrossDeptApproveInput,
   DeviationFinalCodeInput,
@@ -942,6 +945,42 @@ export async function deleteDeviationAttachment(
   return apiFetchData<DeviationLedgerDetail>(
     `/api/v1/quality/deviation/ledger/${id}/attachments/${fileId}`,
     { method: 'DELETE' },
+  )
+}
+
+/** 新增附件批注 */
+export async function createDeviationAttachmentComment(
+  id: string,
+  fileId: string,
+  data: DeviationAttachmentCommentCreateInput,
+): Promise<DeviationAttachmentComment> {
+  return apiFetchData<DeviationAttachmentComment>(
+    `/api/v1/quality/deviation/ledger/${id}/attachments/${fileId}/comments`,
+    { method: 'POST', body: JSON.stringify(data) },
+  )
+}
+
+/** 修改附件批注（正文或处理状态） */
+export async function updateDeviationAttachmentComment(
+  id: string,
+  fileId: string,
+  commentId: string,
+  data: DeviationAttachmentCommentUpdateInput,
+): Promise<DeviationAttachmentComment> {
+  return apiFetchData<DeviationAttachmentComment>(
+    `/api/v1/quality/deviation/ledger/${id}/attachments/${fileId}/comments/${commentId}`,
+    { method: 'PATCH', body: JSON.stringify(data) },
+  )
+}
+
+/** 删除附件批注（软删除，仅作者/超管） */
+export async function deleteDeviationAttachmentComment(
+  id: string,
+  fileId: string,
+  commentId: string,
+): Promise<{ id: string; deleted: boolean } | null> {
+  return fetchDeleteOrNull<{ id: string; deleted: boolean }>(
+    `/api/v1/quality/deviation/ledger/${id}/attachments/${fileId}/comments/${commentId}`,
   )
 }
 

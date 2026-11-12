@@ -13992,6 +13992,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quality/deviation/ledger/{ledger_id}/attachments/{file_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 在线预览附件
+         * @description pdf / docx / 图片直出；``.doc`` 服务端转 docx 后返回（结果缓存到对象存储）。
+         */
+        get: operations["preview_attachment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation/ledger/{ledger_id}/attachments/{file_id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 附件批注列表
+         * @description 按时间正序返回该附件全部有效批注，并给出未处理条数。
+         */
+        get: operations["list_attachment_comments_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__comments_get"];
+        put?: never;
+        /**
+         * 新增附件批注
+         * @description 能查看该偏差即可留批注；已关闭 / 已取消的偏差拒绝写入。
+         */
+        post: operations["create_attachment_comment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__comments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation/ledger/{ledger_id}/attachments/{file_id}/comments/{comment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * 删除附件批注
+         * @description 软删除，仅作者本人或超管。
+         */
+        delete: operations["delete_attachment_comment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__comments__comment_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * 修改附件批注
+         * @description 改内容仅限作者或超管；标记已解决 / 重新打开对所有读者开放。
+         */
+        patch: operations["update_attachment_comment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__comments__comment_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/quality/deviation/ledger/{ledger_id}/attachment-comments/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 附件批注汇总
+         * @description 详情页附件角标：按附件聚合未处理 / 全部批注数。
+         */
+        get: operations["attachment_comment_summary_api_v1_quality_deviation_ledger__ledger_id__attachment_comments_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quality/department-contacts": {
         parameters: {
             query?: never;
@@ -19963,6 +20051,207 @@ export interface components {
              */
             message: string;
             data: components["schemas"]["AsyncJobState"];
+        };
+        /** AttachmentCommentApiResponse */
+        AttachmentCommentApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["AttachmentCommentItem"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * AttachmentCommentCreateRequest
+         * @description 新增文档批注。
+         */
+        AttachmentCommentCreateRequest: {
+            /**
+             * Content
+             * @description 批注正文
+             */
+            content: string;
+            /**
+             * Page No
+             * @description 页码（1 起），文档级批注留空
+             */
+            page_no?: number | null;
+            /**
+             * Anchor Text
+             * @description 选中文本锚点（预留）
+             */
+            anchor_text?: string | null;
+        };
+        /**
+         * AttachmentCommentItem
+         * @description 一条文档批注。
+         */
+        AttachmentCommentItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Ledger Id
+             * Format: uuid
+             */
+            ledger_id: string;
+            /**
+             * File Id
+             * Format: uuid
+             */
+            file_id: string;
+            /** File Name */
+            file_name: string;
+            /**
+             * Page No
+             * @description 页码（1 起）
+             */
+            page_no?: number | null;
+            /** Anchor Text */
+            anchor_text?: string | null;
+            /** Content */
+            content: string;
+            /**
+             * Status
+             * @description open / resolved
+             * @default open
+             */
+            status: string;
+            /** Author Id */
+            author_id?: string | null;
+            /** Author Name */
+            author_name?: string | null;
+            /**
+             * Author Avatar
+             * @description 作者头像地址
+             */
+            author_avatar?: string | null;
+            /** Resolved By */
+            resolved_by?: string | null;
+            /** Resolved By Name */
+            resolved_by_name?: string | null;
+            /** Resolved At */
+            resolved_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AttachmentCommentListApiResponse */
+        AttachmentCommentListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["AttachmentCommentListData"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * AttachmentCommentListData
+         * @description 某附件的批注列表。
+         */
+        AttachmentCommentListData: {
+            /** Items */
+            items?: components["schemas"]["AttachmentCommentItem"][];
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Open Count
+             * @default 0
+             */
+            open_count: number;
+        };
+        /** AttachmentCommentSummaryApiResponse */
+        AttachmentCommentSummaryApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["AttachmentCommentSummaryData"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * AttachmentCommentSummaryData
+         * @description 详情页附件角标用的批注汇总。
+         */
+        AttachmentCommentSummaryData: {
+            /** Items */
+            items?: components["schemas"]["AttachmentCommentSummaryItem"][];
+        };
+        /**
+         * AttachmentCommentSummaryItem
+         * @description 单个附件的批注计数（未处理 / 全部）。
+         */
+        AttachmentCommentSummaryItem: {
+            /**
+             * File Id
+             * Format: uuid
+             */
+            file_id: string;
+            /**
+             * Open Count
+             * @default 0
+             */
+            open_count: number;
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * AttachmentCommentUpdateRequest
+         * @description 修改批注内容或处理状态（两者至少一个）。
+         */
+        AttachmentCommentUpdateRequest: {
+            /**
+             * Content
+             * @description 批注正文
+             */
+            content?: string | null;
+            /**
+             * Status
+             * @description 处理状态：open / resolved
+             */
+            status?: ("open" | "resolved") | null;
         };
         /**
          * AttachmentItem
@@ -92164,6 +92453,219 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_attachment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+                file_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_attachment_comments_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__comments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+                file_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AttachmentCommentListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_attachment_comment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__comments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+                file_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttachmentCommentCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AttachmentCommentApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_attachment_comment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__comments__comment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+                file_id: string;
+                comment_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DeleteResultApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_attachment_comment_api_v1_quality_deviation_ledger__ledger_id__attachments__file_id__comments__comment_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+                file_id: string;
+                comment_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttachmentCommentUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AttachmentCommentApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attachment_comment_summary_api_v1_quality_deviation_ledger__ledger_id__attachment_comments_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AttachmentCommentSummaryApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -573,15 +573,27 @@ class _RowRepo:
         return self.row if self.row is not None and ledger_id == self.row.id else None
 
 
+class _NoopResult:
+    """UPDATE/DELETE 的结果替身，只需要 rowcount。"""
+
+    rowcount = 0
+
+
 class _ServiceDB:
     def __init__(self) -> None:
         self.commits = 0
+        self.statements: list[Any] = []
 
     async def commit(self) -> None:
         self.commits += 1
 
     async def refresh(self, obj: Any) -> None:
         return None
+
+    async def execute(self, statement: Any) -> _NoopResult:
+        # remove_attachment 会级联软删批注（UPDATE），这里只记录不执行
+        self.statements.append(statement)
+        return _NoopResult()
 
 
 def _service(row: DeviationLedger | None) -> tuple[_Service, _ServiceDB]:

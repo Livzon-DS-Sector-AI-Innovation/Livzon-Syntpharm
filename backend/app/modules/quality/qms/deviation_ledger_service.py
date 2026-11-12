@@ -9,8 +9,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
+import threading
 import uuid
 from collections.abc import Iterable, Sequence
 from datetime import UTC, date, datetime
@@ -26,6 +28,7 @@ from app.core.exceptions import BadRequestException, ForbiddenException, NotFoun
 from app.core.llm import llm_client
 from app.modules.hr import public_api as hr_public_api
 from app.platform.identity.models import User
+from app.shared.file_conversion import get_file_conversion
 
 from . import deviation_ledger_constants as constants
 from . import deviation_notify as notify
@@ -54,10 +57,16 @@ from .deviation_flow import (
     transition,
 )
 from .deviation_ledger_constants import LedgerStatus
-from .deviation_ledger_models import DeviationLedger
-from .deviation_ledger_repository import DeviationLedgerRepository
+from .deviation_ledger_models import DeviationAttachmentComment, DeviationLedger
+from .deviation_ledger_repository import DeviationAttachmentCommentRepository, DeviationLedgerRepository
 from .deviation_ledger_schemas import (
     AiAnalysisData,
+    AttachmentCommentCreateRequest,
+    AttachmentCommentItem,
+    AttachmentCommentListData,
+    AttachmentCommentSummaryData,
+    AttachmentCommentSummaryItem,
+    AttachmentCommentUpdateRequest,
     AttachmentItem,
     BatchStatusRequest,
     CapaProposalItem,
@@ -65,6 +74,7 @@ from .deviation_ledger_schemas import (
     CrossDeptApproveRequest,
     CrossDeptReviewerItem,
     CrossDeptStepSubItem,
+    DeleteResultData,
     DistributionItem,
     FinalCodeRequest,
     InvestigationRecordItem,
@@ -112,6 +122,37 @@ _ALLOWED_ATTACHMENT_TYPES: tuple[str, ...] = (
 )
 
 _STORAGE_MODULE = "quality"
+
+#: 终态偏差（已关闭 / 已取消）的批注只读，仅可查阅
+_COMMENT_FROZEN_STATUSES: tuple[str, ...] = (LedgerStatus.CLOSED.value, LedgerStatus.CANCELLED.value)
+
+#: 批注「待处理」状态值
+_COMMENT_STATUS_OPEN = "open"
+_COMMENT_STATUS_RESOLVED = "resolved"
+
+#: 可直接在线预览的图片类型
+_PREVIEW_IMAGE_TYPES: tuple[str, ...] = ("image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp")
+_PREVIEW_IMAGE_SUFFIXES: tuple[str, ...] = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp")
+_PDF_CONTENT_TYPE = "application/pdf"
+_DOCX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+_DOC_CONTENT_TYPE = "application/msword"
+
+#: .doc→docx 预览转换的单飞锁（key = ledger_id:file_id），避免并发重复转换
+_PREVIEW_LOCKS: dict[str, asyncio.Lock] = {}
+_PREVIEW_LOCKS_GUARD = threading.Lock()
+_PREVIEW_LOCKS_LIMIT = 256
+
+
+def _preview_lock(key: str) -> asyncio.Lock:
+    with _PREVIEW_LOCKS_GUARD:
+        lock = _PREVIEW_LOCKS.get(key)
+        if lock is None:
+            if len(_PREVIEW_LOCKS) >= _PREVIEW_LOCKS_LIMIT:
+                for stale_key in [k for k, v in _PREVIEW_LOCKS.items() if not v.locked()]:
+                    _PREVIEW_LOCKS.pop(stale_key, None)
+            lock = asyncio.Lock()
+            _PREVIEW_LOCKS[key] = lock
+        return lock
 
 #: 可编辑基础信息的状态
 _EDITABLE_STATUSES = (LedgerStatus.PENDING_AI_ANALYSIS.value, LedgerStatus.RETURNED.value)
@@ -184,6 +225,7 @@ class DeviationLedgerService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
         self.repo = DeviationLedgerRepository(db)
+        self.comment_repo = DeviationAttachmentCommentRepository(db)
 
     # ── 列表 / 详情 ───────────────────────────────────────────────────
 
@@ -768,6 +810,8 @@ class DeviationLedgerService:
             raise BadRequestException("该附件已被调查记录引用，无法删除")
         row.attachments = [item for item in items if str(item.get("file_id")) != str(file_id)]
         row.updated_by = actor_id
+        #: 附件删除后批注随之软删，避免孤儿批注继续出现在汇总里
+        await self.comment_repo.soft_delete_by_file(ledger_id, file_id, actor_id=actor_id)
         await self.db.commit()
         await self.db.refresh(row)
         if storage.is_enabled() and target.get("object_key"):
@@ -802,6 +846,277 @@ class DeviationLedgerService:
             raise NotFoundException("附件文件已丢失")
         content, content_type = found
         return str(target.get("file_name") or "attachment"), content, content_type
+
+    async def get_attachment_preview(
+        self,
+        ledger_id: uuid.UUID,
+        file_id: uuid.UUID,
+    ) -> tuple[str, bytes, str]:
+        """预览用字节流：pdf / docx / 图片直出，``.doc`` 转 docx 后返回（转换结果缓存到对象存储）。"""
+        row = await self.repo.get_by_id(ledger_id)
+        if row is None:
+            raise NotFoundException("偏差记录不存在")
+        target = self._find_attachment(row, file_id)
+        if target is None:
+            raise NotFoundException("附件不存在")
+        if not storage.is_enabled():
+            raise BadRequestException("文件存储未配置")
+
+        file_name = str(target.get("file_name") or "attachment")
+        content_type = str(target.get("content_type") or "")
+        suffix = os.path.splitext(file_name)[1].lower()
+
+        if content_type in _PREVIEW_IMAGE_TYPES or suffix in _PREVIEW_IMAGE_SUFFIXES:
+            return file_name, await asyncio.to_thread(self._read_object, target), content_type or "image/png"
+        if content_type == _PDF_CONTENT_TYPE or suffix == ".pdf":
+            return file_name, await asyncio.to_thread(self._read_object, target), _PDF_CONTENT_TYPE
+        if content_type == _DOCX_CONTENT_TYPE or suffix == ".docx":
+            return file_name, await asyncio.to_thread(self._read_object, target), _DOCX_CONTENT_TYPE
+        if content_type == _DOC_CONTENT_TYPE or suffix == ".doc":
+            return await self._preview_legacy_doc(ledger_id, file_id, target, file_name)
+        raise BadRequestException("该文件类型不支持在线预览")
+
+    async def _preview_legacy_doc(
+        self,
+        ledger_id: uuid.UUID,
+        file_id: uuid.UUID,
+        target: dict[str, Any],
+        file_name: str,
+    ) -> tuple[str, bytes, str]:
+        """``.doc`` 预览：先查对象存储缓存，未命中则单飞转换并回写缓存。"""
+        cache_key = f"deviation-ledger/{ledger_id}/.preview/{file_id}.docx"
+        cached = await asyncio.to_thread(storage.get_object, _STORAGE_MODULE, cache_key)
+        if cached is not None and cached[0]:
+            return _docx_file_name(file_name), cached[0], _DOCX_CONTENT_TYPE
+
+        async with _preview_lock(f"{ledger_id}:{file_id}"):
+            cached = await asyncio.to_thread(storage.get_object, _STORAGE_MODULE, cache_key)
+            if cached is not None and cached[0]:
+                return _docx_file_name(file_name), cached[0], _DOCX_CONTENT_TYPE
+
+            source = await asyncio.to_thread(self._read_object, target)
+            converted = await asyncio.to_thread(get_file_conversion().convert_bytes_to_docx, source, file_name)
+            if not converted:
+                raise BadRequestException("该文档暂无法在线预览，请下载后查看")
+            try:
+                await asyncio.to_thread(
+                    storage.upload_object,
+                    _STORAGE_MODULE,
+                    cache_key,
+                    converted,
+                    len(converted),
+                    _DOCX_CONTENT_TYPE,
+                )
+            except Exception:  # noqa: BLE001 - 缓存失败不影响本次预览
+                logger.warning(
+                    "deviation preview cache write failed",
+                    extra={"app_module": "quality", "ledger_id": str(ledger_id)},
+                )
+            return _docx_file_name(file_name), converted, _DOCX_CONTENT_TYPE
+
+    @staticmethod
+    def _read_object(target: dict[str, Any]) -> bytes:
+        found = storage.get_object(_STORAGE_MODULE, str(target.get("object_key")))
+        if found is None:
+            raise NotFoundException("附件文件已丢失")
+        return found[0]
+
+    # ── 附件批注 ──────────────────────────────────────────────────────
+
+    async def list_attachment_comments(
+        self,
+        ledger_id: uuid.UUID,
+        file_id: uuid.UUID,
+    ) -> AttachmentCommentListData:
+        """某附件的批注列表（时间正序，含未处理条数）。"""
+        row = await self.repo.get_by_id(ledger_id)
+        if row is None:
+            raise NotFoundException("偏差记录不存在")
+        if self._find_attachment(row, file_id) is None:
+            raise NotFoundException("附件不存在")
+        comments = await self.comment_repo.list_by_file(ledger_id, file_id)
+        profiles = await self._load_comment_profiles(comments)
+        items = [self._to_comment_item(comment, profiles) for comment in comments]
+        return AttachmentCommentListData(
+            items=items,
+            total=len(items),
+            open_count=sum(1 for item in items if item.status == _COMMENT_STATUS_OPEN),
+        )
+
+    async def add_attachment_comment(
+        self,
+        ledger_id: uuid.UUID,
+        file_id: uuid.UUID,
+        payload: AttachmentCommentCreateRequest,
+        *,
+        actor_id: uuid.UUID,
+        actor_name: str,
+    ) -> AttachmentCommentItem:
+        """新增批注：能查看该偏差即可留批注，终态偏差只读。"""
+        row = await self.repo.get_by_id(ledger_id)
+        if row is None:
+            raise NotFoundException("偏差记录不存在")
+        self._assert_comments_writable(row)
+        target = self._find_attachment(row, file_id)
+        if target is None:
+            raise NotFoundException("附件不存在")
+        comment = await self.comment_repo.create(
+            ledger_id=ledger_id,
+            file_id=file_id,
+            file_name=str(target.get("file_name") or "attachment")[:255],
+            page_no=payload.page_no,
+            anchor_text=payload.anchor_text,
+            content=payload.content,
+            status=_COMMENT_STATUS_OPEN,
+            author_name=actor_name,
+            created_by=actor_id,
+            updated_by=actor_id,
+        )
+        await self.db.commit()
+        await self.db.refresh(comment)
+        profiles = await self._load_comment_profiles([comment])
+        return self._to_comment_item(comment, profiles)
+
+    async def update_attachment_comment(
+        self,
+        ledger_id: uuid.UUID,
+        file_id: uuid.UUID,
+        comment_id: uuid.UUID,
+        payload: AttachmentCommentUpdateRequest,
+        *,
+        actor_id: uuid.UUID,
+        actor_name: str,
+        actor_is_superuser: bool = False,
+    ) -> AttachmentCommentItem:
+        """改内容仅限作者 / 超管；改处理状态（解决、重开）对所有读者开放。"""
+        row = await self.repo.get_by_id(ledger_id)
+        if row is None:
+            raise NotFoundException("偏差记录不存在")
+        self._assert_comments_writable(row)
+        comment = await self.comment_repo.get(ledger_id, file_id, comment_id)
+        if comment is None:
+            raise NotFoundException("批注不存在")
+        if payload.content is None and payload.status is None:
+            raise BadRequestException("没有需要更新的内容")
+        if payload.content is not None:
+            if not actor_is_superuser and comment.created_by != actor_id:
+                raise ForbiddenException("只能修改自己提交的批注")
+            comment.content = payload.content
+        if payload.status is not None:
+            comment.status = payload.status
+            if payload.status == _COMMENT_STATUS_RESOLVED:
+                comment.resolved_by = actor_id
+                comment.resolved_by_name = actor_name
+                comment.resolved_at = datetime.now(UTC)
+            else:
+                comment.resolved_by = None
+                comment.resolved_by_name = None
+                comment.resolved_at = None
+        comment.updated_by = actor_id
+        await self.db.commit()
+        await self.db.refresh(comment)
+        profiles = await self._load_comment_profiles([comment])
+        return self._to_comment_item(comment, profiles)
+
+    async def delete_attachment_comment(
+        self,
+        ledger_id: uuid.UUID,
+        file_id: uuid.UUID,
+        comment_id: uuid.UUID,
+        *,
+        actor_id: uuid.UUID,
+        actor_is_superuser: bool = False,
+    ) -> DeleteResultData:
+        """软删除批注，仅作者本人或超管。"""
+        row = await self.repo.get_by_id(ledger_id)
+        if row is None:
+            raise NotFoundException("偏差记录不存在")
+        self._assert_comments_writable(row)
+        comment = await self.comment_repo.get(ledger_id, file_id, comment_id)
+        if comment is None:
+            raise NotFoundException("批注不存在")
+        if not actor_is_superuser and comment.created_by != actor_id:
+            raise ForbiddenException("只能删除自己提交的批注")
+        comment.is_deleted = True
+        comment.updated_by = actor_id
+        await self.db.commit()
+        return DeleteResultData(id=comment_id, deleted=True)
+
+    async def attachment_comment_summary(self, ledger_id: uuid.UUID) -> AttachmentCommentSummaryData:
+        """详情页附件角标：按附件聚合未处理 / 全部批注数。"""
+        row = await self.repo.get_by_id(ledger_id)
+        if row is None:
+            raise NotFoundException("偏差记录不存在")
+        rows = await self.comment_repo.summary_by_ledger(ledger_id)
+        return AttachmentCommentSummaryData(
+            items=[
+                AttachmentCommentSummaryItem(file_id=file_id, open_count=open_count, total_count=total_count)
+                for file_id, open_count, total_count in rows
+            ]
+        )
+
+    @staticmethod
+    def _find_attachment(row: DeviationLedger, file_id: uuid.UUID) -> dict[str, Any] | None:
+        """在主附件与调查记录附件快照中定位附件元数据。"""
+        for item in row.attachments or []:
+            if isinstance(item, dict) and str(item.get("file_id")) == str(file_id):
+                return item
+        for record in row.investigation_records or []:
+            if not isinstance(record, dict):
+                continue
+            for att in record.get("attachments") or []:
+                if isinstance(att, dict) and str(att.get("file_id")) == str(file_id):
+                    return att
+        return None
+
+    @staticmethod
+    def _assert_comments_writable(row: DeviationLedger) -> None:
+        if row.status in _COMMENT_FROZEN_STATUSES:
+            raise BadRequestException("偏差已关闭，批注不可修改")
+
+    async def _load_comment_profiles(
+        self, comments: Sequence[DeviationAttachmentComment]
+    ) -> dict[str, _UserProfile]:
+        ids: set[uuid.UUID] = set()
+        for comment in comments:
+            if comment.created_by is not None:
+                ids.add(comment.created_by)
+            if comment.resolved_by is not None:
+                ids.add(comment.resolved_by)
+        if not ids:
+            return {}
+        result = await self.db.execute(
+            select(User.id, User.name, User.avatar_thumb, User.avatar_url).where(User.id.in_(ids))
+        )
+        return {
+            str(user_id): _UserProfile(id=user_id, name=name or "-", avatar_url=avatar_thumb or avatar_url)
+            for user_id, name, avatar_thumb, avatar_url in result.all()
+        }
+
+    @staticmethod
+    def _to_comment_item(
+        comment: DeviationAttachmentComment,
+        profiles: dict[str, _UserProfile],
+    ) -> AttachmentCommentItem:
+        author = profiles.get(str(comment.created_by)) if comment.created_by else None
+        return AttachmentCommentItem(
+            id=comment.id,
+            ledger_id=comment.ledger_id,
+            file_id=comment.file_id,
+            file_name=comment.file_name,
+            page_no=comment.page_no,
+            anchor_text=comment.anchor_text,
+            content=comment.content,
+            status=comment.status,
+            author_id=comment.created_by,
+            author_name=comment.author_name or (author.name if author else None),
+            author_avatar=author.avatar_url if author else None,
+            resolved_by=comment.resolved_by,
+            resolved_by_name=comment.resolved_by_name,
+            resolved_at=comment.resolved_at,
+            created_at=comment.created_at,
+            updated_at=comment.updated_at,
+        )
 
     # ── 批量 / 删除 ───────────────────────────────────────────────────
 
@@ -1416,6 +1731,12 @@ def _avatar_of(profiles: dict[str, _UserProfile], user_id: Any) -> str | None:
         return None
     profile = profiles.get(str(user_id))
     return profile.avatar_url if profile else None
+
+
+def _docx_file_name(file_name: str) -> str:
+    """``.doc`` 转换后对外展示的文件名（保留原名，仅换扩展名）。"""
+    stem = os.path.splitext(file_name)[0] or "attachment"
+    return f"{stem}.docx"
 
 
 def _is_uuid(value: Any) -> bool:
