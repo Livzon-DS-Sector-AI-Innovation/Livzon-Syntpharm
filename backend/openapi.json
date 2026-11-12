@@ -940,7 +940,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "title": "Response List Departments Api V1 Identity Departments Get"
+                  "$ref": "#/components/schemas/DepartmentListApiResponse"
                 }
               }
             }
@@ -1000,7 +1000,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "title": "Response Get Department Api V1 Identity Departments  Dept Id  Get"
+                  "$ref": "#/components/schemas/DepartmentApiResponse"
                 }
               }
             }
@@ -1173,9 +1173,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Test Login Api V1 Identity Auth Test Login Post"
+                  "$ref": "#/components/schemas/TestLoginResponse"
                 }
               }
             }
@@ -1831,7 +1829,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "title": "Response List Login Logs Api V1 Identity Login Logs Get"
+                  "$ref": "#/components/schemas/LoginLogListApiResponse"
                 }
               }
             }
@@ -3384,6 +3382,66 @@
               "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/PermissionTreeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/permission/permissions/{code}/api-bindings": {
+      "get": {
+        "tags": [
+          "\u6743\u9650\u7ba1\u7406",
+          "\u6743\u9650\u7ba1\u7406"
+        ],
+        "summary": "List Permission Api Bindings",
+        "description": "\u5355\u4e2a\u6743\u9650\u7801\u7ed1\u5b9a\u7684\u63a5\u53e3\u6e05\u5355\uff0c\u4f9b\u89d2\u8272\u7ba1\u7406\u52fe\u9009\u6743\u9650\u65f6\u6309\u9700\u5c55\u5f00\u3002\n\n\u6743\u9650\u53e3\u5f84\u4e0e `/tree` \u4e00\u81f4\u53d6 `platform:role:read`\uff1a\u8fd9\u4efd\u6e05\u5355\u53ea\u670d\u52a1\u4e8e\u300c\u52fe\u8fd9\u4e2a\u6743\u9650\u4f1a\u653e\u5f00\u54ea\u4e9b\u63a5\u53e3\u300d\uff0c\n\u89d2\u8272\u7ba1\u7406\u5458\u901a\u5e38\u6ca1\u6709 `platform:api-binding:read`\uff0c\u590d\u7528\u767b\u8bb0\u7c3f\u7aef\u70b9\u4f1a 403\u3002\n\n\u7eaf\u6ce8\u518c\u8868\u6570\u636e\u3001\u4e0d\u67e5\u5e93\uff0c\u56e0\u6b64\u6743\u9650\u8868\u672a\u8fc1\u79fb\u65f6\u4e5f\u53ef\u6b63\u5e38\u8fd4\u56de\u3002",
+        "operationId": "list_permission_api_bindings_api_v1_permission_permissions__code__api_bindings_get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionApiBindingListResponse"
                 }
               }
             }
@@ -26040,6 +26098,134 @@
         }
       }
     },
+    "/api/v1/safety/hazard-categories/{category_id}": {
+      "put": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u4fee\u6539\u9690\u60a3\u7c7b\u522b\u540d\u79f0\uff08\u5168\u516c\u53f8\u5171\u4eab\uff09",
+        "description": "\u7c7b\u522b\u6539\u540d\uff1a\u540c\u6b65\u5237\u65b0\u5386\u53f2\u53f0\u8d26\u91cc\u7684\u65e7\u540d\u79f0\uff1b\u5185\u7f6e\u7c7b\u522b\u4e0d\u5141\u8bb8\u6539\u540d",
+        "operationId": "put_hazard_category_api_v1_safety_hazard_categories__category_id__put",
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Category Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HazardCategoryUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/HazardCategoryApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u5220\u9664\u9690\u60a3\u7c7b\u522b\uff08\u8f6f\u5220\u9664\uff0c\u5168\u516c\u53f8\u5171\u4eab\uff09",
+        "description": "\u5220\u9664\u7c7b\u522b\uff1a\u8f6f\u5220\u9664\uff0c\u5386\u53f2\u53f0\u8d26\u4fdd\u7559\u539f\u7c7b\u522b\u540d\uff1b\u5185\u7f6e 7 \u7c7b\u4e0d\u53ef\u5220",
+        "operationId": "delete_hazard_category_api_v1_safety_hazard_categories__category_id__delete",
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Category Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/HazardCategoryApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/safety/hazards/{hazard_id}/upload-photo": {
       "post": {
         "tags": [
@@ -26731,7 +26917,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/HazardApiResponse"
+                  "$ref": "#/components/schemas/HazardDiagnoseApiResponse"
                 }
               }
             }
@@ -113902,6 +114088,33 @@
         "title": "DeliverableUploadResult",
         "description": "\u4ea4\u4ed8\u7269\u9644\u4ef6\u4e0a\u4f20\u7ed3\u679c"
       },
+      "DepartmentApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DepartmentApiResponse",
+        "description": "\u90e8\u95e8\u8be6\u60c5\u54cd\u5e94\u4fe1\u5c01\u3002"
+      },
       "DepartmentCreate": {
         "properties": {
           "name": {
@@ -114035,6 +114248,136 @@
         "title": "DepartmentLeaderResponse",
         "description": "\u90e8\u95e8\u8d1f\u8d23\u4eba\u67e5\u8be2\u54cd\u5e94"
       },
+      "DepartmentListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DepartmentListItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "DepartmentListApiResponse",
+        "description": "\u90e8\u95e8\u5217\u8868\u54cd\u5e94\u4fe1\u5c01\uff08`?tree=true` \u65f6\u4e3a\u6811\u5f62\u7ed3\u6784\uff09\u3002"
+      },
+      "DepartmentListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "feishu_department_id": {
+            "type": "string",
+            "title": "Feishu Department Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "parent_feishu_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Feishu Department Id"
+          },
+          "leader_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leader User Id"
+          },
+          "member_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Count"
+          },
+          "status_is_deleted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Is Deleted"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order"
+          },
+          "children": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentListItem"
+            },
+            "type": "array",
+            "title": "Children",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "feishu_department_id",
+          "name"
+        ],
+        "title": "DepartmentListItem",
+        "description": "\u90e8\u95e8\u5217\u8868\u9879\uff08`GET /identity/departments` \u7684 data \u5143\u7d20\uff09\u3002\n\n\u8be5\u7aef\u70b9\u4f20 `?tree=true` \u8fd4\u56de\u6811\u8282\u70b9\u3001\u5426\u5219\u8fd4\u56de\u6241\u5e73\u90e8\u95e8\uff0c\u4e24\u79cd\u7ed3\u6784\u5b57\u6bb5\u4e0d\u540c\u3002\n\u8fd9\u91cc\u7528\u4e24\u8005\u7684\u5e76\u96c6\u5efa\u4e00\u4e2a\u6a21\u578b\uff0c\u907f\u514d `list[TreeNode] | list[DepartmentResponse]`\n\u7684\u8054\u5408\u6821\u9a8c\uff1a\u8054\u5408\u547d\u4e2d\u54ea\u4e00\u4e2a\u90fd\u4f1a\u4e22\u6389\u53e6\u4e00\u5206\u652f\u7684\u5b57\u6bb5\uff08\u6811\u8282\u70b9\u4e22 `path`\uff0c\n\u6241\u5e73\u9879\u4e22 `children`\uff09\u3002"
+      },
       "DepartmentOption": {
         "properties": {
           "code": {
@@ -114078,6 +114421,96 @@
           "data"
         ],
         "title": "DepartmentOptionListResponse"
+      },
+      "DepartmentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "feishu_department_id": {
+            "type": "string",
+            "title": "Feishu Department Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "parent_feishu_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Feishu Department Id"
+          },
+          "leader_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leader User Id"
+          },
+          "member_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Count"
+          },
+          "status_is_deleted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Is Deleted"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "feishu_department_id",
+          "name"
+        ],
+        "title": "DepartmentResponse"
       },
       "DepartmentSafetyOfficerApiResponse": {
         "properties": {
@@ -129263,6 +129696,118 @@
         "title": "HazardCategoryResponse",
         "description": "\u9690\u60a3\u7c7b\u522b\u9879"
       },
+      "HazardCategoryUpdate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name",
+            "description": "\u65b0\u7c7b\u522b\u540d\u79f0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "HazardCategoryUpdate",
+        "description": "\u9690\u60a3\u7c7b\u522b\u6539\u540d\u8bf7\u6c42"
+      },
+      "HazardDiagnoseApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HazardDiagnoseData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "HazardDiagnoseApiResponse",
+        "description": "Bitable \u6f0f\u5355\u8bca\u65ad\u54cd\u5e94\u5305\u88c5"
+      },
+      "HazardDiagnoseData": {
+        "properties": {
+          "cutoff_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cutoff Time",
+            "description": "\u68c0\u6d4b\u65f6\u95f4\u4e0b\u754c\uff08\u672c\u5730\u6700\u65b0 updated_at\uff0cISO \u683c\u5f0f\uff09"
+          },
+          "bitable_matched": {
+            "type": "integer",
+            "title": "Bitable Matched",
+            "description": "\u67e5\u8be2\u7a97\u53e3\u5185 Bitable \u8fd4\u56de\u7684\u8bb0\u5f55\u6570",
+            "default": 0
+          },
+          "local_total": {
+            "type": "integer",
+            "title": "Local Total",
+            "description": "\u672c\u5730\u5df2\u5173\u8054 feishu_record_id \u7684\u8bb0\u5f55\u6570",
+            "default": 0
+          },
+          "missed": {
+            "type": "integer",
+            "title": "Missed",
+            "description": "\u6f0f\u5355\u6570\uff1b-1 \u8868\u793a\u8bca\u65ad\u5931\u8d25",
+            "default": 0
+          },
+          "existing": {
+            "type": "integer",
+            "title": "Existing",
+            "description": "\u4e24\u8fb9\u90fd\u5b58\u5728\u7684\u8bb0\u5f55\u6570",
+            "default": 0
+          },
+          "missed_records": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Missed Records",
+            "description": "\u6f0f\u5355\u8be6\u60c5\uff08\u6700\u591a 50 \u6761\uff0cBitable \u539f\u59cb\u5b57\u6bb5\u503c\uff09"
+          },
+          "diagnostic_ran_at": {
+            "type": "string",
+            "title": "Diagnostic Ran At",
+            "description": "\u8bca\u65ad\u6267\u884c\u65f6\u95f4\uff08ISO \u683c\u5f0f\uff09"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error",
+            "description": "\u8bca\u65ad\u5931\u8d25\u539f\u56e0\uff1b\u6210\u529f\u65f6\u4e3a null"
+          }
+        },
+        "type": "object",
+        "required": [
+          "diagnostic_ran_at"
+        ],
+        "title": "HazardDiagnoseData",
+        "description": "Bitable \u6f0f\u5355\u8bca\u65ad\u7ed3\u679c\uff08`GET /hazards/catch-up/diagnose` \u7684 data\uff09\u3002\n\n\u5b57\u6bb5\u4e0e `feishu/catch_up.py:diagnose_missed_records()` \u7684\u8fd4\u56de dict \u4e00\u4e00\u5bf9\u5e94\uff1b\n\u6b64\u524d\u8be5\u7aef\u70b9\u8bef\u58f0\u660e\u4e3a `HazardApiResponse`\uff08\u9690\u60a3\u5355\u5bf9\u8c61\uff09\uff0c\u8bca\u65ad\u5b57\u6bb5\u4f1a\u88ab\u54cd\u5e94\u6821\u9a8c\u4e22\u5f03\u3002"
+      },
       "HazardIdentificationApiResponse": {
         "properties": {
           "code": {
@@ -131403,6 +131948,32 @@
             "title": "Department",
             "description": "\u8d23\u4efb\u90e8\u95e8"
           },
+          "safety_officer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Officer Id",
+            "description": "\u5206\u7ba1\u5b89\u5168\u5458\uff08FK \u2192 identity.users\uff09"
+          },
+          "safety_officer_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Officer Name",
+            "description": "\u5206\u7ba1\u5b89\u5168\u5458\u59d3\u540d"
+          },
           "major_hazard_basis": {
             "anyOf": [
               {
@@ -131740,6 +132311,32 @@
             ],
             "title": "Department",
             "description": "\u8d23\u4efb\u90e8\u95e8"
+          },
+          "safety_officer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Officer Id",
+            "description": "\u5206\u7ba1\u5b89\u5168\u5458\uff08FK \u2192 identity.users\uff09"
+          },
+          "safety_officer_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Officer Name",
+            "description": "\u5206\u7ba1\u5b89\u5168\u5458\u59d3\u540d"
           },
           "major_hazard_basis": {
             "anyOf": [
@@ -132259,6 +132856,17 @@
             "type": "array",
             "title": "Rectification Responsible Persons",
             "description": "\u6574\u6539\u8d1f\u8d23\u4eba\uff08\u987a\u5e8f\u4e0e rectification_responsible_person_names \u4e00\u81f4\uff09"
+          },
+          "safety_officer_person": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "\u5206\u7ba1\u5b89\u5168\u5458\uff08\u542b\u5934\u50cf\uff09\uff1b\u672a\u5355\u72ec\u6307\u5b9a\u65f6\u7531\u8be6\u60c5\u9875\u6309\u8d23\u4efb\u90e8\u95e8\u914d\u7f6e\u56de\u9000"
           }
         },
         "type": "object",
@@ -132415,6 +133023,32 @@
             ],
             "title": "Department",
             "description": "\u8d23\u4efb\u90e8\u95e8"
+          },
+          "safety_officer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Officer Id",
+            "description": "\u5206\u7ba1\u5b89\u5168\u5458\uff08FK \u2192 identity.users\uff09"
+          },
+          "safety_officer_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Officer Name",
+            "description": "\u5206\u7ba1\u5b89\u5168\u5458\u59d3\u540d"
           },
           "inspector_department": {
             "anyOf": [
@@ -142114,6 +142748,149 @@
         ],
         "title": "LogItemModel"
       },
+      "LoginLogListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LoginLogListResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "LoginLogListApiResponse",
+        "description": "\u767b\u5f55\u8bb0\u5f55\u5206\u9875\u54cd\u5e94\u4fe1\u5c01\u3002"
+      },
+      "LoginLogListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LoginLogResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "LoginLogListResponse"
+      },
+      "LoginLogResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "user_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Name"
+          },
+          "login_type": {
+            "type": "string",
+            "title": "Login Type"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "ip_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip Address"
+          },
+          "user_agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Agent"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "login_type",
+          "status",
+          "created_at"
+        ],
+        "title": "LoginLogResponse"
+      },
       "LogsClearResponse": {
         "properties": {
           "code": {
@@ -146810,6 +147587,60 @@
         "title": "PasswordResetRequest",
         "description": "\u7ba1\u7406\u5458\u91cd\u7f6e\u5bc6\u7801\u3002\n\n`password` \u7559\u7a7a = \u968f\u673a\u751f\u6210\uff1a\u751f\u6210\u7684\u660e\u6587\u5bc6\u7801\u53ea\u5728\u54cd\u5e94\u91cc\u8fd4\u56de\u4e00\u6b21\uff08\u4e00\u6b21\u6027\u5c55\u793a\uff09\uff0c\n\u6570\u636e\u5e93\u4ecd\u53ea\u5b58\u54c8\u5e0c\uff0c\u4e4b\u540e\u65e0\u6cd5\u518d\u6b21\u67e5\u770b\u3002\u4e24\u79cd\u60c5\u51b5\u90fd\u4f1a\u628a\u8d26\u53f7\u6807\u8bb0\u4e3a\u300c\u9996\u767b\u9700\u6539\u5bc6\u300d\u3002"
       },
+      "PermissionApiBindingItem": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "title": "Method",
+            "description": "HTTP \u65b9\u6cd5\uff0c\u5982 GET / POST"
+          },
+          "route_template": {
+            "type": "string",
+            "title": "Route Template",
+            "description": "\u63a5\u53e3\u8def\u7531\u6a21\u677f\uff0c\u8def\u5f84\u53c2\u6570\u4ee5 {name} \u5360\u4f4d"
+          },
+          "scope_required": {
+            "type": "boolean",
+            "title": "Scope Required",
+            "description": "\u8be5\u63a5\u53e3\u662f\u5426\u8981\u6c42\u6570\u636e\u8303\u56f4",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "method",
+          "route_template"
+        ],
+        "title": "PermissionApiBindingItem",
+        "description": "\u5355\u4e2a\u6743\u9650\u7801\u7ed1\u5b9a\u7684\u63a5\u53e3\uff08\u6765\u6e90\u4e3a registry \u5e38\u91cf\uff0c\u65e0 DB \u4e3b\u952e\uff09\u3002"
+      },
+      "PermissionApiBindingListResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionApiBindingItem"
+            },
+            "type": "array",
+            "title": "Data",
+            "description": "\u8be5\u6743\u9650\u7801\u7ed1\u5b9a\u7684\u63a5\u53e3\u6e05\u5355"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "PermissionApiBindingListResponse"
+      },
       "PermissionListResponse": {
         "properties": {
           "code": {
@@ -146883,6 +147714,42 @@
             "type": "boolean",
             "title": "Is Builtin",
             "default": true
+          },
+          "module_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module Label",
+            "description": "\u6a21\u5757\u4e2d\u6587\u540d\uff08\u6ce8\u518c\u8868\u6d3e\u751f\uff09"
+          },
+          "resource_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Label",
+            "description": "\u8d44\u6e90\u4e2d\u6587\u540d\uff08\u6ce8\u518c\u8868\u6d3e\u751f\uff09"
+          },
+          "action_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Label",
+            "description": "\u52a8\u4f5c\u4e2d\u6587\u77ed\u8bcd\uff08\u6ce8\u518c\u8868\u6d3e\u751f\uff09"
           }
         },
         "type": "object",
@@ -175747,6 +176614,44 @@
           "status"
         ],
         "title": "TemplateUploadItem"
+      },
+      "TestLoginResponse": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "user": {
+            "$ref": "#/components/schemas/TestLoginUser"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "user"
+        ],
+        "title": "TestLoginResponse",
+        "description": "E2E \u6d4b\u8bd5\u767b\u5f55\u54cd\u5e94\u3002\n\n\u8be5\u7aef\u70b9\u53ea\u7ed9 e2e \u7528\u4f8b\u6362 token\uff0c\u8fd4\u56de\u4f53\u4e0d\u5e26 {code,data,message} \u4fe1\u5c01\uff0c\n\u56e0\u6b64\u6a21\u578b\u76f4\u63a5\u63cf\u8ff0 `{\"token\": ..., \"user\": ...}`\u3002"
+      },
+      "TestLoginUser": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "TestLoginUser",
+        "description": "E2E \u6d4b\u8bd5\u8d26\u53f7\u4fe1\u606f\u3002"
       },
       "TokenResponse": {
         "properties": {

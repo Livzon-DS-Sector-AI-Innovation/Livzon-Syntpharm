@@ -365,7 +365,7 @@ class DocCheckService:
                 "文档校验完成: check_id=%s problem_count=%s",
                 check_id,
                 len(problems),
-                extra={"module": "quality", "check_id": check_id},
+                extra={"check_id": check_id},
             )
             return CheckStatus.COMPLETED.value
         except BadRequestException as exc:

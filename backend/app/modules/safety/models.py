@@ -602,6 +602,13 @@ class HazardReport(BaseModel):
         DateTime(timezone=True), server_default=None, nullable=False, comment="检查日期"
     )
     department: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="责任部门")
+    safety_officer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="分管安全员（FK → identity.users）；为空时读时回退责任部门配置的安全员",
+    )
+    safety_officer_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="分管安全员姓名快照")
     major_hazard_basis: Mapped[str | None] = mapped_column(Text, nullable=True, comment="隐患判定依据（AI）")
     key_defect: Mapped[str | None] = mapped_column(Text, nullable=True, comment="隐患描述（AI）")
     defect_substance: Mapped[str | None] = mapped_column(

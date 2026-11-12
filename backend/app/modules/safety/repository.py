@@ -40,6 +40,16 @@ from app.platform.identity.models import User
 logger = logging.getLogger(__name__)
 
 
+def _like_pattern(keyword: str) -> str:
+    """构造 ILIKE 包含匹配模式。
+
+    用户输入里的 ``\\``、``%``、``_`` 都是 LIKE 元字符，直接拼进模式会被当成通配符；
+    这里统一转义，配合 ``escape="\\\\"`` 使用（与 ``energy/repository.py`` 的处理保持一致）。
+    """
+    escaped = keyword.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
 def _risk_grading_filter_conditions(
     model: Any,
     *,
@@ -58,8 +68,8 @@ def _risk_grading_filter_conditions(
     if residual_risk:
         conditions.append(model.residual_risk == residual_risk)
     if keyword and keyword.strip():
-        like = f"%{keyword.strip()}%"
-        conditions.append(or_(*(column.ilike(like) for column in keyword_columns)))
+        like = _like_pattern(keyword.strip())
+        conditions.append(or_(*(column.ilike(like, escape="\\") for column in keyword_columns)))
     return conditions
 
 
@@ -291,8 +301,10 @@ class SafetyRepository:
         if department:
             query = query.where(HazardReport.department == department)
         if keyword:
-            like = f"%{keyword}%"
-            query = query.where(HazardReport.description.ilike(like) | HazardReport.hazard_no.ilike(like))
+            like = _like_pattern(keyword)
+            query = query.where(
+                HazardReport.description.ilike(like, escape="\\") | HazardReport.hazard_no.ilike(like, escape="\\")
+            )
 
         count_query = select(func.count(HazardReport.id)).where(~HazardReport.is_deleted)
         if person_pending is not None:
@@ -312,8 +324,10 @@ class SafetyRepository:
         if department:
             count_query = count_query.where(HazardReport.department == department)
         if keyword:
-            like = f"%{keyword}%"
-            count_query = count_query.where(HazardReport.description.ilike(like) | HazardReport.hazard_no.ilike(like))
+            like = _like_pattern(keyword)
+            count_query = count_query.where(
+                HazardReport.description.ilike(like, escape="\\") | HazardReport.hazard_no.ilike(like, escape="\\")
+            )
 
         total = await self.session.scalar(count_query)
         query = query.offset(skip).limit(limit).order_by(HazardReport.created_at.desc())
@@ -395,6 +409,7 @@ class SafetyRepository:
         {
             "discovered_by_name",
             "rectification_responsible_person_name",
+            "safety_officer_name",
         }
     )
 
@@ -412,6 +427,7 @@ class SafetyRepository:
                     "repo.update_hazard 拦截空字符串: hazard_id=%s field=%s (已从 update_data 移除)",
                     hazard_id,
                     guard_field,
+                    extra={"hazard_id": str(hazard_id), "field": guard_field},
                 )
                 del data[guard_field]
 
@@ -464,6 +480,32 @@ class SafetyRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one()
 
+    async def get_hazard_category_by_id(self, category_id: uuid.UUID) -> HazardCategoryDict | None:
+        """按主键取隐患类别（含已软删除记录，供改名/删除前判定）"""
+        query = select(HazardCategoryDict).where(HazardCategoryDict.id == category_id)
+        result = await self.session.execute(query)
+        return result.scalars().first()
+
+    async def update_hazard_category(self, category_id: uuid.UUID, data: dict[str, Any]) -> HazardCategoryDict | None:
+        """按主键更新隐患类别字段"""
+        item = await self.get_hazard_category_by_id(category_id)
+        if item is None:
+            return None
+        for key, value in data.items():
+            setattr(item, key, value)
+        await self.session.flush()
+        return item
+
+    async def rename_hazard_category_in_hazards(self, old_name: str, new_name: str) -> int:
+        """把隐患台账中引用旧类别名的记录同步为新名，返回受影响行数"""
+        stmt = (
+            update(HazardReport)
+            .where(HazardReport.hazard_category == old_name, HazardReport.is_deleted.is_(False))
+            .values(hazard_category=new_name)
+        )
+        result = await self.session.execute(stmt)
+        return int(result.rowcount or 0)  # type: ignore[attr-defined]
+
     async def count_hazards_today(self, date_prefix: str) -> int:
         """统计指定日期前缀的隐患编号数量（含软删除），用于自动生成序号。"""
         query = select(func.count(HazardReport.id)).where(
@@ -509,18 +551,18 @@ class SafetyRepository:
             query = query.where(Accident.happened_at <= date_to)
             count_query = count_query.where(Accident.happened_at <= date_to)
         if keyword:
-            like = f"%{keyword}%"
+            like = _like_pattern(keyword)
             query = query.where(
-                Accident.description.ilike(like)
-                | Accident.location.ilike(like)
-                | Accident.accident_no.ilike(like)
-                | Accident.handling_measures.ilike(like)
+                Accident.description.ilike(like, escape="\\")
+                | Accident.location.ilike(like, escape="\\")
+                | Accident.accident_no.ilike(like, escape="\\")
+                | Accident.handling_measures.ilike(like, escape="\\")
             )
             count_query = count_query.where(
-                Accident.description.ilike(like)
-                | Accident.location.ilike(like)
-                | Accident.accident_no.ilike(like)
-                | Accident.handling_measures.ilike(like)
+                Accident.description.ilike(like, escape="\\")
+                | Accident.location.ilike(like, escape="\\")
+                | Accident.accident_no.ilike(like, escape="\\")
+                | Accident.handling_measures.ilike(like, escape="\\")
             )
 
         total = await self.session.scalar(count_query)
@@ -717,16 +759,16 @@ class SafetyRepository:
             query = query.where(TrainingRecord.certificate_status == certificate_status)
             count_query = count_query.where(TrainingRecord.certificate_status == certificate_status)
         if keyword:
-            like = f"%{keyword}%"
+            like = _like_pattern(keyword)
             query = query.where(
-                TrainingRecord.employee_name.ilike(like)
-                | TrainingRecord.department.ilike(like)
-                | TrainingRecord.certificate_no.ilike(like)
+                TrainingRecord.employee_name.ilike(like, escape="\\")
+                | TrainingRecord.department.ilike(like, escape="\\")
+                | TrainingRecord.certificate_no.ilike(like, escape="\\")
             )
             count_query = count_query.where(
-                TrainingRecord.employee_name.ilike(like)
-                | TrainingRecord.department.ilike(like)
-                | TrainingRecord.certificate_no.ilike(like)
+                TrainingRecord.employee_name.ilike(like, escape="\\")
+                | TrainingRecord.department.ilike(like, escape="\\")
+                | TrainingRecord.certificate_no.ilike(like, escape="\\")
             )
 
         total = await self.session.scalar(count_query)
@@ -800,14 +842,24 @@ class SafetyRepository:
                 query = query.where(HazardIdentification.created_at >= dfrom)
                 count_query = count_query.where(HazardIdentification.created_at >= dfrom)
             except ValueError:
-                logger.warning("忽略异常 @ %s", "SafetyRepository.get_hazard_identifications", exc_info=True)
+                logger.warning(
+                    "忽略异常 @ %s",
+                    "SafetyRepository.get_hazard_identifications",
+                    exc_info=True,
+                    extra={"repo_method": "get_hazard_identifications", "field": "date_from", "value": date_from},
+                )
         if date_to:
             try:
                 dto = dt_module.strptime(date_to + " 23:59:59", "%Y-%m-%d %H:%M:%S")
                 query = query.where(HazardIdentification.created_at <= dto)
                 count_query = count_query.where(HazardIdentification.created_at <= dto)
             except ValueError:
-                logger.warning("忽略异常 @ %s", "SafetyRepository.get_hazard_identifications", exc_info=True)
+                logger.warning(
+                    "忽略异常 @ %s",
+                    "SafetyRepository.get_hazard_identifications",
+                    exc_info=True,
+                    extra={"repo_method": "get_hazard_identifications", "field": "date_to", "value": date_to},
+                )
         if overall_status:
             query = query.where(HazardIdentification.overall_status == overall_status)
             count_query = count_query.where(HazardIdentification.overall_status == overall_status)
@@ -815,15 +867,15 @@ class SafetyRepository:
             query = query.where(HazardIdentification.ai_node_progress == ai_node_progress)
             count_query = count_query.where(HazardIdentification.ai_node_progress == ai_node_progress)
         if keyword:
-            like = f"%{keyword}%"
+            like = _like_pattern(keyword)
             keyword_filter = (
-                HazardIdentification.hazard_id_no.ilike(like)
-                | HazardIdentification.department.ilike(like)
-                | HazardIdentification.position.ilike(like)
-                | HazardIdentification.production_step.ilike(like)
-                | HazardIdentification.risk_point_name.ilike(like)
-                | HazardIdentification.work_step.ilike(like)
-                | HazardIdentification.possible_accident.ilike(like)
+                HazardIdentification.hazard_id_no.ilike(like, escape="\\")
+                | HazardIdentification.department.ilike(like, escape="\\")
+                | HazardIdentification.position.ilike(like, escape="\\")
+                | HazardIdentification.production_step.ilike(like, escape="\\")
+                | HazardIdentification.risk_point_name.ilike(like, escape="\\")
+                | HazardIdentification.work_step.ilike(like, escape="\\")
+                | HazardIdentification.possible_accident.ilike(like, escape="\\")
             )
             query = query.where(keyword_filter)
             count_query = count_query.where(keyword_filter)
@@ -901,6 +953,11 @@ class SafetyRepository:
                     "忽略异常 @ %s",
                     "SafetyRepository.get_hazard_identification_ledger_stats",
                     exc_info=True,
+                    extra={
+                        "repo_method": "get_hazard_identification_ledger_stats",
+                        "field": "date_from",
+                        "value": date_from,
+                    },
                 )
         if date_to:
             try:
@@ -912,6 +969,11 @@ class SafetyRepository:
                     "忽略异常 @ %s",
                     "SafetyRepository.get_hazard_identification_ledger_stats",
                     exc_info=True,
+                    extra={
+                        "repo_method": "get_hazard_identification_ledger_stats",
+                        "field": "date_to",
+                        "value": date_to,
+                    },
                 )
 
         total = await self.session.scalar(base) or 0
@@ -936,6 +998,11 @@ class SafetyRepository:
                     "忽略异常 @ %s",
                     "SafetyRepository.get_hazard_identification_ledger_stats",
                     exc_info=True,
+                    extra={
+                        "repo_method": "get_hazard_identification_ledger_stats",
+                        "field": "date_from",
+                        "value": date_from,
+                    },
                 )
         if date_to:
             try:
@@ -947,6 +1014,11 @@ class SafetyRepository:
                     "忽略异常 @ %s",
                     "SafetyRepository.get_hazard_identification_ledger_stats",
                     exc_info=True,
+                    extra={
+                        "repo_method": "get_hazard_identification_ledger_stats",
+                        "field": "date_to",
+                        "value": date_to,
+                    },
                 )
 
         levels = {"level_1": 0, "level_2": 0, "level_3": 0, "level_4": 0}
@@ -1246,16 +1318,16 @@ class SafetyRepository:
         count_query = select(func.count(OperationRegulation.id)).where(~OperationRegulation.is_deleted)
 
         if position:
-            query = query.where(OperationRegulation.position.ilike(f"%{position}%"))
-            count_query = count_query.where(OperationRegulation.position.ilike(f"%{position}%"))
+            position_like = _like_pattern(position)
+            query = query.where(OperationRegulation.position.ilike(position_like, escape="\\"))
+            count_query = count_query.where(OperationRegulation.position.ilike(position_like, escape="\\"))
         if keyword:
-            like = f"%{keyword}%"
-            query = query.where(
-                OperationRegulation.regulation_name.ilike(like) | OperationRegulation.regulation_no.ilike(like)
+            like = _like_pattern(keyword)
+            keyword_filter = OperationRegulation.regulation_name.ilike(like, escape="\\") | (
+                OperationRegulation.regulation_no.ilike(like, escape="\\")
             )
-            count_query = count_query.where(
-                OperationRegulation.regulation_name.ilike(like) | OperationRegulation.regulation_no.ilike(like)
-            )
+            query = query.where(keyword_filter)
+            count_query = count_query.where(keyword_filter)
         if status:
             statuses = [s.strip() for s in status.split(",") if s.strip()]
             if statuses:
@@ -1351,8 +1423,9 @@ class SafetyRepository:
             query = query.where(RegulationRevision.review_opinion == review_opinion)
             count_query = count_query.where(RegulationRevision.review_opinion == review_opinion)
         if revision_scope:
-            query = query.where(RegulationRevision.revision_scope.ilike(f"%{revision_scope}%"))
-            count_query = count_query.where(RegulationRevision.revision_scope.ilike(f"%{revision_scope}%"))
+            scope_like = _like_pattern(revision_scope)
+            query = query.where(RegulationRevision.revision_scope.ilike(scope_like, escape="\\"))
+            count_query = count_query.where(RegulationRevision.revision_scope.ilike(scope_like, escape="\\"))
 
         total = await self.session.scalar(count_query)
         query = query.offset(skip).limit(limit).order_by(RegulationRevision.created_at.desc())
@@ -1423,11 +1496,11 @@ class SafetyRepository:
         if department:
             query = query.where(SpecialOperationPersonnel.department == department)
         if keyword:
-            like = f"%{keyword}%"
+            like = _like_pattern(keyword)
             query = query.where(
-                SpecialOperationPersonnel.name.ilike(like)
-                | SpecialOperationPersonnel.personnel_no.ilike(like)
-                | SpecialOperationPersonnel.certificate_number.ilike(like)
+                SpecialOperationPersonnel.name.ilike(like, escape="\\")
+                | SpecialOperationPersonnel.personnel_no.ilike(like, escape="\\")
+                | SpecialOperationPersonnel.certificate_number.ilike(like, escape="\\")
             )
 
         count_query = select(func.count(SpecialOperationPersonnel.id)).where(~SpecialOperationPersonnel.is_deleted)
@@ -1438,11 +1511,11 @@ class SafetyRepository:
         if department:
             count_query = count_query.where(SpecialOperationPersonnel.department == department)
         if keyword:
-            like = f"%{keyword}%"
+            like = _like_pattern(keyword)
             count_query = count_query.where(
-                SpecialOperationPersonnel.name.ilike(like)
-                | SpecialOperationPersonnel.personnel_no.ilike(like)
-                | SpecialOperationPersonnel.certificate_number.ilike(like)
+                SpecialOperationPersonnel.name.ilike(like, escape="\\")
+                | SpecialOperationPersonnel.personnel_no.ilike(like, escape="\\")
+                | SpecialOperationPersonnel.certificate_number.ilike(like, escape="\\")
             )
 
         total = await self.session.scalar(count_query)
@@ -1542,17 +1615,17 @@ class SafetyRepository:
         if operation_level:
             query = query.where(SpecialOperationPermit.operation_level == operation_level)
         if keyword:
-            like = f"%{keyword}%"
+            like = _like_pattern(keyword)
             query = query.where(
-                SpecialOperationPermit.permit_no.ilike(like)
-                | SpecialOperationPermit.location.ilike(like)
-                | SpecialOperationPermit.work_description.ilike(like)
-                | SpecialOperationPermit.equipment_tag.ilike(like)
-                | SpecialOperationPermit.applicant_name.ilike(like)
-                | SpecialOperationPermit.work_leader_name.ilike(like)
-                | SpecialOperationPermit.operator_names.ilike(like)
-                | SpecialOperationPermit.guardian_name.ilike(like)
-                | SpecialOperationPermit.approver_name.ilike(like)
+                SpecialOperationPermit.permit_no.ilike(like, escape="\\")
+                | SpecialOperationPermit.location.ilike(like, escape="\\")
+                | SpecialOperationPermit.work_description.ilike(like, escape="\\")
+                | SpecialOperationPermit.equipment_tag.ilike(like, escape="\\")
+                | SpecialOperationPermit.applicant_name.ilike(like, escape="\\")
+                | SpecialOperationPermit.work_leader_name.ilike(like, escape="\\")
+                | SpecialOperationPermit.operator_names.ilike(like, escape="\\")
+                | SpecialOperationPermit.guardian_name.ilike(like, escape="\\")
+                | SpecialOperationPermit.approver_name.ilike(like, escape="\\")
             )
 
         count_query = select(func.count(SpecialOperationPermit.id)).where(~SpecialOperationPermit.is_deleted)
@@ -1563,17 +1636,17 @@ class SafetyRepository:
         if operation_level:
             count_query = count_query.where(SpecialOperationPermit.operation_level == operation_level)
         if keyword:
-            like = f"%{keyword}%"
+            like = _like_pattern(keyword)
             count_query = count_query.where(
-                SpecialOperationPermit.permit_no.ilike(like)
-                | SpecialOperationPermit.location.ilike(like)
-                | SpecialOperationPermit.work_description.ilike(like)
-                | SpecialOperationPermit.equipment_tag.ilike(like)
-                | SpecialOperationPermit.applicant_name.ilike(like)
-                | SpecialOperationPermit.work_leader_name.ilike(like)
-                | SpecialOperationPermit.operator_names.ilike(like)
-                | SpecialOperationPermit.guardian_name.ilike(like)
-                | SpecialOperationPermit.approver_name.ilike(like)
+                SpecialOperationPermit.permit_no.ilike(like, escape="\\")
+                | SpecialOperationPermit.location.ilike(like, escape="\\")
+                | SpecialOperationPermit.work_description.ilike(like, escape="\\")
+                | SpecialOperationPermit.equipment_tag.ilike(like, escape="\\")
+                | SpecialOperationPermit.applicant_name.ilike(like, escape="\\")
+                | SpecialOperationPermit.work_leader_name.ilike(like, escape="\\")
+                | SpecialOperationPermit.operator_names.ilike(like, escape="\\")
+                | SpecialOperationPermit.guardian_name.ilike(like, escape="\\")
+                | SpecialOperationPermit.approver_name.ilike(like, escape="\\")
             )
 
         total = await self.session.scalar(count_query)
@@ -1647,12 +1720,12 @@ class SafetyRepository:
         if status:
             query = query.where(SafetyKnowledgeArticle.status == status)
         if keyword:
-            like = f"%{keyword}%"
+            like = _like_pattern(keyword)
             query = query.where(
-                SafetyKnowledgeArticle.title.ilike(like)
-                | SafetyKnowledgeArticle.summary.ilike(like)
-                | SafetyKnowledgeArticle.content.ilike(like)
-                | SafetyKnowledgeArticle.tags.ilike(like)
+                SafetyKnowledgeArticle.title.ilike(like, escape="\\")
+                | SafetyKnowledgeArticle.summary.ilike(like, escape="\\")
+                | SafetyKnowledgeArticle.content.ilike(like, escape="\\")
+                | SafetyKnowledgeArticle.tags.ilike(like, escape="\\")
             )
 
         count_query = select(func.count(SafetyKnowledgeArticle.id)).where(~SafetyKnowledgeArticle.is_deleted)
@@ -1661,12 +1734,12 @@ class SafetyRepository:
         if status:
             count_query = count_query.where(SafetyKnowledgeArticle.status == status)
         if keyword:
-            like = f"%{keyword}%"
+            like = _like_pattern(keyword)
             count_query = count_query.where(
-                SafetyKnowledgeArticle.title.ilike(like)
-                | SafetyKnowledgeArticle.summary.ilike(like)
-                | SafetyKnowledgeArticle.content.ilike(like)
-                | SafetyKnowledgeArticle.tags.ilike(like)
+                SafetyKnowledgeArticle.title.ilike(like, escape="\\")
+                | SafetyKnowledgeArticle.summary.ilike(like, escape="\\")
+                | SafetyKnowledgeArticle.content.ilike(like, escape="\\")
+                | SafetyKnowledgeArticle.tags.ilike(like, escape="\\")
             )
 
         total = await self.session.scalar(count_query)
@@ -1769,18 +1842,18 @@ class SafetyRepository:
             if is_critical is not None:
                 q = q.where(SpecialOperationReport.is_critical == is_critical)
             if keyword:
-                like = f"%{keyword}%"
+                like = _like_pattern(keyword)
                 q = q.where(
-                    SpecialOperationReport.report_no.ilike(like)
-                    | SpecialOperationReport.work_description.ilike(like)
-                    | SpecialOperationReport.location.ilike(like)
-                    | SpecialOperationReport.equipment_tag.ilike(like)
-                    | SpecialOperationReport.applicant_name.ilike(like)
-                    | SpecialOperationReport.work_leader_name.ilike(like)
-                    | SpecialOperationReport.operator_names.ilike(like)
-                    | SpecialOperationReport.guardian_name.ilike(like)
-                    | SpecialOperationReport.approver_name.ilike(like)
-                    | SpecialOperationReport.department.ilike(like)
+                    SpecialOperationReport.report_no.ilike(like, escape="\\")
+                    | SpecialOperationReport.work_description.ilike(like, escape="\\")
+                    | SpecialOperationReport.location.ilike(like, escape="\\")
+                    | SpecialOperationReport.equipment_tag.ilike(like, escape="\\")
+                    | SpecialOperationReport.applicant_name.ilike(like, escape="\\")
+                    | SpecialOperationReport.work_leader_name.ilike(like, escape="\\")
+                    | SpecialOperationReport.operator_names.ilike(like, escape="\\")
+                    | SpecialOperationReport.guardian_name.ilike(like, escape="\\")
+                    | SpecialOperationReport.approver_name.ilike(like, escape="\\")
+                    | SpecialOperationReport.department.ilike(like, escape="\\")
                 )
             return q
 
@@ -1900,16 +1973,16 @@ class SafetyRepository:
             query = query.where(SpecialOperationReport.is_critical == is_critical)
             count_query = count_query.where(SpecialOperationReport.is_critical == is_critical)
         if keyword:
-            like = f"%{keyword}%"
+            like = _like_pattern(keyword)
             query = query.where(
-                SpecialOperationReport.report_no.ilike(like)
-                | SpecialOperationReport.work_description.ilike(like)
-                | SpecialOperationReport.location.ilike(like)
+                SpecialOperationReport.report_no.ilike(like, escape="\\")
+                | SpecialOperationReport.work_description.ilike(like, escape="\\")
+                | SpecialOperationReport.location.ilike(like, escape="\\")
             )
             count_query = count_query.where(
-                SpecialOperationReport.report_no.ilike(like)
-                | SpecialOperationReport.work_description.ilike(like)
-                | SpecialOperationReport.location.ilike(like)
+                SpecialOperationReport.report_no.ilike(like, escape="\\")
+                | SpecialOperationReport.work_description.ilike(like, escape="\\")
+                | SpecialOperationReport.location.ilike(like, escape="\\")
             )
 
         total = await self.session.scalar(count_query)
@@ -1961,11 +2034,11 @@ class SafetyRepository:
         if report_date:
             query = query.where(func.date(DailyRiskReport.report_date) == report_date.date())
         if keyword:
-            like = f"%{keyword}%"
+            like = _like_pattern(keyword)
             query = query.where(
-                DailyRiskReport.report_no.ilike(like)
-                | DailyRiskReport.operation_description.ilike(like)
-                | DailyRiskReport.department.ilike(like)
+                DailyRiskReport.report_no.ilike(like, escape="\\")
+                | DailyRiskReport.operation_description.ilike(like, escape="\\")
+                | DailyRiskReport.department.ilike(like, escape="\\")
             )
         if report_type:
             query = query.where(DailyRiskReport.report_type == report_type)
@@ -1978,11 +2051,11 @@ class SafetyRepository:
         if report_date:
             count_query = count_query.where(func.date(DailyRiskReport.report_date) == report_date.date())
         if keyword:
-            like = f"%{keyword}%"
+            like = _like_pattern(keyword)
             count_query = count_query.where(
-                DailyRiskReport.report_no.ilike(like)
-                | DailyRiskReport.operation_description.ilike(like)
-                | DailyRiskReport.department.ilike(like)
+                DailyRiskReport.report_no.ilike(like, escape="\\")
+                | DailyRiskReport.operation_description.ilike(like, escape="\\")
+                | DailyRiskReport.department.ilike(like, escape="\\")
             )
         if report_type:
             count_query = count_query.where(DailyRiskReport.report_type == report_type)
@@ -2075,7 +2148,7 @@ class SafetyRepository:
             query = query.where(EhsChange.department == department)
             count_query = count_query.where(EhsChange.department == department)
         if keyword:
-            keyword_filter = EhsChange.title.ilike(f"%{keyword}%")
+            keyword_filter = EhsChange.title.ilike(_like_pattern(keyword), escape="\\")
             query = query.where(keyword_filter)
             count_query = count_query.where(keyword_filter)
 
@@ -2169,11 +2242,11 @@ class SafetyRepository:
         if workplace:
             query = query.where(OhHazardMonitor.workplace == workplace)
         if keyword:
-            like = f"%{keyword}%"
+            like = _like_pattern(keyword)
             query = query.where(
-                OhHazardMonitor.monitor_no.ilike(like)
-                | OhHazardMonitor.workplace.ilike(like)
-                | OhHazardMonitor.location.ilike(like)
+                OhHazardMonitor.monitor_no.ilike(like, escape="\\")
+                | OhHazardMonitor.workplace.ilike(like, escape="\\")
+                | OhHazardMonitor.location.ilike(like, escape="\\")
             )
 
         count_query = select(func.count(OhHazardMonitor.id)).where(~OhHazardMonitor.is_deleted)
@@ -2185,9 +2258,9 @@ class SafetyRepository:
             count_query = count_query.where(OhHazardMonitor.workplace == workplace)
         if keyword:
             count_query = count_query.where(
-                OhHazardMonitor.monitor_no.ilike(like)
-                | OhHazardMonitor.workplace.ilike(like)
-                | OhHazardMonitor.location.ilike(like)
+                OhHazardMonitor.monitor_no.ilike(like, escape="\\")
+                | OhHazardMonitor.workplace.ilike(like, escape="\\")
+                | OhHazardMonitor.location.ilike(like, escape="\\")
             )
 
         query = query.order_by(OhHazardMonitor.created_at.desc()).offset(skip).limit(limit)
@@ -2265,11 +2338,11 @@ class SafetyRepository:
         if department:
             query = query.where(OhHealthExam.department == department)
         if keyword:
-            like = f"%{keyword}%"
+            like = _like_pattern(keyword)
             query = query.where(
-                OhHealthExam.exam_no.ilike(like)
-                | OhHealthExam.employee_name.ilike(like)
-                | OhHealthExam.department.ilike(like)
+                OhHealthExam.exam_no.ilike(like, escape="\\")
+                | OhHealthExam.employee_name.ilike(like, escape="\\")
+                | OhHealthExam.department.ilike(like, escape="\\")
             )
 
         count_query = select(func.count(OhHealthExam.id)).where(~OhHealthExam.is_deleted)
@@ -2281,9 +2354,9 @@ class SafetyRepository:
             count_query = count_query.where(OhHealthExam.department == department)
         if keyword:
             count_query = count_query.where(
-                OhHealthExam.exam_no.ilike(like)
-                | OhHealthExam.employee_name.ilike(like)
-                | OhHealthExam.department.ilike(like)
+                OhHealthExam.exam_no.ilike(like, escape="\\")
+                | OhHealthExam.employee_name.ilike(like, escape="\\")
+                | OhHealthExam.department.ilike(like, escape="\\")
             )
 
         query = query.order_by(OhHealthExam.created_at.desc()).offset(skip).limit(limit)
@@ -2358,16 +2431,16 @@ class SafetyRepository:
             query = query.where(Contractor.training_status == training_status)
             count_query = count_query.where(Contractor.training_status == training_status)
         if keyword:
-            like = f"%{keyword}%"
+            like = _like_pattern(keyword)
             query = query.where(
-                Contractor.company_name.ilike(like)
-                | Contractor.contractor_no.ilike(like)
-                | Contractor.contact_person.ilike(like)
+                Contractor.company_name.ilike(like, escape="\\")
+                | Contractor.contractor_no.ilike(like, escape="\\")
+                | Contractor.contact_person.ilike(like, escape="\\")
             )
             count_query = count_query.where(
-                Contractor.company_name.ilike(like)
-                | Contractor.contractor_no.ilike(like)
-                | Contractor.contact_person.ilike(like)
+                Contractor.company_name.ilike(like, escape="\\")
+                | Contractor.contractor_no.ilike(like, escape="\\")
+                | Contractor.contact_person.ilike(like, escape="\\")
             )
 
         total = await self.session.scalar(count_query)
@@ -2485,12 +2558,12 @@ class SafetyRepository:
         if is_enabled is not None:
             query = query.where(ScheduledTask.is_enabled == is_enabled)
         if search:
-            query = query.where(ScheduledTask.name.ilike(f"%{search}%"))
+            query = query.where(ScheduledTask.name.ilike(_like_pattern(search), escape="\\"))
         count_query = select(func.count(ScheduledTask.id)).where(~ScheduledTask.is_deleted)
         if is_enabled is not None:
             count_query = count_query.where(ScheduledTask.is_enabled == is_enabled)
         if search:
-            count_query = count_query.where(ScheduledTask.name.ilike(f"%{search}%"))
+            count_query = count_query.where(ScheduledTask.name.ilike(_like_pattern(search), escape="\\"))
         total = await self.session.scalar(count_query)
         query = query.offset(skip).limit(limit).order_by(ScheduledTask.created_at.desc())
         result = await self.session.execute(query)

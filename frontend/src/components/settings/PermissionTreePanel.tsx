@@ -5,6 +5,7 @@ import type { Key } from 'react'
 import { Button, Input, Tooltip, Tree, Typography } from 'antd'
 import type { DataNode } from 'antd/es/tree'
 import type { PermissionTreeNode } from '@/types/permission'
+import PermissionApiBindingPopover from './PermissionApiBindingPopover'
 
 const { Text } = Typography
 
@@ -41,8 +42,11 @@ function filterTree(nodes: PermissionTreeNode[], keyword: string): PermissionTre
   const result: PermissionTreeNode[] = []
   for (const node of nodes) {
     const children = node.children?.length ? filterTree(node.children, keyword) : []
+    // 中文名、中文说明与权限码都参与匹配；权限码界面上不展示，但仍支持凭码搜到对应项
     const selfHit =
-      node.title.toLowerCase().includes(keyword) || (node.code ?? '').toLowerCase().includes(keyword)
+      node.title.toLowerCase().includes(keyword) ||
+      (node.code ?? '').toLowerCase().includes(keyword) ||
+      (node.description ?? '').toLowerCase().includes(keyword)
     if (selfHit) {
       result.push(node)
     } else if (children.length) {
@@ -58,9 +62,6 @@ function NodeTitle({ node }: { node: PermissionTreeNode }) {
       <Tooltip title={node.description ?? undefined}>
         <span className={node.disabled ? 'text-[var(--color-muted)]' : 'font-medium'}>
           {node.title}
-          {node.type === 'module' && (
-            <Text className="ml-2 text-[12px] text-[var(--color-steel)]">{node.code}</Text>
-          )}
           {node.disabled && (
             <Text className="ml-2 text-[12px] text-[var(--color-muted)]">待接入</Text>
           )}
@@ -68,18 +69,22 @@ function NodeTitle({ node }: { node: PermissionTreeNode }) {
       </Tooltip>
     )
   }
+  // 权限叶子双行：中文名 + 中文说明，界面上不出现英文权限码（点接口数才在浮层里看到）
   return (
-    <Tooltip title={node.description ? `${node.code}｜${node.description}` : (node.code ?? '')}>
-      <span className="text-[13px]">
-        {node.title}
-        <Text className="ml-2 text-[12px] text-[var(--color-steel)]">{node.code}</Text>
-        {node.binding_count > 0 && (
-          <Text className="ml-2 text-[12px] text-[var(--color-muted)]">
-            {node.binding_count} 个接口
-          </Text>
-        )}
-      </span>
-    </Tooltip>
+    <div className="flex flex-col justify-center py-[2px]">
+      <div className="flex items-center">
+        <span className="text-[13px] font-medium text-[var(--color-ink)]">{node.title}</span>
+        <PermissionApiBindingPopover code={node.code ?? ''} count={node.binding_count ?? 0} />
+      </div>
+      <div className="max-w-[560px]">
+        <span
+          className="block truncate text-[12px] text-[var(--color-steel)]"
+          title={node.description ?? undefined}
+        >
+          {node.description}
+        </span>
+      </div>
+    </div>
   )
 }
 
@@ -122,7 +127,7 @@ export default function PermissionTreePanel({
         <div className="w-full sm:w-[220px]">
           <Input.Search
             allowClear
-            placeholder="搜索模块 / 功能 / 权限码"
+            placeholder="搜索模块 / 功能 / 说明"
             style={{ width: '100%' }}
             onChange={(event) => setKeyword(event.target.value.trim().toLowerCase())}
           />
@@ -153,7 +158,7 @@ export default function PermissionTreePanel({
               .map((key) => String(key).slice(PERM_PREFIX.length))
             onChange?.(codes)
           }}
-          height={300}
+          height={360}
         />
       </div>
     </div>
