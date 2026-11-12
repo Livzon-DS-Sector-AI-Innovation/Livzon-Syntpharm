@@ -109,40 +109,6 @@ export async function deleteDepartmentApi(id: string) {
   })
 }
 
-export async function fetchTeamsApi(params?: {
-  department_id?: string
-  keyword?: string
-  page?: number
-  page_size?: number
-}) {
-  const searchParams = new URLSearchParams()
-  if (params?.department_id) searchParams.set('department_id', String(params.department_id))
-  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 100))
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/teams?${searchParams.toString()}`)
-}
-
-export async function createTeamApi(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/teams`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function updateTeamApi(id: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/teams/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function deleteTeamApi(id: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/teams/${id}`, {
-    method: 'DELETE',
-  })
-}
-
 export async function fetchOffboardingRecordsApi(params?: {
   employee_id?: string
   keyword?: string

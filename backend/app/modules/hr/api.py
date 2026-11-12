@@ -25,6 +25,18 @@ from app.core.job_store import get_job_state_or_404, start_job
 from app.core.redis import cache_get, cache_set
 from app.core.response import build_response, paginated_response
 from app.core.secrets import decrypt_secret, encrypt_secret, mask_secret
+from app.modules.hr.analysis_api import router as analysis_router
+from app.modules.hr.document_generator import generate_onboarding_training_record
+from app.modules.hr.evaluation_document_generator import generate_training_evaluation
+from app.modules.hr.ledger_export_generator import generate_ledger_export
+from app.modules.hr.models import Employee
+from app.modules.hr.notification_document_generator import (
+    generate_training_notification,
+)
+from app.modules.hr.onboarding_evaluation_document_generator import (
+    generate_onboarding_evaluation,
+)
+from app.modules.hr.prejob_document_generator import generate_prejob_training_plan
 from app.modules.hr.schemas import (
     AnnualTrainingPlanCreate,
     AnnualTrainingPlanItemBatchUpdate,
@@ -51,9 +63,6 @@ from app.modules.hr.schemas import (
     PrejobTemplateCreate,
     PrejobTemplateItem,
     PrejobTemplateResponse,
-    TeamCreate,
-    TeamResponse,
-    TeamUpdate,
     TrainingEvaluationInput,
     TrainingLedgerCreate,
     TrainingLedgerPageCreate,
@@ -73,23 +82,6 @@ from app.modules.hr.schemas import (
     TrainingTeamCreate,
     TrainingTeamUpdate,
 )
-
-try:
-    from app.modules.hr.attendance_schemas import DepartmentProductionSettings  # type: ignore[import-not-found]
-except ImportError:
-    DepartmentProductionSettings = None  # type: ignore
-from app.modules.hr.analysis_api import router as analysis_router
-from app.modules.hr.document_generator import generate_onboarding_training_record
-from app.modules.hr.evaluation_document_generator import generate_training_evaluation
-from app.modules.hr.ledger_export_generator import generate_ledger_export
-from app.modules.hr.models import Employee
-from app.modules.hr.notification_document_generator import (
-    generate_training_notification,
-)
-from app.modules.hr.onboarding_evaluation_document_generator import (
-    generate_onboarding_evaluation,
-)
-from app.modules.hr.prejob_document_generator import generate_prejob_training_plan
 from app.modules.hr.signin_document_generator import generate_training_sign_in_sheet
 
 try:
@@ -111,7 +103,6 @@ from app.modules.hr.service import (  # type: ignore[attr-defined]
     EmployeeService,
     OffboardingRecordService,
     OnboardingRecordService,
-    TeamService,
     TrainingLedgerPageService,
     TrainingLedgerService,
     TrainingSessionService,
@@ -215,12 +206,6 @@ def get_offboarding_service(
     session: AsyncSession = Depends(get_db),
 ) -> OffboardingRecordService:
     return OffboardingRecordService(session)
-
-
-def get_team_service(
-    session: AsyncSession = Depends(get_db),
-) -> TeamService:
-    return TeamService(session)
 
 
 def get_onboarding_service(
@@ -1113,109 +1098,6 @@ async def delete_department(  # type: ignore[no-untyped-def]
 ):
     await service.delete_department(department_id)
     return build_response(message="部门删除成功")
-
-
-if DepartmentProductionSettings is not None:
-
-    @router.put("/departments/{department_id}/production-settings", summary="设置部门生产属性")
-    async def set_department_production(  # type: ignore[no-untyped-def]
-        department_id: UUID,
-        payload: DepartmentProductionSettings,
-        current_user: RequiredUser,
-        ctx: PermissionContext = Depends(require_permission("hr:departments:update")),
-        service: DepartmentService = Depends(get_department_service),
-    ):
-        """设置部门是否为生产部门及生产班次时间。"""
-        department = await service.get_department(department_id)
-        department.is_production = payload.is_production
-        department.production_start_time = payload.production_start_time
-        department.production_end_time = payload.production_end_time
-        await service.repo.session.flush()
-        return build_response(
-            data={"id": str(department.id), "is_production": department.is_production},
-            message="生产设置已更新",
-        )
-
-
-# ─── Team Routes ───
-
-
-@router.get("/teams", summary="班组列表")
-async def list_teams(  # type: ignore[no-untyped-def]
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:teams:read")),
-    department_id: UUID | None = Query(None, description="部门筛选"),
-    keyword: str | None = Query(None, description="班组名称或编码关键词"),
-    page_params: PageParams = Depends(),
-    service: TeamService = Depends(get_team_service),
-):
-    teams, total = await service.list_teams(
-        department_id=department_id,
-        keyword=keyword,
-        page=page_params.page,
-        page_size=page_params.page_size,
-    )
-    data = [TeamResponse.model_validate(t).model_dump(mode="json") for t in teams]
-    return paginated_response(
-        data=data,
-        page=page_params.page,
-        page_size=page_params.page_size,
-        total=total,
-    )
-
-
-@router.post("/teams", summary="创建班组")
-async def create_team(  # type: ignore[no-untyped-def]
-    payload: TeamCreate,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:teams:create")),
-    service: TeamService = Depends(get_team_service),
-):
-    team = await service.create_team(payload)
-    return build_response(
-        data=TeamResponse.model_validate(team).model_dump(mode="json"),
-        message="班组创建成功",
-        status_code=201,
-    )
-
-
-@router.get("/teams/{team_id}", summary="班组详情")
-async def get_team(  # type: ignore[no-untyped-def]
-    team_id: UUID,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:teams:read")),
-    service: TeamService = Depends(get_team_service),
-):
-    team = await service.get_team(team_id)
-    return build_response(
-        data=TeamResponse.model_validate(team).model_dump(mode="json"),
-    )
-
-
-@router.put("/teams/{team_id}", summary="更新班组")
-async def update_team(  # type: ignore[no-untyped-def]
-    team_id: UUID,
-    payload: TeamUpdate,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:teams:update")),
-    service: TeamService = Depends(get_team_service),
-):
-    team = await service.update_team(team_id, payload)
-    return build_response(
-        data=TeamResponse.model_validate(team).model_dump(mode="json"),
-        message="班组更新成功",
-    )
-
-
-@router.delete("/teams/{team_id}", summary="删除班组")
-async def delete_team(  # type: ignore[no-untyped-def]
-    team_id: UUID,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:teams:delete")),
-    service: TeamService = Depends(get_team_service),
-):
-    await service.delete_team(team_id)
-    return build_response(message="班组删除成功")
 
 
 # ─── OffboardingRecord Routes ───

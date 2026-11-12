@@ -2,7 +2,6 @@ import {
   EmployeeListResponse,
   EmployeeResponse,
   DepartmentListResponse,
-  TeamListResponse,
   OffboardingRecordListResponse,
   OnboardingRecordListResponse,
   DepartureRecordListResponse,
@@ -87,27 +86,6 @@ export async function fetchDepartments(
     cache: 'no-store',
   })
   if (!res.ok) throw new Error('获取部门列表失败')
-  return res.json()
-}
-
-export async function fetchTeams(
-  params?: {
-    department_id?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<TeamListResponse> {
-  const searchParams = new URLSearchParams()
-  if (params?.department_id) searchParams.set('department_id', params.department_id)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 100))
-
-  const res = await fetch(`${API_BASE}/hr/teams?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取班组列表失败')
   return res.json()
 }
 

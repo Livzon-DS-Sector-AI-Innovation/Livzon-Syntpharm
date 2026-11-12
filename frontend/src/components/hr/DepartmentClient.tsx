@@ -2,13 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from "next/navigation"
-import { Button, message, Table, Space, Popconfirm, Input, Modal } from 'antd'
-import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, TeamOutlined } from '@ant-design/icons'
+import { Button, message, Table, Space, Popconfirm, Input } from 'antd'
+import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Department } from '@/types/hr'
 import { fetchDepartmentsAction, deleteDepartment } from '@/actions/hr'
 import DepartmentForm from './DepartmentForm'
-import TeamClient from './TeamClient'
 
 interface DepartmentClientProps {
   initialDepartments: Department[]
@@ -23,8 +22,6 @@ export default function DepartmentClient({ initialDepartments, initialTotal }: D
   const [searchKeyword, setSearchKeyword] = useState('')
   const _router = useRouter()
   const queryClient = useQueryClient()
-  const [teamModalOpen, setTeamModalOpen] = useState(false)
-  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null)
 
   const { data, isLoading: loading } = useQuery({
     queryKey: ['hr-departments', { searchKeyword, page, pageSize }],
@@ -70,11 +67,6 @@ export default function DepartmentClient({ initialDepartments, initialTotal }: D
     }
   }
 
-  const handleOpenTeams = (department: Department) => {
-    setSelectedDepartment(department)
-    setTeamModalOpen(true)
-  }
-
   const columns = [
     {
       title: '部门编码',
@@ -100,14 +92,6 @@ export default function DepartmentClient({ initialDepartments, initialTotal }: D
       width: 220,
       render: (_: unknown, record: Department) => (
         <Space size="small">
-          <Button
-            type="text"
-            size="small"
-            icon={<TeamOutlined />}
-            onClick={() => handleOpenTeams(record)}
-          >
-            班组
-          </Button>
           <Button
             type="text"
             size="small"
@@ -180,21 +164,6 @@ export default function DepartmentClient({ initialDepartments, initialTotal }: D
         onClose={() => setFormOpen(false)}
         onSuccess={handleFormSuccess}
       />
-
-      <Modal
-        open={teamModalOpen}
-        onCancel={() => setTeamModalOpen(false)}
-        footer={null}
-        width={800}
-        destroyOnHidden
-      >
-        {selectedDepartment && (
-          <TeamClient
-            departmentId={selectedDepartment.id}
-            departmentName={selectedDepartment.name}
-          />
-        )}
-      </Modal>
 
     </div>
   )

@@ -4,7 +4,7 @@ from datetime import date, datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, String, Text, func, text
+from sqlalchemy import Date, DateTime, ForeignKey, Index, Integer, String, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -21,36 +21,6 @@ class HrDepartment(BaseModel):
     name: Mapped[str] = mapped_column(String(64), nullable=False, comment="部门名称")
     code: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, comment="部门编码")
     description: Mapped[str | None] = mapped_column(String(256), nullable=True, comment="部门描述")
-    # ─── 考勤相关 ───
-    is_production: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False,
-        default=False,
-        server_default="false",
-        comment="是否生产部门",
-    )
-    production_start_time: Mapped[str | None] = mapped_column(
-        String(8), nullable=True, comment="生产班次开始时间(HH:MM)"
-    )
-    production_end_time: Mapped[str | None] = mapped_column(String(8), nullable=True, comment="生产班次结束时间(HH:MM)")
-
-    teams: Mapped[list["Team"]] = relationship("Team", back_populates="department", lazy="select")
-
-
-class Team(BaseModel):
-    __tablename__ = "teams"
-    __table_args__ = (
-        Index("ix_teams_department_id", "department_id"),
-        Index("ix_teams_name", "name"),
-        {"schema": "hr"},
-    )
-
-    name: Mapped[str] = mapped_column(String(64), nullable=False, comment="班组名称")
-    code: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="班组编码")
-    description: Mapped[str | None] = mapped_column(String(256), nullable=True, comment="班组描述")
-    department_id: Mapped[UUID] = mapped_column(ForeignKey("hr.departments.id"), nullable=False, comment="所属部门ID")
-
-    department: Mapped["HrDepartment"] = relationship("HrDepartment", back_populates="teams", lazy="select")
 
 
 class Employee(BaseModel):

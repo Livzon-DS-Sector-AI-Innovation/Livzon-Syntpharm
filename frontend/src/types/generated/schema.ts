@@ -9283,43 +9283,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/hr/teams": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 班组列表 */
-        get: operations["list_teams_api_v1_hr_teams_get"];
-        put?: never;
-        /** 创建班组 */
-        post: operations["create_team_api_v1_hr_teams_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/hr/teams/{team_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 班组详情 */
-        get: operations["get_team_api_v1_hr_teams__team_id__get"];
-        /** 更新班组 */
-        put: operations["update_team_api_v1_hr_teams__team_id__put"];
-        post?: never;
-        /** 删除班组 */
-        delete: operations["delete_team_api_v1_hr_teams__team_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/hr/offboarding-records": {
         parameters: {
             query?: never;
@@ -28156,22 +28119,6 @@ export interface components {
              * @description 部门描述
              */
             description?: string | null;
-            /**
-             * Is Production
-             * @description 是否生产部门
-             * @default false
-             */
-            is_production: boolean;
-            /**
-             * Production Start Time
-             * @description 生产班次开始时间(HH:MM)
-             */
-            production_start_time?: string | null;
-            /**
-             * Production End Time
-             * @description 生产班次结束时间(HH:MM)
-             */
-            production_end_time?: string | null;
         };
         /**
          * DepartmentLeaderApiResponse
@@ -28358,15 +28305,6 @@ export interface components {
             code?: string | null;
             /** Description */
             description?: string | null;
-            /**
-             * Is Production
-             * @description 是否生产部门
-             */
-            is_production?: boolean | null;
-            /** Production Start Time */
-            production_start_time?: string | null;
-            /** Production End Time */
-            production_end_time?: string | null;
         };
         /** DepartureRecordCreate */
         DepartureRecordCreate: {
@@ -54372,41 +54310,6 @@ export interface components {
             /** Enabled */
             enabled: boolean;
         };
-        /** TeamCreate */
-        TeamCreate: {
-            /**
-             * Name
-             * @description 班组名称
-             */
-            name: string;
-            /**
-             * Code
-             * @description 班组编码
-             */
-            code?: string | null;
-            /**
-             * Description
-             * @description 班组描述
-             */
-            description?: string | null;
-            /**
-             * Department Id
-             * Format: uuid
-             * @description 所属部门ID
-             */
-            department_id: string;
-        };
-        /** TeamUpdate */
-        TeamUpdate: {
-            /** Name */
-            name?: string | null;
-            /** Code */
-            code?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Department Id */
-            department_id?: string | null;
-        };
         /**
          * TemplateUpdate
          * @description 模板更新
@@ -80330,182 +80233,6 @@ export interface operations {
             header?: never;
             path: {
                 department_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_teams_api_v1_hr_teams_get: {
-        parameters: {
-            query?: {
-                /** @description 部门筛选 */
-                department_id?: string | null;
-                /** @description 班组名称或编码关键词 */
-                keyword?: string | null;
-                page?: number;
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_team_api_v1_hr_teams_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TeamCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_team_api_v1_hr_teams__team_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                team_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_team_api_v1_hr_teams__team_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                team_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TeamUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_team_api_v1_hr_teams__team_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                team_id: string;
             };
             cookie?: {
                 auth_token?: string | null;

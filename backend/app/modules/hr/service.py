@@ -17,7 +17,6 @@ from app.modules.hr.models import (
     HrDepartment,
     OffboardingRecord,
     OnboardingRecord,
-    Team,
     TrainingLedger,
     TrainingLedgerPage,
     TrainingSession,
@@ -31,7 +30,6 @@ from app.modules.hr.repository import (
     EmployeeRepository,
     OffboardingRecordRepository,
     OnboardingRecordRepository,
-    TeamRepository,
     TrainingLedgerPageRepository,
     TrainingLedgerRepository,
     TrainingSessionRepository,
@@ -51,8 +49,6 @@ from app.modules.hr.schemas import (
     OffboardingRecordCreate,
     OffboardingRecordUpdate,
     SyncStatusResponse,
-    TeamCreate,
-    TeamUpdate,
     TrainingLedgerCreate,
     TrainingLedgerUpdate,
     TrainingSessionCreate,
@@ -724,61 +720,6 @@ class DepartmentService:
         page_size: int = 20,
     ) -> tuple[list[HrDepartment], int]:
         return await self.repo.list_departments(
-            keyword=keyword,
-            page=page,
-            page_size=page_size,
-        )
-
-
-class TeamService:
-    def __init__(self, session: AsyncSession) -> None:
-        self.repo = TeamRepository(session)
-        self.department_repo = DepartmentRepository(session)
-
-    async def get_team(self, team_id: UUID) -> Team:
-        team = await self.repo.get_by_id(team_id)
-        if not team:
-            raise NotFoundException("班组", str(team_id))
-        return team
-
-    async def create_team(self, data: TeamCreate) -> Team:
-        department = await self.department_repo.get_by_id(data.department_id)
-        if not department:
-            raise NotFoundException("部门", str(data.department_id))
-
-        team = Team(**data.model_dump())
-        result = await self.repo.create(team)
-        return result
-
-    async def update_team(self, team_id: UUID, data: TeamUpdate) -> Team:
-        team = await self.get_team(team_id)
-        update_data = data.model_dump(exclude_unset=True)
-
-        if "department_id" in update_data:
-            department = await self.department_repo.get_by_id(update_data["department_id"])
-            if not department:
-                raise NotFoundException("部门", str(update_data["department_id"]))
-
-        for field, value in update_data.items():
-            setattr(team, field, value)
-
-        result = await self.repo.update(team)
-        return result
-
-    async def delete_team(self, team_id: UUID) -> None:
-        team = await self.get_team(team_id)
-        await self.repo.soft_delete(team)
-
-    async def list_teams(
-        self,
-        *,
-        department_id: UUID | None = None,
-        keyword: str | None = None,
-        page: int = 1,
-        page_size: int = 20,
-    ) -> tuple[list[Team], int]:
-        return await self.repo.list_teams(
-            department_id=department_id,
             keyword=keyword,
             page=page,
             page_size=page_size,

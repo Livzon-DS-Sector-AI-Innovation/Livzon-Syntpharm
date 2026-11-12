@@ -236,7 +236,6 @@ def _resource_label(resource, module):
     labels = {
         "employees": "员工管理",
         "departments": "部门管理",
-        "teams": "班组管理",
         "offboarding-records": "离岗记录",
         "onboarding-records": "入职记录",
         "departure-records": "离职记录",

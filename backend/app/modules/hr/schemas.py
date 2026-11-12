@@ -13,9 +13,6 @@ class DepartmentBase(BaseModel):
     name: str = Field(..., max_length=64, description="部门名称")
     code: str = Field(..., max_length=32, description="部门编码")
     description: str | None = Field(None, max_length=256, description="部门描述")
-    is_production: bool = Field(False, description="是否生产部门")
-    production_start_time: str | None = Field(None, max_length=8, description="生产班次开始时间(HH:MM)")
-    production_end_time: str | None = Field(None, max_length=8, description="生产班次结束时间(HH:MM)")
 
 
 class DepartmentCreate(DepartmentBase):
@@ -26,45 +23,12 @@ class DepartmentUpdate(BaseModel):
     name: str | None = Field(None, max_length=64)
     code: str | None = Field(None, max_length=32)
     description: str | None = Field(None, max_length=256)
-    is_production: bool | None = Field(None, description="是否生产部门")
-    production_start_time: str | None = Field(None, max_length=8)
-    production_end_time: str | None = Field(None, max_length=8)
 
 
 class DepartmentResponse(DepartmentBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-
-
-# ─── Team Schemas ───
-
-
-class TeamBase(BaseModel):
-    name: str = Field(..., max_length=64, description="班组名称")
-    code: str | None = Field(None, max_length=32, description="班组编码")
-    description: str | None = Field(None, max_length=256, description="班组描述")
-    department_id: UUID = Field(..., description="所属部门ID")
-
-
-class TeamCreate(TeamBase):
-    pass
-
-
-class TeamUpdate(BaseModel):
-    name: str | None = Field(None, max_length=64)
-    code: str | None = Field(None, max_length=32)
-    description: str | None = Field(None, max_length=256)
-    department_id: UUID | None = Field(None)
-
-
-class TeamResponse(TeamBase):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    department: DepartmentResponse | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

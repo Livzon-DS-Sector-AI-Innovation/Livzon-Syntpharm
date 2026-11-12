@@ -11,9 +11,6 @@ import {
   DepartmentCreateInput,
   DepartmentUpdateInput,
   DepartmentListResponse,
-  TeamCreateInput,
-  TeamUpdateInput,
-  TeamListResponse,
   OffboardingRecordCreateInput,
   OffboardingRecordUpdateInput,
   OffboardingRecordListResponse,
@@ -24,7 +21,6 @@ import {
   SelectTask,
   Employee,
   Department,
-  Team,
   OffboardingRecord,
   OnboardingRecordListResponse,
   DepartureRecordListResponse,
@@ -64,10 +60,6 @@ import {
   createDepartmentApi,
   updateDepartmentApi,
   deleteDepartmentApi,
-  fetchTeamsApi,
-  createTeamApi,
-  updateTeamApi,
-  deleteTeamApi,
   fetchOffboardingRecordsApi,
   createOffboardingRecordApi,
   updateOffboardingRecordApi,
@@ -240,37 +232,6 @@ export async function deleteDepartment(id: string) {
   return res as DeleteResponse
 }
 
-// ─── Team Actions ───
-
-export async function fetchTeamsAction(
-  params?: {
-    department_id?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<TeamListResponse> {
-  return fetchTeamsApi(params) as Promise<TeamListResponse>
-}
-
-export async function createTeam(data: TeamCreateInput) {
-  const res = await createTeamApi(data)
-  revalidatePath('/hr/departments')
-  return res as Team
-}
-
-export async function updateTeam(id: string, data: TeamUpdateInput) {
-  const res = await updateTeamApi(id, data)
-  revalidatePath('/hr/departments')
-  return res as Team
-}
-
-export async function deleteTeam(id: string) {
-  const res = await deleteTeamApi(id)
-  revalidatePath('/hr/departments')
-  return res as DeleteResponse
-}
-
 // ─── OffboardingRecord Actions ───
 
 export async function fetchOffboardingRecordsAction(
@@ -399,17 +360,6 @@ export async function fetchOffboardingRecords(
   }
 ): Promise<OffboardingRecordListResponse> {
   return fetchOffboardingRecordsAction(params)
-}
-
-export async function fetchTeams(
-  params?: {
-    department_id?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<TeamListResponse> {
-  return fetchTeamsApi(params) as Promise<TeamListResponse>
 }
 
 export async function fetchOnboardingRecords(
