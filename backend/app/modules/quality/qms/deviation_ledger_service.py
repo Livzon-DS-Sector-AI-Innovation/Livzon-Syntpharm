@@ -154,6 +154,7 @@ def _preview_lock(key: str) -> asyncio.Lock:
             _PREVIEW_LOCKS[key] = lock
         return lock
 
+
 #: 可编辑基础信息的状态
 _EDITABLE_STATUSES = (LedgerStatus.PENDING_AI_ANALYSIS.value, LedgerStatus.RETURNED.value)
 
@@ -1078,9 +1079,7 @@ class DeviationLedgerService:
         if row.status in _COMMENT_FROZEN_STATUSES:
             raise BadRequestException("偏差已关闭，批注不可修改")
 
-    async def _load_comment_profiles(
-        self, comments: Sequence[DeviationAttachmentComment]
-    ) -> dict[str, _UserProfile]:
+    async def _load_comment_profiles(self, comments: Sequence[DeviationAttachmentComment]) -> dict[str, _UserProfile]:
         ids: set[uuid.UUID] = set()
         for comment in comments:
             if comment.created_by is not None:

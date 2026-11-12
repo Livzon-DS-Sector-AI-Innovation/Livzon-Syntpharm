@@ -2421,6 +2421,37 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "GET",
         "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/download",
     ),
+    ApiBindingDef(
+        "quality:deviation:read",
+        "GET",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/preview",
+    ),
+    # 文档批注：能查看该偏差即可读写批注（改正文限作者/超管，在 service 层判定）
+    ApiBindingDef(
+        "quality:deviation:read",
+        "GET",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/comments",
+    ),
+    ApiBindingDef(
+        "quality:deviation:read",
+        "POST",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/comments",
+    ),
+    ApiBindingDef(
+        "quality:deviation:read",
+        "PATCH",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/comments/{comment_id}",
+    ),
+    ApiBindingDef(
+        "quality:deviation:read",
+        "DELETE",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/comments/{comment_id}",
+    ),
+    ApiBindingDef(
+        "quality:deviation:read",
+        "GET",
+        "/api/v1/quality/deviation/ledger/{id}/attachment-comments/summary",
+    ),
     # 偏差组织配置：部门联系人 / 通知设置 / 部门周确认
     ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/department-contacts"),
     ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/department-contacts/member-options"),
