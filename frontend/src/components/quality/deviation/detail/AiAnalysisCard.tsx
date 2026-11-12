@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { App, Button, Card, Empty, Input, Space, Tag } from 'antd'
 import { RobotOutlined } from '@ant-design/icons'
 import { completeDeviationAiAnalysis, startDeviationAiAnalysis } from '@/actions/quality'
@@ -22,32 +22,32 @@ const FIELDS: { key: keyof Draft; label: string; rows: number; placeholder: stri
   { key: 'capa_suggestion', label: '提出 CAPA', rows: 3, placeholder: 'AI 将给出 CAPA 建议（仅文本，不建 CAPA 单）' },
 ]
 
-/** AI 智能分析：生成 → 人工校对 → 确认保存并转入调查 */
+/** AI 智能分析：生成 / 重新分析 → 人工校对 → 保存结果（只保存，不流转；流程由提交调查报告驱动） */
 export function AiAnalysisCard({ ledger, onUpdated }: AiAnalysisCardProps) {
   const { message } = App.useApp()
-  const [draft, setDraft] = useState<Draft>(() => toDraft(ledger.ai_analysis))
-  const [signature, setSignature] = useState(() => JSON.stringify(ledger.ai_analysis ?? null))
+  // 已保存结果的指纹：外部刷新（保存成功 / 重新拉取详情）后草稿自动回落到最新保存值
+  const savedDraft = useMemo(() => toDraft(ledger.ai_analysis), [ledger.ai_analysis])
+  const savedKey = useMemo(() => JSON.stringify(savedDraft), [savedDraft])
+  const [edit, setEdit] = useState<{ key: string; draft: Draft }>(() => ({ key: savedKey, draft: savedDraft }))
   const [busy, setBusy] = useState<'generate' | 'save' | null>(null)
 
-  // 外部刷新（如 AI 重新生成）后同步草稿
-  const incoming = JSON.stringify(ledger.ai_analysis ?? null)
-  if (incoming !== signature) {
-    setSignature(incoming)
-    setDraft(toDraft(ledger.ai_analysis))
-  }
+  const draft = edit.key === savedKey ? edit.draft : savedDraft
+  const updateDraft = (next: Draft) => setEdit({ key: savedKey, draft: next })
 
   const canAnalyze = (ledger.allowed_actions ?? []).includes('analyze')
-  const canSave = ledger.can_operate && ledger.status !== 'closed' && ledger.status !== 'cancelled'
+  // 与后端可编辑口径对齐：待 AI 分析与已退回可编辑，其余阶段只读展示已保存结果
+  const editable = ledger.can_operate && (ledger.status === 'pending_ai_analysis' || ledger.status === 'returned')
   const hasContent = Object.values(draft).some((value) => value.trim().length > 0)
+  const dirty = JSON.stringify(draft) !== savedKey
 
   const handleGenerate = async () => {
     setBusy('generate')
     const result = await startDeviationAiAnalysis(ledger.id)
     setBusy(null)
     if (result.code === 200 && result.data) {
-      setDraft(toDraft(result.data.ai_analysis))
-      onUpdated(result.data)
-      message.success('AI 分析已生成，请校对后确认')
+      // 只更新本地草稿：AI 结果需人工校对后保存，刷新页面仍显示上一次保存的结果
+      updateDraft(toDraft(result.data.ai_analysis))
+      message.success('AI 分析已生成，请校对后保存')
     } else {
       message.error(result.message)
     }
@@ -55,14 +55,11 @@ export function AiAnalysisCard({ ledger, onUpdated }: AiAnalysisCardProps) {
 
   const handleSave = async () => {
     setBusy('save')
-    const result = await completeDeviationAiAnalysis(ledger.id, {
-      ai_analysis: { ...draft },
-      content: '人工校对后确认 AI 分析',
-    })
+    const result = await completeDeviationAiAnalysis(ledger.id, { ai_analysis: { ...draft } })
     setBusy(null)
     if (result.code === 200 && result.data) {
       onUpdated(result.data)
-      message.success('分析已保存并转入调查')
+      message.success('分析结果已保存')
     } else {
       message.error(result.message)
     }
@@ -78,17 +75,18 @@ export function AiAnalysisCard({ ledger, onUpdated }: AiAnalysisCardProps) {
           AI 智能分析
         </span>
       }
-      className="scroll-mt-40 shadow-sm"
+      className="scroll-mt-6 shadow-sm"
       extra={
         <Space wrap size={4}>
+          {dirty && <Tag color="orange">有未保存的修改</Tag>}
           {canAnalyze && (
             <Button size="small" loading={busy === 'generate'} onClick={handleGenerate}>
-              {hasContent ? '重新生成' : '开始分析'}
+              {hasContent ? '重新分析' : '开始分析'}
             </Button>
           )}
-          {canSave && hasContent && (
+          {editable && hasContent && (
             <Button type="primary" size="small" loading={busy === 'save'} onClick={handleSave}>
-              确认并转入调查
+              保存分析结果
             </Button>
           )}
         </Space>
@@ -121,9 +119,9 @@ export function AiAnalysisCard({ ledger, onUpdated }: AiAnalysisCardProps) {
                 rows={field.rows}
                 value={draft[field.key]}
                 placeholder={field.placeholder}
-                disabled={!canSave}
+                disabled={!editable}
                 maxLength={4000}
-                onChange={(event) => setDraft((prev) => ({ ...prev, [field.key]: event.target.value }))}
+                onChange={(event) => updateDraft({ ...draft, [field.key]: event.target.value })}
               />
             </div>
           ))}

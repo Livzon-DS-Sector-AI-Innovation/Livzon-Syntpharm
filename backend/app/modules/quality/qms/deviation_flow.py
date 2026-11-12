@@ -8,7 +8,9 @@
 
 - 调查人：台账 ``handler_ids``
 - 部门负责人：本部门 ``dept_head_id``
-- 跨部门负责人：``cross_dept_reviewers`` 中各跨部门部门的 ``dept_head_id``
+- 跨部门审核：按 ``cross_dept_reviewers`` 每行（部门 + 行内 ``investigator_ids``）各生成
+  一个审核节点，行审核人优先取行内调查人、为空回退该部门 ``dept_head_id``；
+  逐行审批（``approve_cross_dept_row``），全部行通过后环节才前进，整环节驳回仍走 ``transition``
 - 所属 QA：本部门 ``qa_reviewer_id``，缺则回退 ``qa_staff_ids[0]``
 - QA 负责人：本部门 ``qa_head_id``（配置了就用本部门），缺则回退质量保证部 ``qa_head_id``，
   再缺则依次回退两行的 ``qa_staff_ids[1]`` 与质量保证部 ``dept_head_id``
@@ -54,6 +56,9 @@ _AUTO_SKIP_STATUSES: tuple[str, ...] = (
 #: 跨部门审核环节（未开启跨部门审核时步骤条标注为不适用，但不隐藏）
 CROSS_DEPT_STEP = "cross_dept_head_review"
 CROSS_DEPT_INAPPLICABLE_REASON = "本单未勾选跨部门审核，本环节不适用"
+#: 跨部门单行的审核状态（存于 ``cross_dept_reviewers`` 行的 ``review_state`` 字段）
+CROSS_DEPT_ROW_PENDING = "pending"
+CROSS_DEPT_ROW_APPROVED = "approved"
 
 
 @dataclass(frozen=True, slots=True)
@@ -427,10 +432,11 @@ def resolve_step_handlers(
 
     cross_ids: list[uuid.UUID] = []
     for entry in ledger.cross_dept_reviewers or []:
-        department = str(entry.get("department") or "").strip()
-        contact = contacts.get(department)
-        if contact is not None and contact.dept_head_id is not None and contact.dept_head_id not in cross_ids:
-            cross_ids.append(contact.dept_head_id)
+        if not isinstance(entry, dict):
+            continue
+        for reviewer_id in cross_dept_row_reviewer_ids(entry, contacts, directory):
+            if reviewer_id not in cross_ids:
+                cross_ids.append(reviewer_id)
     handlers["cross_dept_head_review"] = cross_ids
 
     handlers["qa_head_review"] = _qa_head_ids(own, qa_dept, directory)
@@ -445,6 +451,61 @@ def resolve_step_handlers(
 def needs_cross_dept_review(ledger: DeviationLedger) -> bool:
     """本单是否真的会经过跨部门负责人审核（开关开启且填了跨部门部门）。"""
     return bool(ledger.needs_cross_dept_review and ledger.cross_dept_reviewers)
+
+
+def cross_dept_review_rows(ledger: DeviationLedger) -> list[dict[str, Any]]:
+    """台账跨部门行（过滤非 dict 脏数据，保持原顺序）。"""
+    return [entry for entry in (ledger.cross_dept_reviewers or []) if isinstance(entry, dict)]
+
+
+def cross_dept_row_reviewer_ids(
+    entry: Mapping[str, Any],
+    contacts: Mapping[str, DepartmentContact],
+    directory: HandlerDirectory,
+) -> list[uuid.UUID]:
+    """单行跨部门的审核人：行内调查人优先，行为空回退该部门的部门负责人。"""
+    reviewer_ids = directory.resolve(entry.get("investigator_ids") or [])
+    if reviewer_ids:
+        return reviewer_ids
+    department = str(entry.get("department") or "").strip()
+    contact = contacts.get(department)
+    if contact is not None and contact.dept_head_id is not None:
+        return [contact.dept_head_id]
+    return []
+
+
+def is_cross_dept_row_approved(entry: Mapping[str, Any]) -> bool:
+    """单行是否已审核通过。"""
+    return str(entry.get("review_state") or "") == CROSS_DEPT_ROW_APPROVED
+
+
+def all_cross_dept_rows_approved(ledger: DeviationLedger) -> bool:
+    """全部跨部门行是否都已通过（无行视为未配置、不通过）。"""
+    rows = cross_dept_review_rows(ledger)
+    return bool(rows) and all(is_cross_dept_row_approved(entry) for entry in rows)
+
+
+def cross_dept_row_payloads(
+    ledger: DeviationLedger,
+    contacts: Mapping[str, DepartmentContact],
+    directory: HandlerDirectory,
+) -> list[dict[str, Any]]:
+    """跨部门逐行审核节点展示数据（流转图 sub_items 与详情行共用）。"""
+    rows: list[dict[str, Any]] = []
+    for entry in cross_dept_review_rows(ledger):
+        department = str(entry.get("department") or "").strip()
+        reviewer_ids = cross_dept_row_reviewer_ids(entry, contacts, directory)
+        rows.append(
+            {
+                "department": department,
+                "reviewer_names": [directory.name(uid) for uid in reviewer_ids],
+                "state": CROSS_DEPT_ROW_APPROVED if is_cross_dept_row_approved(entry) else CROSS_DEPT_ROW_PENDING,
+                "approved_by_name": str(entry.get("approved_name") or "") or None,
+                "approved_at": entry.get("approved_at"),
+                "opinion": str(entry.get("opinion") or "") or None,
+            }
+        )
+    return rows
 
 
 def step_note(ledger: DeviationLedger, step: str) -> tuple[bool, str | None, bool]:
@@ -466,6 +527,27 @@ def allowed_actors(ledger: DeviationLedger, step: str, handlers: Mapping[str, li
     return allowed
 
 
+def ensure_actor_allowed(
+    step: str,
+    allowed: set[uuid.UUID],
+    actor_id: uuid.UUID,
+    *,
+    actor_is_superuser: bool,
+) -> None:
+    """校验操作人是否在该环节的可操作人集合内。
+
+    超级管理员保留兜底能力；其余人一律严格校验。环节未解析到任何处理人时
+    直接拒绝并提示去配置，避免「没有负责人也能审核」。
+    """
+    if actor_is_superuser:
+        return
+    role_label = STEP_DEFS[step].role_label
+    if not allowed:
+        raise ForbiddenException(f"当前环节（{role_label}）未配置处理人，请先在部门联系人配置中配置后再操作")
+    if actor_id not in allowed:
+        raise ForbiddenException(f"当前环节由{role_label}处理，你无权操作")
+
+
 def _append_opinion(
     ledger: DeviationLedger,
     *,
@@ -474,10 +556,11 @@ def _append_opinion(
     actor_id: uuid.UUID,
     actor_name: str,
     content: str,
+    step_label: str | None = None,
 ) -> None:
     opinion = {
         "step": step,
-        "step_label": STEP_DEFS[step].label,
+        "step_label": step_label or STEP_DEFS[step].label,
         "result": result,
         "author_id": str(actor_id),
         "author_name": actor_name,
@@ -576,14 +659,18 @@ async def transition(
 
     if result == REJECTED and not STEP_DEFS[step].allow_reject:
         raise BadRequestException("该环节不支持退回")
+    if step == CROSS_DEPT_STEP and result == APPROVED:
+        raise BadRequestException("跨部门审核请按部门逐行通过")
 
     context = await build_flow_context(db, ledger)
 
-    if result != REJECTED and not actor_is_superuser:
+    if result == RESUBMITTED:
+        # 退回后的重新提交由上报人 / 调查人发起（也可由被退回环节的处理人代提交）
+        allowed = set(ledger.handler_ids or []) | {ledger.reporter_id}
+        allowed.update(context.handlers.get(step, []))
+    else:
         allowed = allowed_actors(ledger, step, context.handlers)
-        if allowed and actor_id not in allowed:
-            role_label = STEP_DEFS[step].role_label
-            raise ForbiddenException(f"当前环节由{role_label}处理，你无权操作")
+    ensure_actor_allowed(step, allowed, actor_id, actor_is_superuser=actor_is_superuser)
 
     if result == APPROVED:
         if "reason_category" in STEP_DEFS[step].requires:
@@ -639,6 +726,105 @@ async def transition(
         handlers=context.handlers,
         content=content.strip(),
         elapsed_hours=elapsed_hours,
+    )
+
+
+async def approve_cross_dept_row(
+    db: AsyncSession,
+    *,
+    ledger_id: uuid.UUID,
+    department: str,
+    content: str,
+    actor_id: uuid.UUID,
+    actor_name: str,
+    actor_is_superuser: bool = False,
+) -> TransitionOutcome:
+    """跨部门逐行审批：行审核人通过只写该行状态，全部行通过后环节才前进到所属 QA 审核。
+
+    行审核人 = 行内调查人（为空回退该部门负责人）；重复审批同行直接拒绝（幂等保护）。
+    """
+    target_department = department.strip()
+    if not target_department:
+        raise BadRequestException("跨部门部门不能为空")
+
+    repo = DeviationLedgerRepository(db)
+    ledger = await repo.get_by_id_for_update(ledger_id)
+    if ledger is None:
+        raise NotFoundException("偏差记录不存在")
+    if ledger.status != LedgerStatus.PENDING_CROSS_DEPT_HEAD_REVIEW.value:
+        raise BadRequestException("当前状态不在跨部门审核环节，不能按部门审批")
+
+    rows = cross_dept_review_rows(ledger)
+    entry = next((item for item in rows if str(item.get("department") or "").strip() == target_department), None)
+    if entry is None:
+        raise NotFoundException("该跨部门行不存在")
+    if is_cross_dept_row_approved(entry):
+        raise BadRequestException("该部门已审核通过，无需重复审批")
+
+    context = await build_flow_context(db, ledger)
+    reviewer_ids = cross_dept_row_reviewer_ids(entry, context.contacts, context.directory)
+    if not reviewer_ids:
+        raise BadRequestException("该跨部门行没有审核人，请在基础信息中补充该部门调查人或维护部门负责人")
+    if not actor_is_superuser and actor_id not in reviewer_ids:
+        raise ForbiddenException("只有该跨部门行的审核人可以审批")
+
+    previous_status = ledger.status
+    now = datetime.now(UTC)
+    elapsed_hours = _elapsed_hours(ledger.status_updated_at, now)
+    updated_rows: list[dict[str, Any]] = []
+    for item in rows:
+        if item is entry:
+            updated_rows.append(
+                {
+                    **item,
+                    "review_state": CROSS_DEPT_ROW_APPROVED,
+                    "approved_by": str(actor_id),
+                    "approved_name": actor_name,
+                    "approved_at": now.isoformat(),
+                    "opinion": content.strip(),
+                }
+            )
+        else:
+            updated_rows.append(dict(item))
+    #: JSONB 原地修改不会被 SQLAlchemy 感知，必须整体重新赋值
+    ledger.cross_dept_reviewers = updated_rows
+
+    _append_opinion(
+        ledger,
+        step=CROSS_DEPT_STEP,
+        result=APPROVED,
+        actor_id=actor_id,
+        actor_name=actor_name,
+        content=content.strip(),
+        step_label=f"{STEP_DEFS[CROSS_DEPT_STEP].label}（{target_department}）",
+    )
+    ledger.updated_by = actor_id
+
+    skipped: list[str] = []
+    if all(is_cross_dept_row_approved(item) for item in updated_rows):
+        next_status = _next_status_on_approve(ledger, CROSS_DEPT_STEP)
+        next_status, skipped = _apply_auto_skip(next_status, context.handlers)
+        ledger.status = next_status
+        ledger.status_updated_at = now
+    else:
+        next_status = ledger.status
+
+    await db.commit()
+    await db.refresh(ledger)
+
+    return TransitionOutcome(
+        ledger=ledger,
+        step=CROSS_DEPT_STEP,
+        result=APPROVED,
+        previous_status=previous_status,
+        next_status=next_status,
+        skipped_steps=skipped,
+        next_handlers=context.refs(STATUS_TO_STEP.get(next_status) or ""),
+        actor_name=actor_name,
+        directory=context.directory,
+        handlers=context.handlers,
+        content=content.strip(),
+        elapsed_hours=elapsed_hours if next_status != previous_status else None,
     )
 
 
@@ -710,18 +896,19 @@ def step_payloads(context: FlowContext, ledger: DeviationLedger) -> list[dict[st
     payloads: list[dict[str, Any]] = []
     for definition in STEP_DEFS.values():
         applicable, skip_reason, auto_skip = step_note(ledger, definition.step)
-        payloads.append(
-            {
-                "step": definition.step,
-                "label": definition.label,
-                "status": definition.status,
-                "role_label": definition.role_label,
-                "handlers": [{"id": str(ref.id), "name": ref.name} for ref in context.refs(definition.step)],
-                "applicable": applicable,
-                "skip_reason": skip_reason,
-                "auto_skip": auto_skip,
-            }
-        )
+        payload: dict[str, Any] = {
+            "step": definition.step,
+            "label": definition.label,
+            "status": definition.status,
+            "role_label": definition.role_label,
+            "handlers": [{"id": str(ref.id), "name": ref.name} for ref in context.refs(definition.step)],
+            "applicable": applicable,
+            "skip_reason": skip_reason,
+            "auto_skip": auto_skip,
+        }
+        if definition.step == CROSS_DEPT_STEP and applicable:
+            payload["sub_items"] = cross_dept_row_payloads(ledger, context.contacts, context.directory)
+        payloads.append(payload)
     return payloads
 
 
@@ -739,6 +926,8 @@ def dedupe(values: Iterable[uuid.UUID]) -> list[uuid.UUID]:
 __all__ = [
     "APPROVED",
     "CROSS_DEPT_INAPPLICABLE_REASON",
+    "CROSS_DEPT_ROW_APPROVED",
+    "CROSS_DEPT_ROW_PENDING",
     "CROSS_DEPT_STEP",
     "QA_DEPARTMENT",
     "REJECTED",
@@ -752,7 +941,13 @@ __all__ = [
     "HandlerRef",
     "StepDef",
     "TransitionOutcome",
+    "all_cross_dept_rows_approved",
+    "approve_cross_dept_row",
     "build_flow_context",
+    "cross_dept_review_rows",
+    "cross_dept_row_payloads",
+    "cross_dept_row_reviewer_ids",
+    "is_cross_dept_row_approved",
     "load_contacts",
     "needs_cross_dept_review",
     "resolve_step_handlers",

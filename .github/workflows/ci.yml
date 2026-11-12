@@ -236,7 +236,11 @@ jobs:
         retention-days: 1
   e2e:
     if: github.event_name != 'push' || github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    # ubuntu-latest 已滚动到 Ubuntu 26.04（resolute，未 GA）。该镜像的 apt 源在
+    # 托管 runner 上持续解析失败（security.ubuntu.com 无法 DNS 解析），使
+    # `playwright install --with-deps` 退出码 100、e2e 整体变红。
+    # 钉住 GA 的 24.04（noble）：Playwright 官方支持，apt 源稳定。
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v5
     - name: Download Docker image artifacts
@@ -273,11 +277,29 @@ jobs:
         echo "resolved Playwright $version"
         echo "version=$version" >> "$GITHUB_OUTPUT"
     - name: Cache Playwright browsers
+      id: pw-cache
       uses: actions/cache@v4
       with:
         path: ~/.cache/ms-playwright
-        key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
-    - run: cd frontend && pnpm exec playwright install --with-deps chromium
+        key: playwright-ubuntu-24.04-${{ steps.playwright.outputs.version }}
+    # 浏览器下载走 Playwright CDN，命中缓存后即跳过。
+    - name: Install Playwright browser
+      if: steps.pw-cache.outputs.cache-hit != 'true'
+      run: cd frontend && pnpm exec playwright install chromium
+    # 系统依赖走 apt：DNS 抖动时不再让整个 e2e 变红，重试三次后仅告警；
+    # 若真缺库，后续 e2e 步骤会给出可读的缺库错误而不是安装失败。
+    - name: Install Playwright OS dependencies (best effort)
+      continue-on-error: true
+      run: |
+        for attempt in 1 2 3; do
+          if (cd frontend && pnpm exec playwright install-deps chromium); then
+            echo "系统依赖安装成功（第 ${attempt} 次）"
+            exit 0
+          fi
+          echo "::warning::第 ${attempt} 次系统依赖安装失败，10 秒后重试"
+          sleep 10
+        done
+        echo "::warning::系统依赖安装最终失败，e2e 可能因缺少系统库而失败"
     - run: bash scripts/ci.sh e2e
       env:
         CI: true

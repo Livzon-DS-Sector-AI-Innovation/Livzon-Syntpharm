@@ -7,12 +7,12 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Any, cast
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only
 
 from .deviation_ledger_constants import STEP_OVERDUE_DAYS, LedgerStatus
-from .deviation_ledger_models import DeviationLedger
+from .deviation_ledger_models import DeviationAttachmentComment, DeviationLedger
 
 #: 当日取号的会话级咨询锁 key，保证并发创建不会撞号
 _CODE_LOCK_KEY = "quality.deviation_ledger.code"
@@ -220,3 +220,90 @@ class DeviationLedgerRepository:
         self.db.add(item)
         await self.db.flush()
         return item
+
+
+class DeviationAttachmentCommentRepository:
+    """附件批注仓储（按 ledger_id + file_id 归集）。"""
+
+    def __init__(self, db: AsyncSession) -> None:
+        self.db = db
+
+    async def list_by_file(
+        self,
+        ledger_id: uuid.UUID,
+        file_id: uuid.UUID,
+    ) -> list[DeviationAttachmentComment]:
+        """按时间正序返回某附件的批注。"""
+        stmt = (
+            select(DeviationAttachmentComment)
+            .where(
+                DeviationAttachmentComment.ledger_id == ledger_id,
+                DeviationAttachmentComment.file_id == file_id,
+                DeviationAttachmentComment.is_deleted.is_(False),
+            )
+            .order_by(
+                DeviationAttachmentComment.created_at.asc(),
+                DeviationAttachmentComment.id.asc(),
+            )
+        )
+        rows = (await self.db.scalars(stmt)).all()
+        return list(rows)
+
+    async def get(
+        self,
+        ledger_id: uuid.UUID,
+        file_id: uuid.UUID,
+        comment_id: uuid.UUID,
+    ) -> DeviationAttachmentComment | None:
+        stmt = select(DeviationAttachmentComment).where(
+            DeviationAttachmentComment.id == comment_id,
+            DeviationAttachmentComment.ledger_id == ledger_id,
+            DeviationAttachmentComment.file_id == file_id,
+            DeviationAttachmentComment.is_deleted.is_(False),
+        )
+        return cast(DeviationAttachmentComment | None, await self.db.scalar(stmt))
+
+    async def create(self, **fields: Any) -> DeviationAttachmentComment:
+        item = DeviationAttachmentComment(**fields)
+        self.db.add(item)
+        await self.db.flush()
+        return item
+
+    async def summary_by_ledger(
+        self,
+        ledger_id: uuid.UUID,
+    ) -> list[tuple[uuid.UUID, int, int]]:
+        """按附件聚合批注数：返回 [(file_id, open_count, total_count)]。"""
+        stmt = (
+            select(
+                DeviationAttachmentComment.file_id,
+                func.count().label("total_count"),
+                func.count().filter(DeviationAttachmentComment.status == "open").label("open_count"),
+            )
+            .where(
+                DeviationAttachmentComment.ledger_id == ledger_id,
+                DeviationAttachmentComment.is_deleted.is_(False),
+            )
+            .group_by(DeviationAttachmentComment.file_id)
+        )
+        rows = (await self.db.execute(stmt)).all()
+        return [(row.file_id, int(row.open_count or 0), int(row.total_count or 0)) for row in rows]
+
+    async def soft_delete_by_file(
+        self,
+        ledger_id: uuid.UUID,
+        file_id: uuid.UUID,
+        *,
+        actor_id: uuid.UUID,
+    ) -> int:
+        """附件被删除时级联软删其全部批注，返回受影响行数。"""
+        result = await self.db.execute(
+            update(DeviationAttachmentComment)
+            .where(
+                DeviationAttachmentComment.ledger_id == ledger_id,
+                DeviationAttachmentComment.file_id == file_id,
+                DeviationAttachmentComment.is_deleted.is_(False),  # noqa: E712
+            )
+            .values(is_deleted=True, updated_by=actor_id)
+        )
+        return int(result.rowcount or 0)  # type: ignore[attr-defined]

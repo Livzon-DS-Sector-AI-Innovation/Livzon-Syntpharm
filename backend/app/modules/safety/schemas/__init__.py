@@ -502,6 +502,8 @@ from app.modules.safety.schemas.hazards import (
     HazardCategoryListApiResponse,
     HazardCategoryResponse,
     HazardCategoryUpdate,
+    HazardDiagnoseApiResponse,
+    HazardDiagnoseData,
     HazardListApiResponse,
     HazardRectificationNotifyApiResponse,
     HazardRectificationNotifyData,

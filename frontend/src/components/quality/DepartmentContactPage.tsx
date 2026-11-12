@@ -25,7 +25,9 @@ import {
   updateDepartmentContact,
 } from '@/actions/quality'
 import { RemoteUserSelect, type RemoteUserSelectOption } from '@/components/common/RemoteUserSelect'
+import { toPersonId, toPersonIds } from '@/lib/utils/form-person'
 import { PeopleNamesInline, PersonInline } from './deviation/PersonInline'
+import type { PersonSnapshot } from './deviation/CrossDeptReviewerFields'
 import { NotifySettingsCard } from '@/components/quality/deviation'
 import type {
   DepartmentContact,
@@ -96,16 +98,16 @@ export function DepartmentContactPage({
     [contacts],
   )
 
-  // 编辑回显：人员下拉展开时才远端取人，已保存（或默认带出）的值靠这些快照显示姓名/头像
-  const editingFallback = useMemo<RemoteUserSelectOption[]>(() => {
-    const rows: RemoteUserSelectOption[] = []
+  // 编辑回显：人员下拉展开时才远端取人，已保存（或默认带出）的值靠这些姓名/头像快照显示
+  const personById = useMemo<Map<string, PersonSnapshot>>(() => {
+    const map = new Map<string, PersonSnapshot>()
     const pushPerson = (id: string | null | undefined, name: string | null | undefined, avatar?: string | null) => {
-      if (id && name) rows.push({ value: id, label: name, avatar })
+      if (id && name) map.set(id, { name, avatar })
     }
     if (!editing) {
       pushPerson(qaDepartment?.quality_head_id, qaDepartment?.quality_head_name, qaDepartment?.quality_head_avatar)
       pushPerson(qaDepartment?.qa_head_id, qaDepartment?.qa_head_name, qaDepartment?.qa_head_avatar)
-      return rows
+      return map
     }
     pushPerson(editing.dept_head_id, editing.dept_head_name, editing.dept_head_avatar)
     pushPerson(editing.production_head_id, editing.production_head_name, editing.production_head_avatar)
@@ -117,8 +119,17 @@ export function DepartmentContactPage({
     }
     pushList(editing.gmp_staff_ids, editing.gmp_staff_names, editing.gmp_staff_avatars)
     pushList(editing.additional_contacts, editing.additional_contact_names, editing.additional_contact_avatars)
-    return rows
+    return map
   }, [editing, qaDepartment])
+
+  // 快照按当前表单值同序取名：换人/删人后不会残留上一次的姓名
+  const formValues = Form.useWatch([], form) as ContactFormValues | undefined
+  // 已保存人员的回显快照统一转成选择器的 fallbackOptions：未展开下拉时也显示姓名/头像而不是 UUID
+  const optionsOf = (ids?: Array<string | null | undefined>): RemoteUserSelectOption[] =>
+    (ids ?? []).filter((id): id is string => Boolean(id)).map((id) => {
+      const snapshot = personById.get(id)
+      return { value: id, label: snapshot?.name || id, avatar: snapshot?.avatar ?? undefined }
+    })
 
   // 部门名是关联键：优先从组织部门里选，避免手输出偏差导致节点负责人解析不到
   const departmentNameCandidates =
@@ -406,22 +417,40 @@ export function DepartmentContactPage({
               name="dept_head_id"
               label="部门负责人"
               tooltip="本部门任何偏差都会指派给他审核"
+              normalize={toPersonId}
             >
-              <RemoteUserSelect placeholder="搜索姓名选择人员" fallbackOptions={editingFallback} />
+              <RemoteUserSelect
+                placeholder="搜索姓名选择人员"
+                allowClear
+                feishuBoundOnly={false}
+                fallbackOptions={optionsOf([formValues?.dept_head_id])}
+              />
             </Form.Item>
             <Form.Item
               name="production_head_id"
               label="生产负责人"
               tooltip="生产车间偏差提级审核时使用"
+              normalize={toPersonId}
             >
-              <RemoteUserSelect placeholder="搜索姓名选择人员" fallbackOptions={editingFallback} />
+              <RemoteUserSelect
+                placeholder="搜索姓名选择人员"
+                allowClear
+                feishuBoundOnly={false}
+                fallbackOptions={optionsOf([formValues?.production_head_id])}
+              />
             </Form.Item>
             <Form.Item
               name="quality_head_id"
               label="质量负责人"
               tooltip="本部门已配置则优先，未配置回退质量保证部"
+              normalize={toPersonId}
             >
-              <RemoteUserSelect placeholder="搜索姓名选择人员" fallbackOptions={editingFallback} />
+              <RemoteUserSelect
+                placeholder="搜索姓名选择人员"
+                allowClear
+                feishuBoundOnly={false}
+                fallbackOptions={optionsOf([formValues?.quality_head_id])}
+              />
             </Form.Item>
           </div>
           <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
@@ -429,22 +458,44 @@ export function DepartmentContactPage({
               name="qa_reviewer_id"
               label="所属 QA"
               tooltip="「所属QA审核」节点处理人，也是最终编号环节处理人"
+              normalize={toPersonId}
             >
-              <RemoteUserSelect placeholder="搜索姓名选择人员" fallbackOptions={editingFallback} />
+              <RemoteUserSelect
+                placeholder="搜索姓名选择人员"
+                allowClear
+                feishuBoundOnly={false}
+                fallbackOptions={optionsOf([formValues?.qa_reviewer_id])}
+              />
             </Form.Item>
             <Form.Item
               name="qa_head_id"
               label="QA 负责人"
               tooltip="「QA负责人审核」节点处理人：本部门已配置则优先，未配置回退质量保证部"
+              normalize={toPersonId}
             >
-              <RemoteUserSelect placeholder="搜索姓名选择人员" fallbackOptions={editingFallback} />
+              <RemoteUserSelect
+                placeholder="搜索姓名选择人员"
+                allowClear
+                feishuBoundOnly={false}
+                fallbackOptions={optionsOf([formValues?.qa_head_id])}
+              />
             </Form.Item>
           </div>
-          <Form.Item name="gmp_staff_ids" label="GMP 人员">
-            <RemoteUserSelect mode="multiple" placeholder="搜索姓名选择人员，可多选" fallbackOptions={editingFallback} />
+          <Form.Item name="gmp_staff_ids" label="GMP 人员" normalize={toPersonIds}>
+            <RemoteUserSelect
+              mode="multiple"
+              placeholder="搜索姓名选择人员，可多选"
+              fallbackOptions={optionsOf(formValues?.gmp_staff_ids)}
+              feishuBoundOnly={false}
+            />
           </Form.Item>
-          <Form.Item name="additional_contacts" label="其他联系人">
-            <RemoteUserSelect mode="multiple" placeholder="搜索姓名选择人员，可多选" fallbackOptions={editingFallback} />
+          <Form.Item name="additional_contacts" label="其他联系人" normalize={toPersonIds}>
+            <RemoteUserSelect
+              mode="multiple"
+              placeholder="搜索姓名选择人员，可多选"
+              fallbackOptions={optionsOf(formValues?.additional_contacts)}
+              feishuBoundOnly={false}
+            />
           </Form.Item>
           <Form.Item name="is_production_workshop" label="是否生产车间" valuePropName="checked">
             <Switch aria-label="是否生产车间" />

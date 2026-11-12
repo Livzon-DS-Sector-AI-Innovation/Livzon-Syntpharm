@@ -333,7 +333,8 @@ CI 会自动检查（`scripts/ci/check_migration_scope.py` 与 `scripts/ci/check
 
 - 每个模块使用 `logger = logging.getLogger(__name__)`
 - 级别：`ERROR`（失败）、`WARNING`（降级/重试）、`INFO`（业务事件）、`DEBUG`（开发调试）
-- 始终包含上下文：`logger.info("batch created", extra={"batch_id": id, "module": "production"})`
+- 始终包含上下文：`logger.info("batch created", extra={"batch_id": id, "biz_module": "production"})`
+- `extra` 的键**不得**与 `LogRecord` 自带属性重名（`module`、`name`、`message`、`levelname`、`args`、`filename`、`lineno` 等）；重名会在记录真正输出时抛 `KeyError: Attempt to overwrite 'xxx' in LogRecord`。业务字段用 `hazard_no`、`record_id`、`biz_module` 这类非保留名。
 - 异常处理用 `logger.exception()`（自动附带 traceback）
 - **禁止**记录 API key、token、密码等敏感信息
 

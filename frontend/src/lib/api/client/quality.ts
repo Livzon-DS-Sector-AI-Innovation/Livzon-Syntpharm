@@ -1,6 +1,11 @@
 import type { ModuleInfo } from '@/types'
 import type { components } from '@/types/generated/schema'
-import type { DepartmentContactListData, DeviationLedgerDetail } from '@/types/quality'
+import type {
+  DepartmentContactListData,
+  DeviationAttachmentCommentList,
+  DeviationAttachmentCommentSummary,
+  DeviationLedgerDetail,
+} from '@/types/quality'
 
 type CapaResponse = components['schemas']['CapaResponse']
 type CapaApiResponse = components['schemas']['CapaApiResponse']
@@ -41,4 +46,23 @@ export async function fetchDepartmentContacts(keyword?: string): Promise<Departm
 /** 台账只读详情：右侧抽屉按需拉取，只含主表字段 */
 export async function fetchDeviationLedgerDetail(id: string): Promise<DeviationLedgerDetail> {
   return apiGet<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${encodeURIComponent(id)}`)
+}
+
+/** 某附件的批注列表（时间正序，含未处理条数） */
+export async function fetchDeviationAttachmentComments(
+  ledgerId: string,
+  fileId: string
+): Promise<DeviationAttachmentCommentList> {
+  const base = `/api/v1/quality/deviation/ledger/${encodeURIComponent(ledgerId)}`
+  return apiGet<DeviationAttachmentCommentList>(
+    `${base}/attachments/${encodeURIComponent(fileId)}/comments`
+  )
+}
+
+/** 详情页附件角标：按附件聚合未处理 / 全部批注数 */
+export async function fetchDeviationAttachmentCommentSummary(
+  ledgerId: string
+): Promise<DeviationAttachmentCommentSummary> {
+  const base = `/api/v1/quality/deviation/ledger/${encodeURIComponent(ledgerId)}`
+  return apiGet<DeviationAttachmentCommentSummary>(`${base}/attachment-comments/summary`)
 }

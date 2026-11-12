@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Alert, Breadcrumb, Button } from 'antd'
-import { ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons'
+import { Alert, App, Breadcrumb, Button, Popconfirm } from 'antd'
+import { ArrowLeftOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons'
+import { deleteDeviationLedger } from '@/actions/quality'
 import type { DeviationLedgerDetail, DeviationLedgerOption } from '@/types/quality'
 import { DEVIATION_LEDGER_PATH } from '../constants'
 import { DetailSummaryBar } from './DetailSummaryBar'
@@ -12,7 +13,7 @@ import { FlowPanel } from './FlowPanel'
 import { BasicInfoCard } from './BasicInfoCard'
 import { AiAnalysisCard } from './AiAnalysisCard'
 import { InvestigationCard } from './InvestigationCard'
-import { ReportCard } from './ReportCard'
+import { CrossDeptReviewCard } from './CrossDeptReviewCard'
 import { ReviewCard } from './ReviewCard'
 import { FinalCodeCard } from './FinalCodeCard'
 import { ReviewTimelineCard } from './ReviewTimelineCard'
@@ -34,7 +35,22 @@ export function DeviationDetailPage({
   optionsError = false,
 }: DeviationDetailPageProps) {
   const router = useRouter()
+  const { message } = App.useApp()
   const [ledger, setLedger] = useState(initialLedger)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    const result = await deleteDeviationLedger(ledger.id)
+    setDeleting(false)
+    if (result.code === 200) {
+      message.success('偏差已删除')
+      router.push(DEVIATION_LEDGER_PATH)
+      router.refresh()
+    } else {
+      message.error(result.message)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -51,9 +67,23 @@ export function DeviationDetailPage({
         <Link href={DEVIATION_LEDGER_PATH}>
           <Button icon={<ArrowLeftOutlined />}>返回台账</Button>
         </Link>
-        <Button icon={<ReloadOutlined />} onClick={() => router.refresh()}>
-          刷新
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Popconfirm
+            title="删除该偏差？"
+            description="删除后不再出现在台账中（软删除，数据仍可追溯）。"
+            okText="删除"
+            okButtonProps={{ danger: true }}
+            cancelText="取消"
+            onConfirm={handleDelete}
+          >
+            <Button danger icon={<DeleteOutlined />} loading={deleting}>
+              删除
+            </Button>
+          </Popconfirm>
+          <Button icon={<ReloadOutlined />} onClick={() => router.refresh()}>
+            刷新
+          </Button>
+        </div>
       </div>
 
       <DetailSummaryBar ledger={ledger} />
@@ -72,7 +102,7 @@ export function DeviationDetailPage({
           <BasicInfoCard ledger={ledger} departmentOptions={departmentOptions} onUpdated={setLedger} />
           <AiAnalysisCard ledger={ledger} onUpdated={setLedger} />
           <InvestigationCard ledger={ledger} onUpdated={setLedger} />
-          <ReportCard ledger={ledger} onUpdated={setLedger} />
+          <CrossDeptReviewCard ledger={ledger} onUpdated={setLedger} />
           <ReviewCard ledger={ledger} onUpdated={setLedger} />
           <FinalCodeCard ledger={ledger} onUpdated={setLedger} />
           <ReviewTimelineCard opinions={ledger.review_opinions ?? []} />

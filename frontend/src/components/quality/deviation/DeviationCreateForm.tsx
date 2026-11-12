@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -22,7 +22,13 @@ import type {
   DeviationLedgerCreateInput,
   DeviationLedgerOption,
 } from '@/types/quality'
-import { RemoteUserSelect } from '@/components/common/RemoteUserSelect'
+import { RemoteUserSelect, type RemoteUserSelectOption } from '@/components/common/RemoteUserSelect'
+import { toPersonId, toPersonIds } from '@/lib/utils/form-person'
+import {
+  CrossDeptReviewerFields,
+  toCrossDeptRowsPayload,
+  type CrossDeptReviewerRowValue,
+} from './CrossDeptReviewerFields'
 import { DEVIATION_LEDGER_PATH } from './constants'
 
 interface DeviationCreateFormProps {
@@ -43,6 +49,7 @@ interface FormValues {
   batch_number: string
   handler_ids: string[]
   needs_cross_dept_review?: boolean
+  cross_dept_reviewers?: CrossDeptReviewerRowValue[]
   description: string
 }
 
@@ -55,16 +62,20 @@ export function DeviationCreateForm({
   const [form] = Form.useForm<FormValues>()
   const [submitting, setSubmitting] = useState(false)
   const [, startTransition] = useTransition()
-  // 已保存值的回显快照：当前登录人（发现人默认值）不在首屏时也要显示姓名
-  const discovererFallback = useMemo(
-    () =>
-      currentUserId && currentUserName
-        ? [{ value: currentUserId, label: currentUserName }]
-        : [],
-    [currentUserId, currentUserName],
-  )
+  const crossReview = Form.useWatch('needs_cross_dept_review', form)
+  // 发现人默认是当前登录人：传姓名快照，未展开下拉时也不会显示 UUID
+  const discovererFallback: RemoteUserSelectOption[] = currentUserId
+    ? [{ value: currentUserId, label: currentUserName }]
+    : []
 
   const handleFinish = async (values: FormValues) => {
+    const crossDeptRows = values.needs_cross_dept_review
+      ? toCrossDeptRowsPayload(values.cross_dept_reviewers ?? [])
+      : []
+    if (values.needs_cross_dept_review && crossDeptRows.length === 0) {
+      message.warning('开启跨部门审核后至少需要一行跨部门（部门必选）')
+      return
+    }
     setSubmitting(true)
     const payload: DeviationLedgerCreateInput = {
       title: values.title.trim(),
@@ -77,6 +88,7 @@ export function DeviationCreateForm({
       batch_number: values.batch_number.trim(),
       handler_ids: values.handler_ids,
       needs_cross_dept_review: Boolean(values.needs_cross_dept_review),
+      cross_dept_reviewers: crossDeptRows,
       description: values.description.trim(),
     }
 
@@ -195,10 +207,12 @@ export function DeviationCreateForm({
                 label="发现人"
                 tooltip="默认填当前登录人，可改选实际发现人"
                 rules={[{ required: true, message: '请选择发现人' }]}
+                normalize={toPersonId}
               >
                 <RemoteUserSelect
                   placeholder={currentUserName || '搜索姓名选择发现人'}
                   fallbackOptions={discovererFallback}
+                  feishuBoundOnly={false}
                 />
               </Form.Item>
             </Col>
@@ -229,8 +243,13 @@ export function DeviationCreateForm({
                 label="调查人"
                 tooltip="可多选，提交后由所选调查人负责后续调查"
                 rules={[{ required: true, message: '请至少选择一名调查人' }]}
+                normalize={toPersonIds}
               >
-                <RemoteUserSelect mode="multiple" placeholder="搜索姓名选择调查人，可多选" />
+                <RemoteUserSelect
+                  mode="multiple"
+                  placeholder="搜索姓名选择调查人，可多选"
+                  feishuBoundOnly={false}
+                />
               </Form.Item>
             </Col>
 
@@ -245,6 +264,17 @@ export function DeviationCreateForm({
                 <Switch aria-label="是否需要跨部门审核" />
               </Form.Item>
             </Col>
+
+            {crossReview && (
+              <Col span={24}>
+                <div className="-mt-2 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-3">
+                  <p className="mb-2 text-xs text-[var(--color-slate)]">
+                    每个跨部门 = 一行会签：留空调查人时由该部门负责人审核；行内任一审核人通过即该行通过，全部行通过后才会进入所属QA审核。
+                  </p>
+                  <CrossDeptReviewerFields form={form} departmentOptions={departmentOptions} />
+                </div>
+              </Col>
+            )}
 
             <Col span={24}>
               <Form.Item

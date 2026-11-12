@@ -24,9 +24,6 @@ import { PeopleInline, PersonInline } from './PersonInline'
 /** 批量更新只开放「作废 / 退回待AI分析」两个管理动作，避免绕过审核流 */
 const BATCH_TARGET_STATUSES = ['cancelled', 'pending_ai_analysis']
 
-/** 仅这两个状态的偏差允许删除，与后端 _DELETABLE_STATUSES 对齐 */
-const DELETABLE_STATUSES = ['pending_ai_analysis', 'cancelled']
-
 /** 列宽单一来源：scroll.x 由列宽求和派生，避免表格宽度与列宽再次漂移 */
 const COLUMN_WIDTHS = {
   code: 150,
@@ -317,20 +314,18 @@ export function DeviationLedgerTable({
               查看
             </Button>
           </Link>
-          {DELETABLE_STATUSES.includes(row.status) && (
-            <Popconfirm
-              title="删除该偏差？"
-              description="删除后不再出现在台账中，且不可恢复。"
-              okText="删除"
-              okButtonProps={{ danger: true }}
-              cancelText="取消"
-              onConfirm={() => handleDelete(row)}
-            >
-              <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-                删除
-              </Button>
-            </Popconfirm>
-          )}
+          <Popconfirm
+            title="删除该偏差？"
+            description="删除后不再出现在台账中（软删除，数据仍可追溯）。"
+            okText="删除"
+            okButtonProps={{ danger: true }}
+            cancelText="取消"
+            onConfirm={() => handleDelete(row)}
+          >
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+              删除
+            </Button>
+          </Popconfirm>
         </Space>
       ),
     },
