@@ -191,3 +191,54 @@ def test_department_levels_read_the_path_after_the_company_root() -> None:
         ],
     )
     assert department_levels(level_one_only) == ("质量保证部", "")
+
+
+def test_parse_directory_employee_handles_nested_mget_payload() -> None:
+    raw = {
+        "base_info": {
+            "employee_id": "ou-123",
+            "name": {"name": {"default_value": "蔡丽英"}},
+            "mobile": "+86 13800000000",
+            "enterprise_email_aliases": [],
+            "departments": [
+                {"department_id": "od-qa", "name": {"default_value": "注册部"}},
+            ],
+            "department_path_infos": [
+                [
+                    {"department_id": "od-company", "department_name": {"default_value": "公司"}},
+                    {"department_id": "od-qa", "department_name": {"default_value": "注册部"}},
+                ]
+            ],
+            "dotted_line_leader_ids": [],
+            "is_resigned": False,
+            "resign_time": "0",
+        },
+        "work_info": {
+            "job_number": "109000586",
+            "job_title": {"job_title_id": "jt-1", "job_title_name": {"default_value": "注册主管"}},
+            "join_date": "2023-12-01",
+            "staff_status": 1,
+            "work_place": {"place_id": "0"},
+            "work_station": {"default_value": ""},
+        },
+    }
+
+    record = parse_directory_employee(raw)
+
+    assert record is not None
+    assert record.open_id == "ou-123"
+    assert record.name == "蔡丽英"
+    assert record.employee_no == "109000586"
+    assert record.job_title_name == "注册主管"
+    assert record.hire_date == date(2023, 12, 1)
+    assert record.department_ids == ["od-qa"]
+    assert record.department_names == ["注册部"]
+    assert record.resign_time == ""
+    assert record.work_place_id == ""
+
+
+def test_employee_required_fields_use_directory_paths() -> None:
+    from app.modules.hr.people_feishu import EMPLOYEE_REQUIRED_FIELDS
+
+    assert EMPLOYEE_REQUIRED_FIELDS
+    assert all(field.startswith(("base_info.", "work_info.")) for field in EMPLOYEE_REQUIRED_FIELDS)

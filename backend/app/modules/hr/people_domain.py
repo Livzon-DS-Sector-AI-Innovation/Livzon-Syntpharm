@@ -185,8 +185,10 @@ def _department_names(raw: dict[str, Any]) -> list[str]:
 def _department_path(raw: dict[str, Any]) -> list[dict[str, str]]:
     for key in ("department_path", "department_path_infos"):
         value = raw.get(key)
-        if not isinstance(value, list):
+        if not isinstance(value, list) or not value:
             continue
+        if isinstance(value[0], list):
+            value = next((item for item in value if item), [])
         path: list[dict[str, str]] = []
         for entry in value:
             if not isinstance(entry, dict):
@@ -201,19 +203,50 @@ def _department_path(raw: dict[str, Any]) -> list[dict[str, str]]:
     return []
 
 
+def _employee_name(base: dict[str, Any]) -> str:
+    value = base.get("name")
+    if isinstance(value, dict) and isinstance(value.get("name"), dict):
+        value = value["name"]
+    return text_value(value)
+
+
+def _department_names_from(raw: dict[str, Any]) -> list[str]:
+    names = _department_names(raw)
+    if names:
+        return names
+    departments = raw.get("departments")
+    if not isinstance(departments, list):
+        return []
+    result: list[str] = []
+    for entry in departments:
+        if not isinstance(entry, dict):
+            continue
+        name = text_value(entry.get("name"))
+        if name:
+            result.append(name)
+    return result
+
+
 def parse_directory_employee(raw: dict[str, Any]) -> EmployeeProfileRecord | None:
     """Map a ``directory/v1/employees/mget`` employee payload to mirror fields.
 
-    ``open_id`` is the mirror key; a payload without it is skipped.
+    The directory API nests values under ``base_info`` and ``work_info``.
+    Flat payloads are also accepted (legacy fixtures), so both shapes parse.
+    ``open_id``/``employee_id`` is the mirror key; a payload without it is skipped.
     """
-    open_id = _str(raw.get("open_id"))
+    base_value = raw.get("base_info")
+    base: dict[str, Any] = base_value if isinstance(base_value, dict) else raw
+    work_value = raw.get("work_info")
+    work: dict[str, Any] = work_value if isinstance(work_value, dict) else raw
+
+    open_id = _str(base.get("employee_id") or base.get("open_id") or raw.get("open_id"))
     if not open_id:
         return None
 
-    avatar_raw = raw.get("avatar")
+    avatar_raw = base.get("avatar")
     avatar = avatar_raw if isinstance(avatar_raw, dict) else {}
 
-    place_raw = raw.get("work_place")
+    place_raw = work.get("work_place")
     place = place_raw if isinstance(place_raw, dict) else {}
     place_id = _str(place.get("place_id"))
     if place_id == "0":
@@ -221,68 +254,68 @@ def parse_directory_employee(raw: dict[str, Any]) -> EmployeeProfileRecord | Non
     place_name = text_value(place.get("place_name")) if place_id else ""
 
     job_title_id, job_title_name = _object_fields(
-        raw.get("job_title"), "job_title_id", "job_title_name", name_aliases=("name",)
+        work.get("job_title"), "job_title_id", "job_title_name", name_aliases=("name",)
     )
     job_level_id, job_level_name = _object_fields(
-        raw.get("job_level"), "job_level_id", "job_level_name", name_aliases=("name",)
+        work.get("job_level"), "job_level_id", "job_level_name", name_aliases=("name",)
     )
     job_family_id, job_family_name = _object_fields(
-        raw.get("job_family"), "job_family_id", "job_family_name", name_aliases=("name",)
+        work.get("job_family"), "job_family_id", "job_family_name", name_aliases=("name",)
     )
 
-    resign_time = _str(raw.get("resign_time"))
+    resign_time = _str(base.get("resign_time"))
     if resign_time == "0":
         resign_time = ""
 
-    aliases = _str_list(raw.get("enterprise_email_aliases") or raw.get("email_alias"))
+    aliases = _str_list(base.get("enterprise_email_aliases") or base.get("email_alias"))
 
     return EmployeeProfileRecord(
         open_id=open_id,
-        name=text_value(raw.get("name")),
-        mobile=_str(raw.get("mobile")),
-        email=_str(raw.get("email")),
-        enterprise_email=_str(raw.get("enterprise_email")),
+        name=_employee_name(base),
+        mobile=_str(base.get("mobile")),
+        email=_str(base.get("email")),
+        enterprise_email=_str(base.get("enterprise_email")),
         email_aliases=aliases,
-        gender=_optional_int(raw.get("gender")),
-        education=_str(raw.get("education")),
-        age=_optional_int(raw.get("age")),
-        description=_str(raw.get("description")),
+        gender=_optional_int(base.get("gender")),
+        education=_str(base.get("education")),
+        age=_optional_int(base.get("age")),
+        description=_str(base.get("description")),
         avatar_72=_str(avatar.get("avatar_72")),
         avatar_240=_str(avatar.get("avatar_240")),
         avatar_640=_str(avatar.get("avatar_640")),
         avatar_origin=_str(avatar.get("avatar_origin")),
-        background_image=_str(raw.get("background_image")),
-        geo_name=_str(raw.get("geo_name") or raw.get("geo")),
-        active_status=_optional_int(raw.get("active_status")),
-        is_resigned=_bool(raw.get("is_resigned")),
+        background_image=_str(base.get("background_image")),
+        geo_name=_str(base.get("geo_name") or base.get("geo")),
+        active_status=_optional_int(base.get("active_status")),
+        is_resigned=_bool(base.get("is_resigned")),
         resign_time=resign_time,
-        is_admin=_bool(raw.get("is_admin")),
-        is_primary_admin=_bool(raw.get("is_primary_admin")),
-        data_source=_optional_int(raw.get("data_source")),
-        employee_no=_str(raw.get("job_number") or raw.get("employee_no")),
+        is_admin=_bool(base.get("is_admin")),
+        is_primary_admin=_bool(base.get("is_primary_admin")),
+        data_source=_optional_int(base.get("data_source")),
+        employee_no=_str(work.get("job_number") or base.get("employee_no")),
         job_title_id=job_title_id,
         job_title_name=job_title_name,
-        hire_date=_date(raw.get("join_date") or raw.get("hire_date")),
-        employment_type=_optional_int(raw.get("employment_type")),
-        staff_status=_optional_int(raw.get("staff_status")),
-        work_country_or_region=_str(raw.get("work_country_or_region")),
+        hire_date=_date(work.get("join_date") or base.get("hire_date")),
+        employment_type=_optional_int(work.get("employment_type")),
+        staff_status=_optional_int(work.get("staff_status")),
+        work_country_or_region=_str(work.get("work_country_or_region")),
         work_place_id=place_id,
         work_place_name=place_name,
-        work_station=_str(raw.get("work_station")),
-        extension_number=_str(raw.get("extension_number") or raw.get("extension")),
-        dotted_line_leader_ids=_str_list(raw.get("dotted_line_leader_ids")),
-        resign_date=_date(raw.get("resign_date")),
-        resign_type=_str(raw.get("resign_type")),
-        resign_reason=_str(raw.get("resign_reason")),
-        resign_remark=_str(raw.get("resign_remark")),
-        positions=_positions(raw.get("positions")),
+        work_station=_str(work.get("work_station")),
+        extension_number=_str(work.get("extension_number") or base.get("extension")),
+        dotted_line_leader_ids=_str_list(base.get("dotted_line_leader_ids")),
+        resign_date=_date(work.get("resign_date")),
+        resign_type=_str(work.get("resign_type")),
+        resign_reason=_str(work.get("resign_reason")),
+        resign_remark=_str(work.get("resign_remark")),
+        positions=_positions(work.get("positions")),
         job_level_id=job_level_id,
         job_level_name=job_level_name,
         job_family_id=job_family_id,
         job_family_name=job_family_name,
-        department_ids=_department_ids(raw),
-        department_names=_department_names(raw),
-        department_path=_department_path(raw),
+        department_ids=_department_ids(base),
+        department_names=_department_names_from(base),
+        department_path=_department_path(base),
     )
 
 
