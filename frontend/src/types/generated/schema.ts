@@ -13797,6 +13797,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quality/deviation/ledger/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询异步任务状态
+         * @description 轮询后台任务状态：`running`/`done`/`failed`，`done` 时 `result` 为任务返回值。
+         */
+        get: operations["get_job_status_api_v1_quality_deviation_ledger_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quality/deviation/ledger/{ledger_id}/ai-analysis": {
         parameters: {
             query?: never;
@@ -13807,8 +13827,11 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * 生成 AI 分析
-         * @description 调用大模型生成结构化分析（只返回，不落库）。
+         * 提交 AI 分析生成任务
+         * @description 大模型耗时不可控，提交到任务队列异步执行（AGENTS.md：请求内不得执行超过 5s 的操作）。
+         *
+         *     前端拿到 `job_id` 后轮询 `/deviation/ledger/jobs/{job_id}`，`done` 时 `result`
+         *     为含 `ai_analysis` 的台账详情；结果仍只返回不落库，由人工校对后保存。
          */
         post: operations["generate_ai_analysis_api_v1_quality_deviation_ledger__ledger_id__ai_analysis_post"];
         delete?: never;
@@ -37626,10 +37649,61 @@ export interface components {
              * @default success
              */
             message: string;
-            /** Data */
-            data?: {
-                [key: string]: unknown;
-            } | null;
+            data?: components["schemas"]["InstrumentListData"] | null;
+        };
+        /**
+         * InstrumentListData
+         * @description 仪器列表分页数据
+         */
+        InstrumentListData: {
+            /** Items */
+            items: components["schemas"]["InstrumentListRow"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /**
+         * InstrumentListRow
+         * @description 仪器列表行（service 层返回的展示字段，含校准有效期与超期标记）
+         */
+        InstrumentListRow: {
+            /** Id */
+            id: string;
+            /** Instrument No */
+            instrument_no: string;
+            /** Instrument Name */
+            instrument_name: string;
+            /** Model */
+            model?: string | null;
+            /** Manufacturer */
+            manufacturer?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Serial No */
+            serial_no?: string | null;
+            /** Location */
+            location?: string | null;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+            /** Status */
+            status?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Valid Until */
+            valid_until?: string | null;
+            /**
+             * Is Overdue
+             * @default false
+             */
+            is_overdue: boolean;
         };
         /**
          * InstrumentMessageApiResponse
@@ -92492,6 +92566,39 @@ export interface operations {
             };
         };
     };
+    get_job_status_api_v1_quality_deviation_ledger_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobStateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     generate_ai_analysis_api_v1_quality_deviation_ledger__ledger_id__ai_analysis_post: {
         parameters: {
             query?: never;
@@ -92511,7 +92618,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["LedgerDetailApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobStateResponse"];
                 };
             };
             /** @description Validation Error */

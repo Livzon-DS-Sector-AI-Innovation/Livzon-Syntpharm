@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from collections.abc import Coroutine, Sequence
@@ -203,6 +204,11 @@ async def send_to_chat(chat_id: str, *, title: str, content: str, url: str | Non
     await _send(chat_id, title=title, content=content, url=url, receive_id_type="chat_id")
 
 
+#: 自检接口在 HTTP 请求内同步执行：飞书客户端默认 3 次重试 × 30s 超时最坏可达 ~93s，
+#: 而 AGENTS.md 要求请求内操作不超过 5s。自检只验证链路，不需要重试，用硬超时兜底。
+_TEST_SEND_TIMEOUT = 5.0
+
+
 async def send_test_card(ref: HandlerRef, *, operator_name: str = "") -> None:
     """给指定用户发一张测试卡片（配置页自检用），失败直接抛给调用方。"""
     receive_id = ref.feishu_id
@@ -216,14 +222,15 @@ async def send_test_card(ref: HandlerRef, *, operator_name: str = "") -> None:
             "后续偏差流转到你的环节时，会收到带「去审批」按钮的卡片。",
         ]
     )
-    await _send(
-        receive_id,
-        title="偏差通知测试",
-        content=content,
-        url=absolute_url("/quality/deviation"),
-        receive_id_type=ref.feishu_id_type,
-        action_text="打开偏差台账",
-    )
+    async with asyncio.timeout(_TEST_SEND_TIMEOUT):
+        await _send(
+            receive_id,
+            title="偏差通知测试",
+            content=content,
+            url=absolute_url("/quality/deviation"),
+            receive_id_type=ref.feishu_id_type,
+            action_text="打开偏差台账",
+        )
 
 
 def _clip(text: str, limit: int = MAX_CONTENT_LENGTH) -> str:

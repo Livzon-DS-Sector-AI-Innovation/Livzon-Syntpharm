@@ -25,6 +25,7 @@ import type {
   DeviationCrossDeptApproveInput,
   DeviationFinalCodeInput,
   DeviationInvestigationInput,
+  DeviationJobState,
   DeviationLedgerBatchStatusInput,
   DeviationLedgerCreateInput,
   DeviationLedgerDetail,
@@ -698,7 +699,7 @@ export async function createDeviationLedger(
   input: DeviationLedgerCreateInput,
 ): Promise<DeviationLedgerActionResult> {
   try {
-    const response = await wrap<DeviationLedgerDetail>(QualityServer.createDeviationLedger(input))
+    const response = await wrap<DeviationLedgerDetail>(QualityServer.fetchCreateDeviationLedger(input))
     revalidatePath('/quality/deviation')
     revalidatePath('/quality/deviation/ledger')
     return { code: response.code, message: response.message, data: response.data }
@@ -739,11 +740,43 @@ export async function updateDeviationLedger(
   id: string,
   input: DeviationLedgerUpdateInput,
 ): Promise<DeviationLedgerActionResult> {
-  return runDeviationAction(id, () => QualityServer.updateDeviationLedger(id, input), '偏差信息保存失败')
+  return runDeviationAction(id, () => QualityServer.fetchUpdateDeviationLedger(id, input), '偏差信息保存失败')
 }
 
-export async function startDeviationAiAnalysis(id: string): Promise<DeviationLedgerActionResult> {
-  return runDeviationAction(id, () => QualityServer.startDeviationAiAnalysis(id), 'AI 分析生成失败')
+export interface DeviationJobActionResult {
+  code: number
+  message: string
+  data: DeviationJobState | null
+}
+
+/** 提交 AI 分析任务：大模型耗时不可控，接口只返回 job_id，结果由轮询获取 */
+export async function startDeviationAiAnalysis(id: string): Promise<DeviationJobActionResult> {
+  try {
+    const data = await QualityServer.fetchStartDeviationAiAnalysis(id)
+    return { code: 200, message: '任务已提交', data }
+  } catch (error) {
+    console.error('AI 分析提交失败', error)
+    return {
+      code: 500,
+      message: error instanceof Error ? error.message : 'AI 分析提交失败',
+      data: null,
+    }
+  }
+}
+
+/** 轮询 AI 分析任务状态 */
+export async function getDeviationJobStatus(jobId: string): Promise<DeviationJobActionResult> {
+  try {
+    const data = await QualityServer.fetchDeviationJobStatus(jobId)
+    return { code: 200, message: 'ok', data }
+  } catch (error) {
+    console.error('查询 AI 分析任务状态失败', error)
+    return {
+      code: 500,
+      message: error instanceof Error ? error.message : '查询任务状态失败',
+      data: null,
+    }
+  }
 }
 
 export async function completeDeviationAiAnalysis(
@@ -752,7 +785,7 @@ export async function completeDeviationAiAnalysis(
 ): Promise<DeviationLedgerActionResult> {
   return runDeviationAction(
     id,
-    () => QualityServer.completeDeviationAiAnalysis(id, input),
+    () => QualityServer.fetchCompleteDeviationAiAnalysis(id, input),
     'AI 分析保存失败',
   )
 }
@@ -763,7 +796,7 @@ export async function submitDeviationInvestigation(
 ): Promise<DeviationLedgerActionResult> {
   return runDeviationAction(
     id,
-    () => QualityServer.submitDeviationInvestigation(id, input),
+    () => QualityServer.fetchSubmitDeviationInvestigation(id, input),
     '调查报告提交失败',
   )
 }
@@ -775,7 +808,7 @@ export async function appendDeviationInvestigationRecord(
 ): Promise<DeviationLedgerActionResult> {
   return runDeviationAction(
     id,
-    () => QualityServer.appendDeviationInvestigationRecord(id, input),
+    () => QualityServer.fetchAppendDeviationInvestigationRecord(id, input),
     '调查记录追加失败',
   )
 }
@@ -784,35 +817,35 @@ export async function approveDeviationCrossDeptRow(
   id: string,
   input: DeviationCrossDeptApproveInput,
 ): Promise<DeviationLedgerActionResult> {
-  return runDeviationAction(id, () => QualityServer.approveDeviationCrossDeptRow(id, input), '跨部门逐行审批失败')
+  return runDeviationAction(id, () => QualityServer.fetchApproveDeviationCrossDeptRow(id, input), '跨部门逐行审批失败')
 }
 
 export async function reviewDeviation(
   id: string,
   input: DeviationReviewInput,
 ): Promise<DeviationLedgerActionResult> {
-  return runDeviationAction(id, () => QualityServer.reviewDeviationLedger(id, input), '审核操作失败')
+  return runDeviationAction(id, () => QualityServer.fetchReviewDeviationLedger(id, input), '审核操作失败')
 }
 
 export async function resubmitDeviation(
   id: string,
   input: DeviationResubmitInput,
 ): Promise<DeviationLedgerActionResult> {
-  return runDeviationAction(id, () => QualityServer.resubmitDeviationLedger(id, input), '重新提交失败')
+  return runDeviationAction(id, () => QualityServer.fetchResubmitDeviationLedger(id, input), '重新提交失败')
 }
 
 export async function submitDeviationFinalCode(
   id: string,
   input: DeviationFinalCodeInput,
 ): Promise<DeviationLedgerActionResult> {
-  return runDeviationAction(id, () => QualityServer.submitDeviationFinalCode(id, input), '最终编号提交失败')
+  return runDeviationAction(id, () => QualityServer.fetchSubmitDeviationFinalCode(id, input), '最终编号提交失败')
 }
 
 export async function uploadDeviationAttachment(
   id: string,
   formData: FormData,
 ): Promise<DeviationLedgerActionResult> {
-  return runDeviationAction(id, () => QualityServer.uploadDeviationAttachment(id, formData), '附件上传失败')
+  return runDeviationAction(id, () => QualityServer.fetchUploadDeviationAttachment(id, formData), '附件上传失败')
 }
 
 export async function deleteDeviationAttachment(
@@ -821,7 +854,7 @@ export async function deleteDeviationAttachment(
 ): Promise<DeviationLedgerActionResult> {
   return runDeviationAction(
     id,
-    () => QualityServer.deleteDeviationAttachment(id, fileId),
+    () => QualityServer.fetchDeleteDeviationAttachment(id, fileId),
     '附件删除失败',
   )
 }
@@ -853,7 +886,7 @@ export async function createDeviationAttachmentComment(
 ): Promise<ApiResponse<DeviationAttachmentComment | null>> {
   return runAttachmentCommentAction(
     id,
-    () => QualityServer.createDeviationAttachmentComment(id, fileId, input),
+    () => QualityServer.fetchCreateDeviationAttachmentComment(id, fileId, input),
     '批注提交失败',
   )
 }
@@ -866,7 +899,7 @@ export async function updateDeviationAttachmentComment(
 ): Promise<ApiResponse<DeviationAttachmentComment | null>> {
   return runAttachmentCommentAction(
     id,
-    () => QualityServer.updateDeviationAttachmentComment(id, fileId, commentId, input),
+    () => QualityServer.fetchUpdateDeviationAttachmentComment(id, fileId, commentId, input),
     '批注更新失败',
   )
 }
@@ -878,7 +911,7 @@ export async function deleteDeviationAttachmentComment(
 ): Promise<ApiResponse<{ id: string; deleted: boolean } | null>> {
   return runAttachmentCommentAction(
     id,
-    () => QualityServer.deleteDeviationAttachmentComment(id, fileId, commentId),
+    () => QualityServer.fetchDeleteDeviationAttachmentComment(id, fileId, commentId),
     '批注删除失败',
   )
 }
@@ -887,7 +920,7 @@ export async function batchUpdateDeviationStatus(
   input: DeviationLedgerBatchStatusInput,
 ): Promise<ApiResponse<DeviationBatchResult | null>> {
   try {
-    const data = await QualityServer.batchUpdateDeviationStatus(input)
+    const data = await QualityServer.fetchBatchUpdateDeviationStatus(input)
     revalidatePath('/quality/deviation')
     revalidatePath('/quality/deviation/ledger')
     return { code: 200, message: '批量更新成功', data }
@@ -903,7 +936,7 @@ export async function batchUpdateDeviationStatus(
 
 export async function deleteDeviationLedger(id: string): Promise<ApiResponse<null>> {
   try {
-    await QualityServer.removeDeviationLedger(id)
+    await QualityServer.fetchRemoveDeviationLedger(id)
     revalidatePath('/quality/deviation')
     revalidatePath('/quality/deviation/ledger')
     return { code: 200, message: '删除成功', data: null }
@@ -921,7 +954,7 @@ export async function updateDeviationNotifySettingsAction(
   input: DeviationNotifySettingsUpdate,
 ): Promise<ApiResponse<DeviationNotifySettings | null>> {
   try {
-    const data = await QualityServer.updateDeviationNotifySettings(input)
+    const data = await QualityServer.fetchUpdateDeviationNotifySettings(input)
     revalidatePath('/quality/department-contacts')
     return { code: 200, message: '通知设置已保存', data }
   } catch (error) {
@@ -938,7 +971,7 @@ export async function sendDeviationNotifyTestAction(): Promise<
   ApiResponse<DeviationNotifyTestResult | null>
 > {
   try {
-    const data = await QualityServer.sendDeviationNotifyTest()
+    const data = await QualityServer.fetchSendDeviationNotifyTest()
     return { code: 200, message: data.message, data }
   } catch (error) {
     console.error('偏差通知测试失败', error)

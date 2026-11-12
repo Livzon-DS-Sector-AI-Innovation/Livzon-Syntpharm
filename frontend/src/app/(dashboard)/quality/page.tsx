@@ -22,34 +22,13 @@ import {
   FileTextOutlined,
   RightOutlined,
 } from '@ant-design/icons'
-
-const API_BASE_URL = '/api/v1'
-
-interface InstrumentItem {
-  id: string
-  instrument_no: string
-  instrument_name: string
-  is_active: boolean
-  valid_until: string
-}
-
-interface ReagentItem {
-  id: string
-  reagent_name: string
-  lot_no: string
-  expiration_date: string
-  status: string
-}
+import { fetchQualityInstruments, fetchQualityReagents } from '@/lib/api/client/quality'
 
 export default function QualityDashboardPage() {
   // 加载仪器统计
   const { data: instrumentData, isLoading: instrumentLoading, refetch: refetchInstruments } = useQuery({
     queryKey: ['quality-dashboard-instruments'],
-    queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/quality/instrument?page=1&page_size=100`)
-      const data = await response.json()
-      return (data.data?.items || []) as InstrumentItem[]
-    },
+    queryFn: fetchQualityInstruments,
   })
 
   const items = instrumentData || []
@@ -89,11 +68,7 @@ export default function QualityDashboardPage() {
   // 加载试剂统计
   const { data: reagentData, isLoading: reagentLoading, refetch: refetchReagents } = useQuery({
     queryKey: ['quality-dashboard-reagents'],
-    queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/quality/reagent/list?page=1&page_size=100`)
-      const data = await response.json()
-      return (data.data?.items || []) as ReagentItem[]
-    },
+    queryFn: fetchQualityReagents,
   })
 
   const reagentItems = reagentData || []

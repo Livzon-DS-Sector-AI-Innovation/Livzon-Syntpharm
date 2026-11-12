@@ -68873,14 +68873,75 @@
         }
       }
     },
+    "/api/v1/quality/deviation/ledger/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u53f0\u8d26",
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u53f0\u8d26"
+        ],
+        "summary": "\u67e5\u8be2\u5f02\u6b65\u4efb\u52a1\u72b6\u6001",
+        "description": "\u8f6e\u8be2\u540e\u53f0\u4efb\u52a1\u72b6\u6001\uff1a`running`/`done`/`failed`\uff0c`done` \u65f6 `result` \u4e3a\u4efb\u52a1\u8fd4\u56de\u503c\u3002",
+        "operationId": "get_job_status_api_v1_quality_deviation_ledger_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsyncJobStateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/quality/deviation/ledger/{ledger_id}/ai-analysis": {
       "post": {
         "tags": [
           "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u53f0\u8d26",
           "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u53f0\u8d26"
         ],
-        "summary": "\u751f\u6210 AI \u5206\u6790",
-        "description": "\u8c03\u7528\u5927\u6a21\u578b\u751f\u6210\u7ed3\u6784\u5316\u5206\u6790\uff08\u53ea\u8fd4\u56de\uff0c\u4e0d\u843d\u5e93\uff09\u3002",
+        "summary": "\u63d0\u4ea4 AI \u5206\u6790\u751f\u6210\u4efb\u52a1",
+        "description": "\u5927\u6a21\u578b\u8017\u65f6\u4e0d\u53ef\u63a7\uff0c\u63d0\u4ea4\u5230\u4efb\u52a1\u961f\u5217\u5f02\u6b65\u6267\u884c\uff08AGENTS.md\uff1a\u8bf7\u6c42\u5185\u4e0d\u5f97\u6267\u884c\u8d85\u8fc7 5s \u7684\u64cd\u4f5c\uff09\u3002\n\n\u524d\u7aef\u62ff\u5230 `job_id` \u540e\u8f6e\u8be2 `/deviation/ledger/jobs/{job_id}`\uff0c`done` \u65f6 `result`\n\u4e3a\u542b `ai_analysis` \u7684\u53f0\u8d26\u8be6\u60c5\uff1b\u7ed3\u679c\u4ecd\u53ea\u8fd4\u56de\u4e0d\u843d\u5e93\uff0c\u7531\u4eba\u5de5\u6821\u5bf9\u540e\u4fdd\u5b58\u3002",
         "operationId": "generate_ai_analysis_api_v1_quality_deviation_ledger__ledger_id__ai_analysis_post",
         "parameters": [
           {
@@ -68916,7 +68977,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/LedgerDetailApiResponse"
+                  "$ref": "#/components/schemas/AsyncJobStateResponse"
                 }
               }
             }
@@ -135028,19 +135089,182 @@
           "data": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/InstrumentListData"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Data"
+            ]
           }
         },
         "type": "object",
         "title": "InstrumentListApiResponse",
         "description": "\u4eea\u5668\u5217\u8868\u54cd\u5e94\u5305\u88c5"
+      },
+      "InstrumentListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InstrumentListRow"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "InstrumentListData",
+        "description": "\u4eea\u5668\u5217\u8868\u5206\u9875\u6570\u636e"
+      },
+      "InstrumentListRow": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "instrument_no": {
+            "type": "string",
+            "title": "Instrument No"
+          },
+          "instrument_name": {
+            "type": "string",
+            "title": "Instrument Name"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "manufacturer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "serial_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serial No"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          },
+          "is_overdue": {
+            "type": "boolean",
+            "title": "Is Overdue",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "instrument_no",
+          "instrument_name"
+        ],
+        "title": "InstrumentListRow",
+        "description": "\u4eea\u5668\u5217\u8868\u884c\uff08service \u5c42\u8fd4\u56de\u7684\u5c55\u793a\u5b57\u6bb5\uff0c\u542b\u6821\u51c6\u6709\u6548\u671f\u4e0e\u8d85\u671f\u6807\u8bb0\uff09"
       },
       "InstrumentMessageApiResponse": {
         "properties": {

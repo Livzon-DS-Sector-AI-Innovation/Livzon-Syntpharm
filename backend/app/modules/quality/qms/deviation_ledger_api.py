@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import date
 from io import BytesIO
+from typing import Any
 from urllib.parse import quote
 from uuid import UUID
 
@@ -15,9 +16,14 @@ from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.core.database import async_session_factory, get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import NotFoundException
+from app.core.job_models import JOB_DONE, JOB_FAILED
+from app.core.job_repository import JobRepository
+from app.core.jobs import submit_job
 from app.core.response import ApiResponse, build_response
+from app.shared.schemas import AsyncJobState, AsyncJobStateResponse
 
 from .deviation_ledger_schemas import (
     AttachmentCommentApiResponse,
@@ -229,19 +235,62 @@ async def delete_ledger(
     return build_response(data=DeleteResultData(id=ledger_id), message="删除成功")
 
 
-@router.post("/{ledger_id}/ai-analysis", response_model=LedgerDetailApiResponse, summary="生成 AI 分析")
+@router.get("/jobs/{job_id}", response_model=AsyncJobStateResponse, summary="查询异步任务状态")
+async def get_job_status(
+    job_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """轮询后台任务状态：`running`/`done`/`failed`，`done` 时 `result` 为任务返回值。"""
+    job = await JobRepository(db).get(job_id)
+    if job is None:
+        raise NotFoundException("任务不存在或已过期")
+    status = {JOB_DONE: "done", JOB_FAILED: "failed"}.get(job.state, "running")
+    return build_response(
+        data=AsyncJobState(
+            job_id=str(job.id),
+            status=status,
+            result=job.result,
+            error=job.error,
+        )
+    )
+
+
+@router.post(
+    "/{ledger_id}/ai-analysis",
+    response_model=AsyncJobStateResponse,
+    summary="提交 AI 分析生成任务",
+)
 async def generate_ai_analysis(
     ledger_id: UUID,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_UPDATE)),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    """调用大模型生成结构化分析（只返回，不落库）。"""
+    """大模型耗时不可控，提交到任务队列异步执行（AGENTS.md：请求内不得执行超过 5s 的操作）。
+
+    前端拿到 `job_id` 后轮询 `/deviation/ledger/jobs/{job_id}`，`done` 时 `result`
+    为含 `ai_analysis` 的台账详情；结果仍只返回不落库，由人工校对后保存。
+    """
     service = DeviationLedgerService(db)
-    analysis = await service.generate_ai_analysis(ledger_id)
-    detail = await service.get_detail(ledger_id, viewer_id=current_user.id)
-    detail.ai_analysis = analysis
-    return build_response(data=detail, message="AI 分析已生成")
+    # 先做存在性/可见性校验，避免给不可见的台账提交任务
+    await service.get_detail(ledger_id, viewer_id=current_user.id)
+    viewer_id = current_user.id
+
+    async def _run(_job_id: UUID) -> dict[str, Any]:
+        async with async_session_factory() as job_db:
+            job_service = DeviationLedgerService(job_db)
+            analysis = await job_service.generate_ai_analysis(ledger_id)
+            detail = await job_service.get_detail(ledger_id, viewer_id=viewer_id)
+            detail.ai_analysis = analysis
+            return detail.model_dump(mode="json")
+
+    job_id = await submit_job("quality.deviation-ai-analysis", _run)
+    return build_response(
+        data=AsyncJobState(job_id=str(job_id), status="running"),
+        message="AI 分析任务已提交",
+    )
 
 
 @router.post(

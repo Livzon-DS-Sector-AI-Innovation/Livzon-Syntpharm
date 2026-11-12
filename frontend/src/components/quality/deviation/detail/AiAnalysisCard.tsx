@@ -3,8 +3,12 @@
 import { useMemo, useState } from 'react'
 import { App, Button, Card, Empty, Input, Space, Tag } from 'antd'
 import { RobotOutlined } from '@ant-design/icons'
-import { completeDeviationAiAnalysis, startDeviationAiAnalysis } from '@/actions/quality'
-import type { DeviationAiAnalysisData, DeviationLedgerDetail } from '@/types/quality'
+import {
+  completeDeviationAiAnalysis,
+  getDeviationJobStatus,
+  startDeviationAiAnalysis,
+} from '@/actions/quality'
+import type { DeviationAiAnalysisData, DeviationJobState, DeviationLedgerDetail } from '@/types/quality'
 
 interface AiAnalysisCardProps {
   ledger: DeviationLedgerDetail
@@ -42,14 +46,27 @@ export function AiAnalysisCard({ ledger, onUpdated }: AiAnalysisCardProps) {
 
   const handleGenerate = async () => {
     setBusy('generate')
-    const result = await startDeviationAiAnalysis(ledger.id)
-    setBusy(null)
-    if (result.code === 200 && result.data) {
+    try {
+      const submitted = await startDeviationAiAnalysis(ledger.id)
+      if (submitted.code !== 200 || !submitted.data) {
+        message.error(submitted.message)
+        return
+      }
+      const job = await waitForJob(submitted.data.job_id)
+      if (!job) {
+        message.error('AI 分析耗时较长，请稍后重新进入详情页查看')
+        return
+      }
+      if (job.status === 'failed') {
+        message.error(job.error ?? 'AI 分析失败')
+        return
+      }
+      const payload = job.result as { ai_analysis?: DeviationAiAnalysisData } | null
       // 只更新本地草稿：AI 结果需人工校对后保存，刷新页面仍显示上一次保存的结果
-      updateDraft(toDraft(result.data.ai_analysis))
+      updateDraft(toDraft(payload?.ai_analysis))
       message.success('AI 分析已生成，请校对后保存')
-    } else {
-      message.error(result.message)
+    } finally {
+      setBusy(null)
     }
   }
 
@@ -129,6 +146,20 @@ export function AiAnalysisCard({ ledger, onUpdated }: AiAnalysisCardProps) {
       )}
     </Card>
   )
+}
+
+const JOB_POLL_INTERVAL_MS = 1500
+const JOB_POLL_MAX_ATTEMPTS = 40
+
+/** 轮询后台任务：done/failed 返回终态，超过约 60s 返回 null（提示用户稍后查看） */
+async function waitForJob(jobId: string): Promise<DeviationJobState | null> {
+  for (let attempt = 0; attempt < JOB_POLL_MAX_ATTEMPTS; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, JOB_POLL_INTERVAL_MS))
+    const state = await getDeviationJobStatus(jobId)
+    if (state.code !== 200 || !state.data) continue
+    if (state.data.status !== 'running') return state.data
+  }
+  return null
 }
 
 function toDraft(analysis: DeviationAiAnalysisData | null | undefined): Draft {

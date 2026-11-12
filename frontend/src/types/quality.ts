@@ -555,6 +555,8 @@ export type DeviationLedgerOptionResult = components['schemas']['OptionListData'
 export type DeviationBatchResult =
   components['schemas']['app__modules__quality__qms__deviation_ledger_schemas__BatchResultData']
 export type DeviationDeleteResult = components['schemas']['DeleteResultData']
+export type DeviationMemberOptionResult = components['schemas']['MemberOptionListData']
+export type DeviationJobState = components['schemas']['AsyncJobState']
 
 /** 台账查询参数：只在前端 URL / 请求 query 上使用 */
 export interface DeviationLedgerFilters {

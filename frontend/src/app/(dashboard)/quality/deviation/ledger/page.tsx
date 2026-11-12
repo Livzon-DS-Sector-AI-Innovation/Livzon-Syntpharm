@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { DeviationLedgerTable } from '@/components/quality/deviation'
 import {
-  getDeviationDepartmentOptions,
-  getDeviationLedger,
-  getDeviationStatusOptions,
+  fetchDeviationDepartmentOptions,
+  fetchDeviationLedgerList,
+  fetchDeviationStatusOptions,
 } from '@/lib/api/server/quality'
 import type {
   DeviationLedgerFilters,
@@ -47,9 +47,9 @@ export default async function DeviationLedgerPage({ searchParams }: PageProps) {
 
   // 三个请求互不依赖，并行取；任一失败只降级该块，不整页 500
   const [listResult, departmentResult, statusResult] = await Promise.allSettled([
-    getDeviationLedger({ ...filters, page, page_size: pageSize }),
-    getDeviationDepartmentOptions(),
-    getDeviationStatusOptions(),
+    fetchDeviationLedgerList({ ...filters, page, page_size: pageSize }),
+    fetchDeviationDepartmentOptions(),
+    fetchDeviationStatusOptions(),
   ])
 
   let list: DeviationLedgerListResult | null = null

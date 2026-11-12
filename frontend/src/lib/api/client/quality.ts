@@ -41,6 +41,21 @@ export async function fetchDepartmentContacts(keyword?: string): Promise<Departm
   return apiGet<DepartmentContactListData>(`/api/v1/quality/department-contacts${query}`)
 }
 
+type InstrumentListData = components['schemas']['InstrumentListData']
+type ReagentListData = components['schemas']['ReagentListResponse']
+
+/** 质量看盘：仪器列表（含校准有效期与超期标记） */
+export async function fetchQualityInstruments(): Promise<InstrumentListData['items']> {
+  const data = await apiGet<InstrumentListData>(`/api/v1/quality/instrument?page=1&page_size=100`)
+  return data.items
+}
+
+/** 质量看盘：试剂列表 */
+export async function fetchQualityReagents(): Promise<ReagentListData['items']> {
+  const data = await apiGet<ReagentListData>(`/api/v1/quality/reagent/list?page=1&page_size=100`)
+  return data.items
+}
+
 // ============ 偏差台账（quality.deviation_ledger） ============
 
 /** 台账只读详情：右侧抽屉按需拉取，只含主表字段 */

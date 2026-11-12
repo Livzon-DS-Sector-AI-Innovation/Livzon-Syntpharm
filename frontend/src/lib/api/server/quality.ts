@@ -29,15 +29,19 @@ import type {
   DeviationAttachmentCommentUpdateInput,
   DeviationBatchResult,
   DeviationCrossDeptApproveInput,
+  DeviationDeleteResult,
   DeviationFinalCodeInput,
   DeviationInvestigationInput,
+  DeviationJobState,
   DeviationLedgerBatchStatusInput,
   DeviationLedgerCreateInput,
   DeviationLedgerDetail,
   DeviationLedgerFilters,
   DeviationLedgerListResult,
   DeviationLedgerOption,
+  DeviationLedgerOptionResult,
   DeviationLedgerStatistics,
+  DeviationMemberOptionResult,
   DeviationLedgerUpdateInput,
   DeviationNotifySettings,
   DeviationNotifySettingsUpdate,
@@ -736,7 +740,7 @@ export async function uploadLcExcel(formData: FormData): Promise<UploadLcRespons
 // ============ 偏差台账 ============
 
 /** 台账列表：状态 / 发生部门 / 发现日期区间筛选，按发现日期倒序 */
-export async function getDeviationLedger(
+export async function fetchDeviationLedgerList(
   params: DeviationLedgerFilters = {},
 ): Promise<DeviationLedgerListResult> {
   const searchParams = new URLSearchParams()
@@ -752,50 +756,50 @@ export async function getDeviationLedger(
 }
 
 /** 偏差看盘统计 */
-export async function getDeviationLedgerStatistics(): Promise<DeviationLedgerStatistics> {
+export async function fetchDeviationLedgerStatistics(): Promise<DeviationLedgerStatistics> {
   return apiFetchData<DeviationLedgerStatistics>('/api/v1/quality/deviation/ledger/statistics')
 }
 
 /** 台账只读详情 */
-export async function getDeviationLedgerDetail(id: string): Promise<DeviationLedgerDetail> {
+export async function fetchDeviationLedgerDetail(id: string): Promise<DeviationLedgerDetail> {
   return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}`)
 }
 
 /** 发生部门候选（筛选栏，覆盖台账已有部门） */
-export async function getDeviationDepartmentOptions(): Promise<DeviationLedgerOption[]> {
-  const data = await apiFetchData<{ items: DeviationLedgerOption[] }>(
+export async function fetchDeviationDepartmentOptions(): Promise<DeviationLedgerOption[]> {
+  const data = await apiFetchData<DeviationLedgerOptionResult>(
     '/api/v1/quality/deviation/ledger/department-options',
   )
   return data.items
 }
 
 /** 新建 / 编辑可用部门（来源部门联系人配置，保证节点负责人可解析） */
-export async function getDeviationDepartmentContactOptions(): Promise<DeviationLedgerOption[]> {
-  const data = await apiFetchData<{ items: DeviationLedgerOption[] }>(
+export async function fetchDeviationDepartmentContactOptions(): Promise<DeviationLedgerOption[]> {
+  const data = await apiFetchData<DeviationLedgerOptionResult>(
     '/api/v1/quality/deviation/ledger/department-contact-options',
   )
   return data.items
 }
 
 /** 调查人候选 */
-export async function getDeviationInvestigatorOptions(keyword?: string): Promise<DeviationLedgerOption[]> {
+export async function fetchDeviationInvestigatorOptions(keyword?: string): Promise<DeviationLedgerOption[]> {
   const query = keyword ? `?keyword=${encodeURIComponent(keyword)}` : ''
-  const data = await apiFetchData<{ items: DeviationLedgerOption[] }>(
+  const data = await apiFetchData<DeviationLedgerOptionResult>(
     `/api/v1/quality/deviation/ledger/investigator-options${query}`,
   )
   return data.items
 }
 
 /** 状态候选 */
-export async function getDeviationStatusOptions(): Promise<DeviationLedgerOption[]> {
-  const data = await apiFetchData<{ items: DeviationLedgerOption[] }>(
+export async function fetchDeviationStatusOptions(): Promise<DeviationLedgerOption[]> {
+  const data = await apiFetchData<DeviationLedgerOptionResult>(
     '/api/v1/quality/deviation/ledger/status-options',
   )
   return data.items
 }
 
 /** 新建偏差 */
-export async function createDeviationLedger(data: DeviationLedgerCreateInput): Promise<DeviationLedgerDetail> {
+export async function fetchCreateDeviationLedger(data: DeviationLedgerCreateInput): Promise<DeviationLedgerDetail> {
   return apiFetchData<DeviationLedgerDetail>('/api/v1/quality/deviation/ledger', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -803,7 +807,7 @@ export async function createDeviationLedger(data: DeviationLedgerCreateInput): P
 }
 
 /** 修改基础信息（含调查人、跨部门审核配置） */
-export async function updateDeviationLedger(
+export async function fetchUpdateDeviationLedger(
   id: string,
   data: DeviationLedgerUpdateInput,
 ): Promise<DeviationLedgerDetail> {
@@ -814,14 +818,19 @@ export async function updateDeviationLedger(
 }
 
 /** 生成 AI 分析（生成后不落库，需再确认保存） */
-export async function startDeviationAiAnalysis(id: string): Promise<DeviationLedgerDetail> {
-  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/ai-analysis`, {
+export async function fetchStartDeviationAiAnalysis(id: string): Promise<DeviationJobState> {
+  return apiFetchData<DeviationJobState>(`/api/v1/quality/deviation/ledger/${id}/ai-analysis`, {
     method: 'POST',
   })
 }
 
+/** 查询 AI 分析后台任务状态（客户端轮询用） */
+export async function fetchDeviationJobStatus(jobId: string): Promise<DeviationJobState> {
+  return apiFetchData<DeviationJobState>(`/api/v1/quality/deviation/ledger/jobs/${jobId}`)
+}
+
 /** 保存 AI 分析结果（只落库，不流转流程） */
-export async function completeDeviationAiAnalysis(
+export async function fetchCompleteDeviationAiAnalysis(
   id: string,
   data: DeviationAiAnalysisInput,
 ): Promise<DeviationLedgerDetail> {
@@ -832,7 +841,7 @@ export async function completeDeviationAiAnalysis(
 }
 
 /** 提交调查报告 */
-export async function submitDeviationInvestigation(
+export async function fetchSubmitDeviationInvestigation(
   id: string,
   data: DeviationInvestigationInput,
 ): Promise<DeviationLedgerDetail> {
@@ -843,7 +852,7 @@ export async function submitDeviationInvestigation(
 }
 
 /** 审核阶段追加调查记录（不推进流程） */
-export async function appendDeviationInvestigationRecord(
+export async function fetchAppendDeviationInvestigationRecord(
   id: string,
   data: DeviationInvestigationInput,
 ): Promise<DeviationLedgerDetail> {
@@ -854,7 +863,7 @@ export async function appendDeviationInvestigationRecord(
 }
 
 /** 跨部门会签：逐行审批（任一审核人通过即该行通过，全部行通过后流转所属QA审核） */
-export async function approveDeviationCrossDeptRow(
+export async function fetchApproveDeviationCrossDeptRow(
   id: string,
   data: DeviationCrossDeptApproveInput,
 ): Promise<DeviationLedgerDetail> {
@@ -865,7 +874,7 @@ export async function approveDeviationCrossDeptRow(
 }
 
 /** 审核通过 / 退回 */
-export async function reviewDeviationLedger(
+export async function fetchReviewDeviationLedger(
   id: string,
   data: DeviationReviewInput,
 ): Promise<DeviationLedgerDetail> {
@@ -876,7 +885,7 @@ export async function reviewDeviationLedger(
 }
 
 /** 退回后重新提交 */
-export async function resubmitDeviationLedger(
+export async function fetchResubmitDeviationLedger(
   id: string,
   data: DeviationResubmitInput,
 ): Promise<DeviationLedgerDetail> {
@@ -887,7 +896,7 @@ export async function resubmitDeviationLedger(
 }
 
 /** 提交最终编号并关闭 */
-export async function submitDeviationFinalCode(
+export async function fetchSubmitDeviationFinalCode(
   id: string,
   data: DeviationFinalCodeInput,
 ): Promise<DeviationLedgerDetail> {
@@ -898,7 +907,7 @@ export async function submitDeviationFinalCode(
 }
 
 /** 上传附件 */
-export async function uploadDeviationAttachment(
+export async function fetchUploadDeviationAttachment(
   id: string,
   formData: FormData,
 ): Promise<DeviationLedgerDetail> {
@@ -909,7 +918,7 @@ export async function uploadDeviationAttachment(
 }
 
 /** 删除附件 */
-export async function deleteDeviationAttachment(
+export async function fetchDeleteDeviationAttachment(
   id: string,
   fileId: string,
 ): Promise<DeviationLedgerDetail> {
@@ -920,7 +929,7 @@ export async function deleteDeviationAttachment(
 }
 
 /** 新增附件批注 */
-export async function createDeviationAttachmentComment(
+export async function fetchCreateDeviationAttachmentComment(
   id: string,
   fileId: string,
   data: DeviationAttachmentCommentCreateInput,
@@ -932,7 +941,7 @@ export async function createDeviationAttachmentComment(
 }
 
 /** 修改附件批注（正文或处理状态） */
-export async function updateDeviationAttachmentComment(
+export async function fetchUpdateDeviationAttachmentComment(
   id: string,
   fileId: string,
   commentId: string,
@@ -945,18 +954,18 @@ export async function updateDeviationAttachmentComment(
 }
 
 /** 删除附件批注（软删除，仅作者/超管） */
-export async function deleteDeviationAttachmentComment(
+export async function fetchDeleteDeviationAttachmentComment(
   id: string,
   fileId: string,
   commentId: string,
-): Promise<{ id: string; deleted: boolean } | null> {
-  return fetchDeleteOrNull<{ id: string; deleted: boolean }>(
+): Promise<DeviationDeleteResult | null> {
+  return fetchDeleteOrNull<DeviationDeleteResult>(
     `/api/v1/quality/deviation/ledger/${id}/attachments/${fileId}/comments/${commentId}`,
   )
 }
 
 /** 批量更新状态 */
-export async function batchUpdateDeviationStatus(
+export async function fetchBatchUpdateDeviationStatus(
   data: DeviationLedgerBatchStatusInput,
 ): Promise<DeviationBatchResult> {
   return apiFetchData<DeviationBatchResult>('/api/v1/quality/deviation/ledger/batch-status', {
@@ -966,34 +975,34 @@ export async function batchUpdateDeviationStatus(
 }
 
 /** 删除偏差（任意状态软删除，数据仍可追溯） */
-export async function removeDeviationLedger(id: string): Promise<void> {
+export async function fetchRemoveDeviationLedger(id: string): Promise<void> {
   await apiFetchRaw(`/api/v1/quality/deviation/ledger/${id}`, { method: 'DELETE' })
 }
 
 // ============ 偏差组织配置 ============
 
 /** 部门联系人列表 */
-export async function getDepartmentContacts(keyword?: string): Promise<DepartmentContactListData> {
+export async function fetchDepartmentContacts(keyword?: string): Promise<DepartmentContactListData> {
   const query = keyword ? `?keyword=${encodeURIComponent(keyword)}` : ''
   return apiFetchData<DepartmentContactListData>(`/api/v1/quality/department-contacts${query}`)
 }
 
 /** 配置页人员候选 */
-export async function getDeviationMemberOptions(keyword?: string): Promise<DepartmentMemberOption[]> {
+export async function fetchDeviationMemberOptions(keyword?: string): Promise<DepartmentMemberOption[]> {
   const query = keyword ? `?keyword=${encodeURIComponent(keyword)}` : ''
-  const data = await apiFetchData<{ items: DepartmentMemberOption[] }>(
+  const data = await apiFetchData<DeviationMemberOptionResult>(
     `/api/v1/quality/department-contacts/member-options${query}`,
   )
   return data.items
 }
 
 /** 通知设置 */
-export async function getDeviationNotifySettings(): Promise<DeviationNotifySettings> {
+export async function fetchDeviationNotifySettings(): Promise<DeviationNotifySettings> {
   return apiFetchData<DeviationNotifySettings>('/api/v1/quality/deviation/notify')
 }
 
 /** 更新通知设置 */
-export async function updateDeviationNotifySettings(
+export async function fetchUpdateDeviationNotifySettings(
   data: DeviationNotifySettingsUpdate,
 ): Promise<DeviationNotifySettings> {
   return apiFetchData<DeviationNotifySettings>('/api/v1/quality/deviation/notify', {
@@ -1003,7 +1012,7 @@ export async function updateDeviationNotifySettings(
 }
 
 /** 发送偏差通知测试卡片（自检飞书链路与处理人绑定情况） */
-export async function sendDeviationNotifyTest(): Promise<DeviationNotifyTestResult> {
+export async function fetchSendDeviationNotifyTest(): Promise<DeviationNotifyTestResult> {
   return apiFetchData<DeviationNotifyTestResult>('/api/v1/quality/deviation/notify/test', {
     method: 'POST',
   })
