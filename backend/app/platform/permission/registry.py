@@ -91,6 +91,9 @@ PLATFORM_PERMISSIONS: tuple[PermissionDef, ...] = (
 PLATFORM_DOMAIN_LABEL = "平台管理"
 
 RESOURCE_LABELS: dict[str, str] = {
+    # 每个业务模块各有一个 `<module>:module:read`（菜单可见性 + 页面准入），
+    # 资源码统一为 "module"，这里叫「模块准入」，避免资源节点显示成重复的模块名或英文码
+    "module": "模块准入",
     "user": "用户管理",
     "role": "角色管理",
     "permission": "权限目录",
@@ -99,6 +102,9 @@ RESOURCE_LABELS: dict[str, str] = {
     "audit": "审计日志",
     "api-binding": "接口绑定",
     "ops": "系统运维",
+    "hazard-category": "隐患类别字典",
+    "llm-config": "模型配置",
+    "module-setting": "模块配置",
     # ── research（研发管理）资源 ──
     "project": "研发项目",
     "track": "研究跟踪",
@@ -238,6 +244,33 @@ RESOURCE_LABELS: dict[str, str] = {
     "production:records": "生产记录",
     "production:steps": "工艺步骤",
     "production:tasks": "生产任务",
+    # ── safety（安全管理）资源 ──
+    # 此前 safety 的资源中文名一条都没登记，权限树里 25 个资源节点一直显示英文资源码
+    "safety:accident": "事故",
+    "safety:ai-workflow-config": "AI 工作流配置",
+    "safety:check": "安全检查",
+    "safety:contractor": "承包商",
+    "safety:daily-risk-report": "每日风险报告",
+    "safety:ehs-change": "EHS 变更",
+    "safety:equipment-facility-hazard": "设备设施危险源台账",
+    "safety:feishu": "飞书事件订阅管理",
+    "safety:hazard": "事故隐患",
+    "safety:hazard-identification": "危害辨识",
+    "safety:knowledge-article": "安全知识文章",
+    "safety:knowledge-graph": "安全知识图谱",
+    "safety:oh-hazard-monitor": "职业危害监测",
+    "safety:oh-health-exam": "职业健康体检",
+    "safety:regulation": "安全法规",
+    "safety:regulation-revision": "法规修订",
+    "safety:scheduled-task": "安全定时任务",
+    "safety:special-operation-ledger": "特殊作业台账",
+    "safety:special-operation-permit": "特殊作业许可",
+    "safety:special-operation-personnel": "特殊作业人员",
+    "safety:special-operation-report": "特殊作业报告",
+    "safety:training": "安全培训",
+    "safety:training-certificate": "培训证书",
+    "safety:training-record": "培训记录",
+    "safety:work-activity-hazard": "作业活动危险源台账",
 }
 
 # ── 业务模块访问权限码（菜单级：每个模块 1 个）─────────────────────
@@ -343,6 +376,16 @@ SAFETY_PERMISSIONS: tuple[PermissionDef, ...] = (
         "管理事故隐患（创建/修改/删除/审批）",
         "safety",
         "hazard",
+        "manage",
+    ),
+    # hazard-categories（隐患类别字典，全公司共享；仅模块管理员可维护）
+    # 注意：与 safety:hazard:manage 分开。能登记隐患的人必须有 hazard:manage，
+    # 若复用该码，则所有能登记隐患的普通用户都能改全公司共享的类别字典。
+    PermissionDef(
+        "safety:hazard-category:manage",
+        "管理隐患类别字典（新增/改名/删除）",
+        "safety",
+        "hazard-category",
         "manage",
     ),
     # knowledge-articles
@@ -1246,6 +1289,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:permission:read", "GET", "/api/v1/permission/permissions"),
     # 权限树只服务于「角色管理」勾选权限，跟随 role:read（与端点 require_permission 对齐）
     ApiBindingDef("platform:role:read", "GET", "/api/v1/permission/tree"),
+    # 单权限码接口清单同样跟随 role:read（与端点 require_permission 对齐）
+    ApiBindingDef("platform:role:read", "GET", "/api/v1/permission/permissions/{code}/api-bindings"),
     ApiBindingDef("platform:api-binding:read", "GET", "/api/v1/permission/api-bindings"),
     # 授权管理
     ApiBindingDef("platform:grant:read", "GET", "/api/v1/permission/departments"),
@@ -1566,7 +1611,9 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("safety:work-activity-hazard:manage", "DELETE", "/api/v1/safety/work-activity-hazards/{hazard_id}"),
     ApiBindingDef("safety:module:read", "GET", "/api/v1/safety/enums/risk-grading"),
     ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazard-categories"),
-    ApiBindingDef("safety:hazard:manage", "POST", "/api/v1/safety/hazard-categories"),
+    ApiBindingDef("safety:hazard-category:manage", "POST", "/api/v1/safety/hazard-categories"),
+    ApiBindingDef("safety:hazard-category:manage", "DELETE", "/api/v1/safety/hazard-categories/{category_id}"),
+    ApiBindingDef("safety:hazard-category:manage", "PUT", "/api/v1/safety/hazard-categories/{category_id}"),
     ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazards"),
     ApiBindingDef("safety:hazard:manage", "POST", "/api/v1/safety/hazards"),
     ApiBindingDef("safety:hazard:read", "GET", "/api/v1/safety/hazards/catch-up/diagnose"),

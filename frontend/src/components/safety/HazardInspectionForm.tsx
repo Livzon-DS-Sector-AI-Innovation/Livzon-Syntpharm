@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { App, Form, Input, DatePicker, Select, Button, Space, Card, Typography, Row, Col, Divider } from 'antd'
-import { CheckOutlined, SaveOutlined, SearchOutlined, PlusOutlined } from '@ant-design/icons'
+import { CheckOutlined, SaveOutlined, SearchOutlined, PlusOutlined, SettingOutlined } from '@ant-design/icons'
 import {
   HAZARD_CATEGORY_OPTIONS,
   HAZARD_LEVEL_FORM_OPTIONS,
@@ -14,6 +14,9 @@ import {
 import { getCurrentUser } from '@/actions/auth'
 import { createHazardCategory } from '@/actions/safety'
 import { fetchHazardCategories, invalidateHazardCategoryCache } from '@/lib/api/client/safety'
+import { usePermission } from '@/hooks/usePermission'
+import { PERM } from '@/lib/permissions/codes'
+import HazardCategoryModal from '@/components/safety/HazardCategoryModal'
 import PersonnelSelect, { PersonnelMultiSelect } from '@/components/safety/PersonnelSelect'
 import dayjs, { type Dayjs } from 'dayjs'
 
@@ -121,6 +124,17 @@ export default function HazardInspectionForm({ initialValues, loading, onSubmit,
   const [addingCategory, setAddingCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [savingCategory, setSavingCategory] = useState(false)
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false)
+
+  // 类别字典全公司共享：只有持有 safety:hazard-category:manage（模块管理员）才能新增/改名/删除，
+  // 普通用户只能在既有选项里选。前端隐藏只是体验优化，后端接口同样校验。
+  const { can, loading: permissionLoading } = usePermission()
+  const canManageCategory = !permissionLoading && can(PERM.hazardCategoryManage)
+
+  const handleCategoryChanged = useCallback(async () => {
+    invalidateHazardCategoryCache()
+    await refetchCategories()
+  }, [refetchCategories])
 
   const categoryOptions = useMemo(() => {
     const seen = new Set<string>()
@@ -336,37 +350,56 @@ export default function HazardInspectionForm({ initialValues, loading, onSubmit,
                 popupRender={(menu) => (
                   <>
                     {menu}
-                    <Divider style={{ margin: '6px 0' }} />
-                    {addingCategory ? (
-                      <div style={{ padding: '4px 8px' }}>
-                        <Space.Compact style={{ width: '100%' }}>
-                          <Input
-                            autoFocus
-                            size="small"
-                            maxLength={64}
-                            placeholder="输入新类别名称"
-                            value={newCategoryName}
-                            onChange={(event) => setNewCategoryName(event.target.value)}
-                            onPressEnter={handleAddCategory}
-                          />
-                          <Button size="small" type="primary" loading={savingCategory} onClick={handleAddCategory}>
-                            确定
-                          </Button>
-                          <Button
-                            size="small"
-                            onClick={() => {
-                              setAddingCategory(false)
-                              setNewCategoryName('')
-                            }}
-                          >
-                            取消
-                          </Button>
-                        </Space.Compact>
-                      </div>
-                    ) : (
-                      <Button type="link" size="small" icon={<PlusOutlined />} onClick={() => setAddingCategory(true)}>
-                        新增类别
-                      </Button>
+                    {canManageCategory && (
+                      <>
+                        <Divider style={{ margin: '6px 0' }} />
+                        {addingCategory ? (
+                          <div style={{ padding: '4px 8px' }}>
+                            <Space.Compact style={{ width: '100%' }}>
+                              <Input
+                                autoFocus
+                                size="small"
+                                maxLength={64}
+                                placeholder="输入新类别名称"
+                                value={newCategoryName}
+                                onChange={(event) => setNewCategoryName(event.target.value)}
+                                onPressEnter={handleAddCategory}
+                              />
+                              <Button size="small" type="primary" loading={savingCategory} onClick={handleAddCategory}>
+                                确定
+                              </Button>
+                              <Button
+                                size="small"
+                                onClick={() => {
+                                  setAddingCategory(false)
+                                  setNewCategoryName('')
+                                }}
+                              >
+                                取消
+                              </Button>
+                            </Space.Compact>
+                          </div>
+                        ) : (
+                          <Space style={{ padding: '0 8px', width: '100%', justifyContent: 'space-between' }}>
+                            <Button
+                              type="link"
+                              size="small"
+                              icon={<PlusOutlined />}
+                              onClick={() => setAddingCategory(true)}
+                            >
+                              新增类别
+                            </Button>
+                            <Button
+                              type="link"
+                              size="small"
+                              icon={<SettingOutlined />}
+                              onClick={() => setCategoryModalOpen(true)}
+                            >
+                              管理类别
+                            </Button>
+                          </Space>
+                        )}
+                      </>
                     )}
                   </>
                 )}
@@ -461,6 +494,14 @@ export default function HazardInspectionForm({ initialValues, loading, onSubmit,
           </Button>
         </Space>
       </Form>
+
+      {canManageCategory && (
+        <HazardCategoryModal
+          open={categoryModalOpen}
+          onClose={() => setCategoryModalOpen(false)}
+          onChanged={handleCategoryChanged}
+        />
+      )}
     </Card>
   )
 }

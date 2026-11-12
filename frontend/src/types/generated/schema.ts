@@ -1015,6 +1015,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/permission/permissions/{code}/api-bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Permission Api Bindings
+         * @description 单个权限码绑定的接口清单，供角色管理勾选权限时按需展开。
+         *
+         *     权限口径与 `/tree` 一致取 `platform:role:read`：这份清单只服务于「勾这个权限会放开哪些接口」，
+         *     角色管理员通常没有 `platform:api-binding:read`，复用登记簿端点会 403。
+         *
+         *     纯注册表数据、不查库，因此权限表未迁移时也可正常返回。
+         */
+        get: operations["list_permission_api_bindings_api_v1_permission_permissions__code__api_bindings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/permission/api-bindings": {
         parameters: {
             query?: never;
@@ -5301,6 +5326,30 @@ export interface paths {
          */
         post: operations["post_hazard_category_api_v1_safety_hazard_categories_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/hazard-categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 修改隐患类别名称（全公司共享）
+         * @description 类别改名：同步刷新历史台账里的旧名称；内置类别不允许改名
+         */
+        put: operations["put_hazard_category_api_v1_safety_hazard_categories__category_id__put"];
+        post?: never;
+        /**
+         * 删除隐患类别（软删除，全公司共享）
+         * @description 删除类别：软删除，历史台账保留原类别名；内置 7 类不可删
+         */
+        delete: operations["delete_hazard_category_api_v1_safety_hazard_categories__category_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -28073,6 +28122,23 @@ export interface components {
              */
             file_size: number;
         };
+        /**
+         * DepartmentApiResponse
+         * @description 部门详情响应信封。
+         */
+        DepartmentApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DepartmentResponse"] | null;
+        };
         /** DepartmentCreate */
         DepartmentCreate: {
             /**
@@ -28145,6 +28211,61 @@ export interface components {
              */
             leader_id?: string | null;
         };
+        /**
+         * DepartmentListApiResponse
+         * @description 部门列表响应信封（`?tree=true` 时为树形结构）。
+         */
+        DepartmentListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["DepartmentListItem"][] | null;
+        };
+        /**
+         * DepartmentListItem
+         * @description 部门列表项（`GET /identity/departments` 的 data 元素）。
+         *
+         *     该端点传 `?tree=true` 返回树节点、否则返回扁平部门，两种结构字段不同。
+         *     这里用两者的并集建一个模型，避免 `list[TreeNode] | list[DepartmentResponse]`
+         *     的联合校验：联合命中哪一个都会丢掉另一分支的字段（树节点丢 `path`，
+         *     扁平项丢 `children`）。
+         */
+        DepartmentListItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Feishu Department Id */
+            feishu_department_id: string;
+            /** Name */
+            name: string;
+            /** Parent Feishu Department Id */
+            parent_feishu_department_id?: string | null;
+            /** Leader User Id */
+            leader_user_id?: string | null;
+            /** Member Count */
+            member_count?: number | null;
+            /** Status Is Deleted */
+            status_is_deleted?: boolean | null;
+            /** Path */
+            path?: string | null;
+            /** Order */
+            order?: number | null;
+            /**
+             * Children
+             * @default []
+             */
+            children: components["schemas"]["DepartmentListItem"][];
+        };
         /** DepartmentOption */
         DepartmentOption: {
             /** Code */
@@ -28166,6 +28287,30 @@ export interface components {
             message: string;
             /** Data */
             data: components["schemas"]["DepartmentOption"][];
+        };
+        /** DepartmentResponse */
+        DepartmentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Feishu Department Id */
+            feishu_department_id: string;
+            /** Name */
+            name: string;
+            /** Parent Feishu Department Id */
+            parent_feishu_department_id?: string | null;
+            /** Leader User Id */
+            leader_user_id?: string | null;
+            /** Member Count */
+            member_count?: number | null;
+            /** Status Is Deleted */
+            status_is_deleted?: boolean | null;
+            /** Path */
+            path?: string | null;
+            /** Order */
+            order?: number | null;
         };
         /**
          * DepartmentSafetyOfficerApiResponse
@@ -34363,6 +34508,89 @@ export interface components {
             is_builtin: boolean;
         };
         /**
+         * HazardCategoryUpdate
+         * @description 隐患类别改名请求
+         */
+        HazardCategoryUpdate: {
+            /**
+             * Name
+             * @description 新类别名称
+             */
+            name: string;
+        };
+        /**
+         * HazardDiagnoseApiResponse
+         * @description Bitable 漏单诊断响应包装
+         */
+        HazardDiagnoseApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["HazardDiagnoseData"];
+        };
+        /**
+         * HazardDiagnoseData
+         * @description Bitable 漏单诊断结果（`GET /hazards/catch-up/diagnose` 的 data）。
+         *
+         *     字段与 `feishu/catch_up.py:diagnose_missed_records()` 的返回 dict 一一对应；
+         *     此前该端点误声明为 `HazardApiResponse`（隐患单对象），诊断字段会被响应校验丢弃。
+         */
+        HazardDiagnoseData: {
+            /**
+             * Cutoff Time
+             * @description 检测时间下界（本地最新 updated_at，ISO 格式）
+             */
+            cutoff_time?: string | null;
+            /**
+             * Bitable Matched
+             * @description 查询窗口内 Bitable 返回的记录数
+             * @default 0
+             */
+            bitable_matched: number;
+            /**
+             * Local Total
+             * @description 本地已关联 feishu_record_id 的记录数
+             * @default 0
+             */
+            local_total: number;
+            /**
+             * Missed
+             * @description 漏单数；-1 表示诊断失败
+             * @default 0
+             */
+            missed: number;
+            /**
+             * Existing
+             * @description 两边都存在的记录数
+             * @default 0
+             */
+            existing: number;
+            /**
+             * Missed Records
+             * @description 漏单详情（最多 50 条，Bitable 原始字段值）
+             */
+            missed_records?: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Diagnostic Ran At
+             * @description 诊断执行时间（ISO 格式）
+             */
+            diagnostic_ran_at: string;
+            /**
+             * Error
+             * @description 诊断失败原因；成功时为 null
+             */
+            error?: string | null;
+        };
+        /**
          * HazardIdentificationApiResponse
          * @description Single hazard identification response wrapper
          */
@@ -35104,6 +35332,16 @@ export interface components {
              */
             department?: string | null;
             /**
+             * Safety Officer Id
+             * @description 分管安全员（FK → identity.users）
+             */
+            safety_officer_id?: string | null;
+            /**
+             * Safety Officer Name
+             * @description 分管安全员姓名
+             */
+            safety_officer_name?: string | null;
+            /**
              * Major Hazard Basis
              * @description 隐患判定依据（AI）
              */
@@ -35252,6 +35490,16 @@ export interface components {
              * @description 责任部门
              */
             department?: string | null;
+            /**
+             * Safety Officer Id
+             * @description 分管安全员（FK → identity.users）
+             */
+            safety_officer_id?: string | null;
+            /**
+             * Safety Officer Name
+             * @description 分管安全员姓名
+             */
+            safety_officer_name?: string | null;
             /**
              * Major Hazard Basis
              * @description 隐患判定依据（AI）
@@ -35445,6 +35693,8 @@ export interface components {
              * @description 整改负责人（顺序与 rectification_responsible_person_names 一致）
              */
             rectification_responsible_persons?: components["schemas"]["PersonRef"][];
+            /** @description 分管安全员（含头像）；未单独指定时由详情页按责任部门配置回退 */
+            safety_officer_person?: components["schemas"]["PersonRef"] | null;
         };
         /**
          * HazardReportUpdate
@@ -35500,6 +35750,16 @@ export interface components {
              * @description 责任部门
              */
             department?: string | null;
+            /**
+             * Safety Officer Id
+             * @description 分管安全员（FK → identity.users）
+             */
+            safety_officer_id?: string | null;
+            /**
+             * Safety Officer Name
+             * @description 分管安全员姓名
+             */
+            safety_officer_name?: string | null;
             /**
              * Inspector Department
              * @description 检查人员部门（Bitable 多选，逗号分隔）
@@ -39586,6 +39846,58 @@ export interface components {
              */
             request_id: string;
         };
+        /**
+         * LoginLogListApiResponse
+         * @description 登录记录分页响应信封。
+         */
+        LoginLogListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["LoginLogListResponse"] | null;
+        };
+        /** LoginLogListResponse */
+        LoginLogListResponse: {
+            /** Items */
+            items: components["schemas"]["LoginLogResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** LoginLogResponse */
+        LoginLogResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** User Id */
+            user_id?: string | null;
+            /** User Name */
+            user_name?: string | null;
+            /** Login Type */
+            login_type: string;
+            /** Status */
+            status: string;
+            /** Ip Address */
+            ip_address?: string | null;
+            /** User Agent */
+            user_agent?: string | null;
+            /** Error Message */
+            error_message?: string | null;
+            /** Created At */
+            created_at: string;
+        };
         /** LogsClearResponse */
         LogsClearResponse: {
             /**
@@ -41738,6 +42050,46 @@ export interface components {
             /** Password */
             password?: string | null;
         };
+        /**
+         * PermissionApiBindingItem
+         * @description 单个权限码绑定的接口（来源为 registry 常量，无 DB 主键）。
+         */
+        PermissionApiBindingItem: {
+            /**
+             * Method
+             * @description HTTP 方法，如 GET / POST
+             */
+            method: string;
+            /**
+             * Route Template
+             * @description 接口路由模板，路径参数以 {name} 占位
+             */
+            route_template: string;
+            /**
+             * Scope Required
+             * @description 该接口是否要求数据范围
+             * @default false
+             */
+            scope_required: boolean;
+        };
+        /** PermissionApiBindingListResponse */
+        PermissionApiBindingListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /**
+             * Data
+             * @description 该权限码绑定的接口清单
+             */
+            data: components["schemas"]["PermissionApiBindingItem"][];
+        };
         /** PermissionListResponse */
         PermissionListResponse: {
             /**
@@ -41782,6 +42134,21 @@ export interface components {
              * @default true
              */
             is_builtin: boolean;
+            /**
+             * Module Label
+             * @description 模块中文名（注册表派生）
+             */
+            module_label?: string | null;
+            /**
+             * Resource Label
+             * @description 资源中文名（注册表派生）
+             */
+            resource_label?: string | null;
+            /**
+             * Action Label
+             * @description 动作中文短词（注册表派生）
+             */
+            action_label?: string | null;
         };
         /** PermissionTreeData */
         PermissionTreeData: {
@@ -54102,6 +54469,31 @@ export interface components {
             /** File Size */
             file_size?: string | null;
         };
+        /**
+         * TestLoginResponse
+         * @description E2E 测试登录响应。
+         *
+         *     该端点只给 e2e 用例换 token，返回体不带 {code,data,message} 信封，
+         *     因此模型直接描述 `{"token": ..., "user": ...}`。
+         */
+        TestLoginResponse: {
+            /** Token */
+            token: string;
+            user: components["schemas"]["TestLoginUser"];
+        };
+        /**
+         * TestLoginUser
+         * @description E2E 测试账号信息。
+         */
+        TestLoginUser: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
         /** TokenResponse */
         TokenResponse: {
             /** Access Token */
@@ -58208,7 +58600,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DepartmentListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58241,7 +58633,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DepartmentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58312,9 +58704,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["TestLoginResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58693,7 +59083,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["LoginLogListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59580,6 +59970,39 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["PermissionTreeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_permission_api_bindings_api_v1_permission_permissions__code__api_bindings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["PermissionApiBindingListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70850,6 +71273,76 @@ export interface operations {
             };
         };
     };
+    put_hazard_category_api_v1_safety_hazard_categories__category_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HazardCategoryUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["HazardCategoryApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_hazard_category_api_v1_safety_hazard_categories__category_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["HazardCategoryApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     handler_api_v1_safety_hazards__hazard_id__upload_photo_post: {
         parameters: {
             query?: never;
@@ -71218,7 +71711,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardDiagnoseApiResponse"];
                 };
             };
             /** @description Validation Error */
