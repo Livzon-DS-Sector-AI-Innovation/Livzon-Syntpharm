@@ -23,6 +23,9 @@ import {
   Department,
   OffboardingRecord,
   OnboardingRecordListResponse,
+  OnboardingRecordApiResponse,
+  OnboardingRecordCreateInput,
+  OnboardingRecordUpdateInput,
   DepartureRecordListResponse,
   DepartureRecord,
   CandidateListParams,
@@ -87,7 +90,9 @@ import {
   fetchTrainingPlansApi,
   fetchEmployeeByNumberApi,
   syncTrainingSpecialistsFeishuOpenIdsApi,
-  syncOnboardingFromFeishuApi,
+  createOnboardingRecordApi,
+  updateOnboardingRecordApi,
+  deleteOnboardingRecordApi,
   syncDepartureFromFeishuApi,
   createTrainingLedgerApi,
   updateTrainingLedgerApi,
@@ -387,18 +392,33 @@ export async function fetchOffboardingRecords(
   return fetchOffboardingRecordsAction(params)
 }
 
-export async function fetchOnboardingRecords(
-  params?: {
-    employee_id?: string
-    department?: string
-    position?: string
-    is_employed?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<OnboardingRecordListResponse> {
+export async function fetchOnboardingRecords(params?: {
+  department?: string
+  keyword?: string
+  page?: number
+  page_size?: number
+}): Promise<OnboardingRecordListResponse> {
   return fetchOnboardingRecordsApi(params) as Promise<OnboardingRecordListResponse>
+}
+
+// ─── 入职台账 Actions（2026 手工台账，ticket #199）──
+
+export async function createOnboardingRecord(data: OnboardingRecordCreateInput) {
+  const res = await createOnboardingRecordApi(data)
+  revalidatePath('/hr/onboarding')
+  return res as OnboardingRecordApiResponse
+}
+
+export async function updateOnboardingRecord(id: string, data: OnboardingRecordUpdateInput) {
+  const res = await updateOnboardingRecordApi(id, data)
+  revalidatePath('/hr/onboarding')
+  return res as OnboardingRecordApiResponse
+}
+
+export async function deleteOnboardingRecord(id: string) {
+  const res = await deleteOnboardingRecordApi(id)
+  revalidatePath('/hr/onboarding')
+  return res as DeleteResponse
 }
 
 export async function fetchDepartureRecords(
@@ -452,12 +472,6 @@ export async function syncTrainingSpecialistsFeishuOpenIds() {
 }
 
 // ─── 飞书同步 Actions (from lib/api/hr.ts) ───
-
-export async function syncOnboardingFromFeishu() {
-  const json = await syncOnboardingFromFeishuApi()
-  revalidatePath('/hr/onboarding')
-  return json
-}
 
 export async function syncDepartureFromFeishu() {
   const json = await syncDepartureFromFeishuApi()

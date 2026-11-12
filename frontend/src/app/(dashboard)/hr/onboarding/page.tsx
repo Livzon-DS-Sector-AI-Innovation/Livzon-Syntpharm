@@ -9,7 +9,7 @@ export default async function OnboardingPage() {
   return (
     <OnboardingClient
       initialRecords={res.data}
-      initialTotal={res.meta?.total || 0}
+      initialTotal={Number(res.meta?.total ?? 0)}
     />
   )
 }

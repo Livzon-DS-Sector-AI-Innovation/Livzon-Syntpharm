@@ -3,8 +3,7 @@
 Standardizes reading of common Feishu field types across all datasources
 and service modules.  Eliminates the copy-pasted private helpers that
 were scattered across employee_datasource.py, candidate_datasource.py,
-onboarding_datasource.py, departure_datasource.py, hr/service.py,
-product/service.py, and scripts.
+departure_datasource.py, hr/service.py, product/service.py, and scripts.
 """
 
 from datetime import UTC, date, datetime

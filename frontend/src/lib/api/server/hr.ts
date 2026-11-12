@@ -192,14 +192,31 @@ export async function batchUpdatePlanItemsApi(planId: string, data: unknown) {
 
 export async function fetchOnboardingRecordsApi(params?: Record<string, unknown>) {
   const searchParams = new URLSearchParams()
-  if (params?.employee_id) searchParams.set('employee_id', String(params.employee_id))
   if (params?.department) searchParams.set('department', String(params.department))
-  if (params?.position) searchParams.set('position', String(params.position))
-  if (params?.is_employed) searchParams.set('is_employed', String(params.is_employed))
   if (params?.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/onboarding-records?${searchParams.toString()}`)
+}
+
+export async function createOnboardingRecordApi(data: unknown) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/onboarding-records`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateOnboardingRecordApi(id: string, data: unknown) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/onboarding-records/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteOnboardingRecordApi(id: string) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/onboarding-records/${id}`, {
+    method: 'DELETE',
+  })
 }
 
 export async function fetchDepartureRecordsApi(params?: Record<string, unknown>) {
@@ -265,12 +282,6 @@ export async function fetchEmployeeByNumberApi(employeeNumber: string) {
 
 export async function syncTrainingSpecialistsFeishuOpenIdsApi() {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-specialists/sync-feishu-openids`, {
-    method: 'POST',
-  })
-}
-
-export async function syncOnboardingFromFeishuApi() {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/onboarding-records/sync-from-feishu`, {
     method: 'POST',
   })
 }

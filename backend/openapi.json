@@ -45097,325 +45097,6 @@
         }
       }
     },
-    "/api/v1/hr/onboarding-records": {
-      "get": {
-        "tags": [
-          "\u4eba\u4e8b\u7ba1\u7406"
-        ],
-        "summary": "\u8001\u5382\u5165\u804c\u53f0\u8d26\u5217\u8868",
-        "operationId": "list_onboarding_records_api_v1_hr_onboarding_records_get",
-        "parameters": [
-          {
-            "name": "department",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u90e8\u95e8\u7b5b\u9009",
-              "title": "Department"
-            },
-            "description": "\u90e8\u95e8\u7b5b\u9009"
-          },
-          {
-            "name": "position",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u5c97\u4f4d\u7b5b\u9009",
-              "title": "Position"
-            },
-            "description": "\u5c97\u4f4d\u7b5b\u9009"
-          },
-          {
-            "name": "is_employed",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u662f\u5426\u5728\u804c\u7b5b\u9009",
-              "title": "Is Employed"
-            },
-            "description": "\u662f\u5426\u5728\u804c\u7b5b\u9009"
-          },
-          {
-            "name": "keyword",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u59d3\u540d\u6216\u5de5\u53f7\u5173\u952e\u8bcd",
-              "title": "Keyword"
-            },
-            "description": "\u59d3\u540d\u6216\u5de5\u53f7\u5173\u952e\u8bcd"
-          },
-          {
-            "name": "sort_by",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "\u6392\u5e8f\u5b57\u6bb5",
-              "default": "hire_date",
-              "title": "Sort By"
-            },
-            "description": "\u6392\u5e8f\u5b57\u6bb5"
-          },
-          {
-            "name": "sort_order",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "\u6392\u5e8f\u65b9\u5411",
-              "default": "desc",
-              "title": "Sort Order"
-            },
-            "description": "\u6392\u5e8f\u65b9\u5411"
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1,
-              "title": "Page"
-            }
-          },
-          {
-            "name": "page_size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 200,
-              "minimum": 1,
-              "default": 20,
-              "title": "Page Size"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/hr/onboarding-records/sync-from-feishu": {
-      "post": {
-        "tags": [
-          "\u4eba\u4e8b\u7ba1\u7406"
-        ],
-        "summary": "\u4ece\u98de\u4e66\u540c\u6b65\u8001\u5382\u5165\u804c\u53f0\u8d26",
-        "description": "\u624b\u52a8\u89e6\u53d1\uff1a\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u62c9\u53d6\u5168\u90e8\u8001\u5382\u5165\u804c\u6570\u636e\u5e76 upsert \u5230\u672c\u5730 PG\u3002",
-        "operationId": "sync_onboarding_from_feishu_api_v1_hr_onboarding_records_sync_from_feishu_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/hr/onboarding-records/sync-status": {
-      "get": {
-        "tags": [
-          "\u4eba\u4e8b\u7ba1\u7406"
-        ],
-        "summary": "\u8001\u5382\u5165\u804c\u53f0\u8d26\u540c\u6b65\u72b6\u6001",
-        "description": "\u67e5\u770b\u672c\u5730\u4e0e\u98de\u4e66\u7684\u6570\u636e\u540c\u6b65\u7edf\u8ba1\u3002",
-        "operationId": "get_onboarding_sync_status_api_v1_hr_onboarding_records_sync_status_get",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/hr/onboarding-records/{record_id}": {
-      "get": {
-        "tags": [
-          "\u4eba\u4e8b\u7ba1\u7406"
-        ],
-        "summary": "\u5165\u804c\u8bb0\u5f55\u8be6\u60c5",
-        "operationId": "get_onboarding_record_api_v1_hr_onboarding_records__record_id__get",
-        "parameters": [
-          {
-            "name": "record_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Record Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/hr/departure-records": {
       "get": {
         "tags": [
@@ -47142,6 +46823,359 @@
               "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/OrgSyncTriggerApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hr/onboarding-records": {
+      "get": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u5165\u804c\u53f0\u8d26"
+        ],
+        "summary": "\u5165\u804c\u53f0\u8d26\u5217\u8868",
+        "operationId": "list_onboarding_records_api_v1_hr_onboarding_records_get",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6d41\u6c34\u53f7 / \u59d3\u540d / \u90e8\u95e8 / \u5c97\u4f4d\u5173\u952e\u8bcd",
+              "title": "Keyword"
+            },
+            "description": "\u6d41\u6c34\u53f7 / \u59d3\u540d / \u90e8\u95e8 / \u5c97\u4f4d\u5173\u952e\u8bcd"
+          },
+          {
+            "name": "department",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u4e00\u7ea7\u6216\u4e8c\u7ea7\u90e8\u95e8\u7b5b\u9009",
+              "title": "Department"
+            },
+            "description": "\u4e00\u7ea7\u6216\u4e8c\u7ea7\u90e8\u95e8\u7b5b\u9009"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingRecordListApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u5165\u804c\u53f0\u8d26"
+        ],
+        "summary": "\u65b0\u5efa\u5165\u804c\u8bb0\u5f55",
+        "operationId": "create_onboarding_record_api_v1_hr_onboarding_records_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingRecordCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingRecordApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hr/onboarding-records/{record_id}": {
+      "get": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u5165\u804c\u53f0\u8d26"
+        ],
+        "summary": "\u5165\u804c\u8bb0\u5f55\u8be6\u60c5",
+        "operationId": "get_onboarding_record_api_v1_hr_onboarding_records__record_id__get",
+        "parameters": [
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Record Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingRecordApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u5165\u804c\u53f0\u8d26"
+        ],
+        "summary": "\u66f4\u65b0\u5165\u804c\u8bb0\u5f55",
+        "operationId": "update_onboarding_record_api_v1_hr_onboarding_records__record_id__put",
+        "parameters": [
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Record Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingRecordUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingRecordApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u5165\u804c\u53f0\u8d26"
+        ],
+        "summary": "\u5220\u9664\u5165\u804c\u8bb0\u5f55",
+        "operationId": "delete_onboarding_record_api_v1_hr_onboarding_records__record_id__delete",
+        "parameters": [
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Record Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingRecordDeleteApiResponse"
                 }
               }
             }
@@ -146192,6 +146226,585 @@
           "employee_name"
         ],
         "title": "OnboardingEvaluationInput"
+      },
+      "OnboardingRecordApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/OnboardingRecordResponse"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "OnboardingRecordApiResponse"
+      },
+      "OnboardingRecordCreate": {
+        "properties": {
+          "serial_no": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Serial No",
+            "description": "\u6d41\u6c34\u53f7"
+          },
+          "department_level1": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Department Level1",
+            "description": "\u4e00\u7ea7\u90e8\u95e8"
+          },
+          "department_level2": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Department Level2",
+            "description": "\u4e8c\u7ea7\u90e8\u95e8"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name",
+            "description": "\u59d3\u540d"
+          },
+          "position": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Position",
+            "description": "\u5c97\u4f4d"
+          },
+          "position_level": {
+            "type": "string",
+            "enum": [
+              "\u5458\u5de5\u7ea7",
+              "\u4e3b\u7ba1\u7ea7",
+              "\u7ecf\u7406\u7ea7",
+              "\u603b\u76d1\u7ea7",
+              "\u526f\u603b\u7ecf\u7406\u7ea7",
+              "\u603b\u7ecf\u7406\u7ea7"
+            ],
+            "title": "Position Level",
+            "description": "\u5c97\u4f4d\u5c42\u7ea7"
+          },
+          "personnel_identity": {
+            "type": "string",
+            "enum": [
+              "\u6b63\u5f0f\u5de5",
+              "\u5b9e\u4e60\u751f",
+              "\u8fd4\u8058\u4eba\u5458"
+            ],
+            "title": "Personnel Identity",
+            "description": "\u4eba\u5458\u8eab\u4efd"
+          },
+          "hire_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Hire Date",
+            "description": "\u5165\u804c\u65e5\u671f"
+          },
+          "join_category": {
+            "type": "string",
+            "enum": [
+              "\u793e\u62db",
+              "\u6821\u62db",
+              "\u730e\u5934\u63a8\u8350",
+              "\u5185\u90e8\u63a8\u8350",
+              "\u96c6\u56e2\u5185\u90e8\u8c03\u52a8",
+              "\u4e8b\u4e1a\u90e8\u5185\u90e8\u8c03\u52a8"
+            ],
+            "title": "Join Category",
+            "description": "\u5165\u804c\u7c7b\u522b"
+          },
+          "education": {
+            "type": "string",
+            "enum": [
+              "\u535a\u58eb",
+              "\u7855\u58eb",
+              "\u672c\u79d1",
+              "\u5927\u4e13",
+              "\u5927\u4e13\u4ee5\u4e0b"
+            ],
+            "title": "Education",
+            "description": "\u5b66\u5386"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "\u7537",
+              "\u5973"
+            ],
+            "title": "Gender",
+            "description": "\u6027\u522b"
+          },
+          "age": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 16.0,
+            "title": "Age",
+            "description": "\u5e74\u9f84"
+          },
+          "mobile": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Mobile",
+            "description": "\u624b\u673a\u53f7\u7801"
+          },
+          "group_classification": {
+            "type": "string",
+            "enum": [
+              "\u804c\u80fd\u7ba1\u7406",
+              "\u751f\u4ea7\u4e00\u7ebf",
+              "\u751f\u4ea7\u4e00\u7ebf\uff1a\u7ba1\u7406",
+              "\u751f\u4ea7\u8f85\u52a9",
+              "\u7814\u53d1\u4e00\u7ebf",
+              "\u6280\u672f\u4e00\u7ebf",
+              "\u540e\u52e4\u670d\u52a1"
+            ],
+            "title": "Group Classification",
+            "description": "\u96c6\u56e2\u6708\u62a5\u8868\u4eba\u5458\u5206\u7c7b"
+          }
+        },
+        "type": "object",
+        "required": [
+          "serial_no",
+          "department_level1",
+          "department_level2",
+          "name",
+          "position",
+          "position_level",
+          "personnel_identity",
+          "hire_date",
+          "join_category",
+          "education",
+          "gender",
+          "age",
+          "mobile",
+          "group_classification"
+        ],
+        "title": "OnboardingRecordCreate",
+        "description": "2026 \u5165\u804c\u53f0\u8d26\u5f55\u5165\u5b57\u6bb5\uff1b\u5168\u90e8\u5fc5\u586b\u3002"
+      },
+      "OnboardingRecordDeleteApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "title": "OnboardingRecordDeleteApiResponse"
+      },
+      "OnboardingRecordListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/OnboardingRecordResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "OnboardingRecordListApiResponse"
+      },
+      "OnboardingRecordResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "serial_no": {
+            "type": "string",
+            "title": "Serial No"
+          },
+          "department_level1": {
+            "type": "string",
+            "title": "Department Level1"
+          },
+          "department_level2": {
+            "type": "string",
+            "title": "Department Level2"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "position": {
+            "type": "string",
+            "title": "Position"
+          },
+          "position_level": {
+            "type": "string",
+            "title": "Position Level"
+          },
+          "personnel_identity": {
+            "type": "string",
+            "title": "Personnel Identity"
+          },
+          "hire_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Hire Date"
+          },
+          "join_category": {
+            "type": "string",
+            "title": "Join Category"
+          },
+          "education": {
+            "type": "string",
+            "title": "Education"
+          },
+          "gender": {
+            "type": "string",
+            "title": "Gender"
+          },
+          "age": {
+            "type": "integer",
+            "title": "Age"
+          },
+          "mobile": {
+            "type": "string",
+            "title": "Mobile"
+          },
+          "group_classification": {
+            "type": "string",
+            "title": "Group Classification"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "serial_no",
+          "department_level1",
+          "department_level2",
+          "name",
+          "position",
+          "position_level",
+          "personnel_identity",
+          "hire_date",
+          "join_category",
+          "education",
+          "gender",
+          "age",
+          "mobile",
+          "group_classification"
+        ],
+        "title": "OnboardingRecordResponse"
+      },
+      "OnboardingRecordUpdate": {
+        "properties": {
+          "serial_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serial No"
+          },
+          "department_level1": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Level1"
+          },
+          "department_level2": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Level2"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "position_level": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "\u5458\u5de5\u7ea7",
+                  "\u4e3b\u7ba1\u7ea7",
+                  "\u7ecf\u7406\u7ea7",
+                  "\u603b\u76d1\u7ea7",
+                  "\u526f\u603b\u7ecf\u7406\u7ea7",
+                  "\u603b\u7ecf\u7406\u7ea7"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position Level"
+          },
+          "personnel_identity": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "\u6b63\u5f0f\u5de5",
+                  "\u5b9e\u4e60\u751f",
+                  "\u8fd4\u8058\u4eba\u5458"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personnel Identity"
+          },
+          "hire_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hire Date"
+          },
+          "join_category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "\u793e\u62db",
+                  "\u6821\u62db",
+                  "\u730e\u5934\u63a8\u8350",
+                  "\u5185\u90e8\u63a8\u8350",
+                  "\u96c6\u56e2\u5185\u90e8\u8c03\u52a8",
+                  "\u4e8b\u4e1a\u90e8\u5185\u90e8\u8c03\u52a8"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Join Category"
+          },
+          "education": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "\u535a\u58eb",
+                  "\u7855\u58eb",
+                  "\u672c\u79d1",
+                  "\u5927\u4e13",
+                  "\u5927\u4e13\u4ee5\u4e0b"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Education"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "\u7537",
+                  "\u5973"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "age": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 16.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age"
+          },
+          "mobile": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mobile"
+          },
+          "group_classification": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "\u804c\u80fd\u7ba1\u7406",
+                  "\u751f\u4ea7\u4e00\u7ebf",
+                  "\u751f\u4ea7\u4e00\u7ebf\uff1a\u7ba1\u7406",
+                  "\u751f\u4ea7\u8f85\u52a9",
+                  "\u7814\u53d1\u4e00\u7ebf",
+                  "\u6280\u672f\u4e00\u7ebf",
+                  "\u540e\u52e4\u670d\u52a1"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Classification"
+          }
+        },
+        "type": "object",
+        "title": "OnboardingRecordUpdate",
+        "description": "\u90e8\u5206\u66f4\u65b0\uff1b\u672a\u4f20\u5b57\u6bb5\u4e0d\u53d8\uff0c\u4f20\u7a7a\u503c\u6216\u975e\u6cd5\u9009\u9879\u4f1a\u88ab\u62d2\u7edd\u3002"
       },
       "OperationLevel": {
         "type": "string",

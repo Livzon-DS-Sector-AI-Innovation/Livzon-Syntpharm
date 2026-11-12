@@ -9320,80 +9320,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/hr/onboarding-records": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 老厂入职台账列表 */
-        get: operations["list_onboarding_records_api_v1_hr_onboarding_records_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/hr/onboarding-records/sync-from-feishu": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 从飞书同步老厂入职台账
-         * @description 手动触发：从飞书多维表格拉取全部老厂入职数据并 upsert 到本地 PG。
-         */
-        post: operations["sync_onboarding_from_feishu_api_v1_hr_onboarding_records_sync_from_feishu_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/hr/onboarding-records/sync-status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 老厂入职台账同步状态
-         * @description 查看本地与飞书的数据同步统计。
-         */
-        get: operations["get_onboarding_sync_status_api_v1_hr_onboarding_records_sync_status_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/hr/onboarding-records/{record_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 入职记录详情 */
-        get: operations["get_onboarding_record_api_v1_hr_onboarding_records__record_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/hr/departure-records": {
         parameters: {
             query?: never;
@@ -9714,6 +9640,43 @@ export interface paths {
          */
         post: operations["trigger_org_sync_api_v1_hr_org_sync_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hr/onboarding-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 入职台账列表 */
+        get: operations["list_onboarding_records_api_v1_hr_onboarding_records_get"];
+        put?: never;
+        /** 新建入职记录 */
+        post: operations["create_onboarding_record_api_v1_hr_onboarding_records_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hr/onboarding-records/{record_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 入职记录详情 */
+        get: operations["get_onboarding_record_api_v1_hr_onboarding_records__record_id__get"];
+        /** 更新入职记录 */
+        put: operations["update_onboarding_record_api_v1_hr_onboarding_records__record_id__put"];
+        post?: never;
+        /** 删除入职记录 */
+        delete: operations["delete_onboarding_record_api_v1_hr_onboarding_records__record_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -41830,6 +41793,222 @@ export interface components {
              * @description 审批日期
              */
             approval_date?: string | null;
+        };
+        /** OnboardingRecordApiResponse */
+        OnboardingRecordApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["OnboardingRecordResponse"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * OnboardingRecordCreate
+         * @description 2026 入职台账录入字段；全部必填。
+         */
+        OnboardingRecordCreate: {
+            /**
+             * Serial No
+             * @description 流水号
+             */
+            serial_no: string;
+            /**
+             * Department Level1
+             * @description 一级部门
+             */
+            department_level1: string;
+            /**
+             * Department Level2
+             * @description 二级部门
+             */
+            department_level2: string;
+            /**
+             * Name
+             * @description 姓名
+             */
+            name: string;
+            /**
+             * Position
+             * @description 岗位
+             */
+            position: string;
+            /**
+             * Position Level
+             * @description 岗位层级
+             * @enum {string}
+             */
+            position_level: "员工级" | "主管级" | "经理级" | "总监级" | "副总经理级" | "总经理级";
+            /**
+             * Personnel Identity
+             * @description 人员身份
+             * @enum {string}
+             */
+            personnel_identity: "正式工" | "实习生" | "返聘人员";
+            /**
+             * Hire Date
+             * Format: date
+             * @description 入职日期
+             */
+            hire_date: string;
+            /**
+             * Join Category
+             * @description 入职类别
+             * @enum {string}
+             */
+            join_category: "社招" | "校招" | "猎头推荐" | "内部推荐" | "集团内部调动" | "事业部内部调动";
+            /**
+             * Education
+             * @description 学历
+             * @enum {string}
+             */
+            education: "博士" | "硕士" | "本科" | "大专" | "大专以下";
+            /**
+             * Gender
+             * @description 性别
+             * @enum {string}
+             */
+            gender: "男" | "女";
+            /**
+             * Age
+             * @description 年龄
+             */
+            age: number;
+            /**
+             * Mobile
+             * @description 手机号码
+             */
+            mobile: string;
+            /**
+             * Group Classification
+             * @description 集团月报表人员分类
+             * @enum {string}
+             */
+            group_classification: "职能管理" | "生产一线" | "生产一线：管理" | "生产辅助" | "研发一线" | "技术一线" | "后勤服务";
+        };
+        /** OnboardingRecordDeleteApiResponse */
+        OnboardingRecordDeleteApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: null;
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** OnboardingRecordListApiResponse */
+        OnboardingRecordListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["OnboardingRecordResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** OnboardingRecordResponse */
+        OnboardingRecordResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Serial No */
+            serial_no: string;
+            /** Department Level1 */
+            department_level1: string;
+            /** Department Level2 */
+            department_level2: string;
+            /** Name */
+            name: string;
+            /** Position */
+            position: string;
+            /** Position Level */
+            position_level: string;
+            /** Personnel Identity */
+            personnel_identity: string;
+            /**
+             * Hire Date
+             * Format: date
+             */
+            hire_date: string;
+            /** Join Category */
+            join_category: string;
+            /** Education */
+            education: string;
+            /** Gender */
+            gender: string;
+            /** Age */
+            age: number;
+            /** Mobile */
+            mobile: string;
+            /** Group Classification */
+            group_classification: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /**
+         * OnboardingRecordUpdate
+         * @description 部分更新；未传字段不变，传空值或非法选项会被拒绝。
+         */
+        OnboardingRecordUpdate: {
+            /** Serial No */
+            serial_no?: string | null;
+            /** Department Level1 */
+            department_level1?: string | null;
+            /** Department Level2 */
+            department_level2?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Position */
+            position?: string | null;
+            /** Position Level */
+            position_level?: ("员工级" | "主管级" | "经理级" | "总监级" | "副总经理级" | "总经理级") | null;
+            /** Personnel Identity */
+            personnel_identity?: ("正式工" | "实习生" | "返聘人员") | null;
+            /** Hire Date */
+            hire_date?: string | null;
+            /** Join Category */
+            join_category?: ("社招" | "校招" | "猎头推荐" | "内部推荐" | "集团内部调动" | "事业部内部调动") | null;
+            /** Education */
+            education?: ("博士" | "硕士" | "本科" | "大专" | "大专以下") | null;
+            /** Gender */
+            gender?: ("男" | "女") | null;
+            /** Age */
+            age?: number | null;
+            /** Mobile */
+            mobile?: string | null;
+            /** Group Classification */
+            group_classification?: ("职能管理" | "生产一线" | "生产一线：管理" | "生产辅助" | "研发一线" | "技术一线" | "后勤服务") | null;
         };
         /**
          * OperationLevel
@@ -81016,147 +81195,6 @@ export interface operations {
             };
         };
     };
-    list_onboarding_records_api_v1_hr_onboarding_records_get: {
-        parameters: {
-            query?: {
-                /** @description 部门筛选 */
-                department?: string | null;
-                /** @description 岗位筛选 */
-                position?: string | null;
-                /** @description 是否在职筛选 */
-                is_employed?: string | null;
-                /** @description 姓名或工号关键词 */
-                keyword?: string | null;
-                /** @description 排序字段 */
-                sort_by?: string;
-                /** @description 排序方向 */
-                sort_order?: string;
-                page?: number;
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    sync_onboarding_from_feishu_api_v1_hr_onboarding_records_sync_from_feishu_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_onboarding_sync_status_api_v1_hr_onboarding_records_sync_status_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_onboarding_record_api_v1_hr_onboarding_records__record_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                record_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_departure_records_api_v1_hr_departure_records_get: {
         parameters: {
             query?: {
@@ -82073,6 +82111,182 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["OrgSyncTriggerApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_onboarding_records_api_v1_hr_onboarding_records_get: {
+        parameters: {
+            query?: {
+                /** @description 流水号 / 姓名 / 部门 / 岗位关键词 */
+                keyword?: string | null;
+                /** @description 一级或二级部门筛选 */
+                department?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["OnboardingRecordListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_onboarding_record_api_v1_hr_onboarding_records_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingRecordCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["OnboardingRecordApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_onboarding_record_api_v1_hr_onboarding_records__record_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["OnboardingRecordApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_onboarding_record_api_v1_hr_onboarding_records__record_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingRecordUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["OnboardingRecordApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_onboarding_record_api_v1_hr_onboarding_records__record_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["OnboardingRecordDeleteApiResponse"];
                 };
             };
             /** @description Validation Error */

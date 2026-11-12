@@ -16,7 +16,6 @@ from app.modules.hr.models import (
     Employee,
     HrDepartment,
     OffboardingRecord,
-    OnboardingRecord,
     PrejobTrainingPlanTemplate,
     TrainingLedger,
     TrainingLedgerPage,
@@ -405,114 +404,6 @@ class OffboardingRecordRepository:
         return record
 
     async def soft_delete(self, record: OffboardingRecord) -> None:
-        record.is_deleted = True
-        await self.session.flush()
-
-
-class OnboardingRecordRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-
-    async def get_by_id(self, record_id: UUID) -> OnboardingRecord | None:
-        result = await self.session.execute(
-            select(OnboardingRecord).where(
-                OnboardingRecord.id == record_id,
-                OnboardingRecord.is_deleted.is_(False),
-            )
-        )
-        return result.scalar_one_or_none()
-
-    async def get_by_feishu_record_id(self, feishu_record_id: str) -> OnboardingRecord | None:
-        result = await self.session.execute(
-            select(OnboardingRecord).where(
-                OnboardingRecord.feishu_record_id == feishu_record_id,
-                OnboardingRecord.is_deleted.is_(False),
-            )
-        )
-        return result.scalar_one_or_none()
-
-    async def list_records(
-        self,
-        *,
-        department: str | None = None,
-        position: str | None = None,
-        is_employed: str | None = None,
-        keyword: str | None = None,
-        page: int = 1,
-        page_size: int = 20,
-        sort_by: str = "created_at",
-        sort_order: str = "desc",
-    ) -> tuple[list[OnboardingRecord], int]:
-        stmt = select(OnboardingRecord).where(OnboardingRecord.is_deleted.is_(False))
-
-        if department:
-            stmt = stmt.where(OnboardingRecord.department == department)
-        if position:
-            stmt = stmt.where(OnboardingRecord.position.ilike(f"%{position}%"))
-        if is_employed:
-            stmt = stmt.where(OnboardingRecord.is_employed == is_employed)
-        if keyword:
-            stmt = stmt.where(
-                OnboardingRecord.name.ilike(f"%{keyword}%") | OnboardingRecord.employee_number.ilike(f"%{keyword}%")
-            )
-
-        count_stmt = select(func.count()).select_from(stmt.subquery())
-        sort_column = getattr(OnboardingRecord, sort_by, OnboardingRecord.created_at)
-        order_func = desc if sort_order == "desc" else asc
-        data_stmt = stmt.order_by(order_func(sort_column)).offset((page - 1) * page_size).limit(page_size)
-
-        total_result = await self.session.execute(count_stmt)
-        total = total_result.scalar() or 0
-
-        data_result = await self.session.execute(data_stmt)
-        return list(data_result.scalars().all()), total
-
-    async def create(self, record: OnboardingRecord) -> OnboardingRecord:
-        self.session.add(record)
-        await self.session.flush()
-        await self.session.refresh(record)
-        return record
-
-    async def update(self, record: OnboardingRecord) -> OnboardingRecord:
-        await self.session.flush()
-        await self.session.refresh(record)
-        return record
-
-    async def upsert_by_feishu_record_id(self, data: dict[str, Any]) -> OnboardingRecord:
-        """Create or update onboarding record by feishu_record_id (used for Feishu sync)."""
-        rid = data.get("feishu_record_id")
-        if not rid:
-            raise ValueError("feishu_record_id is required for upsert")
-
-        record = await self.get_by_feishu_record_id(rid)
-        if record:
-            for key, value in data.items():
-                if key != "id" and value is not None:
-                    setattr(record, key, value)
-            await self.session.flush()
-            await self.session.refresh(record)
-            return record
-        else:
-            new_record = OnboardingRecord(**{k: v for k, v in data.items() if v is not None})
-            self.session.add(new_record)
-            await self.session.flush()
-            await self.session.refresh(new_record)
-            return new_record
-
-    async def count_total(self) -> int:
-        result = await self.session.execute(select(func.count()).where(OnboardingRecord.is_deleted.is_(False)))
-        return result.scalar() or 0
-
-    async def count_synced(self) -> int:
-        result = await self.session.execute(
-            select(func.count()).where(
-                OnboardingRecord.is_deleted.is_(False),
-                OnboardingRecord.feishu_record_id.isnot(None),
-            )
-        )
-        return result.scalar() or 0
-
-    async def soft_delete(self, record: OnboardingRecord) -> None:
         record.is_deleted = True
         await self.session.flush()
 

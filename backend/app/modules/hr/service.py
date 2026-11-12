@@ -16,7 +16,6 @@ from app.modules.hr.models import (
     Employee,
     HrDepartment,
     OffboardingRecord,
-    OnboardingRecord,
     TrainingLedger,
     TrainingLedgerPage,
     TrainingSession,
@@ -29,7 +28,6 @@ from app.modules.hr.repository import (
     DepartureRecordRepository,
     EmployeeRepository,
     OffboardingRecordRepository,
-    OnboardingRecordRepository,
     TrainingLedgerPageRepository,
     TrainingLedgerRepository,
     TrainingSessionRepository,
@@ -63,9 +61,6 @@ from app.platform.integrations.feishu.departure_datasource import (
 )
 from app.platform.integrations.feishu.employee_datasource import (
     EmployeeBitableDataSource,
-)
-from app.platform.integrations.feishu.onboarding_datasource import (
-    OnboardingBitableDataSource,
 )
 
 logger = logging.getLogger(__name__)
@@ -798,103 +793,6 @@ class OffboardingRecordService:
             keyword=keyword,
             page=page,
             page_size=page_size,
-        )
-
-
-class OnboardingRecordService:
-    def __init__(self, session: AsyncSession) -> None:
-        self.repo = OnboardingRecordRepository(session)
-        self.bitable = OnboardingBitableDataSource()
-
-    async def get_record(self, record_id: UUID) -> OnboardingRecord:
-        record = await self.repo.get_by_id(record_id)
-        if not record:
-            raise NotFoundException("入职记录", str(record_id))
-        return record
-
-    async def list_records(
-        self,
-        *,
-        department: str | None = None,
-        position: str | None = None,
-        is_employed: str | None = None,
-        keyword: str | None = None,
-        page: int = 1,
-        page_size: int = 20,
-        sort_by: str = "hire_date",
-        sort_order: str = "desc",
-    ) -> tuple[list[OnboardingRecord], int]:
-        return await self.repo.list_records(
-            department=department,
-            position=position,
-            is_employed=is_employed,
-            keyword=keyword,
-            page=page,
-            page_size=page_size,
-            sort_by=sort_by,
-            sort_order=sort_order,
-        )
-
-    async def sync_from_feishu(self) -> dict[str, Any]:
-        """Pull all records from Feishu Bitable and upsert into local PG.
-
-        Returns:
-            {"created": N, "updated": N, "failed": N, "total": N}
-        """
-        raw_records = await self.bitable.client.search_records(
-            self.bitable.table_id,
-            page_size=500,
-        )
-        stats = {"created": 0, "updated": 0, "failed": 0, "total": len(raw_records)}
-
-        for rec in raw_records:
-            try:
-                from app.platform.integrations.feishu.onboarding_datasource import (
-                    OnboardingRecord as BitableOnboardingRecord,
-                )
-
-                parsed = BitableOnboardingRecord.from_api(rec)
-                data = parsed.to_dict()
-                data["feishu_synced_at"] = date.today()
-                rid = data.get("feishu_record_id")
-                if not rid:
-                    stats["failed"] += 1
-                    continue
-
-                # Skip records with empty critical fields (blank rows in Bitable)
-                if not data.get("name") or not data.get("department") or not data.get("hire_date"):
-                    logger.debug("Skipping blank onboarding record: %s", rid)
-                    continue
-
-                await self.repo.upsert_by_feishu_record_id(data)
-                existing = await self.repo.get_by_feishu_record_id(rid)
-                if (
-                    existing
-                    and existing.created_at
-                    and (datetime.utcnow() - existing.created_at.replace(tzinfo=None)).total_seconds() < 60
-                ):
-                    stats["created"] += 1
-                else:
-                    stats["updated"] += 1
-            except Exception as e:
-                logger.error("Failed to sync onboarding record %s: %s", rec.get("record_id"), e)
-                stats["failed"] += 1
-
-        return stats
-
-    async def get_sync_status(self) -> SyncStatusResponse:
-        local_total = await self.repo.count_total()
-        synced_count = await self.repo.count_synced()
-        unsynced_count = local_total - synced_count
-        feishu_total = synced_count
-
-        return SyncStatusResponse(
-            local_total=local_total,
-            feishu_total=feishu_total,
-            synced_count=synced_count,
-            unsynced_count=unsynced_count,
-            conflict_count=0,
-            last_sync_at=None,
         )
 
 

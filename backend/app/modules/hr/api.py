@@ -33,6 +33,7 @@ from app.modules.hr.models import Employee
 from app.modules.hr.notification_document_generator import (
     generate_training_notification,
 )
+from app.modules.hr.onboarding_api import router as onboarding_router
 from app.modules.hr.onboarding_evaluation_document_generator import (
     generate_onboarding_evaluation,
 )
@@ -61,7 +62,6 @@ from app.modules.hr.schemas import (
     OffboardingRecordResponse,
     OffboardingRecordUpdate,
     OnboardingEvaluationInput,
-    OnboardingRecordResponse,
     PrejobTemplateCreate,
     PrejobTemplateItem,
     PrejobTemplateResponse,
@@ -104,7 +104,6 @@ from app.modules.hr.service import (  # type: ignore[attr-defined]
     DepartureRecordService,
     EmployeeService,
     OffboardingRecordService,
-    OnboardingRecordService,
     TrainingLedgerPageService,
     TrainingLedgerService,
     TrainingSessionService,
@@ -208,12 +207,6 @@ def get_offboarding_service(
     session: AsyncSession = Depends(get_db),
 ) -> OffboardingRecordService:
     return OffboardingRecordService(session)
-
-
-def get_onboarding_service(
-    session: AsyncSession = Depends(get_db),
-) -> OnboardingRecordService:
-    return OnboardingRecordService(session)
 
 
 def get_departure_service(
@@ -1195,82 +1188,6 @@ async def delete_offboarding_record(  # type: ignore[no-untyped-def]
     return build_response(message="离职记录删除成功")
 
 
-# ─── OnboardingRecord Routes ───
-
-
-@router.get("/onboarding-records", summary="老厂入职台账列表")
-async def list_onboarding_records(  # type: ignore[no-untyped-def]
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:onboarding-records:read")),
-    department: str | None = Query(None, description="部门筛选"),
-    position: str | None = Query(None, description="岗位筛选"),
-    is_employed: str | None = Query(None, description="是否在职筛选"),
-    keyword: str | None = Query(None, description="姓名或工号关键词"),
-    sort_by: str = Query("hire_date", description="排序字段"),
-    sort_order: str = Query("desc", description="排序方向"),
-    page_params: PageParams = Depends(),
-    service: OnboardingRecordService = Depends(get_onboarding_service),
-):
-    records, total = await service.list_records(
-        department=department,
-        position=position,
-        is_employed=is_employed,
-        keyword=keyword,
-        sort_by=sort_by,
-        sort_order=sort_order,
-        page=page_params.page,
-        page_size=page_params.page_size,
-    )
-    data = [OnboardingRecordResponse.model_validate(r).model_dump(mode="json") for r in records]
-    return paginated_response(
-        data=data,
-        page=page_params.page,
-        page_size=page_params.page_size,
-        total=total,
-    )
-
-
-@router.post("/onboarding-records/sync-from-feishu", summary="从飞书同步老厂入职台账")
-async def sync_onboarding_from_feishu(  # type: ignore[no-untyped-def]
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:onboarding-records:sync")),
-    service: OnboardingRecordService = Depends(get_onboarding_service),
-):
-    """手动触发：从飞书多维表格拉取全部老厂入职数据并 upsert 到本地 PG。"""
-    stats = await service.sync_from_feishu()
-    msg = f"同步完成：新增 {stats['created']} 条，更新 {stats['updated']} 条，失败 {stats['failed']} 条"
-    return build_response(
-        data=stats,
-        message=msg,
-    )
-
-
-@router.get("/onboarding-records/sync-status", summary="老厂入职台账同步状态")
-async def get_onboarding_sync_status(  # type: ignore[no-untyped-def]
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:onboarding-records:sync")),
-    service: OnboardingRecordService = Depends(get_onboarding_service),
-):
-    """查看本地与飞书的数据同步统计。"""
-    status = await service.get_sync_status()
-    return build_response(
-        data=status.model_dump(mode="json"),
-    )
-
-
-@router.get("/onboarding-records/{record_id}", summary="入职记录详情")
-async def get_onboarding_record(  # type: ignore[no-untyped-def]
-    record_id: UUID,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:onboarding-records:read")),
-    service: OnboardingRecordService = Depends(get_onboarding_service),
-):
-    record = await service.get_record(record_id)
-    return build_response(
-        data=OnboardingRecordResponse.model_validate(record).model_dump(mode="json"),
-    )
-
-
 # ─── DepartureRecord Routes ───
 
 
@@ -1979,6 +1896,7 @@ async def export_annual_training_plan(  # type: ignore[no-untyped-def]
 
 router.include_router(analysis_router)
 router.include_router(org_router)
+router.include_router(onboarding_router)
 router.include_router(people_router)
 if attendance_router is not None:
     router.include_router(attendance_router)

@@ -178,81 +178,12 @@ export interface OffboardingRecordListResponse {
   }
 }
 
-export interface OnboardingRecord {
-  id: string
-  seq_number?: number
-  employee_number: string
-  name: string
-  domain_account?: string
-  department: string
-  team?: string
-  position: string
-  job_category?: string
-  status_category?: string
-  is_employed?: string
-  hire_date: string
-  factory_entry_date?: string
-  livo_entry_date?: string
-  work_start_date?: string
-  graduation_date?: string
-  birth_month?: number
-  birth_day?: number
-  contract_type?: string
-  contract_start_date?: string
-  contract_end_date?: string
-  contract_start_2?: string
-  contract_end_2?: string
-  contract_start_3?: string
-  contract_end_3?: string
-  contract_start_4?: string
-  contract_end_4?: string
-  age?: number
-  work_years?: number
-  factory_tenure?: string
-  company_tenure?: string
-  hire_month?: string
-  school?: string
-  education?: string
-  major?: string
-  classification?: string
-  id_card?: string
-  id_card_expiry?: string
-  id_card_address?: string
-  current_address?: string
-  marital_status?: string
-  household_type?: string
-  political_status?: string
-  phone?: string
-  email?: string
-  emergency_contact_phone?: string
-  emergency_contact_relation?: string
-  bank_account?: string
-  bank_account_location?: string
-  training_id?: string
-  transfer_history?: string
-  remarks?: string[]
-  feishu_record_id?: string
-  feishu_synced_at?: string
-  created_at?: string
-  updated_at?: string
-}
-
-export interface OnboardingRecordListResponse {
-  code: number
-  message: string
-  data: OnboardingRecord[]
-  meta?: {
-    page: number
-    page_size: number
-    total: number
-  }
-}
-
-export interface OnboardingRecordResponse {
-  code: number
-  message: string
-  data: OnboardingRecord
-}
+// ── 入职台账（2026 手工台账，ticket #199）──
+export type OnboardingRecord = components['schemas']['OnboardingRecordResponse']
+export type OnboardingRecordCreateInput = components['schemas']['OnboardingRecordCreate']
+export type OnboardingRecordUpdateInput = components['schemas']['OnboardingRecordUpdate']
+export type OnboardingRecordListResponse = components['schemas']['OnboardingRecordListApiResponse']
+export type OnboardingRecordApiResponse = components['schemas']['OnboardingRecordApiResponse']
 
 export interface DepartureRecord {
   id: string
