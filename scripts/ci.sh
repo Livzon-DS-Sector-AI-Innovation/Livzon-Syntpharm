@@ -156,6 +156,11 @@ run_e2e() {
 
     # ── Start backend (Docker) ──────────────────────────────────────────
     log_info "Starting E2E backend (port 18000)..."
+    if docker image inspect dazah-backend:latest > /dev/null 2>&1; then
+        log_info "Using prebuilt backend image dazah-backend:latest (no build)"
+    else
+        log_warn "dazah-backend:latest not found — building backend image locally (slow path)"
+    fi
     docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" up -d backend-e2e
 
     local start_time=$SECONDS
@@ -190,7 +195,22 @@ run_e2e() {
     cd "$REPO_ROOT"
 
 
-    # Start the container with the pre-built production image
+    # Start the container with the pre-built production image.
+    # The image (frontend-production:latest, see docker-compose.ci.yml) is
+    # loaded from the `frontend-image` CI artifact. Compose only builds when
+    # that image is absent, so guard it explicitly: falling back to a silent
+    # rebuild costs ~3 min per run and hides a broken artifact hand-off.
+    # (`docker compose run` has no --no-build flag; --build is opt-in and we
+    # never pass it.)
+    if ! docker image inspect frontend-production:latest > /dev/null 2>&1; then
+        if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+            log_error "frontend-production:latest not found — the frontend-image artifact was not loaded"
+            exit 1
+        fi
+        # Local runs have no artifact to load: keep the old build-in-place path.
+        log_warn "frontend-production:latest not found — building frontend image locally (slow path)"
+    fi
+
     docker compose -p dazah-e2e -f "$REPO_ROOT/docker-compose.ci.yml" \
         run -d --name e2e-frontend -p 13000:3000 \
         -e API_BASE_URL=http://backend-e2e:8000 \

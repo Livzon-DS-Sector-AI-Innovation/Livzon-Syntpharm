@@ -3,8 +3,15 @@
 import { Button, Form, Select, Tag } from 'antd'
 import type { FormInstance } from 'antd'
 import { CheckCircleOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
-import { RemoteUserSelect, type RemoteUserSelectOption } from '@/components/common/RemoteUserSelect'
+import { RemoteUserMultiSelect } from '@/components/common/RemoteUserSelect'
+import { toPersonIds } from '@/lib/utils/form-person'
 import type { DeviationCrossDeptReviewer, DeviationLedgerOption } from '@/types/quality'
+
+/** 已保存人员的回显快照：UUID → 姓名/头像（下拉收起或搜索结果未覆盖时用于显示姓名） */
+export interface PersonSnapshot {
+  name: string
+  avatar?: string | null
+}
 
 /** 跨部门行值：详情页回显时携带后端行审核状态字段，创建场景仅有编辑字段 */
 export interface CrossDeptReviewerRowValue {
@@ -38,8 +45,8 @@ interface CrossDeptReviewerFieldsProps {
   /** 宿主表单实例（宿主须在 <Form form={form}> 内使用本组件） */
   form: FormInstance
   departmentOptions: DeviationLedgerOption[]
-  /** RemoteUserSelect 已选人员回显快照 */
-  fallbackOptions?: RemoteUserSelectOption[]
+  /** 已选人员回显快照：UUID → 姓名/头像 */
+  personSnapshots?: Map<string, PersonSnapshot>
   /** 宿主 Form 处于全局 disabled 时，显式放开本区控件（详情页 pending_investigation 局部解锁用） */
   unlock?: boolean
 }
@@ -52,10 +59,11 @@ interface CrossDeptReviewerFieldsProps {
 export function CrossDeptReviewerFields({
   form,
   departmentOptions,
-  fallbackOptions = [],
+  personSnapshots,
   unlock = false,
 }: CrossDeptReviewerFieldsProps) {
   const editableProps = unlock ? { disabled: false } : {}
+  const snapshotOf = (id: string): PersonSnapshot | undefined => personSnapshots?.get(id)
 
   return (
     <Form.List name="cross_dept_reviewers">
@@ -66,6 +74,10 @@ export function CrossDeptReviewerFields({
             const row = (form.getFieldValue(['cross_dept_reviewers', field.name]) ?? undefined) as
               | CrossDeptReviewerRowValue
               | undefined
+            // 姓名/头像快照与已选 UUID 同序，漏配的位置留空由选择器自身的选中快照兜底
+            const investigatorIds = row?.investigator_ids ?? []
+            const investigatorLabels = investigatorIds.map((id) => snapshotOf(id)?.name ?? '')
+            const investigatorAvatars = investigatorIds.map((id) => snapshotOf(id)?.avatar ?? null)
             return (
               <div key={field.key} className="flex w-full flex-col gap-2 sm:flex-row sm:items-start">
                 <Form.Item
@@ -81,11 +93,16 @@ export function CrossDeptReviewerFields({
                     {...editableProps}
                   />
                 </Form.Item>
-                <Form.Item name={[field.name, 'investigator_ids']} className="!mb-0 min-w-0 flex-1">
-                  <RemoteUserSelect
-                    mode="multiple"
+                <Form.Item
+                  name={[field.name, 'investigator_ids']}
+                  className="!mb-0 min-w-0 flex-1"
+                  normalize={toPersonIds}
+                >
+                  <RemoteUserMultiSelect
                     placeholder="该部门参与调查人（可留空，由部门负责人审核）"
-                    fallbackOptions={fallbackOptions}
+                    labels={investigatorLabels}
+                    avatarSrcs={investigatorAvatars}
+                    feishuBoundOnly={false}
                     {...editableProps}
                   />
                 </Form.Item>

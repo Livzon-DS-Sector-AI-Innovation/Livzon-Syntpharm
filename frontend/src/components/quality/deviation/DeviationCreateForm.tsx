@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -22,7 +22,8 @@ import type {
   DeviationLedgerCreateInput,
   DeviationLedgerOption,
 } from '@/types/quality'
-import { RemoteUserSelect } from '@/components/common/RemoteUserSelect'
+import { RemoteUserMultiSelect, RemoteUserSelect } from '@/components/common/RemoteUserSelect'
+import { toPersonId, toPersonIds } from '@/lib/utils/form-person'
 import {
   CrossDeptReviewerFields,
   toCrossDeptRowsPayload,
@@ -61,16 +62,9 @@ export function DeviationCreateForm({
   const [form] = Form.useForm<FormValues>()
   const [submitting, setSubmitting] = useState(false)
   const [, startTransition] = useTransition()
-  // 已保存值的回显快照：当前登录人（发现人默认值）不在首屏时也要显示姓名
-  const discovererFallback = useMemo(
-    () =>
-      currentUserId && currentUserName
-        ? [{ value: currentUserId, label: currentUserName }]
-        : [],
-    [currentUserId, currentUserName],
-  )
-
   const crossReview = Form.useWatch('needs_cross_dept_review', form)
+  // 发现人默认是当前登录人：传姓名快照，未展开下拉时也不会显示 UUID
+  const discovererLabel = currentUserId ? currentUserName : undefined
 
   const handleFinish = async (values: FormValues) => {
     const crossDeptRows = values.needs_cross_dept_review
@@ -211,10 +205,12 @@ export function DeviationCreateForm({
                 label="发现人"
                 tooltip="默认填当前登录人，可改选实际发现人"
                 rules={[{ required: true, message: '请选择发现人' }]}
+                normalize={toPersonId}
               >
                 <RemoteUserSelect
                   placeholder={currentUserName || '搜索姓名选择发现人'}
-                  fallbackOptions={discovererFallback}
+                  label={discovererLabel}
+                  feishuBoundOnly={false}
                 />
               </Form.Item>
             </Col>
@@ -245,8 +241,9 @@ export function DeviationCreateForm({
                 label="调查人"
                 tooltip="可多选，提交后由所选调查人负责后续调查"
                 rules={[{ required: true, message: '请至少选择一名调查人' }]}
+                normalize={toPersonIds}
               >
-                <RemoteUserSelect mode="multiple" placeholder="搜索姓名选择调查人，可多选" />
+                <RemoteUserMultiSelect placeholder="搜索姓名选择调查人，可多选" feishuBoundOnly={false} />
               </Form.Item>
             </Col>
 

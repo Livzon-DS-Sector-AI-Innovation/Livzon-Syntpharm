@@ -184,6 +184,7 @@ export const SAFETY_PERM = {
   equipmentFacilityHazardManage: 'safety:equipment-facility-hazard:manage',
   equipmentFacilityHazardRead: 'safety:equipment-facility-hazard:read',
   feishuManage: 'safety:feishu:manage',
+  hazardCategoryManage: 'safety:hazard-category:manage',
   hazardIdentificationManage: 'safety:hazard-identification:manage',
   hazardIdentificationRead: 'safety:hazard-identification:read',
   hazardManage: 'safety:hazard:manage',

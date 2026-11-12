@@ -31,8 +31,10 @@ SAFETY_RESOURCE_CODES: Final[dict[str, tuple[str, str]]] = {
     "enums": ("safety:module:read", "safety:module:read"),
     "feishu": ("safety:feishu:manage", "safety:feishu:manage"),
     "files": ("safety:module:read", "safety:module:read"),
-    # 隐患类别字典挂在 /hazards 页面内，与隐患本身共用同一对权限码
-    "hazard-categories": ("safety:hazard:read", "safety:hazard:manage"),
+    # 隐患类别字典：读沿用隐患只读码（登记表单要能拉到下拉），
+    # 写单独收归 safety:hazard-category:manage（模块管理员），
+    # 避免「能登记隐患的人顺带改全公司共享的类别字典」。
+    "hazard-categories": ("safety:hazard:read", "safety:hazard-category:manage"),
     "hazard-identifications": ("safety:hazard-identification:read", "safety:hazard-identification:manage"),
     "hazards": ("safety:hazard:read", "safety:hazard:manage"),
     "knowledge-articles": ("safety:knowledge-article:read", "safety:knowledge-article:manage"),

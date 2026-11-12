@@ -3,68 +3,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Divider, Select, Spin } from 'antd'
 import type { ReactNode } from 'react'
-import { searchPersonnel } from '@/lib/api/client/identity'
+import { searchPersonnel, type PersonnelOption } from '@/lib/api/client/identity'
 import { UserAvatar, UserLabel } from '@/components/common/UserAvatar'
 
-/**
- * 系统人员下拉（全站唯一实现，参照隐患台账 `fix/liujunguang_hazard-ledger`）：
- *
- * - 展开即取首批用户（无需先输关键字，新建账号后重新展开即可见）
- * - 关键字走 300ms 防抖的服务端搜索，并重置分页（未加载过的用户也能搜到）
- * - 下拉滚动到底自动续载下一页，不需要手动点「加载更多」
- * - 请求序号防竞态：慢响应不会覆盖新关键字的结果
- * - 选项「头像 + 姓名 + 部门」，已选标签「小头像 + 姓名」
- *
- * 与隐患模块的差异：这里额外支持多选（`mode="multiple"`），并用 `fallbackOptions`
- * 承载已保存值的姓名/头像快照，因此表单只需存 UUID，不必再维护平行的姓名数组。
- */
-
+/** 搜索防抖：快速连打不会把每个字符都送到后端 */
 const SEARCH_DEBOUNCE_MS = 300
 /** 每页条数：展开首屏 50 条，够用又不会拖慢响应 */
 const PAGE_SIZE = 50
 /** 触底判定余量：留 32px 避免亚像素误差导致永远触发不到 */
 const SCROLL_BOTTOM_THRESHOLD = 32
 
-/** 组件内部统一的行结构：不伪造生成契约的必填字段 */
-interface PersonRow {
-  id: string
-  name: string
-  department?: string | null
-  avatar?: string | null
-}
-
-export interface RemoteUserSelectOption {
-  value: string
-  label: string
-  avatar?: string | null
-  /** 次级文案（部门），仅用于回显选项的展示 */
-  description?: string | null
-}
-
-export interface RemoteUserSelectProps {
-  /** 已选用户 UUID（多选为 UUID 数组） */
-  value?: string | string[] | null
-  /** 单选回写 string | null，多选回写 string[] */
-  onChange?: (value: string | string[] | null) => void
-  /** 单选（默认）或多选 */
-  mode?: 'single' | 'multiple'
-  placeholder?: string
-  /** 默认允许清空 */
-  allowClear?: boolean
-  disabled?: boolean
-  /** 已保存值的姓名/头像快照：未出现在当前列表时用于回显，避免显示 UUID */
-  fallbackOptions?: RemoteUserSelectOption[]
-  /** true = 只列已绑定飞书身份的账号（要发通知的场景）；默认 false 覆盖本地账号 */
-  feishuBoundOnly?: boolean
-  style?: React.CSSProperties
-}
+type Person = { id: string; name: string }
 
 /** 头像取值：服务端可能只给 thumb 或 url，统一按 thumb → url 回退 */
-function avatarOf(person: { avatar_thumb?: string | null; avatar_url?: string | null }): string | undefined {
+function avatarOf(person: PersonnelOption): string | undefined {
   return person.avatar_thumb || person.avatar_url || undefined
 }
 
-/** 已选标签里的紧凑头像（标签内不放部门，避免 tags 高度撑高） */
+/** 选项/已选标签里的紧凑头像（标签内不放部门，避免 tags 高度撑高） */
 function CompactPersonLabel({ name, src }: { name: string; src?: string }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: '100%', verticalAlign: 'middle' }}>
@@ -74,13 +30,16 @@ function CompactPersonLabel({ name, src }: { name: string; src?: string }) {
   )
 }
 
-/** 下拉面板中的富选项：头像 + 姓名 + 部门 */
-function PersonOptionRow({ person }: { person: PersonRow }) {
-  return <UserLabel name={person.name} src={person.avatar} secondary={person.department} avatarSize={26} />
+/** 下拉面板中的富选项：头像 + 姓名 +（账号 ·）部门 */
+function PersonOptionRow({ person, showUsername }: { person: PersonnelOption; showUsername: boolean }) {
+  const secondary = [showUsername ? person.username : null, person.department].filter(Boolean).join(' · ')
+  return (
+    <UserLabel name={person.name} src={avatarOf(person)} secondary={secondary || undefined} avatarSize={26} />
+  )
 }
 
 /** 按 id 去重合并：分页追加时避免同一用户出现两次 */
-function mergeById(prev: PersonRow[], next: PersonRow[]): PersonRow[] {
+function mergeById(prev: PersonnelOption[], next: PersonnelOption[]): PersonnelOption[] {
   if (prev.length === 0) return next
   const seen = new Set(prev.map((item) => item.id))
   const merged = [...prev]
@@ -92,35 +51,24 @@ function mergeById(prev: PersonRow[], next: PersonRow[]): PersonRow[] {
   return merged
 }
 
-/** 下拉底部只在请求中显示加载提示；没有更多数据时什么都不渲染 */
-function ListLoadingFooter({ loading, hasRows }: { loading: boolean; hasRows: boolean }) {
-  if (!loading || !hasRows) return null
-  return (
-    <>
-      <Divider style={{ margin: '4px 0' }} />
-      <div style={{ padding: '6px 0', textAlign: 'center' }}>
-        <Spin size="small" />
-      </div>
-    </>
-  )
-}
-
 /**
- * 远端人员搜索状态机：首屏、搜索、滚动续载共用一条分页链路。
- * 失败只影响列表本身，不向表单层抛错；首屏失败允许再次展开重试。
+ * 远端用户搜索的公共逻辑：
+ * - 下拉展开即取首批用户（无需先输关键字）
+ * - 关键字变化走 300ms 防抖服务端搜索，并重置分页（未加载过的用户也能搜到）
+ * - 下拉滚动到底自动追加下一页，不需要手动点「加载更多」
+ * - 请求序号防竞态：慢响应不会覆盖新关键字的结果
  */
-function useRemotePersonnel(feishuBoundOnly: boolean) {
-  const [rows, setRows] = useState<PersonRow[]>([])
+function useRemoteUserSearch(feishuBoundOnly: boolean) {
+  const [options, setOptions] = useState<PersonnelOption[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [failed, setFailed] = useState(false)
   const [searchValue, setSearchValue] = useState('')
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const requestSeq = useRef(0)
   // 当前生效的关键字与已消费的分页游标（翻页/搜索都按它取下一页）
   const keywordRef = useRef('')
   const offsetRef = useRef(0)
-  // 滚动是高频回调，用 ref 做请求闸门，避免 state 闭包滞后导致连发
+  // 滚动事件是高频回调，用 ref 做请求闸门，避免 state 闭包滞后导致连发
   const loadingRef = useRef(false)
 
   useEffect(
@@ -138,24 +86,14 @@ function useRemotePersonnel(feishuBoundOnly: boolean) {
       try {
         const page = await searchPersonnel(keyword, offset, PAGE_SIZE, { feishuBoundOnly })
         if (seq !== requestSeq.current) return
-        const next: PersonRow[] = page.items.map((item) => ({
-          id: item.id,
-          name: item.name,
-          department: item.department,
-          avatar: avatarOf(item),
-        }))
-        setRows((prev) => (offset === 0 ? next : mergeById(prev, next)))
+        setOptions((prev) => (offset === 0 ? page.items : mergeById(prev, page.items)))
         setTotal(page.total)
-        setFailed(false)
-        offsetRef.current = offset + next.length
+        offsetRef.current = offset + page.items.length
       } catch {
         // 首屏失败时清空列表（可再次展开重试），追加失败保留已有结果
-        if (seq === requestSeq.current) {
-          setFailed(true)
-          if (offset === 0) {
-            setRows([])
-            setTotal(0)
-          }
+        if (seq === requestSeq.current && offset === 0) {
+          setOptions([])
+          setTotal(0)
         }
       } finally {
         if (seq === requestSeq.current) {
@@ -191,9 +129,9 @@ function useRemotePersonnel(feishuBoundOnly: boolean) {
 
   const loadMore = useCallback(() => {
     if (loadingRef.current) return
-    if (rows.length >= total) return
+    if (options.length >= total) return
     void fetchPage(keywordRef.current, offsetRef.current)
-  }, [fetchPage, rows.length, total])
+  }, [fetchPage, options.length, total])
 
   /** 触底自动续载：直接读滚动容器位置，不依赖 antd 内部状态 */
   const handlePopupScroll = useCallback(
@@ -208,110 +146,98 @@ function useRemotePersonnel(feishuBoundOnly: boolean) {
   /** 收起下拉时清空搜索框，下次展开不会残留上次的关键字 */
   const clearSearchValue = useCallback(() => setSearchValue(''), [])
 
-  return { rows, loading, failed, searchValue, reload, handleSearch, handlePopupScroll, clearSearchValue }
+  return { options, loading, searchValue, reload, handleSearch, handlePopupScroll, clearSearchValue }
+}
+
+/** 下拉底部只在请求中显示加载提示；没有更多数据时什么都不渲染 */
+function ListLoadingFooter({ loading, hasOptions }: { loading: boolean; hasOptions: boolean }) {
+  if (!loading || !hasOptions) return null
+  return (
+    <>
+      <Divider style={{ margin: '4px 0' }} />
+      <div style={{ padding: '6px 0', textAlign: 'center' }}>
+        <Spin size="small" />
+      </div>
+    </>
+  )
+}
+
+export interface RemoteUserSelectProps {
+  /** 已选用户 UUID */
+  value?: string | null
+  /** 已保存的姓名快照：未出现在当前列表时用于回显，避免显示 UUID */
+  label?: string | null
+  /** 已保存的头像快照（可选），缺省走姓名首字兜底 */
+  avatarSrc?: string | null
+  /** true = 只列已绑定飞书身份的账号（要发通知的场景）；授权等场景传 false 以覆盖本地账号 */
+  feishuBoundOnly?: boolean
+  /** 选项次级文案是否带上登录账号（授权场景用于区分重名） */
+  showUsername?: boolean
+  allowClear?: boolean
+  placeholder?: string
+  disabled?: boolean
+  /** Form.Item 会代为注入 onChange；裸用时必填 */
+  onChange?: (person: Person | null) => void
 }
 
 /**
- * 系统人员下拉：头像 + 远端搜索 + 滚动续载。
+ * 远端用户选择器（单选）。
  *
- * 受控用法：`value` 是 UUID（多选为 UUID 数组），`onChange` 只回写 UUID；
- * 姓名与头像由 `fallbackOptions` 提供快照，保证已保存值在未展开下拉时也能正常显示。
+ * 打开即加载 50 条，滚到底自动续载；输入关键字走服务端搜索，搜索结果同样分页续载。
+ * 选择后同时回写 id 与姓名快照，姓名缺失时用快照兜底显示。
  */
 export function RemoteUserSelect({
   value,
-  onChange,
-  mode = 'single',
+  label,
+  avatarSrc,
+  feishuBoundOnly = true,
+  showUsername = false,
+  allowClear = false,
   placeholder = '搜索姓名选择系统用户',
-  allowClear = true,
   disabled,
-  fallbackOptions,
-  feishuBoundOnly = false,
-  style,
+  onChange,
 }: RemoteUserSelectProps) {
-  const multiple = mode === 'multiple'
-  const { rows, loading, failed, searchValue, reload, handleSearch, handlePopupScroll, clearSearchValue } =
-    useRemotePersonnel(feishuBoundOnly)
+  const { options, loading, searchValue, reload, handleSearch, handlePopupScroll, clearSearchValue } =
+    useRemoteUserSearch(feishuBoundOnly)
+  // 选中快照：父级只传 value（如 Form 只存 id）时，重新展开/搜索后也能显示姓名而不是 UUID
+  const [picked, setPicked] = useState<Person | null>(null)
+  const snapshotName = label ?? (picked && picked.id === value ? picked.name : null)
 
-  const selectedIds = useMemo<string[]>(() => {
-    if (multiple) return Array.isArray(value) ? value : []
-    return typeof value === 'string' && value ? [value] : []
-  }, [multiple, value])
+  // 回显：已绑定但未出现在当前列表里时补一个选项，保证显示姓名（带头像）而不是 UUID
+  const displayOptions: PersonnelOption[] = useMemo(
+    () =>
+      value && !options.some((o) => o.id === value)
+        ? [{ id: value, name: snapshotName || value, avatar_thumb: avatarSrc || undefined }, ...options]
+        : options,
+    [options, value, snapshotName, avatarSrc],
+  )
 
-  const fallbackById = useMemo(() => {
-    const map = new Map<string, PersonRow>()
-    for (const option of fallbackOptions ?? []) {
-      map.set(option.value, {
-        id: option.value,
-        name: option.label,
-        department: option.description ?? null,
-        avatar: option.avatar ?? undefined,
-      })
-    }
-    return map
-  }, [fallbackOptions])
+  const optionById = useMemo(() => new Map(displayOptions.map((o) => [o.id, o])), [displayOptions])
 
-  // 已选人员快照：搜索/翻页会整体替换 rows，已选但不在当前结果里的人靠这里保留姓名与头像
-  const [pickedById, setPickedById] = useState<Record<string, PersonRow>>({})
-
-  // 回显：已保存但不在当前结果里的人补到最前面（快照 → 外部 fallback → 未知人员）
-  const displayRows = useMemo<PersonRow[]>(() => {
-    const known = new Set(rows.map((row) => row.id))
-    const missing: PersonRow[] = []
-    for (const id of selectedIds) {
-      if (known.has(id)) continue
-      missing.push(pickedById[id] ?? fallbackById.get(id) ?? { id, name: '未知人员' })
-    }
-    return missing.length > 0 ? [...missing, ...rows] : rows
-  }, [rows, selectedIds, fallbackById, pickedById])
-
-  const rowById = useMemo(() => new Map(displayRows.map((row) => [row.id, row])), [displayRows])
-
-  const handleChange = (next: string | string[] | undefined) => {
-    const nextIds = multiple
-      ? Array.isArray(next)
-        ? next
-        : []
-      : typeof next === 'string' && next
-        ? [next]
-        : []
-    // 记住本次选中人员的姓名/头像：再次搜索替换 rows 后仍能正常回显
-    setPickedById((prev) => {
-      let changed = false
-      const merged: Record<string, PersonRow> = { ...prev }
-      for (const id of nextIds) {
-        const row = rowById.get(id)
-        if (!row || row.name === '未知人员') continue
-        const existing = merged[id]
-        if (existing && existing.name === row.name && existing.avatar === row.avatar) continue
-        merged[id] = row
-        changed = true
-      }
-      return changed ? merged : prev
-    })
-    if (multiple) {
-      onChange?.(nextIds)
+  const handleChange = (next: string | undefined) => {
+    if (!next) {
+      setPicked(null)
+      onChange?.(null)
       return
     }
-    onChange?.(nextIds[0] ?? null)
+    const chosen = displayOptions.find((o) => o.id === next)
+    if (!chosen) return
+    setPicked({ id: chosen.id, name: chosen.name })
+    onChange?.({ id: chosen.id, name: chosen.name })
   }
 
   return (
     <Select
-      mode={multiple ? 'multiple' : undefined}
       showSearch
       allowClear={allowClear}
       disabled={disabled}
       filterOption={false}
       defaultActiveFirstOption={false}
-      /* 下拉按内容宽度展开：窄表单里「头像 + 姓名 + 部门」不会被 select 宽度挤成截断 */
-      popupMatchSelectWidth={false}
       searchValue={searchValue}
-      notFoundContent={
-        loading ? <Spin size="small" /> : failed ? '人员加载失败，重新展开可重试' : '未找到匹配的系统用户'
-      }
+      notFoundContent={loading ? <Spin size="small" /> : '未找到匹配的系统用户'}
       placeholder={placeholder}
-      style={{ width: '100%', ...style }}
-      value={multiple ? selectedIds : (selectedIds[0] ?? undefined)}
+      style={{ width: '100%' }}
+      value={value || undefined}
       onOpenChange={(open) => {
         if (open) reload()
         else clearSearchValue()
@@ -322,19 +248,140 @@ export function RemoteUserSelect({
       popupRender={(menu) => (
         <>
           {menu}
-          <ListLoadingFooter loading={loading} hasRows={displayRows.length > 0} />
+          <ListLoadingFooter loading={loading} hasOptions={displayOptions.length > 0} />
         </>
       )}
-      options={displayRows.map((row) => ({
-        value: row.id,
-        label: <CompactPersonLabel name={row.name} src={row.avatar ?? undefined} />,
+      options={displayOptions.map((o) => ({
+        value: o.id,
+        label: <CompactPersonLabel name={o.name} src={avatarOf(o)} />,
       }))}
       optionRender={(option): ReactNode => {
-        const row = rowById.get(String(option.value))
-        return row ? <PersonOptionRow person={row} /> : (option.label as ReactNode)
+        const person = optionById.get(String(option.value))
+        return person ? <PersonOptionRow person={person} showUsername={showUsername} /> : (option.label as ReactNode)
       }}
     />
   )
 }
 
-export default RemoteUserSelect
+export interface RemoteUserMultiSelectProps {
+  /** 已选用户 UUID 列表 */
+  value?: string[]
+  /** 已保存的姓名快照（与 value 顺序一致），未搜索时用于回显 */
+  labels?: string[]
+  /** 已保存的头像快照（与 value 顺序一致），缺省走姓名首字兜底 */
+  avatarSrcs?: Array<string | null | undefined>
+  /** true = 只列已绑定飞书身份的账号；传 false 以覆盖本地账号 */
+  feishuBoundOnly?: boolean
+  showUsername?: boolean
+  allowClear?: boolean
+  placeholder?: string
+  disabled?: boolean
+  /** Form.Item 会代为注入 onChange；裸用时必填 */
+  onChange?: (persons: Person[]) => void
+}
+
+/**
+ * 远端用户选择器（多选）。
+ *
+ * 与单选同一套取数逻辑：50 条一页、滚到底自动续、关键字走服务端；
+ * 已选但不在当前列表/搜索结果里的人用姓名快照补进选项，标签不会消失。
+ */
+export function RemoteUserMultiSelect({
+  value,
+  labels,
+  avatarSrcs,
+  feishuBoundOnly = true,
+  showUsername = false,
+  allowClear = true,
+  placeholder = '搜索姓名，可多选',
+  disabled,
+  onChange,
+}: RemoteUserMultiSelectProps) {
+  const { options, loading, searchValue, reload, handleSearch, handlePopupScroll, clearSearchValue } =
+    useRemoteUserSearch(feishuBoundOnly)
+  // 选中快照：父级只传 value（如 Form 只存 id 数组）时，重新展开/搜索后也能显示姓名
+  const [pickedList, setPickedList] = useState<Person[]>([])
+  // 稳定引用：value 缺省时不要在每次渲染造新数组，否则下级 useMemo 全部失效
+  const selectedIds = useMemo(() => value ?? [], [value])
+  const pickedNameMap = useMemo(
+    () => new Map(pickedList.map((person) => [person.id, person.name])),
+    [pickedList],
+  )
+
+  // 姓名快照按 id 建索引：value 顺序即快照顺序，直接用 Map 查比 indexOf 稳
+  const labelMap = useMemo(
+    () => new Map(selectedIds.map((id, index) => [id, labels?.[index]])),
+    [selectedIds, labels],
+  )
+  const avatarMap = useMemo(
+    () => new Map(selectedIds.map((id, index) => [id, avatarSrcs?.[index] ?? undefined])),
+    [selectedIds, avatarSrcs],
+  )
+
+  // 回显：把尚未出现在列表里的已选人员补进来（用姓名/头像快照兜底）
+  const displayOptions: PersonnelOption[] = useMemo(() => {
+    const missing = selectedIds
+      .filter((id) => !options.some((o) => o.id === id))
+      .map(
+        (id) =>
+          ({
+            id,
+            name: labelMap.get(id) || pickedNameMap.get(id) || id,
+            avatar_thumb: avatarMap.get(id),
+          }) as PersonnelOption,
+      )
+    return [...missing, ...options]
+  }, [selectedIds, options, labelMap, avatarMap, pickedNameMap])
+
+  const optionById = useMemo(() => new Map(displayOptions.map((o) => [o.id, o])), [displayOptions])
+
+  const handleChange = (nextIds: string[]) => {
+    const persons = nextIds
+      .map((id) => {
+        const picked = displayOptions.find((o) => o.id === id)
+        if (picked) return { id: picked.id, name: picked.name }
+        const fallback = labelMap.get(id)
+        return fallback ? { id, name: fallback } : null
+      })
+      .filter((p): p is Person => p !== null)
+    setPickedList(persons)
+    onChange?.(persons)
+  }
+
+  return (
+    <Select
+      mode="multiple"
+      showSearch
+      allowClear={allowClear}
+      disabled={disabled}
+      filterOption={false}
+      defaultActiveFirstOption={false}
+      searchValue={searchValue}
+      notFoundContent={loading ? <Spin size="small" /> : '未找到匹配的系统用户'}
+      placeholder={placeholder}
+      style={{ width: '100%' }}
+      value={selectedIds}
+      onOpenChange={(open) => {
+        if (open) reload()
+        else clearSearchValue()
+      }}
+      onSearch={handleSearch}
+      onPopupScroll={handlePopupScroll}
+      onChange={handleChange}
+      popupRender={(menu) => (
+        <>
+          {menu}
+          <ListLoadingFooter loading={loading} hasOptions={displayOptions.length > 0} />
+        </>
+      )}
+      options={displayOptions.map((o) => ({
+        value: o.id,
+        label: <CompactPersonLabel name={o.name} src={avatarOf(o)} />,
+      }))}
+      optionRender={(option): ReactNode => {
+        const person = optionById.get(String(option.value))
+        return person ? <PersonOptionRow person={person} showUsername={showUsername} /> : (option.label as ReactNode)
+      }}
+    />
+  )
+}
