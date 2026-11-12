@@ -9719,6 +9719,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/hr/people/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 员工档案部门树（只读）
+         * @description 返回公司根节点下的两级部门树，供员工档案左侧筛选使用。
+         */
+        get: operations["list_people_departments_api_v1_hr_people_departments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hr/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 员工列表（只读） */
+        get: operations["list_employee_profiles_api_v1_hr_people_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hr/people/{person_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 员工详情（只读）
+         * @description 按镜像 id 或飞书 open_id 返回一个人的完整档案。
+         */
+        get: operations["get_employee_profile_api_v1_hr_people__person_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/hr/candidates": {
         parameters: {
             query?: never;
@@ -31056,6 +31113,317 @@ export interface components {
              * @default 待审批
              */
             status: string;
+        };
+        /** EmployeeProfileDetail */
+        EmployeeProfileDetail: {
+            /** Id */
+            id: string;
+            /** Open Id */
+            open_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Mobile
+             * @default
+             */
+            mobile: string;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /**
+             * Enterprise Email
+             * @default
+             */
+            enterprise_email: string;
+            /** Email Aliases */
+            email_aliases?: string[];
+            /** Gender */
+            gender?: number | null;
+            /**
+             * Gender Label
+             * @default 未知
+             */
+            gender_label: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Avatar 72
+             * @default
+             */
+            avatar_72: string;
+            /**
+             * Avatar 240
+             * @default
+             */
+            avatar_240: string;
+            /**
+             * Avatar 640
+             * @default
+             */
+            avatar_640: string;
+            /**
+             * Avatar Origin
+             * @default
+             */
+            avatar_origin: string;
+            /**
+             * Avatar Url
+             * @default
+             */
+            avatar_url: string;
+            /**
+             * Background Image
+             * @default
+             */
+            background_image: string;
+            /**
+             * Geo Name
+             * @default
+             */
+            geo_name: string;
+            /** Active Status */
+            active_status?: number | null;
+            /**
+             * Active Status Label
+             * @default —
+             */
+            active_status_label: string;
+            /**
+             * Is Resigned
+             * @default false
+             */
+            is_resigned: boolean;
+            /**
+             * Resign Time
+             * @default
+             */
+            resign_time: string;
+            /**
+             * Is Admin
+             * @default false
+             */
+            is_admin: boolean;
+            /**
+             * Is Primary Admin
+             * @default false
+             */
+            is_primary_admin: boolean;
+            /** Data Source */
+            data_source?: number | null;
+            /**
+             * Data Source Label
+             * @default —
+             */
+            data_source_label: string;
+            /**
+             * Employee No
+             * @default
+             */
+            employee_no: string;
+            /**
+             * Job Title Id
+             * @default
+             */
+            job_title_id: string;
+            /**
+             * Job Title Name
+             * @default
+             */
+            job_title_name: string;
+            /** Hire Date */
+            hire_date?: string | null;
+            /** Employment Type */
+            employment_type?: number | null;
+            /** Staff Status */
+            staff_status?: number | null;
+            /**
+             * Staff Status Label
+             * @default —
+             */
+            staff_status_label: string;
+            /**
+             * Work Country Or Region
+             * @default
+             */
+            work_country_or_region: string;
+            /**
+             * Work Place Id
+             * @default
+             */
+            work_place_id: string;
+            /**
+             * Work Place Name
+             * @default
+             */
+            work_place_name: string;
+            /**
+             * Work Station
+             * @default
+             */
+            work_station: string;
+            /**
+             * Extension Number
+             * @default
+             */
+            extension_number: string;
+            /** Dotted Line Leader Ids */
+            dotted_line_leader_ids?: string[];
+            /** Resign Date */
+            resign_date?: string | null;
+            /**
+             * Resign Type
+             * @default
+             */
+            resign_type: string;
+            /**
+             * Resign Reason
+             * @default
+             */
+            resign_reason: string;
+            /**
+             * Resign Remark
+             * @default
+             */
+            resign_remark: string;
+            /** Positions */
+            positions?: {
+                [key: string]: string;
+            }[];
+            /**
+             * Job Level Id
+             * @default
+             */
+            job_level_id: string;
+            /**
+             * Job Level Name
+             * @default
+             */
+            job_level_name: string;
+            /**
+             * Job Family Id
+             * @default
+             */
+            job_family_id: string;
+            /**
+             * Job Family Name
+             * @default
+             */
+            job_family_name: string;
+            /** Department Ids */
+            department_ids?: string[];
+            /** Department Names */
+            department_names?: string[];
+            /** Department Path */
+            department_path?: components["schemas"]["OrgPathNode"][];
+            /**
+             * Department Level1 Name
+             * @default
+             */
+            department_level1_name: string;
+            /**
+             * Department Level2 Name
+             * @default
+             */
+            department_level2_name: string;
+            /** Last Synced At */
+            last_synced_at?: string | null;
+        };
+        /** EmployeeProfileDetailApiResponse */
+        EmployeeProfileDetailApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["EmployeeProfileDetail"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** EmployeeProfileListApiResponse */
+        EmployeeProfileListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["EmployeeProfileListData"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** EmployeeProfileListData */
+        EmployeeProfileListData: {
+            /** Items */
+            items?: components["schemas"]["EmployeeProfileListItem"][];
+            /** Last Synced At */
+            last_synced_at?: string | null;
+        };
+        /** EmployeeProfileListItem */
+        EmployeeProfileListItem: {
+            /** Id */
+            id: string;
+            /** Open Id */
+            open_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Avatar Url
+             * @default
+             */
+            avatar_url: string;
+            /** Department Ids */
+            department_ids?: string[];
+            /** Department Names */
+            department_names?: string[];
+            /** Department Path */
+            department_path?: components["schemas"]["OrgPathNode"][];
+            /**
+             * Department Level1 Name
+             * @default
+             */
+            department_level1_name: string;
+            /**
+             * Department Level2 Name
+             * @default
+             */
+            department_level2_name: string;
+            /**
+             * Job Title Name
+             * @default
+             */
+            job_title_name: string;
+            /** Staff Status */
+            staff_status?: number | null;
+            /**
+             * Staff Status Label
+             * @default —
+             */
+            staff_status_label: string;
+            /**
+             * Is Resigned
+             * @default false
+             */
+            is_resigned: boolean;
+            /** Last Synced At */
+            last_synced_at?: string | null;
         };
         /** EmployeeUpdate */
         EmployeeUpdate: {
@@ -81705,6 +82073,110 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["OrgSyncTriggerApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_people_departments_api_v1_hr_people_departments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["OrgDepartmentTreeApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_employee_profiles_api_v1_hr_people_get: {
+        parameters: {
+            query?: {
+                /** @description 部门 ID；公司根节点或不传表示全部 */
+                department_id?: string | null;
+                /** @description 人事状态：在职/离职或飞书枚举值 */
+                status?: string | null;
+                /** @description 姓名 / 工号 / 职务 / 部门关键字 */
+                keyword?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["EmployeeProfileListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_employee_profile_api_v1_hr_people__person_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["EmployeeProfileDetailApiResponse"];
                 };
             };
             /** @description Validation Error */

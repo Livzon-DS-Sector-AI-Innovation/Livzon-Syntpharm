@@ -47159,6 +47159,244 @@
         }
       }
     },
+    "/api/v1/hr/people/departments": {
+      "get": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u5458\u5de5\u6863\u6848"
+        ],
+        "summary": "\u5458\u5de5\u6863\u6848\u90e8\u95e8\u6811\uff08\u53ea\u8bfb\uff09",
+        "description": "\u8fd4\u56de\u516c\u53f8\u6839\u8282\u70b9\u4e0b\u7684\u4e24\u7ea7\u90e8\u95e8\u6811\uff0c\u4f9b\u5458\u5de5\u6863\u6848\u5de6\u4fa7\u7b5b\u9009\u4f7f\u7528\u3002",
+        "operationId": "list_people_departments_api_v1_hr_people_departments_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgDepartmentTreeApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hr/people": {
+      "get": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u5458\u5de5\u6863\u6848"
+        ],
+        "summary": "\u5458\u5de5\u5217\u8868\uff08\u53ea\u8bfb\uff09",
+        "operationId": "list_employee_profiles_api_v1_hr_people_get",
+        "parameters": [
+          {
+            "name": "department_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u90e8\u95e8 ID\uff1b\u516c\u53f8\u6839\u8282\u70b9\u6216\u4e0d\u4f20\u8868\u793a\u5168\u90e8",
+              "title": "Department Id"
+            },
+            "description": "\u90e8\u95e8 ID\uff1b\u516c\u53f8\u6839\u8282\u70b9\u6216\u4e0d\u4f20\u8868\u793a\u5168\u90e8"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u4eba\u4e8b\u72b6\u6001\uff1a\u5728\u804c/\u79bb\u804c\u6216\u98de\u4e66\u679a\u4e3e\u503c",
+              "title": "Status"
+            },
+            "description": "\u4eba\u4e8b\u72b6\u6001\uff1a\u5728\u804c/\u79bb\u804c\u6216\u98de\u4e66\u679a\u4e3e\u503c"
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u59d3\u540d / \u5de5\u53f7 / \u804c\u52a1 / \u90e8\u95e8\u5173\u952e\u5b57",
+              "title": "Keyword"
+            },
+            "description": "\u59d3\u540d / \u5de5\u53f7 / \u804c\u52a1 / \u90e8\u95e8\u5173\u952e\u5b57"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeProfileListApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hr/people/{person_id}": {
+      "get": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u5458\u5de5\u6863\u6848"
+        ],
+        "summary": "\u5458\u5de5\u8be6\u60c5\uff08\u53ea\u8bfb\uff09",
+        "description": "\u6309\u955c\u50cf id \u6216\u98de\u4e66 open_id \u8fd4\u56de\u4e00\u4e2a\u4eba\u7684\u5b8c\u6574\u6863\u6848\u3002",
+        "operationId": "get_employee_profile_api_v1_hr_people__person_id__get",
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Person Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeProfileDetailApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/hr/candidates": {
       "get": {
         "tags": [
@@ -120820,6 +121058,535 @@
           "hire_date"
         ],
         "title": "EmployeeCreate"
+      },
+      "EmployeeProfileDetail": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "open_id": {
+            "type": "string",
+            "title": "Open Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "mobile": {
+            "type": "string",
+            "title": "Mobile",
+            "default": ""
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "default": ""
+          },
+          "enterprise_email": {
+            "type": "string",
+            "title": "Enterprise Email",
+            "default": ""
+          },
+          "email_aliases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Email Aliases"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "gender_label": {
+            "type": "string",
+            "title": "Gender Label",
+            "default": "\u672a\u77e5"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "avatar_72": {
+            "type": "string",
+            "title": "Avatar 72",
+            "default": ""
+          },
+          "avatar_240": {
+            "type": "string",
+            "title": "Avatar 240",
+            "default": ""
+          },
+          "avatar_640": {
+            "type": "string",
+            "title": "Avatar 640",
+            "default": ""
+          },
+          "avatar_origin": {
+            "type": "string",
+            "title": "Avatar Origin",
+            "default": ""
+          },
+          "avatar_url": {
+            "type": "string",
+            "title": "Avatar Url",
+            "default": ""
+          },
+          "background_image": {
+            "type": "string",
+            "title": "Background Image",
+            "default": ""
+          },
+          "geo_name": {
+            "type": "string",
+            "title": "Geo Name",
+            "default": ""
+          },
+          "active_status": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Status"
+          },
+          "active_status_label": {
+            "type": "string",
+            "title": "Active Status Label",
+            "default": "\u2014"
+          },
+          "is_resigned": {
+            "type": "boolean",
+            "title": "Is Resigned",
+            "default": false
+          },
+          "resign_time": {
+            "type": "string",
+            "title": "Resign Time",
+            "default": ""
+          },
+          "is_admin": {
+            "type": "boolean",
+            "title": "Is Admin",
+            "default": false
+          },
+          "is_primary_admin": {
+            "type": "boolean",
+            "title": "Is Primary Admin",
+            "default": false
+          },
+          "data_source": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Source"
+          },
+          "data_source_label": {
+            "type": "string",
+            "title": "Data Source Label",
+            "default": "\u2014"
+          },
+          "employee_no": {
+            "type": "string",
+            "title": "Employee No",
+            "default": ""
+          },
+          "job_title_id": {
+            "type": "string",
+            "title": "Job Title Id",
+            "default": ""
+          },
+          "job_title_name": {
+            "type": "string",
+            "title": "Job Title Name",
+            "default": ""
+          },
+          "hire_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hire Date"
+          },
+          "employment_type": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employment Type"
+          },
+          "staff_status": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Status"
+          },
+          "staff_status_label": {
+            "type": "string",
+            "title": "Staff Status Label",
+            "default": "\u2014"
+          },
+          "work_country_or_region": {
+            "type": "string",
+            "title": "Work Country Or Region",
+            "default": ""
+          },
+          "work_place_id": {
+            "type": "string",
+            "title": "Work Place Id",
+            "default": ""
+          },
+          "work_place_name": {
+            "type": "string",
+            "title": "Work Place Name",
+            "default": ""
+          },
+          "work_station": {
+            "type": "string",
+            "title": "Work Station",
+            "default": ""
+          },
+          "extension_number": {
+            "type": "string",
+            "title": "Extension Number",
+            "default": ""
+          },
+          "dotted_line_leader_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Dotted Line Leader Ids"
+          },
+          "resign_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resign Date"
+          },
+          "resign_type": {
+            "type": "string",
+            "title": "Resign Type",
+            "default": ""
+          },
+          "resign_reason": {
+            "type": "string",
+            "title": "Resign Reason",
+            "default": ""
+          },
+          "resign_remark": {
+            "type": "string",
+            "title": "Resign Remark",
+            "default": ""
+          },
+          "positions": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Positions"
+          },
+          "job_level_id": {
+            "type": "string",
+            "title": "Job Level Id",
+            "default": ""
+          },
+          "job_level_name": {
+            "type": "string",
+            "title": "Job Level Name",
+            "default": ""
+          },
+          "job_family_id": {
+            "type": "string",
+            "title": "Job Family Id",
+            "default": ""
+          },
+          "job_family_name": {
+            "type": "string",
+            "title": "Job Family Name",
+            "default": ""
+          },
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "department_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Names"
+          },
+          "department_path": {
+            "items": {
+              "$ref": "#/components/schemas/OrgPathNode"
+            },
+            "type": "array",
+            "title": "Department Path"
+          },
+          "department_level1_name": {
+            "type": "string",
+            "title": "Department Level1 Name",
+            "default": ""
+          },
+          "department_level2_name": {
+            "type": "string",
+            "title": "Department Level2 Name",
+            "default": ""
+          },
+          "last_synced_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Synced At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "open_id",
+          "name"
+        ],
+        "title": "EmployeeProfileDetail"
+      },
+      "EmployeeProfileDetailApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EmployeeProfileDetail"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EmployeeProfileDetailApiResponse"
+      },
+      "EmployeeProfileListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EmployeeProfileListData"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EmployeeProfileListApiResponse"
+      },
+      "EmployeeProfileListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EmployeeProfileListItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "last_synced_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Synced At"
+          }
+        },
+        "type": "object",
+        "title": "EmployeeProfileListData"
+      },
+      "EmployeeProfileListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "open_id": {
+            "type": "string",
+            "title": "Open Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "avatar_url": {
+            "type": "string",
+            "title": "Avatar Url",
+            "default": ""
+          },
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "department_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Names"
+          },
+          "department_path": {
+            "items": {
+              "$ref": "#/components/schemas/OrgPathNode"
+            },
+            "type": "array",
+            "title": "Department Path"
+          },
+          "department_level1_name": {
+            "type": "string",
+            "title": "Department Level1 Name",
+            "default": ""
+          },
+          "department_level2_name": {
+            "type": "string",
+            "title": "Department Level2 Name",
+            "default": ""
+          },
+          "job_title_name": {
+            "type": "string",
+            "title": "Job Title Name",
+            "default": ""
+          },
+          "staff_status": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Status"
+          },
+          "staff_status_label": {
+            "type": "string",
+            "title": "Staff Status Label",
+            "default": "\u2014"
+          },
+          "is_resigned": {
+            "type": "boolean",
+            "title": "Is Resigned",
+            "default": false
+          },
+          "last_synced_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Synced At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "open_id",
+          "name"
+        ],
+        "title": "EmployeeProfileListItem"
       },
       "EmployeeUpdate": {
         "properties": {

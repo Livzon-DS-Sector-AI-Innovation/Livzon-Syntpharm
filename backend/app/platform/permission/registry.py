@@ -212,6 +212,7 @@ RESOURCE_LABELS: dict[str, str] = {
     "hr:offboarding-records": "离岗记录",
     "hr:onboarding-evaluation": "上岗评估",
     "hr:onboarding-records": "入职记录",
+    "hr:personnel": "员工档案",
     "hr:prejob-training-templates": "岗前培训模板",
     "hr:system-settings": "系统设置",
     "hr:training-evaluation": "培训评估",
@@ -1022,6 +1023,7 @@ HR_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("hr:offboarding-records:update", "离岗记录 - 编辑", "hr", "offboarding-records", "update"),
     PermissionDef("hr:onboarding-evaluation:create", "上岗评估 - 新增", "hr", "onboarding-evaluation", "create"),
     PermissionDef("hr:onboarding-records:read", "入职记录 - 查看", "hr", "onboarding-records", "read"),
+    PermissionDef("hr:personnel:read", "员工档案 - 查看", "hr", "personnel", "read"),
     PermissionDef("hr:onboarding-records:sync", "入职记录 - 同步", "hr", "onboarding-records", "sync"),
     PermissionDef(
         "hr:prejob-training-templates:read", "岗前培训模板 - 查看", "hr", "prejob-training-templates", "read"
@@ -2737,6 +2739,9 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("hr:departments:read", "GET", "/api/v1/hr/org/departments"),
     ApiBindingDef("hr:departments:read", "GET", "/api/v1/hr/org/sync-status"),
     ApiBindingDef("hr:departments:sync", "POST", "/api/v1/hr/org/sync"),
+    ApiBindingDef("hr:personnel:read", "GET", "/api/v1/hr/people"),
+    ApiBindingDef("hr:personnel:read", "GET", "/api/v1/hr/people/departments"),
+    ApiBindingDef("hr:personnel:read", "GET", "/api/v1/hr/people/{person_id}"),
     ApiBindingDef("hr:offboarding-records:read", "GET", "/api/v1/hr/offboarding-records"),
     ApiBindingDef("hr:offboarding-records:create", "POST", "/api/v1/hr/offboarding-records"),
     ApiBindingDef("hr:offboarding-records:read", "GET", "/api/v1/hr/offboarding-records/{record_id}"),

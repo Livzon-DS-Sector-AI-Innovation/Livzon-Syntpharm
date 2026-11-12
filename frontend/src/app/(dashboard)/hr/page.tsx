@@ -18,7 +18,7 @@ const modules = [
   {
     key: 'profile',
     title: '员工档案',
-    desc: '管理员工基本信息、入职离职、岗位变动等',
+    desc: '飞书通讯录镜像，只读浏览员工档案',
     icon: <TeamOutlined className="text-2xl text-[var(--color-primary)]" />,
     path: '/hr/profile',
   },

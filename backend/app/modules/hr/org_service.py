@@ -20,6 +20,8 @@ from app.modules.hr.org_repository import (
     resolve_leader_names,
 )
 from app.modules.hr.org_sync import sync_org_departments
+from app.modules.hr.people_feishu import build_default_employee_fetcher
+from app.modules.hr.people_repository import SqlAlchemyEmployeeProfileStore
 from app.platform.identity.models import OrgSyncRun
 
 logger = logging.getLogger(__name__)
@@ -60,9 +62,11 @@ async def get_sync_status(session: AsyncSession) -> dict[str, Any]:
 
 async def _run_sync(session: AsyncSession) -> None:
     store = SqlAlchemyOrgDepartmentStore(session)
+    people_store = SqlAlchemyEmployeeProfileStore(session)
     started = datetime.now(UTC)
     try:
         fetcher = await build_default_fetcher(session)
+        people_fetcher = await build_default_employee_fetcher(session)
     except Exception as exc:
         # Credential/configuration failures happen before the HTTP fetcher exists;
         # record them here so the page still shows a failed last sync.
@@ -75,7 +79,13 @@ async def _run_sync(session: AsyncSession) -> None:
             finished_at=datetime.now(UTC),
         )
         raise
-    await sync_org_departments(store, fetcher, started_at=started)
+    await sync_org_departments(
+        store,
+        fetcher,
+        people_store=people_store,
+        people_fetcher=people_fetcher,
+        started_at=started,
+    )
 
 
 async def run_manual_org_sync(session: AsyncSession) -> dict[str, Any]:
@@ -114,9 +124,8 @@ def _already_synced_today(run: OrgSyncRun | None) -> bool:
 async def run_scheduled_org_sync() -> None:
     """Nightly 00:00 Asia/Shanghai job: departments first, then people.
 
-    People sync lives in the personnel-mirror ticket (#198); this job already
-    owns the ordering and the shared sync-run record so #198 only fills that
-    phase in.
+    Both phases share one sync-run row; `people_count` reflects the number of
+    personnel mirror rows enriched by the second phase.
     """
     async with async_session_factory() as session:
         if _already_synced_today(await get_latest_sync_run(session)):

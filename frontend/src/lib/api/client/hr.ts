@@ -26,6 +26,10 @@ import {
   PrejobTemplateResponse,
   CandidateListParams,
   CandidateListResponse,
+  EmployeeProfileDetail,
+  EmployeeProfileListData,
+  EmployeeProfileListItem,
+  OrgDepartmentTreeResponse,
 } from '@/types/hr'
 import type { components } from '@/types/generated/schema'
 
@@ -633,4 +637,56 @@ export async function generateEvaluationForm(
   })
   if (!res.ok) throw new Error('生成失败')
   return res.blob()
+}
+
+
+// ── 员工档案（飞书通讯录只读镜像，ticket #198）──
+
+export async function fetchEmployeeProfiles(params?: {
+  department_id?: string
+  status?: string
+  keyword?: string
+  page?: number
+  page_size?: number
+}): Promise<{
+  items: EmployeeProfileListItem[]
+  total: number
+  page: number
+  page_size: number
+  last_synced_at: string | null
+}> {
+  const searchParams = new URLSearchParams()
+  if (params?.department_id) searchParams.set('department_id', params.department_id)
+  if (params?.status) searchParams.set('status', params.status)
+  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  searchParams.set('page', String(params?.page || 1))
+  searchParams.set('page_size', String(params?.page_size || 20))
+
+  const res = await fetch(`${API_BASE}/hr/people?${searchParams.toString()}`, { cache: 'no-store' })
+  if (!res.ok) throw new Error('获取员工列表失败')
+  const json = (await res.json()) as {
+    data: EmployeeProfileListData
+    meta?: { page?: number; page_size?: number; total?: number }
+  }
+  return {
+    items: json.data.items ?? [],
+    last_synced_at: json.data.last_synced_at ?? null,
+    total: json.meta?.total ?? 0,
+    page: json.meta?.page ?? 1,
+    page_size: json.meta?.page_size ?? 20,
+  }
+}
+
+export async function fetchEmployeeProfileDetail(identifier: string): Promise<EmployeeProfileDetail> {
+  const res = await fetch(`${API_BASE}/hr/people/${encodeURIComponent(identifier)}`, { cache: 'no-store' })
+  if (!res.ok) throw new Error('获取员工详情失败')
+  const json = (await res.json()) as { data: EmployeeProfileDetail }
+  return json.data
+}
+
+export async function fetchEmployeeDepartments(): Promise<OrgDepartmentTreeResponse['data']> {
+  const res = await fetch(`${API_BASE}/hr/people/departments`, { cache: 'no-store' })
+  if (!res.ok) throw new Error('获取部门树失败')
+  const json = (await res.json()) as OrgDepartmentTreeResponse
+  return json.data
 }

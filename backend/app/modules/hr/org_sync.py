@@ -24,6 +24,11 @@ from app.modules.hr.org_domain import (
     parse_directory_department,
     select_departments_to_hide,
 )
+from app.modules.hr.people_sync import (
+    EmployeeProfileFetcher,
+    EmployeeProfileStore,
+    sync_employee_profiles,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +65,7 @@ class OrgSyncStats:
     created: int
     updated: int
     hidden: int
+    people: int = 0
 
 
 def _contact_record(raw: dict[str, Any]) -> OrgDepartmentRecord:
@@ -138,9 +144,11 @@ async def sync_org_departments(
     store: OrgDepartmentStore,
     fetcher: OrgDepartmentFetcher,
     *,
+    people_store: EmployeeProfileStore | None = None,
+    people_fetcher: EmployeeProfileFetcher | None = None,
     started_at: datetime | None = None,
 ) -> OrgSyncStats:
-    """Sync the in-scope department tree from Feishu into the mirror.
+    """Sync the in-scope department tree, then people, into their mirrors.
 
     Failures are recorded on the sync-run row and re-raised: the previous
     mirror data is left untouched so the page stays usable.
@@ -183,17 +191,23 @@ async def sync_org_departments(
         for department_id in to_hide:
             await store.hide_department(department_id)
 
+        people_count = 0
+        if people_store is not None and people_fetcher is not None:
+            people_stats = await sync_employee_profiles(people_store, people_fetcher)
+            people_count = people_stats.total
+
         stats = OrgSyncStats(
             total=len(scoped),
             created=created,
             updated=len(scoped) - created,
             hidden=len(to_hide),
+            people=people_count,
         )
         finished = datetime.now(UTC)
         await store.record_sync_run(
             status="success",
             department_count=stats.total,
-            people_count=0,
+            people_count=people_count,
             error_message=None,
             started_at=started,
             finished_at=finished,
@@ -206,6 +220,7 @@ async def sync_org_departments(
                 "created": stats.created,
                 "updated": stats.updated,
                 "hidden": stats.hidden,
+                "people_count": stats.people,
             },
         )
         return stats

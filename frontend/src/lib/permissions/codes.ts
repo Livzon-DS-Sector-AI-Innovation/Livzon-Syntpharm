@@ -456,6 +456,7 @@ export const HR_PERM = {
   offboardingRecordsUpdate: 'hr:offboarding-records:update',
   onboardingEvaluationCreate: 'hr:onboarding-evaluation:create',
   onboardingRecordsRead: 'hr:onboarding-records:read',
+  personnelRead: 'hr:personnel:read',
   onboardingRecordsSync: 'hr:onboarding-records:sync',
   prejobTrainingTemplatesRead: 'hr:prejob-training-templates:read',
   prejobTrainingTemplatesUpdate: 'hr:prejob-training-templates:update',

@@ -47,6 +47,8 @@ import {
   OrgDepartmentTreeResponse,
   OrgSyncStatusResponse,
   OrgSyncTriggerResponse,
+  EmployeeProfileListResponse,
+  EmployeeProfileDetailResponse,
 } from '@/types/hr'
 
 import type { ApiResponse, MessageResponse } from '@/types/common'
@@ -118,6 +120,9 @@ import {
   deleteTrainingTeamApi,
   upsertTrainingSpecialistApi,
   deleteTrainingSpecialistApi,
+  fetchEmployeeProfilesApi,
+  fetchEmployeeProfileDetailApi,
+  fetchEmployeeDepartmentsApi,
 } from '@/lib/api/server/hr'
 
 
@@ -679,4 +684,26 @@ export async function deleteTrainingSpecialistAction(id: string) {
   const res = await deleteTrainingSpecialistApi(id)
   revalidatePath('/hr/training/specialists')
   return res as DeleteResponse
+}
+
+// ── 员工档案（飞书通讯录只读镜像，ticket #198）──
+
+export async function fetchEmployeeProfilesAction(params?: {
+  department_id?: string
+  status?: string
+  keyword?: string
+  page?: number
+  page_size?: number
+}): Promise<EmployeeProfileListResponse> {
+  return fetchEmployeeProfilesApi(params)
+}
+
+export async function fetchEmployeeProfileDetailAction(
+  identifier: string
+): Promise<EmployeeProfileDetailResponse> {
+  return fetchEmployeeProfileDetailApi(identifier)
+}
+
+export async function fetchEmployeeDepartmentsAction(): Promise<OrgDepartmentTreeResponse> {
+  return fetchEmployeeDepartmentsApi()
 }

@@ -1,25 +1,23 @@
-import { fetchEmployees } from '@/actions/hr'
-import { EmployeeProfileClient } from '@/components/hr'
+import { fetchEmployeeDepartmentsAction, fetchEmployeeProfilesAction } from '@/actions/hr'
+import { EmployeeDirectoryClient } from '@/components/hr'
 
 export const dynamic = 'force-dynamic'
 
-export default async function EmployeeProfilePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ department?: string }>
-}) {
-  const params = await searchParams
-  const res = await fetchEmployees({
-    page: 1,
-    page_size: 20,
-    department: params.department,
-  })
+export default async function EmployeeProfilePage() {
+  const [treeResult, peopleResult] = await Promise.allSettled([
+    fetchEmployeeDepartmentsAction(),
+    fetchEmployeeProfilesAction({ page: 1, page_size: 20 }),
+  ])
+
+  const tree = treeResult.status === 'fulfilled' ? treeResult.value.data.items ?? [] : []
+  const people = peopleResult.status === 'fulfilled' ? peopleResult.value.data : undefined
 
   return (
-    <EmployeeProfileClient
-      initialEmployees={res.data}
-      initialTotal={res.meta?.total || 0}
-      initialDepartment={params.department}
+    <EmployeeDirectoryClient
+      initialTree={tree}
+      initialPeople={people?.items ?? []}
+      initialTotal={peopleResult.status === 'fulfilled' ? Number(peopleResult.value.meta?.total ?? 0) : 0}
+      initialLastSyncedAt={people?.last_synced_at ?? null}
     />
   )
 }

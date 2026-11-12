@@ -1,6 +1,8 @@
 import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
 import type {
   CandidateListParams,
+  EmployeeProfileDetailResponse,
+  EmployeeProfileListResponse,
   OrgDepartmentTreeResponse,
   OrgSyncStatusResponse,
   OrgSyncTriggerResponse,
@@ -512,4 +514,30 @@ export async function deleteTrainingSpecialistApi(id: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-specialists/${id}`, {
     method: 'DELETE',
   })
+}
+
+// ── 员工档案（飞书通讯录只读镜像，ticket #198）──
+
+export async function fetchEmployeeProfilesApi(params?: {
+  department_id?: string
+  status?: string
+  keyword?: string
+  page?: number
+  page_size?: number
+}): Promise<EmployeeProfileListResponse> {
+  const searchParams = new URLSearchParams()
+  if (params?.department_id) searchParams.set('department_id', params.department_id)
+  if (params?.status) searchParams.set('status', params.status)
+  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  searchParams.set('page', String(params?.page || 1))
+  searchParams.set('page_size', String(params?.page_size || 20))
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/people?${searchParams.toString()}`)
+}
+
+export async function fetchEmployeeProfileDetailApi(identifier: string): Promise<EmployeeProfileDetailResponse> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/people/${encodeURIComponent(identifier)}`)
+}
+
+export async function fetchEmployeeDepartmentsApi(): Promise<OrgDepartmentTreeResponse> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/people/departments`)
 }

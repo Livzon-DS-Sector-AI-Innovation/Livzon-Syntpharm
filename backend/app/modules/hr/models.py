@@ -4,7 +4,7 @@ from datetime import date, datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Date, DateTime, ForeignKey, Index, Integer, String, Text, func, text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -586,6 +586,90 @@ class Candidate(BaseModel):
         String(16), nullable=True, comment="飞书同步状态: synced/failed"
     )
     feishu_sync_error: Mapped[str | None] = mapped_column(Text, nullable=True, comment="飞书同步失败原因")
+
+
+class EmployeeProfile(BaseModel):
+    """飞书通讯录人员镜像（ticket #198）。
+
+    以飞书 open_id 为唯一键，保存员工档案页面展示的人员字段。同步只 upsert，
+    不删除、不按"未返回"停用任何人；历史离职人员仍可作为台账的人员来源。
+    不保存 employee_id、subscription_ids、leader_id 以及内嵌的 department 对象。
+    """
+
+    __tablename__ = "employee_profiles"
+    __table_args__ = (
+        UniqueConstraint("open_id", name="uq_hr_employee_profiles_open_id"),
+        Index("ix_hr_employee_profiles_name", "name"),
+        Index("ix_hr_employee_profiles_employee_no", "employee_no"),
+        Index("ix_hr_employee_profiles_staff_status", "staff_status"),
+        {"schema": "hr"},
+    )
+
+    open_id: Mapped[str] = mapped_column(String(128), nullable=False, comment="飞书 open_id（唯一键）")
+    name: Mapped[str] = mapped_column(String(100), nullable=False, server_default="", comment="姓名")
+    mobile: Mapped[str] = mapped_column(String(32), nullable=False, server_default="", comment="手机号")
+    email: Mapped[str] = mapped_column(String(255), nullable=False, server_default="", comment="邮箱")
+    enterprise_email: Mapped[str] = mapped_column(String(255), nullable=False, server_default="", comment="企业邮箱")
+    email_aliases: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True, comment="企业邮箱别名列表")
+    gender: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="性别（飞书枚举：1 男 / 2 女）")
+    description: Mapped[str] = mapped_column(Text, nullable=False, server_default="", comment="个性签名")
+    avatar_72: Mapped[str] = mapped_column(String(1024), nullable=False, server_default="", comment="头像 72px URL")
+    avatar_240: Mapped[str] = mapped_column(String(1024), nullable=False, server_default="", comment="头像 240px URL")
+    avatar_640: Mapped[str] = mapped_column(String(1024), nullable=False, server_default="", comment="头像 640px URL")
+    avatar_origin: Mapped[str] = mapped_column(String(1024), nullable=False, server_default="", comment="原始头像 URL")
+    background_image: Mapped[str] = mapped_column(String(1024), nullable=False, server_default="", comment="背景图 URL")
+    geo_name: Mapped[str] = mapped_column(String(64), nullable=False, server_default="", comment="地理名称")
+    active_status: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="账号激活状态（飞书枚举）")
+    is_resigned: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false", comment="是否离职")
+    resign_time: Mapped[str] = mapped_column(
+        String(64), nullable=False, server_default="", comment="离职时间（飞书原始字符串）"
+    )
+    is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false", comment="是否普通管理员")
+    is_primary_admin: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false", comment="是否超级管理员"
+    )
+    data_source: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="飞书数据来源枚举")
+    employee_no: Mapped[str] = mapped_column(String(64), nullable=False, server_default="", comment="工号")
+    job_title_id: Mapped[str] = mapped_column(String(128), nullable=False, server_default="", comment="职务 ID")
+    job_title_name: Mapped[str] = mapped_column(String(200), nullable=False, server_default="", comment="职务名称")
+    hire_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="入职日期")
+    employment_type: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="员工类型（飞书枚举）")
+    staff_status: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="人事状态（飞书枚举）")
+    work_country_or_region: Mapped[str] = mapped_column(
+        String(128), nullable=False, server_default="", comment="工作国家/地区"
+    )
+    work_place_id: Mapped[str] = mapped_column(String(128), nullable=False, server_default="", comment="工作地点 ID")
+    work_place_name: Mapped[str] = mapped_column(String(200), nullable=False, server_default="", comment="工作地点名称")
+    work_station: Mapped[str] = mapped_column(String(200), nullable=False, server_default="", comment="工位")
+    extension_number: Mapped[str] = mapped_column(String(64), nullable=False, server_default="", comment="分机号")
+    dotted_line_leader_ids: Mapped[list[str] | None] = mapped_column(
+        JSONB, nullable=True, comment="虚线上级 open_id 列表"
+    )
+    resign_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="离职日期")
+    resign_type: Mapped[str] = mapped_column(String(100), nullable=False, server_default="", comment="离职类型")
+    resign_reason: Mapped[str] = mapped_column(String(255), nullable=False, server_default="", comment="离职原因")
+    resign_remark: Mapped[str] = mapped_column(Text, nullable=False, server_default="", comment="离职备注")
+    positions: Mapped[list[dict[str, Any]] | None] = mapped_column(
+        JSONB, nullable=True, comment="职位列表 [{id, name}]"
+    )
+    job_level_id: Mapped[str] = mapped_column(String(128), nullable=False, server_default="", comment="职级 ID")
+    job_level_name: Mapped[str] = mapped_column(String(200), nullable=False, server_default="", comment="职级名称")
+    job_family_id: Mapped[str] = mapped_column(String(128), nullable=False, server_default="", comment="序列（职族）ID")
+    job_family_name: Mapped[str] = mapped_column(
+        String(200), nullable=False, server_default="", comment="序列（职族）名称"
+    )
+    department_ids: Mapped[list[str] | None] = mapped_column(
+        JSONB, nullable=True, comment="所属部门 open_department_id 列表"
+    )
+    department_names: Mapped[list[str] | None] = mapped_column(
+        JSONB, nullable=True, comment="所属部门名称列表，与 department_ids 对齐"
+    )
+    department_path: Mapped[list[dict[str, Any]] | None] = mapped_column(
+        JSONB, nullable=True, comment="主部门路径，根 → 一级 → 二级，id + 名称"
+    )
+    last_synced_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="最近一次目录同步时间"
+    )
 
 
 class PrejobTrainingPlanTemplate(BaseModel):

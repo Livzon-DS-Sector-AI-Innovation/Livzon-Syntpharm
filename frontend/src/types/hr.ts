@@ -129,6 +129,13 @@ export type OrgDepartmentTreeResponse = components['schemas']['OrgDepartmentTree
 export type OrgSyncStatusResponse = components['schemas']['OrgSyncStatusApiResponse']
 export type OrgSyncTriggerResponse = components['schemas']['OrgSyncTriggerApiResponse']
 
+// ── 员工档案（飞书通讯录只读镜像，ticket #198）──
+export type EmployeeProfileListItem = components['schemas']['EmployeeProfileListItem']
+export type EmployeeProfileDetail = components['schemas']['EmployeeProfileDetail']
+export type EmployeeProfileListData = components['schemas']['EmployeeProfileListData']
+export type EmployeeProfileListResponse = components['schemas']['EmployeeProfileListApiResponse']
+export type EmployeeProfileDetailResponse = components['schemas']['EmployeeProfileDetailApiResponse']
+
 export interface OffboardingRecord {
   id: string
   employee_id: string

@@ -37,6 +37,7 @@ from app.modules.hr.onboarding_evaluation_document_generator import (
     generate_onboarding_evaluation,
 )
 from app.modules.hr.org_api import router as org_router
+from app.modules.hr.people_api import router as people_router
 from app.modules.hr.prejob_document_generator import generate_prejob_training_plan
 from app.modules.hr.schemas import (
     AnnualTrainingPlanCreate,
@@ -1978,6 +1979,7 @@ async def export_annual_training_plan(  # type: ignore[no-untyped-def]
 
 router.include_router(analysis_router)
 router.include_router(org_router)
+router.include_router(people_router)
 if attendance_router is not None:
     router.include_router(attendance_router)
 
