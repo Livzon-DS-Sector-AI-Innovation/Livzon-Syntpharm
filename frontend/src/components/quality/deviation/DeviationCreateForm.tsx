@@ -23,6 +23,11 @@ import type {
   DeviationLedgerOption,
 } from '@/types/quality'
 import { RemoteUserSelect } from '@/components/common/RemoteUserSelect'
+import {
+  CrossDeptReviewerFields,
+  toCrossDeptRowsPayload,
+  type CrossDeptReviewerRowValue,
+} from './CrossDeptReviewerFields'
 import { DEVIATION_LEDGER_PATH } from './constants'
 
 interface DeviationCreateFormProps {
@@ -43,6 +48,7 @@ interface FormValues {
   batch_number: string
   handler_ids: string[]
   needs_cross_dept_review?: boolean
+  cross_dept_reviewers?: CrossDeptReviewerRowValue[]
   description: string
 }
 
@@ -64,7 +70,16 @@ export function DeviationCreateForm({
     [currentUserId, currentUserName],
   )
 
+  const crossReview = Form.useWatch('needs_cross_dept_review', form)
+
   const handleFinish = async (values: FormValues) => {
+    const crossDeptRows = values.needs_cross_dept_review
+      ? toCrossDeptRowsPayload(values.cross_dept_reviewers ?? [])
+      : []
+    if (values.needs_cross_dept_review && crossDeptRows.length === 0) {
+      message.warning('开启跨部门审核后至少需要一行跨部门（部门必选）')
+      return
+    }
     setSubmitting(true)
     const payload: DeviationLedgerCreateInput = {
       title: values.title.trim(),
@@ -77,6 +92,7 @@ export function DeviationCreateForm({
       batch_number: values.batch_number.trim(),
       handler_ids: values.handler_ids,
       needs_cross_dept_review: Boolean(values.needs_cross_dept_review),
+      cross_dept_reviewers: crossDeptRows,
       description: values.description.trim(),
     }
 
@@ -245,6 +261,17 @@ export function DeviationCreateForm({
                 <Switch aria-label="是否需要跨部门审核" />
               </Form.Item>
             </Col>
+
+            {crossReview && (
+              <Col span={24}>
+                <div className="-mt-2 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-3">
+                  <p className="mb-2 text-xs text-[var(--color-slate)]">
+                    每个跨部门 = 一行会签：留空调查人时由该部门负责人审核；行内任一审核人通过即该行通过，全部行通过后才会进入所属QA审核。
+                  </p>
+                  <CrossDeptReviewerFields form={form} departmentOptions={departmentOptions} />
+                </div>
+              </Col>
+            )}
 
             <Col span={24}>
               <Form.Item

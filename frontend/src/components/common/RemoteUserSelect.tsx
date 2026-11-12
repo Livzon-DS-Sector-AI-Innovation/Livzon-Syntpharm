@@ -250,25 +250,49 @@ export function RemoteUserSelect({
     return map
   }, [fallbackOptions])
 
-  // 回显：已保存但不在当前结果里的人补到最前面（用快照显示姓名与头像）
+  // 已选人员快照：搜索/翻页会整体替换 rows，已选但不在当前结果里的人靠这里保留姓名与头像
+  const [pickedById, setPickedById] = useState<Record<string, PersonRow>>({})
+
+  // 回显：已保存但不在当前结果里的人补到最前面（快照 → 外部 fallback → 未知人员）
   const displayRows = useMemo<PersonRow[]>(() => {
     const known = new Set(rows.map((row) => row.id))
     const missing: PersonRow[] = []
     for (const id of selectedIds) {
       if (known.has(id)) continue
-      missing.push(fallbackById.get(id) ?? { id, name: '未知人员' })
+      missing.push(pickedById[id] ?? fallbackById.get(id) ?? { id, name: '未知人员' })
     }
     return missing.length > 0 ? [...missing, ...rows] : rows
-  }, [rows, selectedIds, fallbackById])
+  }, [rows, selectedIds, fallbackById, pickedById])
 
   const rowById = useMemo(() => new Map(displayRows.map((row) => [row.id, row])), [displayRows])
 
   const handleChange = (next: string | string[] | undefined) => {
+    const nextIds = multiple
+      ? Array.isArray(next)
+        ? next
+        : []
+      : typeof next === 'string' && next
+        ? [next]
+        : []
+    // 记住本次选中人员的姓名/头像：再次搜索替换 rows 后仍能正常回显
+    setPickedById((prev) => {
+      let changed = false
+      const merged: Record<string, PersonRow> = { ...prev }
+      for (const id of nextIds) {
+        const row = rowById.get(id)
+        if (!row || row.name === '未知人员') continue
+        const existing = merged[id]
+        if (existing && existing.name === row.name && existing.avatar === row.avatar) continue
+        merged[id] = row
+        changed = true
+      }
+      return changed ? merged : prev
+    })
     if (multiple) {
-      onChange?.(Array.isArray(next) ? next : [])
+      onChange?.(nextIds)
       return
     }
-    onChange?.(typeof next === 'string' && next ? next : null)
+    onChange?.(nextIds[0] ?? null)
   }
 
   return (

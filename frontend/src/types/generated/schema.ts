@@ -13740,7 +13740,7 @@ export interface paths {
         post?: never;
         /**
          * 删除偏差
-         * @description 软删除，仅限「待AI分析」与「已取消」。
+         * @description 软删除：任意状态均可删除，仅标记删除位，数据仍可追溯。
          */
         delete: operations["delete_ledger_api_v1_quality_deviation_ledger__ledger_id__delete"];
         options?: never;
@@ -13778,8 +13778,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * 确认 AI 分析并进入调查
-         * @description 保存确认后的分析结果，状态推进到待调查。
+         * 保存 AI 分析结果
+         * @description 保存分析结果：只写库、不推进流程，流程由「提交调查报告」驱动。
          */
         post: operations["complete_ai_analysis_api_v1_quality_deviation_ledger__ledger_id__complete_ai_analysis_post"];
         delete?: never;
@@ -13808,6 +13808,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quality/deviation/ledger/{ledger_id}/investigation-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 追加调查记录（不流转）
+         * @description 审核阶段补充调查：只追加调查记录，不改变流程状态。
+         */
+        post: operations["append_investigation_record_api_v1_quality_deviation_ledger__ledger_id__investigation_records_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quality/deviation/ledger/{ledger_id}/review": {
         parameters: {
             query?: never;
@@ -13822,6 +13842,26 @@ export interface paths {
          * @description 按当前环节审核：通过推进下一环节，退回回到本环节并通知上报人。
          */
         post: operations["review_ledger_api_v1_quality_deviation_ledger__ledger_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation/ledger/{ledger_id}/cross-dept-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 跨部门逐行审批通过
+         * @description 该行审核人通过后仅完成该部门节点；全部跨部门行通过后进入所属 QA 审核。
+         */
+        post: operations["approve_cross_dept_row_api_v1_quality_deviation_ledger__ledger_id__cross_dept_review_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -22095,6 +22135,33 @@ export interface components {
             } | null;
         };
         /**
+         * CapaProposalItem
+         * @description CAPA 改进建议条目（内容简述 + 执行人 + 预计完成日期）。
+         */
+        CapaProposalItem: {
+            /**
+             * Sequence
+             * @description 序号，请求方不传时由服务端按顺序回填
+             * @default 0
+             */
+            sequence: number;
+            /**
+             * Summary
+             * @description CAPA 内容简述
+             */
+            summary: string;
+            /**
+             * Executor
+             * @description 执行人
+             */
+            executor?: string | null;
+            /**
+             * Expected Completion Date
+             * @description 预计完成日期
+             */
+            expected_completion_date?: string | null;
+        };
+        /**
          * CapaResponse
          * @description CAPA 响应
          */
@@ -23143,16 +23210,10 @@ export interface components {
         };
         /**
          * CompleteAiAnalysisRequest
-         * @description 确认 AI 分析结果并进入调查；可带人工修正后的内容。
+         * @description 保存 AI 分析结果：只落库，不流转流程。
          */
         CompleteAiAnalysisRequest: {
-            ai_analysis?: components["schemas"]["AiAnalysisData"] | null;
-            /**
-             * Content
-             * @description 确认说明
-             * @default
-             */
-            content: string;
+            ai_analysis: components["schemas"]["AiAnalysisData"];
         };
         /**
          * CompletionMethod
@@ -24900,8 +24961,25 @@ export interface components {
             unit: string;
         };
         /**
+         * CrossDeptApproveRequest
+         * @description 跨部门逐行审批请求体。
+         */
+        CrossDeptApproveRequest: {
+            /**
+             * Department
+             * @description 跨部门部门名（行标识）
+             */
+            department: string;
+            /**
+             * Opinion
+             * @description 审核意见（可选）
+             * @default
+             */
+            opinion: string;
+        };
+        /**
          * CrossDeptReviewerItem
-         * @description 跨部门调查配置：部门 + 调查人。
+         * @description 跨部门审核行：部门 + 行内调查人 + 逐行审核状态。
          */
         CrossDeptReviewerItem: {
             /** Department */
@@ -24910,6 +24988,56 @@ export interface components {
             investigator_ids?: string[];
             /** Investigator Names */
             investigator_names?: string[];
+            /**
+             * Reviewer Names
+             * @description 该行实际审核人（调查人为空时回退部门负责人）
+             */
+            reviewer_names?: string[];
+            /**
+             * Review State
+             * @description 行审核状态：pending / approved
+             * @default pending
+             */
+            review_state: string;
+            /** Approved By */
+            approved_by?: string | null;
+            /** Approved Name */
+            approved_name?: string | null;
+            /** Approved At */
+            approved_at?: string | null;
+            /**
+             * Opinion
+             * @description 该行审核意见
+             */
+            opinion?: string | null;
+            /**
+             * Can Approve
+             * @description 当前查看人可对该行执行通过操作
+             * @default false
+             */
+            can_approve: boolean;
+        };
+        /**
+         * CrossDeptStepSubItem
+         * @description 步骤条跨部门环节的逐行子节点。
+         */
+        CrossDeptStepSubItem: {
+            /** Department */
+            department: string;
+            /** Reviewer Names */
+            reviewer_names?: string[];
+            /**
+             * State
+             * @description pending / approved
+             * @default pending
+             */
+            state: string;
+            /** Approved By Name */
+            approved_by_name?: string | null;
+            /** Approved At */
+            approved_at?: string | null;
+            /** Opinion */
+            opinion?: string | null;
         };
         /** CurrentUserApiResponse */
         CurrentUserApiResponse: {
@@ -37188,11 +37316,48 @@ export interface components {
         };
         /**
          * InvestigationRecordItem
-         * @description 一条调查记录。
+         * @description 一条调查记录（结构化；旧记录仅 content，前端降级纯文本展示）。
          */
         InvestigationRecordItem: {
-            /** Content */
+            /**
+             * Content
+             * @description 旧格式纯文本内容；新记录为空串
+             * @default
+             */
             content: string;
+            /**
+             * Nonconformity Description
+             * @description 不符合事项描述
+             * @default
+             */
+            nonconformity_description: string;
+            /**
+             * Root Cause Analysis
+             * @description 根本原因分析
+             * @default
+             */
+            root_cause_analysis: string;
+            /**
+             * Risk Assessment
+             * @description 风险评估
+             * @default
+             */
+            risk_assessment: string;
+            /**
+             * Capa Proposals
+             * @description 改进建议（CAPA）
+             */
+            capa_proposals?: components["schemas"]["CapaProposalItem"][];
+            /**
+             * Urgent Measures
+             * @description 紧急处理措施（有值时黄色高亮展示）
+             */
+            urgent_measures?: string | null;
+            /**
+             * Attachments
+             * @description 记录级附件（台账附件引用快照）
+             */
+            attachments?: components["schemas"]["AttachmentItem"][];
             /** Author Id */
             author_id?: string | null;
             /** Author Name */
@@ -37207,14 +37372,39 @@ export interface components {
         };
         /**
          * InvestigationRequest
-         * @description 提交调查记录。
+         * @description 结构化调查记录（「提交调查」与「追加调查记录」共用）。
          */
         InvestigationRequest: {
             /**
-             * Content
-             * @description 调查内容
+             * Nonconformity Description
+             * @description 不符合事项描述
              */
-            content: string;
+            nonconformity_description: string;
+            /**
+             * Root Cause Analysis
+             * @description 根本原因分析
+             */
+            root_cause_analysis: string;
+            /**
+             * Risk Assessment
+             * @description 风险评估
+             */
+            risk_assessment: string;
+            /**
+             * Capa Proposals
+             * @description 改进建议（CAPA），至少一条
+             */
+            capa_proposals: components["schemas"]["CapaProposalItem"][];
+            /**
+             * Urgent Measures
+             * @description 紧急处理措施，勾选后必填
+             */
+            urgent_measures?: string | null;
+            /**
+             * Attachment File Ids
+             * @description 记录附件（已上传台账的 file_id）
+             */
+            attachment_file_ids?: string[];
         };
         /** InvoiceLineItem */
         InvoiceLineItem: {
@@ -38019,6 +38209,18 @@ export interface components {
              * @default false
              */
             editable: boolean;
+            /**
+             * Can Edit Investigation
+             * @description 调查人/上报人可否新增调查记录、上传或删除调查文档（调查中与审核阶段均开放）
+             * @default false
+             */
+            can_edit_investigation: boolean;
+            /**
+             * Can Edit Cross Dept
+             * @description 可否增删改跨部门行（基础信息可编辑；或待调查时由调查人+上报人动态添加审核节点）
+             * @default false
+             */
+            can_edit_cross_dept: boolean;
         };
         /** LedgerDetailApiResponse */
         LedgerDetailApiResponse: {
@@ -38359,6 +38561,11 @@ export interface components {
              * @default false
              */
             auto_skip: boolean;
+            /**
+             * Sub Items
+             * @description 跨部门环节逐行子节点（其余环节为空）
+             */
+            sub_items?: components["schemas"]["CrossDeptStepSubItem"][];
         };
         /** LedgerSummary */
         LedgerSummary: {
@@ -38381,7 +38588,7 @@ export interface components {
         };
         /**
          * LedgerUpdateRequest
-         * @description 基础信息修改（仅待 AI 分析 / 已退回状态可编辑）。
+         * @description 基础信息修改（待 AI 分析 / 已退回可改全部；待调查仅可改跨部门两字段）。
          */
         LedgerUpdateRequest: {
             /** Title */
@@ -91610,6 +91817,43 @@ export interface operations {
             };
         };
     };
+    append_investigation_record_api_v1_quality_deviation_ledger__ledger_id__investigation_records_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvestigationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["LedgerDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     review_ledger_api_v1_quality_deviation_ledger__ledger_id__review_post: {
         parameters: {
             query?: never;
@@ -91624,6 +91868,43 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["LedgerDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_cross_dept_row_api_v1_quality_deviation_ledger__ledger_id__cross_dept_review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrossDeptApproveRequest"];
             };
         };
         responses: {

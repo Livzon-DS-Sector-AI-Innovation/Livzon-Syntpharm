@@ -114,7 +114,8 @@ class DeviationLedger(BaseModel):
     cross_dept_reviewers: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB,
         nullable=True,
-        comment="跨部门调查人 [{department, investigators[]}]",
+        comment="跨部门审核行 [{department, investigator_ids[], review_state,"
+        " approved_by, approved_name, approved_at, opinion}（review_state: pending/approved）]",
     )
     attachments: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONB,
@@ -133,7 +134,8 @@ class DeviationLedger(BaseModel):
         nullable=False,
         default=list,
         server_default=text("'[]'::jsonb"),
-        comment="调查记录 [{content, author_id, author_name, create_time}]",
+        comment="调查记录 [{nonconformity_description, root_cause_analysis, risk_assessment,"
+        " capa_proposals[], urgent_measures, attachments[], author_id, author_name, create_time}]，旧记录为 {content}",
     )
     review_opinions: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONB,

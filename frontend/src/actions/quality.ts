@@ -19,6 +19,7 @@ import type {
   UploadLcResponse,
   DeviationAiAnalysisInput,
   DeviationBatchResult,
+  DeviationCrossDeptApproveInput,
   DeviationFinalCodeInput,
   DeviationInvestigationInput,
   DeviationLedgerBatchStatusInput,
@@ -28,7 +29,6 @@ import type {
   DeviationNotifySettings,
   DeviationNotifySettingsUpdate,
   DeviationNotifyTestResult,
-  DeviationReportSaveInput,
   DeviationResubmitInput,
   DeviationReviewInput,
   WeeklyConfirmationInput,
@@ -787,6 +787,25 @@ export async function submitDeviationInvestigation(
   )
 }
 
+/** 审核阶段追加调查记录：只追加记录，不推进流程状态 */
+export async function appendDeviationInvestigationRecord(
+  id: string,
+  input: DeviationInvestigationInput,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(
+    id,
+    () => QualityServer.appendDeviationInvestigationRecord(id, input),
+    '调查记录追加失败',
+  )
+}
+
+export async function approveDeviationCrossDeptRow(
+  id: string,
+  input: DeviationCrossDeptApproveInput,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(id, () => QualityServer.approveDeviationCrossDeptRow(id, input), '跨部门逐行审批失败')
+}
+
 export async function reviewDeviation(
   id: string,
   input: DeviationReviewInput,
@@ -806,13 +825,6 @@ export async function submitDeviationFinalCode(
   input: DeviationFinalCodeInput,
 ): Promise<DeviationLedgerActionResult> {
   return runDeviationAction(id, () => QualityServer.submitDeviationFinalCode(id, input), '最终编号提交失败')
-}
-
-export async function saveDeviationReport(
-  id: string,
-  input: DeviationReportSaveInput,
-): Promise<DeviationLedgerActionResult> {
-  return runDeviationAction(id, () => QualityServer.saveDeviationReport(id, input), '调查报告保存失败')
 }
 
 export async function uploadDeviationAttachment(

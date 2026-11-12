@@ -85,7 +85,7 @@ export function ReviewCard({ ledger, onUpdated }: ReviewCardProps) {
       id="review"
       size="small"
       title="审核流转"
-      className="scroll-mt-40 shadow-sm"
+      className="scroll-mt-6 shadow-sm"
       extra={
         <Tag color={ledger.status === 'returned' ? 'red' : 'gold'}>
           {ledger.current_step_label ?? ledger.status_label}

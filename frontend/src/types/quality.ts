@@ -36,13 +36,6 @@ export interface CrossDeptReviewer {
   investigators: string[];
 }
 
-export interface AiAnalysis {
-  structured_deviation_description: string;
-  preliminary_cause_analysis: string;
-  risk_assessment: string;
-  capa_suggestions: string;
-}
-
 export interface CapaProposal {
   summary: string;
   executor: string;
@@ -222,14 +215,6 @@ export interface FileAttachmentInfo {
   fileName?: string;
   filePath?: string;
   downloadUrl?: string;
-}
-
-// ============ Report Version Types ============
-export interface ReportVersion {
-  content: string;
-  editor: string;
-  editTime: string;
-  changeSummary?: string;
 }
 
 // ============ Attachment Review Types ============
@@ -557,11 +542,12 @@ export type DeviationReviewInput = components['schemas']['ReviewRequest']
 export type DeviationReviewOpinion = components['schemas']['ReviewOpinionItem']
 export type DeviationResubmitInput = components['schemas']['ResubmitRequest']
 export type DeviationFinalCodeInput = components['schemas']['FinalCodeRequest']
-export type DeviationReportSaveInput = components['schemas']['ReportSaveRequest']
-export type DeviationReportVersion = components['schemas']['ReportVersionItem']
 export type DeviationAttachment = components['schemas']['AttachmentItem']
 export type DeviationLedgerStep = components['schemas']['LedgerStep']
 export type DeviationCrossDeptReviewer = components['schemas']['CrossDeptReviewerItem']
+export type DeviationCrossDeptApproveInput = components['schemas']['CrossDeptApproveRequest']
+export type DeviationCrossDeptStepSubItem = components['schemas']['CrossDeptStepSubItem']
+export type DeviationCapaProposalInput = components['schemas']['CapaProposalItem']
 export type DeviationLedgerOptionResult = components['schemas']['OptionListData']
 export type DeviationBatchResult =
   components['schemas']['app__modules__quality__qms__deviation_ledger_schemas__BatchResultData']

@@ -13,7 +13,7 @@ interface DetailSummaryBarProps {
 
 /** 主操作锚点：按后端 allowed_actions 决定按钮，只负责滚动到对应卡片 */
 const ACTION_ANCHORS: Record<string, { href: string; label: string; type: 'primary' | 'default' }> = {
-  analyze: { href: '#ai-analysis', label: '开始 AI 分析', type: 'primary' },
+  analyze: { href: '#ai-analysis', label: 'AI 智能分析', type: 'primary' },
   edit: { href: '#basic-info', label: '编辑基础信息', type: 'default' },
   investigate: { href: '#investigation', label: '提交调查报告', type: 'primary' },
   approve: { href: '#review', label: '审核处理', type: 'primary' },
@@ -34,9 +34,10 @@ export function DetailSummaryBar({ ledger, busy = false }: DetailSummaryBarProps
     ).values(),
   ]
 
-  // 手机端不吸顶：摘要条较高，吸顶会占掉近三成屏幕并遮住下方卡片内容
+  // 摘要条不吸顶（2026-11 改造）：吸顶会遮挡卡片内容、移动端吃掉近三成视口；锚点偏移已相应缩小
+  const crossDeptPending = (ledger.cross_dept_reviewers ?? []).some((row) => row.can_approve)
   return (
-    <section className="z-20 flex flex-col gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-canvas)]/95 p-4 shadow-sm backdrop-blur sm:sticky sm:top-0">
+    <section className="flex flex-col gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1 basis-[280px]">
           <div className="flex flex-wrap items-center gap-2">
@@ -70,11 +71,13 @@ export function DetailSummaryBar({ ledger, busy = false }: DetailSummaryBarProps
           </p>
         </div>
         <Space wrap size={8} className="shrink-0">
-          {actions.map((action) => (
-            <Button key={action.href + action.label} type={action.type} href={action.href} disabled={busy}>
-              {action.label}
-            </Button>
-          ))}
+          {(crossDeptPending ? [...actions, { href: '#cross-dept-review', label: '跨部门审批', type: 'primary' as const }] : actions).map(
+            (action) => (
+              <Button key={action.href + action.label} type={action.type} href={action.href} disabled={busy}>
+                {action.label}
+              </Button>
+            ),
+          )}
         </Space>
       </div>
 

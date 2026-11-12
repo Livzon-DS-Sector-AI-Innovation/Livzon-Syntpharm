@@ -2399,6 +2399,12 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "/api/v1/quality/deviation/ledger/{id}/complete-ai-analysis",
     ),
     ApiBindingDef("quality:deviation:submit", "POST", "/api/v1/quality/deviation/ledger/{id}/investigation"),
+    ApiBindingDef("quality:deviation:submit", "POST", "/api/v1/quality/deviation/ledger/{id}/investigation-records"),
+    ApiBindingDef(
+        "quality:deviation:approve",
+        "POST",
+        "/api/v1/quality/deviation/ledger/{id}/cross-dept-review",
+    ),
     ApiBindingDef("quality:deviation:approve", "POST", "/api/v1/quality/deviation/ledger/{id}/review"),
     ApiBindingDef("quality:deviation:submit", "POST", "/api/v1/quality/deviation/ledger/{id}/resubmit"),
     ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/ledger/{id}/final-code"),

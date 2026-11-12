@@ -47,7 +47,7 @@ export function FinalCodeCard({ ledger, onUpdated }: FinalCodeCardProps) {
   }
 
   return (
-    <Card id="final-code" size="small" title="最终编号与归档" className="scroll-mt-40 shadow-sm">
+    <Card id="final-code" size="small" title="最终编号与归档" className="scroll-mt-6 shadow-sm">
       <div className="flex flex-col gap-3">
         {closed && (
           <Descriptions size="small" column={{ xs: 1, sm: 2, md: 3 }} bordered>

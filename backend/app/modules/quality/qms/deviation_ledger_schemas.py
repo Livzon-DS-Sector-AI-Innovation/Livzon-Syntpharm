@@ -6,17 +6,72 @@ from datetime import date, datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from .deviation_ledger_constants import LEDGER_STATUSES
 
 
 class CrossDeptReviewerItem(BaseModel):
-    """跨部门调查配置：部门 + 调查人。"""
+    """跨部门审核行：部门 + 行内调查人 + 逐行审核状态。"""
 
     department: str
     investigator_ids: list[UUID] = Field(default_factory=list)
     investigator_names: list[str] = Field(default_factory=list)
+    reviewer_names: list[str] = Field(default_factory=list, description="该行实际审核人（调查人为空时回退部门负责人）")
+    review_state: str = Field("pending", description="行审核状态：pending / approved")
+    approved_by: UUID | None = None
+    approved_name: str | None = None
+    approved_at: datetime | None = None
+    opinion: str | None = Field(None, description="该行审核意见")
+    can_approve: bool = Field(False, description="当前查看人可对该行执行通过操作")
+
+    @field_validator("department")
+    @classmethod
+    def _strip_department(cls, value: str) -> str:
+        return value.strip()
+
+
+class CrossDeptStepSubItem(BaseModel):
+    """步骤条跨部门环节的逐行子节点。"""
+
+    department: str
+    reviewer_names: list[str] = Field(default_factory=list)
+    state: str = Field("pending", description="pending / approved")
+    approved_by_name: str | None = None
+    approved_at: datetime | None = None
+    opinion: str | None = None
+
+
+class CrossDeptApproveRequest(BaseModel):
+    """跨部门逐行审批请求体。"""
+
+    department: str = Field(..., min_length=1, max_length=255, description="跨部门部门名（行标识）")
+    opinion: str = Field("", max_length=2000, description="审核意见（可选）")
+
+    @field_validator("department")
+    @classmethod
+    def _strip_department(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("跨部门部门不能为空")
+        return cleaned
+
+
+def _validated_cross_dept_rows(
+    needs: bool | None,
+    rows: list[CrossDeptReviewerItem] | None,
+) -> list[CrossDeptReviewerItem] | None:
+    """跨部门行公共校验：部门非空、行间不重复、开启开关至少一行。"""
+    if rows is None:
+        return rows
+    departments = [row.department.strip() for row in rows]
+    if any(not department for department in departments):
+        raise ValueError("跨部门部门不能为空")
+    if len(set(departments)) != len(departments):
+        raise ValueError("跨部门部门不能重复")
+    if needs and not rows:
+        raise ValueError("开启跨部门审核时至少添加一个跨部门")
+    return rows
 
 
 class LedgerCreateRequest(BaseModel):
@@ -74,6 +129,15 @@ class LedgerCreateRequest(BaseModel):
         if not result:
             raise ValueError("请至少选择一名调查人")
         return result
+
+    @field_validator("cross_dept_reviewers")
+    @classmethod
+    def _check_cross_dept(
+        cls,
+        value: list[CrossDeptReviewerItem],
+        info: ValidationInfo,
+    ) -> list[CrossDeptReviewerItem]:
+        return _validated_cross_dept_rows(info.data.get("needs_cross_dept_review"), value) or []
 
 
 class StepHandlerPerson(BaseModel):
@@ -135,10 +199,40 @@ class AiAnalysisData(BaseModel):
     generated_at: datetime | None = None
 
 
-class InvestigationRecordItem(BaseModel):
-    """一条调查记录。"""
+class CapaProposalItem(BaseModel):
+    """CAPA 改进建议条目（内容简述 + 执行人 + 预计完成日期）。"""
 
-    content: str
+    sequence: int = Field(0, ge=0, description="序号，请求方不传时由服务端按顺序回填")
+    summary: str = Field(..., min_length=1, max_length=2000, description="CAPA 内容简述")
+    executor: str | None = Field(None, max_length=255, description="执行人")
+    expected_completion_date: date | None = Field(None, description="预计完成日期")
+
+    @field_validator("summary")
+    @classmethod
+    def _strip_summary(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("CAPA 内容简述不能为空")
+        return cleaned
+
+    @field_validator("executor")
+    @classmethod
+    def _strip_executor(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value.strip() or None
+
+
+class InvestigationRecordItem(BaseModel):
+    """一条调查记录（结构化；旧记录仅 content，前端降级纯文本展示）。"""
+
+    content: str = Field("", description="旧格式纯文本内容；新记录为空串")
+    nonconformity_description: str = Field("", description="不符合事项描述")
+    root_cause_analysis: str = Field("", description="根本原因分析")
+    risk_assessment: str = Field("", description="风险评估")
+    capa_proposals: list[CapaProposalItem] = Field(default_factory=list, description="改进建议（CAPA）")
+    urgent_measures: str | None = Field(None, description="紧急处理措施（有值时黄色高亮展示）")
+    attachments: list[AttachmentItem] = Field(default_factory=list, description="记录级附件（台账附件引用快照）")
     author_id: UUID | None = None
     author_name: str | None = None
     author_avatar: str | None = Field(None, description="作者头像地址")
@@ -180,6 +274,10 @@ class LedgerStep(BaseModel):
     applicable: bool = Field(True, description="本单是否需要经过该环节（步骤条仍展示，仅标注不适用）")
     skip_reason: str | None = Field(None, description="不适用原因（applicable 为 False 时）")
     auto_skip: bool = Field(False, description="该环节无处理人时由系统自动跳过")
+    sub_items: list[CrossDeptStepSubItem] = Field(
+        default_factory=list,
+        description="跨部门环节逐行子节点（其余环节为空）",
+    )
 
 
 class LedgerDetail(LedgerItem):
@@ -209,6 +307,14 @@ class LedgerDetail(LedgerItem):
     can_operate: bool = Field(False, description="当前登录人是否可操作当前环节")
     allowed_actions: list[str] = Field(default_factory=list, description="当前登录人可执行的动作")
     editable: bool = Field(False, description="基础信息是否可编辑")
+    can_edit_investigation: bool = Field(
+        False,
+        description="调查人/上报人可否新增调查记录、上传或删除调查文档（调查中与审核阶段均开放）",
+    )
+    can_edit_cross_dept: bool = Field(
+        False,
+        description="可否增删改跨部门行（基础信息可编辑；或待调查时由调查人+上报人动态添加审核节点）",
+    )
 
 
 class LedgerListData(BaseModel):
@@ -273,7 +379,7 @@ class OptionListData(BaseModel):
 
 
 class LedgerUpdateRequest(BaseModel):
-    """基础信息修改（仅待 AI 分析 / 已退回状态可编辑）。"""
+    """基础信息修改（待 AI 分析 / 已退回可改全部；待调查仅可改跨部门两字段）。"""
 
     title: str | None = Field(None, min_length=1, max_length=255)
     department: str | None = Field(None, min_length=1, max_length=255)
@@ -297,18 +403,60 @@ class LedgerUpdateRequest(BaseModel):
             raise ValueError("该字段不能为空")
         return cleaned
 
+    @field_validator("cross_dept_reviewers")
+    @classmethod
+    def _check_cross_dept(
+        cls,
+        value: list[CrossDeptReviewerItem] | None,
+        info: ValidationInfo,
+    ) -> list[CrossDeptReviewerItem] | None:
+        return _validated_cross_dept_rows(info.data.get("needs_cross_dept_review"), value)
+
 
 class CompleteAiAnalysisRequest(BaseModel):
-    """确认 AI 分析结果并进入调查；可带人工修正后的内容。"""
+    """保存 AI 分析结果：只落库，不流转流程。"""
 
-    ai_analysis: AiAnalysisData | None = None
-    content: str = Field("", description="确认说明")
+    ai_analysis: AiAnalysisData
 
 
 class InvestigationRequest(BaseModel):
-    """提交调查记录。"""
+    """结构化调查记录（「提交调查」与「追加调查记录」共用）。"""
 
-    content: str = Field(..., min_length=1, description="调查内容")
+    nonconformity_description: str = Field(..., min_length=1, max_length=5000, description="不符合事项描述")
+    root_cause_analysis: str = Field(..., min_length=1, max_length=5000, description="根本原因分析")
+    risk_assessment: str = Field(..., min_length=1, max_length=5000, description="风险评估")
+    capa_proposals: list[CapaProposalItem] = Field(..., min_length=1, description="改进建议（CAPA），至少一条")
+    urgent_measures: str | None = Field(None, max_length=5000, description="紧急处理措施，勾选后必填")
+    attachment_file_ids: list[UUID] = Field(default_factory=list, description="记录附件（已上传台账的 file_id）")
+
+    @field_validator("nonconformity_description", "root_cause_analysis", "risk_assessment")
+    @classmethod
+    def _strip_required(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("该字段不能为空")
+        return cleaned
+
+    @field_validator("urgent_measures")
+    @classmethod
+    def _strip_urgent(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("勾选有紧急处理措施时必须填写说明")
+        return cleaned
+
+    @field_validator("attachment_file_ids")
+    @classmethod
+    def _dedup_attachment_ids(cls, value: list[UUID]) -> list[UUID]:
+        seen: set[UUID] = set()
+        result: list[UUID] = []
+        for item in value:
+            if item not in seen:
+                seen.add(item)
+                result.append(item)
+        return result
 
 
 class ReviewRequest(BaseModel):

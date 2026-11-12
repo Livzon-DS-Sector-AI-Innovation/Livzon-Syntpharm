@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from 'react'
 import { App, Button, Card, DatePicker, Form, Input, Select, Switch } from 'antd'
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { updateDeviationLedger } from '@/actions/quality'
 import { RemoteUserSelect, type RemoteUserSelectOption } from '@/components/common/RemoteUserSelect'
+import { CrossDeptReviewerFields, toCrossDeptRowsPayload } from '../CrossDeptReviewerFields'
 import type {
   DeviationLedgerDetail,
   DeviationLedgerOption,
@@ -59,21 +59,34 @@ export function BasicInfoCard({
     return [...map.values()]
   }, [ledger.handlers, ledger.cross_dept_reviewers])
 
+  // pending_investigation 环节（上报人∪调查人）可动态增删改跨部门名单，其余字段后端锁定
+  const canEditCrossDeptOnly = !ledger.editable && Boolean(ledger.can_edit_cross_dept)
+
   const handleSave = async () => {
     const values = await form.validateFields()
-    const payload: DeviationLedgerUpdateInput = {
-      title: values.title,
-      department: values.department,
-      discovery_date: values.discovery_date.format('YYYY-MM-DD'),
-      discovery_time: values.discovery_time,
-      discovery_location: values.discovery_location,
-      affected_items: values.affected_items,
-      batch_number: values.batch_number,
-      description: values.description,
-      handler_ids: values.handler_ids ?? [],
-      needs_cross_dept_review: values.needs_cross_dept_review,
-      cross_dept_reviewers: values.needs_cross_dept_review ? (values.cross_dept_reviewers ?? []) : [],
+    const rows = values.needs_cross_dept_review ? toCrossDeptRowsPayload(values.cross_dept_reviewers ?? []) : []
+    if (values.needs_cross_dept_review && rows.length === 0) {
+      message.warning('开启跨部门审核后至少需要一行跨部门（部门必选）')
+      return
     }
+    const crossDeptPayload: DeviationLedgerUpdateInput = {
+      needs_cross_dept_review: values.needs_cross_dept_review,
+      cross_dept_reviewers: rows,
+    }
+    const payload: DeviationLedgerUpdateInput = canEditCrossDeptOnly
+      ? crossDeptPayload
+      : {
+          title: values.title,
+          department: values.department,
+          discovery_date: values.discovery_date.format('YYYY-MM-DD'),
+          discovery_time: values.discovery_time,
+          discovery_location: values.discovery_location,
+          affected_items: values.affected_items,
+          batch_number: values.batch_number,
+          description: values.description,
+          handler_ids: values.handler_ids ?? [],
+          ...crossDeptPayload,
+        }
     setSaving(true)
     const result = await updateDeviationLedger(ledger.id, payload)
     setSaving(false)
@@ -90,9 +103,9 @@ export function BasicInfoCard({
       id="basic-info"
       size="small"
       title="基本信息"
-      className="scroll-mt-40 shadow-sm"
+      className="scroll-mt-6 shadow-sm"
       extra={
-        ledger.editable && (
+        (ledger.editable || ledger.can_edit_cross_dept) && (
           <Button type="primary" size="small" loading={saving} onClick={handleSave}>
             保存
           </Button>
@@ -158,56 +171,30 @@ export function BasicInfoCard({
           />
         </Form.Item>
 
-        <Form.Item name="needs_cross_dept_review" label="是否需要跨部门审核" valuePropName="checked">
-          <Switch aria-label="是否需要跨部门审核" />
-        </Form.Item>
+        <div className={canEditCrossDeptOnly ? 'rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-3' : undefined}>
+          {canEditCrossDeptOnly && (
+            <p className="mb-2 text-xs text-[var(--color-slate)]">
+              调查环节中仅可维护跨部门会签名单；已通过的行在保存后保持通过状态。
+            </p>
+          )}
+          <Form.Item
+            name="needs_cross_dept_review"
+            label="是否需要跨部门审核"
+            valuePropName="checked"
+            className={canEditCrossDeptOnly ? '!mb-2' : undefined}
+          >
+            <Switch aria-label="是否需要跨部门审核" {...(canEditCrossDeptOnly ? { disabled: false } : {})} />
+          </Form.Item>
 
-        {crossReview && (
-          <Form.List name="cross_dept_reviewers">
-            {(fields, { add, remove }) => (
-              <div className="mb-4 flex flex-col gap-2">
-                {fields.map((field) => (
-                  <div key={field.key} className="flex w-full flex-col gap-2 sm:flex-row sm:items-start">
-                    <Form.Item
-                      name={[field.name, 'department']}
-                      rules={[{ required: true, message: '请选择跨部门' }]}
-                      className="!mb-0 w-full sm:w-[200px]"
-                    >
-                      <Select
-                        showSearch
-                        optionFilterProp="label"
-                        placeholder="跨部门"
-                        options={departmentOptions.map((item) => ({ value: item.value, label: item.label }))}
-                      />
-                    </Form.Item>
-                    <Form.Item name={[field.name, 'investigator_ids']} className="!mb-0 min-w-0 flex-1">
-                      <RemoteUserSelect
-                        mode="multiple"
-                        placeholder="该部门参与调查人（可留空，由部门负责人审核）"
-                        fallbackOptions={personFallback}
-                      />
-                    </Form.Item>
-                    <Button
-                      type="text"
-                      danger
-                      icon={<DeleteOutlined />}
-                      onClick={() => remove(field.name)}
-                      aria-label="删除跨部门"
-                      className="self-end sm:self-auto"
-                    />
-                  </div>
-                ))}
-                <Button
-                  type="dashed"
-                  icon={<PlusOutlined />}
-                  onClick={() => add({ department: '', investigator_ids: [] })}
-                >
-                  增加跨部门
-                </Button>
-              </div>
-            )}
-          </Form.List>
-        )}
+          {crossReview && (
+            <CrossDeptReviewerFields
+              form={form}
+              departmentOptions={departmentOptions}
+              fallbackOptions={personFallback}
+              unlock={canEditCrossDeptOnly}
+            />
+          )}
+        </div>
       </Form>
     </Card>
   )
