@@ -19,6 +19,7 @@ import type {
   CreateDepartmentContactRequest,
   UpdateDepartmentContactRequest,
   UploadLcResponse,
+  AiLogFilter,
   DepartmentContact,
   DepartmentContactListData,
   DepartmentMemberOption,
@@ -594,17 +595,7 @@ export async function getStabilityTrendData(studyId: string) {
 
 // ============ AI 交互日志 Actions ============
 
-interface AiLogParams {
-  page?: number
-  page_size?: number
-  operate_type?: string
-  operator?: string
-  start_date?: string
-  end_date?: string
-  keyword?: string
-}
-
-export async function getAiLogs(params: AiLogParams = {}) {
+export async function getAiLogs(params: AiLogFilter = {}) {
   const searchParams = new URLSearchParams()
   if (params.page) searchParams.set('page', String(params.page))
   if (params.page_size) searchParams.set('page_size', String(params.page_size))
@@ -673,26 +664,6 @@ export async function fetchLabelVerifications(params: { page: number; page_size:
     page_size: params.page_size.toString(),
   })
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/label-verifications?${searchParams.toString()}`)
-}
-
-// ============ Attachment Review Actions ============
-
-export async function submitAttachmentReview(data: {
-  deviation_id?: string | null
-  capa_id?: string | null
-  attachment_url: string
-  content: string
-}) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/attachment-reviews`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function deleteAttachmentReview(reviewId: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/attachment-reviews/${reviewId}`, {
-    method: 'DELETE',
-  })
 }
 
 // ============ Additional CAPA Actions ============

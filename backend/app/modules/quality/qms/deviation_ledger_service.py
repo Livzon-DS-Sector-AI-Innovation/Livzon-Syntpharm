@@ -825,6 +825,7 @@ class DeviationLedgerService:
                 except Exception:  # noqa: BLE001 - 存储清理失败不回滚元数据
                     logger.warning(
                         "deviation attachment object delete failed",
+                        exc_info=True,
                         extra={"app_module": "quality", "ledger_id": str(ledger_id), "object_key": key},
                     )
         return await self._build_detail(row, viewer_id=actor_id)
@@ -915,6 +916,7 @@ class DeviationLedgerService:
             except Exception:  # noqa: BLE001 - 缓存失败不影响本次预览
                 logger.warning(
                     "deviation preview cache write failed",
+                    exc_info=True,
                     extra={"app_module": "quality", "ledger_id": str(ledger_id)},
                 )
             return _docx_file_name(file_name), converted, _DOCX_CONTENT_TYPE

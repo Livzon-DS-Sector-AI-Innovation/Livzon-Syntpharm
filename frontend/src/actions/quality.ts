@@ -515,7 +515,7 @@ export async function getStabilityTrendData(studyId: string) {
 
 // ============ AI交互日志 Actions ============
 
-export async function getAiLogs(params: AiLogFilter & { page?: number; page_size?: number } = {}) {
+export async function getAiLogs(params: AiLogFilter = {}) {
   return wrap<AiLogListResponse>(QualityServer.getAiLogs(params))
 }
 
@@ -573,25 +573,6 @@ export async function deleteDepartmentContact(contactId: string) {
 
 export async function fetchLabelVerificationsServer(params: { page: number; page_size: number }) {
   return QualityServer.fetchLabelVerifications(params)
-}
-
-// ============ Attachment Review Actions ============
-
-export async function submitAttachmentReview(data: {
-  deviation_id?: string | null
-  capa_id?: string | null
-  attachment_url: string
-  content: string
-}) {
-  const response = await wrap<unknown>(QualityServer.submitAttachmentReview(data))
-  revalidatePath('/quality')
-  return response
-}
-
-export async function deleteAttachmentReview(reviewId: string) {
-  const response = await wrap<unknown>(QualityServer.deleteAttachmentReview(reviewId))
-  revalidatePath('/quality')
-  return response
 }
 
 // ============ Additional CAPA Actions ============
@@ -698,10 +679,7 @@ export async function confirmDocCheckRecord(recordId: string) {
 }
 
 /** 更新预审问题的处理结果 */
-export async function updateDocCheckProblem(
-  problemId: string,
-  payload: { handle_status: string; ignore_reason?: string },
-) {
+export async function updateDocCheckProblem(problemId: string, payload: components['schemas']['ProblemUpdate']) {
   const response = await wrap<null>(DocCheckServer.updateDocCheckProblem(problemId, payload))
   revalidatePath('/quality/doc-check')
   return response

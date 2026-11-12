@@ -1,7 +1,7 @@
 
 // Quality management types (from shared/api.interface.ts)
 
-import type { components } from '@/types/generated/schema'
+import type { components, operations } from '@/types/generated/schema'
 
 // ============ Deviation Types ============
 export type DeviationLevel = 'minor' | 'moderate' | 'major';
@@ -509,13 +509,10 @@ export interface AiLogListResponse {
   page_size: number
 }
 
-export interface AiLogFilter {
-  operate_type?: string
-  operator?: string
-  start_date?: string
-  end_date?: string
-  keyword?: string
-}
+/** AI 交互日志查询参数：来自 OpenAPI 契约（list_ai_logs），含 page/page_size */
+export type AiLogFilter = NonNullable<
+  NonNullable<operations['list_ai_logs_api_v1_quality_ai_logs_get']['parameters']>['query']
+>
 
 // ============ 偏差台账（quality.deviation_ledger） ============
 
