@@ -99,6 +99,52 @@ class Department(BaseModel):
     )
     order: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="同级排序")
 
+    # ── HR 组织目录镜像字段（ticket #197）──
+    enabled_status: Mapped[bool | None] = mapped_column(Boolean, nullable=True, comment="飞书启用状态")
+    order_weight: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="飞书排序权重（原始字符串）")
+    department_path: Mapped[list[dict[str, Any]] | None] = mapped_column(
+        JSONB, nullable=True, comment="部门路径，按根到自身的顺序存储 id+名称"
+    )
+    leader_ids: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True, comment="负责人 open_id，按飞书返回顺序")
+    recursive_members_count: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, comment="递归成员数（含下级部门）"
+    )
+    direct_members_count: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="直属成员数")
+    recursive_departments_count: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="递归下级部门数")
+    direct_departments_count: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="直属下级部门数")
+    data_source: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="飞书数据来源枚举")
+    directory_synced_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="最近一次目录同步时间"
+    )
+    custom_fields: Mapped[list[dict[str, Any]] | None] = mapped_column(
+        JSONB, nullable=True, comment="飞书部门自定义字段（无标签，按 key 存储）"
+    )
+
+
+class OrgSyncRun(BaseModel):
+    """一次组织目录同步的运行记录（ticket #197）。
+
+    只保留运行结果供页面展示；实际部门数据在 ``identity.departments``。
+    保留历史行便于排查失败，最新一行即页面上的「上次同步」。
+    """
+
+    __tablename__ = "org_sync_runs"
+    __table_args__ = (
+        Index("idx_identity_org_sync_runs_started_at", "started_at"),
+        {"schema": "identity"},
+    )
+
+    status: Mapped[str] = mapped_column(String(20), nullable=False, comment="running / success / failed")
+    department_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0", comment="同步部门数"
+    )
+    people_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0", comment="同步人员数"
+    )
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True, comment="失败原因")
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, comment="开始时间")
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="结束时间")
+
 
 class LoginLog(BaseModel):
     """登录记录"""

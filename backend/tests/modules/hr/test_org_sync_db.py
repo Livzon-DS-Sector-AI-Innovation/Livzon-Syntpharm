@@ -1,0 +1,106 @@
+"""DB-backed org sync adapter test (ticket #197).
+
+Verifies that the sync port maps onto the real ``identity.departments`` mirror
+and persists the run log, not just into the in-memory fake used by the unit seam.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.modules.hr.org_domain import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
+from app.modules.hr.org_repository import SqlAlchemyOrgDepartmentStore
+from app.modules.hr.org_sync import sync_org_departments
+from app.platform.identity.models import Department, OrgSyncRun
+
+
+class _Fetcher:
+    async def fetch_departments(self) -> list[dict[str, Any]]:
+        return [
+            {
+                "department_id": "od-101",
+                "name": "101车间",
+                "parent_department_id": IN_SCOPE_COMPANY_ID,
+                "order": 5,
+            }
+        ]
+
+    async def fetch_departments_detail(self, department_ids: list[str]) -> list[dict[str, Any]]:
+        return [
+            {
+                "department_id": "od-101",
+                "name": {"default_value": "101车间"},
+                "parent_department_id": IN_SCOPE_COMPANY_ID,
+                "enabled_status": True,
+                "order_weight": "5",
+                "leaders": [{"leader_id": "ou-leader"}],
+                "department_count": {
+                    "recursive_members_count": "20",
+                    "direct_members_count": "8",
+                    "recursive_departments_count": "2",
+                    "direct_departments_count": "2",
+                },
+                "department_path_infos": [
+                    {
+                        "department_id": IN_SCOPE_COMPANY_ID,
+                        "department_name": {"default_value": IN_SCOPE_COMPANY_NAME},
+                    },
+                    {"department_id": "od-101", "department_name": {"default_value": "101车间"}},
+                ],
+                "data_source": 1,
+                "custom_field_values": [],
+            }
+        ]
+
+
+async def test_sync_persists_mirror_fields_and_hides_stale_department(db_session: AsyncSession) -> None:
+    db_session.add(
+        Department(
+            feishu_department_id="od-stale",
+            name="已移除车间",
+            parent_feishu_department_id=IN_SCOPE_COMPANY_ID,
+            status_is_deleted=False,
+            department_path=[
+                {"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME},
+                {"id": "od-stale", "name": "已移除车间"},
+            ],
+        )
+    )
+    await db_session.flush()
+    store = SqlAlchemyOrgDepartmentStore(db_session)
+
+    stats = await sync_org_departments(store, _Fetcher())
+
+    assert stats.total == 1
+    assert stats.created == 1
+    assert stats.hidden == 1
+
+    department = (
+        await db_session.execute(select(Department).where(Department.feishu_department_id == "od-101"))
+    ).scalar_one()
+    assert department.name == "101车间"
+    assert department.parent_feishu_department_id == IN_SCOPE_COMPANY_ID
+    assert department.leader_ids == ["ou-leader"]
+    assert department.recursive_members_count == 20
+    assert department.direct_members_count == 8
+    assert department.recursive_departments_count == 2
+    assert department.direct_departments_count == 2
+    assert department.enabled_status is True
+    assert department.order_weight == "5"
+    assert department.data_source == 1
+    assert (department.department_path or [])[-1] == {"id": "od-101", "name": "101车间"}
+    assert department.directory_synced_at is not None
+
+    stale = (
+        await db_session.execute(select(Department).where(Department.feishu_department_id == "od-stale"))
+    ).scalar_one()
+    assert stale.status_is_deleted is True
+
+    run = (await db_session.execute(select(OrgSyncRun))).scalars().one()
+    assert run.status == "success"
+    assert run.department_count == 1
+    assert run.people_count == 0
+    assert run.finished_at is not None

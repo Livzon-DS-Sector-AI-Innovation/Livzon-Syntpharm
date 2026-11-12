@@ -9659,6 +9659,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/hr/org/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 部门树（只读）
+         * @description 返回珠海保税区丽珠合成制药有限公司下的两级部门树。
+         */
+        get: operations["list_org_departments_api_v1_hr_org_departments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hr/org/sync-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 组织架构同步状态
+         * @description 最近一次同步的时间、成功/失败、部门/人员数量与错误。
+         */
+        get: operations["get_org_sync_status_api_v1_hr_org_sync_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hr/org/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 立即同步组织架构
+         * @description 立即同步飞书部门数据；同一时间只允许一个同步任务。
+         */
+        post: operations["trigger_org_sync_api_v1_hr_org_sync_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/hr/candidates": {
         parameters: {
             query?: never;
@@ -41738,6 +41798,158 @@ export interface components {
              * @enum {string}
              */
             optimize_type: "polish" | "summarize" | "expand" | "simplify";
+        };
+        /** OrgDepartmentNode */
+        OrgDepartmentNode: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Level
+             * @description 1 = 一级部门，2 = 二级部门
+             */
+            level: number;
+            /** Parent Id */
+            parent_id?: string | null;
+            /** Parent Name */
+            parent_name?: string | null;
+            /** Leader Ids */
+            leader_ids?: string[];
+            /** Leader Names */
+            leader_names?: string[];
+            /**
+             * Leader Display
+             * @description 负责人姓名的展示值；未解析时显示 —
+             * @default —
+             */
+            leader_display: string;
+            /**
+             * Recursive Members Count
+             * @default 0
+             */
+            recursive_members_count: number;
+            /**
+             * Direct Members Count
+             * @default 0
+             */
+            direct_members_count: number;
+            /**
+             * Recursive Departments Count
+             * @default 0
+             */
+            recursive_departments_count: number;
+            /**
+             * Direct Departments Count
+             * @default 0
+             */
+            direct_departments_count: number;
+            /** Department Path */
+            department_path?: components["schemas"]["OrgPathNode"][];
+            /** Enabled Status */
+            enabled_status?: boolean | null;
+            /** Order Weight */
+            order_weight?: string | null;
+            /**
+             * Data Source
+             * @default —
+             */
+            data_source: string;
+            /** Custom Fields */
+            custom_fields?: {
+                [key: string]: unknown;
+            }[];
+            /** Children */
+            children?: components["schemas"]["OrgDepartmentNode"][];
+        };
+        /** OrgDepartmentTreeApiResponse */
+        OrgDepartmentTreeApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["OrgDepartmentTreeData"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** OrgDepartmentTreeData */
+        OrgDepartmentTreeData: {
+            /** Items */
+            items?: components["schemas"]["OrgDepartmentNode"][];
+        };
+        /** OrgPathNode */
+        OrgPathNode: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** OrgSyncStatusApiResponse */
+        OrgSyncStatusApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["OrgSyncStatusData"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** OrgSyncStatusData */
+        OrgSyncStatusData: {
+            /**
+             * Status
+             * @description never / success / failed / running
+             * @default never
+             */
+            status: string;
+            /** Last Synced At */
+            last_synced_at?: string | null;
+            /**
+             * Department Count
+             * @default 0
+             */
+            department_count: number;
+            /**
+             * People Count
+             * @default 0
+             */
+            people_count: number;
+            /** Error Message */
+            error_message?: string | null;
+        };
+        /** OrgSyncTriggerApiResponse */
+        OrgSyncTriggerApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["OrgSyncStatusData"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** OverseasApprovalCreate */
         OverseasApprovalCreate: {
@@ -81400,6 +81612,99 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["AsyncJobAcceptedResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_org_departments_api_v1_hr_org_departments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["OrgDepartmentTreeApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_org_sync_status_api_v1_hr_org_sync_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["OrgSyncStatusApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trigger_org_sync_api_v1_hr_org_sync_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["OrgSyncTriggerApiResponse"];
                 };
             };
             /** @description Validation Error */

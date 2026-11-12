@@ -122,6 +122,13 @@ export interface DepartmentListResponse {
   }
 }
 
+// ── 部门管理（飞书组织架构只读镜像，ticket #197）──
+export type OrgDepartmentNode = components['schemas']['OrgDepartmentNode']
+export type OrgSyncStatusData = components['schemas']['OrgSyncStatusData']
+export type OrgDepartmentTreeResponse = components['schemas']['OrgDepartmentTreeApiResponse']
+export type OrgSyncStatusResponse = components['schemas']['OrgSyncStatusApiResponse']
+export type OrgSyncTriggerResponse = components['schemas']['OrgSyncTriggerApiResponse']
+
 export interface OffboardingRecord {
   id: string
   employee_id: string

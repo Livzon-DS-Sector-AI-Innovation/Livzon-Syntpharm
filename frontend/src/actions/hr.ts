@@ -44,6 +44,9 @@ import {
   TrainingPlanResponse,
   ImportCounts,
   SyncOpenIdsResult,
+  OrgDepartmentTreeResponse,
+  OrgSyncStatusResponse,
+  OrgSyncTriggerResponse,
 } from '@/types/hr'
 
 import type { ApiResponse, MessageResponse } from '@/types/common'
@@ -57,6 +60,9 @@ import {
   syncFromFeishuApi,
   syncToFeishuApi,
   fetchDepartmentsApi,
+  fetchOrgDepartmentsApi,
+  fetchOrgSyncStatusApi,
+  triggerOrgSyncApi,
   createDepartmentApi,
   updateDepartmentApi,
   deleteDepartmentApi,
@@ -339,6 +345,20 @@ export async function fetchEmployees(
   }
 ): Promise<EmployeeListResponse> {
   return fetchEmployeesAction(params)
+}
+
+export async function fetchOrgDepartments(): Promise<OrgDepartmentTreeResponse> {
+  return fetchOrgDepartmentsApi()
+}
+
+export async function fetchOrgSyncStatus(): Promise<OrgSyncStatusResponse> {
+  return fetchOrgSyncStatusApi()
+}
+
+export async function triggerOrgSync(): Promise<OrgSyncTriggerResponse> {
+  const result = await triggerOrgSyncApi()
+  revalidatePath('/hr/departments')
+  return result
 }
 
 export async function fetchDepartments(

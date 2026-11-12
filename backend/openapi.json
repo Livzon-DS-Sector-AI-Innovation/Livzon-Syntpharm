@@ -47006,6 +47006,159 @@
         }
       }
     },
+    "/api/v1/hr/org/departments": {
+      "get": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u7ec4\u7ec7\u67b6\u6784"
+        ],
+        "summary": "\u90e8\u95e8\u6811\uff08\u53ea\u8bfb\uff09",
+        "description": "\u8fd4\u56de\u73e0\u6d77\u4fdd\u7a0e\u533a\u4e3d\u73e0\u5408\u6210\u5236\u836f\u6709\u9650\u516c\u53f8\u4e0b\u7684\u4e24\u7ea7\u90e8\u95e8\u6811\u3002",
+        "operationId": "list_org_departments_api_v1_hr_org_departments_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgDepartmentTreeApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hr/org/sync-status": {
+      "get": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u7ec4\u7ec7\u67b6\u6784"
+        ],
+        "summary": "\u7ec4\u7ec7\u67b6\u6784\u540c\u6b65\u72b6\u6001",
+        "description": "\u6700\u8fd1\u4e00\u6b21\u540c\u6b65\u7684\u65f6\u95f4\u3001\u6210\u529f/\u5931\u8d25\u3001\u90e8\u95e8/\u4eba\u5458\u6570\u91cf\u4e0e\u9519\u8bef\u3002",
+        "operationId": "get_org_sync_status_api_v1_hr_org_sync_status_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgSyncStatusApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hr/org/sync": {
+      "post": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u7ec4\u7ec7\u67b6\u6784"
+        ],
+        "summary": "\u7acb\u5373\u540c\u6b65\u7ec4\u7ec7\u67b6\u6784",
+        "description": "\u7acb\u5373\u540c\u6b65\u98de\u4e66\u90e8\u95e8\u6570\u636e\uff1b\u540c\u4e00\u65f6\u95f4\u53ea\u5141\u8bb8\u4e00\u4e2a\u540c\u6b65\u4efb\u52a1\u3002",
+        "operationId": "trigger_org_sync_api_v1_hr_org_sync_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgSyncTriggerApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/hr/candidates": {
       "get": {
         "tags": [
@@ -145889,6 +146042,319 @@
         ],
         "title": "OptimizeTextRequest",
         "description": "AI\u4f18\u5316\u6587\u672c\u8bf7\u6c42"
+      },
+      "OrgDepartmentNode": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "level": {
+            "type": "integer",
+            "title": "Level",
+            "description": "1 = \u4e00\u7ea7\u90e8\u95e8\uff0c2 = \u4e8c\u7ea7\u90e8\u95e8"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "parent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Name"
+          },
+          "leader_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Leader Ids"
+          },
+          "leader_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Leader Names"
+          },
+          "leader_display": {
+            "type": "string",
+            "title": "Leader Display",
+            "description": "\u8d1f\u8d23\u4eba\u59d3\u540d\u7684\u5c55\u793a\u503c\uff1b\u672a\u89e3\u6790\u65f6\u663e\u793a \u2014",
+            "default": "\u2014"
+          },
+          "recursive_members_count": {
+            "type": "integer",
+            "title": "Recursive Members Count",
+            "default": 0
+          },
+          "direct_members_count": {
+            "type": "integer",
+            "title": "Direct Members Count",
+            "default": 0
+          },
+          "recursive_departments_count": {
+            "type": "integer",
+            "title": "Recursive Departments Count",
+            "default": 0
+          },
+          "direct_departments_count": {
+            "type": "integer",
+            "title": "Direct Departments Count",
+            "default": 0
+          },
+          "department_path": {
+            "items": {
+              "$ref": "#/components/schemas/OrgPathNode"
+            },
+            "type": "array",
+            "title": "Department Path"
+          },
+          "enabled_status": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled Status"
+          },
+          "order_weight": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Weight"
+          },
+          "data_source": {
+            "type": "string",
+            "title": "Data Source",
+            "default": "\u2014"
+          },
+          "custom_fields": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Custom Fields"
+          },
+          "children": {
+            "items": {
+              "$ref": "#/components/schemas/OrgDepartmentNode"
+            },
+            "type": "array",
+            "title": "Children"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "level"
+        ],
+        "title": "OrgDepartmentNode"
+      },
+      "OrgDepartmentTreeApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/OrgDepartmentTreeData"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "OrgDepartmentTreeApiResponse"
+      },
+      "OrgDepartmentTreeData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrgDepartmentNode"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "OrgDepartmentTreeData"
+      },
+      "OrgPathNode": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "OrgPathNode"
+      },
+      "OrgSyncStatusApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/OrgSyncStatusData"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "OrgSyncStatusApiResponse"
+      },
+      "OrgSyncStatusData": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "never / success / failed / running",
+            "default": "never"
+          },
+          "last_synced_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Synced At"
+          },
+          "department_count": {
+            "type": "integer",
+            "title": "Department Count",
+            "default": 0
+          },
+          "people_count": {
+            "type": "integer",
+            "title": "People Count",
+            "default": 0
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          }
+        },
+        "type": "object",
+        "title": "OrgSyncStatusData"
+      },
+      "OrgSyncTriggerApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/OrgSyncStatusData"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "OrgSyncTriggerApiResponse"
       },
       "OverseasApprovalCreate": {
         "properties": {

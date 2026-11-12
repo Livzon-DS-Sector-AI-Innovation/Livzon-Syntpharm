@@ -57,26 +57,26 @@ export default function SystemSettingsClient() {
 
       <Form form={form} layout="vertical">
         <Divider>飞书 - 主 Bot（招聘 / 人事）</Divider>
-        <Form.Item label={feishuLabel('FEISHU_APP_ID')} name="FEISHU_APP_ID">
+        <Form.Item label={feishuLabel('App ID')} name="FEISHU__PLATFORM__APP_ID">
           <Input placeholder="cli_xxxx..." />
         </Form.Item>
-        <Form.Item label={feishuLabel('FEISHU_APP_SECRET')} name="FEISHU_APP_SECRET">
+        <Form.Item label={feishuLabel('App Secret')} name="FEISHU__PLATFORM__APP_SECRET">
           <Input.Password placeholder="飞书 App Secret" />
         </Form.Item>
 
         <Divider>飞书 - 车辆 Bot</Divider>
-        <Form.Item label={feishuLabel('FEISHU_VEHICLE_APP_ID')} name="FEISHU_VEHICLE_APP_ID">
+        <Form.Item label={feishuLabel('App ID')} name="FEISHU__VEHICLE__CREDENTIALS__APP_ID">
           <Input placeholder="cli_xxxx..." />
         </Form.Item>
-        <Form.Item label={feishuLabel('FEISHU_VEHICLE_APP_SECRET')} name="FEISHU_VEHICLE_APP_SECRET">
+        <Form.Item label={feishuLabel('App Secret')} name="FEISHU__VEHICLE__CREDENTIALS__APP_SECRET">
           <Input.Password placeholder="飞书 Vehicle App Secret" />
         </Form.Item>
 
         <Divider>飞书 - 培训 Bot</Divider>
-        <Form.Item label={feishuLabel('FEISHU_TRAINING_APP_ID')} name="FEISHU_TRAINING_APP_ID">
+        <Form.Item label={feishuLabel('App ID')} name="FEISHU__TRAINING__CREDENTIALS__APP_ID">
           <Input placeholder="cli_xxxx..." />
         </Form.Item>
-        <Form.Item label={feishuLabel('FEISHU_TRAINING_APP_SECRET')} name="FEISHU_TRAINING_APP_SECRET">
+        <Form.Item label={feishuLabel('App Secret')} name="FEISHU__TRAINING__CREDENTIALS__APP_SECRET">
           <Input.Password placeholder="飞书 Training App Secret" />
         </Form.Item>
 

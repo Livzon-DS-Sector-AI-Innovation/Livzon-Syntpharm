@@ -438,6 +438,7 @@ export const HR_PERM = {
   departmentsCreate: 'hr:departments:create',
   departmentsDelete: 'hr:departments:delete',
   departmentsRead: 'hr:departments:read',
+  departmentsSync: 'hr:departments:sync',
   departmentsUpdate: 'hr:departments:update',
   departureRecordsCreate: 'hr:departure-records:create',
   departureRecordsDelete: 'hr:departure-records:delete',

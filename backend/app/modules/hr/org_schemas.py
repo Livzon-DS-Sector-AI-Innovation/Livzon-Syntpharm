@@ -1,0 +1,67 @@
+"""Response schemas for the 部门管理 org browser (ticket #197)."""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+
+class OrgPathNode(BaseModel):
+    id: str
+    name: str
+
+
+class OrgDepartmentNode(BaseModel):
+    id: str
+    name: str
+    level: int = Field(..., description="1 = 一级部门，2 = 二级部门")
+    parent_id: str | None = None
+    parent_name: str | None = None
+    leader_ids: list[str] = Field(default_factory=list)
+    leader_names: list[str] = Field(default_factory=list)
+    leader_display: str = Field("—", description="负责人姓名的展示值；未解析时显示 —")
+    recursive_members_count: int = 0
+    direct_members_count: int = 0
+    recursive_departments_count: int = 0
+    direct_departments_count: int = 0
+    department_path: list[OrgPathNode] = Field(default_factory=list)
+    enabled_status: bool | None = None
+    order_weight: str | None = None
+    data_source: str = "—"
+    custom_fields: list[dict[str, Any]] = Field(default_factory=list)
+    children: list[OrgDepartmentNode] = Field(default_factory=list)
+
+
+class OrgDepartmentTreeData(BaseModel):
+    items: list[OrgDepartmentNode] = Field(default_factory=list)
+
+
+class OrgDepartmentTreeApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: OrgDepartmentTreeData
+    meta: dict[str, Any] | None = None
+
+
+class OrgSyncStatusData(BaseModel):
+    status: str = Field("never", description="never / success / failed / running")
+    last_synced_at: datetime | None = None
+    department_count: int = 0
+    people_count: int = 0
+    error_message: str | None = None
+
+
+class OrgSyncStatusApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: OrgSyncStatusData
+    meta: dict[str, Any] | None = None
+
+
+class OrgSyncTriggerApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: OrgSyncStatusData
+    meta: dict[str, Any] | None = None

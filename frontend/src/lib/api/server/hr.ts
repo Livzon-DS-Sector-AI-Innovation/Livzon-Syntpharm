@@ -1,5 +1,10 @@
 import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
-import type { CandidateListParams } from '@/types/hr'
+import type {
+  CandidateListParams,
+  OrgDepartmentTreeResponse,
+  OrgSyncStatusResponse,
+  OrgSyncTriggerResponse,
+} from '@/types/hr'
 
 async function apiFetchFormData(url: string, body: FormData): Promise<unknown> {
   const res = await fetch(url, {
@@ -73,6 +78,20 @@ export async function syncFromFeishuApi() {
 
 export async function syncToFeishuApi(id: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/employees/${id}/sync-to-feishu`, {
+    method: 'POST',
+  })
+}
+
+export async function fetchOrgDepartmentsApi(): Promise<OrgDepartmentTreeResponse> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/org/departments`)
+}
+
+export async function fetchOrgSyncStatusApi(): Promise<OrgSyncStatusResponse> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/org/sync-status`)
+}
+
+export async function triggerOrgSyncApi(): Promise<OrgSyncTriggerResponse> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/org/sync`, {
     method: 'POST',
   })
 }
