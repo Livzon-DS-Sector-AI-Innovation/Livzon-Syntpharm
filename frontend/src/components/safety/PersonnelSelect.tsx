@@ -1,8 +1,9 @@
 'use client'
 
+import { useMemo } from 'react'
 import {
-  RemoteUserMultiSelect,
   RemoteUserSelect,
+  type RemoteUserSelectOption,
 } from '@/components/common/RemoteUserSelect'
 
 /**
@@ -37,17 +38,31 @@ export default function PersonnelSelect({
   disabled,
   onChange,
 }: PersonnelSelectProps) {
+  // 历史 props 只有姓名/头像快照，转成统一组件的 fallbackOptions
+  const fallbackOptions = useMemo<RemoteUserSelectOption[]>(
+    () => (value && label ? [{ value, label, avatar: avatarSrc ?? undefined }] : []),
+    [value, label, avatarSrc],
+  )
+
   return (
     <RemoteUserSelect
       value={value}
-      label={label}
-      avatarSrc={avatarSrc}
+      fallbackOptions={fallbackOptions}
       feishuBoundOnly
       // 台账里的人员多为必填，保持原有「不可清空」行为
       allowClear={false}
       placeholder={placeholder}
       disabled={disabled}
-      onChange={onChange}
+      onChange={(next, picked) => {
+        const id = typeof next === 'string' ? next : null
+        if (!id) {
+          onChange(null)
+          return
+        }
+        // onChange 第二参给出本次选中的行，姓名快照与头像一次拿全
+        const row = Array.isArray(picked) ? picked[0] : picked
+        onChange({ id, name: row?.label ?? label ?? id })
+      }}
     />
   )
 }
@@ -78,15 +93,38 @@ export function PersonnelMultiSelect({
   disabled,
   onChange,
 }: PersonnelMultiSelectProps) {
+  const selectedIds = useMemo(() => value ?? [], [value])
+
+  const fallbackOptions = useMemo<RemoteUserSelectOption[]>(
+    () =>
+      selectedIds.map((id, index) => ({
+        value: id,
+        label: labels?.[index] ?? id,
+        avatar: avatarSrcs?.[index] ?? undefined,
+      })),
+    [selectedIds, labels, avatarSrcs],
+  )
+  const nameById = useMemo(
+    () => new Map(fallbackOptions.map((option) => [option.value, option.label])),
+    [fallbackOptions],
+  )
+
   return (
-    <RemoteUserMultiSelect
-      value={value}
-      labels={labels}
-      avatarSrcs={avatarSrcs}
+    <RemoteUserSelect
+      mode="multiple"
+      value={selectedIds}
+      fallbackOptions={fallbackOptions}
       feishuBoundOnly
       placeholder={placeholder}
       disabled={disabled}
-      onChange={onChange}
+      onChange={(next, picked) => {
+        const nextIds = Array.isArray(next) ? next : []
+        const rows = Array.isArray(picked) ? picked : []
+        const pickedById = new Map(rows.map((row) => [row.value, row.label]))
+        onChange(
+          nextIds.map((id) => ({ id, name: pickedById.get(id) ?? nameById.get(id) ?? id })),
+        )
+      }}
     />
   )
 }

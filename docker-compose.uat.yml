@@ -51,6 +51,35 @@ services:
     networks:
       - uat-net
 
+  # 智能体 - PPT 配音视频渲染 worker
+  # 独立容器：soffice/ffmpeg/TTS 都是 CPU 重活，放在 API 容器里会拖慢接口响应。
+  # 队列在 agent.ppt_video_job 表，靠 FOR UPDATE SKIP LOCKED 抢占，可与 API 分开扩容。
+  ppt-video-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    container_name: uat-ppt-video-worker
+    restart: unless-stopped
+    env_file:
+      - .env.uat
+    environment:
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD 未设置}@uat-redis:6379/0
+      MINIO_ENDPOINT: uat-minio:9000
+      PPT_VIDEO_WORKER_CONCURRENCY: "1"
+      HF_ENDPOINT: ${HF_ENDPOINT:-https://hf-mirror.com}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+      - ./storage:/app/storage
+    networks:
+      - uat-net
+
   edbo-service:
     build:
       context: ./backend

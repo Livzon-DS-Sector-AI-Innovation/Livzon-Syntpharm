@@ -183,8 +183,7 @@ RESOURCE_LABELS: dict[str, str] = {
     "quality:ai-log": "AI交互日志",
     "quality:capa": "CAPA管理",
     "quality:cpv": "持续工艺验证(CPV)",
-    "quality:deviation": "偏差管理",
-    "quality:deviation-settings": "偏差设置",
+    "quality:deviation": "偏差台账",
     "quality:doc-check": "文件检查",
     "quality:export": "数据导出",
     "quality:fqc": "FQC成品检验",
@@ -899,16 +898,12 @@ QUALITY_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("quality:cpv:import", "持续工艺验证(CPV) - 导入", "quality", "cpv", "import"),
     PermissionDef("quality:cpv:read", "持续工艺验证(CPV) - 查看", "quality", "cpv", "read"),
     PermissionDef("quality:cpv:update", "持续工艺验证(CPV) - 编辑", "quality", "cpv", "update"),
-    PermissionDef("quality:deviation-settings:create", "偏差设置 - 新增", "quality", "deviation-settings", "create"),
-    PermissionDef("quality:deviation-settings:delete", "偏差设置 - 删除", "quality", "deviation-settings", "delete"),
-    PermissionDef("quality:deviation-settings:read", "偏差设置 - 查看", "quality", "deviation-settings", "read"),
-    PermissionDef("quality:deviation-settings:update", "偏差设置 - 编辑", "quality", "deviation-settings", "update"),
-    PermissionDef("quality:deviation:approve", "偏差管理 - 审批", "quality", "deviation", "approve"),
-    PermissionDef("quality:deviation:create", "偏差管理 - 新增", "quality", "deviation", "create"),
-    PermissionDef("quality:deviation:delete", "偏差管理 - 删除", "quality", "deviation", "delete"),
-    PermissionDef("quality:deviation:read", "偏差管理 - 查看", "quality", "deviation", "read"),
-    PermissionDef("quality:deviation:submit", "偏差管理 - 提交", "quality", "deviation", "submit"),
-    PermissionDef("quality:deviation:update", "偏差管理 - 编辑", "quality", "deviation", "update"),
+    PermissionDef("quality:deviation:approve", "偏差台账 - 审批", "quality", "deviation", "approve"),
+    PermissionDef("quality:deviation:create", "偏差台账 - 新增", "quality", "deviation", "create"),
+    PermissionDef("quality:deviation:delete", "偏差台账 - 删除", "quality", "deviation", "delete"),
+    PermissionDef("quality:deviation:read", "偏差台账 - 查看", "quality", "deviation", "read"),
+    PermissionDef("quality:deviation:submit", "偏差台账 - 提交", "quality", "deviation", "submit"),
+    PermissionDef("quality:deviation:update", "偏差台账 - 编辑", "quality", "deviation", "update"),
     PermissionDef("quality:doc-check:cancel", "文件检查 - 取消", "quality", "doc-check", "cancel"),
     PermissionDef("quality:doc-check:create", "文件检查 - 新增", "quality", "doc-check", "create"),
     PermissionDef("quality:doc-check:delete", "文件检查 - 删除", "quality", "doc-check", "delete"),
@@ -1181,6 +1176,15 @@ PRODUCTION_PERMISSIONS: tuple[PermissionDef, ...] = (
 )
 
 
+# ── 智能体（agent）─────────────────────────────────────────────────
+# 首期能力为 PPT 配音视频：读接口（列表/详情/媒体/版本）与管理接口（上传/改稿/渲染/删除）分两个码。
+
+AGENT_PERMISSIONS: tuple[PermissionDef, ...] = (
+    PermissionDef("agent:ppt-video:read", "PPT 配音视频 - 查看", "agent", "ppt-video", "read"),
+    PermissionDef("agent:ppt-video:manage", "PPT 配音视频 - 管理", "agent", "ppt-video", "manage"),
+)
+
+
 # 全部权限码（业务模块接入存量接口时，把业务权限码合并进来即可，权限树会自动生长）
 ALL_PERMISSIONS: tuple[PermissionDef, ...] = (
     PLATFORM_PERMISSIONS
@@ -1196,6 +1200,7 @@ ALL_PERMISSIONS: tuple[PermissionDef, ...] = (
     + QUALITY_PERMISSIONS
     + HR_PERMISSIONS
     + PRODUCTION_PERMISSIONS
+    + AGENT_PERMISSIONS
 )
 
 
@@ -2418,102 +2423,93 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("quality:cpv:create", "POST", "/api/v1/quality/cpv/products/{product_id}/parameters"),
     ApiBindingDef("quality:cpv:read", "GET", "/api/v1/quality/cpv/products/{product_id}/statistics"),
     ApiBindingDef("quality:cpv:read", "GET", "/api/v1/quality/cpv/products/{product_id}/trend"),
-    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation"),
-    ApiBindingDef("quality:deviation:create", "POST", "/api/v1/quality/deviation"),
-    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation-flow"),
-    ApiBindingDef("quality:deviation:create", "POST", "/api/v1/quality/deviation-flow"),
-    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation-flow/options"),
-    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation-flow/{id}"),
-    ApiBindingDef("quality:deviation:update", "PUT", "/api/v1/quality/deviation-flow/{id}"),
-    ApiBindingDef("quality:deviation:delete", "DELETE", "/api/v1/quality/deviation-flow/{id}"),
-    ApiBindingDef("quality:deviation:submit", "POST", "/api/v1/quality/deviation-flow/{id}/submit"),
-    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation-flow/{id}/attachments"),
-    ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation-flow/{id}/attachments"),
-    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation-flow/attachments/{id}/download"),
-    ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation-report/upload"),
-    ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation-report/save"),
-    ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation-report/ai/optimize"),
-    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation-report/ai/optimize/jobs/{id}"),
-    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation-report/download"),
-    ApiBindingDef("quality:deviation-settings:read", "GET", "/api/v1/quality/deviation-settings/auto-triggers"),
-    ApiBindingDef("quality:deviation-settings:create", "POST", "/api/v1/quality/deviation-settings/auto-triggers"),
-    ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/auto-triggers/{id}"),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/ledger"),
+    ApiBindingDef("quality:deviation:create", "POST", "/api/v1/quality/deviation/ledger"),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/ledger/statistics"),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/ledger/department-options"),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/ledger/investigator-options"),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/ledger/status-options"),
     ApiBindingDef(
-        "quality:deviation-settings:delete", "DELETE", "/api/v1/quality/deviation-settings/auto-triggers/{id}"
+        "quality:deviation:read",
+        "GET",
+        "/api/v1/quality/deviation/ledger/department-contact-options",
+    ),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/ledger/{id}"),
+    ApiBindingDef("quality:deviation:update", "PUT", "/api/v1/quality/deviation/ledger/{id}"),
+    ApiBindingDef("quality:deviation:delete", "DELETE", "/api/v1/quality/deviation/ledger/{id}"),
+    ApiBindingDef("quality:deviation:update", "PATCH", "/api/v1/quality/deviation/ledger/batch-status"),
+    ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/ledger/{id}/ai-analysis"),
+    ApiBindingDef(
+        "quality:deviation:update",
+        "POST",
+        "/api/v1/quality/deviation/ledger/{id}/complete-ai-analysis",
+    ),
+    ApiBindingDef("quality:deviation:submit", "POST", "/api/v1/quality/deviation/ledger/{id}/investigation"),
+    ApiBindingDef("quality:deviation:submit", "POST", "/api/v1/quality/deviation/ledger/{id}/investigation-records"),
+    ApiBindingDef(
+        "quality:deviation:approve",
+        "POST",
+        "/api/v1/quality/deviation/ledger/{id}/cross-dept-review",
+    ),
+    ApiBindingDef("quality:deviation:approve", "POST", "/api/v1/quality/deviation/ledger/{id}/review"),
+    ApiBindingDef("quality:deviation:submit", "POST", "/api/v1/quality/deviation/ledger/{id}/resubmit"),
+    ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/ledger/{id}/final-code"),
+    ApiBindingDef("quality:deviation:update", "PUT", "/api/v1/quality/deviation/ledger/{id}/report"),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/ledger/{id}/attachments"),
+    ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/ledger/{id}/attachments"),
+    ApiBindingDef(
+        "quality:deviation:update",
+        "DELETE",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}",
     ),
     ApiBindingDef(
-        "quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/auto-triggers/{id}/toggle"
-    ),
-    ApiBindingDef("quality:deviation-settings:read", "GET", "/api/v1/quality/deviation-settings/feishu-bot"),
-    ApiBindingDef("quality:deviation-settings:create", "POST", "/api/v1/quality/deviation-settings/feishu-bot"),
-    ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/feishu-bot"),
-    ApiBindingDef("quality:deviation-settings:delete", "DELETE", "/api/v1/quality/deviation-settings/feishu-bot"),
-    ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/feishu-bot/toggle"),
-    ApiBindingDef("quality:deviation-settings:read", "GET", "/api/v1/quality/deviation-settings/feishu-user/by-mobile"),
-    ApiBindingDef("quality:deviation-settings:read", "GET", "/api/v1/quality/deviation-settings/leaders"),
-    ApiBindingDef("quality:deviation-settings:create", "POST", "/api/v1/quality/deviation-settings/leaders"),
-    ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/leaders/{id}"),
-    ApiBindingDef("quality:deviation-settings:delete", "DELETE", "/api/v1/quality/deviation-settings/leaders/{id}"),
-    ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/leaders/{id}/toggle"),
-    ApiBindingDef("quality:deviation-settings:read", "GET", "/api/v1/quality/deviation-settings/message-templates"),
-    ApiBindingDef("quality:deviation-settings:create", "POST", "/api/v1/quality/deviation-settings/message-templates"),
-    ApiBindingDef(
-        "quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/message-templates/{id}"
+        "quality:deviation:read",
+        "GET",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/download",
     ),
     ApiBindingDef(
-        "quality:deviation-settings:delete", "DELETE", "/api/v1/quality/deviation-settings/message-templates/{id}"
+        "quality:deviation:read",
+        "GET",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/preview",
+    ),
+    # 文档批注：能查看该偏差即可读写批注（改正文限作者/超管，在 service 层判定）
+    ApiBindingDef(
+        "quality:deviation:read",
+        "GET",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/comments",
     ),
     ApiBindingDef(
-        "quality:deviation-settings:update",
-        "PUT",
-        "/api/v1/quality/deviation-settings/message-templates/{id}/set-default",
+        "quality:deviation:read",
+        "POST",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/comments",
     ),
     ApiBindingDef(
-        "quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/message-templates/{id}/toggle"
+        "quality:deviation:read",
+        "PATCH",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/comments/{comment_id}",
     ),
-    ApiBindingDef("quality:deviation-settings:read", "GET", "/api/v1/quality/deviation-settings/options"),
-    ApiBindingDef("quality:deviation-settings:read", "GET", "/api/v1/quality/deviation-settings/qa-users"),
-    ApiBindingDef("quality:deviation-settings:create", "POST", "/api/v1/quality/deviation-settings/qa-users"),
-    ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/qa-users/{id}"),
-    ApiBindingDef("quality:deviation-settings:delete", "DELETE", "/api/v1/quality/deviation-settings/qa-users/{id}"),
     ApiBindingDef(
-        "quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/qa-users/{id}/toggle"
+        "quality:deviation:read",
+        "DELETE",
+        "/api/v1/quality/deviation/ledger/{id}/attachments/{file_id}/comments/{comment_id}",
     ),
-    ApiBindingDef("quality:deviation-settings:create", "POST", "/api/v1/quality/deviation-settings/reminder/trigger"),
-    ApiBindingDef("quality:deviation-settings:read", "GET", "/api/v1/quality/deviation-settings/rules"),
-    ApiBindingDef("quality:deviation-settings:create", "POST", "/api/v1/quality/deviation-settings/rules"),
-    ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/rules/{id}"),
-    ApiBindingDef("quality:deviation-settings:delete", "DELETE", "/api/v1/quality/deviation-settings/rules/{id}"),
-    ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/rules/{id}/toggle"),
-    ApiBindingDef("quality:deviation:create", "POST", "/api/v1/quality/deviation/ai/analyze-direct-cause"),
-    ApiBindingDef("quality:deviation:create", "POST", "/api/v1/quality/deviation/ai/analyze-impact"),
-    ApiBindingDef("quality:deviation:create", "POST", "/api/v1/quality/deviation/ai/analyze-root-cause"),
-    ApiBindingDef("quality:deviation:create", "POST", "/api/v1/quality/deviation/ai/generate-capa"),
-    ApiBindingDef("quality:deviation:create", "POST", "/api/v1/quality/deviation/ai/generate-description"),
-    ApiBindingDef("quality:deviation:create", "POST", "/api/v1/quality/deviation/ai/generate-emergency-measures"),
-    ApiBindingDef("quality:deviation:create", "POST", "/api/v1/quality/deviation/ai/generate-prevention"),
-    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/closings/list"),
-    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/corrections/list"),
-    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/investigations/list"),
-    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/statistics"),
-    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/{deviation_id}"),
-    ApiBindingDef("quality:deviation:update", "PUT", "/api/v1/quality/deviation/{deviation_id}"),
-    ApiBindingDef("quality:deviation:delete", "DELETE", "/api/v1/quality/deviation/{deviation_id}"),
-    ApiBindingDef("quality:deviation:approve", "POST", "/api/v1/quality/deviation/{deviation_id}/approve"),
-    ApiBindingDef("quality:deviation:create", "POST", "/api/v1/quality/deviation/{deviation_id}/closing"),
-    ApiBindingDef("quality:deviation:update", "PUT", "/api/v1/quality/deviation/{deviation_id}/closing"),
-    ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/{deviation_id}/closing/complete"),
-    ApiBindingDef("quality:deviation:create", "POST", "/api/v1/quality/deviation/{deviation_id}/correction"),
-    ApiBindingDef("quality:deviation:update", "PUT", "/api/v1/quality/deviation/{deviation_id}/correction"),
-    ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/{deviation_id}/correction/progress"),
-    ApiBindingDef("quality:deviation:create", "POST", "/api/v1/quality/deviation/{deviation_id}/investigation"),
-    ApiBindingDef("quality:deviation:update", "PUT", "/api/v1/quality/deviation/{deviation_id}/investigation"),
     ApiBindingDef(
-        "quality:deviation:update", "POST", "/api/v1/quality/deviation/{deviation_id}/investigation/complete"
+        "quality:deviation:read",
+        "GET",
+        "/api/v1/quality/deviation/ledger/{id}/attachment-comments/summary",
     ),
-    ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/{deviation_id}/lock-batch"),
-    ApiBindingDef("quality:deviation:submit", "POST", "/api/v1/quality/deviation/{deviation_id}/submit"),
-    ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/{deviation_id}/unlock-batch"),
+    # 偏差组织配置：部门联系人 / 通知设置 / 部门周确认
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/department-contacts"),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/department-contacts/member-options"),
+    ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/department-contacts"),
+    ApiBindingDef("quality:deviation:update", "PUT", "/api/v1/quality/department-contacts/{contact_id}"),
+    ApiBindingDef("quality:deviation:update", "DELETE", "/api/v1/quality/department-contacts/{contact_id}"),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/notify"),
+    ApiBindingDef("quality:deviation:update", "PUT", "/api/v1/quality/deviation/notify"),
+    # 与接口实现一致：测试消息接口用的是 read 权限
+    ApiBindingDef("quality:deviation:read", "POST", "/api/v1/quality/deviation/notify/test"),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/weekly-confirmations"),
+    ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/weekly-confirmations"),
     ApiBindingDef("quality:export:read", "GET", "/api/v1/quality/export/{record_id}"),
     ApiBindingDef("quality:export:read", "GET", "/api/v1/quality/export/{record_id}/file"),
     ApiBindingDef("quality:fqc:create", "POST", "/api/v1/quality/fqc/inspections"),
@@ -3132,6 +3128,101 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "POST",
         "/api/v1/registration/dossier-writer/products/{dossier_id}/templates",
     ),
+    # 智能体 - PPT 配音视频
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/voices"),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos"),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/versions/{version_id}/manifest",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/versions/{version_id}/file",
+    ),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}"),
+    ApiBindingDef("agent:ppt-video:manage", "PATCH", "/api/v1/agent/ppt-videos/{project_id}"),
+    ApiBindingDef("agent:ppt-video:manage", "DELETE", "/api/v1/agent/ppt-videos/{project_id}"),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "PUT",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "POST",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/preview",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/image",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/audio",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_no}/thumb",
+    ),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/render"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/script-ai"),
+    # 页图重生成与状态查询：重试属写操作，状态查询只读（左栏进度条轮询）
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/page-images"),
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/page-images/status",
+    ),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/job"),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/versions"),
+    # 智能体 - AI 配置（自定义模型与全局默认模型；全局写入在函数内再校验平台管理员）
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ai-configs"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ai-configs"),
+    ApiBindingDef("agent:ppt-video:read", "PUT", "/api/v1/agent/ai-configs/global"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ai-configs/test"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ai-configs/models"),
+    ApiBindingDef("agent:ppt-video:manage", "PATCH", "/api/v1/agent/ai-configs/{config_id}"),
+    ApiBindingDef("agent:ppt-video:manage", "DELETE", "/api/v1/agent/ai-configs/{config_id}"),
+    # 智能体 - 项目级 AI 设置、讲稿改写与修订回滚
+    ApiBindingDef("agent:ppt-video:manage", "PUT", "/api/v1/agent/ppt-videos/{project_id}/ai"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/script-rewrite"),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/revisions"),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "POST",
+        "/api/v1/agent/ppt-videos/{project_id}/revisions/{revision_id}/rollback",
+    ),
+    # 智能体 - 换源
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/source"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/source/apply"),
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/source/file"),
+    # 智能体 - 页级轻量编辑
+    ApiBindingDef(
+        "agent:ppt-video:read",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/regions",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "GET",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/shapes",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "PUT",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/edit-text",
+    ),
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "POST",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/edit-image",
+    ),
 )
 # ── 登录入口 / 当前用户自取（豁免绑定兜底）─────────────────────────
 # 这些接口无法绑定权限码，若按「未登记即 403」处理，开启
@@ -3214,6 +3305,7 @@ ENFORCE_READY_MODULES: tuple[str, ...] = (
     "quality",
     "hr",
     "production",
+    "agent",
 )
 
 
