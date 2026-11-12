@@ -43124,6 +43124,11 @@ export interface components {
             /** Leader Names */
             leader_names?: string[];
             /**
+             * Leader Avatars
+             * @description 与 leader_names 对齐的头像 URL
+             */
+            leader_avatars?: string[];
+            /**
              * Leader Display
              * @description 负责人姓名的展示值；未解析时显示 —
              * @default —

@@ -147611,6 +147611,14 @@
             "type": "array",
             "title": "Leader Names"
           },
+          "leader_avatars": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Leader Avatars",
+            "description": "\u4e0e leader_names \u5bf9\u9f50\u7684\u5934\u50cf URL"
+          },
           "leader_display": {
             "type": "string",
             "title": "Leader Display",
