@@ -49,6 +49,8 @@ class EmployeeProfileDetail(BaseModel):
     email_aliases: list[str] = Field(default_factory=list)
     gender: int | None = None
     gender_label: str = "未知"
+    education: str = ""
+    age: int | None = None
     description: str = ""
     avatar_72: str = ""
     avatar_240: str = ""

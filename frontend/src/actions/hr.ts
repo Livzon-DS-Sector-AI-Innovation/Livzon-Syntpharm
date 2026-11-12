@@ -27,7 +27,10 @@ import {
   OnboardingRecordCreateInput,
   OnboardingRecordUpdateInput,
   DepartureRecordListResponse,
-  DepartureRecord,
+  DepartureRecordApiResponse,
+  DepartureRecordCreateInput,
+  DepartureRecordUpdateInput,
+  DepartureRecordDeleteResponse,
   CandidateListParams,
   CandidateListResponse,
   Candidate,
@@ -93,7 +96,6 @@ import {
   createOnboardingRecordApi,
   updateOnboardingRecordApi,
   deleteOnboardingRecordApi,
-  syncDepartureFromFeishuApi,
   createTrainingLedgerApi,
   updateTrainingLedgerApi,
   deleteTrainingLedgerApi,
@@ -105,6 +107,8 @@ import {
   generateOnboardingEvaluationApi,
   createOnboardingTrainingRecordApi,
   createDepartureRecordApi,
+  updateDepartureRecordApi,
+  deleteDepartureRecordApi,
   uploadAnnualTrainingPlanApi,
   uploadTrainersApi,
   uploadSopCatalogApi,
@@ -159,13 +163,6 @@ const OnboardingTrainingRecordSchema = z.object({
   training_date: z.string(),
   trainer: z.string().optional(),
   duration_hours: z.number().optional(),
-})
-
-const DepartureRecordSchema = z.object({
-  employee_id: z.string().uuid(),
-  departure_date: z.string(),
-  departure_reason: z.string().optional(),
-  handover_notes: z.string().optional(),
 })
 
 export async function fetchEmployeesAction(
@@ -424,13 +421,32 @@ export async function deleteOnboardingRecord(id: string) {
 export async function fetchDepartureRecords(
   params?: {
     department?: string
-    offboarding_type?: string
     keyword?: string
     page?: number
     page_size?: number
   }
 ): Promise<DepartureRecordListResponse> {
   return fetchDepartureRecordsApi(params) as Promise<DepartureRecordListResponse>
+}
+
+// ─── 离职台账 Actions（2026 手工台账，ticket #200）──
+
+export async function createDepartureRecord(data: DepartureRecordCreateInput) {
+  const res = await createDepartureRecordApi(data)
+  revalidatePath('/hr/departure')
+  return res as DepartureRecordApiResponse
+}
+
+export async function updateDepartureRecord(id: string, data: DepartureRecordUpdateInput) {
+  const res = await updateDepartureRecordApi(id, data)
+  revalidatePath('/hr/departure')
+  return res as DepartureRecordApiResponse
+}
+
+export async function deleteDepartureRecord(id: string) {
+  const res = await deleteDepartureRecordApi(id)
+  revalidatePath('/hr/departure')
+  return res as DepartureRecordDeleteResponse
 }
 
 export async function fetchEmployeeById(id: string): Promise<EmployeeResponse> {
@@ -469,14 +485,6 @@ export async function syncTrainingSpecialistsFeishuOpenIds() {
   const res = await syncTrainingSpecialistsFeishuOpenIdsApi()
   revalidatePath('/hr/training/specialists')
   return res as ApiResponse<SyncOpenIdsResult>
-}
-
-// ─── 飞书同步 Actions (from lib/api/hr.ts) ───
-
-export async function syncDepartureFromFeishu() {
-  const json = await syncDepartureFromFeishuApi()
-  revalidatePath('/hr/departure')
-  return json
 }
 
 // ─── 培训台账 Actions ───
@@ -551,13 +559,6 @@ export async function createOnboardingTrainingRecord(employeeNumber: string, dat
   const blob = await createOnboardingTrainingRecordApi(employeeNumber, data)
   revalidatePath('/hr')
   return blob
-}
-
-export async function createDepartureRecord(data: unknown) {
-  const _validated = parse(DepartureRecordSchema, data)
-  const res = await createDepartureRecordApi(data)
-  revalidatePath('/hr')
-  return res as DepartureRecord
 }
 
 export async function uploadAnnualTrainingPlan(file: File) {

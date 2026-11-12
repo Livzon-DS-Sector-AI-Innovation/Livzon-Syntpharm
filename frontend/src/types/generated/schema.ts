@@ -9320,83 +9320,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/hr/departure-records": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 老厂离职台账列表 */
-        get: operations["list_departure_records_api_v1_hr_departure_records_get"];
-        put?: never;
-        /** 创建离职台账记录 */
-        post: operations["create_departure_record_api_v1_hr_departure_records_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/hr/departure-records/{record_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 离职台账记录详情 */
-        get: operations["get_departure_record_api_v1_hr_departure_records__record_id__get"];
-        /** 更新离职台账记录 */
-        put: operations["update_departure_record_api_v1_hr_departure_records__record_id__put"];
-        post?: never;
-        /** 删除离职台账记录 */
-        delete: operations["delete_departure_record_api_v1_hr_departure_records__record_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/hr/departure-records/sync-from-feishu": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 从飞书同步老厂离职台账
-         * @description 手动触发：从飞书多维表格拉取全部老厂离职数据并 upsert 到本地 PG。
-         */
-        post: operations["sync_departure_from_feishu_api_v1_hr_departure_records_sync_from_feishu_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/hr/departure-records/sync-status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 老厂离职台账同步状态
-         * @description 查看本地与飞书的数据同步统计。
-         */
-        get: operations["get_departure_sync_status_api_v1_hr_departure_records_sync_status_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/hr/training-ledgers": {
         parameters: {
             query?: never;
@@ -9677,6 +9600,43 @@ export interface paths {
         post?: never;
         /** 删除入职记录 */
         delete: operations["delete_onboarding_record_api_v1_hr_onboarding_records__record_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hr/departure-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 离职台账列表 */
+        get: operations["list_departure_records_api_v1_hr_departure_records_get"];
+        put?: never;
+        /** 新建离职记录 */
+        post: operations["create_departure_record_api_v1_hr_departure_records_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hr/departure-records/{record_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 离职记录详情 */
+        get: operations["get_departure_record_api_v1_hr_departure_records__record_id__get"];
+        /** 更新离职记录 */
+        put: operations["update_departure_record_api_v1_hr_departure_records__record_id__put"];
+        post?: never;
+        /** 删除离职记录 */
+        delete: operations["delete_departure_record_api_v1_hr_departure_records__record_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -28386,238 +28346,182 @@ export interface components {
             /** Description */
             description?: string | null;
         };
-        /** DepartureRecordCreate */
+        /** DepartureRecordApiResponse */
+        DepartureRecordApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DepartureRecordResponse"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * DepartureRecordCreate
+         * @description Create payload: person reference plus the editable ledger fields.
+         */
         DepartureRecordCreate: {
             /**
-             * Name
-             * @description 姓名
+             * Person Id
+             * Format: uuid
+             * @description 员工档案人员 id
              */
-            name: string;
+            person_id: string;
             /**
-             * Department
-             * @description 部门
+             * Position Level
+             * @description 岗位层级
+             * @enum {string}
              */
-            department: string;
+            position_level: "员工级" | "主管级" | "经理级" | "总监级" | "副总经理级" | "总经理级";
             /**
-             * Team
-             * @description 班组
+             * Personnel Identity
+             * @description 人员身份
+             * @enum {string}
              */
-            team?: string | null;
+            personnel_identity: "正式工" | "实习生" | "返聘人员";
             /**
-             * Position
-             * @description 职位
-             */
-            position: string;
-            /**
-             * Job Category
-             * @description 职类
-             */
-            job_category?: string | null;
-            /**
-             * Gender
-             * @description 性别
-             */
-            gender?: string | null;
-            /**
-             * Status Category
-             * @description 统计类别
-             */
-            status_category?: string | null;
-            /**
-             * Livo Entry Date
-             * @description 入丽珠时间
-             */
-            livo_entry_date?: string | null;
-            /**
-             * Factory Entry Date
-             * @description 进厂时间
-             */
-            factory_entry_date?: string | null;
-            /**
-             * Work Start Date
-             * @description 参加工作时间
-             */
-            work_start_date?: string | null;
-            /**
-             * Offboarding Date
+             * Leave Date
+             * Format: date
              * @description 离职日期
              */
-            offboarding_date?: string | null;
+            leave_date: string;
             /**
-             * Company Tenure At Leave
-             * @description 离职时司龄
+             * Leave Category
+             * @description 离职类别
+             * @enum {string}
              */
-            company_tenure_at_leave?: string | null;
+            leave_category: "主动离职" | "被动离职" | "实习生离职" | "退休返聘到期";
             /**
-             * Education
-             * @description 学历
-             */
-            education?: string | null;
-            /**
-             * School
-             * @description 毕业学校
-             */
-            school?: string | null;
-            /**
-             * Major
-             * @description 专业
-             */
-            major?: string | null;
-            /**
-             * Classification
-             * @description 分类
-             */
-            classification?: string | null;
-            /**
-             * Id Card
-             * @description 身份证号
-             */
-            id_card?: string | null;
-            /**
-             * Native Place
-             * @description 籍贯
-             */
-            native_place?: string | null;
-            /**
-             * Household Type
-             * @description 户籍类型
-             */
-            household_type?: string | null;
-            /**
-             * Marital Status
-             * @description 婚姻状况
-             */
-            marital_status?: string | null;
-            /**
-             * Political Status
-             * @description 政治面貌
-             */
-            political_status?: string | null;
-            /**
-             * Phone
-             * @description 手机
-             */
-            phone?: string | null;
-            /**
-             * Emergency Contact Phone
-             * @description 紧急联系人电话
-             */
-            emergency_contact_phone?: string | null;
-            /**
-             * Emergency Contact Relation
-             * @description 紧急联系人|关系
-             */
-            emergency_contact_relation?: string | null;
-            /**
-             * Bank Account
-             * @description 银行卡号
-             */
-            bank_account?: string | null;
-            /**
-             * Contract Type
-             * @description 合同期限
-             */
-            contract_type?: string | null;
-            /**
-             * Transfer History
-             * @description 异动记录
-             */
-            transfer_history?: string | null;
-            /**
-             * Offboarding Type
-             * @description 离职类型
-             * @default 辞职
-             */
-            offboarding_type: string;
-            /**
-             * Offboarding Reason
+             * Leave Reason
              * @description 离职原因
              */
-            offboarding_reason?: string[] | null;
+            leave_reason: string;
             /**
-             * Offboarding Reason 2
-             * @description 离职原因2
+             * Group Classification
+             * @description 集团月报表人员分类
+             * @enum {string}
              */
-            offboarding_reason_2?: string[] | null;
-            /**
-             * Offboarding Remarks
-             * @description 离职备注
-             */
-            offboarding_remarks?: string[] | null;
-            /**
-             * Remarks
-             * @description 备注
-             */
-            remarks?: string | null;
+            group_classification: "职能管理" | "生产一线" | "生产一线：管理" | "生产辅助" | "研发一线" | "技术一线" | "后勤服务";
         };
-        /** DepartureRecordUpdate */
-        DepartureRecordUpdate: {
+        /** DepartureRecordDeleteApiResponse */
+        DepartureRecordDeleteApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: null;
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** DepartureRecordListApiResponse */
+        DepartureRecordListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["DepartureRecordResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** DepartureRecordResponse */
+        DepartureRecordResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Person Id
+             * Format: uuid
+             */
+            person_id: string;
+            /** Department Level1 */
+            department_level1: string;
+            /** Department Level2 */
+            department_level2: string;
             /** Name */
-            name?: string | null;
-            /** Department */
-            department?: string | null;
-            /** Team */
-            team?: string | null;
+            name: string;
+            /**
+             * Gender
+             * @enum {string}
+             */
+            gender: "男" | "女";
             /** Position */
-            position?: string | null;
-            /** Job Category */
-            job_category?: string | null;
-            /** Gender */
-            gender?: string | null;
-            /** Status Category */
-            status_category?: string | null;
-            /** Livo Entry Date */
-            livo_entry_date?: string | null;
-            /** Factory Entry Date */
-            factory_entry_date?: string | null;
-            /** Work Start Date */
-            work_start_date?: string | null;
-            /** Offboarding Date */
-            offboarding_date?: string | null;
-            /** Company Tenure At Leave */
-            company_tenure_at_leave?: string | null;
+            position: string;
+            /** Position Level */
+            position_level: string;
+            /** Personnel Identity */
+            personnel_identity: string;
+            /**
+             * Hire Date
+             * Format: date
+             */
+            hire_date: string;
+            /**
+             * Leave Date
+             * Format: date
+             */
+            leave_date: string;
+            /** Leave Category */
+            leave_category: string;
+            /** Leave Reason */
+            leave_reason: string;
             /** Education */
-            education?: string | null;
-            /** School */
-            school?: string | null;
-            /** Major */
-            major?: string | null;
-            /** Classification */
-            classification?: string | null;
-            /** Id Card */
-            id_card?: string | null;
-            /** Native Place */
-            native_place?: string | null;
-            /** Household Type */
-            household_type?: string | null;
-            /** Marital Status */
-            marital_status?: string | null;
-            /** Political Status */
-            political_status?: string | null;
-            /** Phone */
-            phone?: string | null;
-            /** Emergency Contact Phone */
-            emergency_contact_phone?: string | null;
-            /** Emergency Contact Relation */
-            emergency_contact_relation?: string | null;
-            /** Bank Account */
-            bank_account?: string | null;
-            /** Contract Type */
-            contract_type?: string | null;
-            /** Transfer History */
-            transfer_history?: string | null;
-            /** Offboarding Type */
-            offboarding_type?: string | null;
-            /** Offboarding Reason */
-            offboarding_reason?: string[] | null;
-            /** Offboarding Reason 2 */
-            offboarding_reason_2?: string[] | null;
-            /** Offboarding Remarks */
-            offboarding_remarks?: string[] | null;
-            /** Remarks */
-            remarks?: string[] | null;
-        } & {
-            [key: string]: unknown;
+            education: string;
+            /** Age */
+            age: number;
+            /** Tenure Years */
+            tenure_years: number;
+            /** Group Classification */
+            group_classification: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /**
+         * DepartureRecordUpdate
+         * @description Partial update of editable fields; snapshot fields are rejected.
+         */
+        DepartureRecordUpdate: {
+            /** Position Level */
+            position_level?: ("员工级" | "主管级" | "经理级" | "总监级" | "副总经理级" | "总经理级") | null;
+            /** Personnel Identity */
+            personnel_identity?: ("正式工" | "实习生" | "返聘人员") | null;
+            /** Leave Date */
+            leave_date?: string | null;
+            /** Leave Category */
+            leave_category?: ("主动离职" | "被动离职" | "实习生离职" | "退休返聘到期") | null;
+            /** Leave Reason */
+            leave_reason?: string | null;
+            /** Group Classification */
+            group_classification?: ("职能管理" | "生产一线" | "生产一线：管理" | "生产辅助" | "研发一线" | "技术一线" | "后勤服务") | null;
         };
         /** DependencyInfo */
         DependencyInfo: {
@@ -31109,6 +31013,13 @@ export interface components {
              * @default 未知
              */
             gender_label: string;
+            /**
+             * Education
+             * @default
+             */
+            education: string;
+            /** Age */
+            age?: number | null;
             /**
              * Description
              * @default
@@ -81195,250 +81106,6 @@ export interface operations {
             };
         };
     };
-    list_departure_records_api_v1_hr_departure_records_get: {
-        parameters: {
-            query?: {
-                /** @description 部门筛选 */
-                department?: string | null;
-                /** @description 离职类型筛选 */
-                offboarding_type?: string | null;
-                /** @description 姓名/部门/职位关键词 */
-                keyword?: string | null;
-                /** @description 排序字段 */
-                sort_by?: string;
-                /** @description 排序方向 */
-                sort_order?: string;
-                page?: number;
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_departure_record_api_v1_hr_departure_records_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DepartureRecordCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_departure_record_api_v1_hr_departure_records__record_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                record_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_departure_record_api_v1_hr_departure_records__record_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                record_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DepartureRecordUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_departure_record_api_v1_hr_departure_records__record_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                record_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    sync_departure_from_feishu_api_v1_hr_departure_records_sync_from_feishu_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_departure_sync_status_api_v1_hr_departure_records_sync_status_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_training_ledgers_api_v1_hr_training_ledgers_get: {
         parameters: {
             query?: {
@@ -82287,6 +81954,182 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["OnboardingRecordDeleteApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_departure_records_api_v1_hr_departure_records_get: {
+        parameters: {
+            query?: {
+                /** @description 姓名 / 部门 / 岗位关键词 */
+                keyword?: string | null;
+                /** @description 一级或二级部门筛选 */
+                department?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DepartureRecordListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_departure_record_api_v1_hr_departure_records_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartureRecordCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DepartureRecordApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_departure_record_api_v1_hr_departure_records__record_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DepartureRecordApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_departure_record_api_v1_hr_departure_records__record_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartureRecordUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DepartureRecordApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_departure_record_api_v1_hr_departure_records__record_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DepartureRecordDeleteApiResponse"];
                 };
             };
             /** @description Validation Error */

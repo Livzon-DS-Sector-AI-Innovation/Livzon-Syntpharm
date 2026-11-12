@@ -42,6 +42,8 @@ class EmployeeProfileRecord:
     enterprise_email: str = ""
     email_aliases: list[str] = field(default_factory=list)
     gender: int | None = None
+    education: str = ""
+    age: int | None = None
     description: str = ""
     avatar_72: str = ""
     avatar_240: str = ""
@@ -266,6 +268,8 @@ def parse_directory_employee(raw: dict[str, Any]) -> EmployeeProfileRecord | Non
         enterprise_email=_str(raw.get("enterprise_email")),
         email_aliases=aliases,
         gender=_optional_int(raw.get("gender")),
+        education=_str(raw.get("education")),
+        age=_optional_int(raw.get("age")),
         description=_str(raw.get("description")),
         avatar_72=_str(avatar.get("avatar_72")),
         avatar_240=_str(avatar.get("avatar_240")),

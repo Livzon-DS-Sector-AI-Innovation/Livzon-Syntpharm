@@ -13,6 +13,8 @@ export const JOIN_CATEGORY_OPTIONS = ['社招', '校招', '猎头推荐', '内�
 
 export const EDUCATION_OPTIONS = ['博士', '硕士', '本科', '大专', '大专以下']
 
+export const LEAVE_CATEGORY_OPTIONS = ['主动离职', '被动离职', '实习生离职', '退休返聘到期']
+
 export const GENDER_OPTIONS = ['男', '女']
 
 export const GROUP_CLASSIFICATION_OPTIONS = [

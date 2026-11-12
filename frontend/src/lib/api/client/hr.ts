@@ -138,20 +138,14 @@ export async function fetchOnboardingRecords(
 export async function fetchDepartureRecords(
   params?: {
     department?: string
-    offboarding_type?: string
     keyword?: string
-    sort_by?: string
-    sort_order?: string
     page?: number
     page_size?: number
   }
 ): Promise<DepartureRecordListResponse> {
   const searchParams = new URLSearchParams()
   if (params?.department) searchParams.set('department', params.department)
-  if (params?.offboarding_type) searchParams.set('offboarding_type', params.offboarding_type)
   if (params?.keyword) searchParams.set('keyword', params.keyword)
-  if (params?.sort_by) searchParams.set('sort_by', params.sort_by)
-  if (params?.sort_order) searchParams.set('sort_order', params.sort_order)
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
 

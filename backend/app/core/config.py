@@ -67,7 +67,6 @@ class FeishuHRBitableConfig(BaseModel):
     employee_table_id: str = ""
     department_table_id: str = ""
     offboarding_table_id: str = ""
-    departure_table_id: str = ""
     approval_table_id: str = ""
     candidate_app_token: str = ""
     candidate_table_id: str = ""

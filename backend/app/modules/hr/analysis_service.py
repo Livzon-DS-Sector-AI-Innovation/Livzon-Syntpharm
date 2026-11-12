@@ -166,8 +166,8 @@ class TurnoverAnalysisService:
             select(func.count())
             .select_from(DepartureRecord)
             .where(
-                DepartureRecord.offboarding_date >= start_date,
-                DepartureRecord.offboarding_date <= end_date,
+                DepartureRecord.leave_date >= start_date,
+                DepartureRecord.leave_date <= end_date,
                 DepartureRecord.is_deleted.is_(False),
             )
         )
@@ -175,44 +175,36 @@ class TurnoverAnalysisService:
         total = total_result.scalar() or 0
 
         dept_stmt = (
-            select(DepartureRecord.department, func.count())
+            select(DepartureRecord.department_level1, func.count())
             .where(
-                DepartureRecord.offboarding_date >= start_date,
-                DepartureRecord.offboarding_date <= end_date,
+                DepartureRecord.leave_date >= start_date,
+                DepartureRecord.leave_date <= end_date,
                 DepartureRecord.is_deleted.is_(False),
             )
-            .group_by(DepartureRecord.department)
+            .group_by(DepartureRecord.department_level1)
         )
         dept_result = await self.session.execute(dept_stmt)
         by_department = {row[0]: row[1] for row in dept_result.all() if row[0]}
 
         jc_stmt = (
-            select(DepartureRecord.job_category, func.count())
+            select(DepartureRecord.group_classification, func.count())
             .where(
-                DepartureRecord.offboarding_date >= start_date,
-                DepartureRecord.offboarding_date <= end_date,
+                DepartureRecord.leave_date >= start_date,
+                DepartureRecord.leave_date <= end_date,
                 DepartureRecord.is_deleted.is_(False),
             )
-            .group_by(DepartureRecord.job_category)
+            .group_by(DepartureRecord.group_classification)
         )
         jc_result = await self.session.execute(jc_stmt)
         by_job_category = {row[0]: row[1] for row in jc_result.all() if row[0]}
 
-        reason_stmt = select(
-            DepartureRecord.offboarding_reason,
-            DepartureRecord.offboarding_reason_2,
-        ).where(
-            DepartureRecord.offboarding_date >= start_date,
-            DepartureRecord.offboarding_date <= end_date,
+        reason_stmt = select(DepartureRecord.leave_reason).where(
+            DepartureRecord.leave_date >= start_date,
+            DepartureRecord.leave_date <= end_date,
             DepartureRecord.is_deleted.is_(False),
         )
         reason_result = await self.session.execute(reason_stmt)
-        reason_counter: Counter[str] = Counter()
-        for row in reason_result.all():
-            if row[0]:
-                reason_counter.update(row[0])
-            if row[1]:
-                reason_counter.update(row[1])
+        reason_counter: Counter[str] = Counter(reason for reason in reason_result.scalars().all() if reason)
 
         return {
             "departure_count": total,

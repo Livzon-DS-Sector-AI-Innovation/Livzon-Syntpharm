@@ -12,7 +12,6 @@ from app.modules.hr.models import (
     AnnualTrainingPlan,
     AnnualTrainingPlanItem,
     Candidate,
-    DepartureRecord,
     Employee,
     HrDepartment,
     OffboardingRecord,
@@ -404,113 +403,6 @@ class OffboardingRecordRepository:
         return record
 
     async def soft_delete(self, record: OffboardingRecord) -> None:
-        record.is_deleted = True
-        await self.session.flush()
-
-
-class DepartureRecordRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-
-    async def get_by_id(self, record_id: UUID) -> DepartureRecord | None:
-        result = await self.session.execute(
-            select(DepartureRecord).where(
-                DepartureRecord.id == record_id,
-                DepartureRecord.is_deleted.is_(False),
-            )
-        )
-        return result.scalar_one_or_none()
-
-    async def get_by_feishu_record_id(self, feishu_record_id: str) -> DepartureRecord | None:
-        result = await self.session.execute(
-            select(DepartureRecord).where(
-                DepartureRecord.feishu_record_id == feishu_record_id,
-                DepartureRecord.is_deleted.is_(False),
-            )
-        )
-        return result.scalar_one_or_none()
-
-    async def list_records(
-        self,
-        *,
-        department: str | None = None,
-        offboarding_type: str | None = None,
-        keyword: str | None = None,
-        page: int = 1,
-        page_size: int = 20,
-        sort_by: str = "offboarding_date",
-        sort_order: str = "desc",
-    ) -> tuple[list[DepartureRecord], int]:
-        stmt = select(DepartureRecord).where(DepartureRecord.is_deleted.is_(False))
-
-        if department:
-            stmt = stmt.where(DepartureRecord.department == department)
-        if offboarding_type:
-            stmt = stmt.where(DepartureRecord.offboarding_type == offboarding_type)
-        if keyword:
-            stmt = stmt.where(
-                DepartureRecord.name.ilike(f"%{keyword}%")
-                | DepartureRecord.department.ilike(f"%{keyword}%")
-                | DepartureRecord.position.ilike(f"%{keyword}%")
-            )
-
-        count_stmt = select(func.count()).select_from(stmt.subquery())
-        sort_column = getattr(DepartureRecord, sort_by, DepartureRecord.offboarding_date)
-        order_func = desc if sort_order == "desc" else asc
-        data_stmt = stmt.order_by(order_func(sort_column)).offset((page - 1) * page_size).limit(page_size)
-
-        total_result = await self.session.execute(count_stmt)
-        total = total_result.scalar() or 0
-
-        data_result = await self.session.execute(data_stmt)
-        return list(data_result.scalars().all()), total
-
-    async def create(self, record: DepartureRecord) -> DepartureRecord:
-        self.session.add(record)
-        await self.session.flush()
-        await self.session.refresh(record)
-        return record
-
-    async def update(self, record: DepartureRecord) -> DepartureRecord:
-        await self.session.flush()
-        await self.session.refresh(record)
-        return record
-
-    async def upsert_by_feishu_record_id(self, data: dict[str, Any]) -> DepartureRecord:
-        """Create or update departure record by feishu_record_id (used for Feishu sync)."""
-        rid = data.get("feishu_record_id")
-        if not rid:
-            raise ValueError("feishu_record_id is required for upsert")
-
-        record = await self.get_by_feishu_record_id(rid)
-        if record:
-            for key, value in data.items():
-                if key != "id" and value is not None:
-                    setattr(record, key, value)
-            await self.session.flush()
-            await self.session.refresh(record)
-            return record
-        else:
-            new_record = DepartureRecord(**{k: v for k, v in data.items() if v is not None})
-            self.session.add(new_record)
-            await self.session.flush()
-            await self.session.refresh(new_record)
-            return new_record
-
-    async def count_total(self) -> int:
-        result = await self.session.execute(select(func.count()).where(DepartureRecord.is_deleted.is_(False)))
-        return result.scalar() or 0
-
-    async def count_synced(self) -> int:
-        result = await self.session.execute(
-            select(func.count()).where(
-                DepartureRecord.is_deleted.is_(False),
-                DepartureRecord.feishu_record_id.isnot(None),
-            )
-        )
-        return result.scalar() or 0
-
-    async def soft_delete(self, record: DepartureRecord) -> None:
         record.is_deleted = True
         await self.session.flush()
 

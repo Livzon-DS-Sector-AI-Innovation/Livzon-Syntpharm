@@ -219,14 +219,38 @@ export async function deleteOnboardingRecordApi(id: string) {
   })
 }
 
-export async function fetchDepartureRecordsApi(params?: Record<string, unknown>) {
+export async function fetchDepartureRecordsApi(params?: {
+  department?: string
+  keyword?: string
+  page?: number
+  page_size?: number
+}) {
   const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', String(params.department))
-  if (params?.offboarding_type) searchParams.set('offboarding_type', String(params.offboarding_type))
-  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
+  if (params?.department) searchParams.set('department', params.department)
+  if (params?.keyword) searchParams.set('keyword', params.keyword)
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departure-records?${searchParams.toString()}`)
+}
+
+export async function createDepartureRecordApi(data: unknown) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departure-records`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateDepartureRecordApi(id: string, data: unknown) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departure-records/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteDepartureRecordApi(id: string) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departure-records/${id}`, {
+    method: 'DELETE',
+  })
 }
 
 export async function fetchEmployeeByIdApi(id: string) {
@@ -282,12 +306,6 @@ export async function fetchEmployeeByNumberApi(employeeNumber: string) {
 
 export async function syncTrainingSpecialistsFeishuOpenIdsApi() {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-specialists/sync-feishu-openids`, {
-    method: 'POST',
-  })
-}
-
-export async function syncDepartureFromFeishuApi() {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departure-records/sync-from-feishu`, {
     method: 'POST',
   })
 }
@@ -356,13 +374,6 @@ export async function generateOnboardingEvaluationApi(data: unknown) {
 
 export async function createOnboardingTrainingRecordApi(employeeNumber: string, data: unknown) {
   return apiFetchBlob(`${getApiBaseUrl()}/api/v1/hr/employees/${employeeNumber}/onboarding-training-record`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function createDepartureRecordApi(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departure-records`, {
     method: 'POST',
     body: JSON.stringify(data),
   })

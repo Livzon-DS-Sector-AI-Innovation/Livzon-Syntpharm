@@ -12,7 +12,6 @@ from app.modules.hr.models import (
     AnnualTrainingPlan,
     AnnualTrainingPlanItem,
     Candidate,
-    DepartureRecord,
     Employee,
     HrDepartment,
     OffboardingRecord,
@@ -25,7 +24,6 @@ from app.modules.hr.repository import (
     AnnualTrainingPlanRepository,
     CandidateRepository,
     DepartmentRepository,
-    DepartureRecordRepository,
     EmployeeRepository,
     OffboardingRecordRepository,
     TrainingLedgerPageRepository,
@@ -40,8 +38,6 @@ from app.modules.hr.schemas import (
     CandidateUpdate,
     DepartmentCreate,
     DepartmentUpdate,
-    DepartureRecordCreate,
-    DepartureRecordUpdate,
     EmployeeCreate,
     EmployeeUpdate,
     OffboardingRecordCreate,
@@ -55,9 +51,6 @@ from app.modules.hr.schemas import (
 from app.platform.integrations.feishu import FeishuBitableSync
 from app.platform.integrations.feishu.candidate_datasource import (
     CandidateBitableDataSource,
-)
-from app.platform.integrations.feishu.departure_datasource import (
-    DepartureBitableDataSource,
 )
 from app.platform.integrations.feishu.employee_datasource import (
     EmployeeBitableDataSource,
@@ -793,111 +786,6 @@ class OffboardingRecordService:
             keyword=keyword,
             page=page,
             page_size=page_size,
-        )
-
-
-class DepartureRecordService:
-    def __init__(self, session: AsyncSession) -> None:
-        self.repo = DepartureRecordRepository(session)
-        self.bitable = DepartureBitableDataSource()
-
-    async def get_record(self, record_id: UUID) -> DepartureRecord:
-        record = await self.repo.get_by_id(record_id)
-        if not record:
-            raise NotFoundException("离职台账记录", str(record_id))
-        return record
-
-    async def list_records(
-        self,
-        *,
-        department: str | None = None,
-        offboarding_type: str | None = None,
-        keyword: str | None = None,
-        page: int = 1,
-        page_size: int = 20,
-        sort_by: str = "offboarding_date",
-        sort_order: str = "desc",
-    ) -> tuple[list[DepartureRecord], int]:
-        return await self.repo.list_records(
-            department=department,
-            offboarding_type=offboarding_type,
-            keyword=keyword,
-            page=page,
-            page_size=page_size,
-            sort_by=sort_by,
-            sort_order=sort_order,
-        )
-
-    async def create_record(self, data: DepartureRecordCreate) -> DepartureRecord:
-        record = DepartureRecord(**data.model_dump())
-        return await self.repo.create(record)
-
-    async def update_record(self, record_id: UUID, data: DepartureRecordUpdate) -> DepartureRecord:
-        record = await self.get_record(record_id)
-        update_data = data.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(record, field, value)
-        return await self.repo.update(record)
-
-    async def delete_record(self, record_id: UUID) -> None:
-        record = await self.get_record(record_id)
-        await self.repo.soft_delete(record)
-
-    async def sync_from_feishu(self) -> dict[str, Any]:
-        """Pull all records from Feishu Bitable and upsert into local PG.
-
-        Returns:
-            {"created": N, "updated": N, "failed": N, "total": N}
-        """
-        raw_records = await self.bitable.client.search_records(
-            self.bitable.table_id,
-            page_size=500,
-        )
-        stats = {"created": 0, "updated": 0, "failed": 0, "total": len(raw_records)}
-
-        for rec in raw_records:
-            try:
-                from app.platform.integrations.feishu.departure_datasource import (
-                    DepartureRecord as BitableDepartureRecord,
-                )
-
-                parsed = BitableDepartureRecord.from_api(rec)
-                data = parsed.to_dict()
-                data["feishu_synced_at"] = date.today()
-                rid = data.get("feishu_record_id")
-                if not rid:
-                    stats["failed"] += 1
-                    continue
-
-                await self.repo.upsert_by_feishu_record_id(data)
-                existing = await self.repo.get_by_feishu_record_id(rid)
-                if (
-                    existing
-                    and existing.created_at
-                    and (datetime.utcnow() - existing.created_at.replace(tzinfo=None)).total_seconds() < 60
-                ):
-                    stats["created"] += 1
-                else:
-                    stats["updated"] += 1
-            except Exception:
-                logger.exception("Failed to sync departure record %s", rec.get("record_id"))
-                stats["failed"] += 1
-
-        return stats
-
-    async def get_sync_status(self) -> SyncStatusResponse:
-        local_total = await self.repo.count_total()
-        synced_count = await self.repo.count_synced()
-        unsynced_count = local_total - synced_count
-        feishu_total = synced_count
-
-        return SyncStatusResponse(
-            local_total=local_total,
-            feishu_total=feishu_total,
-            synced_count=synced_count,
-            unsynced_count=unsynced_count,
-            conflict_count=0,
-            last_sync_at=None,
         )
 
 

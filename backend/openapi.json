@@ -45097,482 +45097,6 @@
         }
       }
     },
-    "/api/v1/hr/departure-records": {
-      "get": {
-        "tags": [
-          "\u4eba\u4e8b\u7ba1\u7406"
-        ],
-        "summary": "\u8001\u5382\u79bb\u804c\u53f0\u8d26\u5217\u8868",
-        "operationId": "list_departure_records_api_v1_hr_departure_records_get",
-        "parameters": [
-          {
-            "name": "department",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u90e8\u95e8\u7b5b\u9009",
-              "title": "Department"
-            },
-            "description": "\u90e8\u95e8\u7b5b\u9009"
-          },
-          {
-            "name": "offboarding_type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u79bb\u804c\u7c7b\u578b\u7b5b\u9009",
-              "title": "Offboarding Type"
-            },
-            "description": "\u79bb\u804c\u7c7b\u578b\u7b5b\u9009"
-          },
-          {
-            "name": "keyword",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u59d3\u540d/\u90e8\u95e8/\u804c\u4f4d\u5173\u952e\u8bcd",
-              "title": "Keyword"
-            },
-            "description": "\u59d3\u540d/\u90e8\u95e8/\u804c\u4f4d\u5173\u952e\u8bcd"
-          },
-          {
-            "name": "sort_by",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "\u6392\u5e8f\u5b57\u6bb5",
-              "default": "offboarding_date",
-              "title": "Sort By"
-            },
-            "description": "\u6392\u5e8f\u5b57\u6bb5"
-          },
-          {
-            "name": "sort_order",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "\u6392\u5e8f\u65b9\u5411",
-              "default": "desc",
-              "title": "Sort Order"
-            },
-            "description": "\u6392\u5e8f\u65b9\u5411"
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1,
-              "title": "Page"
-            }
-          },
-          {
-            "name": "page_size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 200,
-              "minimum": 1,
-              "default": 20,
-              "title": "Page Size"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "\u4eba\u4e8b\u7ba1\u7406"
-        ],
-        "summary": "\u521b\u5efa\u79bb\u804c\u53f0\u8d26\u8bb0\u5f55",
-        "operationId": "create_departure_record_api_v1_hr_departure_records_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DepartureRecordCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/hr/departure-records/{record_id}": {
-      "get": {
-        "tags": [
-          "\u4eba\u4e8b\u7ba1\u7406"
-        ],
-        "summary": "\u79bb\u804c\u53f0\u8d26\u8bb0\u5f55\u8be6\u60c5",
-        "operationId": "get_departure_record_api_v1_hr_departure_records__record_id__get",
-        "parameters": [
-          {
-            "name": "record_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Record Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "\u4eba\u4e8b\u7ba1\u7406"
-        ],
-        "summary": "\u66f4\u65b0\u79bb\u804c\u53f0\u8d26\u8bb0\u5f55",
-        "operationId": "update_departure_record_api_v1_hr_departure_records__record_id__put",
-        "parameters": [
-          {
-            "name": "record_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Record Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DepartureRecordUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "\u4eba\u4e8b\u7ba1\u7406"
-        ],
-        "summary": "\u5220\u9664\u79bb\u804c\u53f0\u8d26\u8bb0\u5f55",
-        "operationId": "delete_departure_record_api_v1_hr_departure_records__record_id__delete",
-        "parameters": [
-          {
-            "name": "record_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Record Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/hr/departure-records/sync-from-feishu": {
-      "post": {
-        "tags": [
-          "\u4eba\u4e8b\u7ba1\u7406"
-        ],
-        "summary": "\u4ece\u98de\u4e66\u540c\u6b65\u8001\u5382\u79bb\u804c\u53f0\u8d26",
-        "description": "\u624b\u52a8\u89e6\u53d1\uff1a\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u62c9\u53d6\u5168\u90e8\u8001\u5382\u79bb\u804c\u6570\u636e\u5e76 upsert \u5230\u672c\u5730 PG\u3002",
-        "operationId": "sync_departure_from_feishu_api_v1_hr_departure_records_sync_from_feishu_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/hr/departure-records/sync-status": {
-      "get": {
-        "tags": [
-          "\u4eba\u4e8b\u7ba1\u7406"
-        ],
-        "summary": "\u8001\u5382\u79bb\u804c\u53f0\u8d26\u540c\u6b65\u72b6\u6001",
-        "description": "\u67e5\u770b\u672c\u5730\u4e0e\u98de\u4e66\u7684\u6570\u636e\u540c\u6b65\u7edf\u8ba1\u3002",
-        "operationId": "get_departure_sync_status_api_v1_hr_departure_records_sync_status_get",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/hr/training-ledgers": {
       "get": {
         "tags": [
@@ -47176,6 +46700,359 @@
               "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/OnboardingRecordDeleteApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hr/departure-records": {
+      "get": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u79bb\u804c\u53f0\u8d26"
+        ],
+        "summary": "\u79bb\u804c\u53f0\u8d26\u5217\u8868",
+        "operationId": "list_departure_records_api_v1_hr_departure_records_get",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u59d3\u540d / \u90e8\u95e8 / \u5c97\u4f4d\u5173\u952e\u8bcd",
+              "title": "Keyword"
+            },
+            "description": "\u59d3\u540d / \u90e8\u95e8 / \u5c97\u4f4d\u5173\u952e\u8bcd"
+          },
+          {
+            "name": "department",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u4e00\u7ea7\u6216\u4e8c\u7ea7\u90e8\u95e8\u7b5b\u9009",
+              "title": "Department"
+            },
+            "description": "\u4e00\u7ea7\u6216\u4e8c\u7ea7\u90e8\u95e8\u7b5b\u9009"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartureRecordListApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u79bb\u804c\u53f0\u8d26"
+        ],
+        "summary": "\u65b0\u5efa\u79bb\u804c\u8bb0\u5f55",
+        "operationId": "create_departure_record_api_v1_hr_departure_records_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartureRecordCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartureRecordApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hr/departure-records/{record_id}": {
+      "get": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u79bb\u804c\u53f0\u8d26"
+        ],
+        "summary": "\u79bb\u804c\u8bb0\u5f55\u8be6\u60c5",
+        "operationId": "get_departure_record_api_v1_hr_departure_records__record_id__get",
+        "parameters": [
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Record Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartureRecordApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u79bb\u804c\u53f0\u8d26"
+        ],
+        "summary": "\u66f4\u65b0\u79bb\u804c\u8bb0\u5f55",
+        "operationId": "update_departure_record_api_v1_hr_departure_records__record_id__put",
+        "parameters": [
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Record Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartureRecordUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartureRecordApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u79bb\u804c\u53f0\u8d26"
+        ],
+        "summary": "\u5220\u9664\u79bb\u804c\u8bb0\u5f55",
+        "operationId": "delete_departure_record_api_v1_hr_departure_records__record_id__delete",
+        "parameters": [
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Record Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartureRecordDeleteApiResponse"
                 }
               }
             }
@@ -114114,807 +113991,423 @@
         "type": "object",
         "title": "DepartmentUpdate"
       },
-      "DepartureRecordCreate": {
+      "DepartureRecordApiResponse": {
         "properties": {
-          "name": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
             "type": "string",
-            "maxLength": 64,
-            "title": "Name",
-            "description": "\u59d3\u540d"
+            "title": "Message",
+            "default": "success"
           },
-          "department": {
-            "type": "string",
-            "maxLength": 64,
-            "title": "Department",
-            "description": "\u90e8\u95e8"
+          "data": {
+            "$ref": "#/components/schemas/DepartureRecordResponse"
           },
-          "team": {
+          "meta": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 64
+                "additionalProperties": true,
+                "type": "object"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Team",
-            "description": "\u73ed\u7ec4"
-          },
-          "position": {
-            "type": "string",
-            "maxLength": 64,
-            "title": "Position",
-            "description": "\u804c\u4f4d"
-          },
-          "job_category": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Job Category",
-            "description": "\u804c\u7c7b"
-          },
-          "gender": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 8
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Gender",
-            "description": "\u6027\u522b"
-          },
-          "status_category": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status Category",
-            "description": "\u7edf\u8ba1\u7c7b\u522b"
-          },
-          "livo_entry_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Livo Entry Date",
-            "description": "\u5165\u4e3d\u73e0\u65f6\u95f4"
-          },
-          "factory_entry_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Factory Entry Date",
-            "description": "\u8fdb\u5382\u65f6\u95f4"
-          },
-          "work_start_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Work Start Date",
-            "description": "\u53c2\u52a0\u5de5\u4f5c\u65f6\u95f4"
-          },
-          "offboarding_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offboarding Date",
-            "description": "\u79bb\u804c\u65e5\u671f"
-          },
-          "company_tenure_at_leave": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Company Tenure At Leave",
-            "description": "\u79bb\u804c\u65f6\u53f8\u9f84"
-          },
-          "education": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 16
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Education",
-            "description": "\u5b66\u5386"
-          },
-          "school": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 128
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "School",
-            "description": "\u6bd5\u4e1a\u5b66\u6821"
-          },
-          "major": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Major",
-            "description": "\u4e13\u4e1a"
-          },
-          "classification": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 16
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Classification",
-            "description": "\u5206\u7c7b"
-          },
-          "id_card": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 18
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id Card",
-            "description": "\u8eab\u4efd\u8bc1\u53f7"
-          },
-          "native_place": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Native Place",
-            "description": "\u7c4d\u8d2f"
-          },
-          "household_type": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 128
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Household Type",
-            "description": "\u6237\u7c4d\u7c7b\u578b"
-          },
-          "marital_status": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Marital Status",
-            "description": "\u5a5a\u59fb\u72b6\u51b5"
-          },
-          "political_status": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Political Status",
-            "description": "\u653f\u6cbb\u9762\u8c8c"
-          },
-          "phone": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Phone",
-            "description": "\u624b\u673a"
-          },
-          "emergency_contact_phone": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Emergency Contact Phone",
-            "description": "\u7d27\u6025\u8054\u7cfb\u4eba\u7535\u8bdd"
-          },
-          "emergency_contact_relation": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Emergency Contact Relation",
-            "description": "\u7d27\u6025\u8054\u7cfb\u4eba|\u5173\u7cfb"
-          },
-          "bank_account": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 128
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Bank Account",
-            "description": "\u94f6\u884c\u5361\u53f7"
-          },
-          "contract_type": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Contract Type",
-            "description": "\u5408\u540c\u671f\u9650"
-          },
-          "transfer_history": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Transfer History",
-            "description": "\u5f02\u52a8\u8bb0\u5f55"
-          },
-          "offboarding_type": {
-            "type": "string",
-            "maxLength": 16,
-            "title": "Offboarding Type",
-            "description": "\u79bb\u804c\u7c7b\u578b",
-            "default": "\u8f9e\u804c"
-          },
-          "offboarding_reason": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offboarding Reason",
-            "description": "\u79bb\u804c\u539f\u56e0"
-          },
-          "offboarding_reason_2": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offboarding Reason 2",
-            "description": "\u79bb\u804c\u539f\u56e02"
-          },
-          "offboarding_remarks": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offboarding Remarks",
-            "description": "\u79bb\u804c\u5907\u6ce8"
-          },
-          "remarks": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Remarks",
-            "description": "\u5907\u6ce8"
+            "title": "Meta"
           }
         },
         "type": "object",
         "required": [
-          "name",
-          "department",
-          "position"
+          "data"
         ],
-        "title": "DepartureRecordCreate"
+        "title": "DepartureRecordApiResponse"
       },
-      "DepartureRecordUpdate": {
+      "DepartureRecordCreate": {
         "properties": {
-          "name": {
+          "person_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Person Id",
+            "description": "\u5458\u5de5\u6863\u6848\u4eba\u5458 id"
+          },
+          "position_level": {
+            "type": "string",
+            "enum": [
+              "\u5458\u5de5\u7ea7",
+              "\u4e3b\u7ba1\u7ea7",
+              "\u7ecf\u7406\u7ea7",
+              "\u603b\u76d1\u7ea7",
+              "\u526f\u603b\u7ecf\u7406\u7ea7",
+              "\u603b\u7ecf\u7406\u7ea7"
+            ],
+            "title": "Position Level",
+            "description": "\u5c97\u4f4d\u5c42\u7ea7"
+          },
+          "personnel_identity": {
+            "type": "string",
+            "enum": [
+              "\u6b63\u5f0f\u5de5",
+              "\u5b9e\u4e60\u751f",
+              "\u8fd4\u8058\u4eba\u5458"
+            ],
+            "title": "Personnel Identity",
+            "description": "\u4eba\u5458\u8eab\u4efd"
+          },
+          "leave_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Leave Date",
+            "description": "\u79bb\u804c\u65e5\u671f"
+          },
+          "leave_category": {
+            "type": "string",
+            "enum": [
+              "\u4e3b\u52a8\u79bb\u804c",
+              "\u88ab\u52a8\u79bb\u804c",
+              "\u5b9e\u4e60\u751f\u79bb\u804c",
+              "\u9000\u4f11\u8fd4\u8058\u5230\u671f"
+            ],
+            "title": "Leave Category",
+            "description": "\u79bb\u804c\u7c7b\u522b"
+          },
+          "leave_reason": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Leave Reason",
+            "description": "\u79bb\u804c\u539f\u56e0"
+          },
+          "group_classification": {
+            "type": "string",
+            "enum": [
+              "\u804c\u80fd\u7ba1\u7406",
+              "\u751f\u4ea7\u4e00\u7ebf",
+              "\u751f\u4ea7\u4e00\u7ebf\uff1a\u7ba1\u7406",
+              "\u751f\u4ea7\u8f85\u52a9",
+              "\u7814\u53d1\u4e00\u7ebf",
+              "\u6280\u672f\u4e00\u7ebf",
+              "\u540e\u52e4\u670d\u52a1"
+            ],
+            "title": "Group Classification",
+            "description": "\u96c6\u56e2\u6708\u62a5\u8868\u4eba\u5458\u5206\u7c7b"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "person_id",
+          "position_level",
+          "personnel_identity",
+          "leave_date",
+          "leave_category",
+          "leave_reason",
+          "group_classification"
+        ],
+        "title": "DepartureRecordCreate",
+        "description": "Create payload: person reference plus the editable ledger fields."
+      },
+      "DepartureRecordDeleteApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          },
+          "meta": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 64
+                "additionalProperties": true,
+                "type": "object"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "title": "DepartureRecordDeleteApiResponse"
+      },
+      "DepartureRecordListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DepartureRecordResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DepartureRecordListApiResponse"
+      },
+      "DepartureRecordResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "person_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Person Id"
+          },
+          "department_level1": {
+            "type": "string",
+            "title": "Department Level1"
+          },
+          "department_level2": {
+            "type": "string",
+            "title": "Department Level2"
+          },
+          "name": {
+            "type": "string",
             "title": "Name"
           },
-          "department": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department"
-          },
-          "team": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Team"
-          },
-          "position": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Position"
-          },
-          "job_category": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Job Category"
-          },
           "gender": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 8
-              },
-              {
-                "type": "null"
-              }
+            "type": "string",
+            "enum": [
+              "\u7537",
+              "\u5973"
             ],
             "title": "Gender"
           },
-          "status_category": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status Category"
+          "position": {
+            "type": "string",
+            "title": "Position"
           },
-          "livo_entry_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Livo Entry Date"
+          "position_level": {
+            "type": "string",
+            "title": "Position Level"
           },
-          "factory_entry_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Factory Entry Date"
+          "personnel_identity": {
+            "type": "string",
+            "title": "Personnel Identity"
           },
-          "work_start_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Work Start Date"
+          "hire_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Hire Date"
           },
-          "offboarding_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offboarding Date"
+          "leave_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Leave Date"
           },
-          "company_tenure_at_leave": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Company Tenure At Leave"
+          "leave_category": {
+            "type": "string",
+            "title": "Leave Category"
+          },
+          "leave_reason": {
+            "type": "string",
+            "title": "Leave Reason"
           },
           "education": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 16
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Education"
           },
-          "school": {
+          "age": {
+            "type": "integer",
+            "title": "Age"
+          },
+          "tenure_years": {
+            "type": "number",
+            "title": "Tenure Years"
+          },
+          "group_classification": {
+            "type": "string",
+            "title": "Group Classification"
+          },
+          "created_at": {
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 128
+                "format": "date-time"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "School"
+            "title": "Created At"
           },
-          "major": {
+          "updated_at": {
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 64
+                "format": "date-time"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Major"
-          },
-          "classification": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 16
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Classification"
-          },
-          "id_card": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 18
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id Card"
-          },
-          "native_place": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Native Place"
-          },
-          "household_type": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 16
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Household Type"
-          },
-          "marital_status": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 16
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Marital Status"
-          },
-          "political_status": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Political Status"
-          },
-          "phone": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Phone"
-          },
-          "emergency_contact_phone": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Emergency Contact Phone"
-          },
-          "emergency_contact_relation": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Emergency Contact Relation"
-          },
-          "bank_account": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Bank Account"
-          },
-          "contract_type": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Contract Type"
-          },
-          "transfer_history": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Transfer History"
-          },
-          "offboarding_type": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 16
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offboarding Type"
-          },
-          "offboarding_reason": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offboarding Reason"
-          },
-          "offboarding_reason_2": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offboarding Reason 2"
-          },
-          "offboarding_remarks": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offboarding Remarks"
-          },
-          "remarks": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Remarks"
+            "title": "Updated At"
           }
         },
-        "additionalProperties": true,
         "type": "object",
-        "title": "DepartureRecordUpdate"
+        "required": [
+          "id",
+          "person_id",
+          "department_level1",
+          "department_level2",
+          "name",
+          "gender",
+          "position",
+          "position_level",
+          "personnel_identity",
+          "hire_date",
+          "leave_date",
+          "leave_category",
+          "leave_reason",
+          "education",
+          "age",
+          "tenure_years",
+          "group_classification"
+        ],
+        "title": "DepartureRecordResponse"
+      },
+      "DepartureRecordUpdate": {
+        "properties": {
+          "position_level": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "\u5458\u5de5\u7ea7",
+                  "\u4e3b\u7ba1\u7ea7",
+                  "\u7ecf\u7406\u7ea7",
+                  "\u603b\u76d1\u7ea7",
+                  "\u526f\u603b\u7ecf\u7406\u7ea7",
+                  "\u603b\u7ecf\u7406\u7ea7"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position Level"
+          },
+          "personnel_identity": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "\u6b63\u5f0f\u5de5",
+                  "\u5b9e\u4e60\u751f",
+                  "\u8fd4\u8058\u4eba\u5458"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personnel Identity"
+          },
+          "leave_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leave Date"
+          },
+          "leave_category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "\u4e3b\u52a8\u79bb\u804c",
+                  "\u88ab\u52a8\u79bb\u804c",
+                  "\u5b9e\u4e60\u751f\u79bb\u804c",
+                  "\u9000\u4f11\u8fd4\u8058\u5230\u671f"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leave Category"
+          },
+          "leave_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leave Reason"
+          },
+          "group_classification": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "\u804c\u80fd\u7ba1\u7406",
+                  "\u751f\u4ea7\u4e00\u7ebf",
+                  "\u751f\u4ea7\u4e00\u7ebf\uff1a\u7ba1\u7406",
+                  "\u751f\u4ea7\u8f85\u52a9",
+                  "\u7814\u53d1\u4e00\u7ebf",
+                  "\u6280\u672f\u4e00\u7ebf",
+                  "\u540e\u52e4\u670d\u52a1"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Classification"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DepartureRecordUpdate",
+        "description": "Partial update of editable fields; snapshot fields are rejected."
       },
       "DependencyInfo": {
         "properties": {
@@ -121144,6 +120637,22 @@
             "type": "string",
             "title": "Gender Label",
             "default": "\u672a\u77e5"
+          },
+          "education": {
+            "type": "string",
+            "title": "Education",
+            "default": ""
+          },
+          "age": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age"
           },
           "description": {
             "type": "string",

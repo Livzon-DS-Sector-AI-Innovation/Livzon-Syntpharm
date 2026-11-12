@@ -185,62 +185,13 @@ export type OnboardingRecordUpdateInput = components['schemas']['OnboardingRecor
 export type OnboardingRecordListResponse = components['schemas']['OnboardingRecordListApiResponse']
 export type OnboardingRecordApiResponse = components['schemas']['OnboardingRecordApiResponse']
 
-export interface DepartureRecord {
-  id: string
-  name: string
-  department: string
-  team?: string
-  position: string
-  job_category?: string
-  gender?: string
-  status_category?: string
-  livo_entry_date?: string
-  factory_entry_date?: string
-  work_start_date?: string
-  offboarding_date: string
-  company_tenure_at_leave?: string
-  education?: string
-  school?: string
-  major?: string
-  classification?: string
-  id_card?: string
-  native_place?: string
-  household_type?: string
-  marital_status?: string
-  political_status?: string
-  phone?: string
-  emergency_contact_phone?: string
-  emergency_contact_relation?: string
-  bank_account?: string
-  contract_type?: string
-  transfer_history?: string
-  offboarding_type: string
-  offboarding_reason?: string[]
-  offboarding_reason_2?: string[]
-  offboarding_remarks?: string[]
-  remarks?: string[]
-  feishu_record_id?: string
-  feishu_synced_at?: string
-  created_at?: string
-  updated_at?: string
-}
-
-export interface DepartureRecordListResponse {
-  code: number
-  message: string
-  data: DepartureRecord[]
-  meta?: {
-    page: number
-    page_size: number
-    total: number
-  }
-}
-
-export interface DepartureRecordResponse {
-  code: number
-  message: string
-  data: DepartureRecord
-}
+// ── 离职台账（2026 手工台账，ticket #200）──
+export type DepartureRecord = components['schemas']['DepartureRecordResponse']
+export type DepartureRecordCreateInput = components['schemas']['DepartureRecordCreate']
+export type DepartureRecordUpdateInput = components['schemas']['DepartureRecordUpdate']
+export type DepartureRecordListResponse = components['schemas']['DepartureRecordListApiResponse']
+export type DepartureRecordApiResponse = components['schemas']['DepartureRecordApiResponse']
+export type DepartureRecordDeleteResponse = components['schemas']['DepartureRecordDeleteApiResponse']
 
 export interface AiSuggestion {
   suggestion: string

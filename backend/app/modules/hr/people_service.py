@@ -62,6 +62,8 @@ def detail(profile: EmployeeProfile) -> dict[str, Any]:
         "email_aliases": list(profile.email_aliases or []),
         "gender": profile.gender,
         "gender_label": gender_label(profile.gender),
+        "education": profile.education,
+        "age": profile.age,
         "description": profile.description,
         "avatar_72": profile.avatar_72,
         "avatar_240": profile.avatar_240,

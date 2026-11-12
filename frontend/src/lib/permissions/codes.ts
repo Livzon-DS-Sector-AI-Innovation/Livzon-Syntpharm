@@ -443,7 +443,6 @@ export const HR_PERM = {
   departureRecordsCreate: 'hr:departure-records:create',
   departureRecordsDelete: 'hr:departure-records:delete',
   departureRecordsRead: 'hr:departure-records:read',
-  departureRecordsSync: 'hr:departure-records:sync',
   departureRecordsUpdate: 'hr:departure-records:update',
   employeesCreate: 'hr:employees:create',
   employeesDelete: 'hr:employees:delete',

@@ -177,6 +177,12 @@ class SqlAlchemyEmployeeProfileStore:
         profile.enterprise_email = record.enterprise_email
         profile.email_aliases = list(record.email_aliases)
         profile.gender = record.gender
+        # 学历/年龄不在员工目录 mget 的必取字段内；只有源数据提供时才覆盖，
+        # 避免每次同步清空离职台账需要的人员快照来源。
+        if record.education:
+            profile.education = record.education
+        if record.age is not None:
+            profile.age = record.age
         profile.description = record.description
         profile.avatar_72 = record.avatar_72
         profile.avatar_240 = record.avatar_240
