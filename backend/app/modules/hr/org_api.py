@@ -18,7 +18,8 @@ from app.modules.hr.org_schemas import (
     OrgSyncStatusData,
     OrgSyncTriggerApiResponse,
 )
-from app.modules.hr.org_service import get_org_tree, get_sync_status, run_manual_org_sync
+from app.modules.hr.org_service import enqueue_manual_org_sync, get_org_tree, get_sync_status
+from app.modules.hr.org_settings import load_org_scope
 
 router = APIRouter(prefix="/org", tags=["HR 组织架构"])
 
@@ -29,9 +30,13 @@ async def list_org_departments(
     ctx: PermissionContext = Depends(require_permission("hr:departments:read")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
-    """返回珠海保税区丽珠合成制药有限公司下的两级部门树。"""
+    """返回配置的同步根部门（默认珠海保税区丽珠合成制药有限公司）下的两级部门树。"""
+    scope = await load_org_scope(session)
     items = await get_org_tree(session)
-    data = OrgDepartmentTreeData(items=[OrgDepartmentNode.model_validate(item) for item in items])
+    data = OrgDepartmentTreeData(
+        company_name=scope.department_name,
+        items=[OrgDepartmentNode.model_validate(item) for item in items],
+    )
     return build_response(data=data.model_dump(mode="json"))
 
 
@@ -52,6 +57,6 @@ async def trigger_org_sync(
     ctx: PermissionContext = Depends(require_permission("hr:departments:sync")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
-    """立即同步飞书部门数据；同一时间只允许一个同步任务。"""
-    data = OrgSyncStatusData.model_validate(await run_manual_org_sync(session))
-    return build_response(data=data.model_dump(mode="json"), message="组织架构同步完成")
+    """登记一次后台同步；同一时间只允许一个同步任务。"""
+    data = OrgSyncStatusData.model_validate(await enqueue_manual_org_sync(session))
+    return build_response(data=data.model_dump(mode="json"), message="组织架构同步已开始")

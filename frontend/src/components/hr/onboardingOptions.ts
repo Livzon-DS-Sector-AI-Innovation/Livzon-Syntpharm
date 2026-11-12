@@ -31,10 +31,6 @@ export function toOptions(values: readonly string[]) {
   return values.map((value) => ({ value, label: value }))
 }
 
-export const AVATAR_COLORS = ['#1e88e5', '#8a6a00', '#cf4a00', '#7a0000', '#5645d4', '#1a7f68']
-
-export function avatarColor(name: string): string {
-  let hash = 0
-  for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) % 997
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length]
-}
+// Reuse the shared design-palette avatar fallback so ledger avatars stay in
+// the same color family as the rest of the product.
+export { avatarColorOf as avatarColor } from '@/components/common/UserAvatar'

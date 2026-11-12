@@ -1,8 +1,9 @@
 """Request/response schemas for the 2026 离职台账 (ticket #200).
 
-The selected person is the only source of the snapshot fields
-(一级/二级部门, 姓名, 性别, 岗位, 入职日期, 学历, 年龄); clients cannot send
-them on create or update.
+The selected person is the only source of the frozen snapshot fields
+(一级/二级部门, 姓名, 性别, 岗位, 入职日期). 学历 and 年龄 are prefilled from
+the profile when available, but the form also sends them because the Feishu
+employee sync does not supply those two fields.
 """
 
 from __future__ import annotations
@@ -14,9 +15,16 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from app.modules.hr.departure_domain import LeaveCategory
-from app.modules.hr.onboarding_domain import Gender, GroupClassification, PersonnelIdentity, PositionLevel
+from app.modules.hr.onboarding_domain import (
+    EducationLevel,
+    Gender,
+    GroupClassification,
+    PersonnelIdentity,
+    PositionLevel,
+)
 
 Reason = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
+Age = Annotated[int, Field(ge=16, le=100)]
 
 
 class DepartureRecordCreate(BaseModel):
@@ -30,6 +38,8 @@ class DepartureRecordCreate(BaseModel):
     leave_date: date = Field(..., description="离职日期")
     leave_category: LeaveCategory = Field(..., description="离职类别")
     leave_reason: Reason = Field(..., description="离职原因")
+    education: EducationLevel | None = Field(None, description="学历；不传时取员工档案")
+    age: Age | None = Field(None, description="年龄；不传时取员工档案")
     group_classification: GroupClassification = Field(..., description="集团月报表人员分类")
 
 
@@ -43,6 +53,8 @@ class DepartureRecordUpdate(BaseModel):
     leave_date: date | None = None
     leave_category: LeaveCategory | None = None
     leave_reason: Reason | None = None
+    education: EducationLevel | None = None
+    age: Age | None = None
     group_classification: GroupClassification | None = None
 
 

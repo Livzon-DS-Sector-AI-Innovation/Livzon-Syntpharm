@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, DatePicker, Drawer, Form, Input, InputNumber, Select, message } from 'antd'
 import dayjs from 'dayjs'
 import { useQuery } from '@tanstack/react-query'
@@ -9,6 +9,7 @@ import { createDepartureRecord, updateDepartureRecord } from '@/actions/hr'
 import { fetchEmployeeProfileDetail, fetchEmployeeProfiles } from '@/lib/api/client/hr'
 import type { DepartureRecord, DepartureRecordCreateInput, DepartureRecordUpdateInput } from '@/types/hr'
 import {
+  EDUCATION_OPTIONS,
   GENDER_OPTIONS,
   GROUP_CLASSIFICATION_OPTIONS,
   LEAVE_CATEGORY_OPTIONS,
@@ -32,7 +33,7 @@ interface FormValues {
   gender: string
   position: string
   hire_date: dayjs.Dayjs | null
-  education: string
+  education: string | null
   age: number | null
   position_level: string
   personnel_identity: string
@@ -86,15 +87,6 @@ export default function DepartureRecordFormDrawer({
     enabled: open && !editing,
   })
 
-  const hireDate = Form.useWatch('hire_date', form)
-  const leaveDate = Form.useWatch('leave_date', form)
-
-  const tenureText = useMemo(() => {
-    if (!hireDate || !leaveDate) return ''
-    const years = leaveDate.diff(hireDate, 'day') / 365.25
-    return `${years.toFixed(1)} 年`
-  }, [hireDate, leaveDate])
-
   useEffect(() => {
     if (!open) return
     if (record) {
@@ -115,8 +107,8 @@ export default function DepartureRecordFormDrawer({
         gender: detail.gender_label,
         position: detail.job_title_name,
         hire_date: detail.hire_date ? dayjs(detail.hire_date) : null,
-        education: detail.education,
-        age: detail.age,
+        education: EDUCATION_OPTIONS.includes(detail.education) ? detail.education : null,
+        age: detail.age ?? null,
       })
     } catch (error) {
       message.error(error instanceof Error ? error.message : '人员档案加载失败')
@@ -134,6 +126,8 @@ export default function DepartureRecordFormDrawer({
         leave_date: values.leave_date.format('YYYY-MM-DD'),
         leave_category: values.leave_category,
         leave_reason: values.leave_reason,
+        education: values.education ?? undefined,
+        age: values.age ?? undefined,
         group_classification: values.group_classification,
       } as DepartureRecordUpdateInput
       if (record) {
@@ -217,16 +211,20 @@ export default function DepartureRecordFormDrawer({
             <DatePicker className="w-full" />
           </Form.Item>
           <Form.Item label="学历" name="education" rules={[required]}>
-            <Input disabled />
+            <Select options={toOptions(EDUCATION_OPTIONS)} placeholder="请选择或由档案带入" />
           </Form.Item>
           <Form.Item label="年龄" name="age" rules={[required]}>
-            <InputNumber className="w-full" disabled />
+            <InputNumber className="w-full" min={16} max={100} precision={0} placeholder="由档案带入或手工填写" />
           </Form.Item>
           <Form.Item label="离职类别" name="leave_category" rules={[required]}>
             <Select options={toOptions(LEAVE_CATEGORY_OPTIONS)} placeholder="请选择" />
           </Form.Item>
           <Form.Item label="司龄">
-            <Input value={tenureText} placeholder="由入离职日期自动计算" disabled />
+            <Input
+              value={record ? `${Number(record.tenure_years).toFixed(1)} 年` : ''}
+              placeholder="保存后由入离职日期自动计算"
+              disabled
+            />
           </Form.Item>
           <Form.Item label="离职原因" name="leave_reason" rules={[required]} className="sm:col-span-2">
             <Input.TextArea rows={2} />

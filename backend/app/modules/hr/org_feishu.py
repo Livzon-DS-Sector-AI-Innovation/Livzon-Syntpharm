@@ -21,7 +21,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.secrets import decrypt_secret
-from app.modules.hr.org_domain import IN_SCOPE_COMPANY_ID
+from app.modules.hr.feishu_values import int_value
+from app.modules.hr.org_domain import DEFAULT_SYNC_ROOT_DEPARTMENT_ID
+from app.modules.hr.org_settings import load_org_scope
 from app.platform.integrations.feishu.utils import OPEN_API_BASE_URL, get_tenant_access_token
 
 logger = logging.getLogger(__name__)
@@ -92,7 +94,7 @@ class FeishuOrgDepartmentFetcher:
         *,
         app_id: str,
         app_secret: str,
-        root_department_id: str = IN_SCOPE_COMPANY_ID,
+        root_department_id: str = DEFAULT_SYNC_ROOT_DEPARTMENT_ID,
         client: httpx.AsyncClient | None = None,
     ) -> None:
         self._app_id = app_id
@@ -191,7 +193,7 @@ class FeishuOrgDepartmentFetcher:
                     "department_id": dept_id,
                     "name": raw.get("name") or "",
                     "parent_department_id": self._root_department_id,
-                    "order": _int(raw.get("order")),
+                    "order": int_value(raw.get("order")),
                 }
             )
 
@@ -212,7 +214,7 @@ class FeishuOrgDepartmentFetcher:
                         "department_id": dept_id,
                         "name": raw.get("name") or "",
                         "parent_department_id": parent_id,
-                        "order": _int(raw.get("order")),
+                        "order": int_value(raw.get("order")),
                     }
                 )
         return departments
@@ -239,13 +241,11 @@ class FeishuOrgDepartmentFetcher:
         return details
 
 
-def _int(value: Any) -> int:
-    try:
-        return int(value) if value not in (None, "") else 0
-    except (TypeError, ValueError):
-        return 0
-
-
 async def build_default_fetcher(session: AsyncSession) -> FeishuOrgDepartmentFetcher:
     app_id, app_secret = await load_hr_platform_credentials(session)
-    return FeishuOrgDepartmentFetcher(app_id=app_id, app_secret=app_secret)
+    scope = await load_org_scope(session)
+    return FeishuOrgDepartmentFetcher(
+        app_id=app_id,
+        app_secret=app_secret,
+        root_department_id=scope.department_id,
+    )

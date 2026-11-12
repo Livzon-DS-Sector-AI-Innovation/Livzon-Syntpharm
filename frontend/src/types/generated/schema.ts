@@ -9517,7 +9517,7 @@ export interface paths {
         };
         /**
          * 部门树（只读）
-         * @description 返回珠海保税区丽珠合成制药有限公司下的两级部门树。
+         * @description 返回配置的同步根部门（默认珠海保税区丽珠合成制药有限公司）下的两级部门树。
          */
         get: operations["list_org_departments_api_v1_hr_org_departments_get"];
         put?: never;
@@ -9559,7 +9559,7 @@ export interface paths {
         put?: never;
         /**
          * 立即同步组织架构
-         * @description 立即同步飞书部门数据；同一时间只允许一个同步任务。
+         * @description 登记一次后台同步；同一时间只允许一个同步任务。
          */
         post: operations["trigger_org_sync_api_v1_hr_org_sync_post"];
         delete?: never;
@@ -28405,6 +28405,16 @@ export interface components {
              */
             leave_reason: string;
             /**
+             * Education
+             * @description 学历；不传时取员工档案
+             */
+            education?: ("博士" | "硕士" | "本科" | "大专" | "大专以下") | null;
+            /**
+             * Age
+             * @description 年龄；不传时取员工档案
+             */
+            age?: number | null;
+            /**
              * Group Classification
              * @description 集团月报表人员分类
              * @enum {string}
@@ -28520,6 +28530,10 @@ export interface components {
             leave_category?: ("主动离职" | "被动离职" | "实习生离职" | "退休返聘到期") | null;
             /** Leave Reason */
             leave_reason?: string | null;
+            /** Education */
+            education?: ("博士" | "硕士" | "本科" | "大专" | "大专以下") | null;
+            /** Age */
+            age?: number | null;
             /** Group Classification */
             group_classification?: ("职能管理" | "生产一线" | "生产一线：管理" | "生产辅助" | "研发一线" | "技术一线" | "后勤服务") | null;
         };
@@ -42340,6 +42354,11 @@ export interface components {
         };
         /** OrgDepartmentTreeData */
         OrgDepartmentTreeData: {
+            /**
+             * Company Name
+             * @default
+             */
+            company_name: string;
             /** Items */
             items?: components["schemas"]["OrgDepartmentNode"][];
         };
@@ -42372,10 +42391,11 @@ export interface components {
         OrgSyncStatusData: {
             /**
              * Status
-             * @description never / success / failed / running
+             * @description never / running / success / failed
              * @default never
+             * @enum {string}
              */
-            status: string;
+            status: "never" | "running" | "success" | "failed";
             /** Last Synced At */
             last_synced_at?: string | null;
             /**

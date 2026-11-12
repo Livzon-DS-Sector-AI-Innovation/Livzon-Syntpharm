@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
+
+SyncStatus = Literal["never", "running", "success", "failed"]
 
 
 class OrgPathNode(BaseModel):
@@ -35,6 +37,7 @@ class OrgDepartmentNode(BaseModel):
 
 
 class OrgDepartmentTreeData(BaseModel):
+    company_name: str = ""
     items: list[OrgDepartmentNode] = Field(default_factory=list)
 
 
@@ -46,7 +49,7 @@ class OrgDepartmentTreeApiResponse(BaseModel):
 
 
 class OrgSyncStatusData(BaseModel):
-    status: str = Field("never", description="never / success / failed / running")
+    status: SyncStatus = Field("never", description="never / running / success / failed")
     last_synced_at: datetime | None = None
     department_count: int = 0
     people_count: int = 0

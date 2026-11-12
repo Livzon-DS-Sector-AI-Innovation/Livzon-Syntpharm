@@ -9,12 +9,49 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-IN_SCOPE_COMPANY_ID = "od-9c7089e0d3edc7822c0650a9b2ff4318"
-IN_SCOPE_COMPANY_NAME = "珠海保税区丽珠合成制药有限公司"
-OUT_OF_SCOPE_COMPANY_NAME = "珠海市丽珠医药贸易有限公司"
+from app.modules.hr.feishu_values import int_value, optional_int_value, text_value
+
+DEFAULT_SYNC_ROOT_DEPARTMENT_ID = "od-9c7089e0d3edc7822c0650a9b2ff4318"
+DEFAULT_SYNC_ROOT_DEPARTMENT_NAME = "珠海保税区丽珠合成制药有限公司"
+
+# Backwards-compatible aliases for callers/tests that still use the old names.
+IN_SCOPE_COMPANY_ID = DEFAULT_SYNC_ROOT_DEPARTMENT_ID
+IN_SCOPE_COMPANY_NAME = DEFAULT_SYNC_ROOT_DEPARTMENT_NAME
 
 ROOT_LEVEL = 1
 SECOND_LEVEL = 2
+
+
+@dataclass(frozen=True)
+class OrgScope:
+    """The company subtree the org browser mirrors.
+
+    Both the sync and the read model take this value object instead of
+    comparing against a module-level company id, so the root can be changed
+    through HR system settings without touching domain logic.
+    """
+
+    department_id: str
+    department_name: str
+
+    @property
+    def root_path_node(self) -> dict[str, str]:
+        return {"id": self.department_id, "name": self.department_name}
+
+    def is_root(self, department_id: str | None) -> bool:
+        return department_id == self.department_id
+
+    def is_direct_child(self, parent_id: str | None) -> bool:
+        return parent_id == self.department_id
+
+    def covers_path(self, path: list[dict[str, str]] | None) -> bool:
+        return any(isinstance(entry, dict) and entry.get("id") == self.department_id for entry in path or [])
+
+
+DEFAULT_ORG_SCOPE = OrgScope(
+    department_id=DEFAULT_SYNC_ROOT_DEPARTMENT_ID,
+    department_name=DEFAULT_SYNC_ROOT_DEPARTMENT_NAME,
+)
 
 _DATA_SOURCE_LABELS: dict[int, str] = {
     1: "飞书",
@@ -53,43 +90,6 @@ class OrgDepartmentRecord:
         return self.parent_id
 
 
-def _text(value: Any) -> str:
-    """Read an i18n text object or a plain string as a display name."""
-    if value is None:
-        return ""
-    if isinstance(value, str):
-        return value.strip()
-    if isinstance(value, dict):
-        default = value.get("default_value")
-        if isinstance(default, str):
-            return default.strip()
-        i18n = value.get("i18n_value")
-        if isinstance(i18n, dict):
-            for key in ("zh_cn", "zh-CN", "en_us"):
-                candidate = i18n.get(key)
-                if isinstance(candidate, str) and candidate.strip():
-                    return candidate.strip()
-    return ""
-
-
-def _int(value: Any) -> int:
-    if value is None or value == "":
-        return 0
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return 0
-
-
-def _optional_int(value: Any) -> int | None:
-    if value is None or value == "":
-        return None
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return None
-
-
 def _path_from_raw(raw: Any) -> list[dict[str, str]]:
     if not isinstance(raw, list):
         return []
@@ -100,7 +100,7 @@ def _path_from_raw(raw: Any) -> list[dict[str, str]]:
         dept_id = str(entry.get("department_id") or "").strip()
         if not dept_id or dept_id == "0":
             continue
-        path.append({"id": dept_id, "name": _text(entry.get("department_name"))})
+        path.append({"id": dept_id, "name": text_value(entry.get("department_name"))})
     return path
 
 
@@ -136,7 +136,7 @@ def parse_directory_department(raw: dict[str, Any]) -> OrgDepartmentRecord:
     custom_raw = raw.get("custom_field_values")
     custom_fields = [item for item in custom_raw if isinstance(item, dict)] if isinstance(custom_raw, list) else []
 
-    name = _text(raw.get("name"))
+    name = text_value(raw.get("name"))
     path = _path_from_raw(raw.get("department_path_infos"))
     if path and department_id and path[-1]["id"] != department_id:
         path.append({"id": department_id, "name": name})
@@ -151,11 +151,11 @@ def parse_directory_department(raw: dict[str, Any]) -> OrgDepartmentRecord:
         leader_ids=leader_ids,
         department_path=path,
         enabled_status=raw.get("enabled_status") if isinstance(raw.get("enabled_status"), bool) else None,
-        recursive_members_count=_int(counts.get("recursive_members_count")),
-        direct_members_count=_int(counts.get("direct_members_count")),
-        recursive_departments_count=_int(counts.get("recursive_departments_count")),
-        direct_departments_count=_int(counts.get("direct_departments_count")),
-        data_source=_optional_int(raw.get("data_source")),
+        recursive_members_count=int_value(counts.get("recursive_members_count")),
+        direct_members_count=int_value(counts.get("direct_members_count")),
+        recursive_departments_count=int_value(counts.get("recursive_departments_count")),
+        direct_departments_count=int_value(counts.get("direct_departments_count")),
+        data_source=optional_int_value(raw.get("data_source")),
         custom_fields=custom_fields,
     )
 
@@ -170,10 +170,14 @@ def _sort_key(record: OrgDepartmentRecord) -> tuple[int, str, str]:
     return (record.order, record.name, record.id or "")
 
 
-def _path_for(record: OrgDepartmentRecord, parent: OrgDepartmentRecord | None) -> list[dict[str, str]]:
+def _path_for(
+    record: OrgDepartmentRecord,
+    parent: OrgDepartmentRecord | None,
+    scope: OrgScope,
+) -> list[dict[str, str]]:
     if record.department_path:
         return record.department_path
-    root = {"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME}
+    root = scope.root_path_node
     if parent is None:
         return [root, {"id": record.id or "", "name": record.name}]
     parent_path = parent.department_path or [root, {"id": parent.id or "", "name": parent.name}]
@@ -186,6 +190,7 @@ def _node(
     level: int,
     parent: OrgDepartmentRecord | None,
     leader_names: dict[str, str],
+    scope: OrgScope,
     children: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     resolved = [leader_names[leader_id] for leader_id in record.leader_ids if leader_names.get(leader_id)]
@@ -194,7 +199,7 @@ def _node(
         "name": record.name,
         "level": level,
         "parent_id": record.parent_id,
-        "parent_name": parent.name if parent else IN_SCOPE_COMPANY_NAME,
+        "parent_name": parent.name if parent else scope.department_name,
         "leader_ids": record.leader_ids,
         "leader_names": resolved,
         "leader_display": "、".join(resolved) if resolved else "—",
@@ -202,7 +207,7 @@ def _node(
         "direct_members_count": record.direct_members_count,
         "recursive_departments_count": record.recursive_departments_count,
         "direct_departments_count": record.direct_departments_count,
-        "department_path": _path_for(record, parent),
+        "department_path": _path_for(record, parent, scope),
         "enabled_status": record.enabled_status,
         "order_weight": record.order_weight,
         "data_source": data_source_label(record.data_source),
@@ -215,17 +220,19 @@ def build_org_tree(
     records: list[OrgDepartmentRecord],
     *,
     leader_names: dict[str, str] | None = None,
+    scope: OrgScope = DEFAULT_ORG_SCOPE,
 ) -> list[dict[str, Any]]:
-    """Build the two-level tree: 一级部门 under the company root, then 二级部门.
+    """Build the two-level tree: 一级部门 under the configured scope root.
 
-    The company root itself is not a level, out-of-scope branches are dropped,
-    hidden/removed rows are dropped, and anything deeper than level 2 is ignored.
+    The scope root itself is not a level, branches outside the scope are
+    dropped, hidden/removed rows are dropped, and anything deeper than level 2
+    is ignored.
     """
     names = leader_names or {}
     visible = [record for record in records if record.id and not record.hidden]
 
     level_one = sorted(
-        (record for record in visible if record.parent_id == IN_SCOPE_COMPANY_ID),
+        (record for record in visible if scope.is_direct_child(record.parent_id)),
         key=_sort_key,
     )
     level_one_ids = {record.id for record in level_one}
@@ -238,8 +245,10 @@ def build_org_tree(
     tree: list[dict[str, Any]] = []
     for parent in level_one:
         children = sorted(children_by_parent.get(parent.id or "", []), key=_sort_key)
-        child_nodes = [_node(child, level=SECOND_LEVEL, parent=parent, leader_names=names) for child in children]
-        tree.append(_node(parent, level=ROOT_LEVEL, parent=None, leader_names=names, children=child_nodes))
+        child_nodes = [
+            _node(child, level=SECOND_LEVEL, parent=parent, leader_names=names, scope=scope) for child in children
+        ]
+        tree.append(_node(parent, level=ROOT_LEVEL, parent=None, leader_names=names, scope=scope, children=child_nodes))
     return tree
 
 
@@ -247,22 +256,19 @@ def select_departments_to_hide(
     rows: list[dict[str, Any]],
     *,
     seen_ids: set[str],
+    scope: OrgScope = DEFAULT_ORG_SCOPE,
 ) -> list[str]:
-    """Return previously in-scope mirror ids that Feishu no longer returns.
+    """Return mirror ids that Feishu no longer returns inside the configured scope.
 
-    Only rows whose stored path descends from the in-scope company are touched;
-    departments belonging to other companies in the shared mirror are left alone.
+    Every department that is not part of the current scope snapshot is flagged
+    hidden, including branches that fall outside the configured company. The
+    scope root itself is never hidden.
     """
-    to_hide: list[str] = []
-    for row in rows:
-        if row.get("hidden"):
-            continue
-        dept_id = str(row.get("id") or "")
-        if not dept_id or dept_id in seen_ids or dept_id == IN_SCOPE_COMPANY_ID:
-            continue
-        path = row.get("department_path")
-        if not isinstance(path, list):
-            continue
-        if any(isinstance(entry, dict) and entry.get("id") == IN_SCOPE_COMPANY_ID for entry in path):
-            to_hide.append(dept_id)
-    return to_hide
+    return [
+        str(row["id"])
+        for row in rows
+        if not row.get("hidden")
+        and str(row.get("id") or "")
+        and str(row.get("id")) not in seen_ids
+        and not scope.is_root(str(row.get("id")))
+    ]

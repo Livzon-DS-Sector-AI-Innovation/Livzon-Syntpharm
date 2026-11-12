@@ -11,6 +11,7 @@ from __future__ import annotations
 import importlib.util
 import uuid
 from datetime import date
+from decimal import Decimal
 from typing import Any
 
 from httpx import AsyncClient
@@ -54,6 +55,8 @@ def _payload(profile: EmployeeProfile, **overrides: Any) -> dict[str, Any]:
         "leave_date": "2026-10-31",
         "leave_category": "主动离职",
         "leave_reason": "个人发展",
+        "education": "本科",
+        "age": 33,
         "group_classification": "生产一线：管理",
     }
     data.update(overrides)
@@ -76,7 +79,7 @@ def _record(profile: EmployeeProfile, **overrides: Any) -> DepartureRecord:
         "leave_reason": "个人发展",
         "education": "本科",
         "age": 33,
-        "tenure_years": 7.6,
+        "tenure_years": Decimal("7.6"),
         "group_classification": "生产一线：管理",
     }
     values.update(overrides)
@@ -163,7 +166,7 @@ class TestDepartureCreate:
 
         response = await auth_client.post(
             LIST_URL,
-            json=_payload(profile, department_level1="伪造部门", education="博士"),
+            json=_payload(profile, department_level1="伪造部门"),
         )
 
         assert response.status_code == 422
@@ -214,7 +217,7 @@ class TestDepartureCreate:
 
         assert response.status_code == 404
 
-    async def test_profile_without_education_is_rejected(
+    async def test_user_entered_education_and_age_allow_create_when_profile_lacks_them(
         self,
         auth_client: AsyncClient,
         db_session: AsyncSession,
@@ -222,7 +225,46 @@ class TestDepartureCreate:
         profile = _profile(education="", age=None)
         await _seed(db_session, profile)
 
-        response = await auth_client.post(LIST_URL, json=_payload(profile))
+        payload = _payload(profile)
+        payload.pop("education")
+        payload.pop("age")
+        payload["education"] = "硕士"
+        payload["age"] = 41
+        response = await auth_client.post(LIST_URL, json=payload)
+
+        assert response.status_code == 200
+        assert response.json()["data"]["education"] == "硕士"
+        assert response.json()["data"]["age"] == 41
+
+    async def test_profile_education_and_age_are_used_when_payload_omits_them(
+        self,
+        auth_client: AsyncClient,
+        db_session: AsyncSession,
+    ) -> None:
+        profile = _profile()
+        await _seed(db_session, profile)
+
+        payload = _payload(profile)
+        payload.pop("education")
+        payload.pop("age")
+        response = await auth_client.post(LIST_URL, json=payload)
+
+        assert response.status_code == 200
+        assert response.json()["data"]["education"] == "本科"
+        assert response.json()["data"]["age"] == 33
+
+    async def test_missing_education_and_age_everywhere_is_rejected(
+        self,
+        auth_client: AsyncClient,
+        db_session: AsyncSession,
+    ) -> None:
+        profile = _profile(education="", age=None)
+        await _seed(db_session, profile)
+
+        payload = _payload(profile)
+        payload.pop("education")
+        payload.pop("age")
+        response = await auth_client.post(LIST_URL, json=payload)
 
         assert response.status_code == 422
 

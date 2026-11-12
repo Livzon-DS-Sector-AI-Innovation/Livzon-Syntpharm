@@ -59,6 +59,8 @@ def _profile(
         "background_image": "",
         "geo_name": "",
         "resign_time": "",
+        "education": "本科",
+        "age": 33,
         "employee_no": "",
         "job_title_id": "",
         "job_title_name": "",
@@ -299,6 +301,10 @@ class TestPeopleDetail:
         assert data["department_level1_name"] == "101车间"
         assert data["department_level2_name"] == "合成工段"
         assert data["email_aliases"] == ["zs@livzon.cn"]
+        assert data["education"] == "本科"
+        assert data["age"] == 33
+        assert data["background_image"] == "https://bg.png"
+        assert data["geo_name"] == "cn"
         assert data["positions"] == [{"id": "P-1", "name": "班长"}]
         assert data["job_level_name"] == "M1"
         assert data["job_family_name"] == "生产序列"

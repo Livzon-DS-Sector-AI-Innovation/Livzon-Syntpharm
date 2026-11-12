@@ -40,7 +40,7 @@ export default function SystemSettingsClient() {
   const feishuLabel = (name: string) => (
     <span>
       {name}
-      <span style={{ color: '#999', fontSize: 12, marginLeft: 8 }}>
+      <span style={{ color: 'var(--color-stone)', fontSize: 12, marginLeft: 8 }}>
         （保存后需重启服务生效）
       </span>
     </span>
@@ -65,19 +65,27 @@ export default function SystemSettingsClient() {
         </Form.Item>
 
         <Divider>飞书 - 车辆 Bot</Divider>
-        <Form.Item label={feishuLabel('App ID')} name="FEISHU__VEHICLE__CREDENTIALS__APP_ID">
+        <Form.Item label={feishuLabel('FEISHU_VEHICLE_APP_ID')} name="FEISHU_VEHICLE_APP_ID">
           <Input placeholder="cli_xxxx..." />
         </Form.Item>
-        <Form.Item label={feishuLabel('App Secret')} name="FEISHU__VEHICLE__CREDENTIALS__APP_SECRET">
+        <Form.Item label={feishuLabel('FEISHU_VEHICLE_APP_SECRET')} name="FEISHU_VEHICLE_APP_SECRET">
           <Input.Password placeholder="飞书 Vehicle App Secret" />
         </Form.Item>
 
         <Divider>飞书 - 培训 Bot</Divider>
-        <Form.Item label={feishuLabel('App ID')} name="FEISHU__TRAINING__CREDENTIALS__APP_ID">
+        <Form.Item label={feishuLabel('FEISHU_TRAINING_APP_ID')} name="FEISHU_TRAINING_APP_ID">
           <Input placeholder="cli_xxxx..." />
         </Form.Item>
-        <Form.Item label={feishuLabel('App Secret')} name="FEISHU__TRAINING__CREDENTIALS__APP_SECRET">
+        <Form.Item label={feishuLabel('FEISHU_TRAINING_APP_SECRET')} name="FEISHU_TRAINING_APP_SECRET">
           <Input.Password placeholder="飞书 Training App Secret" />
+        </Form.Item>
+
+        <Divider>HR 组织架构同步</Divider>
+        <Form.Item label="同步根部门 ID" name="HR_ORG_SYNC_ROOT_DEPARTMENT_ID">
+          <Input placeholder="飞书 open_department_id" />
+        </Form.Item>
+        <Form.Item label="同步根部门名称" name="HR_ORG_SYNC_ROOT_DEPARTMENT_NAME">
+          <Input placeholder="如 珠海保税区丽珠合成制药有限公司" />
         </Form.Item>
 
         <Divider>AI 模型</Divider>

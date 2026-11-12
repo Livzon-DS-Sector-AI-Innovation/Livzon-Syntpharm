@@ -8,11 +8,14 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.hr.models import SystemSetting
 from app.modules.hr.org_domain import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
 from app.modules.hr.org_repository import SqlAlchemyOrgDepartmentStore
+from app.modules.hr.org_settings import ORG_SYNC_ROOT_ID_SETTING, ORG_SYNC_ROOT_NAME_SETTING, load_org_scope
 from app.modules.hr.org_sync import sync_org_departments
 from app.platform.identity.models import Department, OrgSyncRun
 
@@ -104,3 +107,54 @@ async def test_sync_persists_mirror_fields_and_hides_stale_department(db_session
     assert run.department_count == 1
     assert run.people_count == 0
     assert run.finished_at is not None
+
+
+async def test_load_org_scope_reads_runtime_settings(db_session: AsyncSession) -> None:
+    db_session.add_all(
+        [
+            SystemSetting(key=ORG_SYNC_ROOT_ID_SETTING, value="od-configured-root"),
+            SystemSetting(key=ORG_SYNC_ROOT_NAME_SETTING, value="配置的公司"),
+        ]
+    )
+    await db_session.flush()
+
+    scope = await load_org_scope(db_session)
+
+    assert scope.department_id == "od-configured-root"
+    assert scope.department_name == "配置的公司"
+
+
+async def test_failed_sync_rolls_back_department_writes_and_records_failure(db_session: AsyncSession) -> None:
+    db_session.add(
+        Department(
+            feishu_department_id="od-stale",
+            name="已移除车间",
+            parent_feishu_department_id=IN_SCOPE_COMPANY_ID,
+            status_is_deleted=False,
+            department_path=[
+                {"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME},
+                {"id": "od-stale", "name": "已移除车间"},
+            ],
+        )
+    )
+    await db_session.commit()
+
+    class _FailingStore(SqlAlchemyOrgDepartmentStore):
+        async def hide_department(self, department_id: str) -> None:
+            raise RuntimeError("database write failed")
+
+    with pytest.raises(RuntimeError, match="database write failed"):
+        await sync_org_departments(_FailingStore(db_session), _Fetcher())
+
+    created = (
+        await db_session.execute(select(Department).where(Department.feishu_department_id == "od-101"))
+    ).scalar_one_or_none()
+    stale = (
+        await db_session.execute(select(Department).where(Department.feishu_department_id == "od-stale"))
+    ).scalar_one()
+    assert created is None
+    assert stale.status_is_deleted is False
+    run = (await db_session.execute(select(OrgSyncRun).order_by(OrgSyncRun.started_at.desc()))).scalars().first()
+    assert run is not None
+    assert run.status == "failed"
+    assert "database write failed" in (run.error_message or "")

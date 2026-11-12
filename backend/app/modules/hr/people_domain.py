@@ -13,6 +13,8 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any
 
+from app.modules.hr.feishu_values import optional_int_value, text_value
+
 _DATA_SOURCE_LABELS: dict[int, str] = {
     1: "飞书",
     2: "第三方",
@@ -84,29 +86,6 @@ class EmployeeProfileRecord:
     last_synced_at: datetime | None = None
 
 
-def _text(value: Any) -> str:
-    """Read an i18n text object or a plain string as display text."""
-    if value is None:
-        return ""
-    if isinstance(value, str):
-        return value.strip()
-    if isinstance(value, dict):
-        default = value.get("default_value")
-        if isinstance(default, str):
-            return default.strip()
-        i18n = value.get("i18n_value")
-        if isinstance(i18n, dict):
-            for key in ("zh_cn", "zh-CN", "en_us"):
-                candidate = i18n.get(key)
-                if isinstance(candidate, str) and candidate.strip():
-                    return candidate.strip()
-        for key in ("name", "text", "value"):
-            candidate = value.get(key)
-            if isinstance(candidate, str) and candidate.strip():
-                return candidate.strip()
-    return ""
-
-
 def _str(value: Any) -> str:
     if value is None:
         return ""
@@ -114,12 +93,9 @@ def _str(value: Any) -> str:
 
 
 def _optional_int(value: Any) -> int | None:
-    if value is None or value == "" or value == "0":
+    if value == "0":
         return None
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return None
+    return optional_int_value(value)
 
 
 def _bool(value: Any) -> bool:
@@ -145,7 +121,7 @@ def _str_list(value: Any) -> list[str]:
         return []
     items: list[str] = []
     for entry in value:
-        text = _text(entry) if isinstance(entry, dict) else _str(entry)
+        text = text_value(entry) if isinstance(entry, dict) else _str(entry)
         if text and text != "0" and text not in items:
             items.append(text)
     return items
@@ -155,10 +131,10 @@ def _object_fields(value: Any, id_key: str, name_key: str, *, name_aliases: tupl
     if not isinstance(value, dict):
         return "", ""
     object_id = _str(value.get(id_key))
-    name = _text(value.get(name_key))
+    name = text_value(value.get(name_key))
     for alias in name_aliases:
         if not name:
-            name = _text(value.get(alias))
+            name = text_value(value.get(alias))
     return object_id, name
 
 
@@ -170,7 +146,7 @@ def _positions(value: Any) -> list[dict[str, str]]:
         if not isinstance(entry, dict):
             continue
         position_id = _str(entry.get("position_code") or entry.get("id"))
-        name = _text(entry.get("position_name")) or _text(entry.get("name"))
+        name = text_value(entry.get("position_name")) or text_value(entry.get("name"))
         if position_id or name:
             positions.append({"id": position_id, "name": name})
     return positions
@@ -200,7 +176,7 @@ def _department_names(raw: dict[str, Any]) -> list[str]:
         return []
     names: list[str] = []
     for entry in value:
-        name = _text(entry) if isinstance(entry, dict) else _str(entry)
+        name = text_value(entry) if isinstance(entry, dict) else _str(entry)
         if name:
             names.append(name)
     return names
@@ -218,7 +194,7 @@ def _department_path(raw: dict[str, Any]) -> list[dict[str, str]]:
             dept_id = _str(entry.get("department_id") or entry.get("id"))
             if not dept_id or dept_id == "0":
                 continue
-            name = _text(entry.get("department_name")) or _text(entry.get("name"))
+            name = text_value(entry.get("department_name")) or text_value(entry.get("name"))
             path.append({"id": dept_id, "name": name})
         if path:
             return path
@@ -242,7 +218,7 @@ def parse_directory_employee(raw: dict[str, Any]) -> EmployeeProfileRecord | Non
     place_id = _str(place.get("place_id"))
     if place_id == "0":
         place_id = ""
-    place_name = _text(place.get("place_name")) if place_id else ""
+    place_name = text_value(place.get("place_name")) if place_id else ""
 
     job_title_id, job_title_name = _object_fields(
         raw.get("job_title"), "job_title_id", "job_title_name", name_aliases=("name",)
@@ -262,7 +238,7 @@ def parse_directory_employee(raw: dict[str, Any]) -> EmployeeProfileRecord | Non
 
     return EmployeeProfileRecord(
         open_id=open_id,
-        name=_text(raw.get("name")),
+        name=text_value(raw.get("name")),
         mobile=_str(raw.get("mobile")),
         email=_str(raw.get("email")),
         enterprise_email=_str(raw.get("enterprise_email")),

@@ -8,13 +8,15 @@ removed departments are flagged via ``status_is_deleted``.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from uuid import UUID
 
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.hr.models import EmployeeProfile
 from app.modules.hr.org_domain import OrgDepartmentRecord
-from app.platform.identity.models import Department, OrgSyncRun, User
+from app.modules.hr.org_sync import SyncRunRecord
+from app.platform.identity.models import Department, OrgSyncRun
 
 
 class SqlAlchemyOrgDepartmentStore:
@@ -62,18 +64,21 @@ class SqlAlchemyOrgDepartmentStore:
             department.status_is_deleted = True
             await self.session.flush()
 
-    async def record_sync_run(self, **kwargs: Any) -> None:
-        self.session.add(
-            OrgSyncRun(
-                status=kwargs["status"],
-                department_count=kwargs["department_count"],
-                people_count=kwargs["people_count"],
-                error_message=kwargs["error_message"],
-                started_at=kwargs["started_at"],
-                finished_at=kwargs["finished_at"],
-            )
-        )
+    async def record_sync_run(self, run: SyncRunRecord, *, run_id: UUID | None = None) -> None:
+        row = await self.session.get(OrgSyncRun, run_id) if run_id is not None else None
+        if row is None:
+            row = OrgSyncRun(id=run_id) if run_id is not None else OrgSyncRun()
+            self.session.add(row)
+        row.status = run.status
+        row.department_count = run.department_count
+        row.people_count = run.people_count
+        row.error_message = run.error_message
+        row.started_at = run.started_at
+        row.finished_at = run.finished_at
         await self.session.flush()
+
+    async def rollback(self) -> None:
+        await self.session.rollback()
 
     @staticmethod
     def _to_record(row: Department) -> OrgDepartmentRecord:
@@ -105,19 +110,15 @@ async def resolve_leader_names(session: AsyncSession, leader_ids: set[str]) -> d
     if not ids:
         return {}
     result = await session.execute(
-        select(User).where(
-            User.is_deleted.is_(False),
-            or_(
-                User.feishu_open_id.in_(ids),
-                User.feishu_user_id.in_(ids),
-            ),
+        select(EmployeeProfile).where(
+            EmployeeProfile.is_deleted.is_(False),
+            EmployeeProfile.open_id.in_(ids),
         )
     )
     names: dict[str, str] = {}
-    for user in result.scalars().all():
-        for key in (user.feishu_open_id, user.feishu_user_id):
-            if key and key in ids:
-                names.setdefault(key, user.name)
+    for profile in result.scalars().all():
+        if profile.open_id in ids and profile.name:
+            names.setdefault(profile.open_id, profile.name)
     return names
 
 

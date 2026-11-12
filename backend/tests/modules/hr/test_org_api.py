@@ -11,13 +11,16 @@ from datetime import UTC, datetime
 from typing import Any
 
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.hr.models import EmployeeProfile
 from app.modules.hr.org_domain import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
 from app.platform.identity.models import Department, OrgSyncRun, User
 
 TREE_URL = "/api/v1/hr/org/departments"
 STATUS_URL = "/api/v1/hr/org/sync-status"
+SYNC_URL = "/api/v1/hr/org/sync"
 
 
 def _company_child(
@@ -136,12 +139,12 @@ class TestOrgDepartmentTree:
         db_session.add(
             _company_child("od-101", "101车间", order=3, leaders=["ou-leader", "ou-missing"]),
         )
-        db_session.add(
-            User(
-                name="张三",
-                employee_no="E-1001",
-                feishu_open_id="ou-leader",
-            )
+        # Leaders resolve through the personnel mirror, not identity.users.
+        db_session.add_all(
+            [
+                EmployeeProfile(open_id="ou-leader", name="张三"),
+                User(name="错误来源", employee_no="E-1001", feishu_open_id="ou-leader"),
+            ]
         )
         await db_session.flush()
 
@@ -224,3 +227,51 @@ class TestOrgSyncStatus:
         assert data["people_count"] == 0
         assert data["error_message"] == "飞书接口不可用"
         assert data["last_synced_at"].startswith("2026-11-13")
+
+
+class TestOrgSyncTrigger:
+    async def test_running_run_is_returned_by_status(
+        self,
+        auth_client: AsyncClient,
+        db_session: AsyncSession,
+    ) -> None:
+        db_session.add(
+            OrgSyncRun(
+                status="running",
+                department_count=0,
+                people_count=0,
+                error_message=None,
+                started_at=datetime(2026, 11, 12, 0, 0, tzinfo=UTC),
+                finished_at=None,
+            )
+        )
+        await db_session.flush()
+
+        response = await auth_client.get(STATUS_URL)
+
+        assert response.json()["data"]["status"] == "running"
+        assert response.json()["data"]["last_synced_at"].startswith("2026-11-12")
+
+    async def test_manual_sync_records_running_and_returns_immediately(
+        self,
+        auth_client: AsyncClient,
+        db_session: AsyncSession,
+        monkeypatch: Any,
+    ) -> None:
+        from app.modules.hr import org_service
+
+        submitted: list[tuple[str, Any]] = []
+
+        async def _fake_submit(name: str, runner: Any) -> None:
+            submitted.append((name, runner))
+
+        monkeypatch.setattr(org_service, "submit_job", _fake_submit)
+
+        response = await auth_client.post(SYNC_URL)
+
+        assert response.status_code == 200
+        assert response.json()["data"]["status"] == "running"
+        assert submitted and submitted[0][0] == org_service.SYNC_JOB_NAME
+        run = (await db_session.execute(select(OrgSyncRun))).scalars().one()
+        assert run.status == "running"
+        assert run.finished_at is None

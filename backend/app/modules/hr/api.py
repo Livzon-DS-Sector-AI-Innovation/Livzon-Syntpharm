@@ -39,6 +39,11 @@ from app.modules.hr.onboarding_evaluation_document_generator import (
     generate_onboarding_evaluation,
 )
 from app.modules.hr.org_api import router as org_router
+from app.modules.hr.org_settings import (
+    ORG_SCOPE_SETTING_DEFAULTS,
+    ORG_SYNC_ROOT_ID_SETTING,
+    ORG_SYNC_ROOT_NAME_SETTING,
+)
 from app.modules.hr.people_api import router as people_router
 from app.modules.hr.prejob_document_generator import generate_prejob_training_plan
 from app.modules.hr.schemas import (
@@ -2567,17 +2572,33 @@ async def save_prejob_template(  # type: ignore[no-untyped-def]
 # ─── System Settings ───
 
 ENV_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env")
+# 主 Bot 使用平台标准嵌套键；车辆/培训 Bot 沿用页面原有的扁平键名，
+# 避免把与 HR 组织同步无关的凭证重命名扩散到本次改动。
 SETTING_KEYS = [
     "FEISHU__PLATFORM__APP_ID",
     "FEISHU__PLATFORM__APP_SECRET",
-    "FEISHU__VEHICLE__CREDENTIALS__APP_ID",
-    "FEISHU__VEHICLE__CREDENTIALS__APP_SECRET",
-    "FEISHU__TRAINING__CREDENTIALS__APP_ID",
-    "FEISHU__TRAINING__CREDENTIALS__APP_SECRET",
+    "FEISHU_VEHICLE_APP_ID",
+    "FEISHU_VEHICLE_APP_SECRET",
+    "FEISHU_TRAINING_APP_ID",
+    "FEISHU_TRAINING_APP_SECRET",
     "AI_BASE_URL",
     "AI_API_KEY",
     "AI_MODEL",
+    ORG_SYNC_ROOT_ID_SETTING,
+    ORG_SYNC_ROOT_NAME_SETTING,
 ]
+# 页面旧键名 -> 实际落库/环境变量键名。读取已有 hr.system_settings 行时使用。
+SETTING_KEY_ALIASES = {
+    "FEISHU_VEHICLE_APP_ID": "FEISHU__VEHICLE__CREDENTIALS__APP_ID",
+    "FEISHU_VEHICLE_APP_SECRET": "FEISHU__VEHICLE__CREDENTIALS__APP_SECRET",
+    "FEISHU_TRAINING_APP_ID": "FEISHU__TRAINING__CREDENTIALS__APP_ID",
+    "FEISHU_TRAINING_APP_SECRET": "FEISHU__TRAINING__CREDENTIALS__APP_SECRET",
+}
+
+
+def _canonical_setting_key(key: str) -> str:
+    return SETTING_KEY_ALIASES.get(key, key)
+
 
 # 凭据类键：落库前加密（app.core.secrets.encrypt_secret），读出后一律按掩码返回。
 SECRET_SETTING_KEYS: frozenset[str] = frozenset(
@@ -2589,7 +2610,7 @@ MASK_PLACEHOLDER = "****"
 
 def _get_db_setting(db_settings: dict[str, str], key: str) -> str:
     """取 DB 中的设置值；凭据类先解密（兼容历史明文行）。"""
-    raw = db_settings.get(key)
+    raw = db_settings.get(_canonical_setting_key(key)) or db_settings.get(key)
     if not raw:
         return ""
     try:
@@ -2600,7 +2621,7 @@ def _get_db_setting(db_settings: dict[str, str], key: str) -> str:
 
 
 def _get_setting_value(settings, key: str) -> str:
-    parts = key.lower().split("__")
+    parts = _canonical_setting_key(key).lower().split("__")
     value = settings
     for part in parts:
         value = getattr(value, part, None)
@@ -2625,6 +2646,8 @@ async def get_system_settings(  # type: ignore[no-untyped-def]
 
     for key in SETTING_KEYS:
         val = _get_db_setting(db_settings, key) or _get_setting_value(_settings, key)
+        if not val:
+            val = ORG_SCOPE_SETTING_DEFAULTS.get(_canonical_setting_key(key), "")
         result[key] = mask_secret(val) if key in SECRET_SETTING_KEYS else val
 
     return build_response(data=result)
@@ -2649,6 +2672,7 @@ async def save_system_settings(  # type: ignore[no-untyped-def]
     for key, raw_value in payload.items():
         if key not in SETTING_KEYS:
             continue
+        canonical_key = _canonical_setting_key(key)
         value_text = "" if raw_value is None else str(raw_value)
         if key in SECRET_SETTING_KEYS:
             if not value_text or MASK_PLACEHOLDER in value_text:
@@ -2661,10 +2685,10 @@ async def save_system_settings(  # type: ignore[no-untyped-def]
                 "INSERT INTO hr.system_settings (key, value, updated_at) VALUES (:k, :v, now()) "
                 "ON CONFLICT (key) DO UPDATE SET value = :v, updated_at = now()"
             ),
-            {"k": key, "v": stored_value},
+            {"k": canonical_key, "v": stored_value},
         )
         updated.append(key)
-        env_updates[key] = value_text
+        env_updates[canonical_key] = value_text
     await session.commit()
 
     # Write to .env file

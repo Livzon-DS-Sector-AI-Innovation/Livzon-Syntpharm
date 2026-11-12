@@ -11,8 +11,10 @@ Feishu fetchers. Catches:
 
 from __future__ import annotations
 
+import copy
 from datetime import UTC, datetime
 from typing import Any
+from uuid import UUID
 
 import pytest
 
@@ -21,7 +23,7 @@ from app.modules.hr.org_domain import (
     IN_SCOPE_COMPANY_NAME,
     OrgDepartmentRecord,
 )
-from app.modules.hr.org_sync import OrgSyncStats, sync_org_departments
+from app.modules.hr.org_sync import OrgSyncStats, SyncRunRecord, sync_org_departments
 
 
 class FakeFetcher:
@@ -47,8 +49,9 @@ class FakeFetcher:
 class FakeStore:
     def __init__(self, existing: list[OrgDepartmentRecord] | None = None) -> None:
         self.records: dict[str, OrgDepartmentRecord] = {r.id: r for r in existing or [] if r.id}
+        self._initial = copy.deepcopy(self.records)
         self.hidden: list[str] = []
-        self.runs: list[dict[str, Any]] = []
+        self.runs: list[SyncRunRecord] = []
 
     async def list_departments(self) -> list[OrgDepartmentRecord]:
         return list(self.records.values())
@@ -64,8 +67,12 @@ class FakeStore:
         if department_id in self.records:
             self.records[department_id].hidden = True
 
-    async def record_sync_run(self, **kwargs: Any) -> None:
-        self.runs.append(kwargs)
+    async def record_sync_run(self, run: SyncRunRecord, *, run_id: UUID | None = None) -> None:
+        self.runs.append(run)
+
+    async def rollback(self) -> None:
+        self.records = copy.deepcopy(self._initial)
+        self.hidden = []
 
 
 def _contact(dept_id: str, name: str, parent_id: str) -> dict[str, Any]:
@@ -147,7 +154,7 @@ async def test_sync_upserts_tree_and_directory_fields() -> None:
 
 
 @pytest.mark.asyncio
-async def test_sync_hides_removed_in_scope_rows_and_leaves_out_of_scope_rows() -> None:
+async def test_sync_hides_removed_and_out_of_scope_rows() -> None:
     stale = OrgDepartmentRecord(
         id="od-stale",
         name="已移除车间",
@@ -174,9 +181,9 @@ async def test_sync_hides_removed_in_scope_rows_and_leaves_out_of_scope_rows() -
 
     stats = await sync_org_departments(store, fetcher)
 
-    assert stats.hidden == 1
-    assert store.hidden == ["od-stale"]
-    assert store.records["od-trade"].hidden is False
+    assert stats.hidden == 2
+    assert store.hidden == ["od-stale", "od-trade"]
+    assert store.records["od-trade"].hidden is True
 
 
 @pytest.mark.asyncio
@@ -237,12 +244,12 @@ async def test_sync_records_last_sync_metadata_with_counts() -> None:
 
     assert len(store.runs) == 1
     run = store.runs[0]
-    assert run["status"] == "success"
-    assert run["department_count"] == 1
-    assert run["people_count"] == 0
-    assert run["started_at"] == started
-    assert run["finished_at"] is not None
-    assert run["error_message"] is None
+    assert run.status == "success"
+    assert run.department_count == 1
+    assert run.people_count == 0
+    assert run.started_at == started
+    assert run.finished_at is not None
+    assert run.error_message is None
 
 
 @pytest.mark.asyncio
@@ -262,5 +269,42 @@ async def test_sync_records_failed_run_and_keeps_existing_data() -> None:
 
     assert store.records["od-101"].name == "101车间"
     assert store.hidden == []
-    assert store.runs[-1]["status"] == "failed"
-    assert "feishu unavailable" in store.runs[-1]["error_message"]
+    assert store.runs[-1].status == "failed"
+    assert "feishu unavailable" in (store.runs[-1].error_message or "")
+
+
+@pytest.mark.asyncio
+async def test_sync_rolls_back_partial_writes_before_recording_failure() -> None:
+    existing = OrgDepartmentRecord(id="od-existing", name="既有部门", parent_id=IN_SCOPE_COMPANY_ID)
+    fetcher = FakeFetcher(
+        departments=[
+            _contact("od-101", "101车间", IN_SCOPE_COMPANY_ID),
+            _contact("od-102", "102车间", IN_SCOPE_COMPANY_ID),
+        ],
+        details=[
+            _detail("od-101", "101车间", IN_SCOPE_COMPANY_ID),
+            _detail("od-102", "102车间", IN_SCOPE_COMPANY_ID),
+        ],
+    )
+
+    class FailingStore(FakeStore):
+        def __init__(self) -> None:
+            super().__init__(existing=[existing])
+            self.calls = 0
+
+        async def upsert_department(self, record: OrgDepartmentRecord) -> bool:
+            self.calls += 1
+            if self.calls == 2:
+                raise RuntimeError("database write failed")
+            return await super().upsert_department(record)
+
+    store = FailingStore()
+
+    with pytest.raises(RuntimeError, match="database write failed"):
+        await sync_org_departments(store, fetcher)
+
+    assert set(store.records) == {"od-existing"}
+    assert store.records["od-existing"].name == "既有部门"
+    assert store.hidden == []
+    assert store.runs[-1].status == "failed"
+    assert "database write failed" in (store.runs[-1].error_message or "")

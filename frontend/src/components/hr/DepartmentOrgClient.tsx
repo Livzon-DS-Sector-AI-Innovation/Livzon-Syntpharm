@@ -1,11 +1,12 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Drawer, Empty, Input, Table, Tag, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { fetchOrgSyncStatus, triggerOrgSync } from '@/actions/hr'
 import type { OrgDepartmentNode, OrgSyncStatusData } from '@/types/hr'
@@ -72,29 +73,45 @@ function SyncLine({
       : failed
         ? '失败'
         : '成功'
-  const dotColor = never ? '#a4a097' : failed ? '#e03131' : running ? '#dd5b00' : '#1aae39'
-  const labelColor = failed ? '#c62828' : running ? '#a34700' : '#1a7f37'
+  const dotColor = never
+    ? 'var(--color-stone)'
+    : failed
+      ? 'var(--color-error)'
+      : running
+        ? 'var(--color-warning)'
+        : 'var(--color-success)'
+  const labelColor = failed
+    ? 'var(--color-error)'
+    : running
+      ? 'var(--color-warning)'
+      : never
+        ? 'var(--color-steel)'
+        : 'var(--color-success)'
 
   return (
     <div className="flex items-start gap-3">
       <div className="text-right">
-        <div className="text-xs text-[#787671]">上次同步 {formatTime(status.last_synced_at)}</div>
+        <div className="text-xs text-[var(--color-steel)]">上次同步 {formatTime(status.last_synced_at)}</div>
         <div className="mt-0.5 text-xs">
           <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: dotColor }} />
           <span style={{ color: labelColor }}>{label}</span>
           {!never && (
-            <span className="ml-1 text-[#a4a097]">
+            <span className="ml-1 text-[var(--color-stone)]">
               · 部门 {status.department_count} · 人员 {status.people_count}
             </span>
           )}
         </div>
         {failed && status.error_message && (
-          <div className="mt-0.5 max-w-[360px] truncate text-xs text-[#c62828]" title={status.error_message}>
+          <div
+            className="mt-0.5 max-w-[360px] truncate text-xs"
+            style={{ color: 'var(--color-error)' }}
+            title={status.error_message}
+          >
             {status.error_message}
           </div>
         )}
       </div>
-      <Button size="small" icon={<ReloadOutlined />} loading={syncing} onClick={onSync}>
+      <Button size="small" icon={<ReloadOutlined />} loading={syncing} disabled={running} onClick={onSync}>
         立即同步
       </Button>
     </div>
@@ -103,9 +120,9 @@ function SyncLine({
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex gap-3 border-b border-[#f0eeec] py-2.5 text-[13px]">
-      <span className="w-[110px] shrink-0 text-[#a4a097]">{label}</span>
-      <span className="min-w-0 flex-1 text-[#37352f]">{value}</span>
+    <div className="flex gap-3 border-b border-[var(--color-hairline-soft)] py-2.5 text-[13px]">
+      <span className="w-[110px] shrink-0 text-[var(--color-stone)]">{label}</span>
+      <span className="min-w-0 flex-1 text-[var(--color-charcoal)]">{value}</span>
     </div>
   )
 }
@@ -115,8 +132,23 @@ export default function DepartmentOrgClient({ initialTree, initialStatus }: Depa
   const [keyword, setKeyword] = useState('')
   const [expandedKeys, setExpandedKeys] = useState<string[]>([])
   const [selected, setSelected] = useState<OrgDepartmentNode | null>(null)
-  const [status, setStatus] = useState<OrgSyncStatusData>(initialStatus)
-  const [syncing, setSyncing] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const queryClient = useQueryClient()
+  const statusQuery = useQuery({
+    queryKey: ['hr-org-sync-status'],
+    queryFn: fetchOrgSyncStatus,
+    initialData: { code: 200, message: 'success', data: initialStatus, meta: null },
+    refetchInterval: (query) => (query.state.data?.data.status === 'running' ? 2000 : false),
+  })
+  const status = statusQuery.data.data
+  const running = status.status === 'running'
+  const syncing = submitting || running
+  const wasRunning = useRef(running)
+
+  useEffect(() => {
+    if (wasRunning.current && !running) router.refresh()
+    wasRunning.current = running
+  }, [running, router])
 
   const filtered = useMemo(() => filterTree(initialTree, keyword), [initialTree, keyword])
   const autoExpanded = useMemo(() => searchExpandedKeys(filtered), [filtered])
@@ -124,22 +156,17 @@ export default function DepartmentOrgClient({ initialTree, initialStatus }: Depa
   const allParentKeys = useMemo(() => searchExpandedKeys(initialTree), [initialTree])
 
   const handleSync = async () => {
-    setSyncing(true)
+    if (running) return
+    setSubmitting(true)
     try {
       const result = await triggerOrgSync()
-      setStatus(result.data)
-      message.success('组织架构同步完成')
-      router.refresh()
+      queryClient.setQueryData(['hr-org-sync-status'], result)
+      message.success(result.data.status === 'running' ? '组织架构同步已开始' : '组织架构同步完成')
     } catch (error: unknown) {
       message.error(error instanceof Error ? error.message : '组织架构同步失败')
-      try {
-        const latest = await fetchOrgSyncStatus()
-        setStatus(latest.data)
-      } catch {
-        // 状态刷新失败时保留旧状态，页面仍可用
-      }
+      await queryClient.invalidateQueries({ queryKey: ['hr-org-sync-status'] })
     } finally {
-      setSyncing(false)
+      setSubmitting(false)
     }
   }
 
@@ -148,7 +175,7 @@ export default function DepartmentOrgClient({ initialTree, initialStatus }: Depa
       title: '部门名称',
       dataIndex: 'name',
       render: (value: string, record) => (
-        <span className={record.level === 1 ? 'font-medium text-[#1a1a1a]' : 'text-[#37352f]'}>{value}</span>
+        <span className={record.level === 1 ? 'font-medium text-[var(--color-ink)]' : 'text-[var(--color-charcoal)]'}>{value}</span>
       ),
     },
     {
@@ -229,12 +256,12 @@ export default function DepartmentOrgClient({ initialTree, initialStatus }: Depa
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="m-0 text-[22px] font-semibold text-[#37352f]">部门管理</h1>
+            <h1 className="m-0 text-[22px] font-semibold text-[var(--color-charcoal)]">部门管理</h1>
             <Tag color="default" variant="filled">
               只读
             </Tag>
           </div>
-          <div className="mt-1 text-[12.5px] text-[#a4a097]">
+          <div className="mt-1 text-[12.5px] text-[var(--color-stone)]">
             来自飞书组织架构，两级结构；仅浏览，不可新增或编辑
           </div>
         </div>
@@ -256,10 +283,10 @@ export default function DepartmentOrgClient({ initialTree, initialStatus }: Depa
         <Button size="small" onClick={() => setExpandedKeys([])} disabled={Boolean(keyword)}>
           全部收起
         </Button>
-        {keyword && <span className="text-xs text-[#a4a097]">搜索时自动展开命中路径</span>}
+        {keyword && <span className="text-xs text-[var(--color-stone)]">搜索时自动展开命中路径</span>}
       </div>
 
-      <div className="overflow-hidden rounded-[10px] border border-[#e5e3df] bg-white">
+      <div className="overflow-hidden rounded-[10px] border border-[var(--color-hairline)] bg-white">
         <Table<OrgDepartmentNode>
           rowKey="id"
           columns={columns}

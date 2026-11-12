@@ -1,6 +1,7 @@
 """HR business ORM models live here."""
 
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -215,7 +216,7 @@ class DepartureRecord(BaseModel):
     leave_date: Mapped[date] = mapped_column(Date, nullable=False, comment="离职日期")
     leave_category: Mapped[str] = mapped_column(String(16), nullable=False, comment="离职类别")
     leave_reason: Mapped[str] = mapped_column(String(255), nullable=False, comment="离职原因")
-    tenure_years: Mapped[float] = mapped_column(Numeric(4, 1), nullable=False, comment="司龄（年，保留一位小数）")
+    tenure_years: Mapped[Decimal] = mapped_column(Numeric(4, 1), nullable=False, comment="司龄（年，保留一位小数）")
     group_classification: Mapped[str] = mapped_column(String(32), nullable=False, comment="集团月报表人员分类")
 
 

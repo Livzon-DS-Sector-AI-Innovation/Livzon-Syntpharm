@@ -10,6 +10,7 @@ export default async function EmployeeProfilePage() {
   ])
 
   const tree = treeResult.status === 'fulfilled' ? treeResult.value.data.items ?? [] : []
+  const companyName = treeResult.status === 'fulfilled' ? treeResult.value.data.company_name ?? '' : ''
   const people = peopleResult.status === 'fulfilled' ? peopleResult.value.data : undefined
 
   return (
@@ -18,6 +19,7 @@ export default async function EmployeeProfilePage() {
       initialPeople={people?.items ?? []}
       initialTotal={peopleResult.status === 'fulfilled' ? Number(peopleResult.value.meta?.total ?? 0) : 0}
       initialLastSyncedAt={people?.last_synced_at ?? null}
+      initialCompanyName={companyName}
     />
   )
 }

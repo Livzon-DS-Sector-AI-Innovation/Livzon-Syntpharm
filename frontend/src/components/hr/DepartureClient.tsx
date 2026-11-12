@@ -1,9 +1,9 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Avatar, Button, Input, Table } from 'antd'
+import { Avatar, Button } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { EyeOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons'
+import { EyeOutlined } from '@ant-design/icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { fetchDepartureRecords } from '@/lib/api/client/hr'
@@ -11,6 +11,7 @@ import type { DepartureRecord, DepartureRecordListResponse } from '@/types/hr'
 import DepartureRecordDetailDrawer from './DepartureRecordDetailDrawer'
 import DepartureRecordFormDrawer from './DepartureRecordFormDrawer'
 import { avatarColor } from './onboardingOptions'
+import LedgerTableShell from './LedgerTableShell'
 
 interface DepartureClientProps {
   initialRecords: DepartureRecord[]
@@ -138,68 +139,31 @@ export default function DepartureClient({ initialRecords, initialTotal }: Depart
   ]
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="m-0 text-[22px] font-semibold text-[#37352f]">离职台账</h1>
-          <div className="mt-1 text-[12.5px] text-[#a4a097]">共 {total} 条</div>
-        </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-          新建
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <Input.Search
-          placeholder="搜索姓名、部门、岗位"
-          allowClear
-          onSearch={(value) => {
-            setKeyword(value.trim())
-            setPage(1)
-          }}
-          onChange={(event) => {
-            if (!event.target.value) {
-              setKeyword('')
-              setPage(1)
-            }
-          }}
-          className="w-72"
-        />
-        <Input
-          placeholder="一级或二级部门筛选"
-          allowClear
-          prefix={<SearchOutlined />}
-          value={department}
-          onChange={(event) => {
-            setDepartment(event.target.value)
-            setPage(1)
-          }}
-          className="w-56"
-        />
-      </div>
-
-      <div className="overflow-hidden rounded-[10px] border border-[#e5e3df] bg-white">
-        <Table<DepartureRecord>
-          columns={columns}
-          dataSource={records}
-          rowKey="id"
-          loading={isFetching}
-          size="middle"
-          pagination={{
-            current: page,
-            pageSize,
-            total,
-            showSizeChanger: true,
-            showTotal: (count) => `共 ${count} 条`,
-            onChange: (nextPage, nextPageSize) => {
-              setPage(nextPage)
-              setPageSize(nextPageSize)
-            },
-          }}
-          scroll={{ x: 1150 }}
-        />
-      </div>
-
+    <LedgerTableShell<DepartureRecord>
+      title="离职台账"
+      total={total}
+      department={department}
+      keywordPlaceholder="搜索姓名、部门、岗位"
+      departmentPlaceholder="一级或二级部门筛选"
+      onKeywordChange={(value) => {
+        setKeyword(value.trim())
+        setPage(1)
+      }}
+      onDepartmentChange={(value) => {
+        setDepartment(value)
+        setPage(1)
+      }}
+      columns={columns}
+      records={records}
+      loading={isFetching}
+      page={page}
+      pageSize={pageSize}
+      onPageChange={(nextPage, nextPageSize) => {
+        setPage(nextPage)
+        setPageSize(nextPageSize)
+      }}
+      onCreate={openCreate}
+    >
       <DepartureRecordDetailDrawer
         open={Boolean(detailRecord)}
         record={detailRecord}
@@ -214,6 +178,6 @@ export default function DepartureClient({ initialRecords, initialTotal }: Depart
         onClose={() => setFormOpen(false)}
         onSaved={refresh}
       />
-    </div>
+    </LedgerTableShell>
   )
 }

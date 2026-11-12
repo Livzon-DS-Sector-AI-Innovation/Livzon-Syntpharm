@@ -14,9 +14,11 @@ These are pure functions: no DB, no HTTP.
 from __future__ import annotations
 
 from app.modules.hr.org_domain import (
+    DEFAULT_ORG_SCOPE,
     IN_SCOPE_COMPANY_ID,
     IN_SCOPE_COMPANY_NAME,
     OrgDepartmentRecord,
+    OrgScope,
     build_org_tree,
     parse_directory_department,
     select_departments_to_hide,
@@ -173,7 +175,7 @@ def test_build_org_tree_filters_hidden_and_renders_unresolved_leaders_as_dash() 
     assert tree[0]["leader_display"] == "—"
 
 
-def test_select_departments_to_hide_only_touches_previous_in_scope_rows() -> None:
+def test_select_departments_to_hide_flags_missing_and_out_of_scope_rows() -> None:
     rows = [
         {
             "id": IN_SCOPE_COMPANY_ID,
@@ -210,4 +212,23 @@ def test_select_departments_to_hide_only_touches_previous_in_scope_rows() -> Non
 
     to_hide = select_departments_to_hide(rows, seen_ids={"od-seen"})
 
-    assert to_hide == ["od-stale"]
+    # Both the removed in-scope row and the out-of-scope branch are hidden:
+    # only the configured root and the ids Feishu returned stay visible.
+    assert to_hide == ["od-stale", "od-out-of-scope"]
+
+
+def test_build_org_tree_uses_configured_scope_root() -> None:
+    scope = OrgScope(department_id="od-new-company", department_name="新公司")
+    scoped = _record("od-a", "101车间", parent="od-new-company")
+    scoped.department_path = [{"id": "od-new-company", "name": "新公司"}, {"id": "od-a", "name": "101车间"}]
+    records = [
+        scoped,
+        _record("od-other", "旧公司部门", parent=IN_SCOPE_COMPANY_ID),
+    ]
+
+    tree = build_org_tree(records, leader_names={}, scope=scope)
+
+    assert [node["name"] for node in tree] == ["101车间"]
+    assert tree[0]["parent_name"] == "新公司"
+    assert tree[0]["department_path"][0] == {"id": "od-new-company", "name": "新公司"}
+    assert DEFAULT_ORG_SCOPE.department_id == IN_SCOPE_COMPANY_ID

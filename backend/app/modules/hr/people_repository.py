@@ -18,7 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ColumnElement
 
 from app.modules.hr.models import EmployeeProfile
-from app.modules.hr.org_domain import IN_SCOPE_COMPANY_ID
+from app.modules.hr.org_domain import OrgScope
+from app.modules.hr.org_settings import load_org_scope
 from app.modules.hr.people_domain import EmployeeProfileRecord
 from app.modules.hr.people_sync import KnownPerson
 from app.platform.identity.models import Department, User
@@ -57,28 +58,28 @@ def parse_staff_status(value: str | None) -> int | None:
         return None
 
 
-async def in_scope_department_ids(session: AsyncSession) -> set[str]:
-    """Return the Feishu department ids that belong to the in-scope company."""
+async def in_scope_department_ids(session: AsyncSession, scope: OrgScope | None = None) -> set[str]:
+    """Return the Feishu department ids that belong to the configured company."""
+    org_scope = scope or await load_org_scope(session)
     result = await session.execute(select(Department).where(Department.is_deleted.is_(False)))
     departments = list(result.scalars().all())
-    scope: set[str] = set()
+    scoped: set[str] = set()
     for department in departments:
-        if department.parent_feishu_department_id == IN_SCOPE_COMPANY_ID:
-            scope.add(department.feishu_department_id)
-        path = department.department_path or []
-        if any(isinstance(entry, dict) and entry.get("id") == IN_SCOPE_COMPANY_ID for entry in path):
-            scope.add(department.feishu_department_id)
+        if org_scope.is_direct_child(department.parent_feishu_department_id):
+            scoped.add(department.feishu_department_id)
+        if org_scope.covers_path(department.department_path):
+            scoped.add(department.feishu_department_id)
 
     changed = True
     while changed:
         changed = False
         for department in departments:
-            if department.feishu_department_id in scope:
+            if department.feishu_department_id in scoped:
                 continue
-            if department.parent_feishu_department_id in scope:
-                scope.add(department.feishu_department_id)
+            if department.parent_feishu_department_id in scoped:
+                scoped.add(department.feishu_department_id)
                 changed = True
-    return scope
+    return scoped
 
 
 async def resolve_filter_department_ids(session: AsyncSession, selected: str | None) -> set[str] | None:
@@ -87,9 +88,10 @@ async def resolve_filter_department_ids(session: AsyncSession, selected: str | N
     ``None`` means "no department filter" (company node). A selected 一级部门
     also matches its 二级部门 children; a selected 二级部门 matches itself.
     """
-    if not selected or selected == IN_SCOPE_COMPANY_ID:
+    org_scope = await load_org_scope(session)
+    if not selected or org_scope.is_root(selected):
         return None
-    scope = await in_scope_department_ids(session)
+    scope = await in_scope_department_ids(session, org_scope)
     if selected not in scope:
         return set()
     result = await session.execute(
