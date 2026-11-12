@@ -370,6 +370,23 @@ async def test_remove_attachment_cascades_comment_soft_delete(monkeypatch: pytes
     assert repo.soft_deleted == [(_LEDGER_ID, _FILE_ID, _AUTHOR_ID)]
 
 
+async def test_remove_attachment_purges_preview_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    service, _ = _service(_row())
+    deleted: list[tuple[str, str]] = []
+    monkeypatch.setattr(core_storage, "is_enabled", lambda: True)
+    monkeypatch.setattr(core_storage, "delete_object", lambda module, key: deleted.append((module, key)))
+
+    async def _fake_detail(*args: Any, **kwargs: Any) -> Any:
+        return SimpleNamespace(id=_LEDGER_ID)
+
+    monkeypatch.setattr(service, "_build_detail", _fake_detail)
+    await service.remove_attachment(_LEDGER_ID, _FILE_ID, actor_id=_AUTHOR_ID, actor_is_superuser=True)
+
+    assert ("quality", str(_attachment()["object_key"])) in deleted
+    # .doc 转换缓存按 file_id 生成，删除附件后不应残留
+    assert ("quality", service_module._preview_cache_key(_LEDGER_ID, _FILE_ID)) in deleted
+
+
 # ── 预览 ──────────────────────────────────────────────────────────────
 
 

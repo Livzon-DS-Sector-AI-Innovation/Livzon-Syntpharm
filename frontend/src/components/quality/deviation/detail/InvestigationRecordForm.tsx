@@ -9,6 +9,7 @@ import {
   submitDeviationInvestigation,
   uploadDeviationAttachment,
 } from '@/actions/quality'
+import { fetchDeviationAttachmentCommentSummary } from '@/lib/api/client/quality'
 import type { DeviationInvestigationInput, DeviationLedgerDetail } from '@/types/quality'
 
 const { TextArea } = Input
@@ -43,13 +44,24 @@ interface InvestigationRecordFormProps {
 /** 单文件上限 20MB，与台账上传一致 */
 const MAX_ATTACHMENT_SIZE = 20 * 1024 * 1024
 
+/** 台账内所有附件的未处理批注总数；取不到时返回 0，不阻断提交 */
+async function countPendingAttachmentComments(ledgerId: string): Promise<number> {
+  try {
+    const summary = await fetchDeviationAttachmentCommentSummary(ledgerId)
+    return (summary.items ?? []).reduce((total, item) => total + (item.open_count ?? 0), 0)
+  } catch {
+    // 批注汇总属提醒性质，失败时按「无未处理批注」处理
+    return 0
+  }
+}
+
 /**
  * 结构化调查记录表单：「提交调查报告」与「追加记录」共用。
  * 顺序：不符合事项描述 / 根本原因分析 / 风险评估（必填）→ CAPA 多行
  * →「有紧急处理措施」（勾选后必填并以黄色警示块展示）→ 记录附件（引用台账 file_id）。
  */
 export function InvestigationRecordForm({ ledger, mode, onSubmitted, onLedgerChange, onCancel }: InvestigationRecordFormProps) {
-  const { message } = App.useApp()
+  const { message, modal } = App.useApp()
   const [form] = Form.useForm<FormValues>()
   const [busy, setBusy] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -71,6 +83,24 @@ export function InvestigationRecordForm({ ledger, mode, onSubmitted, onLedgerCha
       })),
       attachment_file_ids: values.attachment_file_ids ?? [],
     }
+    if (mode === 'submit') {
+      const pending = await countPendingAttachmentComments(ledger.id)
+      if (pending > 0) {
+        modal.confirm({
+          title: `还有 ${pending} 条未处理批注`,
+          content: '未处理的文档批注不会阻断流程。建议先处理或标记解决后再提交调查。',
+          okText: '仍然提交',
+          cancelText: '返回处理',
+          okButtonProps: { danger: true },
+          onOk: () => runSubmit(body),
+        })
+        return
+      }
+    }
+    await runSubmit(body)
+  }
+
+  const runSubmit = async (body: DeviationInvestigationInput) => {
     setBusy(true)
     const result =
       mode === 'submit'

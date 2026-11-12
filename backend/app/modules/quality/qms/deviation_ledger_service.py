@@ -814,14 +814,18 @@ class DeviationLedgerService:
         await self.comment_repo.soft_delete_by_file(ledger_id, file_id, actor_id=actor_id)
         await self.db.commit()
         await self.db.refresh(row)
-        if storage.is_enabled() and target.get("object_key"):
-            try:
-                storage.delete_object(_STORAGE_MODULE, str(target["object_key"]))
-            except Exception:  # noqa: BLE001 - 存储清理失败不回滚元数据
-                logger.warning(
-                    "deviation attachment object delete failed",
-                    extra={"app_module": "quality", "ledger_id": str(ledger_id)},
-                )
+        if storage.is_enabled():
+            stale_keys = [str(target["object_key"])] if target.get("object_key") else []
+            # 转换缓存按 file_id 生成，原文件删除后不再被引用，一并清理避免对象累积
+            stale_keys.append(_preview_cache_key(ledger_id, file_id))
+            for key in stale_keys:
+                try:
+                    await asyncio.to_thread(storage.delete_object, _STORAGE_MODULE, key)
+                except Exception:  # noqa: BLE001 - 存储清理失败不回滚元数据
+                    logger.warning(
+                        "deviation attachment object delete failed",
+                        extra={"app_module": "quality", "ledger_id": str(ledger_id), "object_key": key},
+                    )
         return await self._build_detail(row, viewer_id=actor_id)
 
     async def get_attachment_file(
@@ -884,7 +888,7 @@ class DeviationLedgerService:
         file_name: str,
     ) -> tuple[str, bytes, str]:
         """``.doc`` 预览：先查对象存储缓存，未命中则单飞转换并回写缓存。"""
-        cache_key = f"deviation-ledger/{ledger_id}/.preview/{file_id}.docx"
+        cache_key = _preview_cache_key(ledger_id, file_id)
         cached = await asyncio.to_thread(storage.get_object, _STORAGE_MODULE, cache_key)
         if cached is not None and cached[0]:
             return _docx_file_name(file_name), cached[0], _DOCX_CONTENT_TYPE
@@ -1731,6 +1735,11 @@ def _avatar_of(profiles: dict[str, _UserProfile], user_id: Any) -> str | None:
         return None
     profile = profiles.get(str(user_id))
     return profile.avatar_url if profile else None
+
+
+def _preview_cache_key(ledger_id: uuid.UUID, file_id: uuid.UUID) -> str:
+    """``.doc`` 转换结果的缓存 key，按台账 + 附件隔离。"""
+    return f"deviation-ledger/{ledger_id}/.preview/{file_id}.docx"
 
 
 def _docx_file_name(file_name: str) -> str:
