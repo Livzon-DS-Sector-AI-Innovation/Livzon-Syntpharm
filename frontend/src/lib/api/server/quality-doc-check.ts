@@ -1,5 +1,4 @@
 import type { components } from '@/types/generated/schema'
-import type { MessageResponse } from '@/types/common'
 
 import { apiFetch } from './base'
 
@@ -29,12 +28,5 @@ export async function updateDocCheckProblem(
   return apiFetch<components['schemas']['ProblemApiResponse']>(`${API_BASE}/problems/${problemId}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
-  })
-}
-
-/** 删除偏差单（deviation_flow 路由未注册进 OpenAPI，使用 code/message 信封类型） */
-export async function deleteDeviationFlow(deviationId: string) {
-  return apiFetch<MessageResponse>(`${API_BASE}/deviation-flow/${deviationId}`, {
-    method: 'DELETE',
   })
 }

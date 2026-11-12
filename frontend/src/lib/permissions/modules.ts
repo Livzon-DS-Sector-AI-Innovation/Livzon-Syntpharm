@@ -37,6 +37,7 @@ export const MODULE_ACCESS_PERMS: Partial<Record<string, readonly PermissionCode
   research: [PERM.researchRead],
   registration: [PERM.registrationRead],
   quality: [PERM.qualityRead],
+  agent: [PERM.agentRead],
   // 系统管理（首批接入）：取各子页守卫口径的并集，见下方 SUBMENU_ACCESS_PERMS。
   // grant:read / grant:manage 必须在内：只被授予「授权管理」的账号（如 t-grant）
   // 没有 user:read / role:read，但需要能进入系统管理 → 授权管理。

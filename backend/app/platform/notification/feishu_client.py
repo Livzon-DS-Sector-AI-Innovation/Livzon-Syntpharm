@@ -1,5 +1,6 @@
 """飞书机器人客户端 - 使用 App ID 和 App Secret 获取 tenant_access_token"""
 
+import json
 import logging
 from typing import Any
 
@@ -65,7 +66,8 @@ class FeishuClient:
         payload = {
             "receive_id": receive_id,
             "msg_type": msg_type,
-            "content": content if isinstance(content, str) else content,
+            # 飞书要求 content 为 JSON 字符串；直接传 dict 会被拒（9499 invalid content）
+            "content": content if isinstance(content, str) else json.dumps(content, ensure_ascii=False),
         }
 
         headers = {
@@ -206,12 +208,14 @@ async def send_feishu_card(
                     "tag": "action",
                     "actions": [
                         {
-                            "tag": "a",
+                            # 卡片 v1 的 action 模块只支持 button，不支持 a（11310）
+                            "tag": "button",
                             "text": {
                                 "tag": "lark_md",
                                 "content": action.get("text", ""),
                             },
-                            "href": {"url": action.get("url", "")},
+                            "type": "primary",
+                            "url": action.get("url", ""),
                         }
                     ],
                 }
