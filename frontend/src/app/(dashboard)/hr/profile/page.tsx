@@ -1,12 +1,14 @@
-import { fetchEmployeeDepartmentsAction, fetchEmployeeProfilesAction } from '@/actions/hr'
+import { fetchEmployeeDepartmentsAction, fetchEmployeeProfilesAction, fetchOrgSyncStatus } from '@/actions/hr'
 import { EmployeeDirectoryClient } from '@/components/hr'
+import { unavailableOrgSyncStatus } from '@/lib/hr/orgSyncStatus'
 
 export const dynamic = 'force-dynamic'
 
 export default async function EmployeeProfilePage() {
-  const [treeResult, peopleResult] = await Promise.allSettled([
+  const [treeResult, peopleResult, statusResult] = await Promise.allSettled([
     fetchEmployeeDepartmentsAction(),
     fetchEmployeeProfilesAction({ page: 1, page_size: 20 }),
+    fetchOrgSyncStatus(),
   ])
 
   const tree = treeResult.status === 'fulfilled' ? treeResult.value.data.items ?? [] : []
@@ -20,6 +22,7 @@ export default async function EmployeeProfilePage() {
       initialTotal={peopleResult.status === 'fulfilled' ? Number(peopleResult.value.meta?.total ?? 0) : 0}
       initialLastSyncedAt={people?.last_synced_at ?? null}
       initialCompanyName={companyName}
+      initialStatus={statusResult.status === 'fulfilled' ? statusResult.value.data : unavailableOrgSyncStatus()}
     />
   )
 }
