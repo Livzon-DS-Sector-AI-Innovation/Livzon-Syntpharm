@@ -2638,14 +2638,13 @@ async def get_system_settings(  # type: ignore[no-untyped-def]
 ):
     """获取所有系统配置。凭据类字段只返回掩码（如 `cli_ab****cd12`），绝不返回明文。"""
     result = {}
-    _settings = get_settings()
     from sqlalchemy import text as sql_text
 
     r = await session.execute(sql_text("SELECT key, value FROM hr.system_settings"))
     db_settings = {row[0]: row[1] for row in r.fetchall()}
 
     for key in SETTING_KEYS:
-        val = _get_db_setting(db_settings, key) or _get_setting_value(_settings, key)
+        val = _get_db_setting(db_settings, key)
         if not val:
             val = ORG_SCOPE_SETTING_DEFAULTS.get(_canonical_setting_key(key), "")
         result[key] = mask_secret(val) if key in SECRET_SETTING_KEYS else val
