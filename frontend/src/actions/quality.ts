@@ -17,10 +17,28 @@ import type {
   AiLogListResponse,
   AiLogFilter,
   UploadLcResponse,
+  DeviationAiAnalysisInput,
+  DeviationAttachmentComment,
+  DeviationAttachmentCommentCreateInput,
+  DeviationAttachmentCommentUpdateInput,
+  DeviationBatchResult,
+  DeviationCrossDeptApproveInput,
+  DeviationFinalCodeInput,
+  DeviationInvestigationInput,
+  DeviationJobState,
+  DeviationLedgerBatchStatusInput,
+  DeviationLedgerCreateInput,
+  DeviationLedgerDetail,
+  DeviationLedgerUpdateInput,
+  DeviationNotifySettings,
+  DeviationNotifySettingsUpdate,
+  DeviationNotifyTestResult,
+  DeviationResubmitInput,
+  DeviationReviewInput,
+  WeeklyConfirmationInput,
+  WeeklyConfirmationItem,
 } from '@/types/quality'
 
-type DeviationCreate = components['schemas']['DeviationCreate']
-type DeviationUpdate = components['schemas']['DeviationUpdate']
 type CapaCreate = components['schemas']['CapaCreate']
 type CapaUpdate = components['schemas']['CapaUpdate']
 
@@ -86,30 +104,10 @@ import {
   CapaEvaluationSchema,
   CapaPartCompleteSchema,
   CapaDeptHeadConfirmSchema,
-  DeviationInvestigationSchema,
-  DeviationReviewSchema,
-  DeviationFinalCodeSchema,
-  DeviationTaskCreateSchema,
-  DeviationReportGenerateSchema,
-  DeviationApprovalSchema,
-  DeviationTaskUpdateSchema,
-  DeviationTaskFieldsUpdateSchema,
-  DeviationTemplateCreateSchema,
-  SopTemplateCreateSchema,
-  SopFromTemplateCreateSchema,
-  SopGenerateSchema,
-  SopRuleCreateSchema,
   parse
 } from '@/lib/validation/schemas'
 import * as QualityServer from '@/lib/api/server/quality'
-import * as DeviationReportServer from '@/lib/api/server/quality-deviation-report'
 import * as DocCheckServer from '@/lib/api/server/quality-doc-check'
-import type {
-  DeviationOptimizeJob,
-  DeviationOptimizeJobResult,
-  DeviationReportOptimizeType,
-  DeviationReportUploadResult,
-} from '@/types/quality'
 
 /** 判断服务端函数的返回值是不是完整信封 `{code, message, data, meta}`。 */
 function isEnvelope(value: unknown): value is components['schemas']['ApiResponse'] {
@@ -518,35 +516,12 @@ export async function getStabilityTrendData(studyId: string) {
 
 // ============ AI交互日志 Actions ============
 
-export async function getAiLogs(params: AiLogFilter & { page?: number; page_size?: number } = {}) {
+export async function getAiLogs(params: AiLogFilter = {}) {
   return wrap<AiLogListResponse>(QualityServer.getAiLogs(params))
 }
 
 export async function getAiLogById(id: string) {
   return wrap<AiLogItem>(QualityServer.getAiLogById(id))
-}
-
-// ============ Deviation Actions ============
-
-export async function createDeviation(data: DeviationCreate) {
-  const result = await QualityServer.createDeviation(data)
-  revalidatePath('/quality')
-  revalidatePath('/quality/deviations')
-  return result
-}
-
-export async function updateDeviation(deviationId: string, data: DeviationUpdate) {
-  const result = await QualityServer.updateDeviation(deviationId, data)
-  revalidatePath('/quality')
-  revalidatePath('/quality/deviations')
-  revalidatePath(`/quality/deviations/${deviationId}`)
-  return result
-}
-
-export async function deleteDeviation(deviationId: string) {
-  await QualityServer.deleteDeviation(deviationId)
-  revalidatePath('/quality')
-  revalidatePath('/quality/deviations')
 }
 
 // ============ CAPA Actions ============
@@ -599,25 +574,6 @@ export async function deleteDepartmentContact(contactId: string) {
 
 export async function fetchLabelVerificationsServer(params: { page: number; page_size: number }) {
   return QualityServer.fetchLabelVerifications(params)
-}
-
-// ============ Attachment Review Actions ============
-
-export async function submitAttachmentReview(data: {
-  deviation_id?: string | null
-  capa_id?: string | null
-  attachment_url: string
-  content: string
-}) {
-  const response = await wrap<unknown>(QualityServer.submitAttachmentReview(data))
-  revalidatePath('/quality')
-  return response
-}
-
-export async function deleteAttachmentReview(reviewId: string) {
-  const response = await wrap<unknown>(QualityServer.deleteAttachmentReview(reviewId))
-  revalidatePath('/quality')
-  return response
 }
 
 // ============ Additional CAPA Actions ============
@@ -699,236 +655,6 @@ export async function confirmDeptHead(capaId: string, data: unknown) {
   return result
 }
 
-// ============ Additional Deviation Actions ============
-
-export async function submitDeviation(deviationId: string) {
-  const result = await QualityServer.submitDeviation(deviationId)
-  revalidatePath('/quality')
-  revalidatePath('/quality/deviations')
-  revalidatePath(`/quality/deviations/${deviationId}`)
-  return result
-}
-
-export async function submitInvestigation(deviationId: string, data: unknown) {
-  const validated = parse(DeviationInvestigationSchema, data)
-  const result = await QualityServer.submitInvestigation(deviationId, validated)
-  revalidatePath('/quality')
-  revalidatePath('/quality/deviations')
-  revalidatePath(`/quality/deviations/${deviationId}`)
-  return result
-}
-
-export async function submitReview(deviationId: string, data: unknown) {
-  const validated = parse(DeviationReviewSchema, data)
-  const result = await QualityServer.submitReview(deviationId, validated)
-  revalidatePath('/quality')
-  revalidatePath('/quality/deviations')
-  revalidatePath(`/quality/deviations/${deviationId}`)
-  return result
-}
-
-export async function submitFinalCode(deviationId: string, data: unknown) {
-  const validated = parse(DeviationFinalCodeSchema, data)
-  const result = await QualityServer.submitFinalCode(deviationId, validated)
-  revalidatePath('/quality')
-  revalidatePath('/quality/deviations')
-  revalidatePath(`/quality/deviations/${deviationId}`)
-  return result
-}
-
-export async function resubmitDeviation(deviationId: string) {
-  const result = await QualityServer.resubmitDeviation(deviationId)
-  revalidatePath('/quality')
-  revalidatePath('/quality/deviations')
-  revalidatePath(`/quality/deviations/${deviationId}`)
-  return result
-}
-
-// ============ Deviation Automation Actions ============
-
-export async function createDeviationTask(data: unknown) {
-  const validated = parse(DeviationTaskCreateSchema, data)
-  const response = await wrap<unknown>(QualityServer.createDeviationTask(validated))
-  revalidatePath('/quality/deviation-automation')
-  return response
-}
-
-export async function generateDeviationReport(taskId: string, data: unknown) {
-  const validated = parse(DeviationReportGenerateSchema, data)
-  const response = await wrap<unknown>(QualityServer.generateDeviationReport(taskId, validated))
-  revalidatePath('/quality/deviation-automation')
-  return response
-}
-
-export async function submitDeviationApproval(taskId: string, data: unknown) {
-  const validated = parse(DeviationApprovalSchema, data)
-  const response = await wrap<unknown>(QualityServer.submitDeviationApproval(taskId, validated))
-  revalidatePath('/quality/deviation-automation')
-  return response
-}
-
-export async function updateDeviationTask(taskId: string, data: unknown) {
-  const validated = parse(DeviationTaskUpdateSchema, data)
-  const response = await wrap<unknown>(QualityServer.updateDeviationTask(taskId, validated))
-  revalidatePath('/quality/deviation-automation')
-  return response
-}
-
-export async function updateDeviationTaskFields(taskId: string, data: unknown) {
-  const validated = parse(DeviationTaskFieldsUpdateSchema, data)
-  const response = await wrap<unknown>(QualityServer.updateDeviationTaskFields(taskId, validated))
-  revalidatePath('/quality/deviation-automation')
-  return response
-}
-
-export async function deleteDeviationTask(taskId: string) {
-  const response = await wrap<unknown>(QualityServer.deleteDeviationTask(taskId))
-  revalidatePath('/quality/deviation-automation')
-  return response
-}
-
-// These three return the server's body as-is, rather than wrapping it in
-// `ApiResponse` like the actions above. `apiFetch` already yields
-// `{code, message, data}`, so `wrap` nested it a second time and the caller could
-// not reach `data.id` — which is what the templates page needs after a create, to
-// open the upload modal. Same shape as `fetchLabelVerificationsServer` below.
-export async function createDeviationTemplate(data: unknown) {
-  const validated = parse(DeviationTemplateCreateSchema, data)
-  const response = await QualityServer.createDeviationTemplate(validated)
-  revalidatePath('/quality/deviation-automation/templates')
-  return response
-}
-
-export async function updateDeviationTemplate(templateId: string, data: unknown) {
-  const validated = parse(DeviationTemplateCreateSchema.partial(), data)
-  const response = await QualityServer.updateDeviationTemplate(templateId, validated)
-  revalidatePath('/quality/deviation-automation/templates')
-  return response
-}
-
-export async function deleteDeviationTemplate(templateId: string | number) {
-  const response = await QualityServer.deleteDeviationTemplate(templateId)
-  revalidatePath('/quality/deviation-automation/templates')
-  return response
-}
-
-export async function createSopTemplate(data: unknown) {
-  const validated = parse(SopTemplateCreateSchema, data)
-  const response = await wrap<unknown>(QualityServer.createSopTemplate(validated))
-  revalidatePath('/quality/deviation-automation/sop')
-  return response
-}
-
-export async function createSopFromTemplate(data: unknown) {
-  const validated = parse(SopFromTemplateCreateSchema, data)
-  const response = await wrap<unknown>(QualityServer.createSopFromTemplate(validated))
-  revalidatePath('/quality/deviation-automation/sop')
-  return response
-}
-
-export async function updateSopTemplate(templateId: string, data: unknown) {
-  const validated = parse(SopTemplateCreateSchema.partial(), data)
-  const response = await wrap<unknown>(QualityServer.updateSopTemplate(templateId, validated))
-  revalidatePath('/quality/deviation-automation/sop')
-  return response
-}
-
-export async function deleteSopTemplate(templateId: string) {
-  const response = await wrap<unknown>(QualityServer.deleteSopTemplate(templateId))
-  revalidatePath('/quality/deviation-automation/sop')
-  return response
-}
-
-export async function generateSop(data: unknown) {
-  const validated = parse(SopGenerateSchema, data)
-  const response = await wrap<unknown>(QualityServer.generateSop(validated))
-  revalidatePath('/quality/deviation-automation/sop')
-  return response
-}
-
-// ============ Additional Deviation Automation Actions ============
-
-export async function uploadDeviationFile(file: File) {
-  const formData = new FormData()
-  formData.append('file', file)
-  const response = await wrap<unknown>(QualityServer.uploadDeviationFile(formData))
-  revalidatePath('/quality/deviation-automation')
-  return response
-}
-
-export async function triggerAIProcess(taskId: number) {
-  const response = await wrap<unknown>(QualityServer.triggerAIProcess(taskId))
-  revalidatePath('/quality/deviation-automation')
-  return response
-}
-
-export async function updateAIResult(taskId: number, aiResult: unknown) {
-  const response = await wrap<unknown>(QualityServer.updateAIResult(taskId, aiResult))
-  revalidatePath('/quality/deviation-automation')
-  return response
-}
-
-export async function generateStandard(taskId: number) {
-  const response = await wrap<unknown>(QualityServer.generateStandard(taskId))
-  revalidatePath('/quality/deviation-automation')
-  return response
-}
-
-export async function updateDeviationTemplateStatus(id: number, isActive: boolean) {
-  const response = await wrap<unknown>(QualityServer.updateDeviationTemplateStatus(id, isActive))
-  revalidatePath('/quality/deviation-automation/templates')
-  return response
-}
-
-export async function uploadDeviationTemplate(file: File) {
-  const formData = new FormData()
-  formData.append('file', file)
-  const response = await wrap<unknown>(QualityServer.uploadDeviationTemplate(formData))
-  revalidatePath('/quality/deviation-automation/templates')
-  return response
-}
-
-export async function deleteSopRule(id: number) {
-  const response = await wrap<unknown>(QualityServer.deleteSopRule(id))
-  revalidatePath('/quality/deviation-automation/sop')
-  return response
-}
-
-export async function updateSopRuleStatus(id: number | string, status: string | number) {
-  const response = await wrap<unknown>(QualityServer.updateSopRuleStatus(id, status))
-  revalidatePath('/quality/deviation-automation/sop')
-  return response
-}
-
-export async function createSopRule(data: unknown) {
-  const validated = parse(SopRuleCreateSchema, data)
-  const response = await wrap<unknown>(QualityServer.createSopRule(validated))
-  revalidatePath('/quality/deviation-automation/sop')
-  return response
-}
-
-export async function uploadSopRule(ruleId: number, file: File) {
-  const formData = new FormData()
-  formData.append('file', file)
-  const response = await wrap<unknown>(QualityServer.uploadSopRule(formData, ruleId))
-  revalidatePath('/quality/deviation-automation/sop')
-  return response
-}
-
-export async function aiParseSopRule(ruleId: number) {
-  const response = await wrap<unknown>(QualityServer.aiParseSopRule(ruleId))
-  revalidatePath('/quality/deviation-automation/sop')
-  return response
-}
-
-export async function uploadDeviationFileWithTask(taskId: number, file: File) {
-  const formData = new FormData()
-  formData.append('task_id', String(taskId))
-  formData.append('file', file)
-  const response = await wrap<unknown>(QualityServer.uploadDeviationFileWithTask(formData))
-  revalidatePath('/quality/deviation-automation')
-  return response
-}
 export async function uploadLcExcel(file: File): Promise<UploadLcResponse> {
   const formData = new FormData()
   formData.append('file', file)
@@ -954,38 +680,323 @@ export async function confirmDocCheckRecord(recordId: string) {
 }
 
 /** 更新预审问题的处理结果 */
-export async function updateDocCheckProblem(
-  problemId: string,
-  payload: { handle_status: string; ignore_reason?: string },
-) {
+export async function updateDocCheckProblem(problemId: string, payload: components['schemas']['ProblemUpdate']) {
   const response = await wrap<null>(DocCheckServer.updateDocCheckProblem(problemId, payload))
   revalidatePath('/quality/doc-check')
   return response
 }
 
-/** 删除偏差单 */
-export async function deleteDeviationFlow(deviationId: string) {
-  const response = await wrap<null>(DocCheckServer.deleteDeviationFlow(deviationId))
-  revalidatePath('/quality/deviation-flow')
-  return response
+// ============ 偏差台账 Actions ============
+
+export interface DeviationLedgerActionResult {
+  code: number
+  message: string
+  data: DeviationLedgerDetail | null
 }
 
-// ============ Deviation Report Actions ============
-
-/** 上传 Word 模板并解析为 HTML（server 层已解包，直接返回契约数据） */
-export async function uploadDeviationReportTemplate(file: File): Promise<DeviationReportUploadResult> {
-  return DeviationReportServer.uploadDeviationReport(file)
+/** 新建偏差：成功后刷新看盘与台账两个页面数据 */
+export async function createDeviationLedger(
+  input: DeviationLedgerCreateInput,
+): Promise<DeviationLedgerActionResult> {
+  try {
+    const response = await wrap<DeviationLedgerDetail>(QualityServer.fetchCreateDeviationLedger(input))
+    revalidatePath('/quality/deviation')
+    revalidatePath('/quality/deviation/ledger')
+    return { code: response.code, message: response.message, data: response.data }
+  } catch (error) {
+    // 原始错误只进服务端日志，避免把内部细节透给浏览器
+    console.error('偏差创建失败', error)
+    return {
+      code: 500,
+      message: '偏差创建失败，请稍后重试',
+      data: null,
+    }
+  }
 }
 
-/** 提交 AI 优化任务，返回 job_id（结果由客户端轮询，避免单个请求等 LLM 二三十秒） */
-export async function startDeviationReportOptimize(
-  text: string,
-  optimizeType: DeviationReportOptimizeType,
-): Promise<DeviationOptimizeJob> {
-  return DeviationReportServer.startDeviationReportOptimize(text, optimizeType)
+/** 所有偏差详情写操作的统一收口：成功刷新详情 / 台账 / 看盘三处缓存。 */
+async function runDeviationAction(
+  id: string,
+  call: () => Promise<DeviationLedgerDetail>,
+  fallbackMessage: string,
+): Promise<DeviationLedgerActionResult> {
+  try {
+    const data = await call()
+    revalidatePath('/quality/deviation')
+    revalidatePath('/quality/deviation/ledger')
+    revalidatePath(`/quality/deviation/${id}`)
+    return { code: 200, message: '操作成功', data }
+  } catch (error) {
+    console.error(fallbackMessage, error)
+    return {
+      code: 500,
+      message: error instanceof Error ? error.message : fallbackMessage,
+      data: null,
+    }
+  }
 }
 
-/** 轮询 AI 优化任务状态 */
-export async function getDeviationReportOptimizeJob(jobId: string): Promise<DeviationOptimizeJobResult> {
-  return DeviationReportServer.fetchDeviationReportOptimizeJob(jobId)
+export async function updateDeviationLedger(
+  id: string,
+  input: DeviationLedgerUpdateInput,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(id, () => QualityServer.fetchUpdateDeviationLedger(id, input), '偏差信息保存失败')
+}
+
+export interface DeviationJobActionResult {
+  code: number
+  message: string
+  data: DeviationJobState | null
+}
+
+/** 提交 AI 分析任务：大模型耗时不可控，接口只返回 job_id，结果由轮询获取 */
+export async function startDeviationAiAnalysis(id: string): Promise<DeviationJobActionResult> {
+  try {
+    const data = await QualityServer.fetchStartDeviationAiAnalysis(id)
+    return { code: 200, message: '任务已提交', data }
+  } catch (error) {
+    console.error('AI 分析提交失败', error)
+    return {
+      code: 500,
+      message: error instanceof Error ? error.message : 'AI 分析提交失败',
+      data: null,
+    }
+  }
+}
+
+/** 轮询 AI 分析任务状态 */
+export async function getDeviationJobStatus(jobId: string): Promise<DeviationJobActionResult> {
+  try {
+    const data = await QualityServer.fetchDeviationJobStatus(jobId)
+    return { code: 200, message: 'ok', data }
+  } catch (error) {
+    console.error('查询 AI 分析任务状态失败', error)
+    return {
+      code: 500,
+      message: error instanceof Error ? error.message : '查询任务状态失败',
+      data: null,
+    }
+  }
+}
+
+export async function completeDeviationAiAnalysis(
+  id: string,
+  input: DeviationAiAnalysisInput,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(
+    id,
+    () => QualityServer.fetchCompleteDeviationAiAnalysis(id, input),
+    'AI 分析保存失败',
+  )
+}
+
+export async function submitDeviationInvestigation(
+  id: string,
+  input: DeviationInvestigationInput,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(
+    id,
+    () => QualityServer.fetchSubmitDeviationInvestigation(id, input),
+    '调查报告提交失败',
+  )
+}
+
+/** 审核阶段追加调查记录：只追加记录，不推进流程状态 */
+export async function appendDeviationInvestigationRecord(
+  id: string,
+  input: DeviationInvestigationInput,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(
+    id,
+    () => QualityServer.fetchAppendDeviationInvestigationRecord(id, input),
+    '调查记录追加失败',
+  )
+}
+
+export async function approveDeviationCrossDeptRow(
+  id: string,
+  input: DeviationCrossDeptApproveInput,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(id, () => QualityServer.fetchApproveDeviationCrossDeptRow(id, input), '跨部门逐行审批失败')
+}
+
+export async function reviewDeviation(
+  id: string,
+  input: DeviationReviewInput,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(id, () => QualityServer.fetchReviewDeviationLedger(id, input), '审核操作失败')
+}
+
+export async function resubmitDeviation(
+  id: string,
+  input: DeviationResubmitInput,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(id, () => QualityServer.fetchResubmitDeviationLedger(id, input), '重新提交失败')
+}
+
+export async function submitDeviationFinalCode(
+  id: string,
+  input: DeviationFinalCodeInput,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(id, () => QualityServer.fetchSubmitDeviationFinalCode(id, input), '最终编号提交失败')
+}
+
+export async function uploadDeviationAttachment(
+  id: string,
+  formData: FormData,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(id, () => QualityServer.fetchUploadDeviationAttachment(id, formData), '附件上传失败')
+}
+
+export async function deleteDeviationAttachment(
+  id: string,
+  fileId: string,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(
+    id,
+    () => QualityServer.fetchDeleteDeviationAttachment(id, fileId),
+    '附件删除失败',
+  )
+}
+
+/** 批注写操作独立收敛：返回批注对象，不复用要求返回台账详情的 runDeviationAction */
+async function runAttachmentCommentAction<T>(
+  id: string,
+  call: () => Promise<T>,
+  fallbackMessage: string,
+): Promise<ApiResponse<T | null>> {
+  try {
+    const data = await call()
+    revalidatePath(`/quality/deviation/${id}`)
+    return { code: 200, message: '操作成功', data }
+  } catch (error) {
+    console.error(fallbackMessage, error)
+    return {
+      code: 500,
+      message: error instanceof Error ? error.message : fallbackMessage,
+      data: null,
+    }
+  }
+}
+
+export async function createDeviationAttachmentComment(
+  id: string,
+  fileId: string,
+  input: DeviationAttachmentCommentCreateInput,
+): Promise<ApiResponse<DeviationAttachmentComment | null>> {
+  return runAttachmentCommentAction(
+    id,
+    () => QualityServer.fetchCreateDeviationAttachmentComment(id, fileId, input),
+    '批注提交失败',
+  )
+}
+
+export async function updateDeviationAttachmentComment(
+  id: string,
+  fileId: string,
+  commentId: string,
+  input: DeviationAttachmentCommentUpdateInput,
+): Promise<ApiResponse<DeviationAttachmentComment | null>> {
+  return runAttachmentCommentAction(
+    id,
+    () => QualityServer.fetchUpdateDeviationAttachmentComment(id, fileId, commentId, input),
+    '批注更新失败',
+  )
+}
+
+export async function deleteDeviationAttachmentComment(
+  id: string,
+  fileId: string,
+  commentId: string,
+): Promise<ApiResponse<{ id: string; deleted: boolean } | null>> {
+  return runAttachmentCommentAction(
+    id,
+    () => QualityServer.fetchDeleteDeviationAttachmentComment(id, fileId, commentId),
+    '批注删除失败',
+  )
+}
+
+export async function batchUpdateDeviationStatus(
+  input: DeviationLedgerBatchStatusInput,
+): Promise<ApiResponse<DeviationBatchResult | null>> {
+  try {
+    const data = await QualityServer.fetchBatchUpdateDeviationStatus(input)
+    revalidatePath('/quality/deviation')
+    revalidatePath('/quality/deviation/ledger')
+    return { code: 200, message: '批量更新成功', data }
+  } catch (error) {
+    console.error('偏差批量更新失败', error)
+    return {
+      code: 500,
+      message: error instanceof Error ? error.message : '批量更新失败',
+      data: null,
+    }
+  }
+}
+
+export async function deleteDeviationLedger(id: string): Promise<ApiResponse<null>> {
+  try {
+    await QualityServer.fetchRemoveDeviationLedger(id)
+    revalidatePath('/quality/deviation')
+    revalidatePath('/quality/deviation/ledger')
+    return { code: 200, message: '删除成功', data: null }
+  } catch (error) {
+    console.error('偏差删除失败', error)
+    return {
+      code: 500,
+      message: error instanceof Error ? error.message : '删除失败',
+      data: null,
+    }
+  }
+}
+
+export async function updateDeviationNotifySettingsAction(
+  input: DeviationNotifySettingsUpdate,
+): Promise<ApiResponse<DeviationNotifySettings | null>> {
+  try {
+    const data = await QualityServer.fetchUpdateDeviationNotifySettings(input)
+    revalidatePath('/quality/department-contacts')
+    return { code: 200, message: '通知设置已保存', data }
+  } catch (error) {
+    console.error('通知设置保存失败', error)
+    return {
+      code: 500,
+      message: error instanceof Error ? error.message : '通知设置保存失败',
+      data: null,
+    }
+  }
+}
+
+export async function sendDeviationNotifyTestAction(): Promise<
+  ApiResponse<DeviationNotifyTestResult | null>
+> {
+  try {
+    const data = await QualityServer.fetchSendDeviationNotifyTest()
+    return { code: 200, message: data.message, data }
+  } catch (error) {
+    console.error('偏差通知测试失败', error)
+    return {
+      code: 500,
+      message: error instanceof Error ? error.message : '偏差通知测试失败',
+      data: null,
+    }
+  }
+}
+
+export async function submitWeeklyConfirmation(
+  input: WeeklyConfirmationInput,
+): Promise<ApiResponse<WeeklyConfirmationItem | null>> {
+  try {
+    const data = await QualityServer.upsertWeeklyConfirmation(input)
+    revalidatePath('/quality/deviation')
+    revalidatePath('/quality/department-contacts')
+    return { code: 200, message: '确认成功', data }
+  } catch (error) {
+    console.error('部门周确认提交失败', error)
+    return {
+      code: 500,
+      message: error instanceof Error ? error.message : '确认失败',
+      data: null,
+    }
+  }
 }

@@ -194,25 +194,25 @@ class FeishuClient:
             if data.get("code") != 0:
                 raise ValueError(f"获取通讯录用户失败: {data.get('msg')}")
 
-                items = data.get("data", {}).get("items", [])
-                for user in items:
-                    users.append(
-                        {
-                            "open_id": user.get("open_id"),
-                            "name": user.get("name"),
-                            "en_name": user.get("en_name"),
-                            "email": user.get("email"),
-                            "mobile": user.get("mobile"),
-                            "avatar": user.get("avatar", {}).get("avatar_72") if user.get("avatar") else None,
-                            "department_ids": user.get("department_ids"),
-                        }
-                    )
+            items = data.get("data", {}).get("items", [])
+            for user in items:
+                users.append(
+                    {
+                        "open_id": user.get("open_id"),
+                        "name": user.get("name"),
+                        "en_name": user.get("en_name"),
+                        "email": user.get("email"),
+                        "mobile": user.get("mobile"),
+                        "avatar": user.get("avatar", {}).get("avatar_72") if user.get("avatar") else None,
+                        "department_ids": user.get("department_ids"),
+                    }
+                )
 
-                # 检查是否还有下一页
-                page_token = data.get("data", {}).get("page_token")
-                has_more = data.get("data", {}).get("has_more", False)
-                if not has_more or not page_token:
-                    break
+            # 检查是否还有下一页
+            page_token = data.get("data", {}).get("page_token")
+            has_more = data.get("data", {}).get("has_more", False)
+            if not has_more or not page_token:
+                break
 
         return users
 
@@ -244,20 +244,20 @@ class FeishuClient:
             if data.get("code") != 0:
                 raise ValueError(f"获取部门列表失败: {data.get('msg')}")
 
-                items = data.get("data", {}).get("items", [])
-                for dept in items:
-                    departments.append(
-                        {
-                            "open_department_id": dept.get("open_department_id"),
-                            "name": dept.get("name"),
-                            "parent_department_id": dept.get("parent_department_id"),
-                        }
-                    )
+            items = data.get("data", {}).get("items", [])
+            for dept in items:
+                departments.append(
+                    {
+                        "open_department_id": dept.get("open_department_id"),
+                        "name": dept.get("name"),
+                        "parent_department_id": dept.get("parent_department_id"),
+                    }
+                )
 
-                page_token = data.get("data", {}).get("page_token")
-                has_more = data.get("data", {}).get("has_more", False)
-                if not has_more or not page_token:
-                    break
+            page_token = data.get("data", {}).get("page_token")
+            has_more = data.get("data", {}).get("has_more", False)
+            if not has_more or not page_token:
+                break
 
         return departments
 
@@ -361,12 +361,14 @@ async def send_feishu_card_from_config(
                     "tag": "action",
                     "actions": [
                         {
-                            "tag": "a",
+                            # 卡片 v1 的 action 模块只支持 button，不支持 a（11310）
+                            "tag": "button",
                             "text": {
                                 "tag": "lark_md",
                                 "content": action.get("text", ""),
                             },
-                            "href": {"url": action.get("url", "")},
+                            "type": "primary",
+                            "url": action.get("url", ""),
                         }
                     ],
                 }

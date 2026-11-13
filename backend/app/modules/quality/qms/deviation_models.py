@@ -1,4 +1,12 @@
-"""偏差管理数据模型"""
+"""第 0 代「偏差管理」表模型（历史包袱，仅为外键目标保留）。
+
+偏差流程 / 自动化 / 报告已下线，业务代码不再读写这五张表；之所以仍保留模型，
+是因为 ``capa_models`` 里 ``capas.deviation_id`` 的外键指向 ``quality.quality_deviations``，
+目标表若不在 ``Base.metadata`` 中，SQLAlchemy 在 ``sorted_tables`` 阶段会抛
+``NoReferencedTableError``，导致 ``alembic check`` 在 master 上直接失败。
+这些表已列入 ``alembic/env.py`` 的 ``RETIRED_TABLES``，autogenerate 会忽略，
+既不会补建也不会提议 DROP；物理清理须按 AGENTS.md「Orphan Table 处理规则」单独评审。
+"""
 
 import uuid
 from datetime import datetime
