@@ -106021,6 +106021,19 @@
             "title": "Opinion",
             "description": "\u5ba1\u6838\u610f\u89c1\uff08\u53ef\u9009\uff09",
             "default": ""
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\uff1a\u8d85\u7ea7\u7ba1\u7406\u5458\u66ff\u4ee3\u672c\u884c\u5ba1\u6838\u4eba\u64cd\u4f5c\u65f6\u5fc5\u586b\uff08\u4e0d\u5c11\u4e8e 4 \u4e2a\u5b57\uff09\uff0c\u5c06\u8bb0\u5165\u5ba1\u6838\u610f\u89c1\u4e0e\u5ba1\u8ba1\u65e5\u5fd7"
           }
         },
         "type": "object",
@@ -106096,6 +106109,19 @@
             "title": "Submit Content",
             "description": "\u63d0\u4ea4\u5ba1\u6838\u8bf4\u660e\uff08\u9009\u586b\uff0c\u5199\u5165\u672c\u6b21\u6d41\u8f6c\u8bb0\u5f55\uff1b\u4e3a\u7a7a\u65f6\u7528\u9ed8\u8ba4\u6587\u6848\uff09"
           },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\uff1a\u8d85\u7ea7\u7ba1\u7406\u5458\u66ff\u4ee3\u8c03\u67e5\u4eba\u63d0\u4ea4\u65f6\u5fc5\u586b\uff08\u4e0d\u5c11\u4e8e 4 \u4e2a\u5b57\uff09\uff0c\u5c06\u8bb0\u5165\u5ba1\u8ba1\u65e5\u5fd7"
+          },
           "department": {
             "type": "string",
             "maxLength": 255,
@@ -106126,6 +106152,19 @@
             "minLength": 1,
             "title": "Opinion",
             "description": "\u9000\u56de\u7406\u7531\uff08\u5fc5\u586b\uff09"
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\uff1a\u8d85\u7ea7\u7ba1\u7406\u5458\u66ff\u4ee3\u672c\u884c\u5ba1\u6838\u4eba\u64cd\u4f5c\u65f6\u5fc5\u586b\uff08\u4e0d\u5c11\u4e8e 4 \u4e2a\u5b57\uff09\uff0c\u5c06\u8bb0\u5165\u5ba1\u6838\u610f\u89c1\u4e0e\u5ba1\u8ba1\u65e5\u5fd7"
           }
         },
         "type": "object",
@@ -125195,6 +125234,19 @@
             "title": "Content",
             "description": "\u5907\u6ce8",
             "default": ""
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\uff1a\u8d85\u7ea7\u7ba1\u7406\u5458\u66ff\u4ee3\u6240\u5c5e QA \u5f55\u5165\u7f16\u53f7\u65f6\u5fc5\u586b\uff08\u4e0d\u5c11\u4e8e 4 \u4e2a\u5b57\uff09\uff0c\u5c06\u8bb0\u5165\u5ba1\u8ba1\u65e5\u5fd7"
           }
         },
         "type": "object",
@@ -136840,6 +136892,19 @@
             ],
             "title": "Submit Content",
             "description": "\u63d0\u4ea4\u5ba1\u6838\u8bf4\u660e\uff08\u9009\u586b\uff0c\u5199\u5165\u672c\u6b21\u6d41\u8f6c\u8bb0\u5f55\uff1b\u4e3a\u7a7a\u65f6\u7528\u9ed8\u8ba4\u6587\u6848\uff09"
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\uff1a\u8d85\u7ea7\u7ba1\u7406\u5458\u66ff\u4ee3\u8c03\u67e5\u4eba\u63d0\u4ea4\u65f6\u5fc5\u586b\uff08\u4e0d\u5c11\u4e8e 4 \u4e2a\u5b57\uff09\uff0c\u5c06\u8bb0\u5165\u5ba1\u8ba1\u65e5\u5fd7"
           }
         },
         "type": "object",
@@ -136860,6 +136925,19 @@
             ],
             "title": "Content",
             "description": "\u63d0\u4ea4\u5ba1\u6838\u8bf4\u660e\uff08\u9009\u586b\uff0c\u5199\u5165\u672c\u6b21\u6d41\u8f6c\u8bb0\u5f55\uff09"
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\uff1a\u8d85\u7ea7\u7ba1\u7406\u5458\u66ff\u4ee3\u8c03\u67e5\u4eba\u63d0\u4ea4\u65f6\u5fc5\u586b\uff08\u4e0d\u5c11\u4e8e 4 \u4e2a\u5b57\uff09\uff0c\u5c06\u8bb0\u5165\u5ba1\u8ba1\u65e5\u5fd7"
           }
         },
         "type": "object",
@@ -138583,6 +138661,12 @@
             "type": "array",
             "title": "Allowed Actions",
             "description": "\u5f53\u524d\u767b\u5f55\u4eba\u53ef\u6267\u884c\u7684\u52a8\u4f5c"
+          },
+          "viewer_is_superuser": {
+            "type": "boolean",
+            "title": "Viewer Is Superuser",
+            "description": "\u5f53\u524d\u767b\u5f55\u4eba\u662f\u5426\u8d85\u7ea7\u7ba1\u7406\u5458\uff1a\u4e3a true \u65f6\u975e\u672c\u73af\u8282\u5904\u7406\u4eba\u64cd\u4f5c\u9700\u586b\u300c\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\u300d",
+            "default": false
           },
           "editable": {
             "type": "boolean",
@@ -160678,6 +160762,19 @@
             "title": "Content",
             "description": "\u91cd\u65b0\u63d0\u4ea4\u8bf4\u660e",
             "default": ""
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\uff1a\u8d85\u7ea7\u7ba1\u7406\u5458\u66ff\u4ee3\u4e0a\u62a5\u4eba/\u8c03\u67e5\u4eba\u91cd\u65b0\u63d0\u4ea4\u65f6\u5fc5\u586b\uff08\u4e0d\u5c11\u4e8e 4 \u4e2a\u5b57\uff09"
           }
         },
         "type": "object",
@@ -160813,6 +160910,24 @@
             "title": "Content",
             "default": ""
           },
+          "is_override": {
+            "type": "boolean",
+            "title": "Is Override",
+            "description": "\u662f\u5426\u7ba1\u7406\u5458\u4ee3\u5ba1",
+            "default": false
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0"
+          },
           "create_time": {
             "anyOf": [
               {
@@ -160894,6 +161009,19 @@
             ],
             "title": "Deviation Level",
             "description": "\u504f\u5dee\u5206\u7ea7\uff08QA \u8d1f\u8d23\u4eba\u901a\u8fc7\u524d\u5fc5\u586b\uff09"
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\uff1a\u8d85\u7ea7\u7ba1\u7406\u5458\u66ff\u4ee3\u672c\u73af\u8282\u5904\u7406\u4eba\u64cd\u4f5c\u65f6\u5fc5\u586b\uff08\u4e0d\u5c11\u4e8e 4 \u4e2a\u5b57\uff09\uff0c\u5c06\u8bb0\u5165\u5ba1\u6838\u610f\u89c1\u4e0e\u5ba1\u8ba1\u65e5\u5fd7"
           }
         },
         "type": "object",

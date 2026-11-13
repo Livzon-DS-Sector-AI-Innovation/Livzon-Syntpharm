@@ -80,9 +80,7 @@ def test_superuser_override_returns_reason() -> None:
 
 def test_superuser_override_reason_too_short() -> None:
     with pytest.raises(BadRequestException):
-        ensure_actor_allowed(
-            "dept_head_review", set(), uuid.uuid4(), actor_is_superuser=True, override_reason="ok"
-        )
+        ensure_actor_allowed("dept_head_review", set(), uuid.uuid4(), actor_is_superuser=True, override_reason="ok")
 
 
 def test_superuser_override_reason_too_long() -> None:

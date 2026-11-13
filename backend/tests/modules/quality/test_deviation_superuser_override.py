@@ -67,9 +67,7 @@ def test_superuser_as_handler_is_not_override() -> None:
 
 
 def test_override_reason_is_trimmed() -> None:
-    reason = resolve_override_reason(
-        uuid.uuid4(), set(), actor_is_superuser=True, override_reason="  质量负责人休假  "
-    )
+    reason = resolve_override_reason(uuid.uuid4(), set(), actor_is_superuser=True, override_reason="  质量负责人休假  ")
     assert reason == "质量负责人休假"
 
 

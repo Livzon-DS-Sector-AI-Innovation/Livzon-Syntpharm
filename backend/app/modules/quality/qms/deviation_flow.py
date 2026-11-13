@@ -650,9 +650,7 @@ def ensure_actor_allowed(
     任何处理人时直接拒绝并提示去配置，避免「没有负责人也能审核」。
     """
     if actor_is_superuser:
-        return resolve_override_reason(
-            actor_id, allowed, actor_is_superuser=True, override_reason=override_reason
-        )
+        return resolve_override_reason(actor_id, allowed, actor_is_superuser=True, override_reason=override_reason)
     role_label = STEP_DEFS[step].role_label
     if not allowed:
         raise ForbiddenException(f"当前环节（{role_label}）未配置处理人，请先在部门联系人配置中配置后再操作")
@@ -909,9 +907,7 @@ async def transition(
     ledger.status_updated_at = now
     ledger.updated_by = actor_id
     if override:
-        await record_override_audit(
-            db, ledger=ledger, step=step, result=result, actor_id=actor_id, reason=override
-        )
+        await record_override_audit(db, ledger=ledger, step=step, result=result, actor_id=actor_id, reason=override)
     await db.commit()
     await db.refresh(ledger)
 
