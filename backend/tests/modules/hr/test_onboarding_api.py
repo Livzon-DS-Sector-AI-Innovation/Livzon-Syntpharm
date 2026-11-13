@@ -139,6 +139,15 @@ class TestOnboardingCreate:
 
         assert response.status_code == 422
 
+    async def test_allows_blank_second_level_department(
+        self,
+        auth_client: AsyncClient,
+    ) -> None:
+        response = await auth_client.post(LIST_URL, json=_payload(department_level2=""))
+
+        assert response.status_code == 200, response.text
+        assert response.json()["data"]["department_level2"] == ""
+
     async def test_rejects_unknown_option(
         self,
         auth_client: AsyncClient,

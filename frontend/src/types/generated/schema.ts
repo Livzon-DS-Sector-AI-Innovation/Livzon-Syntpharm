@@ -29247,7 +29247,7 @@ export interface components {
             department_level1?: string | null;
             /**
              * Department Level2
-             * @description 二级部门（手动录入时必填）
+             * @description 二级部门（可空）
              */
             department_level2?: string | null;
             /**
@@ -42592,7 +42592,7 @@ export interface components {
         };
         /**
          * OnboardingRecordCreate
-         * @description 2026 入职台账录入字段；全部必填。
+         * @description 2026 入职台账录入字段；除二级部门可为空外全部必填。
          */
         OnboardingRecordCreate: {
             /**
@@ -42607,7 +42607,8 @@ export interface components {
             department_level1: string;
             /**
              * Department Level2
-             * @description 二级部门
+             * @description 二级部门（可空）
+             * @default
              */
             department_level2: string;
             /**

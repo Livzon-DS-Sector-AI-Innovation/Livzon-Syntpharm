@@ -237,3 +237,23 @@ def test_build_org_tree_uses_configured_scope_root() -> None:
     assert tree[0]["parent_name"] == "新公司"
     assert tree[0]["department_path"][0] == {"id": "od-new-company", "name": "新公司"}
     assert DEFAULT_ORG_SCOPE.department_id == IN_SCOPE_COMPANY_ID
+
+
+def test_build_org_tree_renders_company_as_level_zero() -> None:
+    records = [
+        _record(IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME, parent=None, order=0),
+        _record("od-a", "101车间", parent=IN_SCOPE_COMPANY_ID),
+        _record("od-a1", "合成工段", parent="od-a"),
+    ]
+
+    tree = build_org_tree(records, leader_names={})
+
+    assert len(tree) == 1
+    company = tree[0]
+    assert company["id"] == IN_SCOPE_COMPANY_ID
+    assert company["level"] == 0
+    assert company["parent_name"] is None
+    assert company["department_path"] == [{"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME}]
+    assert [child["name"] for child in company["children"]] == ["101车间"]
+    assert company["children"][0]["level"] == 1
+    assert company["children"][0]["children"][0]["level"] == 2
