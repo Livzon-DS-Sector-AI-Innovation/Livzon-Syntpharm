@@ -2473,7 +2473,11 @@ def _get_db_setting(db_settings: dict[str, str], key: str) -> str:
     try:
         return decrypt_secret(raw)
     except RuntimeError:
-        logger.exception("HR 系统设置解密失败 key=%s（ENCRYPTION_KEY 不匹配？）", key)
+        logger.exception(
+            "HR 系统设置解密失败 key=%s（ENCRYPTION_KEY 不匹配？）",
+            key,
+            extra={"biz_module": "hr", "setting_key": key},
+        )
         return ""
 
 
@@ -2581,6 +2585,9 @@ async def save_system_settings(  # type: ignore[no-untyped-def]
         with open(ENV_PATH, "w", encoding="utf-8") as f:
             f.writelines(lines)
     except Exception:
-        logger.exception("写入 .env 失败（设置已保存到数据库，但需手工补环境变量）")
+        logger.exception(
+            "写入 .env 失败（设置已保存到数据库，但需手工补环境变量）",
+            extra={"biz_module": "hr", "setting_count": len(env_updates)},
+        )
 
     return build_response(data={"updated": updated}, message=f"已保存 {len(updated)} 项设置")
