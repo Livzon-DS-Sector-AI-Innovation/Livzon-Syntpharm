@@ -1,5 +1,6 @@
 import logging
 import os
+import tempfile
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -198,8 +199,8 @@ class Settings(BaseSettings):
 
     # Upload
     UPLOAD_DIR: str = "./uploads"
-    # 历史版本附件曾落在 /tmp 下的根目录（读取旧附件时作兜底，可用空串关闭兜底）
-    LEGACY_UPLOAD_DIR: str = "/tmp/dazah_uploads"
+    # 历史版本附件曾落在系统临时目录下的根目录（读取旧附件时作兜底，可用空串关闭兜底）
+    LEGACY_UPLOAD_DIR: str = str(Path(tempfile.gettempdir()) / "dazah_uploads")
 
     # AI
     AI_API_KEY: str = ""
@@ -288,12 +289,8 @@ class Settings(BaseSettings):
 
     # Font
     CJK_FONT_PATH: str = ""
-    CJK_FONT_FALLBACK_PATHS: list[str] = [
-        "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
-        "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
-        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
-    ]
+    # 通过环境变量配置（JSON 数组）；默认不内置绝对路径
+    CJK_FONT_FALLBACK_PATHS: list[str] = []
 
     # LibreOffice
     SOFFICE_PATH: str = ""
