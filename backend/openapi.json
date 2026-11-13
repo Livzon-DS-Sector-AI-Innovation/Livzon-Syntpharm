@@ -111991,7 +111991,7 @@
               }
             ],
             "title": "Department Level2",
-            "description": "\u4e8c\u7ea7\u90e8\u95e8\uff08\u624b\u52a8\u5f55\u5165\u65f6\u5fc5\u586b\uff09"
+            "description": "\u4e8c\u7ea7\u90e8\u95e8\uff08\u53ef\u7a7a\uff09"
           },
           "name": {
             "anyOf": [
@@ -142459,9 +142459,9 @@
           "department_level2": {
             "type": "string",
             "maxLength": 64,
-            "minLength": 1,
             "title": "Department Level2",
-            "description": "\u4e8c\u7ea7\u90e8\u95e8"
+            "description": "\u4e8c\u7ea7\u90e8\u95e8\uff08\u53ef\u7a7a\uff09",
+            "default": ""
           },
           "name": {
             "type": "string",
@@ -142573,7 +142573,6 @@
         "required": [
           "serial_no",
           "department_level1",
-          "department_level2",
           "name",
           "position",
           "position_level",
@@ -142587,7 +142586,7 @@
           "group_classification"
         ],
         "title": "OnboardingRecordCreate",
-        "description": "2026 \u5165\u804c\u53f0\u8d26\u5f55\u5165\u5b57\u6bb5\uff1b\u5168\u90e8\u5fc5\u586b\u3002"
+        "description": "2026 \u5165\u804c\u53f0\u8d26\u5f55\u5165\u5b57\u6bb5\uff1b\u9664\u4e8c\u7ea7\u90e8\u95e8\u53ef\u4e3a\u7a7a\u5916\u5168\u90e8\u5fc5\u586b\u3002"
       },
       "OnboardingRecordDeleteApiResponse": {
         "properties": {
