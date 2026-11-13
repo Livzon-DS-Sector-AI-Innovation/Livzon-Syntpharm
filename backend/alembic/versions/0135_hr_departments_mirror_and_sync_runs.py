@@ -1,7 +1,7 @@
 """make hr.departments the Feishu org mirror
 
-Revision ID: 0123_hr_departments_mirror_and_sync_runs
-Revises: 0122_hr_departure_person_comment
+Revision ID: 0135_hr_departments_mirror_and_sync_runs
+Revises: 0134_hr_departure_person_comment
 Create Date: 2026-11-13
 
 Expand-only phase:
@@ -19,8 +19,8 @@ from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
-revision: str = "0123_hr_departments_mirror_and_sync_runs"
-down_revision: str = "0122_hr_departure_person_comment"
+revision: str = "0135_hr_departments_mirror_and_sync_runs"
+down_revision: str = "0134_hr_departure_person_comment"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

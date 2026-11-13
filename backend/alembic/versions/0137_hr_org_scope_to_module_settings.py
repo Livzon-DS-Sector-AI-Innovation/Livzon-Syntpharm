@@ -1,7 +1,7 @@
 """move HR org-scope settings to core.module_settings
 
-Revision ID: 0125_hr_org_scope_to_module_settings
-Revises: 0124_revert_identity_org_hr_fields
+Revision ID: 0137_hr_org_scope_to_module_settings
+Revises: 0136_revert_identity_org_hr_fields
 Create Date: 2026-11-13
 
 Runtime configuration belongs in ``core.module_settings``. Move the two
@@ -15,8 +15,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0125_hr_org_scope_to_module_settings"
-down_revision: str = "0124_revert_identity_org_hr_fields"
+revision: str = "0137_hr_org_scope_to_module_settings"
+down_revision: str = "0136_revert_identity_org_hr_fields"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

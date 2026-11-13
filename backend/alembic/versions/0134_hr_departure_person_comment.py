@@ -1,7 +1,7 @@
 """update departure person_id comment
 
-Revision ID: 0122_hr_departure_person_comment
-Revises: 0121_hr_drop_offboarding_records
+Revision ID: 0134_hr_departure_person_comment
+Revises: 0133_add_deviation_investigation_drafts
 Create Date: 2026-11-13
 
 `person_id` 改为可空后，列注释需与模型保持一致（允许不在员工档案中的人员）。
@@ -11,8 +11,8 @@ from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "0122_hr_departure_person_comment"
-down_revision: str = "0121_hr_drop_offboarding_records"
+revision: str = "0134_hr_departure_person_comment"
+down_revision: str = "0133_add_deviation_investigation_drafts"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

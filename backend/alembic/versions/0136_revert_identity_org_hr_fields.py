@@ -1,7 +1,7 @@
 """revert HR additions to the platform department mirror
 
-Revision ID: 0124_revert_identity_org_hr_fields
-Revises: 0123_hr_departments_mirror_and_sync_runs
+Revision ID: 0136_revert_identity_org_hr_fields
+Revises: 0135_hr_departments_mirror_and_sync_runs
 Create Date: 2026-11-13
 
 Contract phase: HR now reads/writes `hr.departments`. Remove the columns and
@@ -16,8 +16,8 @@ from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
-revision: str = "0124_revert_identity_org_hr_fields"
-down_revision: str = "0123_hr_departments_mirror_and_sync_runs"
+revision: str = "0136_revert_identity_org_hr_fields"
+down_revision: str = "0135_hr_departments_mirror_and_sync_runs"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
