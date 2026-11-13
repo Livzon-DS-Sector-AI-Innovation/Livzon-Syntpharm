@@ -19,12 +19,15 @@ from typing import Any, cast
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import storage as core_storage
 from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
 from app.modules.quality.qms import deviation_flow
 from app.modules.quality.qms import deviation_ledger_service as service_module
 from app.modules.quality.qms.deviation_department_models import DepartmentContact
 from app.modules.quality.qms.deviation_flow import (
     APPROVED,
+    CROSS_DEPT_INVESTIGATION_PENDING,
+    CROSS_DEPT_INVESTIGATION_SUBMITTED,
     CROSS_DEPT_ROW_APPROVED,
     CROSS_DEPT_ROW_PENDING,
     CROSS_DEPT_STEP,
@@ -46,6 +49,7 @@ from app.modules.quality.qms.deviation_ledger_models import DeviationLedger
 from app.modules.quality.qms.deviation_ledger_schemas import (
     CapaProposalItem,
     CrossDeptApproveRequest,
+    CrossDeptInvestigationRequest,
     CrossDeptReviewerItem,
     InvestigationRecordItem,
     InvestigationRequest,
@@ -104,13 +108,14 @@ def _row(department: str, investigator_ids: list[str], **state: Any) -> dict[str
 # ── 行审核人解析（纯函数） ──────────────────────────────────────────────
 
 
-def test_row_reviewer_prefers_investigators() -> None:
+def test_row_reviewer_prefers_row_dept_head() -> None:
+    """两节点：审核人是行内显式指定的部门负责人，调查人不再兼任审核人。"""
     investigator = _ref("张三")
     head = _ref("李四")
-    contacts = {"设备部": _contact("设备部", dept_head_id=head.id)}
-    entry = _row("设备部", [str(investigator.id)])
+    contacts = {"设备部": _contact("设备部", dept_head_id=uuid.uuid4())}
+    entry = _row("设备部", [str(investigator.id)], dept_head_id=str(head.id))
 
-    assert cross_dept_row_reviewer_ids(entry, contacts, _directory(investigator, head)) == [investigator.id]
+    assert cross_dept_row_reviewer_ids(entry, contacts, _directory(investigator, head)) == [head.id]
 
 
 def test_row_reviewer_falls_back_to_dept_head() -> None:
@@ -118,6 +123,13 @@ def test_row_reviewer_falls_back_to_dept_head() -> None:
     contacts = {"设备部": _contact("设备部", dept_head_id=head.id)}
 
     assert cross_dept_row_reviewer_ids(_row("设备部", []), contacts, _directory(head)) == [head.id]
+
+
+def test_row_reviewer_ignores_investigators_without_head() -> None:
+    """存量行缺行内负责人且联系人未配置时，调查人不会被当作审核人。"""
+    investigator = _ref("张三")
+
+    assert cross_dept_row_reviewer_ids(_row("设备部", [str(investigator.id)]), {}, _directory(investigator)) == []
 
 
 def test_row_reviewer_empty_when_no_investigator_and_no_contact() -> None:
@@ -142,25 +154,27 @@ def test_all_rows_approved_requires_rows_and_every_state() -> None:
     assert all_cross_dept_rows_approved(done) is True
 
 
-def test_resolve_handlers_cross_dept_is_row_union_deduped() -> None:
-    shared = _ref("王五")
-    extra = _ref("赵六")
-    head = _ref("李四")
+def test_resolve_handlers_cross_dept_is_row_head_union_deduped() -> None:
+    head_a = _ref("李四")
+    head_b = _ref("王五")
+    head_c = _ref("赵六")
+    investigator = _ref("张三")
     ledger = _row_ledger(
         cross_dept_reviewers=[
-            _row("设备部", [str(shared.id)]),
-            _row("生产部", [str(extra.id), str(shared.id)]),
-            _row("工程部", []),
+            _row("设备部", [str(investigator.id)], dept_head_id=str(head_a.id)),
+            _row("生产部", [str(investigator.id), str(head_b.id)]),
+            _row("工程部", [], dept_head_id=str(head_b.id)),
         ]
     )
-    contacts = {"工程部": _contact("工程部", dept_head_id=head.id)}
+    contacts = {"生产部": _contact("生产部", dept_head_id=head_c.id)}
 
-    handlers = resolve_step_handlers(ledger, contacts, _directory(shared, extra, head))
+    handlers = resolve_step_handlers(ledger, contacts, _directory(head_a, head_b, head_c, investigator))
 
-    assert handlers[CROSS_DEPT_STEP] == [shared.id, extra.id, head.id]
+    # 行内负责人优先；行内缺省回退部门联系人；调查人不参与审核环节
+    assert handlers[CROSS_DEPT_STEP] == [head_a.id, head_c.id, head_b.id]
 
 
-def test_row_payloads_display_state_and_names() -> None:
+def test_row_payloads_display_two_nodes_and_names() -> None:
     investigator = _ref("张三")
     head = _ref("李四")
     ledger = _row_ledger(
@@ -168,33 +182,38 @@ def test_row_payloads_display_state_and_names() -> None:
             _row(
                 "设备部",
                 [],
+                dept_head_id=str(head.id),
+                investigate_state=CROSS_DEPT_INVESTIGATION_SUBMITTED,
                 review_state=CROSS_DEPT_ROW_APPROVED,
                 approved_name="李四",
                 approved_at="2026-11-12T08:00:00+00:00",
                 opinion="同意",
             ),
-            _row("生产部", [str(investigator.id)]),
+            _row("生产部", [str(investigator.id)], dept_head_id=str(head.id)),
             "脏数据",
         ]
     )
-    contacts = {"设备部": _contact("设备部", dept_head_id=head.id)}
+    contacts: dict[str, DepartmentContact] = {}
 
     payloads = cross_dept_row_payloads(ledger, contacts, _directory(investigator, head))
 
     assert [item["department"] for item in payloads] == ["设备部", "生产部"]
     assert payloads[0]["state"] == CROSS_DEPT_ROW_APPROVED
     assert payloads[0]["reviewer_names"] == ["李四"]
+    assert payloads[0]["investigate_state"] == CROSS_DEPT_INVESTIGATION_SUBMITTED
     assert payloads[0]["approved_by_name"] == "李四"
     assert payloads[0]["opinion"] == "同意"
     assert payloads[1]["state"] == CROSS_DEPT_ROW_PENDING
-    assert payloads[1]["reviewer_names"] == ["张三"]
+    assert payloads[1]["reviewer_names"] == ["李四"]
+    assert payloads[1]["investigate_state"] == CROSS_DEPT_INVESTIGATION_PENDING
 
 
 def test_step_payloads_sub_items_only_for_cross_dept_step() -> None:
     investigator = _ref("张三")
-    ledger = _row_ledger(cross_dept_reviewers=[_row("设备部", [str(investigator.id)])])
-    contacts = {"设备部": _contact("设备部")}
-    directory = _directory(investigator)
+    head = _ref("李四")
+    ledger = _row_ledger(cross_dept_reviewers=[_row("设备部", [str(investigator.id)], dept_head_id=str(head.id))])
+    contacts: dict[str, DepartmentContact] = {}
+    directory = _directory(investigator, head)
     context = FlowContext(
         contacts=contacts,
         directory=directory,
@@ -206,7 +225,8 @@ def test_step_payloads_sub_items_only_for_cross_dept_step() -> None:
     assert payloads[CROSS_DEPT_STEP]["sub_items"] == [
         {
             "department": "设备部",
-            "reviewer_names": ["张三"],
+            "reviewer_names": ["李四"],
+            "investigate_state": CROSS_DEPT_INVESTIGATION_PENDING,
             "state": CROSS_DEPT_ROW_PENDING,
             "approved_by_name": None,
             "approved_at": None,
@@ -291,8 +311,8 @@ async def test_approve_row_partial_keeps_step(monkeypatch: pytest.MonkeyPatch) -
     qa = _ref("王五")
     ledger = _row_ledger(
         cross_dept_reviewers=[
-            _row("设备部", [str(reviewer_a.id)]),
-            _row("生产部", [str(reviewer_b.id)]),
+            _row("设备部", [], dept_head_id=str(reviewer_a.id)),
+            _row("生产部", [], dept_head_id=str(reviewer_b.id)),
         ]
     )
     context = _cross_dept_context(ledger, reviewer_a, reviewer_b, qa, qa_reviewer=qa)
@@ -319,14 +339,51 @@ async def test_approve_row_partial_keeps_step(monkeypatch: pytest.MonkeyPatch) -
     assert db.commits == 1
 
 
+async def test_approve_row_blocked_until_investigation_submitted(monkeypatch: pytest.MonkeyPatch) -> None:
+    """两节点顺序：配置了行内调查人的行，必须先提交调查才允许部门负责人审核。"""
+    investigator = _ref("张三")
+    head = _ref("李四")
+    qa = _ref("王五")
+    ledger = _row_ledger(cross_dept_reviewers=[_row("设备部", [str(investigator.id)], dept_head_id=str(head.id))])
+    _patch_flow(monkeypatch, ledger, _cross_dept_context(ledger, investigator, head, qa, qa_reviewer=qa))
+
+    with pytest.raises(BadRequestException, match="调查尚未提交"):
+        await approve_cross_dept_row(
+            cast(AsyncSession, _FlowDB()),
+            ledger_id=ledger.id,
+            department="设备部",
+            content="",
+            actor_id=head.id,
+            actor_name="李四",
+        )
+
+    ledger.cross_dept_reviewers = [
+        _row(
+            "设备部",
+            [str(investigator.id)],
+            dept_head_id=str(head.id),
+            investigate_state=CROSS_DEPT_INVESTIGATION_SUBMITTED,
+        )
+    ]
+    outcome = await approve_cross_dept_row(
+        cast(AsyncSession, _FlowDB()),
+        ledger_id=ledger.id,
+        department="设备部",
+        content="同意",
+        actor_id=head.id,
+        actor_name="李四",
+    )
+    assert outcome.next_status == LedgerStatus.PENDING_QA_REVIEW.value
+
+
 async def test_approve_last_row_advances_to_qa(monkeypatch: pytest.MonkeyPatch) -> None:
     reviewer_a = _ref("张三")
     reviewer_b = _ref("李四")
     qa = _ref("王五")
     ledger = _row_ledger(
         cross_dept_reviewers=[
-            _row("设备部", [str(reviewer_a.id)], review_state=CROSS_DEPT_ROW_APPROVED),
-            _row("生产部", [str(reviewer_b.id)]),
+            _row("设备部", [], dept_head_id=str(reviewer_a.id), review_state=CROSS_DEPT_ROW_APPROVED),
+            _row("生产部", [], dept_head_id=str(reviewer_b.id)),
         ]
     )
     context = _cross_dept_context(ledger, reviewer_a, reviewer_b, qa, qa_reviewer=qa)
@@ -352,7 +409,7 @@ async def test_approve_row_guards(monkeypatch: pytest.MonkeyPatch) -> None:
     stranger = _ref("路人")
     qa = _ref("王五")
 
-    approved_rows = [_row("设备部", [str(reviewer.id)], review_state=CROSS_DEPT_ROW_APPROVED)]
+    approved_rows = [_row("设备部", [], dept_head_id=str(reviewer.id), review_state=CROSS_DEPT_ROW_APPROVED)]
     ledger = _row_ledger(cross_dept_reviewers=list(approved_rows))
     _patch_flow(monkeypatch, ledger, _cross_dept_context(ledger, reviewer, stranger, qa))
     with pytest.raises(BadRequestException, match="无需重复审批"):
@@ -375,7 +432,7 @@ async def test_approve_row_guards(monkeypatch: pytest.MonkeyPatch) -> None:
             actor_name="张三",
         )
 
-    pending_rows = [_row("设备部", [str(reviewer.id)]), _row("生产部", [])]
+    pending_rows = [_row("设备部", [], dept_head_id=str(reviewer.id)), _row("生产部", [], dept_head_id=str(qa.id))]
     ledger2 = _row_ledger(cross_dept_reviewers=pending_rows)
     _patch_flow(monkeypatch, ledger2, _cross_dept_context(ledger2, reviewer, stranger, qa))
     with pytest.raises(ForbiddenException, match="审核人"):
@@ -477,32 +534,48 @@ def _investigation_payload(**overrides: Any) -> InvestigationRequest:
 
 
 def test_create_rejects_duplicate_or_empty_cross_dept_departments() -> None:
+    head = uuid.uuid4()
     payload = _create_payload(
-        needs_cross_dept_review=True, cross_dept_reviewers=[CrossDeptReviewerItem(department=" 设备部 ")]
+        needs_cross_dept_review=True,
+        cross_dept_reviewers=[CrossDeptReviewerItem(department=" 设备部 ", dept_head_id=head)],
     )
     assert [row.department for row in payload.cross_dept_reviewers] == ["设备部"]
-    rows = [CrossDeptReviewerItem(department="设备部"), CrossDeptReviewerItem(department=" 设备部 ")]
+    rows = [
+        CrossDeptReviewerItem(department="设备部", dept_head_id=head),
+        CrossDeptReviewerItem(department=" 设备部 ", dept_head_id=head),
+    ]
     with pytest.raises(ValueError, match="重复"):
         _create_payload(needs_cross_dept_review=True, cross_dept_reviewers=rows)
     with pytest.raises(ValueError, match="至少"):
         _create_payload(needs_cross_dept_review=True, cross_dept_reviewers=[])
     with pytest.raises(ValueError, match="不能为空"):
-        _create_payload(needs_cross_dept_review=True, cross_dept_reviewers=[CrossDeptReviewerItem(department="  ")])
+        _create_payload(
+            needs_cross_dept_review=True,
+            cross_dept_reviewers=[CrossDeptReviewerItem(department="  ", dept_head_id=head)],
+        )
+    with pytest.raises(ValueError, match="部门负责人"):
+        _create_payload(needs_cross_dept_review=True, cross_dept_reviewers=[CrossDeptReviewerItem(department="设备部")])
     assert _create_payload(needs_cross_dept_review=False, cross_dept_reviewers=[]).cross_dept_reviewers == []
 
 
 def test_update_validates_cross_dept_rows() -> None:
+    head = uuid.uuid4()
     with pytest.raises(ValueError, match="重复"):
         LedgerUpdateRequest(
             needs_cross_dept_review=True,
             cross_dept_reviewers=[
-                CrossDeptReviewerItem(department="设备部"),
-                CrossDeptReviewerItem(department="设备部"),
+                CrossDeptReviewerItem(department="设备部", dept_head_id=head),
+                CrossDeptReviewerItem(department="设备部", dept_head_id=head),
             ],
         )
-    payload = LedgerUpdateRequest(cross_dept_reviewers=[CrossDeptReviewerItem(department=" 生产部 ")])
+    with pytest.raises(ValueError, match="部门负责人"):
+        LedgerUpdateRequest(cross_dept_reviewers=[CrossDeptReviewerItem(department="生产部")])
+    payload = LedgerUpdateRequest(
+        cross_dept_reviewers=[CrossDeptReviewerItem(department=" 生产部 ", dept_head_id=head)]
+    )
     assert payload.cross_dept_reviewers is not None
     assert payload.cross_dept_reviewers[0].department == "生产部"
+    assert payload.cross_dept_reviewers[0].dept_head_id == head
 
 
 def test_cross_dept_approve_request_requires_department() -> None:
@@ -512,7 +585,22 @@ def test_cross_dept_approve_request_requires_department() -> None:
     assert CrossDeptApproveRequest(department="设备部").opinion == ""
 
 
+def test_investigation_attachment_route_allows_empty_texts_and_capa() -> None:
+    """二选一规则：引用 ≥1 个台账附件（调查报告）时，三个文本与 CAPA 均可空。"""
+    payload = _investigation_payload(
+        nonconformity_description="",
+        root_cause_analysis="",
+        risk_assessment="",
+        capa_proposals=[],
+        attachment_file_ids=[uuid.uuid4()],
+    )
+    assert payload.nonconformity_description == ""
+    assert payload.capa_proposals == []
+    assert len(payload.attachment_file_ids) == 1
+
+
 def test_investigation_requires_three_texts_and_one_capa() -> None:
+    """未引用附件时维持原必填规则：文本非空 + CAPA 至少一条。"""
     _investigation_payload()
     for field in ("nonconformity_description", "root_cause_analysis", "risk_assessment"):
         with pytest.raises(ValueError):
@@ -523,6 +611,10 @@ def test_investigation_requires_three_texts_and_one_capa() -> None:
         _investigation_payload(capa_proposals=[])
     with pytest.raises(ValueError, match="CAPA"):
         _investigation_payload(capa_proposals=[CapaProposalItem(summary="  ")])
+    with pytest.raises(ValueError, match="附件"):
+        _investigation_payload(nonconformity_description="", root_cause_analysis="", risk_assessment="")
+    with pytest.raises(ValueError, match="附件"):
+        _investigation_payload(capa_proposals=[])
 
 
 def test_investigation_urgent_and_attachments() -> None:
@@ -570,6 +662,9 @@ class _RowRepo:
         self.row = row
 
     async def get_by_id_for_update(self, ledger_id: uuid.UUID) -> DeviationLedger | None:
+        return self.row if self.row is not None and ledger_id == self.row.id else None
+
+    async def get_by_id(self, ledger_id: uuid.UUID) -> DeviationLedger | None:
         return self.row if self.row is not None and ledger_id == self.row.id else None
 
 
@@ -620,28 +715,33 @@ def _record_row(**overrides: Any) -> DeviationLedger:
     return row
 
 
-def test_normalized_rows_keep_only_department_and_investigators() -> None:
+def test_normalized_rows_keep_department_investigators_and_head() -> None:
     person = uuid.uuid4()
+    head = uuid.uuid4()
     rows = _normalized_cross_dept_rows(
         [
             CrossDeptReviewerItem(
                 department="设备部",
                 investigator_ids=[person],
+                dept_head_id=head,
                 review_state=CROSS_DEPT_ROW_APPROVED,
                 approved_name="李四",
                 opinion="过期状态",
             )
         ]
     )
-    assert rows == [{"department": "设备部", "investigator_ids": [str(person)]}]
+    assert rows == [{"department": "设备部", "investigator_ids": [str(person)], "dept_head_id": str(head)}]
 
 
 def test_merge_states_keeps_identical_and_resets_changed() -> None:
     person = uuid.uuid4()
     other = uuid.uuid4()
+    head = uuid.uuid4()
     approved = {
         "department": "设备部",
         "investigator_ids": [str(person)],
+        "dept_head_id": str(head),
+        "investigate_state": CROSS_DEPT_INVESTIGATION_SUBMITTED,
         "review_state": CROSS_DEPT_ROW_APPROVED,
         "approved_by": str(person),
         "approved_name": "张三",
@@ -651,13 +751,41 @@ def test_merge_states_keeps_identical_and_resets_changed() -> None:
     merged = _merge_cross_dept_states(
         [approved],
         [
-            {"department": "设备部", "investigator_ids": [str(person)]},
-            {"department": "设备部", "investigator_ids": [str(other)]},
+            {"department": "设备部", "investigator_ids": [str(person)], "dept_head_id": str(head)},
+            {"department": "设备部", "investigator_ids": [str(other)], "dept_head_id": str(head)},
+            {"department": "设备部", "investigator_ids": [str(person)], "dept_head_id": str(other)},
         ],
     )
     assert merged[0]["review_state"] == CROSS_DEPT_ROW_APPROVED
     assert merged[0]["approved_name"] == "张三"
+    assert merged[0]["investigate_state"] == CROSS_DEPT_INVESTIGATION_SUBMITTED
     assert "review_state" not in merged[1]
+    assert "review_state" not in merged[2]
+
+
+def test_merge_states_keeps_investigation_progress_for_pending_row() -> None:
+    """未通过的行改了基础信息后，部门调查进度不应被重置回待调查。"""
+    person = uuid.uuid4()
+    head = uuid.uuid4()
+    investigated = {
+        "department": "设备部",
+        "investigator_ids": [str(person)],
+        "dept_head_id": str(head),
+        "investigate_state": CROSS_DEPT_INVESTIGATION_SUBMITTED,
+        "investigate_submitted_by": str(person),
+        "investigate_submitted_name": "李四",
+        "investigate_submitted_at": "2026-11-12T09:00:00+00:00",
+        "review_state": CROSS_DEPT_ROW_PENDING,
+    }
+    merged = _merge_cross_dept_states(
+        [investigated],
+        [{"department": "设备部", "investigator_ids": [str(person)], "dept_head_id": str(head)}],
+    )
+    assert merged[0]["investigate_state"] == CROSS_DEPT_INVESTIGATION_SUBMITTED
+    assert merged[0]["investigate_submitted_by"] == str(person)
+    assert merged[0]["investigate_submitted_name"] == "李四"
+    # 保留的是调查进度，审核状态仍为待审
+    assert "review_state" not in merged[0]
 
 
 def test_build_record_renumbers_capa_and_snapshots_attachments() -> None:
@@ -712,12 +840,13 @@ async def test_update_investigation_stage_locks_non_cross_dept_fields() -> None:
 
     with pytest.raises(BadRequestException, match="只能修改跨部门"):
         await service.update(row.id, LedgerUpdateRequest(title="新标题"), actor_id=investigator, actor_name="调查人")
+    head = uuid.uuid4()
     with pytest.raises(ForbiddenException, match="跨部门审核配置"):
         await service.update(
             row.id,
             LedgerUpdateRequest(
                 needs_cross_dept_review=True,
-                cross_dept_reviewers=[CrossDeptReviewerItem(department="设备部")],
+                cross_dept_reviewers=[CrossDeptReviewerItem(department="设备部", dept_head_id=head)],
             ),
             actor_id=uuid.uuid4(),
             actor_name="路人",
@@ -727,13 +856,13 @@ async def test_update_investigation_stage_locks_non_cross_dept_fields() -> None:
         row.id,
         LedgerUpdateRequest(
             needs_cross_dept_review=True,
-            cross_dept_reviewers=[CrossDeptReviewerItem(department=" 设备部 ")],
+            cross_dept_reviewers=[CrossDeptReviewerItem(department=" 设备部 ", dept_head_id=head)],
         ),
         actor_id=investigator,
         actor_name="调查人",
     )
     assert row.needs_cross_dept_review is True
-    assert row.cross_dept_reviewers == [{"department": "设备部", "investigator_ids": []}]
+    assert row.cross_dept_reviewers == [{"department": "设备部", "investigator_ids": [], "dept_head_id": str(head)}]
 
     await service.update(
         row.id,
@@ -750,7 +879,9 @@ async def test_update_blocked_outside_investigation_stage() -> None:
     with pytest.raises(BadRequestException, match="不允许修改基础信息"):
         await service.update(
             row.id,
-            LedgerUpdateRequest(cross_dept_reviewers=[CrossDeptReviewerItem(department="设备部")]),
+            LedgerUpdateRequest(
+                cross_dept_reviewers=[CrossDeptReviewerItem(department="设备部", dept_head_id=uuid.uuid4())]
+            ),
             actor_id=row.reporter_id,
             actor_name="上报人",
         )
@@ -780,6 +911,118 @@ async def test_append_record_guards_and_appends_without_transition() -> None:
     assert appended["nonconformity_description"] == "描述不符合事项"
     assert appended["attachments"][0]["file_id"] == str(file_id)
     assert db.commits == 1
+
+
+def test_cross_dept_investigator_can_maintain_investigation_docs() -> None:
+    """跨部门行调查人可上传/删除本部门调查报告（附件路线前提）。"""
+    investigator = uuid.uuid4()
+    row = _row_ledger(
+        cross_dept_reviewers=[
+            {
+                "department": "设备部",
+                "investigator_ids": [str(investigator)],
+                "dept_head_id": str(uuid.uuid4()),
+            }
+        ]
+    )
+    service, _db = _service(row)
+
+    service._assert_can_edit_investigation(row, investigator)
+    with pytest.raises(ForbiddenException, match="调查人"):
+        service._assert_can_edit_investigation(row, uuid.uuid4())
+
+
+async def test_submit_cross_dept_investigation_marks_row_and_tags_record() -> None:
+    """跨部门调查节点：只标记该行「调查已提交」并落部门标记记录，不推进台账状态。"""
+    investigator = uuid.uuid4()
+    head = uuid.uuid4()
+    file_id = uuid.uuid4()
+    row = _record_row(
+        file_id=file_id,
+        cross_dept_reviewers=[
+            {"department": "设备部", "investigator_ids": [str(investigator)], "dept_head_id": str(head)}
+        ],
+    )
+    service, db = _service(row)
+    payload = CrossDeptInvestigationRequest(
+        department=" 设备部 ",
+        nonconformity_description="",
+        root_cause_analysis="",
+        risk_assessment="",
+        capa_proposals=[],
+        attachment_file_ids=[file_id],
+    )
+
+    await service.submit_cross_dept_investigation(row.id, payload, actor_id=investigator, actor_name="张三")
+
+    entry = (row.cross_dept_reviewers or [])[0]
+    assert entry["investigate_state"] == CROSS_DEPT_INVESTIGATION_SUBMITTED
+    assert entry["investigate_submitted_name"] == "张三"
+    assert entry["investigate_submitted_by"] == str(investigator)
+    assert row.status == LedgerStatus.PENDING_CROSS_DEPT_HEAD_REVIEW.value
+    record = (row.investigation_records or [])[0]
+    assert record["department"] == "设备部"
+    assert record["attachments"][0]["file_id"] == str(file_id)
+    assert db.commits == 1
+
+
+async def test_submit_cross_dept_investigation_guards() -> None:
+    investigator = uuid.uuid4()
+    head = uuid.uuid4()
+    stranger = uuid.uuid4()
+    row = _row_ledger(
+        cross_dept_reviewers=[
+            {"department": "设备部", "investigator_ids": [str(investigator)], "dept_head_id": str(head)},
+            {"department": "生产部", "investigator_ids": [], "dept_head_id": str(head)},
+        ]
+    )
+    service, _db = _service(row)
+
+    def _payload(department: str) -> CrossDeptInvestigationRequest:
+        return CrossDeptInvestigationRequest(
+            department=department,
+            nonconformity_description="描述",
+            root_cause_analysis="原因",
+            risk_assessment="风险",
+            capa_proposals=[CapaProposalItem(summary="整改")],
+        )
+
+    payload = _payload("设备部")
+
+    with pytest.raises(ForbiddenException, match="调查人"):
+        await service.submit_cross_dept_investigation(row.id, payload, actor_id=stranger, actor_name="路人")
+
+    with pytest.raises(NotFoundException, match="跨部门行不存在"):
+        await service.submit_cross_dept_investigation(
+            row.id,
+            _payload("工程部"),
+            actor_id=investigator,
+            actor_name="张三",
+        )
+
+    with pytest.raises(BadRequestException, match="未配置调查人"):
+        await service.submit_cross_dept_investigation(
+            row.id,
+            _payload("生产部"),
+            actor_id=head,
+            actor_name="李四",
+        )
+
+    row.status = LedgerStatus.PENDING_QA_REVIEW.value
+    with pytest.raises(BadRequestException, match="不在跨部门审核环节"):
+        await service.submit_cross_dept_investigation(row.id, payload, actor_id=investigator, actor_name="张三")
+
+    row.status = LedgerStatus.PENDING_CROSS_DEPT_HEAD_REVIEW.value
+    row.cross_dept_reviewers = [
+        {
+            "department": "设备部",
+            "investigator_ids": [str(investigator)],
+            "dept_head_id": str(head),
+            "review_state": CROSS_DEPT_ROW_APPROVED,
+        }
+    ]
+    with pytest.raises(BadRequestException, match="已审核通过"):
+        await service.submit_cross_dept_investigation(row.id, payload, actor_id=investigator, actor_name="张三")
 
 
 async def test_submit_investigation_uses_transition_content(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -817,10 +1060,57 @@ async def test_submit_investigation_uses_transition_content(monkeypatch: pytest.
     assert len(row.investigation_records or []) == 1
 
 
-async def test_remove_attachment_blocked_when_referenced_by_record() -> None:
+async def test_submit_investigation_attachment_only_uses_fallback_content(monkeypatch: pytest.MonkeyPatch) -> None:
+    """附件路线提交：文本为空时审核意见正文回退为「以调查报告附件形式提交」。"""
+    investigator = uuid.uuid4()
+    row = _record_row(status=LedgerStatus.PENDING_INVESTIGATION.value, handler_ids=[investigator])
+    file_id = uuid.UUID(str(row.attachments[0]["file_id"]))
+    service, _db = _service(row)
+
+    seen: dict[str, str] = {}
+
+    async def fake_transition(db_arg: AsyncSession, **kwargs: Any) -> TransitionOutcome:
+        seen["content"] = str(kwargs["content"])
+        return TransitionOutcome(
+            ledger=row,
+            step="investigation",
+            result=APPROVED,
+            previous_status=row.status,
+            next_status=row.status,
+            skipped_steps=[],
+            next_handlers=[],
+            actor_name="调查人",
+            directory=_directory(),
+            handlers={},
+        )
+
+    monkeypatch.setattr(service_module, "transition", fake_transition)
+    await service.submit_investigation(
+        row.id,
+        _investigation_payload(
+            nonconformity_description="",
+            root_cause_analysis="",
+            risk_assessment="",
+            capa_proposals=[],
+            attachment_file_ids=[file_id],
+        ),
+        actor_id=investigator,
+        actor_name="调查人",
+    )
+
+    assert seen["content"] == "以调查报告附件形式提交"
+    record = (row.investigation_records or [])[0]
+    assert record["nonconformity_description"] == ""
+    assert record["capa_proposals"] == []
+    assert record["attachments"][0]["file_id"] == str(file_id)
+
+
+async def test_remove_attachment_blocked_when_referenced_by_record(monkeypatch: pytest.MonkeyPatch) -> None:
     investigator = uuid.uuid4()
     file_id = uuid.uuid4()
-    row = _record_row(file_id=file_id, status=LedgerStatus.PENDING_DEPT_HEAD_REVIEW.value, handler_ids=[investigator])
+    monkeypatch.setattr(core_storage, "is_enabled", lambda: False)
+    #: 删除窗口只在调查节点开放（提交后只能预览/下载），这里用待调查状态验证「已被记录引用」单独拦截
+    row = _record_row(file_id=file_id, status=LedgerStatus.PENDING_INVESTIGATION.value, handler_ids=[investigator])
     row.investigation_records = [{"nonconformity_description": "x", "attachments": [{"file_id": str(file_id)}]}]
     service, _db = _service(row)
 

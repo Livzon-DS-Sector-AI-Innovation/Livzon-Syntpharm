@@ -138,6 +138,15 @@ class DeviationLedger(BaseModel):
         comment="调查记录 [{nonconformity_description, root_cause_analysis, risk_assessment,"
         " capa_proposals[], urgent_measures, attachments[], author_id, author_name, create_time}]，旧记录为 {content}",
     )
+    investigation_drafts: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'::jsonb"),
+        comment="调查记录草稿 [{author_id, author_name, department, nonconformity_description,"
+        " root_cause_analysis, risk_assessment, capa_proposals[], urgent_measures,"
+        " attachment_file_ids[], updated_at}]，按 (author_id, department) 唯一，提交后清除",
+    )
     review_opinions: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONB,
         nullable=False,

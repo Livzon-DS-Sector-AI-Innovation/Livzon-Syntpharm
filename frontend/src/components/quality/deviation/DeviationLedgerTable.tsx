@@ -244,7 +244,7 @@ export function DeviationLedgerTable({
           </span>
           {row.returned_step_label && (
             <span className="line-clamp-1 text-[12px] text-[var(--color-error)]" title={row.returned_step_label}>
-              已退回：{row.returned_step_label}
+              已退回至：{row.returned_step_label}
             </span>
           )}
           {row.current_handlers?.length ? (

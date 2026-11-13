@@ -63,15 +63,16 @@ export function DeviationCreateForm({
   const [submitting, setSubmitting] = useState(false)
   const [, startTransition] = useTransition()
   const crossReview = Form.useWatch('needs_cross_dept_review', form)
-  // 发现人默认是当前登录人：传姓名快照，未展开下拉时也不会显示 UUID
-  const discovererLabel = currentUserId ? currentUserName : undefined
+  const discovererId = Form.useWatch('discoverer_id', form)
+  // 发现人默认是当前登录人：仅在选中人仍是登录人时传姓名快照，改选他人后交给下拉自身快照回显，避免姓名错位
+  const discovererLabel = discovererId && discovererId === currentUserId ? currentUserName : undefined
 
   const handleFinish = async (values: FormValues) => {
     const crossDeptRows = values.needs_cross_dept_review
       ? toCrossDeptRowsPayload(values.cross_dept_reviewers ?? [])
       : []
     if (values.needs_cross_dept_review && crossDeptRows.length === 0) {
-      message.warning('开启跨部门审核后至少需要一行跨部门（部门必选）')
+      message.warning('开启跨部门审核后至少需要一行跨部门（部门与部门负责人必选）')
       return
     }
     setSubmitting(true)
@@ -263,7 +264,8 @@ export function DeviationCreateForm({
               <Col span={24}>
                 <div className="-mt-2 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-3">
                   <p className="mb-2 text-xs text-[var(--color-slate)]">
-                    每个跨部门 = 一行会签：留空调查人时由该部门负责人审核；行内任一审核人通过即该行通过，全部行通过后才会进入所属QA审核。
+                    每个跨部门 = 一行两节点：该部门调查人提交调查记录 → 该部门负责人审核。调查人可留空（由负责人直接审核）；
+                    全部行通过后才会进入所属QA审核。
                   </p>
                   <CrossDeptReviewerFields form={form} departmentOptions={departmentOptions} />
                 </div>

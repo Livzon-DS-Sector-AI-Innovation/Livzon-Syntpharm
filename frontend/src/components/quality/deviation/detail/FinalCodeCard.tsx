@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { Alert, App, Button, Card, Descriptions, Input, Tag } from 'antd'
+import { Alert, App, Button, Descriptions, Input, Tag } from 'antd'
 import { NumberOutlined } from '@ant-design/icons'
 import { submitDeviationFinalCode } from '@/actions/quality'
 import type { DeviationLedgerDetail } from '@/types/quality'
+import { SectionCard } from './SectionCard'
+import { isSectionVisible } from './detailSections'
 
 interface FinalCodeCardProps {
   ledger: DeviationLedgerDetail
@@ -16,12 +18,14 @@ export function FinalCodeCard({ ledger, onUpdated }: FinalCodeCardProps) {
   const { message } = App.useApp()
   const [finalCode, setFinalCode] = useState('')
   const [content, setContent] = useState('')
+  const [overrideReason, setOverrideReason] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   const canSubmit = (ledger.allowed_actions ?? []).includes('final_code')
   const closed = Boolean(ledger.final_code)
 
-  if (!canSubmit && !closed) {
+  // 可见性判断与分区导航共用同一份规则（detailSections.isSectionVisible）
+  if (!isSectionVisible('final-code', ledger)) {
     return null
   }
 
@@ -34,6 +38,7 @@ export function FinalCodeCard({ ledger, onUpdated }: FinalCodeCardProps) {
     const response = await submitDeviationFinalCode(ledger.id, {
       final_code: finalCode.trim(),
       content: content.trim(),
+      override_reason: overrideReason.trim() || undefined,
     })
     setSubmitting(false)
     if (response.code === 200 && response.data) {
@@ -47,7 +52,7 @@ export function FinalCodeCard({ ledger, onUpdated }: FinalCodeCardProps) {
   }
 
   return (
-    <Card id="final-code" size="small" title="最终编号与归档" className="scroll-mt-6 shadow-sm">
+    <SectionCard section="final-code" ledger={ledger}>
       <div className="flex flex-col gap-3">
         {closed && (
           <Descriptions size="small" column={{ xs: 1, sm: 2, md: 3 }} bordered>
@@ -92,6 +97,20 @@ export function FinalCodeCard({ ledger, onUpdated }: FinalCodeCardProps) {
                 onChange={(event) => setContent(event.target.value)}
               />
             </div>
+            {ledger.viewer_is_superuser && (
+              <div>
+                <p className="mb-1 text-[12px] text-[var(--color-slate)]">
+                  管理员代审原因（非所属 QA 操作时必填）
+                </p>
+                <Input
+                  value={overrideReason}
+                  maxLength={200}
+                  allowClear
+                  placeholder="如：所属 QA 休假，管理员代录编号；将写入审计日志"
+                  onChange={(event) => setOverrideReason(event.target.value)}
+                />
+              </div>
+            )}
             <div className="flex flex-wrap justify-end gap-2 border-t border-[var(--color-hairline)] pt-3">
               <Button type="primary" loading={submitting} onClick={handleSubmit}>
                 提交并关闭
@@ -100,6 +119,6 @@ export function FinalCodeCard({ ledger, onUpdated }: FinalCodeCardProps) {
           </>
         )}
       </div>
-    </Card>
+    </SectionCard>
   )
 }

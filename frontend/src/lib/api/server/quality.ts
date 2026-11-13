@@ -29,9 +29,13 @@ import type {
   DeviationAttachmentCommentUpdateInput,
   DeviationBatchResult,
   DeviationCrossDeptApproveInput,
+  DeviationCrossDeptInvestigationInput,
+  DeviationCrossDeptRejectInput,
   DeviationDeleteResult,
   DeviationFinalCodeInput,
+  DeviationInvestigationDraftInput,
   DeviationInvestigationInput,
+  DeviationInvestigationSubmitInput,
   DeviationJobState,
   DeviationLedgerBatchStatusInput,
   DeviationLedgerCreateInput,
@@ -862,12 +866,67 @@ export async function fetchAppendDeviationInvestigationRecord(
   })
 }
 
+/** 暂存调查记录草稿（按本人 + 部门覆盖，不推进流程） */
+export async function fetchSaveDeviationInvestigationDraft(
+  id: string,
+  data: DeviationInvestigationDraftInput,
+): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/investigation-drafts`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 清除本人的调查记录草稿（department 为空即主流程调查草稿） */
+export async function fetchDeleteDeviationInvestigationDraft(
+  id: string,
+  department?: string | null,
+): Promise<DeviationLedgerDetail> {
+  const query = department ? `?department=${encodeURIComponent(department)}` : ''
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/investigation-drafts${query}`, {
+    method: 'DELETE',
+  })
+}
+
+/** 跨部门调查人提交本部门调查记录（完成该行「调查」节点） */
+export async function fetchSubmitDeviationCrossDeptInvestigation(
+  id: string,
+  data: DeviationCrossDeptInvestigationInput,
+): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/cross-dept-investigation`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
 /** 跨部门会签：逐行审批（任一审核人通过即该行通过，全部行通过后流转所属QA审核） */
 export async function fetchApproveDeviationCrossDeptRow(
   id: string,
   data: DeviationCrossDeptApproveInput,
 ): Promise<DeviationLedgerDetail> {
   return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/cross-dept-review`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 跨部门会签：逐行退回（只重置该部门的调查与审核节点，流程仍停在跨部门环节） */
+export async function fetchRejectDeviationCrossDeptRow(
+  id: string,
+  data: DeviationCrossDeptRejectInput,
+): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/cross-dept-review/reject`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 调查记录已填写：直接提交审核（不新建记录） */
+export async function fetchSubmitDeviationInvestigationForReview(
+  id: string,
+  data: DeviationInvestigationSubmitInput,
+): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/investigation-submit`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
