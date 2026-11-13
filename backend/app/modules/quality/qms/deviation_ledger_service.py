@@ -54,7 +54,9 @@ from .deviation_flow import (
     is_cross_dept_row_approved,
     is_cross_dept_row_investigated,
     load_contacts,
+    record_override_audit,
     reject_cross_dept_row,
+    resolve_override_reason,
     resolve_step_handlers,
     returnable_steps,
     step_note,
@@ -489,6 +491,7 @@ class DeviationLedgerService:
                 actor_id=actor_id,
                 actor_name=actor_name,
                 actor_is_superuser=actor_is_superuser,
+                override_reason=payload.override_reason,
             )
         row.investigation_records = [*(row.investigation_records or []), record]
         #: 提交成功后清掉本人主调查草稿（与记录写入同一次 commit）
@@ -502,6 +505,7 @@ class DeviationLedgerService:
             actor_id=actor_id,
             actor_name=actor_name,
             actor_is_superuser=actor_is_superuser,
+            override_reason=payload.override_reason,
         )
         self._schedule_transition_notice(outcome)
         return await self._build_detail(outcome.ledger, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
@@ -539,6 +543,7 @@ class DeviationLedgerService:
                 actor_id=actor_id,
                 actor_name=actor_name,
                 actor_is_superuser=actor_is_superuser,
+                override_reason=payload.override_reason,
             )
         outcome = await transition(
             self.db,
@@ -549,6 +554,7 @@ class DeviationLedgerService:
             actor_id=actor_id,
             actor_name=actor_name,
             actor_is_superuser=actor_is_superuser,
+            override_reason=payload.override_reason,
         )
         self._schedule_transition_notice(outcome)
         return await self._build_detail(outcome.ledger, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
@@ -764,6 +770,7 @@ class DeviationLedgerService:
             actor_id=actor_id,
             actor_name=actor_name,
             actor_is_superuser=actor_is_superuser,
+            override_reason=payload.override_reason,
         )
         if outcome.next_status != outcome.previous_status:
             self._schedule_transition_notice(outcome)
@@ -800,6 +807,7 @@ class DeviationLedgerService:
             actor_id=actor_id,
             actor_name=actor_name,
             actor_is_superuser=actor_is_superuser,
+            override_reason=payload.override_reason,
         )
         self._schedule_cross_dept_row_reject_notice(outcome, department=payload.department)
         logger.info(
@@ -846,6 +854,18 @@ class DeviationLedgerService:
         investigator_ids = [str(token) for token in (entry.get("investigator_ids") or [])]
         if not investigator_ids:
             raise BadRequestException("该跨部门行未配置调查人，无需提交调查，请直接由部门负责人审核")
+        allowed_investigators: set[uuid.UUID] = set()
+        for token in investigator_ids:
+            try:
+                allowed_investigators.add(uuid.UUID(token))
+            except ValueError:
+                continue
+        override = resolve_override_reason(
+            actor_id,
+            allowed_investigators,
+            actor_is_superuser=actor_is_superuser,
+            override_reason=payload.override_reason,
+        )
         if not actor_is_superuser and str(actor_id) not in investigator_ids:
             raise ForbiddenException("只有该部门的调查人可以提交调查记录")
 
@@ -876,6 +896,16 @@ class DeviationLedgerService:
             row.cross_dept_reviewers = updated_rows
         row.investigation_drafts = _drop_investigation_draft(row.investigation_drafts, actor_id, target_department)
         row.updated_by = actor_id
+        if override:
+            await record_override_audit(
+                self.db,
+                ledger=row,
+                step=CROSS_DEPT_STEP,
+                result=CROSS_DEPT_INVESTIGATION_SUBMITTED,
+                actor_id=actor_id,
+                reason=override,
+                department=target_department,
+            )
         await self.db.commit()
         await self.db.refresh(row)
         logger.info(
@@ -916,6 +946,7 @@ class DeviationLedgerService:
             target_step=payload.target_step,
             reason_category=payload.reason_category,
             deviation_level=payload.deviation_level,
+            override_reason=payload.override_reason,
         )
         self._schedule_transition_notice(outcome)
         return await self._build_detail(
@@ -948,6 +979,7 @@ class DeviationLedgerService:
             actor_id=actor_id,
             actor_name=actor_name,
             actor_is_superuser=actor_is_superuser,
+            override_reason=payload.override_reason,
         )
         self._schedule_transition_notice(outcome)
         return await self._build_detail(
@@ -973,6 +1005,7 @@ class DeviationLedgerService:
             actor_id=actor_id,
             actor_name=actor_name,
             actor_is_superuser=actor_is_superuser,
+            override_reason=payload.override_reason,
         )
         notice = notify.to_notice(outcome.ledger, reporter_name=self._name_of(outcome, outcome.ledger.reporter_id))
         targets = outcome.directory.refs(list(outcome.ledger.handler_ids or []))
@@ -1701,6 +1734,8 @@ class DeviationLedgerService:
                     author_name=entry.get("author_name"),
                     author_avatar=_avatar_of(profiles, entry.get("author_id")),
                     content=str(entry.get("content") or ""),
+                    is_override=bool(entry.get("is_override")),
+                    override_reason=entry.get("override_reason"),
                     create_time=_as_datetime(entry.get("create_time")),
                 )
                 for entry in (row.review_opinions or [])
@@ -1723,6 +1758,7 @@ class DeviationLedgerService:
             status_updated_at=row.status_updated_at,
             can_operate=bool(actions),
             allowed_actions=actions,
+            viewer_is_superuser=viewer_is_superuser,
             editable=editable,
             can_edit_investigation=can_edit_investigation,
             can_edit_cross_dept=can_edit_cross_dept,

@@ -25421,6 +25421,11 @@ export interface components {
              * @default
              */
             opinion: string;
+            /**
+             * Override Reason
+             * @description 管理员代审原因：超级管理员替代本行审核人操作时必填（不少于 4 个字），将记入审核意见与审计日志
+             */
+            override_reason?: string | null;
         };
         /**
          * CrossDeptInvestigationRequest
@@ -25466,6 +25471,11 @@ export interface components {
              */
             submit_content?: string | null;
             /**
+             * Override Reason
+             * @description 管理员代审原因：超级管理员替代调查人提交时必填（不少于 4 个字），将记入审计日志
+             */
+            override_reason?: string | null;
+            /**
              * Department
              * @description 跨部门部门名（行标识）
              */
@@ -25486,6 +25496,11 @@ export interface components {
              * @description 退回理由（必填）
              */
             opinion: string;
+            /**
+             * Override Reason
+             * @description 管理员代审原因：超级管理员替代本行审核人操作时必填（不少于 4 个字），将记入审核意见与审计日志
+             */
+            override_reason?: string | null;
         };
         /**
          * CrossDeptReviewerItem
@@ -33538,6 +33553,11 @@ export interface components {
              * @default
              */
             content: string;
+            /**
+             * Override Reason
+             * @description 管理员代审原因：超级管理员替代所属 QA 录入编号时必填（不少于 4 个字），将记入审计日志
+             */
+            override_reason?: string | null;
         };
         /** GrantCreate */
         GrantCreate: {
@@ -38360,6 +38380,11 @@ export interface components {
              * @description 提交审核说明（选填，写入本次流转记录；为空时用默认文案）
              */
             submit_content?: string | null;
+            /**
+             * Override Reason
+             * @description 管理员代审原因：超级管理员替代调查人提交时必填（不少于 4 个字），将记入审计日志
+             */
+            override_reason?: string | null;
         };
         /**
          * InvestigationSubmitRequest
@@ -38371,6 +38396,11 @@ export interface components {
              * @description 提交审核说明（选填，写入本次流转记录）
              */
             content?: string | null;
+            /**
+             * Override Reason
+             * @description 管理员代审原因：超级管理员替代调查人提交时必填（不少于 4 个字），将记入审计日志
+             */
+            override_reason?: string | null;
         };
         /** InvoiceLineItem */
         InvoiceLineItem: {
@@ -39169,6 +39199,12 @@ export interface components {
              * @description 当前登录人可执行的动作
              */
             allowed_actions?: string[];
+            /**
+             * Viewer Is Superuser
+             * @description 当前登录人是否超级管理员：为 true 时非本环节处理人操作需填「管理员代审原因」
+             * @default false
+             */
+            viewer_is_superuser: boolean;
             /**
              * Editable
              * @description 基础信息是否可编辑
@@ -48642,6 +48678,11 @@ export interface components {
              * @default
              */
             content: string;
+            /**
+             * Override Reason
+             * @description 管理员代审原因：超级管理员替代上报人/调查人重新提交时必填（不少于 4 个字）
+             */
+            override_reason?: string | null;
         };
         /**
          * RetentionStatus
@@ -48709,6 +48750,17 @@ export interface components {
              * @default
              */
             content: string;
+            /**
+             * Is Override
+             * @description 是否管理员代审
+             * @default false
+             */
+            is_override: boolean;
+            /**
+             * Override Reason
+             * @description 管理员代审原因
+             */
+            override_reason?: string | null;
             /** Create Time */
             create_time?: string | null;
         };
@@ -48748,6 +48800,11 @@ export interface components {
              * @description 偏差分级（QA 负责人通过前必填）
              */
             deviation_level?: string | null;
+            /**
+             * Override Reason
+             * @description 管理员代审原因：超级管理员替代本环节处理人操作时必填（不少于 4 个字），将记入审核意见与审计日志
+             */
+            override_reason?: string | null;
         };
         /**
          * ReviewingDrugItem

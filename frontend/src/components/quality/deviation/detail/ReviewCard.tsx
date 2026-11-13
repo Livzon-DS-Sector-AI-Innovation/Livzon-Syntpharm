@@ -18,6 +18,7 @@ interface ReviewCardProps {
 export function ReviewCard({ ledger, onUpdated }: ReviewCardProps) {
   const { message } = App.useApp()
   const [content, setContent] = useState('')
+  const [overrideReason, setOverrideReason] = useState('')
   const [reasonCategory, setReasonCategory] = useState<string | undefined>(ledger.reason_category ?? undefined)
   const [deviationLevel, setDeviationLevel] = useState<string | undefined>(ledger.deviation_level ?? undefined)
   const [pending, setPending] = useState<'approved' | 'rejected' | 'resubmit' | null>(null)
@@ -70,6 +71,7 @@ export function ReviewCard({ ledger, onUpdated }: ReviewCardProps) {
       target_step: result === 'rejected' ? (targetStep ?? null) : undefined,
       reason_category: needReason ? (reasonCategory?.trim() || null) : undefined,
       deviation_level: needLevel ? (deviationLevel ?? null) : undefined,
+      override_reason: overrideReason.trim() || undefined,
     })
     setPending(null)
     if (response.code === 200 && response.data) {
@@ -115,7 +117,10 @@ export function ReviewCard({ ledger, onUpdated }: ReviewCardProps) {
 
   const runResubmit = async () => {
     setPending('resubmit')
-    const response = await resubmitDeviation(ledger.id, { content: content.trim() })
+    const response = await resubmitDeviation(ledger.id, {
+      content: content.trim(),
+      override_reason: overrideReason.trim() || undefined,
+    })
     setPending(null)
     if (response.code === 200 && response.data) {
       setContent('')
@@ -201,6 +206,19 @@ export function ReviewCard({ ledger, onUpdated }: ReviewCardProps) {
           placeholder={canResubmit ? '重新提交说明（可选）' : '审核意见（退回时必填）'}
           onChange={(event) => setContent(event.target.value)}
         />
+
+        {ledger.viewer_is_superuser && (
+          <div>
+            <p className="mb-1 text-[12px] text-[var(--color-slate)]">管理员代审原因（非本环节处理人操作时必填）</p>
+            <Input
+              value={overrideReason}
+              maxLength={200}
+              allowClear
+              placeholder="如：本环节处理人休假，管理员代处理；将写入审核意见与审计日志"
+              onChange={(event) => setOverrideReason(event.target.value)}
+            />
+          </div>
+        )}
 
         {/* 卡片内操作区统一：顶部细分隔线 + 右对齐，与调查/报告/最终编号三张卡一致 */}
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-[var(--color-hairline)] pt-3">

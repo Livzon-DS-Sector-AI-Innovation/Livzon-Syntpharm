@@ -173,6 +173,7 @@ export function InvestigationCard({ ledger, onUpdated, prefill, onPrefillApplied
   // 卡片快捷提交：调查记录已填写后可直接提交审核（不新建记录）
   const [submitOpen, setSubmitOpen] = useState(false)
   const [submitInfo, setSubmitInfo] = useState('')
+  const [overrideReason, setOverrideReason] = useState('')
   const [submitting, setSubmitting] = useState(false)
   // 当前正在预览的附件：非空即打开预览抽屉（左文档 + 右批注）
   const [previewAttachment, setPreviewAttachment] = useState<DeviationAttachment | null>(null)
@@ -215,6 +216,7 @@ export function InvestigationCard({ ledger, onUpdated, prefill, onPrefillApplied
     setSubmitting(true)
     const result = await submitDeviationInvestigationForReview(ledger.id, {
       content: submitInfo.trim() || null,
+      override_reason: overrideReason.trim() || undefined,
     })
     setSubmitting(false)
     if (result.code === 200 && result.data) {
@@ -374,6 +376,20 @@ export function InvestigationCard({ ledger, onUpdated, prefill, onPrefillApplied
             placeholder="提交信息（选填），如：已按退回意见补充根本原因分析"
             onChange={(event) => setSubmitInfo(event.target.value)}
           />
+          {ledger.viewer_is_superuser && (
+            <div>
+              <p className="mb-1 text-[12px] text-[var(--color-slate)]">
+                管理员代审原因（非调查人操作时必填）
+              </p>
+              <Input
+                value={overrideReason}
+                maxLength={200}
+                allowClear
+                placeholder="如：调查人休假，管理员代提交；将写入审计日志"
+                onChange={(event) => setOverrideReason(event.target.value)}
+              />
+            </div>
+          )}
         </div>
       </Modal>
 

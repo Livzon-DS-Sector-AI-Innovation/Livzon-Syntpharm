@@ -61,8 +61,40 @@ def test_actor_in_allowed_passes() -> None:
     ensure_actor_allowed("dept_head_review", {actor}, actor, actor_is_superuser=False)
 
 
-def test_superuser_bypasses_allowed() -> None:
-    ensure_actor_allowed("dept_head_review", set(), uuid.uuid4(), actor_is_superuser=True)
+def test_superuser_override_requires_reason() -> None:
+    with pytest.raises(BadRequestException) as excinfo:
+        ensure_actor_allowed("dept_head_review", set(), uuid.uuid4(), actor_is_superuser=True)
+    assert "代审原因" in str(excinfo.value)
+
+
+def test_superuser_override_returns_reason() -> None:
+    reason = ensure_actor_allowed(
+        "dept_head_review",
+        {uuid.uuid4()},
+        uuid.uuid4(),
+        actor_is_superuser=True,
+        override_reason="  质量负责人休假，管理者代审  ",
+    )
+    assert reason == "质量负责人休假，管理者代审"
+
+
+def test_superuser_override_reason_too_short() -> None:
+    with pytest.raises(BadRequestException):
+        ensure_actor_allowed(
+            "dept_head_review", set(), uuid.uuid4(), actor_is_superuser=True, override_reason="ok"
+        )
+
+
+def test_superuser_override_reason_too_long() -> None:
+    with pytest.raises(BadRequestException):
+        ensure_actor_allowed(
+            "dept_head_review", set(), uuid.uuid4(), actor_is_superuser=True, override_reason="代" * 201
+        )
+
+
+def test_superuser_as_handler_needs_no_reason() -> None:
+    actor = uuid.uuid4()
+    assert ensure_actor_allowed("dept_head_review", {actor}, actor, actor_is_superuser=True) is None
 
 
 def test_actor_not_in_allowed_is_forbidden() -> None:

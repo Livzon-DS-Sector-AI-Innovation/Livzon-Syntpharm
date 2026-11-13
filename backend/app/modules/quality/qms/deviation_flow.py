@@ -33,6 +33,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
+from app.platform.audit.service import record_audit_log
 from app.platform.identity.models import User
 
 from . import deviation_ledger_constants as constants
@@ -64,6 +65,12 @@ CROSS_DEPT_INAPPLICABLE_REASON = "本单未勾选跨部门审核，本环节不�
 #: 跨部门单行的审核状态（存于 ``cross_dept_reviewers`` 行的 ``review_state`` 字段）
 CROSS_DEPT_ROW_PENDING = "pending"
 CROSS_DEPT_ROW_APPROVED = "approved"
+
+#: 管理员代审：原因最少字数（挡住「1」「ok」这类无意义理由）与上限
+OVERRIDE_REASON_MIN_LEN = 4
+OVERRIDE_REASON_MAX_LEN = 200
+#: 管理员代审的审计动作名（``audit.logs.action``）
+OVERRIDE_AUDIT_ACTION = "deviation.superuser_override"
 
 
 @dataclass(frozen=True, slots=True)
@@ -604,25 +611,61 @@ def allowed_actors(ledger: DeviationLedger, step: str, handlers: Mapping[str, li
     return allowed
 
 
+def resolve_override_reason(
+    actor_id: uuid.UUID,
+    allowed: set[uuid.UUID],
+    *,
+    actor_is_superuser: bool,
+    override_reason: str | None,
+) -> str | None:
+    """超级管理员「代审」原因：超管不在处理人集合内时视为代审，必须填写原因。
+
+    非超管、或超管本人恰好就是该环节处理人时返回 ``None``（不算代审）。
+    代审原因会写进审核意见并落平台审计日志，便于 GMP 抽查时区分「本人职责」与
+    「管理员代操作」。
+    """
+    if not actor_is_superuser or actor_id in allowed:
+        return None
+    reason = (override_reason or "").strip()
+    if len(reason) < OVERRIDE_REASON_MIN_LEN:
+        raise BadRequestException(
+            f"管理员代审必须填写代审原因（不少于 {OVERRIDE_REASON_MIN_LEN} 个字），将记入审计日志"
+        )
+    if len(reason) > OVERRIDE_REASON_MAX_LEN:
+        raise BadRequestException(f"代审原因不能超过 {OVERRIDE_REASON_MAX_LEN} 个字")
+    return reason
+
+
 def ensure_actor_allowed(
     step: str,
     allowed: set[uuid.UUID],
     actor_id: uuid.UUID,
     *,
     actor_is_superuser: bool,
-) -> None:
-    """校验操作人是否在该环节的可操作人集合内。
+    override_reason: str | None = None,
+) -> str | None:
+    """校验操作人是否在该环节的可操作人集合内，返回代审原因（非代审返回 ``None``）。
 
-    超级管理员保留兜底能力；其余人一律严格校验。环节未解析到任何处理人时
-    直接拒绝并提示去配置，避免「没有负责人也能审核」。
+    超级管理员保留兜底能力，但代审必须填写原因；其余人一律严格校验。环节未解析到
+    任何处理人时直接拒绝并提示去配置，避免「没有负责人也能审核」。
     """
     if actor_is_superuser:
-        return
+        return resolve_override_reason(
+            actor_id, allowed, actor_is_superuser=True, override_reason=override_reason
+        )
     role_label = STEP_DEFS[step].role_label
     if not allowed:
         raise ForbiddenException(f"当前环节（{role_label}）未配置处理人，请先在部门联系人配置中配置后再操作")
     if actor_id not in allowed:
         raise ForbiddenException(f"当前环节由{role_label}处理，你无权操作")
+    return None
+
+
+def format_opinion_content(content: str, override_reason: str | None) -> str:
+    """审核意见正文：代审时加「【管理员代审】原因」前缀，便于人读与事后抽查。"""
+    if not override_reason:
+        return content
+    return f"【管理员代审】{override_reason}｜{content}".rstrip("｜")
 
 
 def _append_opinion(
@@ -634,17 +677,51 @@ def _append_opinion(
     actor_name: str,
     content: str,
     step_label: str | None = None,
+    override_reason: str | None = None,
 ) -> None:
+    body = format_opinion_content(content, override_reason)
     opinion = {
         "step": step,
         "step_label": step_label or STEP_DEFS[step].label,
         "result": result,
         "author_id": str(actor_id),
         "author_name": actor_name,
-        "content": content,
+        "content": body,
+        #: 超管代审标记：详情页与抽查脚本据此区分「本人职责」与「管理员代操作」
+        "is_override": bool(override_reason),
+        "override_reason": override_reason,
         "create_time": datetime.now(UTC).isoformat(),
     }
     ledger.review_opinions = [*(ledger.review_opinions or []), opinion]
+
+
+async def record_override_audit(
+    db: AsyncSession,
+    *,
+    ledger: DeviationLedger,
+    step: str,
+    result: str,
+    actor_id: uuid.UUID,
+    reason: str,
+    department: str | None = None,
+) -> None:
+    """记录管理员代审审计日志（与业务变更同事务提交）。"""
+    await record_audit_log(
+        db,
+        action=OVERRIDE_AUDIT_ACTION,
+        user_id=actor_id,
+        resource_type="quality.deviation_ledger",
+        resource_id=ledger.id,
+        new_value={
+            "step": step,
+            "result": result,
+            "override_reason": reason,
+            "department": department,
+            "status": ledger.status,
+            "code": ledger.code,
+        },
+        extra={"app_module": "quality"},
+    )
 
 
 def _next_status_on_approve(ledger: DeviationLedger, step: str) -> str:
@@ -732,6 +809,7 @@ async def transition(
     target_step: str | None = None,
     reason_category: str | None = None,
     deviation_level: str | None = None,
+    override_reason: str | None = None,
 ) -> TransitionOutcome:
     """统一流转入口：校验 → 守卫 → 追加意见 → 推进状态（含自动跳过）。
 
@@ -769,7 +847,9 @@ async def transition(
         allowed.update(context.handlers.get(step, []))
     else:
         allowed = allowed_actors(ledger, step, context.handlers)
-    ensure_actor_allowed(step, allowed, actor_id, actor_is_superuser=actor_is_superuser)
+    override = ensure_actor_allowed(
+        step, allowed, actor_id, actor_is_superuser=actor_is_superuser, override_reason=override_reason
+    )
 
     if result == APPROVED:
         if "reason_category" in STEP_DEFS[step].requires:
@@ -811,6 +891,7 @@ async def transition(
         actor_id=actor_id,
         actor_name=actor_name,
         content=content.strip(),
+        override_reason=override,
     )
 
     if return_target is not None:
@@ -827,6 +908,10 @@ async def transition(
     ledger.status = next_status
     ledger.status_updated_at = now
     ledger.updated_by = actor_id
+    if override:
+        await record_override_audit(
+            db, ledger=ledger, step=step, result=result, actor_id=actor_id, reason=override
+        )
     await db.commit()
     await db.refresh(ledger)
 
@@ -855,6 +940,7 @@ async def approve_cross_dept_row(
     actor_id: uuid.UUID,
     actor_name: str,
     actor_is_superuser: bool = False,
+    override_reason: str | None = None,
 ) -> TransitionOutcome:
     """跨部门逐行审批：行审核人通过只写该行状态，全部行通过后环节才前进到所属 QA 审核。
 
@@ -885,6 +971,9 @@ async def approve_cross_dept_row(
     reviewer_ids = cross_dept_row_reviewer_ids(entry, context.contacts, context.directory)
     if not reviewer_ids:
         raise BadRequestException("该跨部门行没有审核人，请在基础信息中补充该部门调查人或维护部门负责人")
+    override = resolve_override_reason(
+        actor_id, set(reviewer_ids), actor_is_superuser=actor_is_superuser, override_reason=override_reason
+    )
     if not actor_is_superuser and actor_id not in reviewer_ids:
         raise ForbiddenException("只有该跨部门行的审核人可以审批")
 
@@ -917,8 +1006,19 @@ async def approve_cross_dept_row(
         actor_name=actor_name,
         content=content.strip(),
         step_label=f"{STEP_DEFS[CROSS_DEPT_STEP].label}（{target_department}）",
+        override_reason=override,
     )
     ledger.updated_by = actor_id
+    if override:
+        await record_override_audit(
+            db,
+            ledger=ledger,
+            step=CROSS_DEPT_STEP,
+            result=APPROVED,
+            actor_id=actor_id,
+            reason=override,
+            department=target_department,
+        )
 
     skipped: list[str] = []
     if all(is_cross_dept_row_approved(item) for item in updated_rows):
@@ -960,6 +1060,7 @@ async def reject_cross_dept_row(
     actor_id: uuid.UUID,
     actor_name: str,
     actor_is_superuser: bool = False,
+    override_reason: str | None = None,
 ) -> TransitionOutcome:
     """跨部门单行退回：只重置该部门的「调查 → 审核」两个节点，其余行已通过结果保留。
 
@@ -988,6 +1089,9 @@ async def reject_cross_dept_row(
     reviewer_ids = cross_dept_row_reviewer_ids(entry, context.contacts, context.directory)
     if not reviewer_ids:
         raise BadRequestException("该跨部门行没有审核人，请在基础信息中补充该部门调查人或维护部门负责人")
+    override = resolve_override_reason(
+        actor_id, set(reviewer_ids), actor_is_superuser=actor_is_superuser, override_reason=override_reason
+    )
     if not actor_is_superuser and actor_id not in reviewer_ids:
         raise ForbiddenException("只有该跨部门行的审核人可以退回")
 
@@ -1030,8 +1134,19 @@ async def reject_cross_dept_row(
         actor_name=actor_name,
         content=reason,
         step_label=f"{STEP_DEFS[CROSS_DEPT_STEP].label}（{target_department}）",
+        override_reason=override,
     )
     ledger.updated_by = actor_id
+    if override:
+        await record_override_audit(
+            db,
+            ledger=ledger,
+            step=CROSS_DEPT_STEP,
+            result=REJECTED,
+            actor_id=actor_id,
+            reason=override,
+            department=target_department,
+        )
     await db.commit()
     await db.refresh(ledger)
 
@@ -1059,6 +1174,7 @@ async def submit_final_code(
     actor_id: uuid.UUID,
     actor_name: str,
     actor_is_superuser: bool = False,
+    override_reason: str | None = None,
 ) -> TransitionOutcome:
     """输入最终编号并关闭偏差。"""
     code = final_code.strip()
@@ -1077,6 +1193,9 @@ async def submit_final_code(
     allowed = set(context.handlers.get("final_code_input", []))
     allowed.add(ledger.reporter_id)
     allowed.update(ledger.handler_ids or [])
+    override = resolve_override_reason(
+        actor_id, allowed, actor_is_superuser=actor_is_superuser, override_reason=override_reason
+    )
     if not actor_is_superuser and allowed and actor_id not in allowed:
         raise ForbiddenException("最终编号由所属QA录入，你无权操作")
 
@@ -1089,10 +1208,15 @@ async def submit_final_code(
         actor_id=actor_id,
         actor_name=actor_name,
         content=f"最终编号：{code}",
+        override_reason=override,
     )
     ledger.status = LedgerStatus.CLOSED.value
     ledger.status_updated_at = datetime.now(UTC)
     ledger.updated_by = actor_id
+    if override:
+        await record_override_audit(
+            db, ledger=ledger, step="final_code_input", result=APPROVED, actor_id=actor_id, reason=override
+        )
     try:
         await db.commit()
     except IntegrityError as exc:
