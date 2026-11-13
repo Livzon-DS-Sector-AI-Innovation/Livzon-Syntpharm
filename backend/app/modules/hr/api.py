@@ -59,6 +59,7 @@ from app.modules.hr.schemas import (
     EmployeeCreate,
     EmployeeResponse,
     EmployeeUpdate,
+    HrSystemSettingsApiResponse,
     OnboardingEvaluationInput,
     PrejobTemplateCreate,
     PrejobTemplateItem,
@@ -2484,7 +2485,7 @@ def _get_setting_value(settings, key: str) -> str:
     return str(value) if value else ""
 
 
-@router.get("/system-settings", summary="获取系统设置")
+@router.get("/system-settings", summary="获取系统设置", response_model=HrSystemSettingsApiResponse)
 async def get_system_settings(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:system-settings:read")),

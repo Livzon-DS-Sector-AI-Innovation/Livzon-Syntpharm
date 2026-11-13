@@ -729,3 +729,12 @@ class PrejobTemplateResponse(BaseModel):
     items: list[PrejobTemplateItem]
     created_at: datetime | None = None
     updated_at: datetime | None = None
+
+
+class HrSystemSettingsApiResponse(BaseModel):
+    """`GET /hr/system-settings` 的完整响应体。"""
+
+    code: int
+    message: str
+    data: dict[str, str]
+    meta: dict[str, Any] | None = None
