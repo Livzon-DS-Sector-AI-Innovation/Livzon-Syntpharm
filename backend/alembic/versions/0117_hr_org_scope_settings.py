@@ -1,12 +1,11 @@
 """move HR org-scope settings to core.module_settings
 
-Revision ID: 0125_hr_org_scope_to_module_settings
-Revises: 0124_revert_identity_org_hr_fields
+Revision ID: 0117_hr_org_scope_settings
+Revises: 0116_hr_org_records
 Create Date: 2026-11-13
 
 Runtime configuration belongs in ``core.module_settings``. Move the two
-org-sync root keys out of the legacy ``hr.system_settings`` table so the HR
-org sync reads the standard runtime-config store.
+org-sync root keys out of the legacy ``hr.system_settings`` table.
 """
 
 from collections.abc import Sequence
@@ -15,8 +14,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0125_hr_org_scope_to_module_settings"
-down_revision: str = "0124_revert_identity_org_hr_fields"
+revision: str = "0117_hr_org_scope_settings"
+down_revision: str = "0116_hr_org_records"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
