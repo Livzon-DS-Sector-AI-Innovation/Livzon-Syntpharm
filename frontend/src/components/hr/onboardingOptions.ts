@@ -33,4 +33,3 @@ export function toOptions(values: readonly string[]) {
 
 // Reuse the shared design-palette avatar fallback so ledger avatars stay in
 // the same color family as the rest of the product.
-export { avatarColorOf as avatarColor } from '@/components/common/UserAvatar'

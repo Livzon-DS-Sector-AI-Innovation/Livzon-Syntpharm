@@ -14,7 +14,6 @@ from app.modules.hr.models import (
     Candidate,
     Employee,
     HrDepartment,
-    OffboardingRecord,
     TrainingLedger,
     TrainingLedgerPage,
     TrainingSession,
@@ -25,7 +24,6 @@ from app.modules.hr.repository import (
     CandidateRepository,
     DepartmentRepository,
     EmployeeRepository,
-    OffboardingRecordRepository,
     TrainingLedgerPageRepository,
     TrainingLedgerRepository,
     TrainingSessionRepository,
@@ -40,8 +38,6 @@ from app.modules.hr.schemas import (
     DepartmentUpdate,
     EmployeeCreate,
     EmployeeUpdate,
-    OffboardingRecordCreate,
-    OffboardingRecordUpdate,
     SyncStatusResponse,
     TrainingLedgerCreate,
     TrainingLedgerUpdate,
@@ -708,81 +704,6 @@ class DepartmentService:
         page_size: int = 20,
     ) -> tuple[list[HrDepartment], int]:
         return await self.repo.list_departments(
-            keyword=keyword,
-            page=page,
-            page_size=page_size,
-        )
-
-
-class OffboardingRecordService:
-    def __init__(self, session: AsyncSession) -> None:
-        self.repo = OffboardingRecordRepository(session)
-        self.employee_repo = EmployeeRepository(session)
-        self.feishu = FeishuBitableSync()
-
-    async def get_record(self, record_id: UUID) -> OffboardingRecord:
-        record = await self.repo.get_by_id(record_id)
-        if not record:
-            raise NotFoundException("离职记录", str(record_id))
-        return record
-
-    async def create_record(self, data: OffboardingRecordCreate) -> OffboardingRecord:
-        employee = await self.employee_repo.get_by_id(data.employee_id)
-        if not employee:
-            raise NotFoundException("员工", str(data.employee_id))
-
-        record = OffboardingRecord(**data.model_dump())
-        record = await self.repo.create(record)
-
-        # 自动将员工状态更新为离职
-        employee.status = "离职"
-        await self.employee_repo.update(employee)
-
-        # 同步到飞书
-        try:
-            record_dict = {
-                **record.__dict__,
-                "employee": {
-                    "name": employee.name,
-                    "employee_number": employee.employee_number,
-                },
-            }
-            await self.feishu.sync_offboarding_created(record_dict)
-        except Exception as e:
-            logger.warning("Feishu sync failed for offboarding created: %s", e)
-
-        return record
-
-    async def update_record(self, record_id: UUID, data: OffboardingRecordUpdate) -> OffboardingRecord:
-        record = await self.get_record(record_id)
-        update_data = data.model_dump(exclude_unset=True)
-
-        for field, value in update_data.items():
-            setattr(record, field, value)
-
-        result = await self.repo.update(record)
-
-        try:
-            await self.feishu.sync_offboarding_updated(result.__dict__)
-        except Exception as e:
-            logger.warning("Feishu sync failed for offboarding updated: %s", e)
-
-        return result
-
-    async def delete_record(self, record_id: UUID) -> None:
-        record = await self.get_record(record_id)
-        await self.repo.soft_delete(record)
-
-    async def list_records(
-        self,
-        *,
-        employee_id: UUID | None = None,
-        keyword: str | None = None,
-        page: int = 1,
-        page_size: int = 20,
-    ) -> tuple[list[OffboardingRecord], int]:
-        return await self.repo.list_records(
-            employee_id=employee_id,
             keyword=keyword,
             page=page,
             page_size=page_size,

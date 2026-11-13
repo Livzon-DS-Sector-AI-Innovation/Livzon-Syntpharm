@@ -136,49 +136,6 @@ export type EmployeeProfileListData = components['schemas']['EmployeeProfileList
 export type EmployeeProfileListResponse = components['schemas']['EmployeeProfileListApiResponse']
 export type EmployeeProfileDetailResponse = components['schemas']['EmployeeProfileDetailApiResponse']
 
-export interface OffboardingRecord {
-  id: string
-  employee_id: string
-  employee?: Employee
-  offboarding_date: string
-  offboarding_type: string
-  reason?: string
-  handover_status: string
-  notes?: string
-  created_at?: string
-  updated_at?: string
-}
-
-export interface OffboardingRecordCreateInput {
-  employee_id: string
-  offboarding_date: string
-  offboarding_type?: string
-  reason?: string
-  handover_status?: string
-  notes?: string
-}
-
-export interface OffboardingRecordUpdateInput {
-  employee_id?: string
-  offboarding_date?: string
-  offboarding_type?: string
-  reason?: string
-  handover_status?: string
-  notes?: string
-}
-
-export interface OffboardingRecordListResponse {
-  code: number
-  message: string
-  data: OffboardingRecord[]
-  meta?: {
-    page: number
-    page_size: number
-    total: number
-  }
-}
-
-// ── 入职台账（2026 手工台账，ticket #199）──
 export type OnboardingRecord = components['schemas']['OnboardingRecordResponse']
 export type OnboardingRecordCreateInput = components['schemas']['OnboardingRecordCreate']
 export type OnboardingRecordUpdateInput = components['schemas']['OnboardingRecordUpdate']

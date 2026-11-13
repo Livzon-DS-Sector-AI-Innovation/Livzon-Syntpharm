@@ -149,40 +149,6 @@ class Employee(BaseModel):
     feishu_synced_at: Mapped[date | None] = mapped_column(Date, nullable=True, comment="上次飞书同步时间")
 
 
-class OffboardingRecord(BaseModel):
-    __tablename__ = "offboarding_records"
-    __table_args__ = (
-        Index("ix_offboarding_employee_id", "employee_id"),
-        Index("ix_offboarding_date", "offboarding_date"),
-        {"schema": "hr"},
-    )
-
-    employee_id: Mapped[UUID] = mapped_column(
-        ForeignKey("hr.employees.id"),
-        nullable=False,
-        comment="员工ID",
-    )
-    offboarding_date: Mapped[date] = mapped_column(Date, nullable=False, comment="离职日期")
-    offboarding_type: Mapped[str] = mapped_column(
-        String(16),
-        nullable=False,
-        default="辞职",
-        server_default="辞职",
-        comment="离职类型: 辞职, 辞退, 合同到期, 退休, 其他",
-    )
-    reason: Mapped[str | None] = mapped_column(String(512), nullable=True, comment="离职原因")
-    handover_status: Mapped[str] = mapped_column(
-        String(16),
-        nullable=False,
-        default="待交接",
-        server_default="待交接",
-        comment="交接状态: 待交接, 交接中, 已完成",
-    )
-    notes: Mapped[str | None] = mapped_column(String(512), nullable=True, comment="备注")
-
-    employee: Mapped["Employee"] = relationship("Employee", lazy="select")
-
-
 class DepartureRecord(BaseModel):
     """2026 离职台账（ticket #200）：人工录入，人员字段在保存时冻结。"""
 

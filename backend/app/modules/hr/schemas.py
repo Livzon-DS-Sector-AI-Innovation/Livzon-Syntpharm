@@ -339,40 +339,6 @@ class OnboardingEvaluationInput(BaseModel):
     approval_date: date | None = Field(None, description="审批日期")
 
 
-# ─── OffboardingRecord Schemas ───
-
-
-class OffboardingRecordBase(BaseModel):
-    employee_id: UUID = Field(..., description="员工ID")
-    offboarding_date: date = Field(..., description="离职日期")
-    offboarding_type: str = Field("辞职", max_length=16, description="离职类型")
-    reason: str | None = Field(None, max_length=512, description="离职原因")
-    handover_status: str = Field("待交接", max_length=16, description="交接状态")
-    notes: str | None = Field(None, max_length=512, description="备注")
-
-
-class OffboardingRecordCreate(OffboardingRecordBase):
-    pass
-
-
-class OffboardingRecordUpdate(BaseModel):
-    employee_id: UUID | None = Field(None)
-    offboarding_date: date | None = Field(None)
-    offboarding_type: str | None = Field(None, max_length=16)
-    reason: str | None = Field(None, max_length=512)
-    handover_status: str | None = Field(None, max_length=16)
-    notes: str | None = Field(None, max_length=512)
-
-
-class OffboardingRecordResponse(OffboardingRecordBase):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    employee: EmployeeResponse | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-
-
 # ─── TrainingLedger Schemas ───
 
 

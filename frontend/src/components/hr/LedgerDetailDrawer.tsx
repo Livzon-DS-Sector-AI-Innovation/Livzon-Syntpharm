@@ -1,9 +1,8 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { Avatar, Button, Drawer, Popconfirm } from 'antd'
+import { Button, Drawer, Popconfirm } from 'antd'
 
-import { avatarColor } from './onboardingOptions'
 
 export interface LedgerDetailRow {
   label: string
@@ -66,14 +65,9 @@ export default function LedgerDetailDrawer({
       }
     >
       <div>
-        <div className="mb-3 flex items-center gap-3 border-b border-[var(--color-hairline-soft)] pb-3">
-          <Avatar size={44} style={{ backgroundColor: avatarColor(avatarName), fontSize: 16 }}>
-            {avatarName.slice(0, 1)}
-          </Avatar>
-          <div>
-            <div className="text-[15px] font-semibold text-[var(--color-charcoal)]">{avatarName}</div>
-            <div className="text-xs text-[var(--color-stone)]">{subtitle}</div>
-          </div>
+        <div className="mb-3 border-b border-[var(--color-hairline-soft)] pb-3">
+          <div className="text-[15px] font-semibold text-[var(--color-charcoal)]">{avatarName}</div>
+          <div className="text-xs text-[var(--color-stone)]">{subtitle}</div>
         </div>
         {rows.map((row) => (
           <DetailRow key={row.label} label={row.label} value={row.value} />

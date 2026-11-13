@@ -11,9 +11,6 @@ import {
   DepartmentCreateInput,
   DepartmentUpdateInput,
   DepartmentListResponse,
-  OffboardingRecordCreateInput,
-  OffboardingRecordUpdateInput,
-  OffboardingRecordListResponse,
   TrainingSessionCreateInput,
   TrainingSessionUpdateInput,
   TrainingSessionListResponse,
@@ -21,7 +18,6 @@ import {
   SelectTask,
   Employee,
   Department,
-  OffboardingRecord,
   OnboardingRecordListResponse,
   OnboardingRecordApiResponse,
   OnboardingRecordCreateInput,
@@ -74,10 +70,6 @@ import {
   createDepartmentApi,
   updateDepartmentApi,
   deleteDepartmentApi,
-  fetchOffboardingRecordsApi,
-  createOffboardingRecordApi,
-  updateOffboardingRecordApi,
-  deleteOffboardingRecordApi,
   createAnnualTrainingPlanApi,
   deleteAnnualTrainingPlanApi,
   deleteAnnualPlanItemApi,
@@ -245,38 +237,6 @@ export async function deleteDepartment(id: string) {
   return res as DeleteResponse
 }
 
-// ─── OffboardingRecord Actions ───
-
-export async function fetchOffboardingRecordsAction(
-  params?: {
-    employee_id?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<OffboardingRecordListResponse> {
-  return fetchOffboardingRecordsApi(params) as Promise<OffboardingRecordListResponse>
-}
-
-export async function createOffboardingRecord(data: OffboardingRecordCreateInput) {
-  const res = await createOffboardingRecordApi(data)
-  revalidatePath('/hr/offboarding')
-  revalidatePath('/hr/profile')
-  return res as OffboardingRecord
-}
-
-export async function updateOffboardingRecord(id: string, data: OffboardingRecordUpdateInput) {
-  const res = await updateOffboardingRecordApi(id, data)
-  revalidatePath('/hr/offboarding')
-  return res as OffboardingRecord
-}
-
-export async function deleteOffboardingRecord(id: string) {
-  const res = await deleteOffboardingRecordApi(id)
-  revalidatePath('/hr/offboarding')
-  return res as DeleteResponse
-}
-
 // ─── Annual Training Plan Actions ───
 
 export async function createAnnualTrainingPlan(data: { year: number; department: string; status: string }) {
@@ -376,17 +336,6 @@ export async function fetchDepartments(
   }
 ): Promise<DepartmentListResponse> {
   return fetchDepartmentsAction(params)
-}
-
-export async function fetchOffboardingRecords(
-  params?: {
-    employee_id?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<OffboardingRecordListResponse> {
-  return fetchOffboardingRecordsAction(params)
 }
 
 export async function fetchOnboardingRecords(params?: {
