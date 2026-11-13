@@ -196,13 +196,17 @@ async def load_person_lookup(
 
 
 def _hazard_bound_ids(item: HazardReport) -> list[Any]:
-    ids: list[Any] = [item.discovered_by, item.rectification_responsible_person]
+    ids: list[Any] = [item.discovered_by, item.rectification_responsible_person, item.safety_officer_id]
     ids.extend(item.rectification_responsible_person_ids or [])
     return [value for value in ids if value]
 
 
 def _hazard_names(item: HazardReport) -> list[str]:
-    names: list[str | None] = [item.discovered_by_name, item.rectification_responsible_person_name]
+    names: list[str | None] = [
+        item.discovered_by_name,
+        item.rectification_responsible_person_name,
+        item.safety_officer_name,
+    ]
     names.extend(split_person_names(item.rectification_responsible_person_names))
     return [name for name in names if name]
 
@@ -233,6 +237,10 @@ def _to_hazard_response(item: HazardReport, lookup: PersonLookup) -> HazardRepor
         for ref in (lookup.ref(person_id, name, department_hint=item.department) for person_id, name in entries)
         if ref is not None
     ]
+    # 分管安全员：未单独指定时留空，由详情页回退到责任部门配置的安全员
+    response.safety_officer_person = lookup.ref(
+        item.safety_officer_id, item.safety_officer_name, department_hint=item.department
+    )
     return response
 
 

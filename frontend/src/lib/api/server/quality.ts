@@ -1,9 +1,7 @@
-import { apiFetch, apiFetchRaw, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
+import { apiFetch, apiFetchData, apiFetchRaw, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
 import type { components } from '@/types/generated/schema'
 
 type CapaApiResponse = components['schemas']['CapaApiResponse']
-type DeviationCreate = components['schemas']['DeviationCreate']
-type DeviationUpdate = components['schemas']['DeviationUpdate']
 type CapaCreate = components['schemas']['CapaCreate']
 type CapaUpdate = components['schemas']['CapaUpdate']
 
@@ -21,6 +19,38 @@ import type {
   CreateDepartmentContactRequest,
   UpdateDepartmentContactRequest,
   UploadLcResponse,
+  AiLogFilter,
+  DepartmentContact,
+  DepartmentContactListData,
+  DepartmentMemberOption,
+  DeviationAiAnalysisInput,
+  DeviationAttachmentComment,
+  DeviationAttachmentCommentCreateInput,
+  DeviationAttachmentCommentUpdateInput,
+  DeviationBatchResult,
+  DeviationCrossDeptApproveInput,
+  DeviationDeleteResult,
+  DeviationFinalCodeInput,
+  DeviationInvestigationInput,
+  DeviationJobState,
+  DeviationLedgerBatchStatusInput,
+  DeviationLedgerCreateInput,
+  DeviationLedgerDetail,
+  DeviationLedgerFilters,
+  DeviationLedgerListResult,
+  DeviationLedgerOption,
+  DeviationLedgerOptionResult,
+  DeviationLedgerStatistics,
+  DeviationMemberOptionResult,
+  DeviationLedgerUpdateInput,
+  DeviationNotifySettings,
+  DeviationNotifySettingsUpdate,
+  DeviationNotifyTestResult,
+  DeviationResubmitInput,
+  DeviationReviewInput,
+  WeeklyConfirmationInput,
+  WeeklyConfirmationItem,
+  WeeklyConfirmationListData,
 } from '@/types/quality'
 import type {
   SamplingOrderCreate,
@@ -569,17 +599,7 @@ export async function getStabilityTrendData(studyId: string) {
 
 // ============ AI 交互日志 Actions ============
 
-interface AiLogParams {
-  page?: number
-  page_size?: number
-  operate_type?: string
-  operator?: string
-  start_date?: string
-  end_date?: string
-  keyword?: string
-}
-
-export async function getAiLogs(params: AiLogParams = {}) {
+export async function getAiLogs(params: AiLogFilter = {}) {
   const searchParams = new URLSearchParams()
   if (params.page) searchParams.set('page', String(params.page))
   if (params.page_size) searchParams.set('page_size', String(params.page_size))
@@ -595,26 +615,6 @@ export async function getAiLogs(params: AiLogParams = {}) {
 
 export async function getAiLogById(id: string) {
   return apiFetch(`/api/v1/quality/ai/logs/${id}`)
-}
-
-// ============ Deviation Actions ============
-
-export async function createDeviation(data: DeviationCreate) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function updateDeviation(deviationId: string, data: DeviationUpdate) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function deleteDeviation(deviationId: string) {
-  return fetchDeleteOrNull(`/api/v1/quality/deviations/${deviationId}`)
 }
 
 // ============ CAPA Actions ============
@@ -639,15 +639,18 @@ export async function deleteCapa(capaId: string) {
 
 // ============ Department Contact Actions ============
 
-export async function createDepartmentContact(data: CreateDepartmentContactRequest) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/department-contacts`, {
+export async function createDepartmentContact(data: CreateDepartmentContactRequest): Promise<DepartmentContact> {
+  return apiFetchData<DepartmentContact>('/api/v1/quality/department-contacts', {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateDepartmentContact(contactId: string, data: UpdateDepartmentContactRequest) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/department-contacts/${contactId}`, {
+export async function updateDepartmentContact(
+  contactId: string,
+  data: UpdateDepartmentContactRequest,
+): Promise<DepartmentContact> {
+  return apiFetchData<DepartmentContact>(`/api/v1/quality/department-contacts/${contactId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -665,26 +668,6 @@ export async function fetchLabelVerifications(params: { page: number; page_size:
     page_size: params.page_size.toString(),
   })
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/label-verifications?${searchParams.toString()}`)
-}
-
-// ============ Attachment Review Actions ============
-
-export async function submitAttachmentReview(data: {
-  deviation_id?: string | null
-  capa_id?: string | null
-  attachment_url: string
-  content: string
-}) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/attachment-reviews`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function deleteAttachmentReview(reviewId: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/attachment-reviews/${reviewId}`, {
-    method: 'DELETE',
-  })
 }
 
 // ============ Additional CAPA Actions ============
@@ -747,221 +730,308 @@ export async function confirmDeptHead(capaId: string, data: unknown): Promise<Ca
   })
 }
 
-// ============ Additional Deviation Actions ============
-
-export async function submitDeviation(deviationId: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}/submit`, {
-    method: 'POST',
-  })
-}
-
-export async function submitInvestigation(deviationId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}/investigation`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function submitReview(deviationId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}/review`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function submitFinalCode(deviationId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}/final-code`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function resubmitDeviation(deviationId: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}/resubmit`, {
-    method: 'POST',
-  })
-}
-
-// ============ Deviation Automation Actions ============
-
-export async function createDeviationTask(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function generateDeviationReport(taskId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}/generate`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function submitDeviationApproval(taskId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}/submit`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function updateDeviationTask(taskId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function updateDeviationTaskFields(taskId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}/fields`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function deleteDeviationTask(taskId: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}`, {
-    method: 'DELETE',
-  })
-}
-
-export async function createDeviationTemplate(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/templates`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function updateDeviationTemplate(templateId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/templates/${templateId}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function deleteDeviationTemplate(templateId: string | number) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/templates/${templateId}`, {
-    method: 'DELETE',
-  })
-}
-
-export async function createSopTemplate(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop/templates`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function createSopFromTemplate(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop/from-template`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function updateSopTemplate(templateId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop/templates/${templateId}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function deleteSopTemplate(templateId: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop/templates/${templateId}`, {
-    method: 'DELETE',
-  })
-}
-
-export async function generateSop(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop/generate`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function uploadDeviationFile(formData: FormData) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/upload`, {
-    method: 'POST',
-    body: formData,
-  })
-}
-
-export async function triggerAIProcess(taskId: number) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}/ai-process`, {
-    method: 'POST',
-  })
-}
-
-export async function updateAIResult(taskId: number, aiResult: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}/update-ai-result`, {
-    method: 'PUT',
-    body: JSON.stringify({ ai_result: aiResult }),
-  })
-}
-
-export async function generateStandard(taskId: number) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}/generate-standard`, {
-    method: 'POST',
-  })
-}
-
-export async function updateDeviationTemplateStatus(id: number, isActive: boolean) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/templates/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify({ is_active: isActive }),
-  })
-}
-
-export async function uploadDeviationTemplate(formData: FormData) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/templates/upload`, {
-    method: 'POST',
-    body: formData,
-  })
-}
-
-export async function deleteSopRule(id: number) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop-rules/${id}`, {
-    method: 'DELETE',
-  })
-}
-
-export async function updateSopRuleStatus(id: number | string, status: string | number) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop-rules/${id}/status`, {
-    method: 'PUT',
-    body: JSON.stringify({ status }),
-  })
-}
-
-export async function createSopRule(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop-rules`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function uploadSopRule(formData: FormData, ruleId: number) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop-rules/${ruleId}/upload`, {
-    method: 'POST',
-    body: formData,
-  })
-}
-
-export async function aiParseSopRule(ruleId: number) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/sop-rules/${ruleId}/ai-parse`, {
-    method: 'POST',
-  })
-}
-
-export async function uploadDeviationFileWithTask(formData: FormData) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/upload`, {
-    method: 'POST',
-    body: formData,
-  })
-}
-
 export async function uploadLcExcel(formData: FormData): Promise<UploadLcResponse> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/lc-report/upload`, {
     method: 'POST',
     body: formData,
+  })
+}
+
+// ============ 偏差台账 ============
+
+/** 台账列表：状态 / 发生部门 / 发现日期区间筛选，按发现日期倒序 */
+export async function fetchDeviationLedgerList(
+  params: DeviationLedgerFilters = {},
+): Promise<DeviationLedgerListResult> {
+  const searchParams = new URLSearchParams()
+  if (params.reason_category) searchParams.set('reason_category', params.reason_category)
+  if (params.status) searchParams.set('status', params.status)
+  if (params.department) searchParams.set('department', params.department)
+  if (params.page) searchParams.set('page', String(params.page))
+  if (params.page_size) searchParams.set('page_size', String(params.page_size))
+  const queryString = searchParams.toString()
+  return apiFetchData<DeviationLedgerListResult>(
+    `/api/v1/quality/deviation/ledger${queryString ? `?${queryString}` : ''}`,
+  )
+}
+
+/** 偏差看盘统计 */
+export async function fetchDeviationLedgerStatistics(): Promise<DeviationLedgerStatistics> {
+  return apiFetchData<DeviationLedgerStatistics>('/api/v1/quality/deviation/ledger/statistics')
+}
+
+/** 台账只读详情 */
+export async function fetchDeviationLedgerDetail(id: string): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}`)
+}
+
+/** 发生部门候选（筛选栏，覆盖台账已有部门） */
+export async function fetchDeviationDepartmentOptions(): Promise<DeviationLedgerOption[]> {
+  const data = await apiFetchData<DeviationLedgerOptionResult>(
+    '/api/v1/quality/deviation/ledger/department-options',
+  )
+  return data.items
+}
+
+/** 新建 / 编辑可用部门（来源部门联系人配置，保证节点负责人可解析） */
+export async function fetchDeviationDepartmentContactOptions(): Promise<DeviationLedgerOption[]> {
+  const data = await apiFetchData<DeviationLedgerOptionResult>(
+    '/api/v1/quality/deviation/ledger/department-contact-options',
+  )
+  return data.items
+}
+
+/** 调查人候选 */
+export async function fetchDeviationInvestigatorOptions(keyword?: string): Promise<DeviationLedgerOption[]> {
+  const query = keyword ? `?keyword=${encodeURIComponent(keyword)}` : ''
+  const data = await apiFetchData<DeviationLedgerOptionResult>(
+    `/api/v1/quality/deviation/ledger/investigator-options${query}`,
+  )
+  return data.items
+}
+
+/** 状态候选 */
+export async function fetchDeviationStatusOptions(): Promise<DeviationLedgerOption[]> {
+  const data = await apiFetchData<DeviationLedgerOptionResult>(
+    '/api/v1/quality/deviation/ledger/status-options',
+  )
+  return data.items
+}
+
+/** 新建偏差 */
+export async function fetchCreateDeviationLedger(data: DeviationLedgerCreateInput): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>('/api/v1/quality/deviation/ledger', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 修改基础信息（含调查人、跨部门审核配置） */
+export async function fetchUpdateDeviationLedger(
+  id: string,
+  data: DeviationLedgerUpdateInput,
+): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 生成 AI 分析（生成后不落库，需再确认保存） */
+export async function fetchStartDeviationAiAnalysis(id: string): Promise<DeviationJobState> {
+  return apiFetchData<DeviationJobState>(`/api/v1/quality/deviation/ledger/${id}/ai-analysis`, {
+    method: 'POST',
+  })
+}
+
+/** 查询 AI 分析后台任务状态（客户端轮询用） */
+export async function fetchDeviationJobStatus(jobId: string): Promise<DeviationJobState> {
+  return apiFetchData<DeviationJobState>(`/api/v1/quality/deviation/ledger/jobs/${jobId}`)
+}
+
+/** 保存 AI 分析结果（只落库，不流转流程） */
+export async function fetchCompleteDeviationAiAnalysis(
+  id: string,
+  data: DeviationAiAnalysisInput,
+): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/complete-ai-analysis`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 提交调查报告 */
+export async function fetchSubmitDeviationInvestigation(
+  id: string,
+  data: DeviationInvestigationInput,
+): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/investigation`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 审核阶段追加调查记录（不推进流程） */
+export async function fetchAppendDeviationInvestigationRecord(
+  id: string,
+  data: DeviationInvestigationInput,
+): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/investigation-records`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 跨部门会签：逐行审批（任一审核人通过即该行通过，全部行通过后流转所属QA审核） */
+export async function fetchApproveDeviationCrossDeptRow(
+  id: string,
+  data: DeviationCrossDeptApproveInput,
+): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/cross-dept-review`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 审核通过 / 退回 */
+export async function fetchReviewDeviationLedger(
+  id: string,
+  data: DeviationReviewInput,
+): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/review`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 退回后重新提交 */
+export async function fetchResubmitDeviationLedger(
+  id: string,
+  data: DeviationResubmitInput,
+): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/resubmit`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 提交最终编号并关闭 */
+export async function fetchSubmitDeviationFinalCode(
+  id: string,
+  data: DeviationFinalCodeInput,
+): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/final-code`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 上传附件 */
+export async function fetchUploadDeviationAttachment(
+  id: string,
+  formData: FormData,
+): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(`/api/v1/quality/deviation/ledger/${id}/attachments`, {
+    method: 'POST',
+    body: formData,
+  })
+}
+
+/** 删除附件 */
+export async function fetchDeleteDeviationAttachment(
+  id: string,
+  fileId: string,
+): Promise<DeviationLedgerDetail> {
+  return apiFetchData<DeviationLedgerDetail>(
+    `/api/v1/quality/deviation/ledger/${id}/attachments/${fileId}`,
+    { method: 'DELETE' },
+  )
+}
+
+/** 新增附件批注 */
+export async function fetchCreateDeviationAttachmentComment(
+  id: string,
+  fileId: string,
+  data: DeviationAttachmentCommentCreateInput,
+): Promise<DeviationAttachmentComment> {
+  return apiFetchData<DeviationAttachmentComment>(
+    `/api/v1/quality/deviation/ledger/${id}/attachments/${fileId}/comments`,
+    { method: 'POST', body: JSON.stringify(data) },
+  )
+}
+
+/** 修改附件批注（正文或处理状态） */
+export async function fetchUpdateDeviationAttachmentComment(
+  id: string,
+  fileId: string,
+  commentId: string,
+  data: DeviationAttachmentCommentUpdateInput,
+): Promise<DeviationAttachmentComment> {
+  return apiFetchData<DeviationAttachmentComment>(
+    `/api/v1/quality/deviation/ledger/${id}/attachments/${fileId}/comments/${commentId}`,
+    { method: 'PATCH', body: JSON.stringify(data) },
+  )
+}
+
+/** 删除附件批注（软删除，仅作者/超管） */
+export async function fetchDeleteDeviationAttachmentComment(
+  id: string,
+  fileId: string,
+  commentId: string,
+): Promise<DeviationDeleteResult | null> {
+  return fetchDeleteOrNull<DeviationDeleteResult>(
+    `/api/v1/quality/deviation/ledger/${id}/attachments/${fileId}/comments/${commentId}`,
+  )
+}
+
+/** 批量更新状态 */
+export async function fetchBatchUpdateDeviationStatus(
+  data: DeviationLedgerBatchStatusInput,
+): Promise<DeviationBatchResult> {
+  return apiFetchData<DeviationBatchResult>('/api/v1/quality/deviation/ledger/batch-status', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 删除偏差（任意状态软删除，数据仍可追溯） */
+export async function fetchRemoveDeviationLedger(id: string): Promise<void> {
+  await apiFetchRaw(`/api/v1/quality/deviation/ledger/${id}`, { method: 'DELETE' })
+}
+
+// ============ 偏差组织配置 ============
+
+/** 部门联系人列表 */
+export async function fetchDepartmentContacts(keyword?: string): Promise<DepartmentContactListData> {
+  const query = keyword ? `?keyword=${encodeURIComponent(keyword)}` : ''
+  return apiFetchData<DepartmentContactListData>(`/api/v1/quality/department-contacts${query}`)
+}
+
+/** 配置页人员候选 */
+export async function fetchDeviationMemberOptions(keyword?: string): Promise<DepartmentMemberOption[]> {
+  const query = keyword ? `?keyword=${encodeURIComponent(keyword)}` : ''
+  const data = await apiFetchData<DeviationMemberOptionResult>(
+    `/api/v1/quality/department-contacts/member-options${query}`,
+  )
+  return data.items
+}
+
+/** 通知设置 */
+export async function fetchDeviationNotifySettings(): Promise<DeviationNotifySettings> {
+  return apiFetchData<DeviationNotifySettings>('/api/v1/quality/deviation/notify')
+}
+
+/** 更新通知设置 */
+export async function fetchUpdateDeviationNotifySettings(
+  data: DeviationNotifySettingsUpdate,
+): Promise<DeviationNotifySettings> {
+  return apiFetchData<DeviationNotifySettings>('/api/v1/quality/deviation/notify', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 发送偏差通知测试卡片（自检飞书链路与处理人绑定情况） */
+export async function fetchSendDeviationNotifyTest(): Promise<DeviationNotifyTestResult> {
+  return apiFetchData<DeviationNotifyTestResult>('/api/v1/quality/deviation/notify/test', {
+    method: 'POST',
+  })
+}
+
+/** 部门周确认列表 */
+export async function getWeeklyConfirmations(weekKey?: string): Promise<WeeklyConfirmationListData> {
+  const query = weekKey ? `?week_key=${encodeURIComponent(weekKey)}` : ''
+  return apiFetchData<WeeklyConfirmationListData>(
+    `/api/v1/quality/deviation/weekly-confirmations${query}`,
+  )
+}
+
+/** 提交本部门周确认 */
+export async function upsertWeeklyConfirmation(
+  data: WeeklyConfirmationInput,
+): Promise<WeeklyConfirmationItem> {
+  return apiFetchData<WeeklyConfirmationItem>('/api/v1/quality/deviation/weekly-confirmations', {
+    method: 'POST',
+    body: JSON.stringify(data),
   })
 }

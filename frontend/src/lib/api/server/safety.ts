@@ -163,7 +163,7 @@ export async function getDepartmentSafetyOfficer(departmentName: string, authHea
 }
 
 export async function createHazard(data: unknown, authHeaders?: Record<string, string>) {
-  return apiFetch<HazardListApiResponse>('/api/v1/safety/hazards', {
+  return apiFetch<HazardApiResponse>('/api/v1/safety/hazards', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -175,6 +175,23 @@ export async function createHazardCategory(name: string, authHeaders?: Record<st
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify({ name }),
+  })
+}
+
+/** 修改隐患类别名称（需 safety:hazard-category:manage） */
+export async function updateHazardCategory(id: string, name: string, authHeaders?: Record<string, string>) {
+  return apiFetch<HazardCategoryApiResponse>(`/api/v1/safety/hazard-categories/${id}`, {
+    method: 'PUT',
+    headers: authHeaders,
+    body: JSON.stringify({ name }),
+  })
+}
+
+/** 删除隐患类别（软删除，需 safety:hazard-category:manage） */
+export async function deleteHazardCategory(id: string, authHeaders?: Record<string, string>) {
+  return apiFetch<HazardCategoryApiResponse>(`/api/v1/safety/hazard-categories/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders,
   })
 }
 

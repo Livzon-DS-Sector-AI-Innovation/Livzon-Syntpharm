@@ -11,6 +11,8 @@ from typing import Any
 import pytest
 from httpx import AsyncClient
 
+from app.modules.safety.risk_grading import derive_equipment_evaluation_grade
+
 BASE_URL = "/api/v1/safety/equipment-facility-hazards"
 WORK_ACTIVITY_URL = "/api/v1/safety/work-activity-hazards"
 
@@ -90,6 +92,8 @@ class TestEquipmentFacilityHazardCreate:
         assert data["likelihood_l"] == 2
         assert data["severity_s"] == "C"
         assert data["risk_evaluation_r"] == 11
+        assert data["evaluation_grade"] == 2
+        assert data["evaluation_grade_label"] == "2级"
         assert data["current_control_measures"] == ["engineering", "management"]
         assert data["residual_risk"] == "level_2"
         assert data["residual_risk_label"] == "2级一般风险"
@@ -109,14 +113,23 @@ class TestEquipmentFacilityHazardCreate:
         assert body["meta"]["total"] == 1
         assert [row["id"] for row in body["data"]] == [created["id"]]
 
-    async def test_client_supplied_r_is_ignored(self, auth_client: AsyncClient) -> None:
-        data = await create(auth_client, risk_evaluation_r=999)
+    async def test_client_supplied_r_and_grade_are_ignored(self, auth_client: AsyncClient) -> None:
+        data = await create(
+            auth_client,
+            risk_evaluation_r=999,
+            evaluation_grade=4,
+            evaluation_grade_label="4级",
+        )
 
         assert data["risk_evaluation_r"] == 11
+        assert data["evaluation_grade"] == 2
+        assert data["evaluation_grade_label"] == "2级"
 
         response = await auth_client.get(BASE_URL)
         assert response.status_code == 200
-        assert response.json()["data"][0]["risk_evaluation_r"] == 11
+        stored = response.json()["data"][0]
+        assert stored["risk_evaluation_r"] == 11
+        assert stored["evaluation_grade"] == 2
 
 
 MATRIX_CELLS = [
@@ -160,6 +173,47 @@ class TestRiskEvaluationMatrix:
         data = await create(auth_client, likelihood_l=likelihood, severity_s=severity)
 
         assert data["risk_evaluation_r"] == expected
+
+
+def grade_of_r(value: int) -> int:
+    if value < 10:
+        return 1
+    if value < 20:
+        return 2
+    if value < 40:
+        return 3
+    return 4
+
+
+class TestEvaluationGrade:
+    @pytest.mark.parametrize(("likelihood", "severity", "expected_r"), MATRIX_CELLS)
+    async def test_grade_tracks_all_25_matrix_cells(
+        self,
+        auth_client: AsyncClient,
+        likelihood: int,
+        severity: str,
+        expected_r: int,
+    ) -> None:
+        data = await create(auth_client, likelihood_l=likelihood, severity_s=severity)
+
+        assert data["evaluation_grade"] == grade_of_r(expected_r)
+        assert data["evaluation_grade_label"] == f"{grade_of_r(expected_r)}级"
+
+    @pytest.mark.parametrize(
+        ("risk_evaluation_r", "expected_grade", "expected_label"),
+        [
+            (3, 1, "1级"),
+            (9, 1, "1级"),
+            (10, 2, "2级"),
+            (19, 2, "2级"),
+            (20, 3, "3级"),
+            (39, 3, "3级"),
+            (40, 4, "4级"),
+            (100, 4, "4级"),
+        ],
+    )
+    def test_band_boundaries(self, risk_evaluation_r: int, expected_grade: int, expected_label: str) -> None:
+        assert derive_equipment_evaluation_grade(risk_evaluation_r) == (expected_grade, expected_label)
 
 
 REQUIRED_FIELDS = [
@@ -291,7 +345,6 @@ class TestLedgerIsolation:
             exposure_e="6",
             consequence_c="15",
             risk_value_d="270",
-            evaluation_grade=3,
             control_measures=["engineering"],
         )
 
@@ -304,7 +357,6 @@ class TestLedgerIsolation:
             "exposure_e",
             "consequence_c",
             "risk_value_d",
-            "evaluation_grade",
             "control_measures",
         ):
             assert field not in data
@@ -384,6 +436,7 @@ EXPORT_HEADERS = [
     "可能性L",
     "严重性S",
     "危险评价R",
+    "评价级别",
     "现有管控措施",
     "建议改进（新增）措施",
     "残余风险",
@@ -420,7 +473,7 @@ class TestEquipmentFacilityHazardUpdate:
 
         response = await auth_client.put(
             f"{BASE_URL}/{created['id']}",
-            json=payload(likelihood_l=5, severity_s="E", risk_evaluation_r=999),
+            json=payload(likelihood_l=5, severity_s="E", risk_evaluation_r=999, evaluation_grade=1),
         )
 
         assert response.status_code == 200, response.text
@@ -428,6 +481,8 @@ class TestEquipmentFacilityHazardUpdate:
         assert data["likelihood_l"] == 5
         assert data["severity_s"] == "E"
         assert data["risk_evaluation_r"] == 100
+        assert data["evaluation_grade"] == 4
+        assert data["evaluation_grade_label"] == "4级"
         assert data["equipment_facility_tag"] == created["equipment_facility_tag"]
 
     async def test_put_reapplies_all_create_rules(self, auth_client: AsyncClient) -> None:
@@ -556,6 +611,37 @@ class TestEquipmentFacilityHazardFilters:
         assert response.json()["meta"]["total"] == 1
         assert response.json()["data"][0]["control_level"] == "201车间"
 
+    async def test_evaluation_grade_filter_and_export(self, auth_client: AsyncClient) -> None:
+        await create_variant(auth_client, equipment_facility_tag="G1-EQ", likelihood_l=1, severity_s="A")
+        await create_variant(auth_client, equipment_facility_tag="G2-EQ", likelihood_l=2, severity_s="C")
+        await create_variant(auth_client, equipment_facility_tag="G3-EQ", likelihood_l=3, severity_s="D")
+        await create_variant(auth_client, equipment_facility_tag="G4-EQ", likelihood_l=5, severity_s="E")
+
+        by_grade = await auth_client.get(BASE_URL, params={"evaluation_grade": 4})
+        assert by_grade.status_code == 200
+        assert by_grade.json()["meta"]["total"] == 1
+        assert by_grade.json()["data"][0]["equipment_facility_tag"] == "G4-EQ"
+
+        combined = await auth_client.get(
+            BASE_URL,
+            params={"evaluation_grade": 4, "control_level": "101车间", "residual_risk": "level_2"},
+        )
+        assert combined.status_code == 200
+        assert combined.json()["meta"]["total"] == 1
+
+        exported = await auth_client.get(EXPORT_URL, params={"evaluation_grade": 3})
+        assert exported.status_code == 200
+        sheet = openpyxl.load_workbook(BytesIO(exported.content)).active
+        assert sheet.max_row == 2
+        assert sheet.cell(row=2, column=2).value == "G3-EQ"
+        assert sheet.cell(row=2, column=9).value == "3级"
+
+    @pytest.mark.parametrize("value", [0, 5, -1])
+    async def test_invalid_evaluation_grade_filter_is_rejected(self, auth_client: AsyncClient, value: int) -> None:
+        response = await auth_client.get(BASE_URL, params={"evaluation_grade": value})
+
+        assert response.status_code == 422, response.text
+
 
 class TestEquipmentFacilityHazardExport:
     async def test_export_returns_xlsx_with_chinese_headers_and_filtered_rows(self, auth_client: AsyncClient) -> None:
@@ -579,6 +665,7 @@ class TestEquipmentFacilityHazardExport:
         assert sheet.max_row == 2
         assert sheet.cell(row=2, column=2).value == "导出命中设备"
         assert str(sheet.cell(row=2, column=8).value) == "11"
+        assert sheet.cell(row=2, column=9).value == "2级"
 
     async def test_export_honors_keyword_and_combined_filters(self, auth_client: AsyncClient) -> None:
         await create_variant(

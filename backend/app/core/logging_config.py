@@ -180,12 +180,22 @@ class ConsoleFormatter(logging.Formatter):
         )
 
 
+# LogRecord 自带属性（含 exc_info/args/module 等）与已由 JsonFormatter 单独输出的字段。
+# 两者之外的一律视为调用方 `logger.info(..., extra={...})` 传入的业务字段。
+_RESERVED_RECORD_ATTRS: frozenset[str] = frozenset(
+    vars(logging.LogRecord(name="", level=0, pathname="", lineno=0, msg="", args=(), exc_info=None))
+) | {"message", "asctime", "request_id"}
+
+
 class JsonFormatter(logging.Formatter):
     """生产环境 JSON Lines 格式，便于日志聚合系统（ELK / Loki / SLS）采集。
 
     输出示例：
         {"timestamp":"2026-06-24T10:30:15.123456Z","level":"INFO","logger":"...",
          "module":"safety","message":"...","request_id":"3f8a2b1c"}
+
+    调用方通过 ``extra={...}`` 传入的业务字段（如 ``hazard_no``）会平铺到每条 JSON 里，
+    供日志平台按字段过滤/聚合；键名不得与 LogRecord 自带属性（module/name/message 等）冲突。
     """
 
     def formatTime(  # noqa: N802 — 覆盖 logging.Formatter.formatTime
@@ -212,6 +222,11 @@ class JsonFormatter(logging.Formatter):
             "msg": record.getMessage(),
             "rid": rid,
         }
+        # 平铺 extra= 传入的业务字段（跳过 LogRecord 自带属性与私有键，避免覆盖固定字段）
+        for key, value in vars(record).items():
+            if key in _RESERVED_RECORD_ATTRS or key in log_entry or key.startswith("_"):
+                continue
+            log_entry[key] = value
         if record.exc_info and record.exc_info[1]:
             log_entry["exc"] = self.formatException(record.exc_info)
         return json.dumps(log_entry, ensure_ascii=False, default=str)

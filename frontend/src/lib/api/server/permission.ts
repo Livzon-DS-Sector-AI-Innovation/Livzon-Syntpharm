@@ -4,7 +4,6 @@ import type { components } from '@/types/generated/schema'
 type Schemas = components['schemas']
 
 const P = (path: string) => `${getApiBaseUrl()}/api/v1/permission${path}`
-const ID = (path: string) => `${getApiBaseUrl()}/api/v1/identity${path}`
 
 function auth(token?: string): Record<string, string> | undefined {
   return token ? { Authorization: `Bearer ${token}` } : undefined
@@ -57,6 +56,14 @@ export function getApiBindings(token?: string) {
   return apiFetch<Schemas['ApiBindingListResponse']>(P('/api-bindings'), { headers: auth(token) })
 }
 
+/** 单个权限码绑定的接口清单（权限树按需展开用，权限口径 platform:role:read）。 */
+export function getPermissionApiBindings(code: string, token?: string) {
+  return apiFetch<Schemas['PermissionApiBindingListResponse']>(
+    P(`/permissions/${encodeURIComponent(code)}/api-bindings`),
+    { headers: auth(token) },
+  )
+}
+
 // ── 授权 ──────────────────────────────────────────────────────────
 
 export function getDepartments(token?: string) {
@@ -98,7 +105,7 @@ export function deleteGrant(id: string, token?: string) {
 // ── 批量操作 ───────────────────────────────────────────────────────
 
 export function batchUpdateRoleStatus(data: Schemas['StatusBatchRequest'], token?: string) {
-  return apiFetch<Schemas['BatchResultApiResponse']>(P('/roles/batch-status'), {
+  return apiFetch<Schemas['app__platform__permission__schemas__BatchResultApiResponse']>(P('/roles/batch-status'), {
     method: 'POST',
     headers: auth(token),
     body: JSON.stringify(data),
@@ -106,7 +113,7 @@ export function batchUpdateRoleStatus(data: Schemas['StatusBatchRequest'], token
 }
 
 export function batchDeleteRoles(data: Schemas['IdsBatchRequest'], token?: string) {
-  return apiFetch<Schemas['BatchResultApiResponse']>(P('/roles/batch-delete'), {
+  return apiFetch<Schemas['app__platform__permission__schemas__BatchResultApiResponse']>(P('/roles/batch-delete'), {
     method: 'POST',
     headers: auth(token),
     body: JSON.stringify(data),
@@ -114,7 +121,7 @@ export function batchDeleteRoles(data: Schemas['IdsBatchRequest'], token?: strin
 }
 
 export function batchUpdateGrantStatus(data: Schemas['StatusBatchRequest'], token?: string) {
-  return apiFetch<Schemas['BatchResultApiResponse']>(P('/grants/batch-status'), {
+  return apiFetch<Schemas['app__platform__permission__schemas__BatchResultApiResponse']>(P('/grants/batch-status'), {
     method: 'POST',
     headers: auth(token),
     body: JSON.stringify(data),
@@ -122,18 +129,11 @@ export function batchUpdateGrantStatus(data: Schemas['StatusBatchRequest'], toke
 }
 
 export function batchDeleteGrants(data: Schemas['IdsBatchRequest'], token?: string) {
-  return apiFetch<Schemas['BatchResultApiResponse']>(P('/grants/batch-delete'), {
+  return apiFetch<Schemas['app__platform__permission__schemas__BatchResultApiResponse']>(P('/grants/batch-delete'), {
     method: 'POST',
     headers: auth(token),
     body: JSON.stringify(data),
   })
-}
-
-// ── 用户选择列表（授权下拉用）─────────────────────────────────────
-
-export function getUsersForSelect(token?: string) {
-  // 后端 limit 上限为 100（identity/api.py 的 Query(20, ge=1, le=100)），超过会 422
-  return apiFetch<Schemas['UserManagementListApiResponse']>(ID('/users?limit=100'), { headers: auth(token) })
 }
 
 // ── 当前用户权限 ──────────────────────────────────────────────────

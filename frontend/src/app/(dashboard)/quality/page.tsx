@@ -22,34 +22,13 @@ import {
   FileTextOutlined,
   RightOutlined,
 } from '@ant-design/icons'
-
-const API_BASE_URL = '/api/v1'
-
-interface InstrumentItem {
-  id: string
-  instrument_no: string
-  instrument_name: string
-  is_active: boolean
-  valid_until: string
-}
-
-interface ReagentItem {
-  id: string
-  reagent_name: string
-  lot_no: string
-  expiration_date: string
-  status: string
-}
+import { fetchQualityInstruments, fetchQualityReagents } from '@/lib/api/client/quality'
 
 export default function QualityDashboardPage() {
   // 加载仪器统计
   const { data: instrumentData, isLoading: instrumentLoading, refetch: refetchInstruments } = useQuery({
     queryKey: ['quality-dashboard-instruments'],
-    queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/quality/instrument?page=1&page_size=100`)
-      const data = await response.json()
-      return (data.data?.items || []) as InstrumentItem[]
-    },
+    queryFn: fetchQualityInstruments,
   })
 
   const items = instrumentData || []
@@ -89,11 +68,7 @@ export default function QualityDashboardPage() {
   // 加载试剂统计
   const { data: reagentData, isLoading: reagentLoading, refetch: refetchReagents } = useQuery({
     queryKey: ['quality-dashboard-reagents'],
-    queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/quality/reagent/list?page=1&page_size=100`)
-      const data = await response.json()
-      return (data.data?.items || []) as ReagentItem[]
-    },
+    queryFn: fetchQualityReagents,
   })
 
   const reagentItems = reagentData || []
@@ -241,11 +216,11 @@ export default function QualityDashboardPage() {
           <div className="stat-module stat-module-purple">
             <div className="module-header">
               <FileTextOutlined className="module-icon" />
-              <span className="module-title">偏差与合规</span>
+              <span className="module-title">偏差管理</span>
             </div>
             <div className="module-stats">
               <div className="stat-item">
-                <div className="stat-label">偏差记录</div>
+                <div className="stat-label">偏差总数</div>
                 <div className="stat-value stat-value-purple">-</div>
               </div>
               <div className="stat-item">
@@ -269,9 +244,17 @@ export default function QualityDashboardPage() {
                 </div>
               </div>
             </div>
-            <Link href="/quality/deviation-automation/history" className="module-link">
-              进入管理 <RightOutlined />
-            </Link>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <Link href="/quality/deviation" className="module-link">
+                进入看盘 <RightOutlined />
+              </Link>
+              <Link href="/quality/deviation/ledger" className="module-link">
+                偏差台账 <RightOutlined />
+              </Link>
+              <Link href="/quality/deviation/new" className="module-link">
+                新建偏差 <RightOutlined />
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -469,7 +452,8 @@ export default function QualityDashboardPage() {
 
         @media (min-width: 768px) {
           .stats-grid {
-            grid-template-columns: repeat(3, 1fr);
+            /* auto-fit + minmax：侧边栏占宽时按可用宽度自动降列，避免三列被压成溢出 */
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
             margin-bottom: 24px;
           }
@@ -582,6 +566,8 @@ export default function QualityDashboardPage() {
           padding: 8px 10px;
           border-radius: 8px;
           font-size: 12px;
+          /* 卡片被压窄时允许内部收缩，避免 min-content 撑破卡片 */
+          min-width: 0;
         }
 
         @media (min-width: 768px) {
@@ -608,6 +594,7 @@ export default function QualityDashboardPage() {
 
         .alert-content {
           flex: 1;
+          min-width: 0;
         }
 
         .alert-num {
@@ -644,7 +631,7 @@ export default function QualityDashboardPage() {
 
         @media (min-width: 768px) {
           .alerts-grid {
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
           }
         }

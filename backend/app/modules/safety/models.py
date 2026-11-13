@@ -602,6 +602,13 @@ class HazardReport(BaseModel):
         DateTime(timezone=True), server_default=None, nullable=False, comment="检查日期"
     )
     department: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="责任部门")
+    safety_officer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="分管安全员（FK → identity.users）；为空时读时回退责任部门配置的安全员",
+    )
+    safety_officer_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="分管安全员姓名快照")
     major_hazard_basis: Mapped[str | None] = mapped_column(Text, nullable=True, comment="隐患判定依据（AI）")
     key_defect: Mapped[str | None] = mapped_column(Text, nullable=True, comment="隐患描述（AI）")
     defect_substance: Mapped[str | None] = mapped_column(
@@ -1180,6 +1187,7 @@ class EquipmentFacilityHazard(BaseModel):
     __table_args__ = (
         Index("ix_equipment_facility_hazards_control_level", "control_level"),
         Index("ix_equipment_facility_hazards_residual_risk", "residual_risk"),
+        Index("ix_equipment_facility_hazards_evaluation_grade", "evaluation_grade"),
         {"schema": "safety"},
     )
 
@@ -1193,6 +1201,10 @@ class EquipmentFacilityHazard(BaseModel):
     risk_evaluation_r: Mapped[int] = mapped_column(
         Integer, nullable=False, comment="危险评价 R（安全风险矩阵查表，服务端计算，只读）"
     )
+    evaluation_grade: Mapped[int] = mapped_column(
+        Integer, nullable=False, comment="评价级别 1–4（按 R 分级，服务端计算，只读）"
+    )
+    evaluation_grade_label: Mapped[str] = mapped_column(String(20), nullable=False, comment="评价级别中文标签")
 
     current_control_measures: Mapped[list[str]] = mapped_column(
         JSON, nullable=False, comment="现有管控措施（有序的稳定 key 数组）"

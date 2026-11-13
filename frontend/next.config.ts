@@ -24,6 +24,18 @@ const nextConfig: NextConfig = {
     proxyClientMaxBodySize: '50mb',
   },
 
+  async redirects() {
+    // 旧偏差入口（偏差流程 / 偏差自动化 / 偏差报告）已下线，统一回到偏差管理看盘，避免死链
+    return [
+      { source: '/quality/deviation-flow/:path*', destination: '/quality/deviation', permanent: true },
+      { source: '/quality/deviation-flow', destination: '/quality/deviation', permanent: true },
+      { source: '/quality/deviation-automation/:path*', destination: '/quality/deviation', permanent: true },
+      { source: '/quality/deviation-automation', destination: '/quality/deviation', permanent: true },
+      { source: '/quality/deviation/report/:path*', destination: '/quality/deviation', permanent: true },
+      { source: '/quality/deviation/report', destination: '/quality/deviation', permanent: true },
+    ];
+  },
+
   async headers() {
     return [
       {

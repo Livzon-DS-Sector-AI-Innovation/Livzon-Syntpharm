@@ -5,6 +5,7 @@
 """
 
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
@@ -24,9 +25,11 @@ from app.platform.identity.models import User
 from app.platform.permission.cache import evict_user_permission_cache
 from app.platform.permission.models import (
     GRANT_ACTIVE,
+    Permission,
     Role,
     UserRoleGrant,
 )
+from app.platform.permission.registry import PERMISSIONS_BY_CODE
 from app.platform.permission.repository import (
     ApiBindingRepository,
     GrantRepository,
@@ -50,6 +53,8 @@ from app.platform.permission.schemas import (
     MessageApiResponse,
     MyPermissionsData,
     MyPermissionsResponse,
+    PermissionApiBindingItem,
+    PermissionApiBindingListResponse,
     PermissionListResponse,
     PermissionResponse,
     PermissionTreeData,
@@ -63,7 +68,13 @@ from app.platform.permission.schemas import (
     StatusBatchRequest,
 )
 from app.platform.permission.service.authorization import is_superuser_with_cache
-from app.platform.permission.service.catalog import build_permission_tree
+from app.platform.permission.service.catalog import build_api_binding_items, build_permission_tree
+from app.platform.permission.service.description import (
+    action_label,
+    build_resource_label,
+    module_label,
+    resource_definitions,
+)
 from app.platform.permission.service.management import (
     assert_actor_can_grant_role,
     assert_actor_can_grant_scope,
@@ -368,6 +379,28 @@ async def batch_delete_roles(
 # ── 权限目录 ──────────────────────────────────────────────────────
 
 
+def _permission_response(permission: Permission) -> dict[str, Any]:
+    """DB 权限行转响应，并补注册表派生的中文展示字段（目录页「模块/资源/动作」三列）。
+
+    库里可能存在注册表已退役的历史权限码，此时三个中文列保持 None，前端回退英文原值。
+    """
+    item = PermissionResponse.model_validate(permission)
+    definition = PERMISSIONS_BY_CODE.get(permission.code)
+    if definition is None:
+        return item.model_dump()
+    return item.model_copy(
+        update={
+            "module_label": module_label(definition.module),
+            "resource_label": build_resource_label(
+                definition.module,
+                definition.resource,
+                resource_definitions(definition.module, definition.resource),
+            ),
+            "action_label": action_label(definition.action),
+        }
+    ).model_dump()
+
+
 @router.get("/permissions", response_model=PermissionListResponse)
 async def list_permissions(
     ctx: PermissionContext = Depends(require_permission("platform:permission:read")),
@@ -375,7 +408,7 @@ async def list_permissions(
 ) -> ApiResponse:
     repo = PermissionRepository()
     perms = await repo.list_permissions(db)
-    return build_response(data=[PermissionResponse.model_validate(p).model_dump() for p in perms])
+    return build_response(data=[_permission_response(p) for p in perms])
 
 
 @router.get("/tree", response_model=PermissionTreeResponse)
@@ -397,6 +430,24 @@ async def get_permission_tree(
         total_modules=len(tree),
     )
     return build_response(data=data.model_dump())
+
+
+@router.get("/permissions/{code}/api-bindings", response_model=PermissionApiBindingListResponse)
+async def list_permission_api_bindings(
+    code: str,
+    ctx: PermissionContext = Depends(require_permission("platform:role:read")),
+) -> ApiResponse:
+    """单个权限码绑定的接口清单，供角色管理勾选权限时按需展开。
+
+    权限口径与 `/tree` 一致取 `platform:role:read`：这份清单只服务于「勾这个权限会放开哪些接口」，
+    角色管理员通常没有 `platform:api-binding:read`，复用登记簿端点会 403。
+
+    纯注册表数据、不查库，因此权限表未迁移时也可正常返回。
+    """
+    if code not in PERMISSIONS_BY_CODE:
+        raise NotFoundException("权限码", code)
+    items = [PermissionApiBindingItem(**item) for item in build_api_binding_items(code)]
+    return build_response(data=[item.model_dump() for item in items])
 
 
 # ── 接口绑定登记簿 ────────────────────────────────────────────────

@@ -333,7 +333,8 @@ CI 会自动检查（`scripts/ci/check_migration_scope.py` 与 `scripts/ci/check
 
 - 每个模块使用 `logger = logging.getLogger(__name__)`
 - 级别：`ERROR`（失败）、`WARNING`（降级/重试）、`INFO`（业务事件）、`DEBUG`（开发调试）
-- 始终包含上下文：`logger.info("batch created", extra={"batch_id": id, "module": "production"})`
+- 始终包含上下文：`logger.info("batch created", extra={"batch_id": id, "biz_module": "production"})`
+- `extra` 的键**不得**与 `LogRecord` 自带属性重名（`module`、`name`、`message`、`levelname`、`args`、`filename`、`lineno` 等）；重名会在记录真正输出时抛 `KeyError: Attempt to overwrite 'xxx' in LogRecord`。业务字段用 `hazard_no`、`record_id`、`biz_module` 这类非保留名。
 - 异常处理用 `logger.exception()`（自动附带 traceback）
 - **禁止**记录 API key、token、密码等敏感信息
 
@@ -460,6 +461,31 @@ export const dynamic = 'force-dynamic'
 ```typescript
 ✗ import { BatchForm } from '@/components/production/BatchForm'
 ✓ import { BatchTable } from '@/components/production'
+```
+
+## 人员选择（人员下拉）
+
+**凡是需要选择系统人员的地方，统一使用 `components/common/RemoteUserSelect.tsx`**（`@/components/common/RemoteUserSelect`，默认导出同名组件）。
+
+它提供与隐患台账一致的能力：展开即取首批系统用户（50 条/页）、300ms 防抖的服务端姓名搜索、请求序号防竞态、底部「加载更多」、选项「头像 + 姓名 + 部门」、已选标签小头像。
+
+**禁止**：
+
+- 再写页面级 `options={userOptions}` 的全量人员 `Select`（页码一次性拉全量用户既慢又会随人数增长线性变差）
+- 在 Client 组件里自己 `fetch` 人员接口（人员检索走 `lib/api/client/identity.ts` 的 `searchPersonnel` 只读封装）
+
+**必须**：
+
+- 值只存 UUID（单选 `string`，多选 `string[]`），姓名/头像通过 `fallbackOptions` 快照回显，保证未展开下拉时不显示 UUID
+- 多选场景传 `mode="multiple"`
+
+```tsx
+import { RemoteUserSelect } from '@/components/common/RemoteUserSelect'
+
+// 单选
+<RemoteUserSelect placeholder="搜索姓名选择人员" fallbackOptions={personFallback} />
+// 多选
+<RemoteUserSelect mode="multiple" placeholder="搜索姓名选择人员，可多选" fallbackOptions={personFallback} />
 ```
 
 ## 命名规范
@@ -627,4 +653,4 @@ Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-
 
 ### Domain docs
 
-Single-context layout. `CONTEXT.md` and `docs/adr/` are created lazily by `/domain-modeling`. See `docs/agents/domain.md`.
+Single-context layout. `GLOSSARY.md` and `docs/adr/` are created lazily by `/domain-modeling`. See `docs/agents/domain.md`.
