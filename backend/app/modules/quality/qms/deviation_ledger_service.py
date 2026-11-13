@@ -1129,7 +1129,14 @@ class DeviationLedgerService:
         object_key = f"deviation-ledger/{ledger_id}/{file_id}-{filename}"
         if not storage.is_enabled():
             raise BadRequestException("文件存储未配置，无法上传附件")
-        storage.upload_object(_STORAGE_MODULE, object_key, content, len(content), content_type)
+        await asyncio.to_thread(
+            storage.upload_object,
+            _STORAGE_MODULE,
+            object_key,
+            content,
+            len(content),
+            content_type,
+        )
         row.attachments = [
             *(row.attachments or []),
             {
@@ -1214,7 +1221,7 @@ class DeviationLedgerService:
             raise NotFoundException("附件不存在")
         if not storage.is_enabled():
             raise BadRequestException("文件存储未配置")
-        found = storage.get_object(_STORAGE_MODULE, str(target.get("object_key")))
+        found = await asyncio.to_thread(storage.get_object, _STORAGE_MODULE, str(target.get("object_key")))
         if found is None:
             raise NotFoundException("附件文件已丢失")
         content, content_type = found
