@@ -17,6 +17,7 @@ from typing import Any, cast
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import storage as core_storage
 from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
 from app.modules.quality.qms import deviation_ledger_service as service_module
 from app.modules.quality.qms.deviation_flow import (
@@ -381,9 +382,10 @@ async def test_remove_attachment_rejected_after_submit() -> None:
     assert len(row.attachments or []) == 1
 
 
-async def test_remove_attachment_allowed_at_investigation_stage() -> None:
+async def test_remove_attachment_allowed_at_investigation_stage(monkeypatch: pytest.MonkeyPatch) -> None:
     investigator = uuid.uuid4()
     file_id = uuid.uuid4()
+    monkeypatch.setattr(core_storage, "is_enabled", lambda: False)
     row = _row_ledger(
         handler_ids=[investigator],
         attachments=[{"file_id": str(file_id), "file_name": "a.pdf", "size": 1}],

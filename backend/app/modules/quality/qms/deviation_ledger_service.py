@@ -219,33 +219,41 @@ def _merge_cross_dept_states(
     old_rows: Sequence[dict[str, Any]],
     new_rows: Sequence[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """名单更新后保留已通过行的审核状态（部门、调查人集合、部门负责人完全一致才保留）。"""
-    approved_index: dict[tuple[str, frozenset[str], str | None], dict[str, Any]] = {}
+    """名单更新后保留行内进度：身份键一致的行保留部门调查进度，已通过行连同审核状态一起保留。
+
+    部门、调查人集合、部门负责人完全一致才视为同一行；改动任一项即视为新行，进度重置。
+    """
+    previous_index: dict[tuple[str, frozenset[str], str | None], dict[str, Any]] = {}
     for entry in old_rows:
-        if not isinstance(entry, dict) or not is_cross_dept_row_approved(entry):
-            continue
-        key = _cross_dept_row_identity(entry)
-        approved_index[key] = entry
+        if isinstance(entry, dict):
+            previous_index[_cross_dept_row_identity(entry)] = entry
     merged: list[dict[str, Any]] = []
     for entry in new_rows:
-        previous = approved_index.get(_cross_dept_row_identity(entry))
+        previous = previous_index.get(_cross_dept_row_identity(entry))
         if previous is None:
             merged.append(dict(entry))
-        else:
-            merged.append(
-                {
-                    **entry,
-                    "review_state": CROSS_DEPT_ROW_APPROVED,
-                    "approved_by": previous.get("approved_by"),
-                    "approved_name": previous.get("approved_name"),
-                    "approved_at": previous.get("approved_at"),
-                    "opinion": previous.get("opinion"),
-                    "investigate_state": previous.get("investigate_state") or CROSS_DEPT_INVESTIGATION_PENDING,
-                    "investigate_submitted_by": previous.get("investigate_submitted_by"),
-                    "investigate_submitted_name": previous.get("investigate_submitted_name"),
-                    "investigate_submitted_at": previous.get("investigate_submitted_at"),
-                }
-            )
+            continue
+        # 调查进度与审核进度同属行内状态：未通过的行也要保留，否则基础信息一改就要重新调查
+        restored = {
+            "investigate_state": previous.get("investigate_state") or CROSS_DEPT_INVESTIGATION_PENDING,
+            "investigate_submitted_by": previous.get("investigate_submitted_by"),
+            "investigate_submitted_name": previous.get("investigate_submitted_name"),
+            "investigate_submitted_at": previous.get("investigate_submitted_at"),
+        }
+        if not is_cross_dept_row_approved(previous):
+            merged.append({**entry, **restored})
+            continue
+        merged.append(
+            {
+                **entry,
+                **restored,
+                "review_state": CROSS_DEPT_ROW_APPROVED,
+                "approved_by": previous.get("approved_by"),
+                "approved_name": previous.get("approved_name"),
+                "approved_at": previous.get("approved_at"),
+                "opinion": previous.get("opinion"),
+            }
+        )
     return merged
 
 
@@ -1013,7 +1021,7 @@ class DeviationLedgerService:
         if reporter is not None and all(ref.id != reporter.id for ref in targets):
             targets.append(reporter)
         notify.spawn(notify.notify_closed(notice, actor_name=actor_name, recipients=targets))
-        return await self._build_detail(outcome.ledger, viewer_id=actor_id)
+        return await self._build_detail(outcome.ledger, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
 
     # ── AI 分析 ──────────────────────────────────────────────────────
 
@@ -1088,7 +1096,7 @@ class DeviationLedgerService:
         row.updated_by = actor_id
         await self.db.commit()
         await self.db.refresh(row)
-        return await self._build_detail(row, viewer_id=actor_id)
+        return await self._build_detail(row, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
 
     # ── 附件 ──────────────────────────────────────────────────────────
 
@@ -1138,7 +1146,7 @@ class DeviationLedgerService:
         row.updated_by = actor_id
         await self.db.commit()
         await self.db.refresh(row)
-        return await self._build_detail(row, viewer_id=actor_id)
+        return await self._build_detail(row, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
 
     async def remove_attachment(
         self,
@@ -1187,7 +1195,7 @@ class DeviationLedgerService:
                         exc_info=True,
                         extra={"app_module": "quality", "ledger_id": str(ledger_id), "object_key": key},
                     )
-        return await self._build_detail(row, viewer_id=actor_id)
+        return await self._build_detail(row, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
 
     async def get_attachment_file(
         self,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Alert, App, Breadcrumb, Button, FloatButton, Popconfirm } from 'antd'
@@ -19,7 +19,7 @@ import { SCROLLSPY_SECTION_KEYS } from './detailSections'
 import { FlowPanel } from './FlowPanel'
 import { BasicInfoCard } from './BasicInfoCard'
 import { AiAnalysisCard } from './AiAnalysisCard'
-import { InvestigationCard } from './InvestigationCard'
+import { InvestigationCard, type InvestigationCardHandle } from './InvestigationCard'
 import { CrossDeptReviewCard } from './CrossDeptReviewCard'
 import { ReviewCard } from './ReviewCard'
 import { FinalCodeCard } from './FinalCodeCard'
@@ -49,6 +49,26 @@ export function DeviationDetailPage({
   const [deleting, setDeleting] = useState(false)
   // AI 分析 → 调查表单的一次性填充载荷：由 AI 卡片写入、调查卡片消费后清空
   const [investigationPrefill, setInvestigationPrefill] = useState<DeviationInvestigationPrefill | null>(null)
+  // 调查卡片的命令式入口：AI 卡片发出「一键填写」时展开表单（依赖稳定化，避免子组件重复渲染）
+  const investigationCardRef = useRef<InvestigationCardHandle>(null)
+
+  const handleFillInvestigation = useCallback((prefill: DeviationInvestigationPrefill) => {
+    // 先下发载荷再展开表单：同一批渲染里表单挂载即可按 nonce 消费
+    setInvestigationPrefill(prefill)
+    investigationCardRef.current?.openSubmitForm()
+  }, [])
+
+  const handlePrefillApplied = useCallback(
+    (filled: number) => {
+      setInvestigationPrefill(null)
+      if (filled > 0) {
+        message.success(`已把 AI 分析带入 ${filled} 项空白内容，请核对后提交`)
+      } else {
+        message.info('调查表单已有内容，AI 分析未覆盖任何字段')
+      }
+    },
+    [message],
+  )
   // 当前滚动到的板块：驱动分区导航高亮
   const activeSection = useActiveSection(pageRef, SCROLLSPY_SECTION_KEYS)
 
@@ -118,20 +138,14 @@ export function DeviationDetailPage({
           <AiAnalysisCard
             ledger={ledger}
             onUpdated={setLedger}
-            onFillInvestigation={setInvestigationPrefill}
+            onFillInvestigation={handleFillInvestigation}
           />
           <InvestigationCard
+            ref={investigationCardRef}
             ledger={ledger}
             onUpdated={setLedger}
             prefill={investigationPrefill}
-            onPrefillApplied={(filled) => {
-              setInvestigationPrefill(null)
-              if (filled > 0) {
-                message.success(`已把 AI 分析带入 ${filled} 项空白内容，请核对后提交`)
-              } else {
-                message.info('调查表单已有内容，AI 分析未覆盖任何字段')
-              }
-            }}
+            onPrefillApplied={handlePrefillApplied}
           />
           <CrossDeptReviewCard ledger={ledger} onUpdated={setLedger} />
           <ReviewCard ledger={ledger} onUpdated={setLedger} />

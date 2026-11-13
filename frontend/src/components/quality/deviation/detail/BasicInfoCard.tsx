@@ -75,7 +75,7 @@ export function BasicInfoCard({
 
   // 快照与已选 UUID 同序：表单值变化后重新按 id 取名，避免删人后姓名错位
   const handlerIds = Form.useWatch<string[]>('handler_ids', form) ?? []
-  const handlerLabels = handlerIds.map((id) => personSnapshots.get(id)?.name ?? '')
+  const handlerLabels = handlerIds.map((id) => personSnapshots.get(id)?.name ?? '未知人员')
   const handlerAvatars = handlerIds.map((id) => personSnapshots.get(id)?.avatar ?? null)
 
   // pending_investigation 环节（上报人∪调查人）可动态增删改跨部门名单，其余字段后端锁定

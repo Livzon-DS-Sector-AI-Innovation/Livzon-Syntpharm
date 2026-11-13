@@ -63,8 +63,9 @@ export function DeviationCreateForm({
   const [submitting, setSubmitting] = useState(false)
   const [, startTransition] = useTransition()
   const crossReview = Form.useWatch('needs_cross_dept_review', form)
-  // 发现人默认是当前登录人：传姓名快照，未展开下拉时也不会显示 UUID
-  const discovererLabel = currentUserId ? currentUserName : undefined
+  const discovererId = Form.useWatch('discoverer_id', form)
+  // 发现人默认是当前登录人：仅在选中人仍是登录人时传姓名快照，改选他人后交给下拉自身快照回显，避免姓名错位
+  const discovererLabel = discovererId && discovererId === currentUserId ? currentUserName : undefined
 
   const handleFinish = async (values: FormValues) => {
     const crossDeptRows = values.needs_cross_dept_review
