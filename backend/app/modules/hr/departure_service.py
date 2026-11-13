@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from datetime import date
 from typing import Any
+from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -86,21 +87,36 @@ class DepartureRecordService(LedgerRecordService[DepartureRecord]):
         self.repo = DepartureRecordRepository(session)
 
     async def create_record(self, payload: DepartureRecordCreate) -> DepartureRecord:
-        profile = await self.repo.get_profile(payload.person_id)
-        if profile is None:
-            raise NotFoundException("员工档案", str(payload.person_id))
+        if payload.person_id is not None:
+            profile = await self.repo.get_profile(payload.person_id)
+            if profile is None:
+                raise NotFoundException("员工档案", str(payload.person_id))
+            snapshot = _person_snapshot(profile)
+            person_id: UUID | None = profile.id
+            education = _resolved_education(profile, payload.education)
+            age = _resolved_age(profile, payload.age)
+        else:
+            if payload.hire_date is None or not payload.gender:
+                raise AppException(status_code=422, message="手动录入时请填写入职日期和性别")
+            snapshot = PersonSnapshot(
+                department_level1=(payload.department_level1 or "").strip(),
+                department_level2=(payload.department_level2 or "").strip(),
+                name=(payload.name or "").strip(),
+                gender=payload.gender,
+                position=(payload.position or "").strip(),
+                hire_date=payload.hire_date,
+            )
+            person_id = None
+            education = (payload.education or "").strip()
+            age = payload.age
 
-        snapshot = _person_snapshot(profile)
         if payload.leave_date < snapshot.hire_date:
             raise AppException(status_code=422, message="离职日期不能早于入职日期")
-
-        education = _resolved_education(profile, payload.education)
-        age = _resolved_age(profile, payload.age)
         if not education or age is None:
             raise AppException(status_code=422, message="请填写学历和年龄")
 
         record = DepartureRecord(
-            person_id=profile.id,
+            person_id=person_id,
             **asdict(snapshot),
             education=education,
             age=age,

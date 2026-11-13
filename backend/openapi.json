@@ -111955,10 +111955,98 @@
       "DepartureRecordCreate": {
         "properties": {
           "person_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Person Id",
-            "description": "\u5458\u5de5\u6863\u6848\u4eba\u5458 id"
+            "description": "\u5458\u5de5\u6863\u6848\u4eba\u5458 id\uff1b\u4e0d\u5728\u6863\u6848\u4e2d\u65f6\u7559\u7a7a\u5e76\u624b\u5de5\u586b\u5199\u5feb\u7167\u5b57\u6bb5"
+          },
+          "department_level1": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Level1",
+            "description": "\u4e00\u7ea7\u90e8\u95e8\uff08\u624b\u52a8\u5f55\u5165\u65f6\u5fc5\u586b\uff09"
+          },
+          "department_level2": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Level2",
+            "description": "\u4e8c\u7ea7\u90e8\u95e8\uff08\u624b\u52a8\u5f55\u5165\u65f6\u5fc5\u586b\uff09"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "\u59d3\u540d\uff08\u624b\u52a8\u5f55\u5165\u65f6\u5fc5\u586b\uff09"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "\u7537",
+                  "\u5973"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender",
+            "description": "\u6027\u522b\uff08\u624b\u52a8\u5f55\u5165\u65f6\u5fc5\u586b\uff09"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position",
+            "description": "\u5c97\u4f4d\uff08\u624b\u52a8\u5f55\u5165\u65f6\u5fc5\u586b\uff09"
+          },
+          "hire_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hire Date",
+            "description": "\u5165\u804c\u65e5\u671f\uff08\u624b\u52a8\u5f55\u5165\u65f6\u5fc5\u586b\uff09"
           },
           "position_level": {
             "type": "string",
@@ -112058,7 +112146,6 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "person_id",
           "position_level",
           "personnel_identity",
           "leave_date",
@@ -112147,8 +112234,15 @@
             "title": "Id"
           },
           "person_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Person Id"
           },
           "department_level1": {
