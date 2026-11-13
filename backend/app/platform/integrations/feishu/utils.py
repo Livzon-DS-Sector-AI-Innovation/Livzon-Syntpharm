@@ -106,12 +106,13 @@ async def get_tenant_access_token(
     app_secret: str,
     *,
     cache_key: str | None = None,
+    force_refresh: bool = False,
 ) -> str:
     """Get tenant_access_token from explicit app credentials."""
     if not app_id or not app_secret:
         raise RuntimeError("App ID 或 App Secret 未配置")
 
-    if cache_key:
+    if cache_key and not force_refresh:
         try:
             cached = await cache_get(f"feishu:tenant_access_token:{cache_key}")
             if cached:
