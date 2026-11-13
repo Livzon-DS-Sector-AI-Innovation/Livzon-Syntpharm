@@ -23,6 +23,7 @@ class OrgDepartmentNode(BaseModel):
     parent_name: str | None = None
     leader_ids: list[str] = Field(default_factory=list)
     leader_names: list[str] = Field(default_factory=list)
+    leader_avatars: list[str] = Field(default_factory=list, description="与 leader_names 对齐的头像 URL")
     leader_display: str = Field("—", description="负责人姓名的展示值；未解析时显示 —")
     recursive_members_count: int = 0
     direct_members_count: int = 0

@@ -194,10 +194,10 @@ class DepartureRecord(BaseModel):
         {"schema": "hr"},
     )
 
-    person_id: Mapped[UUID] = mapped_column(
+    person_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("hr.employee_profiles.id"),
-        nullable=False,
-        comment="员工档案 id（人员来源）",
+        nullable=True,
+        comment="员工档案 id（可选；不在档案中的人员可手工录入）",
     )
 
     # ─── 人员快照（选中人员时写入，之后冻结）───

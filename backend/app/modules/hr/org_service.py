@@ -19,6 +19,7 @@ from app.modules.hr.org_feishu import build_default_fetcher
 from app.modules.hr.org_repository import (
     SqlAlchemyOrgDepartmentStore,
     get_latest_sync_run,
+    resolve_leader_avatars,
     resolve_leader_names,
 )
 from app.modules.hr.org_settings import load_org_scope
@@ -42,8 +43,10 @@ async def get_org_tree(session: AsyncSession) -> list[dict[str, Any]]:
     scope = await load_org_scope(session)
     store = SqlAlchemyOrgDepartmentStore(session)
     records = await store.list_departments()
-    leader_names = await resolve_leader_names(session, _all_leader_ids(records))
-    return build_org_tree(records, leader_names=leader_names, scope=scope)
+    leader_ids = _all_leader_ids(records)
+    leader_names = await resolve_leader_names(session, leader_ids)
+    leader_avatars = await resolve_leader_avatars(session, leader_ids)
+    return build_org_tree(records, leader_names=leader_names, leader_avatars=leader_avatars, scope=scope)
 
 
 async def get_sync_status(session: AsyncSession) -> dict[str, Any]:

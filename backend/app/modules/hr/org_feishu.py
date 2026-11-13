@@ -103,11 +103,12 @@ class FeishuOrgDepartmentFetcher:
             )
         return self._client
 
-    async def _token(self) -> str:
+    async def _token(self, *, force_refresh: bool = False) -> str:
         return await get_tenant_access_token(
             self._app_id,
             self._app_secret,
             cache_key=f"hr-org:{self._app_id}",
+            force_refresh=force_refresh,
         )
 
     async def _request(
@@ -121,6 +122,7 @@ class FeishuOrgDepartmentFetcher:
         token = await self._token()
         client = await self._get_client()
         last_error: Exception | None = None
+        token_refreshed = False
         for attempt in range(_MAX_RETRIES):
             try:
                 response = await client.request(
@@ -137,6 +139,10 @@ class FeishuOrgDepartmentFetcher:
                     raise RuntimeError(f"飞书接口 {path} 返回 HTTP {response.status_code}")
                 payload = response.json()
                 code = payload.get("code")
+                if code == 99991663 and not token_refreshed:
+                    token_refreshed = True
+                    token = await self._token(force_refresh=True)
+                    continue
                 if code not in (0, None):
                     raise RuntimeError(f"飞书接口 {path} 返回错误: code={code}, msg={payload.get('msg', '')}")
                 return payload.get("data") or {}

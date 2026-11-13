@@ -122,6 +122,27 @@ async def resolve_leader_names(session: AsyncSession, leader_ids: set[str]) -> d
     return names
 
 
+async def resolve_leader_avatars(session: AsyncSession, leader_ids: set[str]) -> dict[str, str]:
+    """Map Feishu leader ids to profile avatar URLs; unresolved ids are absent."""
+    ids = {leader_id for leader_id in leader_ids if leader_id}
+    if not ids:
+        return {}
+    result = await session.execute(
+        select(EmployeeProfile).where(
+            EmployeeProfile.is_deleted.is_(False),
+            EmployeeProfile.open_id.in_(ids),
+        )
+    )
+    avatars: dict[str, str] = {}
+    for profile in result.scalars().all():
+        if profile.open_id not in ids:
+            continue
+        avatar = profile.avatar_72 or profile.avatar_240 or profile.avatar_640 or profile.avatar_origin
+        if avatar:
+            avatars.setdefault(profile.open_id, avatar)
+    return avatars
+
+
 async def get_latest_sync_run(session: AsyncSession) -> OrgSyncRun | None:
     result = await session.execute(
         select(OrgSyncRun)

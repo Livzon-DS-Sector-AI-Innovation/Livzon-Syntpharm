@@ -163,10 +163,15 @@ def test_build_org_tree_filters_hidden_and_renders_unresolved_leaders_as_dash() 
         _record("od-b", "已撤销车间", parent=IN_SCOPE_COMPANY_ID, hidden=True),
     ]
 
-    tree = build_org_tree(records, leader_names={"ou-known": "张三"})
+    tree = build_org_tree(
+        records,
+        leader_names={"ou-known": "张三"},
+        leader_avatars={"ou-known": "https://example.com/avatar.png"},
+    )
 
     assert [node["name"] for node in tree] == ["101车间"]
     assert tree[0]["leader_names"] == ["张三"]
+    assert tree[0]["leader_avatars"] == ["https://example.com/avatar.png"]
     assert tree[0]["leader_display"] == "张三"
 
     records[0].leader_ids = ["ou-missing"]
