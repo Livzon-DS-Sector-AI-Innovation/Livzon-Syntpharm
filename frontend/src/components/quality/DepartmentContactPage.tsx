@@ -24,7 +24,7 @@ import {
   deleteDepartmentContact,
   updateDepartmentContact,
 } from '@/actions/quality'
-import { RemoteUserSelect, type RemoteUserSelectOption } from '@/components/common/RemoteUserSelect'
+import { RemoteUserMultiSelect, RemoteUserSelect } from '@/components/common/RemoteUserSelect'
 import { toPersonId, toPersonIds } from '@/lib/utils/form-person'
 import { PeopleNamesInline, PersonInline } from './deviation/PersonInline'
 import type { PersonSnapshot } from './deviation/CrossDeptReviewerFields'
@@ -124,12 +124,12 @@ export function DepartmentContactPage({
 
   // 快照按当前表单值同序取名：换人/删人后不会残留上一次的姓名
   const formValues = Form.useWatch([], form) as ContactFormValues | undefined
-  // 已保存人员的回显快照统一转成选择器的 fallbackOptions：未展开下拉时也显示姓名/头像而不是 UUID
-  const optionsOf = (ids?: Array<string | null | undefined>): RemoteUserSelectOption[] =>
-    (ids ?? []).filter((id): id is string => Boolean(id)).map((id) => {
-      const snapshot = personById.get(id)
-      return { value: id, label: snapshot?.name || id, avatar: snapshot?.avatar ?? undefined }
-    })
+  const labelsOf = (ids?: string[]) => (ids ?? []).map((id) => personById.get(id)?.name ?? '')
+  const avatarsOf = (ids?: string[]) => (ids ?? []).map((id) => personById.get(id)?.avatar ?? null)
+  const snapshotOf = (id?: string | null) => {
+    const snapshot = id ? personById.get(id) : undefined
+    return { label: snapshot?.name, avatarSrc: snapshot?.avatar ?? null }
+  }
 
   // 部门名是关联键：优先从组织部门里选，避免手输出偏差导致节点负责人解析不到
   const departmentNameCandidates =
@@ -423,7 +423,7 @@ export function DepartmentContactPage({
                 placeholder="搜索姓名选择人员"
                 allowClear
                 feishuBoundOnly={false}
-                fallbackOptions={optionsOf([formValues?.dept_head_id])}
+                {...snapshotOf(formValues?.dept_head_id)}
               />
             </Form.Item>
             <Form.Item
@@ -436,7 +436,7 @@ export function DepartmentContactPage({
                 placeholder="搜索姓名选择人员"
                 allowClear
                 feishuBoundOnly={false}
-                fallbackOptions={optionsOf([formValues?.production_head_id])}
+                {...snapshotOf(formValues?.production_head_id)}
               />
             </Form.Item>
             <Form.Item
@@ -449,7 +449,7 @@ export function DepartmentContactPage({
                 placeholder="搜索姓名选择人员"
                 allowClear
                 feishuBoundOnly={false}
-                fallbackOptions={optionsOf([formValues?.quality_head_id])}
+                {...snapshotOf(formValues?.quality_head_id)}
               />
             </Form.Item>
           </div>
@@ -464,7 +464,7 @@ export function DepartmentContactPage({
                 placeholder="搜索姓名选择人员"
                 allowClear
                 feishuBoundOnly={false}
-                fallbackOptions={optionsOf([formValues?.qa_reviewer_id])}
+                {...snapshotOf(formValues?.qa_reviewer_id)}
               />
             </Form.Item>
             <Form.Item
@@ -477,23 +477,23 @@ export function DepartmentContactPage({
                 placeholder="搜索姓名选择人员"
                 allowClear
                 feishuBoundOnly={false}
-                fallbackOptions={optionsOf([formValues?.qa_head_id])}
+                {...snapshotOf(formValues?.qa_head_id)}
               />
             </Form.Item>
           </div>
           <Form.Item name="gmp_staff_ids" label="GMP 人员" normalize={toPersonIds}>
-            <RemoteUserSelect
-              mode="multiple"
+            <RemoteUserMultiSelect
               placeholder="搜索姓名选择人员，可多选"
-              fallbackOptions={optionsOf(formValues?.gmp_staff_ids)}
+              labels={labelsOf(formValues?.gmp_staff_ids)}
+              avatarSrcs={avatarsOf(formValues?.gmp_staff_ids)}
               feishuBoundOnly={false}
             />
           </Form.Item>
           <Form.Item name="additional_contacts" label="其他联系人" normalize={toPersonIds}>
-            <RemoteUserSelect
-              mode="multiple"
+            <RemoteUserMultiSelect
               placeholder="搜索姓名选择人员，可多选"
-              fallbackOptions={optionsOf(formValues?.additional_contacts)}
+              labels={labelsOf(formValues?.additional_contacts)}
+              avatarSrcs={avatarsOf(formValues?.additional_contacts)}
               feishuBoundOnly={false}
             />
           </Form.Item>

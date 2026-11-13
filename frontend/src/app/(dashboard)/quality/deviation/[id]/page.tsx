@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { DEVIATION_LEDGER_PATH } from '@/components/quality/deviation/constants'
 import { DeviationDetailPage } from '@/components/quality/deviation'
 import {
-  getDeviationDepartmentContactOptions,
-  getDeviationLedgerDetail,
+  fetchDeviationDepartmentContactOptions,
+  fetchDeviationLedgerDetail,
 } from '@/lib/api/server/quality'
 import type { DeviationLedgerOption } from '@/types/quality'
 
@@ -22,8 +22,8 @@ export default async function DeviationDetailRoute({ params }: PageProps) {
 
   // 详情为主，候选数据独立降级：候选失败不影响查看与审核
   const [detailResult, departmentResult] = await Promise.allSettled([
-    getDeviationLedgerDetail(id),
-    getDeviationDepartmentContactOptions(),
+    fetchDeviationLedgerDetail(id),
+    fetchDeviationDepartmentContactOptions(),
   ])
 
   if (detailResult.status === 'rejected') {

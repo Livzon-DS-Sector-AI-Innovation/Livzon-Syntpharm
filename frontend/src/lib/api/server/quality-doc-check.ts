@@ -21,10 +21,7 @@ export async function confirmDocCheckRecord(recordId: string) {
 }
 
 /** 更新问题处理结果 */
-export async function updateDocCheckProblem(
-  problemId: string,
-  payload: { handle_status: string; ignore_reason?: string },
-) {
+export async function updateDocCheckProblem(problemId: string, payload: components['schemas']['ProblemUpdate']) {
   return apiFetch<components['schemas']['ProblemApiResponse']>(`${API_BASE}/problems/${problemId}`, {
     method: 'PUT',
     body: JSON.stringify(payload),

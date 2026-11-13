@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { Alert, App, Button, Card, Descriptions, Input, Tag } from 'antd'
+import { Alert, App, Button, Descriptions, Input, Tag } from 'antd'
 import { NumberOutlined } from '@ant-design/icons'
 import { submitDeviationFinalCode } from '@/actions/quality'
 import type { DeviationLedgerDetail } from '@/types/quality'
+import { SectionCard } from './SectionCard'
+import { isSectionVisible } from './detailSections'
 
 interface FinalCodeCardProps {
   ledger: DeviationLedgerDetail
@@ -21,7 +23,8 @@ export function FinalCodeCard({ ledger, onUpdated }: FinalCodeCardProps) {
   const canSubmit = (ledger.allowed_actions ?? []).includes('final_code')
   const closed = Boolean(ledger.final_code)
 
-  if (!canSubmit && !closed) {
+  // 可见性判断与分区导航共用同一份规则（detailSections.isSectionVisible）
+  if (!isSectionVisible('final-code', ledger)) {
     return null
   }
 
@@ -47,7 +50,7 @@ export function FinalCodeCard({ ledger, onUpdated }: FinalCodeCardProps) {
   }
 
   return (
-    <Card id="final-code" size="small" title="最终编号与归档" className="scroll-mt-6 shadow-sm">
+    <SectionCard section="final-code" ledger={ledger}>
       <div className="flex flex-col gap-3">
         {closed && (
           <Descriptions size="small" column={{ xs: 1, sm: 2, md: 3 }} bordered>
@@ -100,6 +103,6 @@ export function FinalCodeCard({ ledger, onUpdated }: FinalCodeCardProps) {
           </>
         )}
       </div>
-    </Card>
+    </SectionCard>
   )
 }

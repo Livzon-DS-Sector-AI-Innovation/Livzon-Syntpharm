@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 import { DepartmentContactPage } from '@/components/quality'
 import {
-  getDepartmentContacts,
-  getDeviationDepartmentOptions,
-  getDeviationLedgerStatistics,
-  getDeviationMemberOptions,
-  getDeviationNotifySettings,
+  fetchDepartmentContacts,
+  fetchDeviationDepartmentOptions,
+  fetchDeviationLedgerStatistics,
+  fetchDeviationMemberOptions,
+  fetchDeviationNotifySettings,
 } from '@/lib/api/server/quality'
 import type {
   DepartmentContact,
@@ -21,11 +21,11 @@ export const metadata: Metadata = { title: '部门联系人配置' }
 export default async function DepartmentContactsPage() {
   // 五块数据独立降级：任一失败只影响对应区域
   const [contactsResult, memberResult, notifyResult, statisticsResult, orgDepartmentResult] = await Promise.allSettled([
-    getDepartmentContacts(),
-    getDeviationMemberOptions(),
-    getDeviationNotifySettings(),
-    getDeviationLedgerStatistics(),
-    getDeviationDepartmentOptions(),
+    fetchDepartmentContacts(),
+    fetchDeviationMemberOptions(),
+    fetchDeviationNotifySettings(),
+    fetchDeviationLedgerStatistics(),
+    fetchDeviationDepartmentOptions(),
   ])
 
   let loadError: string | null = null

@@ -18,6 +18,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import BadRequestException, ForbiddenException
+from app.core.llm import llm_client
 from app.modules.quality.qms import deviation_ledger_service as service_module
 from app.modules.quality.qms.deviation_flow import APPROVED, HandlerDirectory, TransitionOutcome
 from app.modules.quality.qms.deviation_ledger_constants import LedgerStatus
@@ -70,13 +71,62 @@ async def test_save_ai_analysis_rejects_unrelated_actor() -> None:
     assert db.commits == 0
 
 
-async def test_save_ai_analysis_rejects_review_stage() -> None:
+async def test_save_ai_analysis_allows_review_stage() -> None:
+    """除已关闭 / 已取消外任意节点都可保存：审核阶段也允许覆盖旧结论。"""
     reporter = uuid.uuid4()
     row = _row_ledger(status=LedgerStatus.PENDING_DEPT_HEAD_REVIEW.value, reporter_id=reporter)
+    service, db = _service(row)
+
+    await service.save_ai_analysis(row.id, _payload(), actor_id=reporter, actor_name="上报人")
+
+    assert (row.ai_analysis or {}).get("description") == "偏差描述"
+    assert db.commits == 1
+
+
+async def test_save_ai_analysis_rejects_closed_and_cancelled() -> None:
+    reporter = uuid.uuid4()
+    for status in (LedgerStatus.CLOSED.value, LedgerStatus.CANCELLED.value):
+        row = _row_ledger(status=status, reporter_id=reporter)
+        service, db = _service(row)
+        with pytest.raises(BadRequestException, match="AI 分析"):
+            await service.save_ai_analysis(row.id, _payload(), actor_id=reporter, actor_name="上报人")
+        assert db.commits == 0
+
+
+async def test_generate_ai_analysis_available_at_review_stage(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """AI 分析不再局限待 AI 分析 / 已退回：审核阶段调查人也能重新分析。"""
+
+    async def fake_chat_json(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        return {
+            "description": "AI 描述",
+            "reason": "AI 原因",
+            "risk_assessment": "AI 风险",
+            "capa_suggestion": "AI CAPA",
+        }
+
+    monkeypatch.setattr(llm_client, "chat_json", fake_chat_json)
+    investigator = uuid.uuid4()
+    row = _row_ledger(status=LedgerStatus.PENDING_QA_REVIEW.value, handler_ids=[investigator])
     service, _db = _service(row)
 
+    analysis = await service.generate_ai_analysis(row.id, actor_id=investigator)
+
+    assert analysis.description == "AI 描述"
+    assert analysis.model == "default"
+
+
+async def test_generate_ai_analysis_rejects_stranger_and_closed() -> None:
+    row = _row_ledger(status=LedgerStatus.PENDING_QA_REVIEW.value, handler_ids=[uuid.uuid4()])
+    service, _db = _service(row)
+    with pytest.raises(ForbiddenException, match="AI 分析"):
+        await service.generate_ai_analysis(row.id, actor_id=uuid.uuid4())
+
+    closed = _row_ledger(status=LedgerStatus.CLOSED.value)
+    closed_service, _closed_db = _service(closed)
     with pytest.raises(BadRequestException, match="AI 分析"):
-        await service.save_ai_analysis(row.id, _payload(), actor_id=reporter, actor_name="上报人")
+        await closed_service.generate_ai_analysis(closed.id, actor_id=uuid.uuid4(), actor_is_superuser=True)
 
 
 async def test_save_ai_analysis_allows_superuser_any_stage() -> None:

@@ -408,8 +408,7 @@ const qualityRoutes: RouteCase[] = [
   { path: '/quality/deviation/new', module: 'quality', kind: 'normal', expected: heading('新建偏差') },
   { path: '/quality/calculator', module: 'quality', kind: 'normal', expected: heading('计算器') },
   { path: '/quality/cpv', module: 'quality', kind: 'normal', expected: heading('CPV') },
-  // Disabled: endpoint /api/v1/quality/department-contacts not implemented (returns 404)
-  // { path: '/quality/department-contacts', module: 'quality', kind: 'normal', expected: heading('部门联系人配置') },
+  { path: '/quality/department-contacts', module: 'quality', kind: 'normal', expected: heading('部门联系人配置') },
   { path: '/quality/doc-check', module: 'quality', kind: 'normal', expected: heading('审核管理') },
   { path: '/quality/fqc', module: 'quality', kind: 'normal', expected: heading('FQC'), expectData: antdTableData, expectFetch: 'server-action' },
   {

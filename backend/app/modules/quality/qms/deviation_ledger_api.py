@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import date
 from io import BytesIO
+from typing import Any
 from urllib.parse import quote
 from uuid import UUID
 
@@ -15,9 +16,14 @@ from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.core.database import async_session_factory, get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import NotFoundException
+from app.core.job_models import JOB_DONE, JOB_FAILED
+from app.core.job_repository import JobRepository
+from app.core.jobs import submit_job
 from app.core.response import ApiResponse, build_response
+from app.shared.schemas import AsyncJobState, AsyncJobStateResponse
 
 from .deviation_ledger_schemas import (
     AttachmentCommentApiResponse,
@@ -32,10 +38,14 @@ from .deviation_ledger_schemas import (
     BatchStatusRequest,
     CompleteAiAnalysisRequest,
     CrossDeptApproveRequest,
+    CrossDeptInvestigationRequest,
+    CrossDeptRejectRequest,
     DeleteResultApiResponse,
     DeleteResultData,
     FinalCodeRequest,
+    InvestigationDraftRequest,
     InvestigationRequest,
+    InvestigationSubmitRequest,
     LedgerCreateRequest,
     LedgerDetailApiResponse,
     LedgerListApiResponse,
@@ -229,19 +239,65 @@ async def delete_ledger(
     return build_response(data=DeleteResultData(id=ledger_id), message="删除成功")
 
 
-@router.post("/{ledger_id}/ai-analysis", response_model=LedgerDetailApiResponse, summary="生成 AI 分析")
+@router.get("/jobs/{job_id}", response_model=AsyncJobStateResponse, summary="查询异步任务状态")
+async def get_job_status(
+    job_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """轮询后台任务状态：`running`/`done`/`failed`，`done` 时 `result` 为任务返回值。"""
+    job = await JobRepository(db).get(job_id)
+    if job is None:
+        raise NotFoundException("任务不存在或已过期")
+    status = {JOB_DONE: "done", JOB_FAILED: "failed"}.get(job.state, "running")
+    return build_response(
+        data=AsyncJobState(
+            job_id=str(job.id),
+            status=status,
+            result=job.result,
+            error=job.error,
+        )
+    )
+
+
+@router.post(
+    "/{ledger_id}/ai-analysis",
+    response_model=AsyncJobStateResponse,
+    summary="提交 AI 分析生成任务",
+)
 async def generate_ai_analysis(
     ledger_id: UUID,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(_UPDATE)),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    """调用大模型生成结构化分析（只返回，不落库）。"""
+    """大模型耗时不可控，提交到任务队列异步执行（AGENTS.md：请求内不得执行超过 5s 的操作）。
+
+    前端拿到 `job_id` 后轮询 `/deviation/ledger/jobs/{job_id}`，`done` 时 `result`
+    为含 `ai_analysis` 的台账详情；结果仍只返回不落库，由人工校对后保存。
+    """
     service = DeviationLedgerService(db)
-    analysis = await service.generate_ai_analysis(ledger_id)
-    detail = await service.get_detail(ledger_id, viewer_id=current_user.id)
-    detail.ai_analysis = analysis
-    return build_response(data=detail, message="AI 分析已生成")
+    # 先做存在性/可见性校验，避免给不可见的台账提交任务
+    await service.get_detail(ledger_id, viewer_id=current_user.id)
+    viewer_id = current_user.id
+    viewer_is_superuser = _is_superuser(ctx)
+
+    async def _run(_job_id: UUID) -> dict[str, Any]:
+        async with async_session_factory() as job_db:
+            job_service = DeviationLedgerService(job_db)
+            analysis = await job_service.generate_ai_analysis(
+                ledger_id, actor_id=viewer_id, actor_is_superuser=viewer_is_superuser
+            )
+            detail = await job_service.get_detail(ledger_id, viewer_id=viewer_id)
+            detail.ai_analysis = analysis
+            return detail.model_dump(mode="json")
+
+    job_id = await submit_job("quality.deviation-ai-analysis", _run)
+    return build_response(
+        data=AsyncJobState(job_id=str(job_id), status="running"),
+        message="AI 分析任务已提交",
+    )
 
 
 @router.post(
@@ -289,6 +345,30 @@ async def submit_investigation(
 
 
 @router.post(
+    "/{ledger_id}/investigation-submit",
+    response_model=LedgerDetailApiResponse,
+    summary="调查记录已填写，提交审核（不新建记录）",
+)
+async def submit_investigation_for_review(
+    ledger_id: UUID,
+    payload: InvestigationSubmitRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_SUBMIT)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """卡片快捷入口：二选一材料校验通过后直接流转到部门负责人审核。"""
+    service = DeviationLedgerService(db)
+    detail = await service.submit_investigation_for_review(
+        ledger_id,
+        payload,
+        actor_id=current_user.id,
+        actor_name=current_user.name or "-",
+        actor_is_superuser=_is_superuser(ctx),
+    )
+    return build_response(data=detail, message="调查已提交审核")
+
+
+@router.post(
     "/{ledger_id}/investigation-records",
     response_model=LedgerDetailApiResponse,
     summary="追加调查记录（不流转）",
@@ -312,6 +392,53 @@ async def append_investigation_record(
     return build_response(data=detail, message="调查记录已追加")
 
 
+@router.post(
+    "/{ledger_id}/investigation-drafts",
+    response_model=LedgerDetailApiResponse,
+    summary="暂存调查记录草稿",
+)
+async def save_investigation_draft(
+    ledger_id: UUID,
+    payload: InvestigationDraftRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_SUBMIT)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """按（本人, 部门）覆盖暂存，不推进流程；提交调查后草稿由服务端清除。"""
+    service = DeviationLedgerService(db)
+    detail = await service.save_investigation_draft(
+        ledger_id,
+        payload,
+        actor_id=current_user.id,
+        actor_name=current_user.name or "-",
+        actor_is_superuser=_is_superuser(ctx),
+    )
+    return build_response(data=detail, message="草稿已暂存")
+
+
+@router.delete(
+    "/{ledger_id}/investigation-drafts",
+    response_model=LedgerDetailApiResponse,
+    summary="清除本人的调查记录草稿",
+)
+async def delete_investigation_draft(
+    ledger_id: UUID,
+    current_user: RequiredUser,
+    department: str | None = Query(None, description="跨部门行草稿的部门名；主流程草稿不传"),
+    ctx: PermissionContext = Depends(require_permission(_SUBMIT)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """只清除本人该范围草稿，不影响他人的草稿。"""
+    service = DeviationLedgerService(db)
+    detail = await service.delete_investigation_draft(
+        ledger_id,
+        department=department,
+        actor_id=current_user.id,
+        actor_is_superuser=_is_superuser(ctx),
+    )
+    return build_response(data=detail, message="草稿已清除")
+
+
 @router.post("/{ledger_id}/review", response_model=LedgerDetailApiResponse, summary="审核通过 / 退回")
 async def review_ledger(
     ledger_id: UUID,
@@ -320,7 +447,7 @@ async def review_ledger(
     ctx: PermissionContext = Depends(require_permission(_APPROVE)),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    """按当前环节审核：通过推进下一环节，退回回到本环节并通知上报人。"""
+    """按当前环节审核：通过推进下一环节，退回落到目标前置环节待办并通知该环节处理人。"""
     service = DeviationLedgerService(db)
     detail = await service.review(
         ledger_id,
@@ -356,6 +483,54 @@ async def approve_cross_dept_row(
     )
     advanced = detail.current_step != "cross_dept_head_review"
     return build_response(data=detail, message="该部门已审核通过" + ("，跨部门审核全部完成" if advanced else ""))
+
+
+@router.post(
+    "/{ledger_id}/cross-dept-review/reject",
+    response_model=LedgerDetailApiResponse,
+    summary="跨部门逐行退回",
+)
+async def reject_cross_dept_row(
+    ledger_id: UUID,
+    payload: CrossDeptRejectRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_APPROVE)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """只重置该部门的调查与审核节点，流程仍停留在跨部门审核环节。"""
+    service = DeviationLedgerService(db)
+    detail = await service.reject_cross_dept(
+        ledger_id,
+        payload,
+        actor_id=current_user.id,
+        actor_name=current_user.name or "-",
+        actor_is_superuser=_is_superuser(ctx),
+    )
+    return build_response(data=detail, message="该部门已退回，等待重新调查与审核")
+
+
+@router.post(
+    "/{ledger_id}/cross-dept-investigation",
+    response_model=LedgerDetailApiResponse,
+    summary="跨部门调查人提交本部门调查记录",
+)
+async def submit_cross_dept_investigation(
+    ledger_id: UUID,
+    payload: CrossDeptInvestigationRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_SUBMIT)),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """行内调查人提交调查记录并完成该部门「调查」节点，随后由该部门负责人审核。"""
+    service = DeviationLedgerService(db)
+    detail = await service.submit_cross_dept_investigation(
+        ledger_id,
+        payload,
+        actor_id=current_user.id,
+        actor_name=current_user.name or "-",
+        actor_is_superuser=_is_superuser(ctx),
+    )
+    return build_response(data=detail, message="本部门调查已提交，等待部门负责人审核")
 
 
 @router.post("/{ledger_id}/resubmit", response_model=LedgerDetailApiResponse, summary="退回后重新提交")

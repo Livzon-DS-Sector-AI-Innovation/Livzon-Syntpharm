@@ -13672,6 +13672,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quality/deviation/ledger/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询异步任务状态
+         * @description 轮询后台任务状态：`running`/`done`/`failed`，`done` 时 `result` 为任务返回值。
+         */
+        get: operations["get_job_status_api_v1_quality_deviation_ledger_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quality/deviation/ledger/{ledger_id}/ai-analysis": {
         parameters: {
             query?: never;
@@ -13682,8 +13702,11 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * 生成 AI 分析
-         * @description 调用大模型生成结构化分析（只返回，不落库）。
+         * 提交 AI 分析生成任务
+         * @description 大模型耗时不可控，提交到任务队列异步执行（AGENTS.md：请求内不得执行超过 5s 的操作）。
+         *
+         *     前端拿到 `job_id` 后轮询 `/deviation/ledger/jobs/{job_id}`，`done` 时 `result`
+         *     为含 `ai_analysis` 的台账详情；结果仍只返回不落库，由人工校对后保存。
          */
         post: operations["generate_ai_analysis_api_v1_quality_deviation_ledger__ledger_id__ai_analysis_post"];
         delete?: never;
@@ -13732,6 +13755,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quality/deviation/ledger/{ledger_id}/investigation-submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 调查记录已填写，提交审核（不新建记录）
+         * @description 卡片快捷入口：二选一材料校验通过后直接流转到部门负责人审核。
+         */
+        post: operations["submit_investigation_for_review_api_v1_quality_deviation_ledger__ledger_id__investigation_submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quality/deviation/ledger/{ledger_id}/investigation-records": {
         parameters: {
             query?: never;
@@ -13752,6 +13795,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quality/deviation/ledger/{ledger_id}/investigation-drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 暂存调查记录草稿
+         * @description 按（本人, 部门）覆盖暂存，不推进流程；提交调查后草稿由服务端清除。
+         */
+        post: operations["save_investigation_draft_api_v1_quality_deviation_ledger__ledger_id__investigation_drafts_post"];
+        /**
+         * 清除本人的调查记录草稿
+         * @description 只清除本人该范围草稿，不影响他人的草稿。
+         */
+        delete: operations["delete_investigation_draft_api_v1_quality_deviation_ledger__ledger_id__investigation_drafts_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quality/deviation/ledger/{ledger_id}/review": {
         parameters: {
             query?: never;
@@ -13763,7 +13830,7 @@ export interface paths {
         put?: never;
         /**
          * 审核通过 / 退回
-         * @description 按当前环节审核：通过推进下一环节，退回回到本环节并通知上报人。
+         * @description 按当前环节审核：通过推进下一环节，退回落到目标前置环节待办并通知该环节处理人。
          */
         post: operations["review_ledger_api_v1_quality_deviation_ledger__ledger_id__review_post"];
         delete?: never;
@@ -13786,6 +13853,46 @@ export interface paths {
          * @description 该行审核人通过后仅完成该部门节点；全部跨部门行通过后进入所属 QA 审核。
          */
         post: operations["approve_cross_dept_row_api_v1_quality_deviation_ledger__ledger_id__cross_dept_review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation/ledger/{ledger_id}/cross-dept-review/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 跨部门逐行退回
+         * @description 只重置该部门的调查与审核节点，流程仍停留在跨部门审核环节。
+         */
+        post: operations["reject_cross_dept_row_api_v1_quality_deviation_ledger__ledger_id__cross_dept_review_reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/deviation/ledger/{ledger_id}/cross-dept-investigation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 跨部门调查人提交本部门调查记录
+         * @description 行内调查人提交调查记录并完成该部门「调查」节点，随后由该部门负责人审核。
+         */
+        post: operations["submit_cross_dept_investigation_api_v1_quality_deviation_ledger__ledger_id__cross_dept_investigation_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -25956,8 +26063,73 @@ export interface components {
             opinion: string;
         };
         /**
+         * CrossDeptInvestigationRequest
+         * @description 跨部门调查人向本部门行提交调查记录（复用调查记录二选一校验）。
+         */
+        CrossDeptInvestigationRequest: {
+            /**
+             * Nonconformity Description
+             * @description 不符合事项描述（未引用附件时必填）
+             * @default
+             */
+            nonconformity_description: string;
+            /**
+             * Root Cause Analysis
+             * @description 根本原因分析（未引用附件时必填）
+             * @default
+             */
+            root_cause_analysis: string;
+            /**
+             * Risk Assessment
+             * @description 风险评估（未引用附件时必填）
+             * @default
+             */
+            risk_assessment: string;
+            /**
+             * Capa Proposals
+             * @description 改进建议（CAPA），未引用附件时至少一条
+             */
+            capa_proposals?: components["schemas"]["CapaProposalItem"][];
+            /**
+             * Urgent Measures
+             * @description 紧急处理措施，勾选后必填
+             */
+            urgent_measures?: string | null;
+            /**
+             * Attachment File Ids
+             * @description 记录附件（已上传台账的 file_id）
+             */
+            attachment_file_ids?: string[];
+            /**
+             * Submit Content
+             * @description 提交审核说明（选填，写入本次流转记录；为空时用默认文案）
+             */
+            submit_content?: string | null;
+            /**
+             * Department
+             * @description 跨部门部门名（行标识）
+             */
+            department: string;
+        };
+        /**
+         * CrossDeptRejectRequest
+         * @description 跨部门逐行退回请求体：只重置该部门行，流程仍停留在跨部门审核环节。
+         */
+        CrossDeptRejectRequest: {
+            /**
+             * Department
+             * @description 跨部门部门名（行标识）
+             */
+            department: string;
+            /**
+             * Opinion
+             * @description 退回理由（必填）
+             */
+            opinion: string;
+        };
+        /**
          * CrossDeptReviewerItem
-         * @description 跨部门审核行：部门 + 行内调查人 + 逐行审核状态。
+         * @description 跨部门审核行：部门 + 行内调查人 + 行内部门负责人 + 逐行两节点（调查 → 审核）状态。
          */
         CrossDeptReviewerItem: {
             /** Department */
@@ -25967,10 +26139,36 @@ export interface components {
             /** Investigator Names */
             investigator_names?: string[];
             /**
+             * Dept Head Id
+             * @description 该行部门负责人（表单显式指定；存量行缺省时运行时回退联系人配置）
+             */
+            dept_head_id?: string | null;
+            /**
+             * Dept Head Name
+             * @description 该行部门负责人姓名（展示用，读取时解析）
+             */
+            dept_head_name?: string | null;
+            /**
              * Reviewer Names
-             * @description 该行实际审核人（调查人为空时回退部门负责人）
+             * @description 该行实际审核人（行内负责人优先，缺省回退部门联系人）
              */
             reviewer_names?: string[];
+            /**
+             * Investigate State
+             * @description 行调查状态：pending（待调查）/ submitted（调查已提交）
+             * @default pending
+             */
+            investigate_state: string;
+            /**
+             * Investigate Submitted Name
+             * @description 首个提交调查的行内调查人姓名
+             */
+            investigate_submitted_name?: string | null;
+            /**
+             * Investigate Submitted At
+             * @description 行调查提交时间
+             */
+            investigate_submitted_at?: string | null;
             /**
              * Review State
              * @description 行审核状态：pending / approved
@@ -25994,6 +26192,18 @@ export interface components {
              * @default false
              */
             can_approve: boolean;
+            /**
+             * Can Reject
+             * @description 当前查看人可对该行执行退回操作
+             * @default false
+             */
+            can_reject: boolean;
+            /**
+             * Can Investigate
+             * @description 当前查看人可向该行提交调查记录
+             * @default false
+             */
+            can_investigate: boolean;
         };
         /**
          * CrossDeptStepSubItem
@@ -26004,6 +26214,12 @@ export interface components {
             department: string;
             /** Reviewer Names */
             reviewer_names?: string[];
+            /**
+             * Investigate State
+             * @description pending / submitted（行内调查人是否已提交调查）
+             * @default pending
+             */
+            investigate_state: string;
             /**
              * State
              * @description pending / approved
@@ -30101,6 +30317,34 @@ export interface components {
              * @description 下载地址
              */
             url: string;
+        };
+        /**
+         * DraftCapaItem
+         * @description 草稿里的 CAPA 行：允许未填完（正式提交时仍按 ``CapaProposalItem`` 校验）。
+         */
+        DraftCapaItem: {
+            /**
+             * Sequence
+             * @description 序号，请求方不传时按顺序回填
+             * @default 0
+             */
+            sequence: number;
+            /**
+             * Summary
+             * @description CAPA 内容简述（草稿可空）
+             * @default
+             */
+            summary: string;
+            /**
+             * Executor
+             * @description 执行人
+             */
+            executor?: string | null;
+            /**
+             * Expected Completion Date
+             * @description 预计完成日期
+             */
+            expected_completion_date?: string | null;
         };
         /** DrugCreate */
         DrugCreate: {
@@ -38986,10 +39230,61 @@ export interface components {
              * @default success
              */
             message: string;
-            /** Data */
-            data?: {
-                [key: string]: unknown;
-            } | null;
+            data?: components["schemas"]["InstrumentListData"] | null;
+        };
+        /**
+         * InstrumentListData
+         * @description 仪器列表分页数据
+         */
+        InstrumentListData: {
+            /** Items */
+            items: components["schemas"]["InstrumentListRow"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /**
+         * InstrumentListRow
+         * @description 仪器列表行（service 层返回的展示字段，含校准有效期与超期标记）
+         */
+        InstrumentListRow: {
+            /** Id */
+            id: string;
+            /** Instrument No */
+            instrument_no: string;
+            /** Instrument Name */
+            instrument_name: string;
+            /** Model */
+            model?: string | null;
+            /** Manufacturer */
+            manufacturer?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Serial No */
+            serial_no?: string | null;
+            /** Location */
+            location?: string | null;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+            /** Status */
+            status?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Valid Until */
+            valid_until?: string | null;
+            /**
+             * Is Overdue
+             * @default false
+             */
+            is_overdue: boolean;
         };
         /**
          * InstrumentMessageApiResponse
@@ -39224,6 +39519,104 @@ export interface components {
             updated_at: string;
         };
         /**
+         * InvestigationDraftItem
+         * @description 一条调查记录草稿（仅返回当前查看人本人的草稿）。
+         */
+        InvestigationDraftItem: {
+            /** Author Id */
+            author_id?: string | null;
+            /** Author Name */
+            author_name?: string | null;
+            /**
+             * Author Avatar
+             * @description 作者头像地址
+             */
+            author_avatar?: string | null;
+            /**
+             * Department
+             * @description 跨部门行草稿的部门名；主流程调查草稿为 None
+             */
+            department?: string | null;
+            /**
+             * Nonconformity Description
+             * @default
+             */
+            nonconformity_description: string;
+            /**
+             * Root Cause Analysis
+             * @default
+             */
+            root_cause_analysis: string;
+            /**
+             * Risk Assessment
+             * @default
+             */
+            risk_assessment: string;
+            /** Capa Proposals */
+            capa_proposals?: components["schemas"]["DraftCapaItem"][];
+            /**
+             * Has Urgent
+             * @default false
+             */
+            has_urgent: boolean;
+            /** Urgent Measures */
+            urgent_measures?: string | null;
+            /** Attachment File Ids */
+            attachment_file_ids?: string[];
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /**
+         * InvestigationDraftRequest
+         * @description 调查记录草稿：只做长度与格式约束，必填规则留到正式提交时再校验。
+         */
+        InvestigationDraftRequest: {
+            /**
+             * Department
+             * @description 跨部门行草稿的部门名；主流程调查草稿为空
+             */
+            department?: string | null;
+            /**
+             * Nonconformity Description
+             * @description 不符合事项描述
+             * @default
+             */
+            nonconformity_description: string;
+            /**
+             * Root Cause Analysis
+             * @description 根本原因分析
+             * @default
+             */
+            root_cause_analysis: string;
+            /**
+             * Risk Assessment
+             * @description 风险评估
+             * @default
+             */
+            risk_assessment: string;
+            /**
+             * Capa Proposals
+             * @description 改进建议（CAPA）行
+             */
+            capa_proposals?: components["schemas"]["DraftCapaItem"][];
+            /**
+             * Has Urgent
+             * @description 是否勾选「有紧急处理措施」（保留勾选状态，便于回填）
+             * @default false
+             */
+            has_urgent: boolean;
+            /**
+             * Urgent Measures
+             * @description 紧急处理措施
+             */
+            urgent_measures?: string | null;
+            /**
+             * Attachment File Ids
+             * @description 记录附件（已上传台账的 file_id）
+             */
+            attachment_file_ids?: string[];
+        };
+        /**
          * InvestigationRecordItem
          * @description 一条调查记录（结构化；旧记录仅 content，前端降级纯文本展示）。
          */
@@ -39234,6 +39627,11 @@ export interface components {
              * @default
              */
             content: string;
+            /**
+             * Department
+             * @description 跨部门调查记录的部门标记；主流程调查记录为 None
+             */
+            department?: string | null;
             /**
              * Nonconformity Description
              * @description 不符合事项描述
@@ -39286,24 +39684,27 @@ export interface components {
         InvestigationRequest: {
             /**
              * Nonconformity Description
-             * @description 不符合事项描述
+             * @description 不符合事项描述（未引用附件时必填）
+             * @default
              */
             nonconformity_description: string;
             /**
              * Root Cause Analysis
-             * @description 根本原因分析
+             * @description 根本原因分析（未引用附件时必填）
+             * @default
              */
             root_cause_analysis: string;
             /**
              * Risk Assessment
-             * @description 风险评估
+             * @description 风险评估（未引用附件时必填）
+             * @default
              */
             risk_assessment: string;
             /**
              * Capa Proposals
-             * @description 改进建议（CAPA），至少一条
+             * @description 改进建议（CAPA），未引用附件时至少一条
              */
-            capa_proposals: components["schemas"]["CapaProposalItem"][];
+            capa_proposals?: components["schemas"]["CapaProposalItem"][];
             /**
              * Urgent Measures
              * @description 紧急处理措施，勾选后必填
@@ -39314,6 +39715,22 @@ export interface components {
              * @description 记录附件（已上传台账的 file_id）
              */
             attachment_file_ids?: string[];
+            /**
+             * Submit Content
+             * @description 提交审核说明（选填，写入本次流转记录；为空时用默认文案）
+             */
+            submit_content?: string | null;
+        };
+        /**
+         * InvestigationSubmitRequest
+         * @description 已填写调查记录后，直接提交审核（不新建调查记录）。
+         */
+        InvestigationSubmitRequest: {
+            /**
+             * Content
+             * @description 提交审核说明（选填，写入本次流转记录）
+             */
+            content?: string | null;
         };
         /** InvoiceLineItem */
         InvoiceLineItem: {
@@ -40163,6 +40580,22 @@ export interface components {
              * @default false
              */
             can_edit_cross_dept: boolean;
+            /**
+             * Can Delete Attachment
+             * @description 是否可删除台账附件（仅调查节点、本人提交前开放；提交后附件只能预览与下载）
+             * @default false
+             */
+            can_delete_attachment: boolean;
+            /**
+             * Investigation Drafts
+             * @description 当前查看人本人的调查记录草稿（按人隔离，提交后由服务端清除）
+             */
+            investigation_drafts?: components["schemas"]["InvestigationDraftItem"][];
+            /**
+             * Return Targets
+             * @description 当前查看人可退回的前置环节（按流程顺序，最近的在最后）；无退回权限时为空
+             */
+            return_targets?: components["schemas"]["ReturnTargetItem"][];
         };
         /** LedgerDetailApiResponse */
         LedgerDetailApiResponse: {
@@ -50242,6 +50675,32 @@ export interface components {
          * @enum {string}
          */
         RetentionStatus: "retained" | "expired" | "disposed";
+        /**
+         * ReturnTargetItem
+         * @description 可退回的前置环节（退回弹窗下拉数据）。
+         */
+        ReturnTargetItem: {
+            /**
+             * Step
+             * @description 环节标识（退回时作为 target_step 回传）
+             */
+            step: string;
+            /**
+             * Label
+             * @description 环节名称
+             */
+            label: string;
+            /**
+             * Role Label
+             * @description 该环节责任角色
+             */
+            role_label: string;
+            /**
+             * Handlers
+             * @description 该环节处理人
+             */
+            handlers?: components["schemas"]["StepHandlerPerson"][];
+        };
         /** ReuseSummary */
         ReuseSummary: {
             /**
@@ -50333,6 +50792,11 @@ export interface components {
              * @default
              */
             content: string;
+            /**
+             * Target Step
+             * @description 退回目标环节（仅 rejected 生效）：缺省退到上一环节，可选范围见详情 return_targets
+             */
+            target_step?: string | null;
             /**
              * Reason Category
              * @description 原因分类（QA 审核通过必填）
@@ -94715,6 +95179,39 @@ export interface operations {
             };
         };
     };
+    get_job_status_api_v1_quality_deviation_ledger_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobStateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     generate_ai_analysis_api_v1_quality_deviation_ledger__ledger_id__ai_analysis_post: {
         parameters: {
             query?: never;
@@ -94734,7 +95231,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["LedgerDetailApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobStateResponse"];
                 };
             };
             /** @description Validation Error */
@@ -94822,6 +95319,43 @@ export interface operations {
             };
         };
     };
+    submit_investigation_for_review_api_v1_quality_deviation_ledger__ledger_id__investigation_submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvestigationSubmitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["LedgerDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     append_investigation_record_api_v1_quality_deviation_ledger__ledger_id__investigation_records_post: {
         parameters: {
             query?: never;
@@ -94838,6 +95372,79 @@ export interface operations {
                 "application/json": components["schemas"]["InvestigationRequest"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["LedgerDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_investigation_draft_api_v1_quality_deviation_ledger__ledger_id__investigation_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvestigationDraftRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["LedgerDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_investigation_draft_api_v1_quality_deviation_ledger__ledger_id__investigation_drafts_delete: {
+        parameters: {
+            query?: {
+                /** @description 跨部门行草稿的部门名；主流程草稿不传 */
+                department?: string | null;
+            };
+            header?: never;
+            path: {
+                ledger_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -94910,6 +95517,80 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CrossDeptApproveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["LedgerDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_cross_dept_row_api_v1_quality_deviation_ledger__ledger_id__cross_dept_review_reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrossDeptRejectRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["LedgerDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_cross_dept_investigation_api_v1_quality_deviation_ledger__ledger_id__cross_dept_investigation_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ledger_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrossDeptInvestigationRequest"];
             };
         };
         responses: {

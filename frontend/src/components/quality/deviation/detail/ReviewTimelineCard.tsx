@@ -1,8 +1,9 @@
 'use client'
 
-import { Card, Empty, Tag, Timeline } from 'antd'
+import { Empty, Tag, Timeline } from 'antd'
 import type { DeviationReviewOpinion } from '@/types/quality'
 import { PersonInline } from '../PersonInline'
+import { SectionCard } from './SectionCard'
 
 interface ReviewTimelineCardProps {
   opinions: DeviationReviewOpinion[]
@@ -17,7 +18,10 @@ const RESULT_META: Record<string, { color: string; label: string; tag: string }>
 export function ReviewTimelineCard({ opinions }: ReviewTimelineCardProps) {
   const items = [...opinions].reverse()
   return (
-    <Card size="small" title="审核记录" className="shadow-sm">
+    <SectionCard
+      section="review-timeline"
+      badge={<span className="text-[12px] text-[var(--color-stone)]">共 {items.length} 次</span>}
+    >
       {items.length === 0 ? (
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无审核记录" />
       ) : (
@@ -52,7 +56,7 @@ export function ReviewTimelineCard({ opinions }: ReviewTimelineCardProps) {
           })}
         />
       )}
-    </Card>
+    </SectionCard>
   )
 }
 
