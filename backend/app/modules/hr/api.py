@@ -43,6 +43,8 @@ from app.modules.hr.org_settings import (
     ORG_SCOPE_SETTING_DEFAULTS,
     ORG_SYNC_ROOT_ID_SETTING,
     ORG_SYNC_ROOT_NAME_SETTING,
+    load_org_scope,
+    save_org_scope_value,
 )
 from app.modules.hr.people_api import router as people_router
 from app.modules.hr.prejob_document_generator import generate_prejob_training_plan
@@ -2498,7 +2500,14 @@ async def get_system_settings(  # type: ignore[no-untyped-def]
     r = await session.execute(sql_text("SELECT key, value FROM hr.system_settings"))
     db_settings = {row[0]: row[1] for row in r.fetchall()}
 
+    scope = await load_org_scope(session)
     for key in SETTING_KEYS:
+        if key == ORG_SYNC_ROOT_ID_SETTING:
+            result[key] = scope.department_id
+            continue
+        if key == ORG_SYNC_ROOT_NAME_SETTING:
+            result[key] = scope.department_name
+            continue
         val = _get_db_setting(db_settings, key)
         if not val:
             val = ORG_SCOPE_SETTING_DEFAULTS.get(_canonical_setting_key(key), "")
@@ -2528,6 +2537,10 @@ async def save_system_settings(  # type: ignore[no-untyped-def]
             continue
         canonical_key = _canonical_setting_key(key)
         value_text = "" if raw_value is None else str(raw_value)
+        if key in ORG_SCOPE_SETTING_DEFAULTS:
+            await save_org_scope_value(session, key, value_text)
+            updated.append(key)
+            continue
         if key in SECRET_SETTING_KEYS:
             if not value_text or MASK_PLACEHOLDER in value_text:
                 continue
