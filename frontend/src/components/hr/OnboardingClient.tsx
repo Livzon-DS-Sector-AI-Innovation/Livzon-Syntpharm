@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Avatar, Button } from 'antd'
+import { Button } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { EyeOutlined } from '@ant-design/icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -10,7 +10,6 @@ import { fetchOnboardingRecords } from '@/lib/api/client/hr'
 import type { OnboardingRecord, OnboardingRecordListResponse } from '@/types/hr'
 import OnboardingRecordDetailDrawer from './OnboardingRecordDetailDrawer'
 import OnboardingRecordFormDrawer from './OnboardingRecordFormDrawer'
-import { avatarColor } from './onboardingOptions'
 import LedgerTableShell from './LedgerTableShell'
 
 interface OnboardingClientProps {
@@ -80,14 +79,7 @@ export default function OnboardingClient({ initialRecords, initialTotal }: Onboa
       dataIndex: 'name',
       key: 'name',
       width: 140,
-      render: (name: string) => (
-        <span className="flex items-center gap-2">
-          <Avatar size={28} style={{ backgroundColor: avatarColor(name), fontSize: 12 }}>
-            {name.slice(0, 1)}
-          </Avatar>
-          <span className="font-medium">{name}</span>
-        </span>
-      ),
+      render: (name: string) => <span className="font-medium">{name}</span>,
     },
     {
       title: '一级部门',
