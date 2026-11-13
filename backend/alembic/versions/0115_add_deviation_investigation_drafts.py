@@ -37,7 +37,7 @@ def upgrade() -> None:
             nullable=False,
             comment="调查记录草稿 [{author_id, author_name, department, nonconformity_description,"
             " root_cause_analysis, risk_assessment, capa_proposals[], urgent_measures,"
-            " attachment_file_ids[], updated_at}]，按 (author_id, department) 唯一",
+            " attachment_file_ids[], updated_at}]，按 (author_id, department) 唯一，提交后清除",
         ),
         schema=_SCHEMA,
     )
