@@ -106,7 +106,6 @@ class FeishuBitableSync:
         self.bitable = BitableClient()
         self.employee_table = _settings.HR_BITABLE_EMPLOYEE_TABLE_ID  # type: ignore[attr-defined]
         self.department_table = _settings.HR_BITABLE_DEPARTMENT_TABLE_ID  # type: ignore[attr-defined]
-        self.offboarding_table = _settings.HR_BITABLE_OFFBOARDING_TABLE_ID  # type: ignore[attr-defined]
         self.approval_table = _settings.HR_BITABLE_APPROVAL_TABLE_ID  # type: ignore[attr-defined]
 
     def _is_enabled(self) -> bool:
@@ -252,55 +251,6 @@ class FeishuBitableSync:
             filter_str=f'CurrentValue.[工号] = "{employee_number}"',
         )
         return items[0].get("record_id") if items else None
-
-    # ─── Offboarding ───
-
-    async def sync_offboarding_created(self, record: dict[str, Any]) -> None:
-        if not self._is_enabled() or not self.offboarding_table:
-            return
-        employee = record.get("employee") or {}
-        fields = {
-            "员工姓名": employee.get("name") or "",
-            "工号": employee.get("employee_number") or "",
-            "离职日期": _to_ms_timestamp(record.get("offboarding_date")),
-            "离职类型": record.get("offboarding_type") or "",
-            "离职原因": record.get("reason") or "",
-            "交接状态": record.get("handover_status") or "",
-            "备注": record.get("notes") or "",
-        }
-        try:
-            rec = await self.bitable.create_record(self.offboarding_table, fields)
-            logger.info(
-                "Offboarding synced to Feishu: %s, record_id=%s",
-                employee.get("name"),
-                rec.get("record_id"),
-            )
-        except Exception as e:
-            logger.error("Failed to sync offboarding to Feishu: %s", e)
-            raise
-
-    async def sync_offboarding_updated(self, record: dict[str, Any]) -> None:
-        if not self._is_enabled() or not self.offboarding_table:
-            return
-        record_id = record.get("_feishu_record_id")
-        if not record_id:
-            return
-        employee = record.get("employee") or {}
-        fields = {
-            "员工姓名": employee.get("name") or "",
-            "工号": employee.get("employee_number") or "",
-            "离职日期": _to_ms_timestamp(record.get("offboarding_date")),
-            "离职类型": record.get("offboarding_type") or "",
-            "离职原因": record.get("reason") or "",
-            "交接状态": record.get("handover_status") or "",
-            "备注": record.get("notes") or "",
-        }
-        try:
-            await self.bitable.update_record(self.offboarding_table, record_id, fields)
-            logger.info("Offboarding updated in Feishu: %s", employee.get("name"))
-        except Exception as e:
-            logger.error("Failed to update offboarding in Feishu: %s", e)
-            raise
 
     # ─── Approval ───
 
