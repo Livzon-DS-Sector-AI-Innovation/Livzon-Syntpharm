@@ -15,8 +15,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.hr.models import EmployeeProfile
+from app.modules.hr.models import HrDepartment as Department
+from app.modules.hr.models import HrOrgSyncRun as OrgSyncRun
 from app.modules.hr.org_domain import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
-from app.platform.identity.models import Department, OrgSyncRun, User
+from app.platform.identity.models import User
 
 TREE_URL = "/api/v1/hr/org/departments"
 STATUS_URL = "/api/v1/hr/org/sync-status"

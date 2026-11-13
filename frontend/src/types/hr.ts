@@ -107,9 +107,7 @@ export interface Department {
   updated_at?: string
 }
 
-export type DepartmentCreateInput = components['schemas']['DepartmentCreate']
 
-export type DepartmentUpdateInput = components['schemas']['DepartmentUpdate']
 
 export interface DepartmentListResponse {
   code: number

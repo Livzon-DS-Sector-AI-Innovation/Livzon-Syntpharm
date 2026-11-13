@@ -691,10 +691,11 @@ class DepartmentService:
         code = department.code
         await self.repo.soft_delete(department)
 
-        try:
-            await self.feishu.sync_department_deleted(code)
-        except Exception as e:
-            logger.warning("Feishu sync failed for department deleted: %s", e)
+        if code:
+            try:
+                await self.feishu.sync_department_deleted(code)
+            except Exception as e:
+                logger.warning("Feishu sync failed for department deleted: %s", e)
 
     async def list_departments(
         self,

@@ -1,8 +1,8 @@
 """SQLAlchemy adapter for the department mirror (ticket #197).
 
 Implements the :class:`app.modules.hr.org_sync.OrgDepartmentStore` port over
-``identity.departments`` and ``identity.org_sync_runs``. Never hard-deletes:
-removed departments are flagged via ``status_is_deleted``.
+``hr.departments`` and ``hr.org_sync_runs``. Never hard-deletes: removed
+departments are flagged via ``status_is_deleted``.
 """
 
 from __future__ import annotations
@@ -13,10 +13,9 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.hr.models import EmployeeProfile
+from app.modules.hr.models import EmployeeProfile, HrDepartment, HrOrgSyncRun
 from app.modules.hr.org_domain import OrgDepartmentRecord
 from app.modules.hr.org_sync import SyncRunRecord
-from app.platform.identity.models import Department, OrgSyncRun
 
 
 class SqlAlchemyOrgDepartmentStore:
@@ -25,21 +24,24 @@ class SqlAlchemyOrgDepartmentStore:
 
     async def list_departments(self) -> list[OrgDepartmentRecord]:
         result = await self.session.execute(
-            select(Department).where(Department.is_deleted.is_(False)).order_by(Department.order, Department.name)
+            select(HrDepartment)
+            .where(HrDepartment.is_deleted.is_(False))
+            .order_by(HrDepartment.order, HrDepartment.name)
         )
         return [self._to_record(row) for row in result.scalars().all()]
 
     async def upsert_department(self, record: OrgDepartmentRecord) -> bool:
         if not record.id:
             return False
-        result = await self.session.execute(select(Department).where(Department.feishu_department_id == record.id))
+        result = await self.session.execute(select(HrDepartment).where(HrDepartment.feishu_department_id == record.id))
         department = result.scalar_one_or_none()
         created = department is None
         if department is None:
-            department = Department(feishu_department_id=record.id)
+            department = HrDepartment(feishu_department_id=record.id)
             self.session.add(department)
 
         department.name = record.name
+        department.level = max(len(record.department_path) - 1, 0) if record.department_path else None
         department.parent_feishu_department_id = record.parent_id
         department.order = record.order
         department.order_weight = record.order_weight
@@ -58,16 +60,18 @@ class SqlAlchemyOrgDepartmentStore:
         return created
 
     async def hide_department(self, department_id: str) -> None:
-        result = await self.session.execute(select(Department).where(Department.feishu_department_id == department_id))
+        result = await self.session.execute(
+            select(HrDepartment).where(HrDepartment.feishu_department_id == department_id)
+        )
         department = result.scalar_one_or_none()
         if department is not None:
             department.status_is_deleted = True
             await self.session.flush()
 
     async def record_sync_run(self, run: SyncRunRecord, *, run_id: UUID | None = None) -> None:
-        row = await self.session.get(OrgSyncRun, run_id) if run_id is not None else None
+        row = await self.session.get(HrOrgSyncRun, run_id) if run_id is not None else None
         if row is None:
-            row = OrgSyncRun(id=run_id) if run_id is not None else OrgSyncRun()
+            row = HrOrgSyncRun(id=run_id) if run_id is not None else HrOrgSyncRun()
             self.session.add(row)
         row.status = run.status
         row.department_count = run.department_count
@@ -81,7 +85,7 @@ class SqlAlchemyOrgDepartmentStore:
         await self.session.rollback()
 
     @staticmethod
-    def _to_record(row: Department) -> OrgDepartmentRecord:
+    def _to_record(row: HrDepartment) -> OrgDepartmentRecord:
         return OrgDepartmentRecord(
             id=row.feishu_department_id,
             name=row.name,
@@ -143,11 +147,11 @@ async def resolve_leader_avatars(session: AsyncSession, leader_ids: set[str]) ->
     return avatars
 
 
-async def get_latest_sync_run(session: AsyncSession) -> OrgSyncRun | None:
+async def get_latest_sync_run(session: AsyncSession) -> HrOrgSyncRun | None:
     result = await session.execute(
-        select(OrgSyncRun)
-        .where(OrgSyncRun.is_deleted.is_(False))
-        .order_by(OrgSyncRun.started_at.desc(), OrgSyncRun.created_at.desc())
+        select(HrOrgSyncRun)
+        .where(HrOrgSyncRun.is_deleted.is_(False))
+        .order_by(HrOrgSyncRun.started_at.desc(), HrOrgSyncRun.created_at.desc())
         .limit(1)
     )
     return result.scalar_one_or_none()

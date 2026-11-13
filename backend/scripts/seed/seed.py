@@ -82,9 +82,6 @@ async def main() -> None:
     print("Connecting to database...")
     conn = await asyncpg.connect(DATABASE_URL)
     try:
-        print("Seeding departments...")
-        await seed_departments(conn)
-
         print("Seeding HR org-sync settings...")
         await seed_hr_org_settings(conn)
 
