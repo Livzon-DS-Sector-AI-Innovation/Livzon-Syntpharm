@@ -94,11 +94,13 @@ async def predict_drug(db: AsyncSession, drug: Drug) -> DrugPredictionResponse:
     today = date.today()
 
     # 最近一个实际完成节点（预测锚点）
-    completed_indexes = sorted(
-        idx for idx, n in node_records.items() if n.actual_date is not None
-    )
+    completed_indexes = sorted(idx for idx, n in node_records.items() if n.actual_date is not None)
     anchor_idx = completed_indexes[-1] if completed_indexes else None
-    anchor_date = node_records[anchor_idx].actual_date if anchor_idx else drug.acceptance_date
+    anchor_date = drug.acceptance_date
+    if anchor_idx is not None:
+        anchor_actual = node_records[anchor_idx].actual_date
+        if anchor_actual is not None:
+            anchor_date = anchor_actual
 
     nodes_out: list[NodePrediction] = []
     cumulative_base = drug.acceptance_date  # 规则链从受理日起算；已完成节点用实际日期推进

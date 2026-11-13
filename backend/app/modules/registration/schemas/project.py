@@ -24,8 +24,6 @@ RegistrationType = Literal["新注册", "再注册", "变更", "补充申请"]
 PreStage = Literal["initiation", "data_preparation", "internal_review", "submission", "accepted"]
 
 
-
-
 class ProjectCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     product_name: str = Field(min_length=1, max_length=255)

@@ -187,7 +187,7 @@ export default function RegulatoryDocumentDetailPage() {
           返回列表
         </button>
         {doc.originalUrl && (
-          <button type="button" className={ui.btn} onClick={() => window.open(doc.originalUrl, '_blank')}>
+          <button type="button" className={ui.btn} onClick={() => window.open(doc.originalUrl!, '_blank')}>
             <LinkOutlined />
             查看原文
           </button>

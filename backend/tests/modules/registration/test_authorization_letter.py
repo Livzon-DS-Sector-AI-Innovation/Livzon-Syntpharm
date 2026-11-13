@@ -216,9 +216,7 @@ async def test_download_writes_trail(auth_client, mock_storage):
     resp = await auth_client.get(f"/api/v1/registration/authorization-letters/{letter['id']}/download")
     assert resp.status_code == 200
 
-    trails = (await auth_client.get(f"/api/v1/registration/authorization-letters/{letter['id']}/trails")).json()[
-        "data"
-    ]
+    trails = (await auth_client.get(f"/api/v1/registration/authorization-letters/{letter['id']}/trails")).json()["data"]
     assert [t["action"] for t in trails] == ["download", "generate"]  # 新→旧倒序
     assert "下载授权书文件" in trails[0]["detail"]
     assert trails[0]["created_by_name"] == "Test User"

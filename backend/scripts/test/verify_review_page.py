@@ -42,20 +42,28 @@ CHECK_JS = """
   out.segSpec = `h=${segCs.height} r=${segCs.borderRadius} gap=${cs(segsWrap).gap}`
   out.segFilledCount = segs.filter(s => cs(s).backgroundColor === 'rgb(95, 86, 214)').length
   const hollow = segs.find(s => cs(s).backgroundColor !== 'rgb(95, 86, 214)')
-  out.segHollow = hollow ? `border=${cs(hollow).borderColor} ${cs(hollow).borderWidth} bg=${cs(hollow).backgroundColor}` : 'none'
+  out.segHollow = hollow
+    ? `border=${cs(hollow).borderColor} ${cs(hollow).borderWidth} bg=${cs(hollow).backgroundColor}`
+    : 'none'
   out.segWrapWidth = `${cs(segsWrap).maxWidth} flexGrow=${cs(segsWrap).flexGrow}`
   const num = row.querySelector('span[class*="segNum"]')
   out.segNum = `${num.textContent} size=${cs(num).fontSize} color=${cs(num).color}`
   const tag = row.querySelectorAll('td')[4]?.querySelector('span')
   out.nodeTag = tag ? `size=${cs(tag).fontSize} bg=${cs(tag).backgroundColor} color=${cs(tag).color}` : 'not-found'
   out.titleSize = cs(document.querySelector('h1'))?.fontSize
-  out.kpiNumSize = cs([...document.querySelectorAll('div')].find(d => /^\\d+$/.test(d.textContent) && d.children.length === 0 && cs(d).fontSize === '36px'))?.fontSize || 'not-found'
+  const kpiEl = [...document.querySelectorAll('div')].find(
+    d => /^\\d+$/.test(d.textContent) && d.children.length === 0 && cs(d).fontSize === '36px'
+  )
+  out.kpiNumSize = cs(kpiEl)?.fontSize || 'not-found'
   const btn = [...document.querySelectorAll('button')].find(b => b.textContent.includes('刷新'))
   out.btnSize = cs(btn)?.fontSize
   const foot = document.querySelector('div[class*="tableFoot"]')
-  out.footTotal = foot?.querySelector('span')?.textContent + ' size=' + cs(foot?.querySelector('span'))?.fontSize
+  out.footTotal =
+    foot?.querySelector('span')?.textContent + ' size=' + cs(foot?.querySelector('span'))?.fontSize
   const active = foot?.querySelector('.ant-pagination-item-active')
-  out.pageActive = active ? `bg=${cs(active).backgroundColor} text=${cs(active.querySelector('a'))?.color}` : 'not-found'
+  out.pageActive = active
+    ? `bg=${cs(active).backgroundColor} text=${cs(active.querySelector('a'))?.color}`
+    : 'not-found'
   // 全页字号扫描：揪出 12/13px 文字
   const bad = []
   document.querySelectorAll('div[class*="regUi"] *').forEach(el => {
@@ -104,18 +112,14 @@ DRAWER_JS = """
 async def main() -> None:
     async with async_session_factory() as db:
         user = (
-            await db.execute(
-                select(User).where(User.status == "active", User.name == "陈莹莹").limit(1)
-            )
+            await db.execute(select(User).where(User.status == "active", User.name == "陈莹莹").limit(1))
         ).scalar_one()
     token = generate_jwt(user)
 
     from playwright.async_api import async_playwright
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(
-            args=["--host-resolver-rules=MAP localhost frontend"]
-        )
+        browser = await p.chromium.launch(args=["--host-resolver-rules=MAP localhost frontend"])
         ctx = await browser.new_context(viewport={"width": 1440, "height": 900})
         await ctx.add_cookies([{"name": "auth_token", "value": token, "url": FRONTEND}])
         page = await ctx.new_page()

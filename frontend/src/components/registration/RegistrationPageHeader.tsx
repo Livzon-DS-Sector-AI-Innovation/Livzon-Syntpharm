@@ -14,7 +14,7 @@ export function RegistrationPageHeader({
 }: {
   icon: ReactNode
   title: string
-  sub?: string
+  sub?: ReactNode
   actions?: ReactNode
 }) {
   return (

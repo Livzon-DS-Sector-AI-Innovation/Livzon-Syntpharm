@@ -70,9 +70,7 @@ class AuthorizationLetterRepository:
     async def list_distinct_products(self) -> list[str]:
         """已有授权书记录中的品种去重列表（供筛选下拉与主数据合并）"""
         result = await self.session.execute(
-            select(AuthorizationLetter.product_name)
-            .where(AuthorizationLetter.is_deleted.is_(False))
-            .distinct()
+            select(AuthorizationLetter.product_name).where(AuthorizationLetter.is_deleted.is_(False)).distinct()
         )
         return list(result.scalars().all())
 

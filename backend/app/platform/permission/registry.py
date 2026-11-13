@@ -2187,6 +2187,14 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "registration:authorization-letter:read", "GET", "/api/v1/registration/authorization-letters/products"
     ),
     ApiBindingDef(
+        "registration:authorization-letter:read", "GET", "/api/v1/registration/authorization-letters/filter-options"
+    ),
+    ApiBindingDef(
+        "registration:authorization-letter:read",
+        "GET",
+        "/api/v1/registration/authorization-letters/{letter_id}/trails",
+    ),
+    ApiBindingDef(
         "registration:authorization-letter:read", "GET", "/api/v1/registration/authorization-letters/{letter_id}"
     ),
     ApiBindingDef(
@@ -2211,6 +2219,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("registration:drug:read", "GET", "/api/v1/registration/drugs"),
     ApiBindingDef("registration:drug:create", "POST", "/api/v1/registration/drugs"),
     ApiBindingDef("registration:drug:read", "GET", "/api/v1/registration/drugs/nodes"),
+    ApiBindingDef("registration:drug:read", "GET", "/api/v1/registration/drugs/{drug_id}/prediction"),
     ApiBindingDef("registration:drug:read", "GET", "/api/v1/registration/drugs/{drug_id}"),
     ApiBindingDef("registration:drug:update", "PUT", "/api/v1/registration/drugs/{drug_id}"),
     ApiBindingDef("registration:drug:delete", "DELETE", "/api/v1/registration/drugs/{drug_id}"),
@@ -2252,9 +2261,13 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("registration:approval-record:create", "POST", "/api/v1/registration/ledger/wc-certificates/import"),
     ApiBindingDef("registration:project:read", "GET", "/api/v1/registration/projects"),
     ApiBindingDef("registration:project:create", "POST", "/api/v1/registration/projects"),
+    ApiBindingDef("registration:project:read", "GET", "/api/v1/registration/projects/kpi"),
     ApiBindingDef("registration:project:read", "GET", "/api/v1/registration/projects/{project_id}"),
     ApiBindingDef("registration:project:update", "PUT", "/api/v1/registration/projects/{project_id}"),
     ApiBindingDef("registration:project:delete", "DELETE", "/api/v1/registration/projects/{project_id}"),
+    ApiBindingDef("registration:project:read", "GET", "/api/v1/registration/projects/{project_id}/logs"),
+    ApiBindingDef("registration:project:update", "POST", "/api/v1/registration/projects/{project_id}/logs"),
+    ApiBindingDef("registration:project:update", "POST", "/api/v1/registration/projects/{project_id}/stage"),
     ApiBindingDef("registration:reference-standard:read", "GET", "/api/v1/registration/reference-standards"),
     ApiBindingDef(
         "registration:reference-standard:create", "POST", "/api/v1/registration/reference-standards/generate"

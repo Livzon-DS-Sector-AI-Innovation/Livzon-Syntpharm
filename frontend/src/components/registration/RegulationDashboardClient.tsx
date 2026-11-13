@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { Space, App, Spin, Badge } from 'antd'
 import {
-  CheckCircleOutlined, SyncOutlined, CalendarOutlined,
+  CheckCircleOutlined, CalendarOutlined,
   FileTextOutlined, AlertOutlined,
 } from '@ant-design/icons'
 import dynamic from 'next/dynamic'
@@ -16,7 +16,6 @@ import {
   fetchDashboard,
 } from '@/lib/api/client/regulatory-tracker'
 import { RegistrationPageHeader } from './RegistrationPageHeader'
-import { tagClassOf } from './registration-ui'
 import ui from './registration-ui.module.css'
 import { IconActivity, IconRefresh, IconWarn } from './registration-icons'
 
@@ -313,7 +312,7 @@ export default function RegulationDashboardClient() {
                           <button
                             type="button"
                             className={ui.btn}
-                            onClick={(e) => { e.stopPropagation(); window.open(doc.originalUrl, '_blank') }}
+                            onClick={(e) => { e.stopPropagation(); window.open(doc.originalUrl!, '_blank') }}
                           >
                             原文
                           </button>

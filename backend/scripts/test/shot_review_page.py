@@ -26,18 +26,14 @@ FRONTEND = "http://localhost:3000"
 async def main() -> None:
     async with async_session_factory() as db:
         user = (
-            await db.execute(
-                select(User).where(User.status == "active", User.name == "陈莹莹").limit(1)
-            )
+            await db.execute(select(User).where(User.status == "active", User.name == "陈莹莹").limit(1))
         ).scalar_one()
     token = generate_jwt(user)
 
     from playwright.async_api import async_playwright
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(
-            args=["--host-resolver-rules=MAP localhost frontend"]
-        )
+        browser = await p.chromium.launch(args=["--host-resolver-rules=MAP localhost frontend"])
         ctx = await browser.new_context(viewport={"width": 1440, "height": 900})
         await ctx.add_cookies([{"name": "auth_token", "value": token, "url": FRONTEND}])
         page = await ctx.new_page()

@@ -77,9 +77,7 @@ async def test_expiring_certificates_window_boundary(db_session: AsyncSession):
     assert summary.expired_count - baseline.expired_count == 1
     assert summary.expiring_soon_count - baseline.expiring_soon_count == 2
     # 清单按有效期升序
-    assert summary.expiring_certificates == sorted(
-        summary.expiring_certificates, key=lambda item: item.valid_until
-    )
+    assert summary.expiring_certificates == sorted(summary.expiring_certificates, key=lambda item: item.valid_until)
 
 
 async def test_expiring_certificates_ledger_type_and_soft_delete(db_session: AsyncSession):
@@ -113,22 +111,26 @@ async def test_expiring_include_registration_certificates(db_session: AsyncSessi
     db_session.add_all(
         [
             RegistrationCertificate(
-                product_name="测试-主证-已过期", market="中国",
+                product_name="测试-主证-已过期",
+                market="中国",
                 certificate_type="domestic_approval",
                 valid_until=today - timedelta(days=3),
             ),
             RegistrationCertificate(
-                product_name="测试-主证-紧急档", market="中国",
+                product_name="测试-主证-紧急档",
+                market="中国",
                 certificate_type="domestic_approval",
                 valid_until=today + timedelta(days=150),
             ),
             RegistrationCertificate(
-                product_name="测试-主证-临期档", market="美国",
+                product_name="测试-主证-临期档",
+                market="美国",
                 certificate_type="overseas_registration",
                 valid_until=today + timedelta(days=300),
             ),
             RegistrationCertificate(
-                product_name="测试-主证-窗口外", market="美国",
+                product_name="测试-主证-窗口外",
+                market="美国",
                 certificate_type="overseas_registration",
                 valid_until=today + timedelta(days=EXPIRING_SOON_DAYS + 35),
             ),
@@ -151,6 +153,4 @@ async def test_expiring_include_registration_certificates(db_session: AsyncSessi
     # 主证书表无发证日期字段，不参与今年新增统计
     assert summary.domestic_new_this_year == baseline.domestic_new_this_year
     # 清单按有效期升序
-    assert summary.expiring_certificates == sorted(
-        summary.expiring_certificates, key=lambda item: item.valid_until
-    )
+    assert summary.expiring_certificates == sorted(summary.expiring_certificates, key=lambda item: item.valid_until)

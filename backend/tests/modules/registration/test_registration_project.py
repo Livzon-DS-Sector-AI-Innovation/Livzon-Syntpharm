@@ -209,7 +209,5 @@ async def test_project_api_flow(auth_client: AsyncClient):
     assert logs_resp.json()["data"][0]["content"] == "API 进展记录"
 
     # 受理后状态无修改入口：stage 接口拒绝 accepted
-    reject = await auth_client.post(
-        f"/api/v1/registration/projects/{project['id']}/stage", json={"stage": "accepted"}
-    )
+    reject = await auth_client.post(f"/api/v1/registration/projects/{project['id']}/stage", json={"stage": "accepted"})
     assert reject.status_code == 400

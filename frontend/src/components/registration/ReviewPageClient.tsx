@@ -10,6 +10,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react'
+import Link from 'next/link'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table, Space, Input, Select, Modal, App, Form, DatePicker,
@@ -497,7 +498,7 @@ export function ReviewPageClient() {
                         {drugProjects.map(project => {
                           const cfg = PROJECT_STATUS[project.status] || { label: project.status, className: ui.tagPlain }
                           return (
-                            <a key={project.id} href="/registration/projects" className={styles.projItem}>
+                            <Link key={project.id} href="/registration/projects" className={styles.projItem}>
                               <span className={styles.projName}>
                                 {project.market} · {project.registration_type || '注册'}
                               </span>
@@ -507,7 +508,7 @@ export function ReviewPageClient() {
                                 {project.expected_completion_at ? ` · 预计 ${project.expected_completion_at}` : ''}
                               </span>
                               <span className={styles.projLink}>查看 ›</span>
-                            </a>
+                            </Link>
                           )
                         })}
                       </div>
