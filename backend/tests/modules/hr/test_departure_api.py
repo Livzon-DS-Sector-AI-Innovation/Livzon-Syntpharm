@@ -488,6 +488,49 @@ class TestDepartureDelete:
         assert data["hire_date"] == "2020-01-01"
         assert data["tenure_years"] == 6.5
 
+    async def test_manual_record_allows_blank_second_level_department(self, auth_client: AsyncClient) -> None:
+        payload = {
+            "department_level1": "安全环保部",
+            "name": "无二级人员",
+            "gender": "男",
+            "position": "安全专员",
+            "hire_date": "2021-05-01",
+            "position_level": "员工级",
+            "personnel_identity": "正式工",
+            "leave_date": "2026-06-30",
+            "leave_category": "主动离职",
+            "leave_reason": "个人发展",
+            "education": "本科",
+            "age": 32,
+            "group_classification": "职能管理",
+        }
+
+        response = await auth_client.post(LIST_URL, json=payload)
+
+        assert response.status_code == 200, response.text
+        assert response.json()["data"]["department_level2"] == ""
+
+    async def test_profile_without_second_level_department_snapshots_blank(
+        self,
+        auth_client: AsyncClient,
+        db_session: AsyncSession,
+    ) -> None:
+        profile = _profile(
+            department_path=[
+                {"id": "od-company", "name": "珠海保税区丽珠合成制药有限公司"},
+                {"id": "od-level1", "name": "头孢合成制造部"},
+            ],
+            department_names=["头孢合成制造部"],
+        )
+        await _seed(db_session, profile)
+
+        response = await auth_client.post(LIST_URL, json=_payload(profile))
+
+        assert response.status_code == 200, response.text
+        data = response.json()["data"]
+        assert data["department_level1"] == "头孢合成制造部"
+        assert data["department_level2"] == ""
+
     async def test_manual_record_requires_snapshot_fields(self, auth_client: AsyncClient) -> None:
         payload = {
             "department_level1": "质量保证部",

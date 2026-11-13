@@ -127,8 +127,8 @@ export default function OnboardingRecordFormDrawer({
           <Form.Item label="一级部门" name="department_level1" rules={[required]}>
             <Input />
           </Form.Item>
-          <Form.Item label="二级部门" name="department_level2" rules={[required]}>
-            <Input />
+          <Form.Item label="二级部门（可空）" name="department_level2">
+            <Input placeholder="没有二级部门时留空" />
           </Form.Item>
           <Form.Item label="岗位" name="position" rules={[required]}>
             <Input />

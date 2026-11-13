@@ -34,7 +34,7 @@ class DepartureRecordCreate(BaseModel):
 
     person_id: UUID | None = Field(None, description="员工档案人员 id；不在档案中时留空并手工填写快照字段")
     department_level1: str | None = Field(None, max_length=64, description="一级部门（手动录入时必填）")
-    department_level2: str | None = Field(None, max_length=64, description="二级部门（手动录入时必填）")
+    department_level2: str | None = Field(None, max_length=64, description="二级部门（可空）")
     name: str | None = Field(None, max_length=64, description="姓名（手动录入时必填）")
     gender: Gender | None = Field(None, description="性别（手动录入时必填）")
     position: str | None = Field(None, max_length=64, description="岗位（手动录入时必填）")
@@ -56,7 +56,6 @@ class DepartureRecordCreate(BaseModel):
             label
             for label, value in (
                 ("一级部门", self.department_level1),
-                ("二级部门", self.department_level2),
                 ("姓名", self.name),
                 ("性别", self.gender),
                 ("岗位", self.position),

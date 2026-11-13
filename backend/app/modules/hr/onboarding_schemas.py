@@ -19,6 +19,7 @@ from app.modules.hr.onboarding_domain import (
 
 SerialNo = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=32)]
 DepartmentName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64)]
+OptionalDepartmentName = Annotated[str, StringConstraints(strip_whitespace=True, max_length=64)]
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64)]
 Position = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64)]
 Mobile = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=32)]
@@ -26,11 +27,11 @@ Age = Annotated[int, Field(ge=16, le=100)]
 
 
 class OnboardingRecordCreate(BaseModel):
-    """2026 入职台账录入字段；全部必填。"""
+    """2026 入职台账录入字段；除二级部门可为空外全部必填。"""
 
     serial_no: SerialNo = Field(..., description="流水号")
     department_level1: DepartmentName = Field(..., description="一级部门")
-    department_level2: DepartmentName = Field(..., description="二级部门")
+    department_level2: OptionalDepartmentName = Field("", description="二级部门（可空）")
     name: Name = Field(..., description="姓名")
     position: Position = Field(..., description="岗位")
     position_level: PositionLevel = Field(..., description="岗位层级")
