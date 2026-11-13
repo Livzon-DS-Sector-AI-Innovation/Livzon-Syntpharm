@@ -22,6 +22,10 @@ from app.modules.safety.api.oh_hazard_monitors import oh_hazard_monitors_router
 from app.modules.safety.api.oh_health_exams import oh_health_exams_router
 from app.modules.safety.api.permission_map import resolve_code
 from app.modules.safety.api.regulations import regulations_router
+from app.modules.safety.api.risk_grading import (
+    equipment_facility_hazards_router,
+    work_activity_hazards_router,
+)
 from app.modules.safety.api.scheduled_tasks import scheduled_tasks_router
 from app.modules.safety.api.special_operation_reports import (
     special_operation_reports_router,
@@ -50,6 +54,8 @@ router.include_router(knowledge_router)
 router.include_router(oh_hazard_monitors_router)
 router.include_router(oh_health_exams_router)
 router.include_router(regulations_router)
+router.include_router(work_activity_hazards_router)
+router.include_router(equipment_facility_hazards_router)
 router.include_router(scheduled_tasks_router)
 router.include_router(special_operation_reports_router)
 router.include_router(special_ops_permits_router)

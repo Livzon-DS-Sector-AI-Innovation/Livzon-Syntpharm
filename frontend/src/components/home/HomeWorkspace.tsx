@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Empty, Typography } from 'antd'
 import { ArrowRightOutlined } from '@ant-design/icons'
 import { ModuleIcon } from '@/components/Icons'
+import { UserAvatar } from '@/components/common/UserAvatar'
 
 const { Text, Title } = Typography
 
@@ -16,6 +17,8 @@ export interface HomeModuleEntry {
 
 interface HomeWorkspaceProps {
   userName: string
+  /** 当前登录用户的飞书头像（可选，缺省走首字母兜底） */
+  avatarUrl?: string | null
   department?: string | null
   position?: string | null
   /** 服务端格式化好的日期，避免客户端/服务端时区差异导致 hydration 不一致 */
@@ -32,6 +35,7 @@ interface HomeWorkspaceProps {
  */
 export function HomeWorkspace({
   userName,
+  avatarUrl,
   department,
   position,
   today,
@@ -43,10 +47,15 @@ export function HomeWorkspace({
     <div className="mx-auto max-w-[1200px] space-y-4">
       <h1 className="sr-only">工作台</h1>
       <section className="rounded-[var(--rounded-lg)] border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6">
-        <Title level={3} style={{ margin: 0 }}>
-          {userName}，欢迎回来
-        </Title>
-        <Text type="secondary">{meta}</Text>
+        <div className="flex items-center gap-4">
+          <UserAvatar size={52} name={userName} src={avatarUrl} />
+          <div className="min-w-0">
+            <Title level={3} style={{ margin: 0 }}>
+              {userName}，欢迎回来
+            </Title>
+            <Text type="secondary">{meta}</Text>
+          </div>
+        </div>
       </section>
 
       <section>

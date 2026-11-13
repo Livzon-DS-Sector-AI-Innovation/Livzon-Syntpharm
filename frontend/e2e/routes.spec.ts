@@ -403,22 +403,12 @@ const procurementRoutes: RouteCase[] = [
 
 const qualityRoutes: RouteCase[] = [
   { path: '/quality', module: 'quality', kind: 'normal', expected: heading('质量管理中心') },
-  { path: '/quality/deviation', module: 'quality', kind: 'normal', expected: text('AI智能偏差管理系统') },
-  { path: '/quality/deviation/report', module: 'quality', kind: 'normal', expected: text('偏差报告编辑器') },
-  // Disabled: /api/v1/quality/deviation-flow endpoint returns 404/500
-  // { path: '/quality/deviation-flow/settings', module: 'quality', kind: 'normal', expected: heading('偏差提醒设置') },
-  // { path: '/quality/deviation-flow/query', module: 'quality', kind: 'normal', expected: heading('偏差任务查询') },
-  // { path: '/quality/deviation-flow/progress', module: 'quality', kind: 'normal', expected: heading('偏差详情') },
-  // Disabled: calls /api/v1/quality/deviation-automation/templates (returns 404)
-  // { path: '/quality/deviation-automation/templates', module: 'quality', kind: 'normal', expected: text('报告模板管理') },
-  // Disabled: calls /api/v1/quality/deviation-automation/templates (returns 404)
-  // { path: '/quality/deviation-automation/history', module: 'quality', kind: 'normal', expected: text('历史任务查询') },
-  // Disabled: calls /api/v1/quality/deviation-automation/templates (returns 404)
-  // { path: '/quality/deviation-automation/sop', module: 'quality', kind: 'normal', expected: text('SOP规则管理') },
+  { path: '/quality/deviation', module: 'quality', kind: 'normal', expected: heading('偏差管理') },
+  { path: '/quality/deviation/ledger', module: 'quality', kind: 'normal', expected: heading('偏差台账') },
+  { path: '/quality/deviation/new', module: 'quality', kind: 'normal', expected: heading('新建偏差') },
   { path: '/quality/calculator', module: 'quality', kind: 'normal', expected: heading('计算器') },
   { path: '/quality/cpv', module: 'quality', kind: 'normal', expected: heading('CPV') },
-  // Disabled: endpoint /api/v1/quality/department-contacts not implemented (returns 404)
-  // { path: '/quality/department-contacts', module: 'quality', kind: 'normal', expected: heading('部门联系人配置') },
+  { path: '/quality/department-contacts', module: 'quality', kind: 'normal', expected: heading('部门联系人配置') },
   { path: '/quality/doc-check', module: 'quality', kind: 'normal', expected: heading('审核管理') },
   { path: '/quality/fqc', module: 'quality', kind: 'normal', expected: heading('FQC'), expectData: antdTableData, expectFetch: 'server-action' },
   {
@@ -457,8 +447,6 @@ const qualityRoutes: RouteCase[] = [
   // { path: '/quality/ai-config', module: 'quality', kind: 'normal', expected: text('AI 配置设置') },
   { path: '/quality/ai-log', module: 'quality', kind: 'normal', expected: heading('AI交互日志') },
   // Excluded (form/create pages):
-  // /quality/deviation-automation/create
-  // /quality/deviation-flow/create
   // /quality/material-report/create
   // /quality/doc-check/new
   // /quality/instrument/list/create
@@ -547,6 +535,24 @@ const safetyRoutes: RouteCase[] = [
   { path: '/safety/hazard', module: 'safety', kind: 'normal', expected: heading('隐患登记') },
   { path: '/safety/hazard-identification', module: 'safety', kind: 'normal', expected: heading('危险源辨识工作流') },
   { path: '/safety/hazard-identification/ledger', module: 'safety', kind: 'normal', expected: heading('危险源辨识台账') },
+  {
+    path: '/safety/risk-grading/work-activity-ledger',
+    module: 'safety',
+    kind: 'normal',
+    expected: heading('作业活动危险源台账'),
+    topLevelHeading: '作业活动危险源台账',
+    expectData: antdTableData,
+    expectFetch: '/api/v1/safety/work-activity-hazards',
+  },
+  {
+    path: '/safety/risk-grading/equipment-ledger',
+    module: 'safety',
+    kind: 'normal',
+    expected: heading('设备设施危险源台账'),
+    topLevelHeading: '设备设施危险源台账',
+    expectData: antdTableData,
+    expectFetch: '/api/v1/safety/equipment-facility-hazards',
+  },
   { path: '/safety/hazard-ledger', module: 'safety', kind: 'normal', expected: heading('隐患台账') },
   { path: '/safety/accident', module: 'safety', kind: 'normal', expected: text('事故管理') },
   { path: '/safety/check', module: 'safety', kind: 'normal', expected: text('安全检查') },

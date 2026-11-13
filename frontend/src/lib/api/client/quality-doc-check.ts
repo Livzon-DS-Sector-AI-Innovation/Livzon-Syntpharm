@@ -19,15 +19,3 @@ export async function uploadDocCheckFile<T>(formData: FormData): Promise<ApiResp
   const res = await fetch(`${API_BASE}/upload`, { method: 'POST', body: formData })
   return parseEnvelope<T>(res, '文件上传失败')
 }
-
-/** 给偏差单上传附件 */
-export async function uploadDeviationFlowAttachment<T = unknown>(
-  deviationId: string,
-  formData: FormData,
-): Promise<ApiResponse<T>> {
-  const res = await fetch(`${API_BASE}/deviation-flow/${deviationId}/attachments`, {
-    method: 'POST',
-    body: formData,
-  })
-  return parseEnvelope<T>(res, '附件上传失败')
-}

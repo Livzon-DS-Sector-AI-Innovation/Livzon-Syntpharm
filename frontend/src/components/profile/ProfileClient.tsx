@@ -1,7 +1,7 @@
 'use client'
 
-import { Avatar, Card, Descriptions, Tag, Typography } from 'antd'
-import { UserOutlined } from '@ant-design/icons'
+import { Card, Descriptions, Tag, Typography } from 'antd'
+import { UserAvatar } from '@/components/common/UserAvatar'
 
 const { Text } = Typography
 
@@ -60,12 +60,7 @@ export function ProfileClient({ user, isSuperuser, permissionCount }: ProfileCli
 
       <Card>
         <div className="flex flex-wrap items-center gap-4">
-          <Avatar
-            size={64}
-            src={user.avatarUrl || undefined}
-            icon={<UserOutlined />}
-            className="shrink-0"
-          />
+          <UserAvatar size={64} name={user.name} src={user.avatarUrl} />
           <div className="min-w-0">
             <div className="text-[20px] font-semibold text-[var(--color-ink)]">{user.name}</div>
             <div className="mt-0.5 text-[13px] text-[var(--color-steel)]">

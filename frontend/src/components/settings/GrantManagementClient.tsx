@@ -26,13 +26,14 @@ import {
   fetchDepartmentOptions,
   fetchGrants,
   fetchRoles,
-  fetchUserOptions,
   fetchUserPreview,
   updateGrant,
 } from '@/actions/permission'
 import type { BatchResult, DepartmentOption, GrantCreateInput, GrantItem, ScopeType } from '@/types/permission'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
+import { UserLabel } from '@/components/common/UserAvatar'
+import { RemoteUserSelect } from '@/components/common/RemoteUserSelect'
 import { SettingsListCard } from './SettingsListCard'
 import { BatchActionBar, BatchDeleteConfirmModal, BatchResultModal } from './BatchOperations'
 import { moduleMenus } from '@/lib/menu-config'
@@ -84,11 +85,8 @@ export default function GrantManagementClient() {
     queryFn: fetchRoles,
   })
 
-  const { data: users = [] } = useQuery({
-    queryKey: ['permission-user-options'],
-    queryFn: fetchUserOptions,
-  })
-
+  // 用户下拉不再一次性全量拉取（旧实现写死 limit=100，523 个账号里大半选不到），
+  // 改由 RemoteUserSelect 分页 + 服务端搜索按需取数。
   const { data: departments = [] } = useQuery<DepartmentOption[]>({
     queryKey: ['permission-department-options'],
     queryFn: fetchDepartmentOptions,
@@ -98,10 +96,6 @@ export default function GrantManagementClient() {
   const departmentOptions = departments.map((d) => ({ value: d.code, label: `${d.name}（${d.code}）` }))
 
   const roleOptions = roles.map((r) => ({ value: r.id, label: `${r.name}（${r.code}）` }))
-  const userOptions = users.map((u) => ({
-    value: u.id,
-    label: `${u.name}${u.username ? `（${u.username}）` : ''}`,
-  }))
 
   // 生效预览：选定用户后拉其权限，算出可见模块/页面
   const { data: previewData } = useQuery({
@@ -356,8 +350,11 @@ export default function GrantManagementClient() {
     {
       title: '用户',
       key: 'user',
-      width: 180,
-      render: (_: unknown, r: GrantItem) => r.user_name || r.user_id,
+      width: 210,
+      // 头像来自 identity.users（授权列表接口已带回 avatar_url），缺失时回退首字
+      render: (_: unknown, r: GrantItem) => (
+        <UserLabel name={r.user_name} src={r.avatar_url} secondary={r.username} fallback={r.user_id} />
+      ),
     },
     {
       title: '角色',
@@ -502,9 +499,16 @@ export default function GrantManagementClient() {
               name="user_id"
               label="用户"
               rules={[{ required: true, message: '请选择用户' }]}
-              style={{ width: '100%', maxWidth: 260 }}
+              style={{ width: '100%', maxWidth: 320 }}
+              // 组件回传 { id, name }，表单里只存 id：授权接口只认 id，姓名由组件内部快照回显
+              getValueFromEvent={(person: { id: string } | null) => person?.id}
             >
-              <Select showSearch optionFilterProp="label" options={userOptions} placeholder="选择用户" />
+              <RemoteUserSelect
+                // 授权要覆盖未绑定飞书的本地账号，故不限制 feishu_bound_only
+                feishuBoundOnly={false}
+                showUsername
+                placeholder="搜索姓名或账号选择用户"
+              />
             </Form.Item>
           )}
           <Form.Item
@@ -575,15 +579,13 @@ export default function GrantManagementClient() {
         footer={null}
         width="min(560px, calc(100vw - 24px))"
       >
-        <Select
-          showSearch
+        <RemoteUserSelect
           allowClear
+          feishuBoundOnly={false}
+          showUsername
           placeholder="选择用户，查看其当前权限下能访问的模块 / 页面"
-          style={{ width: '100%' }}
           value={previewUserId}
-          onChange={(v) => setPreviewUserId(v)}
-          options={userOptions}
-          optionFilterProp="label"
+          onChange={(person) => setPreviewUserId(person?.id)}
         />
         <div className="mt-4">
           {previewData && (

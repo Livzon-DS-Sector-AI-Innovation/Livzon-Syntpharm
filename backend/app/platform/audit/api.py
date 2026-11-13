@@ -39,7 +39,7 @@ async def list_audit_logs(
 ) -> ApiResponse:
     """分页查询操作记录，按时间倒序。"""
     base = (
-        select(AuditLog, User.name, User.username)
+        select(AuditLog, User.name, User.username, User.avatar_thumb, User.avatar_url)
         .outerjoin(User, User.id == AuditLog.user_id)
         .where(AuditLog.action.isnot(None))
     )
@@ -64,6 +64,7 @@ async def list_audit_logs(
             user_id=log.user_id,
             user_name=user_name,
             username=username,
+            avatar_url=avatar_thumb or avatar_url,
             action=log.action,
             resource_type=log.resource_type,
             resource_id=log.resource_id,
@@ -73,7 +74,7 @@ async def list_audit_logs(
             ip_address=log.ip_address,
             created_at=log.created_at,
         )
-        for log, user_name, username in rows
+        for log, user_name, username, avatar_thumb, avatar_url in rows
     ]
     return build_response(data=AuditLogListData(items=data, total=total, page=page, page_size=page_size).model_dump())
 

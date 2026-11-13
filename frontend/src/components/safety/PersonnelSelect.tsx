@@ -1,99 +1,92 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { Select, Spin } from 'antd'
-import { searchPersonnel, type PersonnelOption } from '@/lib/api/client/identity'
+import {
+  RemoteUserMultiSelect,
+  RemoteUserSelect,
+} from '@/components/common/RemoteUserSelect'
 
-const SEARCH_DEBOUNCE_MS = 300
+/**
+ * 系统用户选择器（安全模块的对外门面）。
+ *
+ * 取数与分页逻辑已统一收口到 `components/common/RemoteUserSelect`：
+ * 打开即 50 条、滚到底自动续载、关键字走服务端搜索。
+ * 这里只保留历史 props 形状，让隐患登记、隐患详情、设备巡检抽屉等既有调用点零改动。
+ *
+ * 业务口径：台账里的人员字段以 uuid 为准、姓名为展示快照，因此选择后要同时回写 id 与 name；
+ * 只列已绑定飞书身份的系统用户（审批人/整改负责人要能收到飞书通知）。
+ */
 
 export interface PersonnelSelectProps {
   /** 已绑定的系统用户 UUID */
   value?: string | null
   /** 已保存的姓名，用于未搜索时回显（避免直接显示 UUID） */
   label?: string | null
+  /** 已保存的头像地址（可选），用于未搜索时回显真实头像；缺省走姓名首字兜底 */
+  avatarSrc?: string | null
   placeholder?: string
   disabled?: boolean
   onChange: (person: { id: string; name: string } | null) => void
 }
 
-/**
- * 系统用户选择器。
- *
- * 台账里的人员字段以 uuid 为准、姓名为展示快照，因此选择后需要同时回写 id 与 name。
- * 搜索走后端 /identity/personnel（姓名模糊匹配，重名用账号/部门区分）。
- */
+/** 系统用户选择器（单选），委托通用远端组件。 */
 export default function PersonnelSelect({
   value,
   label,
-  placeholder = '搜索姓名/账号选择系统用户',
+  avatarSrc,
+  placeholder = '搜索姓名选择系统用户',
   disabled,
   onChange,
 }: PersonnelSelectProps) {
-  const [options, setOptions] = useState<PersonnelOption[]>([])
-  const [loading, setLoading] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const requestSeq = useRef(0)
-
-  useEffect(
-    () => () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    },
-    [],
-  )
-
-  const handleSearch = (keyword: string) => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-    const kw = keyword.trim()
-    if (!kw) {
-      setOptions([])
-      return
-    }
-    timerRef.current = setTimeout(async () => {
-      const seq = ++requestSeq.current
-      setLoading(true)
-      try {
-        const items = await searchPersonnel(kw, 50)
-        if (seq === requestSeq.current) setOptions(items)
-      } catch {
-        if (seq === requestSeq.current) setOptions([])
-      } finally {
-        if (seq === requestSeq.current) setLoading(false)
-      }
-    }, SEARCH_DEBOUNCE_MS)
-  }
-
-  // 回显：已绑定但未搜索时补一个选项，保证显示姓名而不是 UUID
-  const displayOptions: PersonnelOption[] =
-    value && !options.some((o) => o.id === value)
-      ? [{ id: value, name: label || value }, ...options]
-      : options
-
-  const handleChange = (next: string | undefined) => {
-    if (!next) {
-      onChange(null)
-      return
-    }
-    const picked = displayOptions.find((o) => o.id === next)
-    if (picked) onChange({ id: picked.id, name: picked.name })
-  }
-
   return (
-    <Select
-      showSearch
+    <RemoteUserSelect
+      value={value}
+      label={label}
+      avatarSrc={avatarSrc}
+      feishuBoundOnly
+      // 台账里的人员多为必填，保持原有「不可清空」行为
       allowClear={false}
-      disabled={disabled}
-      filterOption={false}
-      defaultActiveFirstOption={false}
-      notFoundContent={loading ? <Spin size="small" /> : '未找到匹配的系统用户'}
       placeholder={placeholder}
-      style={{ width: '100%' }}
-      value={value || undefined}
-      onSearch={handleSearch}
-      onChange={handleChange}
-      options={displayOptions.map((o) => ({
-        value: o.id,
-        label: `${o.name}${o.username ? `（${o.username}）` : ''}${o.department ? ` - ${o.department}` : ''}`,
-      }))}
+      disabled={disabled}
+      onChange={onChange}
+    />
+  )
+}
+
+export interface PersonnelMultiSelectProps {
+  /** 已选系统用户 UUID 列表 */
+  value?: string[]
+  /** 已保存的姓名快照（与 value 顺序一致），未搜索时用于回显 */
+  labels?: string[]
+  /** 已保存的头像快照（与 value 顺序一致），未搜索时用于回显；缺省走姓名首字兜底 */
+  avatarSrcs?: Array<string | null | undefined>
+  placeholder?: string
+  disabled?: boolean
+  onChange: (persons: { id: string; name: string }[]) => void
+}
+
+/**
+ * 系统用户选择器（多选）。
+ *
+ * 用于「整改负责人」这类多人字段：提交时同时回写 UUID 列表与姓名快照，
+ * 保证台账在不额外查用户表的情况下展示姓名；下拉项与已选标签均带头像。
+ */
+export function PersonnelMultiSelect({
+  value,
+  labels,
+  avatarSrcs,
+  placeholder = '搜索姓名，可多选',
+  disabled,
+  onChange,
+}: PersonnelMultiSelectProps) {
+  return (
+    <RemoteUserMultiSelect
+      value={value}
+      labels={labels}
+      avatarSrcs={avatarSrcs}
+      feishuBoundOnly
+      placeholder={placeholder}
+      disabled={disabled}
+      onChange={onChange}
     />
   )
 }

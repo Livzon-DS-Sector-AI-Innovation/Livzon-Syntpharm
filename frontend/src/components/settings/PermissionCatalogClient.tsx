@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Input, Table, Tabs, Tag, Typography } from 'antd'
 import { fetchApiBindings, fetchPermissions } from '@/actions/permission'
+import type { PermissionItem } from '@/types/permission'
 import { SettingsListCard } from './SettingsListCard'
 
 const { Text } = Typography
@@ -18,9 +19,26 @@ function PermissionTable() {
   const columns = [
     { title: '权限码', dataIndex: 'code', width: 260 },
     { title: '名称', dataIndex: 'name', width: 160 },
-    { title: '模块', dataIndex: 'module', width: 120 },
-    { title: '资源', dataIndex: 'resource', width: 140 },
-    { title: '动作', dataIndex: 'action', width: 100 },
+    // 模块/资源/动作三列展示中文，中文由后端从注册表派生；
+    // registry 已退役但库里仍存在的历史码没有中文，回退英文原值而不是留空
+    {
+      title: '模块',
+      dataIndex: 'module_label',
+      width: 120,
+      render: (value: string | null, record: PermissionItem) => value ?? record.module,
+    },
+    {
+      title: '资源',
+      dataIndex: 'resource_label',
+      width: 140,
+      render: (value: string | null, record: PermissionItem) => value ?? record.resource,
+    },
+    {
+      title: '动作',
+      dataIndex: 'action_label',
+      width: 100,
+      render: (value: string | null, record: PermissionItem) => value ?? record.action,
+    },
     {
       title: '状态',
       dataIndex: 'status',

@@ -19,9 +19,31 @@ from app.modules.safety.models import HazardReport
 from app.modules.safety.repository import SafetyRepository
 from app.modules.safety.schemas import HazardReportCreate, HazardReportUpdate
 from app.modules.safety.service._helpers import audit_log
+from app.modules.safety.service.hazard_person import split_person_names
 from app.platform.integrations.ai.client import AIOutputError, AIService
 
 logger = logging.getLogger(__name__)
+
+# ── 内置隐患类别（2026-11 需求收窄为 7 类；字典表只存用户新增项，GET 时合并去重）──
+BUILTIN_HAZARD_CATEGORIES: tuple[str, ...] = (
+    "安全标识",
+    "化学品管理",
+    "跑冒滴漏",
+    "设备设施",
+    "消防应急",
+    "仪表电气",
+    "作业环境",
+)
+
+# AI 插件仍输出旧英文枚举值，落库前映射到新中文类别名称（不是 7 类之一的保持原值）
+_AI_CATEGORY_TO_LABEL: dict[str, str] = {
+    "label_signage": "安全标识",
+    "hazardous_storage": "化学品管理",
+    "equipment": "设备设施",
+    "emergency_mgmt": "消防应急",
+    "instrument_electrical": "仪表电气",
+    "six_s": "作业环境",
+}
 
 # ── 模块级辅助函数 ──
 
@@ -152,11 +174,13 @@ async def _sync_ai_review_to_bitable(hazard: HazardReport, result: dict[str, Any
             "AI初审结果已同步到 Bitable: hazard_no=%s conclusion=%s",
             hazard.hazard_no,
             bitable_conclusion,
+            extra={"hazard_no": hazard.hazard_no, "conclusion": bitable_conclusion},
         )
     except Exception:
         logger.exception(
             "同步 AI 初审结果到 Bitable 失败: hazard_no=%s",
             hazard.hazard_no,
+            extra={"hazard_no": hazard.hazard_no},
         )
 
 
@@ -172,6 +196,7 @@ async def _sync_rectification_status_to_bitable(hazard: HazardReport, status: st
             logger.warning(
                 "_sync_rectification_status_to_bitable: 缺少 feishu_record_id, hazard_no=%s",
                 hazard.hazard_no,
+                extra={"hazard_no": hazard.hazard_no},
             )
             return
         # 设置 ignore 标记防止回写触发 changed_v1 事件再同步回来
@@ -184,9 +209,14 @@ async def _sync_rectification_status_to_bitable(hazard: HazardReport, status: st
             record_id,
             status,
             status_label,
+            extra={"record_id": record_id, "status": status, "status_label": status_label},
         )
     except Exception:
-        logger.exception("整改状态回写 Bitable 失败: hazard_no=%s", hazard.hazard_no)
+        logger.exception(
+            "整改状态回写 Bitable 失败: hazard_no=%s",
+            hazard.hazard_no,
+            extra={"hazard_no": hazard.hazard_no},
+        )
 
 
 async def _sync_verify_status_to_bitable(hazard: HazardReport, field_name: str, value: str) -> None:
@@ -207,12 +237,14 @@ async def _sync_verify_status_to_bitable(hazard: HazardReport, field_name: str, 
             hazard.hazard_no,
             field_name,
             value,
+            extra={"hazard_no": hazard.hazard_no, "field_name": field_name, "field_value": value},
         )
     except Exception:
         logger.exception(
             "复核状态回写 Bitable 失败: hazard_no=%s field=%s",
             hazard.hazard_no,
             field_name,
+            extra={"hazard_no": hazard.hazard_no, "field_name": field_name},
         )
 
 
@@ -292,14 +324,14 @@ class HazardService:
                 try:
                     delete_object("safety", file_path)
                 except Exception:
-                    logger.exception("Failed to delete file from MinIO: %s", file_path)
+                    logger.exception("Failed to delete file from MinIO: %s", file_path, extra={"minio_key": file_path})
                     pass
             else:
                 abs_path = os.path.abspath(file_path)
                 if os.path.exists(abs_path):
                     os.remove(abs_path)
         except OSError:
-            logger.debug("忽略异常 @ %s", "HazardService._cleanup_file")
+            logger.debug("忽略异常 @ %s", "HazardService._cleanup_file", extra={"step": "cleanup_file"})
 
     @staticmethod
     def _cleanup_json_array_files(json_str: str | None) -> None:
@@ -312,7 +344,11 @@ class HazardService:
                     if isinstance(p, str):
                         HazardService._cleanup_file(p)
         except (json.JSONDecodeError, TypeError):
-            logger.debug("忽略异常 @ %s", "HazardService._cleanup_json_array_files")
+            logger.debug(
+                "忽略异常 @ %s",
+                "HazardService._cleanup_json_array_files",
+                extra={"step": "cleanup_json_array_files"},
+            )
 
     # ==================== HazardReport Operations ====================
 
@@ -360,6 +396,8 @@ class HazardService:
         run_hazard_ai_script() 手动触发，与 Bitable 同步流程对齐。
         """
         hazard_data = data.model_dump(exclude_none=True)
+        await self._bind_person_ids(hazard_data)
+        self._normalize_responsible_persons(hazard_data, is_create=True)
         if not hazard_data.get("hazard_no"):
             # 自动生成：HZ-年月日-序号
             today = datetime.now().strftime("%Y%m%d")
@@ -383,7 +421,12 @@ class HazardService:
         # ── 自动执行 AI 隐患识别（插件：有照片走视觉模型，无照片走文本模型）──
         # 在 savepoint 内执行，避免 AI 流程中的 DB 错误污染外层事务
         if auto_run_ai:
-            logger.info("触发 AI 隐患识别: hazard_id=%s hazard_no=%s", item.id, item.hazard_no)
+            logger.info(
+                "触发 AI 隐患识别: hazard_id=%s hazard_no=%s",
+                item.id,
+                item.hazard_no,
+                extra={"hazard_id": str(item.id), "hazard_no": item.hazard_no},
+            )
             ai_savepoint = await self.session.begin_nested()
             try:
                 item = await self.run_hazard_ai_script(item.id, 1)  # type: ignore[assignment]
@@ -395,10 +438,11 @@ class HazardService:
                     item.hazard_level,
                     item.hazard_category,
                     item.ai_error_message,
+                    extra={"hazard_id": str(item.id), "hazard_level": item.hazard_level},
                 )
-            except Exception as e:
+            except Exception:
                 await ai_savepoint.rollback()
-                logger.error(f"AI 隐患识别失败(hazard {item.id}): {e}")
+                logger.exception("AI 隐患识别失败", extra={"hazard_id": str(item.id)})
                 # 即使 AI 失败也返回记录，用户可在台账中手动重试
 
         # ── 自动计算整改期限（discovered_at + 60 天）──
@@ -411,7 +455,12 @@ class HazardService:
             item = await self.repo.update_hazard(  # type: ignore[assignment]
                 item.id, {"deadline": computed_deadline}
             )
-            logger.info("整改期限自动计算: hazard_id=%s deadline=%s", item.id, computed_deadline)
+            logger.info(
+                "整改期限自动计算: hazard_id=%s deadline=%s",
+                item.id,
+                computed_deadline,
+                extra={"hazard_id": str(item.id), "deadline": str(computed_deadline)},
+            )
 
         # ── 自动判定整改责任人（根据责任部门查部门负责人）──
         # 与 Bitable 同步流程 (_create_hazard_from_bitable) 保持一致
@@ -434,19 +483,226 @@ class HazardService:
                         item.department,
                         person.name,
                         person.id,
+                        extra={
+                            "department": item.department,
+                            "leader_name": person.name,
+                            "leader_id": str(person.id),
+                        },
                     )
             except Exception:
-                logger.exception("责任人自动判定失败: dept=%s", item.department)
+                logger.exception("责任人自动判定失败: dept=%s", item.department, extra={"department": item.department})
 
         return item
 
     async def update_hazard(self, hazard_id: uuid.UUID, data: HazardReportUpdate) -> HazardReport | None:
         """更新隐患"""
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+        await self._bind_person_ids(update_data)
+        self._normalize_responsible_persons(update_data, is_create=False)
         item = await self.repo.update_hazard(hazard_id, update_data)
         if item:
             await self._audit("update", "hazard_report", resource_id=hazard_id)
         return item
+
+    async def _bind_person_ids(self, data: dict[str, Any]) -> None:
+        """把「姓名唯一命中」的人员补成系统用户 UUID（同名多人 / 查无此人保持留空待确认）。
+
+        与读时解析、Alembic 回填共用同一套严格规则（``resolve_by_name_strict``）：
+        无 UUID 但姓名有值时解析，命中才落库，未命中不改动，避免静默错绑。
+        """
+        department_hint = data.get("department")
+        if not data.get("discovered_by") and data.get("discovered_by_name"):
+            bound = await self._resolve_person_uuid(str(data["discovered_by_name"]), department_hint)
+            if bound is not None:
+                data["discovered_by"] = bound
+
+        # 分管安全员：只给了姓名（历史数据/接口直传）时补 UUID，同名多人则保留姓名待确认
+        if not data.get("safety_officer_id") and data.get("safety_officer_name"):
+            bound = await self._resolve_person_uuid(str(data["safety_officer_name"]), department_hint)
+            if bound is not None:
+                data["safety_officer_id"] = bound
+
+        # 整改负责人多选：任一人未唯一命中则整条不写 ids，避免 ids 与 names 错位
+        if not data.get("rectification_responsible_person_ids"):
+            names = split_person_names(data.get("rectification_responsible_person_names"))
+            if names:
+                bound_ids: list[uuid.UUID] = []
+                for name in names:
+                    bound = await self._resolve_person_uuid(name, department_hint)
+                    if bound is None:
+                        logger.info(
+                            "整改负责人未唯一命中，保留姓名待确认: name=%r",
+                            name,
+                            extra={"person_name": name},
+                        )
+                        return
+                    bound_ids.append(bound)
+                data["rectification_responsible_person_ids"] = [str(value) for value in bound_ids]
+                data["rectification_responsible_person"] = bound_ids[0]
+                data["rectification_responsible_person_name"] = names[0][:100]
+
+    async def _resolve_person_uuid(self, name: str, department_hint: str | None) -> uuid.UUID | None:
+        """严格姓名解析 → UUID；同名多人无法消歧或查无此人返回 None。"""
+        from app.modules.safety.feishu.identity_resolver import IdentityResolver
+
+        try:
+            match = await IdentityResolver(self.session).resolve_by_name_strict(name, department_hint)
+        except Exception:
+            logger.exception("人员姓名解析失败，保留待确认: name=%r", name, extra={"person_name": name})
+            return None
+        if not match.is_matched or match.person is None or not match.person.id:
+            return None
+        return uuid.UUID(match.person.id)
+
+    @staticmethod
+    def _normalize_responsible_persons(data: dict[str, Any], *, is_create: bool) -> None:
+        """整改负责人多选归一化：过滤非法 UUID，并把首人回写到单人字段以兼容旧逻辑。
+
+        - 多选为空但姓名有值：保留姓名快照（等人工确认），不写 ids
+        - 多选为空且无姓名：更新时保留原值，绝不误清空历史单人字段
+        - 单人字段保留：通知、复核、Bitable 同步仍读 rectification_responsible_person(_name)
+        """
+        raw_ids = data.get("rectification_responsible_person_ids")
+        if not raw_ids:
+            data.pop("rectification_responsible_person_ids", None)
+            names = split_person_names(data.get("rectification_responsible_person_names"))
+            if names:
+                data["rectification_responsible_person_names"] = ",".join(names)[:500]
+                if not data.get("rectification_responsible_person_name"):
+                    data["rectification_responsible_person_name"] = names[0][:100]
+            elif is_create:
+                data.pop("rectification_responsible_person_names", None)
+            return
+
+        valid_ids: list[str] = []
+        for raw in raw_ids:
+            try:
+                valid_ids.append(str(uuid.UUID(str(raw))))
+            except (ValueError, AttributeError, TypeError):
+                logger.warning("整改负责人 UUID 非法，已忽略: %r", raw, extra={"raw_value": repr(raw)})
+        if not valid_ids:
+            data.pop("rectification_responsible_person_ids", None)
+            return
+
+        data["rectification_responsible_person_ids"] = valid_ids
+        names_raw = data.get("rectification_responsible_person_names") or ""
+        names = [n.strip() for n in str(names_raw).split(",") if n.strip()]
+        if names:
+            data["rectification_responsible_person_names"] = ",".join(names)[:500]
+            data["rectification_responsible_person_name"] = names[0][:100]
+        # 首人回写单人字段（FK 字段），保证旧通知/复核链路可用
+        data["rectification_responsible_person"] = uuid.UUID(valid_ids[0])
+
+    # ==================== 隐患类别字典 ====================
+
+    async def list_hazard_categories(self) -> list[dict[str, Any]]:
+        """类别下拉数据源：内置 7 类 + 字典表增量，按排序值去重合并。"""
+        rows = await self.repo.list_hazard_categories()
+        stored = [
+            {
+                "id": str(row.id),
+                "name": row.name,
+                "sort_order": row.sort_order,
+                "is_builtin": False,
+            }
+            for row in rows
+        ]
+        stored_names = {item["name"] for item in stored}
+        builtin = [
+            {
+                "id": None,
+                "name": name,
+                "sort_order": idx,
+                "is_builtin": True,
+            }
+            for idx, name in enumerate(BUILTIN_HAZARD_CATEGORIES)
+            if name not in stored_names
+        ]
+        return sorted(builtin + stored, key=lambda x: (x["sort_order"], x["name"]))
+
+    async def create_hazard_category(self, name: str) -> dict[str, Any]:
+        """新增隐患类别（幂等：重名返回已有记录，软删除记录自动恢复）。"""
+        value = (name or "").strip()
+        if not value:
+            raise ValueError("类别名称不能为空")
+        if len(value) > 64:
+            raise ValueError("类别名称不能超过 64 个字符")
+        if value in BUILTIN_HAZARD_CATEGORIES:
+            return {
+                "id": None,
+                "name": value,
+                "sort_order": BUILTIN_HAZARD_CATEGORIES.index(value),
+                "is_builtin": True,
+            }
+
+        existing = await self.repo.get_hazard_category_by_name(value)
+        if existing is not None:
+            if existing.is_deleted or not existing.is_active:
+                existing.is_deleted = False
+                existing.is_active = True
+                await self.session.flush()
+                logger.info("hazard category restored", extra={"hazard_category": value})
+            return {
+                "id": str(existing.id),
+                "name": existing.name,
+                "sort_order": existing.sort_order,
+                "is_builtin": False,
+            }
+
+        row = await self.repo.create_hazard_category({"name": value, "sort_order": 100, "is_active": True})
+        logger.info("hazard category created", extra={"hazard_category": value})
+        await self._audit("create", "hazard_category", resource_id=row.id)
+        return {"id": str(row.id), "name": row.name, "sort_order": row.sort_order, "is_builtin": False}
+
+    async def update_hazard_category(self, category_id: uuid.UUID, name: str) -> dict[str, Any]:
+        """隐患类别改名。
+
+        内置 7 类不落字典表（list 时以 id=None 合成），所以只可能改到用户新增项。
+        改名会同步刷新隐患台账里引用旧名的记录，避免台账出现孤儿类别名。
+        """
+        value = (name or "").strip()
+        if not value:
+            raise ValueError("类别名称不能为空")
+        if len(value) > 64:
+            raise ValueError("类别名称不能超过 64 个字符")
+        if value in BUILTIN_HAZARD_CATEGORIES:
+            raise ValueError(f"「{value}」是内置类别，请换一个名称")
+
+        row = await self.repo.get_hazard_category_by_id(category_id)
+        if row is None or row.is_deleted:
+            raise LookupError("隐患类别不存在")
+
+        row_id, old_name, sort_order = row.id, row.name, row.sort_order
+        if old_name == value:
+            return {"id": str(row_id), "name": old_name, "sort_order": sort_order, "is_builtin": False}
+
+        duplicate = await self.repo.get_hazard_category_by_name(value)
+        # 已软删除的同名记录不挡路：删除后想改回旧名字是合理操作
+        if duplicate is not None and duplicate.id != row_id and not duplicate.is_deleted:
+            raise ValueError(f"类别「{value}」已存在")
+
+        await self.repo.update_hazard_category(row_id, {"name": value, "is_deleted": False, "is_active": True})
+        changed = await self.repo.rename_hazard_category_in_hazards(old_name, value)
+        logger.info(
+            "hazard category renamed",
+            extra={"hazard_category_old": old_name, "hazard_category_new": value, "hazards_updated": changed},
+        )
+        await self._audit("update", "hazard_category", resource_id=row_id)
+        return {"id": str(row_id), "name": value, "sort_order": sort_order, "is_builtin": False}
+
+    async def delete_hazard_category(self, category_id: uuid.UUID) -> dict[str, Any]:
+        """删除隐患类别（软删除）。
+
+        内置 7 类不在字典表内，无法通过主键删除；历史台账保留原类别名，不做回填。
+        """
+        row = await self.repo.get_hazard_category_by_id(category_id)
+        if row is None or row.is_deleted:
+            raise LookupError("隐患类别不存在")
+        row_id, name, sort_order = row.id, row.name, row.sort_order
+        await self.repo.update_hazard_category(row_id, {"is_deleted": True, "is_active": False})
+        logger.info("hazard category deleted", extra={"hazard_category": name})
+        await self._audit("delete", "hazard_category", resource_id=row_id)
+        return {"id": str(row_id), "name": name, "sort_order": sort_order, "is_builtin": False}
 
     async def upload_hazard_photo(self, hazard_id: uuid.UUID, file_name: str, file_path: str) -> HazardReport | None:
         """保存隐患图片路径，追加到 defect_photos JSON 数组"""
@@ -464,7 +720,10 @@ class HazardService:
             try:
                 photos = json.loads(hazard.defect_photos.replace("\\", "/"))  # type: ignore[union-attr]
             except Exception:
-                logger.exception("Failed to parse defect_photos JSON after backslash replacement")
+                logger.exception(
+                    "Failed to parse defect_photos JSON after backslash replacement",
+                    extra={"field": "defect_photos", "step": "parse_photos_json"},
+                )
                 photos = []
         if not isinstance(photos, list):
             photos = []
@@ -485,7 +744,10 @@ class HazardService:
             try:
                 photos = json.loads(hazard.rectification_photos.replace("\\", "/"))  # type: ignore[union-attr]
             except Exception:
-                logger.exception("Failed to parse rectification_photos JSON after backslash replacement")
+                logger.exception(
+                    "Failed to parse rectification_photos JSON after backslash replacement",
+                    extra={"field": "rectification_photos", "step": "parse_photos_json"},
+                )
                 photos = []
         if not isinstance(photos, list):
             photos = []
@@ -510,6 +772,7 @@ class HazardService:
         rectification_reply: str | None = None,
         actual_completion_date: datetime | None = None,
         capa_measures: str | None = None,
+        rectification_progress_note: str | None = None,
     ) -> HazardReport | None:
         """整改回复：in_progress → ai_reviewing（AI 初审作为复核阶段第一道关卡）。"""
         hazard = await self.repo.get_hazard_by_id(hazard_id)
@@ -520,6 +783,8 @@ class HazardService:
         }
         if capa_measures is not None:
             update_data["capa_measures"] = capa_measures
+        if rectification_progress_note is not None:
+            update_data["rectification_progress_note"] = rectification_progress_note
         # 整改完成时间：优先用传入值，其次保留已有值，最后 fallback 当前时间
         if actual_completion_date:
             update_data["actual_completion_date"] = actual_completion_date
@@ -733,7 +998,10 @@ class HazardService:
             return await self._generate_hazard_identification(item)
 
         # Script 2: 整改建议已由插件在 script 1 中生成，无需额外调用
-        logger.debug("Script 2 无需额外 AI 调用，整改建议已由插件生成")
+        logger.debug(
+            "Script 2 无需额外 AI 调用，整改建议已由插件生成",
+            extra={"step": "rectification_suggestion_plugin"},
+        )
         return {}
 
     async def _generate_hazard_identification(self, item: HazardReport) -> dict[str, Any]:
@@ -755,6 +1023,7 @@ class HazardService:
             item.id,
             (item.description or "")[:80],
             len(image_urls),
+            extra={"hazard_id": str(item.id), "photo_count": len(image_urls)},
         )
 
         # 构建插件输入（注意：HazardReport 模型没有 location 字段，传 None 即可）
@@ -788,13 +1057,25 @@ class HazardService:
                     max_cards=5,
                 )
                 await knowledge_sp.commit()
-                logger.info("法规知识库加载完成: len=%d chars", len(knowledge_context))
+                logger.info(
+                    "法规知识库加载完成: len=%d chars",
+                    len(knowledge_context),
+                    extra={"knowledge": "regulations", "chars": len(knowledge_context)},
+                )
             except Exception as e:
                 await knowledge_sp.rollback()
-                logger.warning("法规知识库加载失败，继续不使用知识增强: %s", e)
+                logger.warning(
+                    "法规知识库加载失败，继续不使用知识增强: %s",
+                    e,
+                    extra={"knowledge": "regulations", "error": str(e)},
+                )
                 knowledge_context = None
         except Exception as e:
-            logger.warning("法规知识库加载失败，继续不使用知识增强: %s", e)
+            logger.warning(
+                "法规知识库加载失败，继续不使用知识增强: %s",
+                e,
+                extra={"knowledge": "regulations", "error": str(e)},
+            )
             knowledge_context = None
 
         try:
@@ -827,7 +1108,7 @@ class HazardService:
                 },
             }
         except Exception as e:
-            logger.error("AI 隐患识别插件执行失败: %s", e)
+            logger.exception("AI 隐患识别插件执行失败", extra={"plugin": "hazard_recognize"})
             raise AIOutputError(f"AI 隐患识别失败: {e}") from e
         finally:
             await ai_service.close()
@@ -848,6 +1129,7 @@ class HazardService:
                 logger.warning(
                     "defect_photos JSON 解析失败，返回空列表: raw=%s",
                     defect_photos[:200],
+                    extra={"field": "defect_photos", "step": "parse_photos_json"},
                 )
                 return []
         if isinstance(photos, str):
@@ -856,6 +1138,7 @@ class HazardService:
             logger.warning(
                 "defect_photos 格式异常(非 list/str)，返回空列表: type=%s",
                 type(photos).__name__,
+                extra={"field": "defect_photos", "value_type": type(photos).__name__},
             )
             return []
 
@@ -898,9 +1181,14 @@ class HazardService:
                     with open(found_path, "rb") as f:
                         b64 = base64.b64encode(f.read()).decode()
                     urls.append(f"data:{mime};base64,{b64}")
-                    logger.debug("转换本地图片为 data URI: %s (%s)", found_path, mime)
+                    logger.debug(
+                        "转换本地图片为 data URI: %s (%s)",
+                        found_path,
+                        mime,
+                        extra={"path": found_path, "mime": mime},
+                    )
                 except Exception as exc:
-                    logger.warning("无法读取图片 %s: %s", found_path, exc)
+                    logger.warning("无法读取图片 %s: %s", found_path, exc, extra={"path": found_path})
             else:
                 # 本地文件不存在 → MinIO 模式下存的是 object_key，回落到对象存储读取
                 if minio_enabled():
@@ -908,23 +1196,25 @@ class HazardService:
                         obj = get_object("safety", p_str)
                     except Exception:
                         obj = None
-                        logger.warning("MinIO 读取失败: key=%s", p_str, exc_info=True)
+                        logger.warning("MinIO 读取失败: key=%s", p_str, exc_info=True, extra={"minio_key": p_str})
                     if obj:
                         obj_data, obj_type = obj
                         urls.append(f"data:{obj_type or 'image/jpeg'};base64,{base64.b64encode(obj_data).decode()}")
-                        logger.debug("从 MinIO 读取图片: %s (%s)", p_str, obj_type)
+                        logger.debug("从 MinIO 读取图片: %s (%s)", p_str, obj_type, extra={"minio_key": p_str})
                         continue
                 # 仍未取到，记录警告以便排查（AI 审查缺少图片时可根据此日志定位）
                 logger.warning(
                     "defect_photos 本地文件不存在: path=%s (checked: %s)",
                     p_str,
                     check_paths,
+                    extra={"path": p_str},
                 )
 
         logger.info(
             "_parse_defect_photo_urls: input_count=%d output_count=%d",
             len(photos) if isinstance(photos, list) else 0,
             len(urls),
+            extra={"output_count": len(urls)},
         )
         return urls
 
@@ -961,6 +1251,7 @@ class HazardService:
             len(defect_image_urls),
             len(rectification_image_urls),
             len(rectification_reply_text),
+            extra={"hazard_id": str(item.id)},
         )
 
         # 解析 AI 识别结果中的整改建议
@@ -971,7 +1262,10 @@ class HazardService:
             try:
                 ai_suggestion = {"raw": item.corrective_preventive_measures}
             except Exception:
-                logger.exception("Failed to parse corrective_preventive_measures")
+                logger.exception(
+                    "Failed to parse corrective_preventive_measures",
+                    extra={"field": "corrective_preventive_measures"},
+                )
                 ai_suggestion = None
 
         # 构建插件输入
@@ -1012,12 +1306,24 @@ class HazardService:
                     max_cards=5,
                 )
                 await knowledge_sp.commit()
-                logger.info("法规知识库加载完成: len=%d chars", len(knowledge_context))
+                logger.info(
+                    "法规知识库加载完成: len=%d chars",
+                    len(knowledge_context),
+                    extra={"knowledge": "regulations", "chars": len(knowledge_context)},
+                )
             except Exception as e:
                 await knowledge_sp.rollback()
-                logger.warning("法规知识库加载失败，继续不使用知识增强: %s", e)
+                logger.warning(
+                    "法规知识库加载失败，继续不使用知识增强: %s",
+                    e,
+                    extra={"knowledge": "regulations", "error": str(e)},
+                )
         except Exception as e:
-            logger.warning("法规知识库加载失败，继续不使用知识增强: %s", e)
+            logger.warning(
+                "法规知识库加载失败，继续不使用知识增强: %s",
+                e,
+                extra={"knowledge": "regulations", "error": str(e)},
+            )
 
         try:
             config = ReviewPluginConfig(
@@ -1049,7 +1355,7 @@ class HazardService:
                 "reasoning": output.reasoning,
             }
         except Exception as e:
-            logger.error("AI 整改初审插件执行失败: %s", e)
+            logger.exception("AI 整改初审插件执行失败", extra={"plugin": "rectification_review"})
             raise AIOutputError(f"AI 整改初审失败: {e}") from e
         finally:
             await ai_service.close()
@@ -1074,7 +1380,11 @@ class HazardService:
 
             item = await bg_service.repo.get_hazard_by_id(hazard_id)
             if not item:
-                logger.warning("run_rectification_review: hazard not found id=%s", hazard_id)
+                logger.warning(
+                    "run_rectification_review: hazard not found id=%s",
+                    hazard_id,
+                    extra={"hazard_id": str(hazard_id)},
+                )
                 return None
 
             # 设置处理中状态
@@ -1098,6 +1408,10 @@ class HazardService:
                     "AI 整改初审完成: hazard_id=%s conclusion=%s",
                     hazard_id,
                     result.get("review_conclusion"),
+                    extra={
+                        "hazard_id": str(hazard_id),
+                        "conclusion": result.get("review_conclusion"),
+                    },
                 )
                 # ── 根据 AI 评审判定路由后续通知 ──
                 # 对结论字符串做 strip 处理，防止 AI 模型附加空白字符导致比较失败
@@ -1121,7 +1435,11 @@ class HazardService:
                                 rectification_status="replied",
                             ),
                         )
-                    logger.info("AI 初审通过 → 通知一级复核人: hazard_id=%s", hazard_id)
+                    logger.info(
+                        "AI 初审通过 → 通知一级复核人: hazard_id=%s",
+                        hazard_id,
+                        extra={"hazard_id": str(hazard_id)},
+                    )
                 elif conclusion == "不通过":
                     # AI 判定不通过 → 自动驳回，通知责任人重新整改
                     await bg_service.repo.update_hazard(hazard_id, {"rectification_status": "rejected"})
@@ -1145,6 +1463,7 @@ class HazardService:
                     logger.info(
                         "AI 初审不通过 → 自动驳回，通知责任人: hazard_id=%s",
                         hazard_id,
+                        extra={"hazard_id": str(hazard_id)},
                     )
                 elif conclusion == "无需整改":
                     # AI 判定无需整改 → 跳过 L1/L2，直接通知 L3 检查人员闭环确认
@@ -1183,6 +1502,7 @@ class HazardService:
                     logger.info(
                         "AI 初审无需整改 → 跳过 L1/L2，通知 L3 检查人员闭环: hazard_id=%s",
                         hazard_id,
+                        extra={"hazard_id": str(hazard_id)},
                     )
                 else:
                     # 未知结论类型，安全兜底：保守处理为不通过，通知责任人重新整改
@@ -1191,6 +1511,7 @@ class HazardService:
                         "AI 初审返回未知结论: hazard_id=%s conclusion=%r → 保守处理为不通过",
                         hazard_id,
                         conclusion,
+                        extra={"hazard_id": hazard_id, "conclusion": conclusion},
                     )
                     await bg_service.repo.update_hazard(hazard_id, {"rectification_status": "rejected"})
                     await bg_session.commit()
@@ -1207,7 +1528,7 @@ class HazardService:
                         )
                 return updated
             except AIOutputError as e:
-                logger.error("AI 整改初审失败(hazard %s): %s", hazard_id, e)
+                logger.exception("AI 整改初审失败", extra={"hazard_id": str(hazard_id)})
                 await bg_service.repo.update_hazard(
                     hazard_id,
                     {
@@ -1224,7 +1545,7 @@ class HazardService:
                 )
                 return None
             except Exception as e:
-                logger.error("AI 整改初审异常(hazard %s): %s", hazard_id, e)
+                logger.exception("AI 整改初审异常", extra={"hazard_id": str(hazard_id)})
                 await bg_service.repo.update_hazard(
                     hazard_id,
                     {
@@ -1269,15 +1590,15 @@ class HazardService:
 
         try:
             generated = await self._generate_hazard_ai_output(script_number, item)
-            self._map_hazard_ai_output(script_number, generated, update_data)
+            self._map_hazard_ai_output(script_number, generated, update_data, current=item)
             update_data["ai_node_progress"] = "completed"
             update_data["ai_error_message"] = None
             update_data["ai_generated"] = True
         except AIOutputError as e:
-            logger.error(f"Hazard script {script_number} AI 输出错误: {e}")
+            logger.exception("Hazard script AI 输出错误", extra={"script_number": script_number})
             update_data["ai_error_message"] = str(e)
         except Exception as e:
-            logger.error(f"Hazard script {script_number} 执行异常: {e}")
+            logger.exception("Hazard script 执行异常", extra={"script_number": script_number})
             update_data["ai_error_message"] = f"AI 服务调用失败：{e}"
 
         return await self.repo.update_hazard(hazard_id, update_data)
@@ -1306,8 +1627,17 @@ class HazardService:
         "special_operation",
     }
 
-    def _map_hazard_ai_output(self, script_number: int, output: dict[str, Any], update_data: dict[str, Any]) -> None:
-        """将 AI JSON 输出映射到 HazardReport 字段（校验枚举值）。"""
+    # 人工可填字段：AI 只补空白，不覆盖手填值（2026-11 需求）
+    _AI_BLANK_ONLY_FIELDS = frozenset({"hazard_level", "hazard_category"})
+
+    def _map_hazard_ai_output(
+        self,
+        script_number: int,
+        output: dict[str, Any],
+        update_data: dict[str, Any],
+        current: HazardReport | None = None,
+    ) -> None:
+        """将 AI JSON 输出映射到 HazardReport 字段（校验枚举值；人工已填字段不覆盖）。"""
         if script_number == 1:
             for json_key, db_field in [
                 ("hazard_type", "hazard_type"),
@@ -1321,14 +1651,39 @@ class HazardService:
                 if json_key in output and output[json_key]:
                     val = output[json_key]
                     if db_field == "hazard_type" and val not in self._VALID_HAZARD_TYPES:
-                        logger.debug("AI 输出非法 hazard_type=%s，跳过", val)
+                        logger.debug(
+                            "AI 输出非法 hazard_type=%s，跳过",
+                            val,
+                            extra={"field": "hazard_type", "value": val},
+                        )
                         continue
                     if db_field == "hazard_level" and val not in self._VALID_HAZARD_LEVELS:
-                        logger.debug("AI 输出非法 hazard_level=%s，跳过", val)
+                        logger.debug(
+                            "AI 输出非法 hazard_level=%s，跳过",
+                            val,
+                            extra={"field": "hazard_level", "value": val},
+                        )
                         continue
                     if db_field == "hazard_category" and val not in self._VALID_HAZARD_CATEGORIES:
-                        logger.debug("AI 输出非法 hazard_category=%s，跳过", val)
+                        logger.debug(
+                            "AI 输出非法 hazard_category=%s，跳过",
+                            val,
+                            extra={"field": "hazard_category", "value": val},
+                        )
                         continue
+                    if db_field == "hazard_category":
+                        val = _AI_CATEGORY_TO_LABEL.get(val, val)
+                    if db_field in self._AI_BLANK_ONLY_FIELDS and current is not None:
+                        existing = getattr(current, db_field, None)
+                        if existing:
+                            logger.debug(
+                                "AI 跳过人工已填字段: hazard_id=%s field=%s existing=%s",
+                                current.id,
+                                db_field,
+                                existing,
+                                extra={"hazard_id": current.id, "field": db_field},
+                            )
+                            continue
                     update_data[db_field] = val
 
             # 插件生成的整改建议（两层结构）→ 格式化为可读中文文本
@@ -1410,6 +1765,7 @@ async def _build_verify_card_content(
                     hazard.hazard_no,
                     label,
                     len(clean),
+                    extra={"hazard_no": hazard.hazard_no, "label": label, "photo_count": len(clean)},
                 )
                 return await upload_images_batch(clean)
             except Exception:
@@ -1417,6 +1773,7 @@ async def _build_verify_card_content(
                     "复核通知照片处理异常: hazard_no=%s label=%s",
                     hazard.hazard_no,
                     label,
+                    extra={"hazard_no": hazard.hazard_no, "label": label},
                 )
                 return []
 
@@ -1430,6 +1787,7 @@ async def _build_verify_card_content(
                 hazard.hazard_no,
                 level,
                 repr(hazard.rectification_photos)[:200],
+                extra={"hazard_no": hazard.hazard_no, "verify_level": level},
             )
     else:
         defect_keys = []
@@ -1489,6 +1847,7 @@ async def _build_verify_card_content(
                 hazard.hazard_no,
                 len(defect_keys),
                 len(rectification_keys),
+                extra={"hazard_no": hazard.hazard_no, "defect_photo_count": len(defect_keys)},
             )
 
     # ── 操作按钮 ──
@@ -1588,7 +1947,10 @@ async def _send_verify_notification(hazard: HazardReport, level: int) -> None:
     from app.modules.safety.feishu.identity_resolver import IdentityResolver
 
     try:
-        logger.debug(f"VERIFY_START: hazard_no={hazard.hazard_no} level={level} dept={hazard.department}")
+        logger.debug(
+            f"VERIFY_START: hazard_no={hazard.hazard_no} level={level} dept={hazard.department}",
+            extra={"hazard_no": hazard.hazard_no, "verify_level": level},
+        )
         async with async_session_factory() as session:
             resolver = IdentityResolver(session)
 
@@ -1597,6 +1959,7 @@ async def _send_verify_notification(hazard: HazardReport, level: int) -> None:
                 logger.warning(
                     "一般隐患不应通知分管领导(L2)，已跳过: hazard_no=%s",
                     hazard.hazard_no,
+                    extra={"hazard_no": hazard.hazard_no, "verify_level": level},
                 )
                 return
 
@@ -1607,24 +1970,35 @@ async def _send_verify_notification(hazard: HazardReport, level: int) -> None:
             elif level == 3:
                 person = await resolver.resolve_discoverer(hazard)
             else:
-                logger.debug(f"VERIFY_FAIL: hazard_no={hazard.hazard_no} 未知复核级别 level={level}")
-                logger.warning("未知复核级别: level=%s hazard_no=%s", level, hazard.hazard_no)
+                logger.debug(
+                    f"VERIFY_FAIL: hazard_no={hazard.hazard_no} 未知复核级别 level={level}",
+                    extra={"hazard_no": hazard.hazard_no, "verify_level": level},
+                )
+                logger.warning(
+                    "未知复核级别: level=%s hazard_no=%s",
+                    level,
+                    hazard.hazard_no,
+                    extra={"hazard_no": hazard.hazard_no, "verify_level": level},
+                )
                 return
 
             if not person:
                 logger.debug(
-                    f"VERIFY_FAIL: hazard_no={hazard.hazard_no} level={level} 身份解析失败 dept={hazard.department}"
+                    f"VERIFY_FAIL: hazard_no={hazard.hazard_no} level={level} 身份解析失败 dept={hazard.department}",
+                    extra={"hazard_no": hazard.hazard_no, "verify_level": level},
                 )
                 logger.warning(
                     "复核通知: 身份解析失败 hazard_no=%s level=%s",
                     hazard.hazard_no,
                     level,
+                    extra={"hazard_no": hazard.hazard_no, "verify_level": level},
                 )
                 return
 
             logger.debug(
                 f"VERIFY_RESOLVED: hazard_no={hazard.hazard_no} level={level} "
-                f"target={person.name} user_id={person.user_id} open_id={person.open_id}"
+                f"target={person.name} user_id={person.user_id} open_id={person.open_id}",
+                extra={"hazard_no": hazard.hazard_no, "verify_level": level, "target": person.name},
             )
 
             logger.info(
@@ -1634,6 +2008,12 @@ async def _send_verify_notification(hazard: HazardReport, level: int) -> None:
                 person.name,
                 person.user_id,
                 person.open_id,
+                extra={
+                    "hazard_no": hazard.hazard_no,
+                    "verify_level": level,
+                    "target_name": person.name,
+                    "user_id": str(person.user_id),
+                },
             )
 
             title, content, elements = await _build_verify_card_content(
@@ -1656,7 +2036,14 @@ async def _send_verify_notification(hazard: HazardReport, level: int) -> None:
             if success:
                 logger.debug(
                     f"VERIFY_SENT: hazard_no={hazard.hazard_no} level={level} "
-                    f"to={person.name} receive_id={receive_id} id_type={id_type}"
+                    f"to={person.name} receive_id={receive_id} id_type={id_type}",
+                    extra={
+                        "hazard_no": hazard.hazard_no,
+                        "verify_level": level,
+                        "target": person.name,
+                        "receive_id": receive_id,
+                        "id_type": id_type,
+                    },
                 )
                 logger.info(
                     "复核通知已发送: hazard_no=%s level=%s to=%s receive_id=%s id_type=%s",
@@ -1665,11 +2052,24 @@ async def _send_verify_notification(hazard: HazardReport, level: int) -> None:
                     person.name,
                     receive_id,
                     id_type,
+                    extra={
+                        "hazard_no": hazard.hazard_no,
+                        "verify_level": level,
+                        "target_name": person.name,
+                        "id_type": id_type,
+                    },
                 )
             else:
                 logger.debug(
                     f"VERIFY_SEND_FAIL: hazard_no={hazard.hazard_no} level={level} "
-                    f"to={person.name} receive_id={receive_id} id_type={id_type} — send_user_card returned False"
+                    f"to={person.name} receive_id={receive_id} id_type={id_type} — send_user_card returned False",
+                    extra={
+                        "hazard_no": hazard.hazard_no,
+                        "verify_level": level,
+                        "target": person.name,
+                        "receive_id": receive_id,
+                        "id_type": id_type,
+                    },
                 )
                 logger.warning(
                     "复核通知发送失败: hazard_no=%s level=%s to=%s receive_id=%s id_type=%s",
@@ -1678,6 +2078,12 @@ async def _send_verify_notification(hazard: HazardReport, level: int) -> None:
                     person.name,
                     receive_id,
                     id_type,
+                    extra={
+                        "hazard_no": hazard.hazard_no,
+                        "verify_level": level,
+                        "target_name": person.name,
+                        "id_type": id_type,
+                    },
                 )
 
             # 记录通知结果到数据库（使用独立 session，原 identity session 已关闭）
@@ -1695,10 +2101,23 @@ async def _send_verify_notification(hazard: HazardReport, level: int) -> None:
                     )
                     await rec_session.commit()
             except Exception:
-                logger.exception("记录复核通知结果失败: hazard_no=%s", hazard.hazard_no)
+                logger.exception(
+                    "记录复核通知结果失败: hazard_no=%s",
+                    hazard.hazard_no,
+                    extra={"hazard_no": hazard.hazard_no},
+                )
     except Exception as e:
-        logger.debug(f"VERIFY_EXCEPTION: hazard_no={hazard.hazard_no} level={level} error={e}")
-        logger.warning("复核通知异常: hazard_no=%s level=%s error=%s", hazard.hazard_no, level, e)
+        logger.debug(
+            f"VERIFY_EXCEPTION: hazard_no={hazard.hazard_no} level={level} error={e}",
+            extra={"hazard_no": hazard.hazard_no, "verify_level": level},
+        )
+        logger.warning(
+            "复核通知异常: hazard_no=%s level=%s error=%s",
+            hazard.hazard_no,
+            level,
+            e,
+            extra={"hazard_no": hazard.hazard_no, "verify_level": level},
+        )
         # 记录异常到数据库
         try:
             async with async_session_factory() as session2:
@@ -1714,7 +2133,11 @@ async def _send_verify_notification(hazard: HazardReport, level: int) -> None:
                 )
                 await session2.commit()
         except Exception:
-            logger.exception("记录复核通知异常失败: hazard_no=%s", hazard.hazard_no)
+            logger.exception(
+                "记录复核通知异常失败: hazard_no=%s",
+                hazard.hazard_no,
+                extra={"hazard_no": hazard.hazard_no},
+            )
 
 
 async def _send_rectification_notification(hazard: HazardReport) -> None:
@@ -1731,7 +2154,12 @@ async def _send_rectification_notification(hazard: HazardReport) -> None:
     try:
         logger.debug(
             f"RECTIFY_START: hazard_no={hazard.hazard_no} "
-            f"resp_name={hazard.rectification_responsible_person_name} dept={hazard.department}"
+            f"resp_name={hazard.rectification_responsible_person_name} dept={hazard.department}",
+            extra={
+                "hazard_no": hazard.hazard_no,
+                "resp_name": hazard.rectification_responsible_person_name,
+                "department": hazard.department,
+            },
         )
         async with async_session_factory() as session:
             resolver = IdentityResolver(session)
@@ -1740,18 +2168,24 @@ async def _send_rectification_notification(hazard: HazardReport) -> None:
             if not person:
                 logger.debug(
                     f"RECTIFY_FAIL: hazard_no={hazard.hazard_no} "
-                    f"无法解析责任人 name={hazard.rectification_responsible_person_name}"
+                    f"无法解析责任人 name={hazard.rectification_responsible_person_name}",
+                    extra={"hazard_no": hazard.hazard_no},
                 )
                 logger.warning(
                     "整改通知: 无法解析责任人 hazard_no=%s name=%s",
                     hazard.hazard_no,
                     hazard.rectification_responsible_person_name,
+                    extra={
+                        "hazard_no": hazard.hazard_no,
+                        "person_name": hazard.rectification_responsible_person_name,
+                    },
                 )
                 return
 
             logger.debug(
                 f"RECTIFY_RESOLVED: hazard_no={hazard.hazard_no} "
-                f"target={person.name} user_id={person.user_id} open_id={person.open_id}"
+                f"target={person.name} user_id={person.user_id} open_id={person.open_id}",
+                extra={"hazard_no": hazard.hazard_no, "target": person.name},
             )
 
             logger.info(
@@ -1760,6 +2194,11 @@ async def _send_rectification_notification(hazard: HazardReport) -> None:
                 person.name,
                 person.user_id,
                 person.open_id,
+                extra={
+                    "hazard_no": hazard.hazard_no,
+                    "target_name": person.name,
+                    "user_id": str(person.user_id),
+                },
             )
 
         bitable_file_token = get_settings().feishu.safety.bitable_app_token
@@ -1847,6 +2286,7 @@ async def _send_rectification_notification(hazard: HazardReport) -> None:
                     "整改通知照片处理异常: hazard_no=%s label=%s",
                     hazard.hazard_no,
                     label,
+                    extra={"hazard_no": hazard.hazard_no, "label": label},
                 )
                 return []
 
@@ -1909,6 +2349,7 @@ async def _send_rectification_notification(hazard: HazardReport) -> None:
             logger.info(
                 "整改通知无照片: hazard_no=%s",
                 hazard.hazard_no,
+                extra={"hazard_no": hazard.hazard_no},
             )
 
         # ── 操作按钮 ──
@@ -1949,6 +2390,12 @@ async def _send_rectification_notification(hazard: HazardReport) -> None:
                 person.name,
                 receive_id,
                 id_type,
+                extra={
+                    "hazard_no": hazard.hazard_no,
+                    "target": person.name,
+                    "receive_id": receive_id,
+                    "id_type": id_type,
+                },
             )
             logger.info(
                 "整改通知已发送: hazard_no=%s to=%s receive_id=%s id_type=%s",
@@ -1956,6 +2403,7 @@ async def _send_rectification_notification(hazard: HazardReport) -> None:
                 person.name,
                 receive_id,
                 id_type,
+                extra={"hazard_no": hazard.hazard_no, "target_name": person.name, "id_type": id_type},
             )
         else:
             logger.debug(
@@ -1964,6 +2412,12 @@ async def _send_rectification_notification(hazard: HazardReport) -> None:
                 person.name,
                 receive_id,
                 id_type,
+                extra={
+                    "hazard_no": hazard.hazard_no,
+                    "target": person.name,
+                    "receive_id": receive_id,
+                    "id_type": id_type,
+                },
             )
             logger.warning(
                 "整改通知发送失败: hazard_no=%s to=%s receive_id=%s id_type=%s",
@@ -1971,6 +2425,7 @@ async def _send_rectification_notification(hazard: HazardReport) -> None:
                 person.name,
                 receive_id,
                 id_type,
+                extra={"hazard_no": hazard.hazard_no, "target_name": person.name, "id_type": id_type},
             )
 
         # ── 同时通知分管安全员 ──
@@ -1994,21 +2449,28 @@ async def _send_rectification_notification(hazard: HazardReport) -> None:
                             hazard.hazard_no,
                             safety_officer.name,
                             so_receive_id,
+                            extra={"hazard_no": hazard.hazard_no, "target_name": safety_officer.name},
                         )
                     else:
                         logger.warning(
                             "整改通知发送安全员失败: hazard_no=%s to=%s",
                             hazard.hazard_no,
                             safety_officer.name,
+                            extra={"hazard_no": hazard.hazard_no, "target_name": safety_officer.name},
                         )
                 else:
                     logger.info(
                         "整改通知: 部门 %s 未配置安全员，跳过安全员通知 hazard_no=%s",
                         hazard.department,
                         hazard.hazard_no,
+                        extra={"hazard_no": hazard.hazard_no, "department": hazard.department},
                     )
         except Exception:
-            logger.exception("整改通知安全员异常: hazard_no=%s", hazard.hazard_no)
+            logger.exception(
+                "整改通知安全员异常: hazard_no=%s",
+                hazard.hazard_no,
+                extra={"hazard_no": hazard.hazard_no},
+            )
 
         # 记录通知结果到数据库（使用独立 session，原 identity session 已关闭）
         try:
@@ -2024,11 +2486,25 @@ async def _send_rectification_notification(hazard: HazardReport) -> None:
                 )
                 await rec_session.commit()
         except Exception:
-            logger.exception("记录整改通知结果失败: hazard_no=%s", hazard.hazard_no)
+            logger.exception(
+                "记录整改通知结果失败: hazard_no=%s",
+                hazard.hazard_no,
+                extra={"hazard_no": hazard.hazard_no},
+            )
 
     except Exception as e:
-        logger.debug("RECTIFY_EXCEPTION: hazard_no=%s error=%s", hazard.hazard_no, e)
-        logger.warning("整改通知异常: error=%s hazard_no=%s", e, hazard.hazard_no)
+        logger.debug(
+            "RECTIFY_EXCEPTION: hazard_no=%s error=%s",
+            hazard.hazard_no,
+            e,
+            extra={"hazard_no": hazard.hazard_no},
+        )
+        logger.warning(
+            "整改通知异常: error=%s hazard_no=%s",
+            e,
+            hazard.hazard_no,
+            extra={"hazard_no": hazard.hazard_no},
+        )
         # 记录异常到数据库
         try:
             async with async_session_factory() as session2:
@@ -2043,4 +2519,8 @@ async def _send_rectification_notification(hazard: HazardReport) -> None:
                 )
                 await session2.commit()
         except Exception:
-            logger.exception("记录整改通知异常失败: hazard_no=%s", hazard.hazard_no)
+            logger.exception(
+                "记录整改通知异常失败: hazard_no=%s",
+                hazard.hazard_no,
+                extra={"hazard_no": hazard.hazard_no},
+            )

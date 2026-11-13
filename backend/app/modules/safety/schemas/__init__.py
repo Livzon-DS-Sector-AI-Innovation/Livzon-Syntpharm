@@ -119,6 +119,11 @@ __all__ = [
     "RegulationStagesResponse",
     "HazardLedgerExportParsedFilters",
     "HazardLedgerExportRequest",
+    "HazardCategoryApiResponse",
+    "HazardCategoryCreate",
+    "HazardCategoryListApiResponse",
+    "HazardCategoryResponse",
+    "HazardCategoryUpdate",
     "HazardLevel",
     "HazardReportBase",
     "HazardReportCreate",
@@ -168,6 +173,7 @@ __all__ = [
     "PSSRResultEnum",
     "PSSR_RESULT_OPTIONS",
     "PermitStatus",
+    "PersonRef",
     "PersonnelStatus",
     "QUALIFICATION_LEVEL_OPTIONS",
     "QUALIFICATION_TYPE_OPTIONS",
@@ -289,6 +295,18 @@ __all__ = [
     "VerifyMonitorRequest",
     "WORK_RECORD_STATUS_OPTIONS",
     "WorkRecordStatusEnum",
+    "EquipmentFacilityHazardApiResponse",
+    "EquipmentFacilityHazardCreate",
+    "EquipmentFacilityHazardListApiResponse",
+    "EquipmentFacilityHazardListMeta",
+    "EquipmentFacilityHazardResponse",
+    "WorkActivityHazardApiResponse",
+    "WorkActivityHazardCreate",
+    "WorkActivityHazardListApiResponse",
+    "WorkActivityHazardListMeta",
+    "WorkActivityHazardResponse",
+    "RiskGradingOptions",
+    "RiskGradingOptionsApiResponse",
 ]
 
 from app.modules.safety.schemas.accidents import (
@@ -479,6 +497,13 @@ from app.modules.safety.schemas.hazards import (
     HazardAiRunApiResponse,
     HazardAiRunData,
     HazardApiResponse,
+    HazardCategoryApiResponse,
+    HazardCategoryCreate,
+    HazardCategoryListApiResponse,
+    HazardCategoryResponse,
+    HazardCategoryUpdate,
+    HazardDiagnoseApiResponse,
+    HazardDiagnoseData,
     HazardListApiResponse,
     HazardRectificationNotifyApiResponse,
     HazardRectificationNotifyData,
@@ -533,6 +558,7 @@ from app.modules.safety.schemas.oh_health_exams import (
     OhHealthExamUpdate,
     SetExamConclusionRequest,
 )
+from app.modules.safety.schemas.person_ref import PersonRef
 from app.modules.safety.schemas.regulations import (
     OperationRegulationApiResponse,
     OperationRegulationBase,
@@ -559,6 +585,20 @@ from app.modules.safety.schemas.regulations import (
     SopContentUpdate,
     SopGenerateResponse,
     SopMeta,
+)
+from app.modules.safety.schemas.risk_grading import (
+    EquipmentFacilityHazardApiResponse,
+    EquipmentFacilityHazardCreate,
+    EquipmentFacilityHazardListApiResponse,
+    EquipmentFacilityHazardListMeta,
+    EquipmentFacilityHazardResponse,
+    RiskGradingOptions,
+    RiskGradingOptionsApiResponse,
+    WorkActivityHazardApiResponse,
+    WorkActivityHazardCreate,
+    WorkActivityHazardListApiResponse,
+    WorkActivityHazardListMeta,
+    WorkActivityHazardResponse,
 )
 from app.modules.safety.schemas.risk_reports import (
     REPORT_STATUS_OPTIONS,

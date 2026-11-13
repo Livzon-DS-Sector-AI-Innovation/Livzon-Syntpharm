@@ -27,11 +27,16 @@ from app.modules.safety.schemas import (
     HazardAiRunApiResponse,
     HazardAiRunData,
     HazardApiResponse,
+    HazardCategoryApiResponse,
+    HazardCategoryCreate,
+    HazardCategoryListApiResponse,
+    HazardCategoryResponse,
+    HazardCategoryUpdate,
+    HazardDiagnoseApiResponse,
     HazardListApiResponse,
     HazardRectificationNotifyApiResponse,
     HazardRectificationNotifyData,
     HazardReportCreate,
-    HazardReportResponse,
     HazardReportUpdate,
     HazardStatsApiResponse,
     HazardStatsResponse,
@@ -47,6 +52,11 @@ from app.modules.safety.service.hazard import (
     _send_rectification_notification,
     _send_verify_notification,
 )
+from app.modules.safety.service.hazard_person import (
+    to_hazard_response,
+    to_hazard_responses,
+)
+from app.platform.permission.deps import PermissionContext, require_permission
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +100,7 @@ async def get(
         person_match,
     )
     return HazardListApiResponse(
-        data=[HazardReportResponse.model_validate(h) for h in items],
+        data=await to_hazard_responses(db, items),
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
@@ -175,7 +185,86 @@ async def handler(  # noqa: F811
     item = await service.get_hazard(hazard_id)
     if not item:
         raise NotFoundException(resource="隐患")
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
+
+
+@hazards_router.get(
+    "/hazard-categories",
+    response_model=HazardCategoryListApiResponse,
+    summary="获取隐患类别字典（内置 7 类 + 用户新增）",
+)
+async def get_hazard_categories(current_user: RequiredUser, db: AsyncSession = Depends(get_db)) -> Any:
+    """隐患登记下拉用的类别清单：内置类别与字典表增量合并去重"""
+    service = HazardService(db)
+    data = await service.list_hazard_categories()
+    return HazardCategoryListApiResponse(data=[HazardCategoryResponse(**item) for item in data])
+
+
+@hazards_router.post(
+    "/hazard-categories",
+    response_model=HazardCategoryApiResponse,
+    summary="新增隐患类别（全公司共享）",
+)
+async def post_hazard_category(
+    current_user: RequiredUser,
+    data: HazardCategoryCreate,
+    db: AsyncSession = Depends(get_db),
+    # 全局权限开关关闭时中间件不拦截，这里显式校验，保证只有类别管理员能写
+    ctx: PermissionContext = Depends(require_permission("safety:hazard-category:manage")),
+) -> Any:
+    """新增隐患类别：重名直接返回已有记录（幂等），软删除记录自动恢复"""
+    service = HazardService(db)
+    try:
+        item = await service.create_hazard_category(data.name)
+    except ValueError as exc:
+        raise BadRequestException(message=str(exc)) from exc
+    await db.commit()
+    return HazardCategoryApiResponse(data=HazardCategoryResponse(**item))
+
+
+@hazards_router.put(
+    "/hazard-categories/{category_id}",
+    response_model=HazardCategoryApiResponse,
+    summary="修改隐患类别名称（全公司共享）",
+)
+async def put_hazard_category(
+    current_user: RequiredUser,
+    category_id: uuid.UUID,
+    data: HazardCategoryUpdate,
+    db: AsyncSession = Depends(get_db),
+    ctx: PermissionContext = Depends(require_permission("safety:hazard-category:manage")),
+) -> Any:
+    """类别改名：同步刷新历史台账里的旧名称；内置类别不允许改名"""
+    service = HazardService(db)
+    try:
+        item = await service.update_hazard_category(category_id, data.name)
+    except ValueError as exc:
+        raise BadRequestException(message=str(exc)) from exc
+    except LookupError as exc:
+        raise NotFoundException(resource="隐患类别") from exc
+    await db.commit()
+    return HazardCategoryApiResponse(data=HazardCategoryResponse(**item))
+
+
+@hazards_router.delete(
+    "/hazard-categories/{category_id}",
+    response_model=HazardCategoryApiResponse,
+    summary="删除隐患类别（软删除，全公司共享）",
+)
+async def delete_hazard_category(
+    current_user: RequiredUser,
+    category_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    ctx: PermissionContext = Depends(require_permission("safety:hazard-category:manage")),
+) -> Any:
+    """删除类别：软删除，历史台账保留原类别名；内置 7 类不可删"""
+    service = HazardService(db)
+    try:
+        item = await service.delete_hazard_category(category_id)
+    except LookupError as exc:
+        raise NotFoundException(resource="隐患类别") from exc
+    await db.commit()
+    return HazardCategoryApiResponse(data=HazardCategoryResponse(**item))
 
 
 @hazards_router.post("/hazards", response_model=HazardApiResponse, summary="创建隐患")
@@ -185,7 +274,7 @@ async def post(current_user: RequiredUser, data: HazardReportCreate, db: AsyncSe
     service = HazardService(db)
     item = await service.create_hazard(data, auto_run_ai=False)
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.put(  # type: ignore[no-redef]
@@ -200,7 +289,7 @@ async def handler(  # noqa: F811
     if not item:
         raise NotFoundException(resource="隐患")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -246,7 +335,7 @@ async def handler(  # noqa: F811
     if not item:
         raise NotFoundException(resource="隐患")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -291,7 +380,7 @@ async def handler(  # noqa: F811
     if not item:
         raise NotFoundException(resource="隐患")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -308,7 +397,7 @@ async def handler(  # noqa: F811
     if not item:
         raise BadRequestException(message="无法开始整改，当前状态不允许")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -336,7 +425,7 @@ async def handler(  # noqa: F811
     if not item:
         raise BadRequestException(message="无法回复，当前状态不允许")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -362,7 +451,7 @@ async def handler(  # noqa: F811
     if not item:
         raise BadRequestException(message="无法复核，当前状态不允许")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
@@ -391,7 +480,7 @@ async def handler(  # noqa: F811
     if not item:
         raise BadRequestException(message="无法重新整改，当前状态不允许")
     await db.commit()
-    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=await to_hazard_response(db, item))
 
 
 @hazards_router.delete(  # type: ignore[no-redef]
@@ -603,7 +692,7 @@ async def handler(  # noqa: F811
 
 @hazards_router.get(  # type: ignore[no-redef]
     "/hazards/catch-up/diagnose",
-    response_model=HazardApiResponse,
+    response_model=HazardDiagnoseApiResponse,
     summary="Bitable 漏单诊断",
 )
 async def handler(  # noqa: F811

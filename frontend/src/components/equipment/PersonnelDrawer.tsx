@@ -1,11 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import {App, Button, Drawer, Select, Typography, Avatar} from 'antd'
+import {App, Button, Drawer, Select, Typography} from 'antd'
 import { UserOutlined, SearchOutlined } from '@ant-design/icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { addPersonnel } from '@/actions/equipment-personnel'
 import type { EquipmentRole } from '@/types/equipment-personnel'
+import { UserAvatar } from '@/components/common/UserAvatar'
 
 const { Text } = Typography
 
@@ -18,19 +19,11 @@ interface Props {
 interface UserOption {
   value: string
   label: string
+  name: string
   account: string
   dept: string
   eno: string
   avatar: string | null
-}
-
-function avatarColor(name: string): string {
-  const colors = ['#5645d4', '#7b3ff2', '#dd5b00', '#0075de', '#1aae39', '#e03131']
-  let hash = 0
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return colors[Math.abs(hash) % colors.length]
 }
 
 export function PersonnelDrawer({ open, onClose, roles: _roles }: Props) {
@@ -56,6 +49,7 @@ export function PersonnelDrawer({ open, onClose, roles: _roles }: Props) {
           value: String(u.id),
           // 统一「姓名（账号）」：重名时能区分
           label: account ? `${name}（${account}）` : name,
+          name,
           account,
           dept: String(u.department ?? ''),
           eno: String(u.employee_no ?? ''),
@@ -174,18 +168,7 @@ export function PersonnelDrawer({ open, onClose, roles: _roles }: Props) {
           loading={isLoading}
           optionRender={(option) => (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
-              <Avatar
-                size={32}
-                src={option.data.avatar || undefined}
-                style={{
-                  backgroundColor: option.data.avatar ? 'transparent' : avatarColor(option.data.label),
-                  flexShrink: 0,
-                  fontSize: 13,
-                  fontWeight: 600,
-                }}
-              >
-                {option.data.label.charAt(0)}
-              </Avatar>
+              <UserAvatar size={32} name={option.data.name} src={option.data.avatar} />
               <div style={{ lineHeight: 1.3 }}>
                 <Text style={{ fontSize: 14, fontWeight: 500, color: '#1a1a1a', display: 'block' }}>
                   {option.data.label}

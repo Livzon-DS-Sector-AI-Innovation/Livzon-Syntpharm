@@ -7,7 +7,7 @@
 // ============ HazardReport Types ============
 
 import type { components } from "@/types/generated/schema"
-import { HazardType, HazardLevel, HazardCategory } from "./enums"
+import { HazardType, HazardLevel } from "./enums"
 
 type HazardReportApi = components["schemas"]["HazardReportResponse"]
 
@@ -15,12 +15,15 @@ type HazardReportApi = components["schemas"]["HazardReportResponse"]
 export interface HazardReport extends Omit<HazardReportApi, "hazard_type" | "hazard_level" | "hazard_category"> {
   hazard_type: HazardType
   hazard_level: HazardLevel
-  hazard_category?: HazardCategory
+  /** 隐患类别：字典表名称（内置 7 类 + 用户新增），旧记录可能是英文枚举值 */
+  hazard_category?: string
 }
 
 /** 表单载荷（创建契约来自 OpenAPI，overall_status 为平台内部草稿态） */
 export type HazardReportFormData = Partial<components["schemas"]["HazardReportCreate"]> & {
   overall_status?: string
+  /** 整改进度：走 PUT /hazards/{id} 人工维护（创建契约不含该字段） */
+  rectification_status?: string
 }
 
 export interface HazardReportQueryParams {

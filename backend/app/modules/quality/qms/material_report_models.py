@@ -107,12 +107,8 @@ class MaterialReport(BaseModel):
     generated_file_url: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="生成文件路径")
 
     # 关联
-    # Fully module-qualified: quality declares TWO classes named ReportTemplate —
-    # material_report_models.ReportTemplate (table quality.report_templates, this one)
-    # and deviation_automation_models.ReportTemplate (table quality.report_template).
-    # Both now inherit the shared BaseModel, so a bare "ReportTemplate" is ambiguous in
-    # the declarative registry and SQLAlchemy raises InvalidRequestError at mapper
-    # configuration time. Qualifying the path keeps this relationship pointing here.
+    # 全限定路径：偏差报告自动化下线后，quality 里同类名只剩本模块的 ReportTemplate
+    # （quality.report_templates）。保留全限定写法，将来再出现同名类时不会歧义。
     template: Mapped[Optional["ReportTemplate"]] = relationship(
         "app.modules.quality.qms.material_report_models.ReportTemplate",
         back_populates="reports",

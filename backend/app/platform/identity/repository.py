@@ -12,6 +12,16 @@ from app.platform.identity.models import (
 )
 
 
+def _like_pattern(keyword: str) -> str:
+    """构造 ILIKE 包含匹配模式。
+
+    用户输入里的 ``\\``、``%``、``_`` 都是 LIKE 元字符，直接拼进模式会被当成通配符；
+    这里统一转义，配合 ``escape="\\"`` 使用。
+    """
+    escaped = keyword.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
 class UserRepository:
     async def get_by_id(
         self,
@@ -219,13 +229,14 @@ class UserRepository:
             count_stmt = count_stmt.where(User.id.not_in(exclude_user_ids))
 
         if keyword:
-            pattern = f"%{keyword}%"
+            # 用户管理搜索：与 list_all 同一套转义口径，避免 `%`/`_` 被当通配符
+            pattern = _like_pattern(keyword)
             filter_expr = or_(
-                User.name.ilike(pattern),
-                User.username.ilike(pattern),
-                User.email.ilike(pattern),
-                User.mobile.ilike(pattern),
-                User.employee_no.ilike(pattern),
+                User.name.ilike(pattern, escape="\\"),
+                User.username.ilike(pattern, escape="\\"),
+                User.email.ilike(pattern, escape="\\"),
+                User.mobile.ilike(pattern, escape="\\"),
+                User.employee_no.ilike(pattern, escape="\\"),
             )
             base = base.where(filter_expr)
             count_stmt = count_stmt.where(filter_expr)
@@ -271,30 +282,41 @@ class UserRepository:
         *,
         department_id: str | None = None,
         keyword: str | None = None,
+        feishu_bound_only: bool = False,
         offset: int = 0,
         limit: int = 100,
     ) -> tuple[list[User], int]:
-        """分页查询所有用户，支持按部门/关键词筛选。"""
+        """分页查询所有用户，支持按部门/关键词筛选。
+
+        feishu_bound_only=True 时只返回已绑定飞书身份的账号，
+        判定口径与「绑定飞书」的 unbound_only 保持一致（两个飞书 ID 任一存在即视为已绑定）。
+        """
         base = select(User).where(User.is_deleted == False)  # noqa: E712
-
-        if department_id:
-            base = base.where(
-                User.feishu_department_ids.contains(department_id),
-            )
-        if keyword:
-            base = base.where(
-                User.name.ilike(f"%{keyword}%"),
-            )
-
         count_stmt = select(User.id).where(User.is_deleted == False)  # noqa: E712
+
         if department_id:
-            count_stmt = count_stmt.where(
-                User.feishu_department_ids.contains(department_id),
-            )
+            department_filter = User.feishu_department_ids.contains(department_id)
+            base = base.where(department_filter)
+            count_stmt = count_stmt.where(department_filter)
         if keyword:
-            count_stmt = count_stmt.where(
-                User.name.ilike(f"%{keyword}%"),
+            # 选人下拉的搜索框：除了姓名，还要能按登录账号 / 工号 / 手机号搜到人，
+            # 否则重名或只记得账号时根本找不到（NULL 参与 OR 结果为 NULL，会被 WHERE 自然过滤）。
+            pattern = _like_pattern(keyword)
+            keyword_filter = or_(
+                User.name.ilike(pattern, escape="\\"),
+                User.username.ilike(pattern, escape="\\"),
+                User.employee_no.ilike(pattern, escape="\\"),
+                User.mobile.ilike(pattern, escape="\\"),
             )
+            base = base.where(keyword_filter)
+            count_stmt = count_stmt.where(keyword_filter)
+        if feishu_bound_only:
+            bound_filter = or_(
+                User.feishu_user_id.isnot(None),
+                User.feishu_open_id.isnot(None),
+            )
+            base = base.where(bound_filter)
+            count_stmt = count_stmt.where(bound_filter)
         total_result = await session.execute(count_stmt)
         total = len(total_result.scalars().all())
 
@@ -395,7 +417,7 @@ class LoginLogRepository:
         if status:
             conditions.append(LoginLog.status == status)
         if keyword:
-            conditions.append(LoginLog.user_name.ilike(f"%{keyword}%"))
+            conditions.append(LoginLog.user_name.ilike(_like_pattern(keyword), escape="\\"))
 
         # 用 COUNT(*) 统计总数（原来把符合条件的全部 id 拉回内存再取长度，数据量增长后很慢）
         total = (await session.execute(select(func.count()).select_from(LoginLog).where(*conditions))).scalar_one()

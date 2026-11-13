@@ -14,6 +14,7 @@ import {
   saveLivzonFeishuConfig as saveLivzonFeishuConfigServer,
   testLivzonFeishuConfig as testLivzonFeishuConfigServer,
   syncLivzonFeishuContacts as syncLivzonFeishuContactsServer,
+  triggerFeishuUserInfoSync as triggerFeishuUserInfoSyncServer,
 } from '@/lib/api/server/settings'
 
 async function getAuthToken(): Promise<string | undefined> {
@@ -76,4 +77,10 @@ export async function testLivzonFeishuConfig(data?: FeishuConfigUpsert) {
 export async function syncLivzonFeishuContacts() {
   const token = await getAuthToken()
   return syncLivzonFeishuContactsServer(token)
+}
+
+/** 用户管理页：同步飞书用户资料（头像、部门、职位等），不分配账号 */
+export async function syncFeishuUserInfo() {
+  const token = await getAuthToken()
+  return triggerFeishuUserInfoSyncServer(token)
 }

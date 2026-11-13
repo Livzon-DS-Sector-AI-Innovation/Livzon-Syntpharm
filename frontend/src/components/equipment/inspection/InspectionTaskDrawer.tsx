@@ -1,8 +1,9 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { App, Avatar, Card, DatePicker, Drawer, Form, Select, Tag, Typography } from 'antd'
+import { App, Card, DatePicker, Drawer, Form, Select, Tag, Typography } from 'antd'
 import { UserOutlined, CheckSquareOutlined, CalendarOutlined } from '@ant-design/icons'
+import { UserAvatar } from '@/components/common/UserAvatar'
 import { useInspectionStore } from '@/stores/inspection'
 import { createInspectionTask } from '@/actions/inspection'
 import { fetchInspectionRoutes } from '@/lib/api/client/inspection'
@@ -21,8 +22,6 @@ interface Props {
 
 const C = { navy: '#0a1530', purple: '#5645d4', ink: '#1a1a1a', slate: '#5d5b54',
   stone: '#a4a097', hairline: '#e5e3df', surface: '#f6f5f4', canvas: '#ffffff' }
-const AV = ['#5645d4', '#7b3ff2', '#dd5b00', '#0075de', '#1aae39', '#2a9d99']
-function avColor(n: string) { let h = 0; for (let i = 0; i < n.length; i++) h = n.charCodeAt(i) + ((h << 5) - h); return AV[Math.abs(h) % AV.length] }
 
 export function InspectionTaskDrawer({ templates, equipments }: Props) {
   const { message } = App.useApp()
@@ -227,11 +226,7 @@ export function InspectionTaskDrawer({ templates, equipments }: Props) {
                   if (!p) return <Text>{o.label}</Text>
                   return (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Avatar size={28} src={p.avatar_url || undefined}
-                        style={{ backgroundColor: p.avatar_url ? 'transparent' : avColor(p.name), flexShrink: 0, fontSize: 11, fontWeight: 700 }}
-                        icon={!p.avatar_url ? <UserOutlined /> : undefined}>
-                        {!p.avatar_url ? p.name.charAt(0) : undefined}
-                      </Avatar>
+                      <UserAvatar size={28} name={p.name} src={p.avatar_url} />
                       <div style={{ lineHeight: 1.3 }}>
                         <Text style={{ fontSize: 13, fontWeight: 500 }}>{p.name}</Text>
                         {p.department && <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>{p.department}{p.employee_no ? ` · ${p.employee_no}` : ''}</Text>}

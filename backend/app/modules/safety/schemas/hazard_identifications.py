@@ -6,6 +6,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.modules.safety.schemas.person_ref import PersonRef
+
 # ── 风险等级常量 ──
 RISK_LEVELS = [
     {
@@ -235,6 +237,9 @@ class HazardIdentificationResponse(HazardIdentificationBase):
     post_risk_label: str | None = None
     control_level: str | None = None
     responsible_person: str | None = None
+    responsible_person_users: list[PersonRef] = Field(
+        default_factory=list, description="责任人匹配结果（命中系统用户时含头像，未命中仅保留姓名）"
+    )
     ai_node_progress: str
     ai_error_message: str | None = None
     overall_status: str

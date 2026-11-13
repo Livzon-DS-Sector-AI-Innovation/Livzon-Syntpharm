@@ -37,6 +37,10 @@ from app.modules.safety.schemas import (
 from app.modules.safety.service import (
     SafetyService,
 )
+from app.modules.safety.service.hazard_person import (
+    to_hazard_identification_response,
+    to_hazard_identification_responses,
+)
 
 hazard_identifications_router = APIRouter()
 
@@ -78,7 +82,7 @@ async def handler(
         batch_id,
     )
     return HazardIdentificationListApiResponse(
-        data=[HazardIdentificationResponse.model_validate(i) for i in items],
+        data=await to_hazard_identification_responses(db, items),
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
@@ -158,7 +162,7 @@ async def handler(  # noqa: F811
     item = await service.get_hazard_identification(hid)
     if not item:
         raise NotFoundException(resource="记录")
-    return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
+    return HazardIdentificationApiResponse(data=await to_hazard_identification_response(db, item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]

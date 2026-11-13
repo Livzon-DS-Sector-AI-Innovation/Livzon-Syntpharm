@@ -991,6 +991,7 @@ async def _create_hazard_from_bitable(
             bt_field_label="检查人员",
             existing_name=mapped.get("discovered_by_name"),
             strict_name=True,
+            department_hint=mapped.get("department"),
         )
         _debug_log(
             f"CREATE_INSPECTOR_RESOLVED: record_id={record_id} "
@@ -1548,6 +1549,7 @@ async def _update_hazard_from_bitable(
             bt_field_label="检查人员",
             existing_name=getattr(hazard, "discovered_by_name", None),
             strict_name=True,
+            department_hint=update_data.get("department") or getattr(hazard, "department", None),
         )
         if inspector_uuid:
             update_data["discovered_by"] = inspector_uuid

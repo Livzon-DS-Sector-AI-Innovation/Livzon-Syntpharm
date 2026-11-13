@@ -3,11 +3,10 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Dropdown, Avatar } from "antd"
+import { Dropdown } from "antd"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   LogoutOutlined,
-  UserOutlined,
   MenuOutlined,
   MenuUnfoldOutlined,
   MenuFoldOutlined,
@@ -15,6 +14,7 @@ import {
   HomeOutlined,
   IdcardOutlined,
 } from "@ant-design/icons"
+import { UserAvatar } from "@/components/common/UserAvatar"
 import { resolveMenus } from "@/lib/menu/resolve"
 import { ModuleIcon, SearchIcon, BellIcon } from "@/components/Icons"
 import { logout } from "@/actions/auth"
@@ -48,7 +48,6 @@ export function TopNav({ onMenuClick, permissionView, userName, avatarUrl }: Top
     }
   }
 
-  const avatarSrc = avatarUrl || undefined
   const displayName = userName
 
   // 可见模块与排序 = 「代码菜单结构 + 服务端下发的菜单配置」合并结果（见 lib/menu/resolve.ts）
@@ -199,11 +198,7 @@ export function TopNav({ onMenuClick, permissionView, userName, avatarUrl }: Top
             className="ml-2 flex items-center gap-2 h-8 px-2 rounded-[var(--rounded-md)] hover:bg-[var(--color-surface)] transition-colors disabled:opacity-50"
             disabled={loggingOut}
           >
-            {avatarSrc ? (
-              <Avatar src={avatarSrc} size={28} />
-            ) : (
-              <Avatar size={28} icon={<UserOutlined />} />
-            )}
+            <UserAvatar size={28} name={displayName} src={avatarUrl} />
             <span className="text-[13px] text-[var(--color-ink)] hidden md:inline">
               {displayName}
             </span>

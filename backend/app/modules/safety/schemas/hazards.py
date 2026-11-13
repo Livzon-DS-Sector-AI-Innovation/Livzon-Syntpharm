@@ -6,11 +6,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from app.modules.safety.schemas.enums import (
-    HazardCategory,
-    HazardLevel,
-    HazardType,
-)
+from app.modules.safety.schemas.enums import HazardLevel, HazardType
+from app.modules.safety.schemas.person_ref import PersonRef
 
 
 class RectificationReplyRequest(BaseModel):
@@ -22,6 +19,7 @@ class RectificationReplyRequest(BaseModel):
     rectification_reply: str | None = Field(None, description="整改回复内容（新字段）")
     capa_measures: str | None = Field(None, description="纠正预防措施（人工填写）")
     actual_completion_date: datetime | None = Field(None, description="整改完成时间（默认当前时间）")
+    rectification_progress_note: str | None = Field(None, description="整改进度说明")
 
 
 class VerifyLevelRequest(BaseModel):
@@ -60,18 +58,25 @@ class HazardReportBase(BaseModel):
     inspection_category: str | None = Field(None, max_length=64, description="检查类别（日常检查/专项检查…）")
     hazard_type: HazardType = Field(..., description="隐患分类（人/物/环/管）")
     hazard_level: HazardLevel = Field(HazardLevel.GENERAL, description="隐患等级")
-    hazard_category: HazardCategory | None = Field(None, description="隐患类别（设备设施/危化储存…）")
+    hazard_category: str | None = Field(None, max_length=64, description="隐患类别（字典表名称）")
     description: str = Field(..., description="隐患描述")
     discovered_by: uuid.UUID | None = Field(None, description="发现人")
     discovered_by_name: str | None = Field(None, max_length=100, description="检查人员姓名")
     inspector_department: str | None = Field(None, max_length=500, description="检查人员部门（Bitable 多选，逗号分隔）")
     discovered_at: datetime = Field(..., description="检查日期")
     department: str | None = Field(None, max_length=100, description="责任部门")
+    safety_officer_id: uuid.UUID | None = Field(None, description="分管安全员（FK → identity.users）")
+    safety_officer_name: str | None = Field(None, max_length=100, description="分管安全员姓名")
     major_hazard_basis: str | None = Field(None, description="隐患判定依据（AI）")
     key_defect: str | None = Field(None, description="隐患描述（AI）")
     defect_photos: str | None = Field(None, description="缺陷图片JSON数组")
     rectification_responsible_person: uuid.UUID | None = Field(None, description="整改责任人（FK → identity.users）")
     rectification_responsible_person_name: str | None = Field(None, max_length=100, description="整改责任人姓名")
+    rectification_responsible_person_ids: list[str] | None = Field(None, description="整改负责人多选 UUID 列表")
+    rectification_responsible_person_names: str | None = Field(
+        None, max_length=500, description="整改负责人姓名快照（逗号分隔）"
+    )
+    rectification_progress_note: str | None = Field(None, description="整改进度说明（自定义文字）")
     corrective_preventive_measures: str | None = Field(None, description="AI整改建议")
     rectification_reply: str | None = Field(None, description="整改回复内容")
     capa_measures: str | None = Field(None, description="纠正预防措施（人工填写）")
@@ -90,9 +95,10 @@ class HazardReportCreate(HazardReportBase):
     )
     hazard_type: HazardType | None = Field(None, description="隐患分类")  # type: ignore[assignment]
     hazard_level: HazardLevel | None = Field(None, description="隐患等级")  # type: ignore[assignment]
-    hazard_category: HazardCategory | None = Field(None, description="隐患类别")
+    hazard_category: str | None = Field(None, max_length=64, description="隐患类别（字典表名称）")
     description: str | None = Field(None, description="隐患描述")  # type: ignore[assignment]
     discovered_at: datetime | None = Field(None, description="发现时间")  # type: ignore[assignment]
+    overall_status: str | None = Field(None, max_length=20, description="整体状态（draft=草稿，completed=正式登记）")
 
 
 class HazardReportUpdate(BaseModel):
@@ -103,18 +109,25 @@ class HazardReportUpdate(BaseModel):
     inspection_category: str | None = Field(None, max_length=64, description="检查类别（日常检查/专项检查…）")
     hazard_type: HazardType | None = Field(None, description="隐患分类")
     hazard_level: HazardLevel | None = Field(None, description="隐患等级")
-    hazard_category: HazardCategory | None = Field(None, description="隐患类别")
+    hazard_category: str | None = Field(None, max_length=64, description="隐患类别（字典表名称）")
     description: str | None = Field(None, description="隐患描述")
     discovered_by: uuid.UUID | None = Field(None, description="发现人（FK → identity.users）")
     discovered_by_name: str | None = Field(None, max_length=100, description="检查人员姓名")
     discovered_at: datetime | None = Field(None, description="检查日期")
     department: str | None = Field(None, max_length=100, description="责任部门")
+    safety_officer_id: uuid.UUID | None = Field(None, description="分管安全员（FK → identity.users）")
+    safety_officer_name: str | None = Field(None, max_length=100, description="分管安全员姓名")
     inspector_department: str | None = Field(None, max_length=500, description="检查人员部门（Bitable 多选，逗号分隔）")
     major_hazard_basis: str | None = Field(None, description="隐患判定依据（AI）")
     key_defect: str | None = Field(None, description="隐患描述（AI）")
     defect_photos: str | None = Field(None, description="缺陷图片JSON数组")
     rectification_responsible_person: uuid.UUID | None = Field(None, description="整改责任人（FK → identity.users）")
     rectification_responsible_person_name: str | None = Field(None, max_length=100, description="整改责任人姓名")
+    rectification_responsible_person_ids: list[str] | None = Field(None, description="整改负责人多选 UUID 列表")
+    rectification_responsible_person_names: str | None = Field(
+        None, max_length=500, description="整改负责人姓名快照（逗号分隔）"
+    )
+    rectification_progress_note: str | None = Field(None, description="整改进度说明")
     corrective_preventive_measures: str | None = Field(None, description="AI整改建议")
     rectification_reply: str | None = Field(None, description="整改回复内容")
     capa_measures: str | None = Field(None, description="纠正预防措施（人工填写）")
@@ -174,6 +187,14 @@ class HazardReportResponse(HazardReportBase):
     review_notified_level: int | None = None
     review_notify_status: str | None = None
     review_notify_error: str | None = None
+    # ── 人员引用（读时解析：UUID 命中 → 系统用户；仅姓名 → 唯一命中兜底）──
+    discovered_by_person: PersonRef | None = Field(None, description="检查人员/审批人（含头像）")
+    rectification_responsible_persons: list[PersonRef] = Field(
+        default_factory=list, description="整改负责人（顺序与 rectification_responsible_person_names 一致）"
+    )
+    safety_officer_person: PersonRef | None = Field(
+        None, description="分管安全员（含头像）；未单独指定时由详情页按责任部门配置回退"
+    )
 
     class Config:
         from_attributes = True
@@ -245,6 +266,35 @@ class DepartmentSafetyOfficerApiResponse(BaseModel):
     data: DepartmentSafetyOfficerResponse | None = None
 
 
+class HazardDiagnoseData(BaseModel):
+    """Bitable 漏单诊断结果（`GET /hazards/catch-up/diagnose` 的 data）。
+
+    字段与 `feishu/catch_up.py:diagnose_missed_records()` 的返回 dict 一一对应；
+    此前该端点误声明为 `HazardApiResponse`（隐患单对象），诊断字段会被响应校验丢弃。
+    """
+
+    cutoff_time: str | None = Field(None, description="检测时间下界（本地最新 updated_at，ISO 格式）")
+    bitable_matched: int = Field(0, description="查询窗口内 Bitable 返回的记录数")
+    local_total: int = Field(0, description="本地已关联 feishu_record_id 的记录数")
+    missed: int = Field(0, description="漏单数；-1 表示诊断失败")
+    existing: int = Field(0, description="两边都存在的记录数")
+    # 漏单详情取 Bitable 原始字段值，列类型决定实际类型（日期为时间戳、人员列为数组），
+    # 因此保持字典结构：收紧成固定标量类型会让响应校验在真实数据上抛 500。
+    missed_records: list[dict[str, Any]] = Field(
+        default_factory=list, description="漏单详情（最多 50 条，Bitable 原始字段值）"
+    )
+    diagnostic_ran_at: str = Field(..., description="诊断执行时间（ISO 格式）")
+    error: str | None = Field(None, description="诊断失败原因；成功时为 null")
+
+
+class HazardDiagnoseApiResponse(BaseModel):
+    """Bitable 漏单诊断响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: HazardDiagnoseData
+
+
 class HazardVerifyNotifyData(BaseModel):
     """复核通知发送结果"""
 
@@ -288,3 +338,43 @@ class HazardAiRunApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: HazardAiRunData | None = None
+
+
+# ============ 隐患类别字典 ============
+
+
+class HazardCategoryCreate(BaseModel):
+    """新增隐患类别请求"""
+
+    name: str = Field(..., min_length=1, max_length=64, description="类别名称")
+
+
+class HazardCategoryUpdate(BaseModel):
+    """隐患类别改名请求"""
+
+    name: str = Field(..., min_length=1, max_length=64, description="新类别名称")
+
+
+class HazardCategoryResponse(BaseModel):
+    """隐患类别项"""
+
+    id: str | None = Field(None, description="字典记录 ID（内置类别为 None）")
+    name: str = Field(..., description="类别名称")
+    sort_order: int = Field(0, description="排序值，越小越前")
+    is_builtin: bool = Field(False, description="是否内置类别（不可删除）")
+
+
+class HazardCategoryListApiResponse(BaseModel):
+    """隐患类别列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[HazardCategoryResponse]
+
+
+class HazardCategoryApiResponse(BaseModel):
+    """单个隐患类别响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: HazardCategoryResponse | None = None

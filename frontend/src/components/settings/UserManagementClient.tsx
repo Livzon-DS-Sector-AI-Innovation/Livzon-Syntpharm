@@ -29,6 +29,7 @@ import {
   MoreOutlined,
   PlusOutlined,
   ReloadOutlined,
+  SyncOutlined,
   UserSwitchOutlined,
 } from '@ant-design/icons'
 import {
@@ -44,6 +45,8 @@ import {
   updateUser,
 } from '@/actions/users'
 import { createGrant, fetchRoles } from '@/actions/permission'
+import { syncFeishuUserInfo } from '@/actions/settings'
+import { UserLabel } from '@/components/common/UserAvatar'
 import type {
   LocalUserCreate,
   UserBatchStatusResult,
@@ -169,6 +172,8 @@ export default function UserManagementClient() {
   // 批量启用/禁用：选中行 + 结果汇总（失败项逐条列原因）
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([])
   const [batching, setBatching] = useState(false)
+  // 同步飞书用户信息：后台任务，接口立即返回，按钮只防重复点击
+  const [syncingFeishu, setSyncingFeishu] = useState(false)
   const [batchResult, setBatchResult] = useState<UserBatchStatusResult | null>(null)
   const [sessionUser, setSessionUser] = useState<UserManagementItem | null>(null)
   const [sessions, setSessions] = useState<UserSession[]>([])
@@ -233,6 +238,26 @@ export default function UserManagementClient() {
     // 刷新后行可能已变化，清掉选择避免批量操作指向旧数据
     setSelectedRowKeys([])
     refetchUsers()
+  }
+
+  /**
+   * 同步飞书用户信息：只回填姓名 / 英文名 / 部门 / 职位 / 头像，不分配账号、不改状态与角色。
+   * 后端是后台任务（约 1 分钟），触发后延迟刷新一次列表，避免用户以为没生效。
+   */
+  const handleSyncFeishu = async () => {
+    setSyncingFeishu(true)
+    try {
+      const result = await syncFeishuUserInfo()
+      message.success(result.message || '已开始在后台同步飞书用户信息')
+      window.setTimeout(() => {
+        setSelectedRowKeys([])
+        refetchUsers()
+      }, 60_000)
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : '同步飞书用户信息失败')
+    } finally {
+      setSyncingFeishu(false)
+    }
   }
 
   /** 筛选条件变化：回到第 1 页并清空跨页选中（否则会对着看不见的行做批量操作）。 */
@@ -589,16 +614,15 @@ export default function UserManagementClient() {
       title: '姓名',
       dataIndex: 'name',
       key: 'name',
-      width: 130,
-      // 单行省略，避免长姓名把整行撑高；悬停看全名
-      render: (name: string) => {
-        const text = name || '-'
-        return (
-          <Tooltip title={text} placement="topLeft">
-            <span className="block max-w-full truncate font-medium text-[var(--color-charcoal)]">{text}</span>
-          </Tooltip>
-        )
-      },
+      width: 170,
+      // 头像来自飞书同步（avatar_thumb 优先），加载失败自动回退首字色块；悬停看全名
+      render: (name: string, record: UserManagementItem) => (
+        <Tooltip title={name || '-'} placement="topLeft">
+          <span className="block max-w-full truncate">
+            <UserLabel name={name} src={record.avatar_thumb ?? record.avatar_url} avatarSize={26} />
+          </span>
+        </Tooltip>
+      ),
     },
     {
       title: '账号',
@@ -806,6 +830,13 @@ export default function UserManagementClient() {
               刷新
             </Button>
             {canManage && (
+              <Tooltip title="从飞书通讯录同步姓名、英文名、部门、职位与头像；不分配账号、不改状态与角色">
+                <Button icon={<SyncOutlined />} loading={syncingFeishu} onClick={handleSyncFeishu}>
+                  同步飞书用户信息
+                </Button>
+              </Tooltip>
+            )}
+            {canManage && (
               <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
                 新建用户
               </Button>
@@ -821,8 +852,8 @@ export default function UserManagementClient() {
             loading={loading}
             rowSelection={rowSelection}
             // 固定操作列需要明确的滚动宽度，否则「编辑 / 启停 / ⋯」会被挤断
-            // 列宽合计：姓名 130 + 账号 150 + 部门 140 + 职位 130 + 角色 180 + 状态 110 + 来源/飞书 150 + 创建时间 170 + 操作 180 + 多选 50
-            scroll={{ x: 1390 }}
+            // 列宽合计：姓名 170 + 账号 150 + 部门 140 + 职位 130 + 角色 180 + 状态 110 + 来源/飞书 150 + 创建时间 170 + 操作 180 + 多选 50
+            scroll={{ x: 1430 }}
             pagination={{
               current: page,
               pageSize,

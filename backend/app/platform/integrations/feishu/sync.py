@@ -95,6 +95,33 @@ def _is_newly_created(existing: Any) -> bool:
     return (datetime.now(UTC) - created_at).total_seconds() < 60  # type: ignore[no-any-return]
 
 
+def _resolve_position(rec: dict[str, Any]) -> str | None:
+    """解析职位：`job_title` 优先，为空时退回 `positions` 里的岗位名称。
+
+    `job_title` 与 `positions` 同属 `contact:user.employee:readonly`（集团审核中），
+    当前租户两者都返回空，因此取不到值时返回 None（不覆盖本地已有职位）；
+    权限开通后无需再改代码即可自动有值。
+
+    `positions` 可能多人多岗，取 `is_major=True` 的主岗优先，其次按返回顺序。
+    """
+    job_title = (rec.get("job_title") or "").strip()
+    if job_title:
+        return job_title
+
+    positions = rec.get("positions")
+    if not isinstance(positions, list):
+        return None
+    ordered = sorted(
+        (p for p in positions if isinstance(p, dict)),
+        key=lambda p: not p.get("is_major"),
+    )
+    for position in ordered:
+        name = (position.get("position_name") or "").strip()
+        if name:
+            return name
+    return None
+
+
 def _parse_user_record(rec: dict[str, Any]) -> dict[str, Any] | None:
     open_id = rec.get("open_id")
     if not open_id:
@@ -113,7 +140,7 @@ def _parse_user_record(rec: dict[str, Any]) -> dict[str, Any] | None:
         "email": rec.get("email") or None,
         "mobile": rec.get("mobile") or None,
         "department": rec.get("dept_name", ""),
-        "position": rec.get("job_title") or None,
+        "position": _resolve_position(rec),
         "avatar_url": rec.get("avatar_url") or rec.get("avatar_key") or None,
         "avatar_thumb": rec.get("avatar_thumb") or None,
         "avatar_middle": rec.get("avatar_middle") or None,
@@ -128,7 +155,14 @@ async def _upsert_user(parsed: dict[str, Any]) -> None:
     from app.platform.identity.models import User
 
     async with async_session_factory() as db:
-        result = await db.execute(select(User).where(User.feishu_open_id == parsed["open_id"]))
+        # 必须排除软删行：解绑飞书会软删账号，历史行与新行同 open_id 时会命中多行，
+        # 直接 scalar_one_or_none 会抛 MultipleResultsFound，该成员从此永远同步失败。
+        result = await db.execute(
+            select(User)
+            .where(User.feishu_open_id == parsed["open_id"], User.is_deleted.is_(False))
+            .order_by(User.created_at.desc())
+            .limit(1)
+        )
         existing = result.scalar_one_or_none()
         if existing:
             existing.name = parsed["name"] or existing.name
@@ -142,36 +176,62 @@ async def _upsert_user(parsed: dict[str, Any]) -> None:
             existing.avatar_middle = parsed["avatar_middle"] or existing.avatar_middle
             existing.avatar_big = parsed["avatar_big"] or existing.avatar_big
             existing.feishu_union_id = parsed["union_id"] or existing.feishu_union_id
-            if not existing.department:
-                existing.department = parsed["department"]
+            # 部门以飞书为准：人员换部门后要跟着变（飞书没给部门时保留本地旧值，避免被空值清掉）
+            existing.department = parsed["department"] or existing.department
             existing.feishu_department_ids = parsed["feishu_department_ids"]
             # user_id 需 contact:user.employee_id:readonly（集团审核中），为空时不覆盖
             if not existing.feishu_user_id and parsed["user_id"]:
                 existing.feishu_user_id = parsed["user_id"]
+            # 账号回填：权限未开通时无可用候选值，函数内部直接跳过（当前为 no-op）
+            await _maybe_backfill_username(db, existing, parsed)
             # 离职/冻结：开关开启时自动禁用账号（不自动恢复，恢复需人工；跳过超管）
             if parsed.get("is_resigned") or parsed.get("is_frozen"):
                 await _maybe_disable_resigned(db, existing)
         else:
-            db.add(
-                User(
-                    name=parsed["name"],
-                    en_name=parsed["en_name"],
-                    feishu_user_id=parsed["user_id"],
-                    feishu_open_id=parsed["open_id"],
-                    employee_no=parsed["employee_no"],
-                    email=parsed["email"],
-                    mobile=parsed["mobile"],
-                    department=parsed["department"],
-                    position=parsed["position"],
-                    avatar_url=parsed["avatar_url"],
-                    avatar_thumb=parsed["avatar_thumb"],
-                    avatar_middle=parsed["avatar_middle"],
-                    avatar_big=parsed["avatar_big"],
-                    feishu_union_id=parsed["union_id"],
-                    feishu_department_ids=parsed["feishu_department_ids"],
-                )
+            created = User(
+                name=parsed["name"],
+                en_name=parsed["en_name"],
+                feishu_user_id=parsed["user_id"],
+                feishu_open_id=parsed["open_id"],
+                employee_no=parsed["employee_no"],
+                email=parsed["email"],
+                mobile=parsed["mobile"],
+                department=parsed["department"],
+                position=parsed["position"],
+                avatar_url=parsed["avatar_url"],
+                avatar_thumb=parsed["avatar_thumb"],
+                avatar_middle=parsed["avatar_middle"],
+                avatar_big=parsed["avatar_big"],
+                feishu_union_id=parsed["union_id"],
+                feishu_department_ids=parsed["feishu_department_ids"],
             )
+            db.add(created)
+            await db.flush()
+            await _maybe_backfill_username(db, created, parsed)
         await db.commit()
+
+
+async def _maybe_backfill_username(db: Any, user: Any, parsed: dict[str, Any]) -> None:
+    """账号回填：等集团开通 `contact:user.employee_id:readonly` 后自动生效。
+
+    - 只给还没有账号的人回填，已有账号一律不动（账号创建后不可修改）；
+    - 候选值优先工号 `employee_no`，其次飞书 `user_id`；当前租户这两项权限未开通，
+      同步结果里恒为空，因此现在调用等于 no-op；
+    - 回填前查重：候选值已被其他账号占用时跳过，避免唯一约束冲突打断整批同步。
+    """
+    if user.username:
+        return
+    candidate = (parsed.get("employee_no") or parsed.get("user_id") or "").strip()
+    if not candidate:
+        return
+
+    from app.platform.identity.models import User
+
+    taken = await db.execute(select(User.id).where(User.username == candidate))
+    if taken.scalar_one_or_none() is not None:
+        logger.warning("Skip username backfill for %s: username already taken", parsed.get("open_id"))
+        return
+    user.username = candidate
 
 
 async def _maybe_disable_resigned(db: Any, user: Any) -> None:
@@ -195,7 +255,13 @@ async def _get_existing_user(open_id: str) -> Any:
     from app.platform.identity.models import User
 
     async with async_session_factory() as db:
-        result = await db.execute(select(User).where(User.feishu_open_id == open_id))
+        # 与 _upsert_user 保持一致：排除软删行，避免历史软删行导致命中多行抛异常
+        result = await db.execute(
+            select(User)
+            .where(User.feishu_open_id == open_id, User.is_deleted.is_(False))
+            .order_by(User.created_at.desc())
+            .limit(1)
+        )
         return result.scalar_one_or_none()
 
 
@@ -396,7 +462,11 @@ async def sync_users_by_ids(
     app_id: str | None = None,
     app_secret: str | None = None,
 ) -> dict[str, Any]:
-    """Sync explicitly authorized Feishu users by user ID/open ID."""
+    """Sync explicitly authorized Feishu users by user ID/open ID.
+
+    凭证统一走 `contact` 模块默认配置（见 `FEISHU__PLATFORM__*`），
+    `app_id`/`app_secret` 仅为调用方兼容保留，当前不参与取数。
+    """
     from app.platform.integrations.feishu.contact import get_user_detail
 
     t0 = time.time()
@@ -407,12 +477,7 @@ async def sync_users_by_ids(
         users: list[dict[str, Any]] = []
         for user_id in unique_user_ids:
             try:
-                user = await get_user_detail(  # type: ignore[call-arg]
-                    user_id,
-                    user_id_type=user_id_type,
-                    app_id=app_id,
-                    app_secret=app_secret,
-                )
+                user = await get_user_detail(user_id, user_id_type=user_id_type)
                 if user:
                     users.append(user)
             except Exception:

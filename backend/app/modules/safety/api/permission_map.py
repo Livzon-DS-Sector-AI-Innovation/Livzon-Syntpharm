@@ -6,8 +6,10 @@
 - GET/HEAD（以及语义等价的只读 POST）→ `<prefix>:read`
 - 其余写动作 → `<prefix>:manage`
 
-表是唯一权威：`safety/api/__init__.py` 用它生成依赖，registry 的绑定登记也用同一份
-口径生成（见 `scripts/ci/gen_permission_bindings.py` 的 safety 分支）。
+表是唯一权威：`safety/api/__init__.py` 用它生成依赖，`permission/registry.py` 的
+`PermissionDef` / `ApiBindingDef` 必须与之同码登记（`scripts/ci/check_permissions.py`
+校验完整性；该脚本只校验绑定是否存在，不校验绑定码与本表的解析结果是否一致，
+改动本表时须同步手改 registry 绑定）。
 新增资源时必须同时补 registry 的 PermissionDef，否则导入期校验会报错。
 """
 
@@ -21,10 +23,18 @@ SAFETY_RESOURCE_CODES: Final[dict[str, tuple[str, str]]] = {
     "contractors": ("safety:contractor:read", "safety:contractor:manage"),
     "daily-risk-reports": ("safety:daily-risk-report:read", "safety:daily-risk-report:manage"),
     "ehs-changes": ("safety:ehs-change:read", "safety:ehs-change:manage"),
+    "equipment-facility-hazards": (
+        "safety:equipment-facility-hazard:read",
+        "safety:equipment-facility-hazard:manage",
+    ),
     # 枚举字典 / 文件下载只有读动作，直接复用模块级只读码
     "enums": ("safety:module:read", "safety:module:read"),
     "feishu": ("safety:feishu:manage", "safety:feishu:manage"),
     "files": ("safety:module:read", "safety:module:read"),
+    # 隐患类别字典：读沿用隐患只读码（登记表单要能拉到下拉），
+    # 写单独收归 safety:hazard-category:manage（模块管理员），
+    # 避免「能登记隐患的人顺带改全公司共享的类别字典」。
+    "hazard-categories": ("safety:hazard:read", "safety:hazard-category:manage"),
     "hazard-identifications": ("safety:hazard-identification:read", "safety:hazard-identification:manage"),
     "hazards": ("safety:hazard:read", "safety:hazard:manage"),
     "knowledge-articles": ("safety:knowledge-article:read", "safety:knowledge-article:manage"),
@@ -42,6 +52,7 @@ SAFETY_RESOURCE_CODES: Final[dict[str, tuple[str, str]]] = {
     ),
     "special-operation-reports": ("safety:special-operation-report:read", "safety:special-operation-report:manage"),
     "trainings": ("safety:training:read", "safety:training:manage"),
+    "work-activity-hazards": ("safety:work-activity-hazard:read", "safety:work-activity-hazard:manage"),
     "training-certificates": ("safety:training-certificate:read", "safety:training-certificate:manage"),
     "training-records": ("safety:training-record:read", "safety:training-record:manage"),
 }

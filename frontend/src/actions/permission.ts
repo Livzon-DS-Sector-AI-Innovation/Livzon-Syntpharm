@@ -18,10 +18,10 @@ import {
   getGrants as getGrantsApi,
   getMyPermissions as getMyPermissionsApi,
   getPermissions as getPermissionsApi,
+  getPermissionApiBindings as getPermissionApiBindingsApi,
   getPermissionPreview as getPermissionPreviewApi,
   getPermissionTree as getPermissionTreeApi,
   getRoles as getRolesApi,
-  getUsersForSelect,
   updateGrant as updateGrantApi,
   updateRole as updateRoleApi,
 } from '@/lib/api/server/permission'
@@ -34,12 +34,12 @@ import type {
   GrantUpdateInput,
   MyPermissions,
   PermissionActionResult,
+  PermissionApiBindingItem,
   PermissionItem,
   PermissionTreeData,
   RoleCreateInput,
   RoleDetail,
   RoleUpdateInput,
-  UserOption,
 } from '@/types/permission'
 
 async function getAuthToken(): Promise<string | undefined> {
@@ -120,6 +120,12 @@ export async function fetchPermissionTree(): Promise<PermissionTreeData> {
 export async function fetchApiBindings(): Promise<ApiBindingItem[]> {
   const token = await getAuthToken()
   return unwrapResponse(await getApiBindingsApi(token)) ?? []
+}
+
+/** 单个权限码绑定的接口清单（权限树点击「N 个接口」时才请求）。 */
+export async function fetchPermissionApiBindings(code: string): Promise<PermissionApiBindingItem[]> {
+  const token = await getAuthToken()
+  return unwrapResponse(await getPermissionApiBindingsApi(code, token)) ?? []
 }
 
 // ── 授权 ──────────────────────────────────────────────────────────
@@ -203,14 +209,6 @@ export async function batchDeleteGrants(ids: string[]): Promise<PermissionAction
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : '批量删除授权失败' }
   }
-}
-
-// ── 用户选择列表 ──────────────────────────────────────────────────
-
-export async function fetchUserOptions(): Promise<UserOption[]> {
-  const token = await getAuthToken()
-  const data = unwrapResponse(await getUsersForSelect(token))
-  return (data?.items ?? []).map(item => ({ ...item, username: item.username ?? null }))
 }
 
 // ── 当前用户权限 ──────────────────────────────────────────────────

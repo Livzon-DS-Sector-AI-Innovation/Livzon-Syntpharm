@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -18,6 +19,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     Text,
     func,
@@ -579,9 +581,9 @@ class HazardReport(BaseModel):
         comment="隐患等级（AI）：一般隐患/较大隐患/重大隐患",
     )
     hazard_category: Mapped[str | None] = mapped_column(
-        String(32),
+        String(64),
         nullable=True,
-        comment="隐患类别（AI）：设备设施/危化储存/仪表+电气/…（13种）",
+        comment="隐患类别：字典表 safety.hazard_categories 的 name（内置 7 类 + 用户新增）",
     )
     description: Mapped[str] = mapped_column(Text, nullable=False, comment="隐患描述")
     discovered_by: Mapped[uuid.UUID | None] = mapped_column(
@@ -600,6 +602,13 @@ class HazardReport(BaseModel):
         DateTime(timezone=True), server_default=None, nullable=False, comment="检查日期"
     )
     department: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="责任部门")
+    safety_officer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="分管安全员（FK → identity.users）；为空时读时回退责任部门配置的安全员",
+    )
+    safety_officer_name: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="分管安全员姓名快照")
     major_hazard_basis: Mapped[str | None] = mapped_column(Text, nullable=True, comment="隐患判定依据（AI）")
     key_defect: Mapped[str | None] = mapped_column(Text, nullable=True, comment="隐患描述（AI）")
     defect_substance: Mapped[str | None] = mapped_column(
@@ -618,6 +627,16 @@ class HazardReport(BaseModel):
     rectification_responsible_person_name: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="整改责任人姓名（Bitable「责任人」）"
     )
+    rectification_responsible_person_ids: Mapped[list[str] | None] = mapped_column(
+        JSON,
+        nullable=True,
+        comment="整改负责人多选 UUID 列表（新）。为空时回退单人字段 rectification_responsible_person",
+    )
+    rectification_responsible_person_names: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        comment="整改负责人姓名快照（逗号分隔，与 ids 顺序一致）",
+    )
     corrective_preventive_measures: Mapped[str | None] = mapped_column(Text, nullable=True, comment="AI整改建议")
     rectification_reply: Mapped[str | None] = mapped_column(Text, nullable=True, comment="整改回复内容")
     capa_measures: Mapped[str | None] = mapped_column(
@@ -634,6 +653,9 @@ class HazardReport(BaseModel):
         server_default="pending",
         nullable=False,
         comment="整改进度",
+    )
+    rectification_progress_note: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="整改进度说明（自定义文字，与单选状态并存）"
     )
     # ── 三级复核 ──
     verify_level_1_status: Mapped[str] = mapped_column(
@@ -1123,6 +1145,78 @@ class HazardIdentification(BaseModel):
     )
 
     notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
+
+
+class WorkActivityHazard(BaseModel):
+    """作业活动危险源台账（LEC 法：D = L × E × C，D > 20，1–4 级）。"""
+
+    __tablename__ = "work_activity_hazards"
+    __table_args__ = (
+        Index("ix_work_activity_hazards_control_level", "control_level"),
+        Index("ix_work_activity_hazards_residual_risk", "residual_risk"),
+        Index("ix_work_activity_hazards_evaluation_grade", "evaluation_grade"),
+        {"schema": "safety"},
+    )
+
+    position_location: Mapped[str] = mapped_column(String(255), nullable=False, comment="岗位/地点")
+    area_activity: Mapped[str] = mapped_column(String(255), nullable=False, comment="区域/活动")
+    hazard_name_or_event: Mapped[str] = mapped_column(Text, nullable=False, comment="危险源名称或潜在事件")
+    possible_harm: Mapped[str] = mapped_column(Text, nullable=False, comment="可能导致的危害")
+    hazard_type: Mapped[str] = mapped_column(Text, nullable=False, comment="危险源类型")
+
+    likelihood_l: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False, comment="可能性L（0.1–10）")
+    exposure_e: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False, comment="发生频次E（0.5–10）")
+    consequence_c: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False, comment="后果C（1–100）")
+    risk_value_d: Mapped[Decimal] = mapped_column(
+        Numeric(38, 18), nullable=False, comment="风险值D = L×E×C（服务端精确计算，只读）"
+    )
+    evaluation_grade: Mapped[int] = mapped_column(Integer, nullable=False, comment="评价级别 1–4（4 最高，服务端计算）")
+    evaluation_grade_label: Mapped[str] = mapped_column(String(20), nullable=False, comment="评价级别中文标签")
+
+    control_measures: Mapped[list[str]] = mapped_column(JSON, nullable=False, comment="控制措施（有序的稳定 key 数组）")
+    residual_risk: Mapped[str] = mapped_column(String(20), nullable=False, comment="残余风险 key")
+    residual_risk_label: Mapped[str] = mapped_column(String(50), nullable=False, comment="残余风险中文标签")
+    control_level: Mapped[str] = mapped_column(String(100), nullable=False, comment="管控层级（部门单选）")
+    execution_level: Mapped[str] = mapped_column(String(20), nullable=False, comment="执行层级 key（车间/班组长）")
+
+
+class EquipmentFacilityHazard(BaseModel):
+    """设备设施危险源台账（安全风险矩阵：R 由 L/S 交叉格查得，只读）。"""
+
+    __tablename__ = "equipment_facility_hazards"
+    __table_args__ = (
+        Index("ix_equipment_facility_hazards_control_level", "control_level"),
+        Index("ix_equipment_facility_hazards_residual_risk", "residual_risk"),
+        Index("ix_equipment_facility_hazards_evaluation_grade", "evaluation_grade"),
+        {"schema": "safety"},
+    )
+
+    equipment_facility_tag: Mapped[str] = mapped_column(String(255), nullable=False, comment="设备设施/位号")
+    inspection_item: Mapped[str] = mapped_column(Text, nullable=False, comment="检查项目")
+    inspection_standard: Mapped[str] = mapped_column(Text, nullable=False, comment="检查标准")
+    nonconformity_consequence: Mapped[str] = mapped_column(Text, nullable=False, comment="不符合标准情况及后果")
+
+    likelihood_l: Mapped[int] = mapped_column(Integer, nullable=False, comment="可能性 L（1–5）")
+    severity_s: Mapped[str] = mapped_column(String(1), nullable=False, comment="严重性 S（A–E）")
+    risk_evaluation_r: Mapped[int] = mapped_column(
+        Integer, nullable=False, comment="危险评价 R（安全风险矩阵查表，服务端计算，只读）"
+    )
+    evaluation_grade: Mapped[int] = mapped_column(
+        Integer, nullable=False, comment="评价级别 1–4（按 R 分级，服务端计算，只读）"
+    )
+    evaluation_grade_label: Mapped[str] = mapped_column(String(20), nullable=False, comment="评价级别中文标签")
+
+    current_control_measures: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, comment="现有管控措施（有序的稳定 key 数组）"
+    )
+    improvement_measures: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, comment="建议改进（新增）措施（有序的稳定 key 数组）"
+    )
+    residual_risk: Mapped[str] = mapped_column(String(20), nullable=False, comment="残余风险 key")
+    residual_risk_label: Mapped[str] = mapped_column(String(50), nullable=False, comment="残余风险中文标签")
+    control_level: Mapped[str] = mapped_column(String(100), nullable=False, comment="管控层级（部门单选）")
+    execution_level: Mapped[str] = mapped_column(String(20), nullable=False, comment="执行层级 key（车间/班组长）")
+    remarks: Mapped[str] = mapped_column(Text, nullable=False, comment="备注")
 
 
 # ==================== 安全操作规程 ====================
@@ -2182,4 +2276,32 @@ class GraphKnowledgeEdge(BaseModel):
     )
     target_node: Mapped[GraphKnowledgeNode] = relationship(
         "GraphKnowledgeNode", foreign_keys=[target_node_id], lazy="select"
+    )
+
+
+# ==================== 隐患类别字典 ====================
+
+
+class HazardCategoryDict(BaseModel):
+    """隐患类别字典表（用户可在登记时新增，全公司共享）"""
+
+    __tablename__ = "hazard_categories"
+    __table_args__ = (
+        Index(
+            "uq_hazard_categories_name",
+            "name",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
+        {"schema": "safety", "comment": "隐患类别字典（用户可新增，全公司共享）"},
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="类别名称（与 hazard_reports.hazard_category 同值）"
+    )
+    sort_order: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False, comment="排序值（越小越前）"
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default="true", nullable=False, comment="是否启用"
     )

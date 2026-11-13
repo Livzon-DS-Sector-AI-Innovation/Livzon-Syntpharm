@@ -10,7 +10,7 @@ import type { BatchResult } from '@/types/batch'
 import type { UserBatchStatusResult } from '@/types/users'
 
 export function normalizeBatchResult(
-  data: components['schemas']['BatchResultData'] | null | undefined,
+  data: components['schemas']['app__platform__permission__schemas__BatchResultData'] | null | undefined,
 ): BatchResult {
   return { succeeded: data?.succeeded ?? [], failed: data?.failed ?? [] }
 }
