@@ -31,6 +31,8 @@ import {
   AnnualTrainingPlan,
   AnnualTrainingPlanListResponse,
   AnnualTrainingPlanItem,
+  AnnualTrainingPlanCreateInput,
+  AnnualTrainingPlanItemBatchUpdateInput,
   TrainingLedgerListResponse,
   TrainingSession,
   TrainingTeam,
@@ -218,7 +220,7 @@ export async function fetchDepartmentsAction(
 
 // ─── Annual Training Plan Actions ───
 
-export async function createAnnualTrainingPlan(data: { year: number; department: string; status: string }) {
+export async function createAnnualTrainingPlan(data: AnnualTrainingPlanCreateInput) {
   const res = await createAnnualTrainingPlanApi(data)
   revalidatePath('/hr/training/annual-plan')
   return res as ApiResponse<AnnualTrainingPlan>
@@ -236,7 +238,7 @@ export async function deleteAnnualPlanItem(planId: string, itemId: string) {
   return res as DeleteResponse
 }
 
-export async function batchUpdatePlanItems(planId: string, data: { items: unknown[] }) {
+export async function batchUpdatePlanItems(planId: string, data: AnnualTrainingPlanItemBatchUpdateInput) {
   const res = await batchUpdatePlanItemsApi(planId, data)
   revalidatePath('/hr/training/annual-plan')
   return res as AnnualTrainingPlanItem[]
