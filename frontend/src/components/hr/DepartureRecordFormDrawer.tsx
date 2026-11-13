@@ -223,8 +223,8 @@ export default function DepartureRecordFormDrawer({
           <Form.Item label="一级部门" name="department_level1" rules={[required]}>
             <Input disabled={!manual} />
           </Form.Item>
-          <Form.Item label="二级部门" name="department_level2" rules={[required]}>
-            <Input disabled={!manual} />
+          <Form.Item label="二级部门（可空）" name="department_level2">
+            <Input disabled={!manual} placeholder="没有二级部门时留空" />
           </Form.Item>
           <Form.Item label="岗位" name="position" rules={[required]}>
             <Input disabled={!manual} />

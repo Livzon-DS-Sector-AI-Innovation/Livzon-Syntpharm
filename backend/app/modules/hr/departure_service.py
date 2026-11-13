@@ -54,7 +54,7 @@ def _person_snapshot(profile: EmployeeProfile) -> PersonSnapshot:
     gender = gender_label(profile.gender)
     position = _position_of(profile)
 
-    if not level1 or not level2 or not position or not profile.hire_date:
+    if not level1 or not position or not profile.hire_date:
         raise AppException(status_code=422, message=_INCOMPLETE_PROFILE)
     if gender not in ("男", "女"):
         raise AppException(status_code=422, message=_INCOMPLETE_PROFILE)
