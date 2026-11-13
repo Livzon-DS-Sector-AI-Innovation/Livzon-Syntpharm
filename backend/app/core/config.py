@@ -71,6 +71,11 @@ class FeishuHRBitableConfig(BaseModel):
     approval_table_id: str = ""
     candidate_app_token: str = ""
     candidate_table_id: str = ""
+    # 一次性旧/新克隆表迁移（scripts/sync/sync_feishu_to_clone_tables.py）
+    employees_old_table_id: str = ""
+    employees_new_table_id: str = ""
+    onboarding_old_table_id: str = ""
+    onboarding_new_table_id: str = ""
 
 
 class FeishuSafetyConfig(BaseModel):
