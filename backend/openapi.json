@@ -48744,7 +48744,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/HrSystemSettingsApiResponse"
+                }
               }
             }
           },
@@ -133453,6 +133455,45 @@
         "type": "object",
         "title": "HplcReferenceUpdate",
         "description": "Update HPLC Reference Substance"
+      },
+      "HrSystemSettingsApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "data"
+        ],
+        "title": "HrSystemSettingsApiResponse",
+        "description": "`GET /hr/system-settings` \u7684\u5b8c\u6574\u54cd\u5e94\u4f53\u3002"
       },
       "IPQCApprovalCreate": {
         "properties": {

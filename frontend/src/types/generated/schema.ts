@@ -36887,6 +36887,24 @@ export interface components {
             attach_file?: string | null;
         };
         /**
+         * HrSystemSettingsApiResponse
+         * @description `GET /hr/system-settings` 的完整响应体。
+         */
+        HrSystemSettingsApiResponse: {
+            /** Code */
+            code: number;
+            /** Message */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: string;
+            };
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
          * IPQCApprovalCreate
          * @description IPQC审批
          */
@@ -85365,7 +85383,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["HrSystemSettingsApiResponse"];
                 };
             };
             /** @description Validation Error */
