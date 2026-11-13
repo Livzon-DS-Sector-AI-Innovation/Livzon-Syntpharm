@@ -11616,6 +11616,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/registration/projects/kpi": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 注册项目 KPI 统计 */
+        get: operations["get_project_kpi_api_v1_registration_projects_kpi_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/registration/projects/{project_id}": {
         parameters: {
             query?: never;
@@ -11625,11 +11642,52 @@ export interface paths {
         };
         /** 获取注册项目详情 */
         get: operations["get_project_api_v1_registration_projects__project_id__get"];
-        /** 更新注册项目 */
+        /** 更新注册项目基本信息 */
         put: operations["update_project_api_v1_registration_projects__project_id__put"];
         post?: never;
         /** 删除注册项目 */
         delete: operations["delete_project_api_v1_registration_projects__project_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/projects/{project_id}/stage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 推进申报前阶段
+         * @description 推进/回退申报前阶段（受理为界）：触发状态流转并自动写入 system 进展记录。
+         */
+        post: operations["advance_stage_api_v1_registration_projects__project_id__stage_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/projects/{project_id}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取项目进展记录
+         * @description 进展记录时间线（新→旧倒序）。审计追踪：只增不删，无更新/删除接口。
+         */
+        get: operations["list_project_logs_api_v1_registration_projects__project_id__logs_get"];
+        put?: never;
+        /** 添加项目进展记录 */
+        post: operations["add_project_log_api_v1_registration_projects__project_id__logs_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -11672,7 +11730,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/registration/drugs/": {
+    "/api/v1/registration/drugs": {
         parameters: {
             query?: never;
             header?: never;
@@ -11683,13 +11741,13 @@ export interface paths {
          * 获取药品列表
          * @description 获取所有药品及其审评节点
          */
-        get: operations["list_drugs_api_v1_registration_drugs__get"];
+        get: operations["list_drugs_api_v1_registration_drugs_get"];
         put?: never;
         /**
          * 创建药品
          * @description 创建新药品
          */
-        post: operations["create_drug_api_v1_registration_drugs__post"];
+        post: operations["create_drug_api_v1_registration_drugs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11739,6 +11797,26 @@ export interface paths {
          * @description 删除药品
          */
         delete: operations["delete_drug_api_v1_registration_drugs__drug_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/drugs/{drug_id}/prediction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取药品审评进度预测
+         * @description 规则预测（工作日推算）+ 历史统计修正区间的双轨预测
+         */
+        get: operations["get_drug_prediction_api_v1_registration_drugs__drug_id__prediction_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -11809,6 +11887,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/registration/authorization-letters/filter-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 授权书列表筛选下拉选项
+         * @description 品种选项来自品种主数据（新增品种自动出现），年份按生成时间动态提取降序
+         */
+        get: operations["list_filter_options_api_v1_registration_authorization_letters_filter_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/registration/authorization-letters": {
         parameters: {
             query?: never;
@@ -11817,7 +11915,7 @@ export interface paths {
             cookie?: never;
         };
         /** 授权书生成记录列表 */
-        get: operations["get_api_v1_registration_authorization_letters_get"];
+        get: operations["list_letters_api_v1_registration_authorization_letters_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -11836,7 +11934,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 生成授权书 */
-        post: operations["post_api_v1_registration_authorization_letters_generate_post"];
+        post: operations["generate_letter_api_v1_registration_authorization_letters_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11851,11 +11949,28 @@ export interface paths {
             cookie?: never;
         };
         /** 授权书记录详情 */
-        get: operations["get_api_v1_registration_authorization_letters__letter_id__get"];
+        get: operations["get_letter_api_v1_registration_authorization_letters__letter_id__get"];
         put?: never;
         post?: never;
         /** 删除授权书记录 */
-        delete: operations["delete_api_v1_registration_authorization_letters__letter_id__delete"];
+        delete: operations["delete_letter_api_v1_registration_authorization_letters__letter_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/authorization-letters/{letter_id}/trails": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 授权书留痕记录（生成/下载，只增不删） */
+        get: operations["list_letter_trails_api_v1_registration_authorization_letters__letter_id__trails_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -11869,7 +11984,7 @@ export interface paths {
             cookie?: never;
         };
         /** 获取授权书文件下载URL */
-        get: operations["get_api_v1_registration_authorization_letters__letter_id__download_url_get"];
+        get: operations["get_letter_download_url_api_v1_registration_authorization_letters__letter_id__download_url_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -11886,7 +12001,7 @@ export interface paths {
             cookie?: never;
         };
         /** 下载生成的授权书文件 */
-        get: operations["get_api_v1_registration_authorization_letters__letter_id__download_get"];
+        get: operations["download_letter_api_v1_registration_authorization_letters__letter_id__download_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -20469,6 +20584,22 @@ export interface components {
             /** Reject Reason */
             reject_reason?: string | null;
         };
+        /**
+         * AuthorizationLetterFilterOptions
+         * @description 授权书列表筛选下拉选项
+         */
+        AuthorizationLetterFilterOptions: {
+            /**
+             * Products
+             * @description 品种选项（品种主数据 ∪ 已有记录品种）
+             */
+            products?: string[];
+            /**
+             * Years
+             * @description 年份选项（按生成时间提取，降序）
+             */
+            years?: number[];
+        };
         /** AuthorizationLetterListItem */
         AuthorizationLetterListItem: {
             /**
@@ -20488,6 +20619,10 @@ export interface components {
             administration_route: string;
             /** Output File Name */
             output_file_name?: string | null;
+            /** Created By */
+            created_by?: string | null;
+            /** Created By Name */
+            created_by_name?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -20518,6 +20653,8 @@ export interface components {
             administration_route: string;
             /** Remarks */
             remarks?: string | null;
+            /** Template File Name */
+            template_file_name?: string | null;
             /** Output File Name */
             output_file_name?: string | null;
             /**
@@ -20530,6 +20667,41 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /**
+         * AuthorizationLetterTrailItem
+         * @description 授权书留痕记录（生成/下载，只增不删）
+         */
+        AuthorizationLetterTrailItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Letter Id
+             * Format: uuid
+             */
+            letter_id: string;
+            /**
+             * Action
+             * @description 动作：generate=生成 / download=下载
+             */
+            action: string;
+            /**
+             * Detail
+             * @description 留痕描述（生成时含模板版本）
+             */
+            detail: string;
+            /** Created By */
+            created_by?: string | null;
+            /** Created By Name */
+            created_by_name?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /**
          * AutoCompareRequest
@@ -21505,6 +21677,52 @@ export interface components {
              */
             save_prediction: boolean;
         };
+        /** Body_generate_letter_api_v1_registration_authorization_letters_generate_post */
+        Body_generate_letter_api_v1_registration_authorization_letters_generate_post: {
+            /** Template */
+            template?: string | null;
+            /**
+             * Product Name
+             * @description 产品名称
+             */
+            product_name: string;
+            /**
+             * Registration Number
+             * @description 登记号
+             */
+            registration_number: string;
+            /**
+             * Preparation Unit
+             * @description 制剂单位名称
+             */
+            preparation_unit: string;
+            /**
+             * Preparation Name
+             * @description 制剂名称
+             */
+            preparation_name: string;
+            /**
+             * Administration Route
+             * @description 给药途径
+             */
+            administration_route: string;
+            /**
+             * Remarks
+             * @description 备注
+             */
+            remarks?: string | null;
+            /**
+             * Template Variant
+             * @description 内置模板版本：zh=中文
+             * @default zh
+             */
+            template_variant: string;
+            /**
+             * Replacements
+             * @description 自定义模板的替换规则 JSON，格式: [{"old": "原文本", "new": "新文本"}]
+             */
+            replacements?: string | null;
+        };
         /** Body_handler_api_v1_quality_label_verifications_upload_video_post */
         Body_handler_api_v1_quality_label_verifications_upload_video_post: {
             /** File */
@@ -21730,46 +21948,6 @@ export interface components {
              * @description Quantity change (positive or negative)
              */
             quantity: number;
-        };
-        /** Body_post_api_v1_registration_authorization_letters_generate_post */
-        Body_post_api_v1_registration_authorization_letters_generate_post: {
-            /** Template */
-            template: string;
-            /**
-             * Product Name
-             * @description 产品名称
-             */
-            product_name: string;
-            /**
-             * Registration Number
-             * @description 登记号
-             */
-            registration_number: string;
-            /**
-             * Preparation Unit
-             * @description 制剂单位名称
-             */
-            preparation_unit: string;
-            /**
-             * Preparation Name
-             * @description 制剂名称
-             */
-            preparation_name: string;
-            /**
-             * Administration Route
-             * @description 给药途径
-             */
-            administration_route: string;
-            /**
-             * Remarks
-             * @description 备注
-             */
-            remarks?: string | null;
-            /**
-             * Replacements
-             * @description 替换规则 JSON，格式: [{"old": "原文本", "new": "新文本"}]
-             */
-            replacements?: string | null;
         };
         /** Body_post_api_v1_registration_ledger_copp_certificates_import_post */
         Body_post_api_v1_registration_ledger_copp_certificates_import_post: {
@@ -25948,6 +26126,21 @@ export interface components {
             /** Remark */
             remark?: string | null;
         };
+        /** DataResponse[AuthorizationLetterFilterOptions] */
+        DataResponse_AuthorizationLetterFilterOptions_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["AuthorizationLetterFilterOptions"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[AuthorizationLetterResponse] */
         DataResponse_AuthorizationLetterResponse_: {
             /**
@@ -26126,6 +26319,21 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["DownloadUrlResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[DrugPredictionResponse] */
+        DataResponse_DrugPredictionResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DrugPredictionResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[DrugResponse] */
@@ -26502,6 +26710,36 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["ProblemHandleResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ProgressLogResponse] */
+        DataResponse_ProgressLogResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ProgressLogResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ProjectKpiResponse] */
+        DataResponse_ProjectKpiResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ProjectKpiResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[ProjectResponse] */
@@ -26910,6 +27148,22 @@ export interface components {
             data?: components["schemas"]["AuthorizationLetterListItem"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[list[AuthorizationLetterTrailItem]] */
+        DataResponse_list_AuthorizationLetterTrailItem__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["AuthorizationLetterTrailItem"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[list[CandidateResponse]] */
         DataResponse_list_CandidateResponse__: {
             /**
@@ -27180,6 +27434,22 @@ export interface components {
             message: string;
             /** Data */
             data?: components["schemas"]["ProductInfo"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[ProgressLogResponse]] */
+        DataResponse_list_ProgressLogResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["ProgressLogResponse"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[list[ProjectProgressItem]] */
@@ -29209,6 +29479,8 @@ export interface components {
              * Format: date
              */
             acceptance_date: string;
+            /** Acceptance Number */
+            acceptance_number?: string | null;
         };
         /** DrugNodeResponse */
         DrugNodeResponse: {
@@ -29226,6 +29498,8 @@ export interface components {
             node_index: number;
             /** Actual Date */
             actual_date: string | null;
+            /** Skipped */
+            skipped: boolean;
             /**
              * Created At
              * Format: date-time
@@ -29243,6 +29517,31 @@ export interface components {
             node_index: number;
             /** Actual Date */
             actual_date?: string | null;
+            /** Skipped */
+            skipped?: boolean | null;
+        };
+        /**
+         * DrugPredictionResponse
+         * @description 药品审评进度预测
+         */
+        DrugPredictionResponse: {
+            /**
+             * Drug Id
+             * Format: uuid
+             */
+            drug_id: string;
+            /** Total Nodes */
+            total_nodes: number;
+            /** Completed Nodes */
+            completed_nodes: number;
+            /** Current Node Index */
+            current_node_index?: number | null;
+            /** Days In Current Node */
+            days_in_current_node?: number | null;
+            /** Estimated Approval Date */
+            estimated_approval_date?: string | null;
+            /** Nodes */
+            nodes: components["schemas"]["NodePrediction"][];
         };
         /** DrugResponse */
         DrugResponse: {
@@ -29260,6 +29559,8 @@ export interface components {
              * Format: date
              */
             acceptance_date: string;
+            /** Acceptance Number */
+            acceptance_number?: string | null;
             /** Current Node */
             current_node: number;
             /**
@@ -29281,6 +29582,8 @@ export interface components {
             type?: ("仿制药" | "创新药" | "原料药") | null;
             /** Acceptance Date */
             acceptance_date?: string | null;
+            /** Acceptance Number */
+            acceptance_number?: string | null;
             /** Nodes */
             nodes?: components["schemas"]["DrugNodeUpdate"][] | null;
         };
@@ -29300,6 +29603,8 @@ export interface components {
              * Format: date
              */
             acceptance_date: string;
+            /** Acceptance Number */
+            acceptance_number?: string | null;
             /** Current Node */
             current_node: number;
             /**
@@ -31946,6 +32251,30 @@ export interface components {
              * @description 提示文本
              */
             message: string;
+        };
+        /**
+         * ExpiringCertificateItem
+         * @description 即将到期/已过期的证书条目（用于概览页"需要关注"预警）
+         */
+        ExpiringCertificateItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Product Name */
+            product_name: string;
+            /** Certificate Name */
+            certificate_name?: string | null;
+            /**
+             * Valid Until
+             * Format: date
+             */
+            valid_until: string;
+            /** Days Left */
+            days_left: number;
+            /** Ledger Type */
+            ledger_type: string;
         };
         /** ExportApiResponse */
         ExportApiResponse: {
@@ -39208,6 +39537,38 @@ export interface components {
             reviewing_count: number;
             /** Planned Count */
             planned_count: number;
+            /**
+             * Domestic New This Year
+             * @default 0
+             */
+            domestic_new_this_year: number;
+            /**
+             * Overseas New This Year
+             * @default 0
+             */
+            overseas_new_this_year: number;
+            /**
+             * Copp New This Year
+             * @default 0
+             */
+            copp_new_this_year: number;
+            /**
+             * Wc New This Year
+             * @default 0
+             */
+            wc_new_this_year: number;
+            /** Expiring Certificates */
+            expiring_certificates?: components["schemas"]["ExpiringCertificateItem"][];
+            /**
+             * Expired Count
+             * @default 0
+             */
+            expired_count: number;
+            /**
+             * Expiring Soon Count
+             * @default 0
+             */
+            expiring_soon_count: number;
         };
         /**
          * LedgerUpdateRequest
@@ -40240,6 +40601,32 @@ export interface components {
              */
             message: string;
             data: components["schemas"]["MyPermissionsData"];
+        };
+        /**
+         * NodePrediction
+         * @description 单个节点的预测信息
+         */
+        NodePrediction: {
+            /** Node Index */
+            node_index: number;
+            /** Node Name */
+            node_name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "completed" | "in_progress" | "pending" | "skipped";
+            /** Actual Date */
+            actual_date?: string | null;
+            /** Estimated Date */
+            estimated_date?: string | null;
+            /** Estimated Range */
+            estimated_range?: [
+                string,
+                string
+            ] | null;
+            /** Delta Days */
+            delta_days?: number | null;
         };
         /**
          * NotifyEvents
@@ -44297,32 +44684,72 @@ export interface components {
              */
             remarks?: string | null;
         };
+        /** ProgressLogCreate */
+        ProgressLogCreate: {
+            /** Content */
+            content: string;
+        };
+        /** ProgressLogResponse */
+        ProgressLogResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Log Type */
+            log_type: string;
+            /** Content */
+            content: string;
+            /** Created By */
+            created_by: string | null;
+            /** Created By Name */
+            created_by_name?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** ProjectCreate */
         ProjectCreate: {
+            /** Name */
+            name: string;
             /** Product Name */
             product_name: string;
-            /** Market */
-            market: string;
-            /** Registration Type */
-            registration_type?: string | null;
             /**
-             * Status
-             * @default draft
+             * Registration Type
              * @enum {string}
              */
-            status: "draft" | "preparing" | "submitted" | "accepted" | "under_review" | "supplementary" | "approved" | "withdrawn" | "terminated";
-            /** Submitted At */
-            submitted_at?: string | null;
-            /** Accepted At */
-            accepted_at?: string | null;
-            /** Approved At */
-            approved_at?: string | null;
-            /** Expected Completion At */
-            expected_completion_at?: string | null;
+            registration_type: "新注册" | "再注册" | "变更" | "补充申请";
+            /** Project No */
+            project_no?: string | null;
+            /** Market */
+            market?: string | null;
             /** Owner */
             owner?: string | null;
-            /** Latest Progress */
-            latest_progress?: string | null;
+            /** Planned Submission Date */
+            planned_submission_date?: string | null;
+            /** Drug Id */
+            drug_id?: string | null;
+        };
+        /**
+         * ProjectKpiResponse
+         * @description 注册项目 KPI：申报前 / 已受理·审评中 / 临期未递交 / 已获批
+         */
+        ProjectKpiResponse: {
+            /** Pre Submission */
+            pre_submission: number;
+            /** Accepted Reviewing */
+            accepted_reviewing: number;
+            /** Due Soon */
+            due_soon: number;
+            /** Approved */
+            approved: number;
         };
         /**
          * ProjectProgressItem
@@ -44373,14 +44800,30 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Drug Id */
+            drug_id: string | null;
+            /** Project No */
+            project_no: string | null;
+            /** Name */
+            name: string | null;
             /** Product Name */
             product_name: string;
             /** Market */
-            market: string;
+            market: string | null;
             /** Registration Type */
             registration_type: string | null;
             /** Status */
             status: string;
+            /** Pre Stage */
+            pre_stage: string;
+            /** Stage Completed At */
+            stage_completed_at?: {
+                [key: string]: string;
+            };
+            /** Planned Submission Date */
+            planned_submission_date: string | null;
+            /** Acceptance Number */
+            acceptance_number: string | null;
             /** Submitted At */
             submitted_at: string | null;
             /** Accepted At */
@@ -44393,6 +44836,7 @@ export interface components {
             owner: string | null;
             /** Latest Progress */
             latest_progress: string | null;
+            latest_log?: components["schemas"]["ProgressLogResponse"] | null;
             /**
              * Created At
              * Format: date-time
@@ -44404,28 +44848,29 @@ export interface components {
              */
             updated_at: string;
         };
-        /** ProjectUpdate */
+        /**
+         * ProjectUpdate
+         * @description 基本信息可编辑；状态/阶段不在此修改（阶段走 /stage 推进，受理后状态由申报进度查询同步）。
+         */
         ProjectUpdate: {
+            /** Name */
+            name?: string | null;
             /** Product Name */
             product_name?: string | null;
+            /** Registration Type */
+            registration_type?: ("新注册" | "再注册" | "变更" | "补充申请") | null;
+            /** Project No */
+            project_no?: string | null;
             /** Market */
             market?: string | null;
-            /** Registration Type */
-            registration_type?: string | null;
-            /** Status */
-            status?: ("draft" | "preparing" | "submitted" | "accepted" | "under_review" | "supplementary" | "approved" | "withdrawn" | "terminated") | null;
-            /** Submitted At */
-            submitted_at?: string | null;
-            /** Accepted At */
-            accepted_at?: string | null;
-            /** Approved At */
-            approved_at?: string | null;
-            /** Expected Completion At */
-            expected_completion_at?: string | null;
             /** Owner */
             owner?: string | null;
-            /** Latest Progress */
-            latest_progress?: string | null;
+            /** Planned Submission Date */
+            planned_submission_date?: string | null;
+            /** Expected Completion At */
+            expected_completion_at?: string | null;
+            /** Drug Id */
+            drug_id?: string | null;
         };
         /** PurchaseApprovalRecordResponse */
         PurchaseApprovalRecordResponse: {
@@ -53121,6 +53566,14 @@ export interface components {
             data_points: {
                 [key: string]: components["schemas"]["StabilityTrendDataPoint"][];
             };
+        };
+        /** StageAdvanceRequest */
+        StageAdvanceRequest: {
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "initiation" | "data_preparation" | "internal_review" | "submission" | "accepted";
         };
         /**
          * StageTransitionCheckResult
@@ -87042,7 +87495,16 @@ export interface operations {
     };
     list_projects_api_v1_registration_projects__get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description 搜索项目名称/编号/品种 */
+                search?: string | null;
+                /** @description 注册类型筛选 */
+                registration_type?: string | null;
+                /** @description 状态筛选 */
+                status?: string | null;
+                /** @description 按关联审评品种反查 */
+                drug_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: {
@@ -87093,6 +87555,37 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DataResponse_ProjectResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_project_kpi_api_v1_registration_projects_kpi_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ProjectKpiResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -87196,6 +87689,113 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DataResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    advance_stage_api_v1_registration_projects__project_id__stage_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StageAdvanceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ProjectResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_project_logs_api_v1_registration_projects__project_id__logs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_ProgressLogResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_project_log_api_v1_registration_projects__project_id__logs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProgressLogCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ProgressLogResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -87378,7 +87978,7 @@ export interface operations {
             };
         };
     };
-    list_drugs_api_v1_registration_drugs__get: {
+    list_drugs_api_v1_registration_drugs_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -87409,7 +88009,7 @@ export interface operations {
             };
         };
     };
-    create_drug_api_v1_registration_drugs__post: {
+    create_drug_api_v1_registration_drugs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -87565,6 +88165,39 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DataResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_drug_prediction_api_v1_registration_drugs__drug_id__prediction_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                drug_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DrugPredictionResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -87748,13 +88381,46 @@ export interface operations {
             };
         };
     };
-    get_api_v1_registration_authorization_letters_get: {
+    list_filter_options_api_v1_registration_authorization_letters_filter_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_AuthorizationLetterFilterOptions_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_letters_api_v1_registration_authorization_letters_get: {
         parameters: {
             query?: {
-                /** @description 产品名称搜索 */
+                /** @description 关键词（模糊匹配：产品名称/登记号/制剂单位/制剂名称） */
+                keyword?: string | null;
+                /** @description 品种精确筛选 */
                 product_name?: string | null;
-                /** @description 制剂单位搜索 */
-                preparation_unit?: string | null;
+                /** @description 生成年份筛选 */
+                year?: number | null;
                 page?: number;
                 page_size?: number;
             };
@@ -87786,7 +88452,7 @@ export interface operations {
             };
         };
     };
-    post_api_v1_registration_authorization_letters_generate_post: {
+    generate_letter_api_v1_registration_authorization_letters_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -87797,7 +88463,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_post_api_v1_registration_authorization_letters_generate_post"];
+                "multipart/form-data": components["schemas"]["Body_generate_letter_api_v1_registration_authorization_letters_generate_post"];
             };
         };
         responses: {
@@ -87821,7 +88487,7 @@ export interface operations {
             };
         };
     };
-    get_api_v1_registration_authorization_letters__letter_id__get: {
+    get_letter_api_v1_registration_authorization_letters__letter_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -87854,7 +88520,7 @@ export interface operations {
             };
         };
     };
-    delete_api_v1_registration_authorization_letters__letter_id__delete: {
+    delete_letter_api_v1_registration_authorization_letters__letter_id__delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -87887,7 +88553,40 @@ export interface operations {
             };
         };
     };
-    get_api_v1_registration_authorization_letters__letter_id__download_url_get: {
+    list_letter_trails_api_v1_registration_authorization_letters__letter_id__trails_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                letter_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_AuthorizationLetterTrailItem__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_letter_download_url_api_v1_registration_authorization_letters__letter_id__download_url_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -87920,7 +88619,7 @@ export interface operations {
             };
         };
     };
-    get_api_v1_registration_authorization_letters__letter_id__download_get: {
+    download_letter_api_v1_registration_authorization_letters__letter_id__download_get: {
         parameters: {
             query?: never;
             header?: never;

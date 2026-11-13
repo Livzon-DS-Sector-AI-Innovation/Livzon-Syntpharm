@@ -1,0 +1,357 @@
+/*
+ * 申报进度查询页专属样式
+ * 设计令牌继承自 registration-ui.module.css 的 .regUi / .tokenScope 祖先节点。
+ * 字号与概览页一致：正文 14 / 辅助 13 / 小标签 12。
+ */
+
+/* ============ 列表页 ============ */
+.toolbarHint {
+  margin-left: auto;
+  align-self: center;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.drugName {
+  font-weight: 600;
+  color: var(--ink-1);
+}
+
+/* 审评进度：分段短横线（每节点一根，弹性铺满列宽，组最大 380px） */
+.progressCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.segments {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  max-width: 380px;
+}
+.seg {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: transparent;
+  border: 1.5px solid #C3C7DA; /* 未到达：描边空心灰 */
+  box-sizing: border-box;
+}
+.segFilled {
+  composes: seg;
+  background: #5F56D6; /* 已完成或已跳过：实心品牌紫 */
+  border-color: #5F56D6;
+}
+.segNum {
+  font-size: 14px;
+  color: var(--ink-2);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 操作列样式与标准表格样式已提升为共享类（registration-ui.module.css） */
+.opLink {
+  composes: opLink from './registration-ui.module.css';
+}
+.opDel {
+  composes: opDel from './registration-ui.module.css';
+}
+
+/* 表格：沿用共享标准表格样式 */
+.tableLg {
+  composes: tableStd from './registration-ui.module.css';
+}
+
+/* 表格底部栏：左侧总数 + 右侧分页（当前页紫底白字） */
+.tableFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-top: 1px solid var(--line);
+}
+.totalText {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.tableFoot :global(.ant-pagination-item-active) {
+  background: var(--brand-600) !important;
+  border-color: var(--brand-600) !important;
+}
+.tableFoot :global(.ant-pagination-item-active a) {
+  color: #fff !important;
+}
+
+/* ============ 详情抽屉 ============ */
+.drawerName {
+  font-size: 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.drawerSub {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+.drawerBody {
+  padding: 16px 22px 24px;
+  font-size: 14px;
+}
+
+/* 摘要卡（浅紫底） */
+.summary {
+  background: var(--brand-50);
+  border: 1px solid var(--brand-100);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+.summaryTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.summaryLabel {
+  font-size: 14px;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.summaryNum {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brand-600);
+}
+.summaryBar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #fff;
+  overflow: hidden;
+}
+.summaryBarFill {
+  display: block;
+  height: 100%;
+  background: var(--brand-500);
+  border-radius: 999px;
+  transition: width 300ms ease;
+}
+.summaryDates {
+  display: flex;
+  gap: 24px;
+  margin-top: 12px;
+}
+.dLabel {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.dVal {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-1);
+  margin-top: 1px;
+}
+.dValKey {
+  composes: dVal;
+  color: var(--brand-600);
+}
+
+/* ============ 关联注册项目 ============ */
+.projList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.projItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  text-decoration: none;
+  color: inherit;
+  transition: all var(--t-fast);
+}
+.projItem:hover {
+  border-color: var(--brand-500);
+  background: var(--brand-50);
+}
+.projName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-1);
+}
+.projMeta {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.projLink {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--brand-600);
+}
+
+/* ============ 受理号登记行 ============ */
+.acceptanceRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 18px;
+  background: var(--bg);
+  border-radius: var(--r-md);
+}
+.acceptanceLabel {
+  font-size: 13px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.acceptanceSave {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--brand-600);
+  background: var(--brand-600);
+  color: #fff;
+  white-space: nowrap;
+  transition: all var(--t-fast);
+}
+.acceptanceSave:hover {
+  background: var(--brand-500);
+  border-color: var(--brand-500);
+}
+.acceptanceSave:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ============ 节点时间轴 ============ */
+.tlTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tlCount {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--brand-600);
+  background: var(--brand-50);
+  padding: 1px 8px;
+  border-radius: 999px;
+}
+.tlItem {
+  display: flex;
+  gap: 12px;
+  position: relative;
+  padding-bottom: 18px;
+  cursor: pointer;
+}
+.tlItem::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 26px;
+  bottom: 0;
+  width: 2px;
+  background: var(--line);
+}
+.tlItem:last-child::before {
+  display: none;
+}
+.tlDot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+  background: #fff;
+  border: 2px solid var(--line);
+  color: var(--ink-3);
+  z-index: 1;
+}
+.tlItemCurrent .tlDot {
+  background: var(--brand-600);
+  border-color: var(--brand-600);
+  color: #fff;
+}
+.tlItemDone .tlDot {
+  background: var(--ok-600);
+  border-color: var(--ok-600);
+  color: #fff;
+}
+.tlBody {
+  flex: 1;
+  min-width: 0;
+}
+.tlRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tlName {
+  font-size: 15px;
+  font-weight: 500;
+}
+.tlNameSkipped {
+  composes: tlName;
+  color: var(--ink-3);
+  text-decoration: line-through;
+}
+.tlMeta {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+.tlManage {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--ink-3);
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+.tlItem:hover .tlManage {
+  opacity: 1;
+  color: var(--brand-600);
+}
+/* 节点操作区：默认收起，仅展开的节点显示 */
+.tlControls {
+  display: none;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: var(--r-md);
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-2);
+  flex-wrap: wrap;
+}
+.tlItemExpanded .tlControls {
+  display: flex;
+}
+.undoLink {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 13px;
+  color: var(--brand-600);
+  cursor: pointer;
+}
+.undoLink:hover {
+  text-decoration: underline;
+}

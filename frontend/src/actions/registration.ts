@@ -3,9 +3,12 @@
 import { revalidatePath } from 'next/cache'
 import {
   AuthorizationLetterCreateInput,
+  AuthorizationLetterFilterOptions,
   AuthorizationLetterListItem,
   ParseCOAResponse,
   ProductInfo,
+  ProjectKpi,
+  ProjectProgressLog,
   ReferenceStandardListItem,
   RegistrationProject,
   SupplementaryReplyListItem,
@@ -22,6 +25,7 @@ import {
   generateReferenceStandard as generateReferenceStandardApi,
   deleteReferenceStandard as deleteReferenceStandardApi,
   fetchAuthorizationLetters as fetchAuthorizationLettersApi,
+  fetchAuthorizationLetterFilterOptions as fetchAuthorizationLetterFilterOptionsApi,
   fetchRegistrationProducts as fetchRegistrationProductsApi,
   fetchRegistrationProjects as fetchRegistrationProjectsApi,
   fetchReferenceStandards as fetchReferenceStandardsApi,
@@ -33,6 +37,10 @@ import {
   createRegistrationProject as createRegistrationProjectApi,
   updateRegistrationProject as updateRegistrationProjectApi,
   deleteRegistrationProject as deleteRegistrationProjectApi,
+  fetchProjectKpi as fetchProjectKpiApi,
+  fetchProjectLogs as fetchProjectLogsApi,
+  advanceProjectStage as advanceProjectStageApi,
+  addProjectLog as addProjectLogApi,
 } from '@/lib/api/server/registration'
 
 type DrugCreate = components['schemas']['DrugCreate']
@@ -49,7 +57,14 @@ export async function generateAuthorizationLetter(
 ): Promise<{ success: boolean; message: string; data?: AuthorizationLetterData }> {
   try {
     const submitData = new FormData()
-    submitData.append('template', formData.get('template') as File)
+    const template = formData.get('template')
+    if (template instanceof File) {
+      submitData.append('template', template)
+    }
+    const variant = formData.get('template_variant')
+    if (typeof variant === 'string' && variant) {
+      submitData.append('template_variant', variant)
+    }
     submitData.append('product_name', data.product_name)
     submitData.append('registration_number', data.registration_number)
     submitData.append('preparation_unit', data.preparation_unit)
@@ -190,17 +205,33 @@ export async function deleteReferenceStandardAction(id: string): Promise<Message
 }
 
 export async function fetchAuthorizationLettersServer(
-  params: { page: number; page_size: number }
+  params: { page: number; page_size: number; keyword?: string; product_name?: string; year?: number }
 ): Promise<PageResult<AuthorizationLetterListItem>> {
   return fetchAuthorizationLettersApi(params)
+}
+
+export async function fetchAuthorizationLetterFilterOptionsServer(): Promise<AuthorizationLetterFilterOptions> {
+  return fetchAuthorizationLetterFilterOptionsApi()
 }
 
 export async function fetchProductsServer(): Promise<ProductInfo[]> {
   return fetchRegistrationProductsApi()
 }
 
-export async function fetchRegistrationProjectsServer(): Promise<RegistrationProject[]> {
-  return fetchRegistrationProjectsApi()
+export async function fetchRegistrationProjectsServer(params?: {
+  search?: string
+  registration_type?: string
+  status?: string
+}): Promise<RegistrationProject[]> {
+  return fetchRegistrationProjectsApi(params)
+}
+
+export async function fetchProjectKpiServer(): Promise<ProjectKpi> {
+  return fetchProjectKpiApi()
+}
+
+export async function fetchProjectLogsServer(projectId: string): Promise<ProjectProgressLog[]> {
+  return fetchProjectLogsApi(projectId)
 }
 
 export async function fetchReferenceStandardsServer(
@@ -258,4 +289,32 @@ export async function deleteRegistrationProject(id: string): Promise<MessageResp
   const result = (await deleteRegistrationProjectApi(id)) as MessageResponse
   revalidatePath('/registration')
   return result
+}
+
+/** 推进申报前阶段（受理为界；触发状态流转并由后端自动写 system 进展记录） */
+export async function advanceProjectStage(
+  id: string,
+  stage: string
+): Promise<{ success: boolean; message: string; data?: ProjectData }> {
+  try {
+    const json = (await advanceProjectStageApi(id, stage)) as ApiResponse<ProjectData>
+    revalidatePath('/registration/projects')
+    return { success: true, message: json.message || '阶段已更新', data: json.data }
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : '阶段推进失败' }
+  }
+}
+
+/** 添加手动进展记录（自动带时间与当前登录人；记录只增不删） */
+export async function addProjectProgressLog(
+  id: string,
+  content: string
+): Promise<{ success: boolean; message: string; data?: components['schemas']['ProgressLogResponse'] }> {
+  try {
+    const json = (await addProjectLogApi(id, content)) as ApiResponse<components['schemas']['ProgressLogResponse']>
+    revalidatePath('/registration/projects')
+    return { success: true, message: json.message || '记录已添加', data: json.data }
+  } catch (error) {
+    return { success: false, message: error instanceof Error ? error.message : '添加记录失败' }
+  }
 }

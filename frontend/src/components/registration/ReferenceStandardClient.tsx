@@ -3,12 +3,15 @@
 import { useState } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { DataUnavailable } from '@/components/common/DataUnavailable'
-import { UploadFile, Table, Input, Button, Space, App, Card, Modal, Form, Upload, Row, Col, Spin, Alert } from 'antd'
-import {DownloadOutlined, DeleteOutlined, FileSearchOutlined} from '@ant-design/icons'
+import { UploadFile, Table, Input, Button, Space, App, Modal, Form, Upload, Row, Col, Spin, Alert } from 'antd'
+import { FileSearchOutlined } from '@ant-design/icons'
 import { ReferenceStandardListItem } from '@/types/registration'
 import { fetchReferenceStandards, fetchReferenceStandardDownloadUrl } from '@/lib/api/client/registration'
 import { parseCOA } from '@/actions/registration'
 import { generateReferenceStandard, deleteReferenceStandardAction } from '@/actions/registration'
+import { RegistrationPageHeader } from './RegistrationPageHeader'
+import ui from './registration-ui.module.css'
+import { IconBook, IconPlus, IconTrash } from './registration-icons'
 import dayjs from 'dayjs'
 
 interface ReferenceStandardClientProps {
@@ -212,76 +215,81 @@ export default function ReferenceStandardClient({
       width: 150,
       fixed: 'right' as const,
       render: (_: unknown, record: ReferenceStandardListItem) => (
-        <Space>
-          <Button
-            type="link"
-            icon={<DownloadOutlined />}
+        <Space size={0}>
+          <button
+            type="button"
+            className={ui.opLink}
             onClick={async () => { const url = await fetchReferenceStandardDownloadUrl(record.id); window.open(url, "_blank"); }}
-            target="_blank"
           >
             下载
-          </Button>
-          <Button
-            type="link"
-            danger
-            icon={<DeleteOutlined />}
+          </button>
+          <button
+            type="button"
+            className={ui.opDel}
+            title="删除"
             onClick={() => handleDelete(record.id)}
           >
-            删除
-          </Button>
+            {IconTrash}
+          </button>
         </Space>
       ),
     },
   ]
 
   return (
-    <div>
-      <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)] mb-2">
-        对照物质说明表管理
-      </h1>
-      <p className="text-[14px] text-[var(--color-steel)] mb-4">
-        上传COA检验报告，自动提取信息并生成对照物质说明表Word文档
-      </p>
-
-      <Card>
-        <div className="flex gap-4 mb-4">
-          <Input
-            placeholder="药品名称搜索"
-            value={drugName}
-            onChange={(e) => setDrugName(e.target.value)}
-            style={{ width: 200 }}
-            allowClear
-          />
-          <Button onClick={handleSearch}>搜索</Button>
-          <Button type="primary" onClick={() => setGenerateModalOpen(true)}>
+    <div className={ui.regUi}>
+      <RegistrationPageHeader
+        icon={IconBook}
+        title="参考标准"
+        sub="上传 COA 检验报告，自动提取信息并生成对照物质说明表"
+        actions={
+          <button type="button" className={ui.btnPrimary} onClick={() => setGenerateModalOpen(true)}>
+            {IconPlus}
             生成说明表
-          </Button>
+          </button>
+        }
+      />
+
+      <div className={ui.panel}>
+        <div className={ui.toolbar}>
+          <div className={ui.toolbarGroup}>
+            <Input
+              placeholder="药品名称搜索"
+              value={drugName}
+              onChange={(e) => setDrugName(e.target.value)}
+              style={{ width: 200 }}
+              allowClear
+            />
+            <button type="button" className={ui.btn} onClick={handleSearch}>搜索</button>
+          </div>
         </div>
 
-        <Table
-          columns={columns}
-          dataSource={records}
-          rowKey="id"
-          loading={recordsQuery.isPending}
-          pagination={{
-            current: query.page,
-            pageSize: query.pageSize,
-            total: total,
-            showSizeChanger: true,
-            // 后端 PageParams 为 le=200，选项不得超过该上限否则 422
-            pageSizeOptions: [10, 20, 50, 100],
-            showTotal: (total) => `共 ${total} 条`,
-            onChange: handlePageChange,
-          }}
-          scroll={{ x: 1400 }}
-          locale={{
-            // 取数失败时在表格内嵌降级区块，与「确实没有记录」的空态区分开
-            emptyText: recordsQuery.isError ? (
-              <DataUnavailable compact onRetry={() => void recordsQuery.refetch()} />
-            ) : undefined,
-          }}
-        />
-      </Card>
+        <div className={`${ui.tableWrap} ${ui.tableStd}`}>
+          <Table
+            columns={columns}
+            dataSource={records}
+            rowKey="id"
+            loading={recordsQuery.isPending}
+            pagination={{
+              current: query.page,
+              pageSize: query.pageSize,
+              total: total,
+              showSizeChanger: true,
+              // 后端 PageParams 为 le=200，选项不得超过该上限否则 422
+              pageSizeOptions: [10, 20, 50, 100],
+              showTotal: (total) => `共 ${total} 条`,
+              onChange: handlePageChange,
+            }}
+            scroll={{ x: 1400 }}
+            locale={{
+              // 取数失败时在表格内嵌降级区块，与「确实没有记录」的空态区分开
+              emptyText: recordsQuery.isError ? (
+                <DataUnavailable compact onRetry={() => void recordsQuery.refetch()} />
+              ) : undefined,
+            }}
+          />
+        </div>
+      </div>
 
       <Modal
         title="生成对照物质说明表"

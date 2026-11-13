@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
-  App, Tree, Button, Space, Tag, Upload, Spin, Empty,
+  App, Tree, Space, Upload, Spin, Empty,
   Popconfirm, Typography, Tabs, Modal, Select, Checkbox,
 } from 'antd'
 import {
@@ -23,6 +23,7 @@ import type { Chapter, ChapterAsset, AssetCategory, AvailableAsset } from '@/typ
 import type { UploadResponse } from '@/types/dossier-writer'
 import { AiFillPanel } from './AiFillPanel'
 import { DocxPreview } from './DocxPreview'
+import ui from './registration-ui.module.css'
 
 const { Text: _Text, Title: _Title, Paragraph: _Paragraph } = Typography
 
@@ -179,14 +180,14 @@ export function DossierWriterDetailPageClient() {
               <span className="text-gray-500">{ch.chapter_code}</span>
               <span className="font-medium">{ch.chapter_title}</span>
               {ch.has_assets && ch.asset_count > 0 && (
-                <Tag color="blue" style={{ fontSize: 10, lineHeight: '14px' }}>
+                <span className={ui.tagInfo} style={{ fontSize: 12 }}>
                   {ch.asset_count}素材
-                </Tag>
+                </span>
               )}
               {ch.has_content && (
-                <Tag color="green" style={{ fontSize: 10, lineHeight: '14px' }}>
+                <span className={ui.tagOk} style={{ fontSize: 12 }}>
                   已匹配
-                </Tag>
+                </span>
               )}
             </span>
           ),
@@ -430,57 +431,65 @@ export function DossierWriterDetailPageClient() {
 
   return (
     <App>
-    <div className="h-full flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
+    <div className={`${ui.tokenScope} h-full flex flex-col`} style={{ height: 'calc(100vh - 64px)' }}>
       {/* Top bar */}
-      <div className="flex items-center justify-between px-5 py-3 bg-white border-b border-gray-200 flex-shrink-0">
+      <div
+        className="flex items-center justify-between px-5 py-2.5 bg-white flex-shrink-0"
+        style={{ borderBottom: '1px solid var(--line)' }}
+      >
         <div className="flex items-center gap-3 min-w-0">
-          <Button
-            type="text"
-            icon={<ArrowLeftOutlined />}
+          <button
+            type="button"
+            className={ui.btn}
             onClick={() => router.push('/registration/dossier-writer')}
-          />
+          >
+            <ArrowLeftOutlined />
+            返回列表
+          </button>
           <div className="min-w-0">
             <h1 className="text-lg font-semibold truncate m-0">
               {currentDossier?.product_name || '加载中...'}
             </h1>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs" style={{ color: 'var(--ink-3)' }}>
               {currentDossier?.sterile_type && <span>{currentDossier.sterile_type}</span>}
               {currentDossier?.manufacturer && <span className="ml-2">{currentDossier.manufacturer}</span>}
             </div>
           </div>
           {currentDossier?.status && (
-            <Tag color={currentDossier.status === 'active' ? 'green' : 'default'} className="ml-2">
+            <span className={`${currentDossier.status === 'active' ? ui.tagOk : ui.tagPlain} ml-2`}>
               {currentDossier.status}
-            </Tag>
+            </span>
           )}
         </div>
 
-        <Space>
-          <Button onClick={handleMatchAssets} loading={matching} disabled={!currentDossier}>
-            智能匹配素材
-          </Button>
-          <Button onClick={handleFillFields} loading={filling} disabled={!selectedChapterId}>
-            <ThunderboltOutlined /> 提取并填充
-          </Button>
-          <Button onClick={handleExportChapter} loading={exporting} disabled={!selectedChapterId}>
+        <Space size={8}>
+          <button type="button" className={ui.btn} onClick={handleMatchAssets} disabled={!currentDossier || matching}>
+            {matching ? '匹配中…' : '智能匹配素材'}
+          </button>
+          <button type="button" className={ui.btn} onClick={handleFillFields} disabled={!selectedChapterId || filling}>
+            <ThunderboltOutlined />
+            {filling ? '填充中…' : '提取并填充'}
+          </button>
+          <button type="button" className={ui.btn} onClick={handleExportChapter} disabled={!selectedChapterId || exporting}>
             导出当前章节
-          </Button>
-          <Button type="primary" onClick={handleExportAll} loading={exporting} disabled={!currentDossier}>
-            导出全部
-          </Button>
-          <Button onClick={() => setUploadTemplateOpen(true)} icon={<UploadOutlined />}>
+          </button>
+          <button type="button" className={ui.btnPrimary} onClick={handleExportAll} disabled={!currentDossier || exporting}>
+            {exporting ? '导出中…' : '导出全部'}
+          </button>
+          <button type="button" className={ui.btn} onClick={() => setUploadTemplateOpen(true)}>
+            <UploadOutlined />
             上传模板
-          </Button>
+          </button>
         </Space>
       </div>
 
       {/* Main content: left-right split */}
       <div className="flex flex-1 min-h-0">
         {/* Left panel */}
-        <div className="w-[420px] flex-shrink-0 border-r border-gray-200 bg-white flex flex-col">
+        <div className="w-[420px] flex-shrink-0 bg-white flex flex-col" style={{ borderRight: '1px solid var(--line)' }}>
           {/* Chapter tree */}
-          <div className="h-[260px] flex-shrink-0 border-b border-gray-200 overflow-auto p-3">
-            <div className="text-xs text-gray-500 mb-2 font-medium">M3 目录结构</div>
+          <div className="h-[260px] flex-shrink-0 overflow-auto p-3" style={{ borderBottom: '1px solid var(--line)' }}>
+            <div className="text-xs mb-2 font-medium" style={{ color: 'var(--ink-3)' }}>M3 目录结构</div>
             {chapterTreeLoading ? (
               <div className="flex justify-center py-8"><Spin /></div>
             ) : treeData.length > 0 ? (
@@ -511,14 +520,14 @@ export function DossierWriterDetailPageClient() {
                       <span>
                         素材 ({availableAssets.length || selectedChapter.assets?.length || 0})
                         {availableAssets.filter(a => a.is_inherited).length > 0 && (
-                          <Tag color="blue" style={{ marginLeft: 4, fontSize: 10, lineHeight: '14px' }}>
+                          <span className={ui.tagInfo} style={{ marginLeft: 4, fontSize: 12 }}>
                             {availableAssets.filter(a => a.is_inherited).length}继承
-                          </Tag>
+                          </span>
                         )}
                         {uncategorizedCount > 0 && (
-                          <Tag color="orange" style={{ marginLeft: 4, fontSize: 10, lineHeight: '14px' }}>
+                          <span className={ui.tagWarn} style={{ marginLeft: 4, fontSize: 12 }}>
                             {uncategorizedCount}未分类
-                          </Tag>
+                          </span>
                         )}
                       </span>
                     ),
@@ -530,14 +539,27 @@ export function DossierWriterDetailPageClient() {
                             showUploadList={false}
                             disabled={!selectedChapterId}
                           >
-                            <Button type="primary" icon={<UploadOutlined />} loading={uploading} block>
-                              上传素材
-                            </Button>
+                            <button
+                              type="button"
+                              className={ui.btnPrimary}
+                              disabled={!selectedChapterId || uploading}
+                              style={{ width: '100%', justifyContent: 'center' }}
+                            >
+                              <UploadOutlined />
+                              {uploading ? '上传中…' : '上传素材'}
+                            </button>
                           </Upload>
                         </div>
 
                         {uncategorizedCount > 0 && (
-                          <div className="mb-3 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
+                          <div
+                            className="mb-3 p-2 rounded text-xs"
+                            style={{
+                              background: 'var(--warn-50)',
+                              border: '1px solid color-mix(in srgb, var(--warn-600) 20%, #fff)',
+                              color: 'var(--warn-600)',
+                            }}
+                          >
                             <WarningOutlined /> 有 {uncategorizedCount} 个素材未分类，AI 填充时可能无法准确提取。请为每个素材指定正确的分类。
                           </div>
                         )}
@@ -559,11 +581,11 @@ export function DossierWriterDetailPageClient() {
                                           onChange={() => handleToggleAsset(asset.id, asset.is_selected)}
                                           disabled={togglingAssetId === asset.id}
                                         />
-                                        <FileWordOutlined className="text-blue-500 flex-shrink-0" />
+                                        <FileWordOutlined className="flex-shrink-0" style={{ color: 'var(--brand-500)' }} />
                                         <div className="flex-1 min-w-0">
                                           <div className="font-medium text-sm truncate">{asset.original_filename}</div>
                                           <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-500">
-                                            {asset.file_type && <Tag style={{ marginRight: 0 }}>{asset.file_type.toUpperCase()}</Tag>}
+                                            {asset.file_type && <span className={ui.tagPlain}>{asset.file_type.toUpperCase()}</span>}
                                             {asset.file_size && <span>{(asset.file_size / 1024).toFixed(1)} KB</span>}
                                             <span>{dayjs(asset.uploaded_at).format('MM-DD HH:mm')}</span>
                                           </div>
@@ -574,7 +596,9 @@ export function DossierWriterDetailPageClient() {
                                           okText="确定"
                                           cancelText="取消"
                                         >
-                                          <Button type="text" size="small" danger icon={<DeleteOutlined />} />
+                                          <button type="button" className={ui.opDel} title="删除素材">
+                                            <DeleteOutlined />
+                                          </button>
                                         </Popconfirm>
                                       </div>
                                       <div className="ml-10">
@@ -614,14 +638,14 @@ export function DossierWriterDetailPageClient() {
                                           onChange={() => handleToggleAsset(asset.id, asset.is_selected)}
                                           disabled={togglingAssetId === asset.id}
                                         />
-                                        <FileWordOutlined className="text-green-500 flex-shrink-0" />
+                                        <FileWordOutlined className="flex-shrink-0" style={{ color: 'var(--ok-600)' }} />
                                         <div className="flex-1 min-w-0">
                                           <div className="font-medium text-sm truncate">{asset.original_filename}</div>
                                           <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-500">
-                                            <Tag color="blue" style={{ marginRight: 0, fontSize: 10, lineHeight: '14px' }}>
+                                            <span className={ui.tagInfo} style={{ fontSize: 12 }}>
                                               来自 {asset.parent_chapter_code || '父章节'}
-                                            </Tag>
-                                            {asset.file_type && <Tag style={{ marginRight: 0 }}>{asset.file_type.toUpperCase()}</Tag>}
+                                            </span>
+                                            {asset.file_type && <span className={ui.tagPlain}>{asset.file_type.toUpperCase()}</span>}
                                             {asset.file_size && <span>{(asset.file_size / 1024).toFixed(1)} KB</span>}
                                           </div>
                                         </div>
@@ -686,8 +710,11 @@ export function DossierWriterDetailPageClient() {
           <p className="mb-4 text-gray-600">
             请上传 Word 格式的申报资料模板文件（.docx），支持多文件批量上传
           </p>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-            <FileWordOutlined className="text-4xl text-blue-500 mb-4" />
+          <div
+            className="border-2 border-dashed rounded-lg p-8 text-center"
+            style={{ borderColor: 'var(--line)' }}
+          >
+            <FileWordOutlined className="text-4xl mb-4" style={{ color: 'var(--brand-500)' }} />
             <p className="mb-4">点击或拖拽文件到此处上传（可多选）</p>
             <input
               type="file"
@@ -699,7 +726,8 @@ export function DossierWriterDetailPageClient() {
             />
             <label
               htmlFor="detail-template-upload"
-              className="cursor-pointer inline-block px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              className={ui.btnPrimary}
+              style={{ cursor: 'pointer' }}
             >
               {parsing ? '处理中...' : '选择文件'}
             </label>

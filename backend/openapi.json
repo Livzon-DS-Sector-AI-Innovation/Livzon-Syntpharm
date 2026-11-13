@@ -57611,6 +57611,79 @@
         "operationId": "list_projects_api_v1_registration_projects__get",
         "parameters": [
           {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u641c\u7d22\u9879\u76ee\u540d\u79f0/\u7f16\u53f7/\u54c1\u79cd",
+              "title": "Search"
+            },
+            "description": "\u641c\u7d22\u9879\u76ee\u540d\u79f0/\u7f16\u53f7/\u54c1\u79cd"
+          },
+          {
+            "name": "registration_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6ce8\u518c\u7c7b\u578b\u7b5b\u9009",
+              "title": "Registration Type"
+            },
+            "description": "\u6ce8\u518c\u7c7b\u578b\u7b5b\u9009"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u72b6\u6001\u7b5b\u9009",
+              "title": "Status"
+            },
+            "description": "\u72b6\u6001\u7b5b\u9009"
+          },
+          {
+            "name": "drug_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6309\u5173\u8054\u5ba1\u8bc4\u54c1\u79cd\u53cd\u67e5",
+              "title": "Drug Id"
+            },
+            "description": "\u6309\u5173\u8054\u5ba1\u8bc4\u54c1\u79cd\u53cd\u67e5"
+          },
+          {
             "name": "auth_token",
             "in": "cookie",
             "required": false,
@@ -57709,6 +57782,56 @@
         }
       }
     },
+    "/api/v1/registration/projects/kpi": {
+      "get": {
+        "tags": [
+          "\u6ce8\u518c\u7ba1\u7406",
+          "\u6ce8\u518c\u9879\u76ee"
+        ],
+        "summary": "\u6ce8\u518c\u9879\u76ee KPI \u7edf\u8ba1",
+        "operationId": "get_project_kpi_api_v1_registration_projects_kpi_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ProjectKpiResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/registration/projects/{project_id}": {
       "get": {
         "tags": [
@@ -57773,7 +57896,7 @@
           "\u6ce8\u518c\u7ba1\u7406",
           "\u6ce8\u518c\u9879\u76ee"
         ],
-        "summary": "\u66f4\u65b0\u6ce8\u518c\u9879\u76ee",
+        "summary": "\u66f4\u65b0\u6ce8\u518c\u9879\u76ee\u57fa\u672c\u4fe1\u606f",
         "operationId": "update_project_api_v1_registration_projects__project_id__put",
         "parameters": [
           {
@@ -57878,6 +58001,206 @@
               "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/DataResponse_NoneType_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/projects/{project_id}/stage": {
+      "post": {
+        "tags": [
+          "\u6ce8\u518c\u7ba1\u7406",
+          "\u6ce8\u518c\u9879\u76ee"
+        ],
+        "summary": "\u63a8\u8fdb\u7533\u62a5\u524d\u9636\u6bb5",
+        "description": "\u63a8\u8fdb/\u56de\u9000\u7533\u62a5\u524d\u9636\u6bb5\uff08\u53d7\u7406\u4e3a\u754c\uff09\uff1a\u89e6\u53d1\u72b6\u6001\u6d41\u8f6c\u5e76\u81ea\u52a8\u5199\u5165 system \u8fdb\u5c55\u8bb0\u5f55\u3002",
+        "operationId": "advance_stage_api_v1_registration_projects__project_id__stage_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StageAdvanceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ProjectResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/projects/{project_id}/logs": {
+      "get": {
+        "tags": [
+          "\u6ce8\u518c\u7ba1\u7406",
+          "\u6ce8\u518c\u9879\u76ee"
+        ],
+        "summary": "\u83b7\u53d6\u9879\u76ee\u8fdb\u5c55\u8bb0\u5f55",
+        "description": "\u8fdb\u5c55\u8bb0\u5f55\u65f6\u95f4\u7ebf\uff08\u65b0\u2192\u65e7\u5012\u5e8f\uff09\u3002\u5ba1\u8ba1\u8ffd\u8e2a\uff1a\u53ea\u589e\u4e0d\u5220\uff0c\u65e0\u66f4\u65b0/\u5220\u9664\u63a5\u53e3\u3002",
+        "operationId": "list_project_logs_api_v1_registration_projects__project_id__logs_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_ProgressLogResponse__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u6ce8\u518c\u7ba1\u7406",
+          "\u6ce8\u518c\u9879\u76ee"
+        ],
+        "summary": "\u6dfb\u52a0\u9879\u76ee\u8fdb\u5c55\u8bb0\u5f55",
+        "operationId": "add_project_log_api_v1_registration_projects__project_id__logs_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgressLogCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ProgressLogResponse_"
                 }
               }
             }
@@ -58189,7 +58512,7 @@
         }
       }
     },
-    "/api/v1/registration/drugs/": {
+    "/api/v1/registration/drugs": {
       "get": {
         "tags": [
           "\u6ce8\u518c\u7ba1\u7406",
@@ -58197,7 +58520,7 @@
         ],
         "summary": "\u83b7\u53d6\u836f\u54c1\u5217\u8868",
         "description": "\u83b7\u53d6\u6240\u6709\u836f\u54c1\u53ca\u5176\u5ba1\u8bc4\u8282\u70b9",
-        "operationId": "list_drugs_api_v1_registration_drugs__get",
+        "operationId": "list_drugs_api_v1_registration_drugs_get",
         "parameters": [
           {
             "name": "auth_token",
@@ -58246,7 +58569,7 @@
         ],
         "summary": "\u521b\u5efa\u836f\u54c1",
         "description": "\u521b\u5efa\u65b0\u836f\u54c1",
-        "operationId": "create_drug_api_v1_registration_drugs__post",
+        "operationId": "create_drug_api_v1_registration_drugs_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -58522,6 +58845,67 @@
               "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/DataResponse_NoneType_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/drugs/{drug_id}/prediction": {
+      "get": {
+        "tags": [
+          "\u6ce8\u518c\u7ba1\u7406",
+          "\u7533\u62a5\u8fdb\u5ea6-\u836f\u54c1"
+        ],
+        "summary": "\u83b7\u53d6\u836f\u54c1\u5ba1\u8bc4\u8fdb\u5ea6\u9884\u6d4b",
+        "description": "\u89c4\u5219\u9884\u6d4b\uff08\u5de5\u4f5c\u65e5\u63a8\u7b97\uff09+ \u5386\u53f2\u7edf\u8ba1\u4fee\u6b63\u533a\u95f4\u7684\u53cc\u8f68\u9884\u6d4b",
+        "operationId": "get_drug_prediction_api_v1_registration_drugs__drug_id__prediction_get",
+        "parameters": [
+          {
+            "name": "drug_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Drug Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_DrugPredictionResponse_"
                 }
               }
             }
@@ -58847,6 +59231,57 @@
         }
       }
     },
+    "/api/v1/registration/authorization-letters/filter-options": {
+      "get": {
+        "tags": [
+          "\u6ce8\u518c\u7ba1\u7406",
+          "\u6388\u6743\u4e66\u7ba1\u7406"
+        ],
+        "summary": "\u6388\u6743\u4e66\u5217\u8868\u7b5b\u9009\u4e0b\u62c9\u9009\u9879",
+        "description": "\u54c1\u79cd\u9009\u9879\u6765\u81ea\u54c1\u79cd\u4e3b\u6570\u636e\uff08\u65b0\u589e\u54c1\u79cd\u81ea\u52a8\u51fa\u73b0\uff09\uff0c\u5e74\u4efd\u6309\u751f\u6210\u65f6\u95f4\u52a8\u6001\u63d0\u53d6\u964d\u5e8f",
+        "operationId": "list_filter_options_api_v1_registration_authorization_letters_filter_options_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_AuthorizationLetterFilterOptions_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/registration/authorization-letters": {
       "get": {
         "tags": [
@@ -58854,8 +59289,26 @@
           "\u6388\u6743\u4e66\u7ba1\u7406"
         ],
         "summary": "\u6388\u6743\u4e66\u751f\u6210\u8bb0\u5f55\u5217\u8868",
-        "operationId": "get_api_v1_registration_authorization_letters_get",
+        "operationId": "list_letters_api_v1_registration_authorization_letters_get",
         "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u5173\u952e\u8bcd\uff08\u6a21\u7cca\u5339\u914d\uff1a\u4ea7\u54c1\u540d\u79f0/\u767b\u8bb0\u53f7/\u5236\u5242\u5355\u4f4d/\u5236\u5242\u540d\u79f0\uff09",
+              "title": "Keyword"
+            },
+            "description": "\u5173\u952e\u8bcd\uff08\u6a21\u7cca\u5339\u914d\uff1a\u4ea7\u54c1\u540d\u79f0/\u767b\u8bb0\u53f7/\u5236\u5242\u5355\u4f4d/\u5236\u5242\u540d\u79f0\uff09"
+          },
           {
             "name": "product_name",
             "in": "query",
@@ -58869,28 +59322,28 @@
                   "type": "null"
                 }
               ],
-              "description": "\u4ea7\u54c1\u540d\u79f0\u641c\u7d22",
+              "description": "\u54c1\u79cd\u7cbe\u786e\u7b5b\u9009",
               "title": "Product Name"
             },
-            "description": "\u4ea7\u54c1\u540d\u79f0\u641c\u7d22"
+            "description": "\u54c1\u79cd\u7cbe\u786e\u7b5b\u9009"
           },
           {
-            "name": "preparation_unit",
+            "name": "year",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "integer"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "description": "\u5236\u5242\u5355\u4f4d\u641c\u7d22",
-              "title": "Preparation Unit"
+              "description": "\u751f\u6210\u5e74\u4efd\u7b5b\u9009",
+              "title": "Year"
             },
-            "description": "\u5236\u5242\u5355\u4f4d\u641c\u7d22"
+            "description": "\u751f\u6210\u5e74\u4efd\u7b5b\u9009"
           },
           {
             "name": "page",
@@ -58963,7 +59416,7 @@
           "\u6388\u6743\u4e66\u7ba1\u7406"
         ],
         "summary": "\u751f\u6210\u6388\u6743\u4e66",
-        "operationId": "post_api_v1_registration_authorization_letters_generate_post",
+        "operationId": "generate_letter_api_v1_registration_authorization_letters_generate_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -58987,7 +59440,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_post_api_v1_registration_authorization_letters_generate_post"
+                "$ref": "#/components/schemas/Body_generate_letter_api_v1_registration_authorization_letters_generate_post"
               }
             }
           }
@@ -59023,7 +59476,7 @@
           "\u6388\u6743\u4e66\u7ba1\u7406"
         ],
         "summary": "\u6388\u6743\u4e66\u8bb0\u5f55\u8be6\u60c5",
-        "operationId": "get_api_v1_registration_authorization_letters__letter_id__get",
+        "operationId": "get_letter_api_v1_registration_authorization_letters__letter_id__get",
         "parameters": [
           {
             "name": "letter_id",
@@ -59081,7 +59534,7 @@
           "\u6388\u6743\u4e66\u7ba1\u7406"
         ],
         "summary": "\u5220\u9664\u6388\u6743\u4e66\u8bb0\u5f55",
-        "operationId": "delete_api_v1_registration_authorization_letters__letter_id__delete",
+        "operationId": "delete_letter_api_v1_registration_authorization_letters__letter_id__delete",
         "parameters": [
           {
             "name": "letter_id",
@@ -59134,6 +59587,66 @@
         }
       }
     },
+    "/api/v1/registration/authorization-letters/{letter_id}/trails": {
+      "get": {
+        "tags": [
+          "\u6ce8\u518c\u7ba1\u7406",
+          "\u6388\u6743\u4e66\u7ba1\u7406"
+        ],
+        "summary": "\u6388\u6743\u4e66\u7559\u75d5\u8bb0\u5f55\uff08\u751f\u6210/\u4e0b\u8f7d\uff0c\u53ea\u589e\u4e0d\u5220\uff09",
+        "operationId": "list_letter_trails_api_v1_registration_authorization_letters__letter_id__trails_get",
+        "parameters": [
+          {
+            "name": "letter_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Letter Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_AuthorizationLetterTrailItem__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/registration/authorization-letters/{letter_id}/download-url": {
       "get": {
         "tags": [
@@ -59141,7 +59654,7 @@
           "\u6388\u6743\u4e66\u7ba1\u7406"
         ],
         "summary": "\u83b7\u53d6\u6388\u6743\u4e66\u6587\u4ef6\u4e0b\u8f7dURL",
-        "operationId": "get_api_v1_registration_authorization_letters__letter_id__download_url_get",
+        "operationId": "get_letter_download_url_api_v1_registration_authorization_letters__letter_id__download_url_get",
         "parameters": [
           {
             "name": "letter_id",
@@ -59201,7 +59714,7 @@
           "\u6388\u6743\u4e66\u7ba1\u7406"
         ],
         "summary": "\u4e0b\u8f7d\u751f\u6210\u7684\u6388\u6743\u4e66\u6587\u4ef6",
-        "operationId": "get_api_v1_registration_authorization_letters__letter_id__download_get",
+        "operationId": "download_letter_api_v1_registration_authorization_letters__letter_id__download_get",
         "parameters": [
           {
             "name": "letter_id",
@@ -94865,6 +95378,29 @@
         ],
         "title": "AuditRequest"
       },
+      "AuthorizationLetterFilterOptions": {
+        "properties": {
+          "products": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Products",
+            "description": "\u54c1\u79cd\u9009\u9879\uff08\u54c1\u79cd\u4e3b\u6570\u636e \u222a \u5df2\u6709\u8bb0\u5f55\u54c1\u79cd\uff09"
+          },
+          "years": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Years",
+            "description": "\u5e74\u4efd\u9009\u9879\uff08\u6309\u751f\u6210\u65f6\u95f4\u63d0\u53d6\uff0c\u964d\u5e8f\uff09"
+          }
+        },
+        "type": "object",
+        "title": "AuthorizationLetterFilterOptions",
+        "description": "\u6388\u6743\u4e66\u5217\u8868\u7b5b\u9009\u4e0b\u62c9\u9009\u9879"
+      },
       "AuthorizationLetterListItem": {
         "properties": {
           "id": {
@@ -94902,6 +95438,29 @@
               }
             ],
             "title": "Output File Name"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
           },
           "created_at": {
             "type": "string",
@@ -94965,6 +95524,17 @@
             ],
             "title": "Remarks"
           },
+          "template_file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template File Name"
+          },
           "output_file_name": {
             "anyOf": [
               {
@@ -94999,6 +95569,68 @@
           "updated_at"
         ],
         "title": "AuthorizationLetterResponse"
+      },
+      "AuthorizationLetterTrailItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "letter_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Letter Id"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action",
+            "description": "\u52a8\u4f5c\uff1agenerate=\u751f\u6210 / download=\u4e0b\u8f7d"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail",
+            "description": "\u7559\u75d5\u63cf\u8ff0\uff08\u751f\u6210\u65f6\u542b\u6a21\u677f\u7248\u672c\uff09"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "letter_id",
+          "action",
+          "detail",
+          "created_at"
+        ],
+        "title": "AuthorizationLetterTrailItem",
+        "description": "\u6388\u6743\u4e66\u7559\u75d5\u8bb0\u5f55\uff08\u751f\u6210/\u4e0b\u8f7d\uff0c\u53ea\u589e\u4e0d\u5220\uff09"
       },
       "AutoCompareRequest": {
         "properties": {
@@ -97012,6 +97644,86 @@
         ],
         "title": "Body_edbo_optimize_api_v1_research_edbo_optimize_post"
       },
+      "Body_generate_letter_api_v1_registration_authorization_letters_generate_post": {
+        "properties": {
+          "template": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name",
+            "description": "\u4ea7\u54c1\u540d\u79f0"
+          },
+          "registration_number": {
+            "type": "string",
+            "title": "Registration Number",
+            "description": "\u767b\u8bb0\u53f7"
+          },
+          "preparation_unit": {
+            "type": "string",
+            "title": "Preparation Unit",
+            "description": "\u5236\u5242\u5355\u4f4d\u540d\u79f0"
+          },
+          "preparation_name": {
+            "type": "string",
+            "title": "Preparation Name",
+            "description": "\u5236\u5242\u540d\u79f0"
+          },
+          "administration_route": {
+            "type": "string",
+            "title": "Administration Route",
+            "description": "\u7ed9\u836f\u9014\u5f84"
+          },
+          "remarks": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remarks",
+            "description": "\u5907\u6ce8"
+          },
+          "template_variant": {
+            "type": "string",
+            "title": "Template Variant",
+            "description": "\u5185\u7f6e\u6a21\u677f\u7248\u672c\uff1azh=\u4e2d\u6587",
+            "default": "zh"
+          },
+          "replacements": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replacements",
+            "description": "\u81ea\u5b9a\u4e49\u6a21\u677f\u7684\u66ff\u6362\u89c4\u5219 JSON\uff0c\u683c\u5f0f: [{\"old\": \"\u539f\u6587\u672c\", \"new\": \"\u65b0\u6587\u672c\"}]"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_name",
+          "registration_number",
+          "preparation_unit",
+          "preparation_name",
+          "administration_route"
+        ],
+        "title": "Body_generate_letter_api_v1_registration_authorization_letters_generate_post"
+      },
       "Body_handler_api_v1_quality_label_verifications_upload_video_post": {
         "properties": {
           "file": {
@@ -97488,74 +98200,6 @@
           "quantity"
         ],
         "title": "Body_post_api_v1_quality_static_data_standard__id__adjust_quantity_post"
-      },
-      "Body_post_api_v1_registration_authorization_letters_generate_post": {
-        "properties": {
-          "template": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "Template"
-          },
-          "product_name": {
-            "type": "string",
-            "title": "Product Name",
-            "description": "\u4ea7\u54c1\u540d\u79f0"
-          },
-          "registration_number": {
-            "type": "string",
-            "title": "Registration Number",
-            "description": "\u767b\u8bb0\u53f7"
-          },
-          "preparation_unit": {
-            "type": "string",
-            "title": "Preparation Unit",
-            "description": "\u5236\u5242\u5355\u4f4d\u540d\u79f0"
-          },
-          "preparation_name": {
-            "type": "string",
-            "title": "Preparation Name",
-            "description": "\u5236\u5242\u540d\u79f0"
-          },
-          "administration_route": {
-            "type": "string",
-            "title": "Administration Route",
-            "description": "\u7ed9\u836f\u9014\u5f84"
-          },
-          "remarks": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Remarks",
-            "description": "\u5907\u6ce8"
-          },
-          "replacements": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Replacements",
-            "description": "\u66ff\u6362\u89c4\u5219 JSON\uff0c\u683c\u5f0f: [{\"old\": \"\u539f\u6587\u672c\", \"new\": \"\u65b0\u6587\u672c\"}]"
-          }
-        },
-        "type": "object",
-        "required": [
-          "template",
-          "product_name",
-          "registration_number",
-          "preparation_unit",
-          "preparation_name",
-          "administration_route"
-        ],
-        "title": "Body_post_api_v1_registration_authorization_letters_generate_post"
       },
       "Body_post_api_v1_registration_ledger_copp_certificates_import_post": {
         "properties": {
@@ -107087,6 +107731,42 @@
         "type": "object",
         "title": "DataMasterUpdate"
       },
+      "DataResponse_AuthorizationLetterFilterOptions_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuthorizationLetterFilterOptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[AuthorizationLetterFilterOptions]"
+      },
       "DataResponse_AuthorizationLetterResponse_": {
         "properties": {
           "code": {
@@ -107518,6 +108198,42 @@
         },
         "type": "object",
         "title": "DataResponse[DownloadUrlResponse]"
+      },
+      "DataResponse_DrugPredictionResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DrugPredictionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[DrugPredictionResponse]"
       },
       "DataResponse_DrugResponse_": {
         "properties": {
@@ -108412,6 +109128,78 @@
         },
         "type": "object",
         "title": "DataResponse[ProblemHandleResult]"
+      },
+      "DataResponse_ProgressLogResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProgressLogResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ProgressLogResponse]"
+      },
+      "DataResponse_ProjectKpiResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectKpiResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ProjectKpiResponse]"
       },
       "DataResponse_ProjectResponse_": {
         "properties": {
@@ -109389,6 +110177,46 @@
         "type": "object",
         "title": "DataResponse[list[AuthorizationLetterListItem]]"
       },
+      "DataResponse_list_AuthorizationLetterTrailItem__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AuthorizationLetterTrailItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[AuthorizationLetterTrailItem]]"
+      },
       "DataResponse_list_CandidateResponse__": {
         "properties": {
           "code": {
@@ -110068,6 +110896,46 @@
         },
         "type": "object",
         "title": "DataResponse[list[ProductInfo]]"
+      },
+      "DataResponse_list_ProgressLogResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ProgressLogResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[ProgressLogResponse]]"
       },
       "DataResponse_list_ProjectProgressItem__": {
         "properties": {
@@ -114976,6 +115844,18 @@
             "type": "string",
             "format": "date",
             "title": "Acceptance Date"
+          },
+          "acceptance_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acceptance Number"
           }
         },
         "type": "object",
@@ -115014,6 +115894,10 @@
             ],
             "title": "Actual Date"
           },
+          "skipped": {
+            "type": "boolean",
+            "title": "Skipped"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -115031,6 +115915,7 @@
           "drug_id",
           "node_index",
           "actual_date",
+          "skipped",
           "created_at",
           "updated_at"
         ],
@@ -115055,6 +115940,17 @@
               }
             ],
             "title": "Actual Date"
+          },
+          "skipped": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skipped"
           }
         },
         "type": "object",
@@ -115062,6 +115958,73 @@
           "node_index"
         ],
         "title": "DrugNodeUpdate"
+      },
+      "DrugPredictionResponse": {
+        "properties": {
+          "drug_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Drug Id"
+          },
+          "total_nodes": {
+            "type": "integer",
+            "title": "Total Nodes"
+          },
+          "completed_nodes": {
+            "type": "integer",
+            "title": "Completed Nodes"
+          },
+          "current_node_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Node Index"
+          },
+          "days_in_current_node": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days In Current Node"
+          },
+          "estimated_approval_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Approval Date"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/NodePrediction"
+            },
+            "type": "array",
+            "title": "Nodes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "drug_id",
+          "total_nodes",
+          "completed_nodes",
+          "nodes"
+        ],
+        "title": "DrugPredictionResponse",
+        "description": "\u836f\u54c1\u5ba1\u8bc4\u8fdb\u5ea6\u9884\u6d4b"
       },
       "DrugResponse": {
         "properties": {
@@ -115082,6 +116045,17 @@
             "type": "string",
             "format": "date",
             "title": "Acceptance Date"
+          },
+          "acceptance_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acceptance Number"
           },
           "current_node": {
             "type": "integer",
@@ -115153,6 +116127,18 @@
             ],
             "title": "Acceptance Date"
           },
+          "acceptance_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acceptance Number"
+          },
           "nodes": {
             "anyOf": [
               {
@@ -115190,6 +116176,17 @@
             "type": "string",
             "format": "date",
             "title": "Acceptance Date"
+          },
+          "acceptance_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acceptance Number"
           },
           "current_node": {
             "type": "integer",
@@ -121468,6 +122465,53 @@
         ],
         "title": "ExperimentUpdateResult",
         "description": "\u66f4\u65b0\u5b9e\u9a8c\u7684\u8fd4\u56de\u7ed3\u679c\u3002"
+      },
+      "ExpiringCertificateItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "certificate_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate Name"
+          },
+          "valid_until": {
+            "type": "string",
+            "format": "date",
+            "title": "Valid Until"
+          },
+          "days_left": {
+            "type": "integer",
+            "title": "Days Left"
+          },
+          "ledger_type": {
+            "type": "string",
+            "title": "Ledger Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "product_name",
+          "valid_until",
+          "days_left",
+          "ledger_type"
+        ],
+        "title": "ExpiringCertificateItem",
+        "description": "\u5373\u5c06\u5230\u671f/\u5df2\u8fc7\u671f\u7684\u8bc1\u4e66\u6761\u76ee\uff08\u7528\u4e8e\u6982\u89c8\u9875\"\u9700\u8981\u5173\u6ce8\"\u9884\u8b66\uff09"
       },
       "ExportApiResponse": {
         "properties": {
@@ -138469,6 +139513,43 @@
           "planned_count": {
             "type": "integer",
             "title": "Planned Count"
+          },
+          "domestic_new_this_year": {
+            "type": "integer",
+            "title": "Domestic New This Year",
+            "default": 0
+          },
+          "overseas_new_this_year": {
+            "type": "integer",
+            "title": "Overseas New This Year",
+            "default": 0
+          },
+          "copp_new_this_year": {
+            "type": "integer",
+            "title": "Copp New This Year",
+            "default": 0
+          },
+          "wc_new_this_year": {
+            "type": "integer",
+            "title": "Wc New This Year",
+            "default": 0
+          },
+          "expiring_certificates": {
+            "items": {
+              "$ref": "#/components/schemas/ExpiringCertificateItem"
+            },
+            "type": "array",
+            "title": "Expiring Certificates"
+          },
+          "expired_count": {
+            "type": "integer",
+            "title": "Expired Count",
+            "default": 0
+          },
+          "expiring_soon_count": {
+            "type": "integer",
+            "title": "Expiring Soon Count",
+            "default": 0
           }
         },
         "type": "object",
@@ -140798,6 +141879,94 @@
           "data"
         ],
         "title": "MyPermissionsResponse"
+      },
+      "NodePrediction": {
+        "properties": {
+          "node_index": {
+            "type": "integer",
+            "title": "Node Index"
+          },
+          "node_name": {
+            "type": "string",
+            "title": "Node Name"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "in_progress",
+              "pending",
+              "skipped"
+            ],
+            "title": "Status"
+          },
+          "actual_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Date"
+          },
+          "estimated_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Date"
+          },
+          "estimated_range": {
+            "anyOf": [
+              {
+                "prefixItems": [
+                  {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  {
+                    "type": "string",
+                    "format": "date"
+                  }
+                ],
+                "type": "array",
+                "maxItems": 2,
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Range"
+          },
+          "delta_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "node_index",
+          "node_name",
+          "status"
+        ],
+        "title": "NodePrediction",
+        "description": "\u5355\u4e2a\u8282\u70b9\u7684\u9884\u6d4b\u4fe1\u606f"
       },
       "NotifyEvents": {
         "properties": {
@@ -149435,21 +150604,106 @@
         "title": "ProductionRecordUpdate",
         "description": "\u66f4\u65b0\u751f\u4ea7\u8bb0\u5f55"
       },
+      "ProgressLogCreate": {
+        "properties": {
+          "content": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "ProgressLogCreate"
+      },
+      "ProgressLogResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "log_type": {
+            "type": "string",
+            "title": "Log Type"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "log_type",
+          "content",
+          "created_by",
+          "created_at"
+        ],
+        "title": "ProgressLogResponse"
+      },
       "ProjectCreate": {
         "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name"
+          },
           "product_name": {
             "type": "string",
             "maxLength": 255,
             "minLength": 1,
             "title": "Product Name"
           },
-          "market": {
-            "type": "string",
-            "maxLength": 128,
-            "minLength": 1,
-            "title": "Market"
-          },
           "registration_type": {
+            "type": "string",
+            "enum": [
+              "\u65b0\u6ce8\u518c",
+              "\u518d\u6ce8\u518c",
+              "\u53d8\u66f4",
+              "\u8865\u5145\u7533\u8bf7"
+            ],
+            "title": "Registration Type"
+          },
+          "project_no": {
             "anyOf": [
               {
                 "type": "string",
@@ -149459,71 +150713,19 @@
                 "type": "null"
               }
             ],
-            "title": "Registration Type"
+            "title": "Project No"
           },
-          "status": {
-            "type": "string",
-            "enum": [
-              "draft",
-              "preparing",
-              "submitted",
-              "accepted",
-              "under_review",
-              "supplementary",
-              "approved",
-              "withdrawn",
-              "terminated"
-            ],
-            "title": "Status",
-            "default": "draft"
-          },
-          "submitted_at": {
+          "market": {
             "anyOf": [
               {
                 "type": "string",
-                "format": "date"
+                "maxLength": 128
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Submitted At"
-          },
-          "accepted_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Accepted At"
-          },
-          "approved_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Approved At"
-          },
-          "expected_completion_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expected Completion At"
+            "title": "Market"
           },
           "owner": {
             "anyOf": [
@@ -149537,24 +150739,67 @@
             ],
             "title": "Owner"
           },
-          "latest_progress": {
+          "planned_submission_date": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "date"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Latest Progress"
+            "title": "Planned Submission Date"
+          },
+          "drug_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drug Id"
           }
         },
         "type": "object",
         "required": [
+          "name",
           "product_name",
-          "market"
+          "registration_type"
         ],
         "title": "ProjectCreate"
+      },
+      "ProjectKpiResponse": {
+        "properties": {
+          "pre_submission": {
+            "type": "integer",
+            "title": "Pre Submission"
+          },
+          "accepted_reviewing": {
+            "type": "integer",
+            "title": "Accepted Reviewing"
+          },
+          "due_soon": {
+            "type": "integer",
+            "title": "Due Soon"
+          },
+          "approved": {
+            "type": "integer",
+            "title": "Approved"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pre_submission",
+          "accepted_reviewing",
+          "due_soon",
+          "approved"
+        ],
+        "title": "ProjectKpiResponse",
+        "description": "\u6ce8\u518c\u9879\u76ee KPI\uff1a\u7533\u62a5\u524d / \u5df2\u53d7\u7406\u00b7\u5ba1\u8bc4\u4e2d / \u4e34\u671f\u672a\u9012\u4ea4 / \u5df2\u83b7\u6279"
       },
       "ProjectProgressItem": {
         "properties": {
@@ -149644,12 +150889,53 @@
             "format": "uuid",
             "title": "Id"
           },
+          "drug_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drug Id"
+          },
+          "project_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project No"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
           "product_name": {
             "type": "string",
             "title": "Product Name"
           },
           "market": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Market"
           },
           "registration_type": {
@@ -149666,6 +150952,41 @@
           "status": {
             "type": "string",
             "title": "Status"
+          },
+          "pre_stage": {
+            "type": "string",
+            "title": "Pre Stage"
+          },
+          "stage_completed_at": {
+            "additionalProperties": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "type": "object",
+            "title": "Stage Completed At"
+          },
+          "planned_submission_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Submission Date"
+          },
+          "acceptance_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acceptance Number"
           },
           "submitted_at": {
             "anyOf": [
@@ -149736,6 +151057,16 @@
               }
             ],
             "title": "Latest Progress"
+          },
+          "latest_log": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProgressLogResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "created_at": {
             "type": "string",
@@ -149751,10 +151082,16 @@
         "type": "object",
         "required": [
           "id",
+          "drug_id",
+          "project_no",
+          "name",
           "product_name",
           "market",
           "registration_type",
           "status",
+          "pre_stage",
+          "planned_submission_date",
+          "acceptance_number",
           "submitted_at",
           "accepted_at",
           "approved_at",
@@ -149768,6 +151105,19 @@
       },
       "ProjectUpdate": {
         "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
           "product_name": {
             "anyOf": [
               {
@@ -149781,20 +151131,24 @@
             ],
             "title": "Product Name"
           },
-          "market": {
+          "registration_type": {
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 128,
-                "minLength": 1
+                "enum": [
+                  "\u65b0\u6ce8\u518c",
+                  "\u518d\u6ce8\u518c",
+                  "\u53d8\u66f4",
+                  "\u8865\u5145\u7533\u8bf7"
+                ]
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Market"
+            "title": "Registration Type"
           },
-          "registration_type": {
+          "project_no": {
             "anyOf": [
               {
                 "type": "string",
@@ -149804,77 +151158,19 @@
                 "type": "null"
               }
             ],
-            "title": "Registration Type"
+            "title": "Project No"
           },
-          "status": {
+          "market": {
             "anyOf": [
               {
                 "type": "string",
-                "enum": [
-                  "draft",
-                  "preparing",
-                  "submitted",
-                  "accepted",
-                  "under_review",
-                  "supplementary",
-                  "approved",
-                  "withdrawn",
-                  "terminated"
-                ]
+                "maxLength": 128
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Status"
-          },
-          "submitted_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Submitted At"
-          },
-          "accepted_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Accepted At"
-          },
-          "approved_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Approved At"
-          },
-          "expected_completion_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expected Completion At"
+            "title": "Market"
           },
           "owner": {
             "anyOf": [
@@ -149888,20 +151184,46 @@
             ],
             "title": "Owner"
           },
-          "latest_progress": {
+          "planned_submission_date": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "date"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Latest Progress"
+            "title": "Planned Submission Date"
+          },
+          "expected_completion_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Completion At"
+          },
+          "drug_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drug Id"
           }
         },
         "type": "object",
-        "title": "ProjectUpdate"
+        "title": "ProjectUpdate",
+        "description": "\u57fa\u672c\u4fe1\u606f\u53ef\u7f16\u8f91\uff1b\u72b6\u6001/\u9636\u6bb5\u4e0d\u5728\u6b64\u4fee\u6539\uff08\u9636\u6bb5\u8d70 /stage \u63a8\u8fdb\uff0c\u53d7\u7406\u540e\u72b6\u6001\u7531\u7533\u62a5\u8fdb\u5ea6\u67e5\u8be2\u540c\u6b65\uff09\u3002"
       },
       "PurchaseApprovalRecordResponse": {
         "properties": {
@@ -170756,6 +172078,26 @@
         ],
         "title": "StabilityTrendResponse",
         "description": "\u8d8b\u52bf\u5206\u6790\u54cd\u5e94"
+      },
+      "StageAdvanceRequest": {
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": [
+              "initiation",
+              "data_preparation",
+              "internal_review",
+              "submission",
+              "accepted"
+            ],
+            "title": "Stage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stage"
+        ],
+        "title": "StageAdvanceRequest"
       },
       "StageTransitionCheckResult": {
         "properties": {

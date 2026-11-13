@@ -64,6 +64,18 @@ export interface WcCertificate {
   updated_at: string
 }
 
+/** 即将到期/已过期的证书条目（概览页"需要关注"预警） */
+export interface ExpiringCertificateItem {
+  id: string
+  product_name: string
+  certificate_name: string | null
+  valid_until: string
+  /** 距到期天数；负数表示已过期天数 */
+  days_left: number
+  /** 来源子表，用于生成台账定位链接；certificate = 主证书表（registration_certificates） */
+  ledger_type: 'domestic' | 'overseas' | 'copp' | 'wc' | 'certificate'
+}
+
 export interface LedgerSummary {
   domestic_count: number
   overseas_count: number
@@ -73,6 +85,15 @@ export interface LedgerSummary {
   wc_count: number
   reviewing_count: number
   planned_count: number
+  /** 今年新增（按发证日期统计） */
+  domestic_new_this_year: number
+  overseas_new_this_year: number
+  copp_new_this_year: number
+  wc_new_this_year: number
+  /** 证书有效期预警（已过期 + 90 天内到期） */
+  expiring_certificates: ExpiringCertificateItem[]
+  expired_count: number
+  expiring_soon_count: number
 }
 
 export interface ReviewingDrug {
