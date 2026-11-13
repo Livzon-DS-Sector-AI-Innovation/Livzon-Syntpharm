@@ -30,7 +30,7 @@ export default function OnboardingRecordDetailDrawer({
         { label: '人员身份', value: record.personnel_identity },
         { label: '入职日期', value: record.hire_date },
         { label: '入职类别', value: record.join_category },
-        { label: '学历', value: record.education },
+        { label: '学历/学位', value: record.education },
         { label: '性别', value: record.gender },
         { label: '年龄', value: record.age },
         { label: '手机号码', value: record.mobile },

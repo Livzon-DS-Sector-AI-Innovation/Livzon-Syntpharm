@@ -145,7 +145,7 @@ export default function OnboardingRecordFormDrawer({
           <Form.Item label="入职类别" name="join_category" rules={[required]}>
             <Select options={toOptions(JOIN_CATEGORY_OPTIONS)} placeholder="请选择" />
           </Form.Item>
-          <Form.Item label="学历" name="education" rules={[required]}>
+          <Form.Item label="学历/学位" name="education" rules={[required]}>
             <Select options={toOptions(EDUCATION_OPTIONS)} placeholder="请选择" />
           </Form.Item>
           <Form.Item label="性别" name="gender" rules={[required]}>
