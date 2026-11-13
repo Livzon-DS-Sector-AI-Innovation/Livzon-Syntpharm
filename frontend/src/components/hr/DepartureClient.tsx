@@ -106,11 +106,10 @@ export default function DepartureClient({ initialRecords, initialTotal }: Depart
       width: 120,
     },
     {
-      title: '司龄',
-      dataIndex: 'tenure_years',
-      key: 'tenure_years',
-      width: 100,
-      render: (value: number) => `${Number(value).toFixed(1)} 年`,
+      title: '离职类别',
+      dataIndex: 'leave_category',
+      key: 'leave_category',
+      width: 120,
     },
     {
       title: '操作',
