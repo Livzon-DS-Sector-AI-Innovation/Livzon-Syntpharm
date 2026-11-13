@@ -113,7 +113,6 @@ def _detail(
     return payload
 
 
-@pytest.mark.asyncio
 async def test_sync_upserts_tree_and_directory_fields() -> None:
     fetcher = FakeFetcher(
         departments=[
@@ -153,7 +152,6 @@ async def test_sync_upserts_tree_and_directory_fields() -> None:
     assert fetcher.detail_requests == [["od-101", "od-101-1"]]
 
 
-@pytest.mark.asyncio
 async def test_sync_hides_removed_and_out_of_scope_rows() -> None:
     stale = OrgDepartmentRecord(
         id="od-stale",
@@ -186,7 +184,6 @@ async def test_sync_hides_removed_and_out_of_scope_rows() -> None:
     assert store.records["od-trade"].hidden is True
 
 
-@pytest.mark.asyncio
 async def test_sync_upserts_department_when_directory_detail_is_missing() -> None:
     fetcher = FakeFetcher(
         departments=[_contact("od-101", "101车间", IN_SCOPE_COMPANY_ID)],
@@ -208,7 +205,6 @@ async def test_sync_upserts_department_when_directory_detail_is_missing() -> Non
     assert record.recursive_members_count == 0
 
 
-@pytest.mark.asyncio
 async def test_sync_ignores_departments_deeper_than_two_levels() -> None:
     fetcher = FakeFetcher(
         departments=[
@@ -231,7 +227,6 @@ async def test_sync_ignores_departments_deeper_than_two_levels() -> None:
     assert fetcher.detail_requests == [["od-101", "od-101-1"]]
 
 
-@pytest.mark.asyncio
 async def test_sync_records_last_sync_metadata_with_counts() -> None:
     fetcher = FakeFetcher(
         departments=[_contact("od-101", "101车间", IN_SCOPE_COMPANY_ID)],
@@ -252,7 +247,6 @@ async def test_sync_records_last_sync_metadata_with_counts() -> None:
     assert run.error_message is None
 
 
-@pytest.mark.asyncio
 async def test_sync_records_failed_run_and_keeps_existing_data() -> None:
     existing = OrgDepartmentRecord(id="od-101", name="101车间", parent_id=IN_SCOPE_COMPANY_ID)
     store = FakeStore(existing=[existing])
@@ -273,7 +267,6 @@ async def test_sync_records_failed_run_and_keeps_existing_data() -> None:
     assert "feishu unavailable" in (store.runs[-1].error_message or "")
 
 
-@pytest.mark.asyncio
 async def test_sync_rolls_back_partial_writes_before_recording_failure() -> None:
     existing = OrgDepartmentRecord(id="od-existing", name="既有部门", parent_id=IN_SCOPE_COMPANY_ID)
     fetcher = FakeFetcher(
@@ -310,7 +303,6 @@ async def test_sync_rolls_back_partial_writes_before_recording_failure() -> None
     assert "database write failed" in (store.runs[-1].error_message or "")
 
 
-@pytest.mark.asyncio
 async def test_sync_stores_company_root_and_requests_its_detail() -> None:
     fetcher = FakeFetcher(
         departments=[
