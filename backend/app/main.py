@@ -5,6 +5,7 @@ import logging
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -12,7 +13,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import IntegrityError
+from starlette.datastructures import MutableHeaders
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 import app.platform.audit.models  # noqa: F401
 
@@ -322,6 +325,48 @@ app.add_middleware(AuditMiddleware)
 app.add_middleware(PermissionBindingMiddleware)
 # 最后 add = 最外层 = 最先执行：被禁用的接口直接 403，不再走后续判定
 app.add_middleware(ApiSwitchMiddleware)
+
+
+class RelativeRedirectMiddleware:
+    """将 3xx 重定向的绝对 Location 归一化为相对路径。
+
+    FastAPI redirect_slashes 生成的 Location 基于容器内请求 URL（如
+    http://backend:8000/...），经前端 dev 代理转发后浏览器无法解析，
+    导致 307/308 循环最终 Failed to fetch。统一改写为相对路径后，
+    浏览器会以自身源（localhost:3000）为基准正确跟随。
+
+    只归一化「指向应用自身」的重定向（netloc 与请求 Host 一致）；
+    指向外部站点的重定向（如飞书 OAuth 授权页）必须保持绝对地址。
+    """
+
+    REDIRECT_STATUSES = {301, 302, 303, 307, 308}
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        request_host = dict(scope["headers"]).get(b"host", b"").decode()
+
+        async def send_wrapper(message: Message) -> None:
+            if message["type"] == "http.response.start" and message["status"] in self.REDIRECT_STATUSES:
+                headers = MutableHeaders(raw=message["headers"])
+                location = headers.get("location", "")
+                if location.startswith(("http://", "https://")) and urlsplit(location).netloc == request_host:
+                    parsed = urlsplit(location)
+                    relative = parsed.path
+                    if parsed.query:
+                        relative += f"?{parsed.query}"
+                    headers["location"] = relative
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
+
+
+app.add_middleware(RelativeRedirectMiddleware)
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
