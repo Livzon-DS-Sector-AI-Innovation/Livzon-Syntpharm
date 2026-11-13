@@ -12,7 +12,7 @@ from datetime import date, datetime
 from typing import Annotated, Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 from app.modules.hr.departure_domain import LeaveCategory
 from app.modules.hr.onboarding_domain import (
@@ -32,7 +32,13 @@ class DepartureRecordCreate(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    person_id: UUID = Field(..., description="员工档案人员 id")
+    person_id: UUID | None = Field(None, description="员工档案人员 id；不在档案中时留空并手工填写快照字段")
+    department_level1: str | None = Field(None, max_length=64, description="一级部门（手动录入时必填）")
+    department_level2: str | None = Field(None, max_length=64, description="二级部门（手动录入时必填）")
+    name: str | None = Field(None, max_length=64, description="姓名（手动录入时必填）")
+    gender: Gender | None = Field(None, description="性别（手动录入时必填）")
+    position: str | None = Field(None, max_length=64, description="岗位（手动录入时必填）")
+    hire_date: date | None = Field(None, description="入职日期（手动录入时必填）")
     position_level: PositionLevel = Field(..., description="岗位层级")
     personnel_identity: PersonnelIdentity = Field(..., description="人员身份")
     leave_date: date = Field(..., description="离职日期")
@@ -41,6 +47,26 @@ class DepartureRecordCreate(BaseModel):
     education: EducationLevel | None = Field(None, description="学历；不传时取员工档案")
     age: Age | None = Field(None, description="年龄；不传时取员工档案")
     group_classification: GroupClassification = Field(..., description="集团月报表人员分类")
+
+    @model_validator(mode="after")
+    def _require_manual_snapshot(self) -> DepartureRecordCreate:
+        if self.person_id is not None:
+            return self
+        missing = [
+            label
+            for label, value in (
+                ("一级部门", self.department_level1),
+                ("二级部门", self.department_level2),
+                ("姓名", self.name),
+                ("性别", self.gender),
+                ("岗位", self.position),
+                ("入职日期", self.hire_date),
+            )
+            if not value
+        ]
+        if missing:
+            raise ValueError("手动录入时必须填写：" + "、".join(missing))
+        return self
 
 
 class DepartureRecordUpdate(BaseModel):
@@ -62,7 +88,7 @@ class DepartureRecordResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
-    person_id: UUID
+    person_id: UUID | None
     department_level1: str
     department_level2: str
     name: str

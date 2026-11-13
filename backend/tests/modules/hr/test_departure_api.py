@@ -156,7 +156,7 @@ class TestDepartureCreate:
         assert detail["hire_date"] == "2019-03-15"
         assert detail["tenure_years"] == 7.6
 
-    async def test_client_cannot_supply_snapshot_fields(
+    async def test_client_snapshot_fields_are_ignored_when_profile_selected(
         self,
         auth_client: AsyncClient,
         db_session: AsyncSession,
@@ -166,10 +166,13 @@ class TestDepartureCreate:
 
         response = await auth_client.post(
             LIST_URL,
-            json=_payload(profile, department_level1="伪造部门"),
+            json=_payload(profile, department_level1="伪造部门", name="伪造姓名"),
         )
 
-        assert response.status_code == 422
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["department_level1"] == "头孢合成制造部"
+        assert data["name"] == "张伟"
 
     async def test_rejects_missing_required_field(
         self,
@@ -454,6 +457,53 @@ class TestDepartureDelete:
         body = (await auth_client.get(LIST_URL)).json()
         assert body["meta"]["total"] == 0
         assert (await auth_client.get(f"{LIST_URL}/{created['id']}")).status_code == 404
+
+    async def test_create_without_profile_uses_manual_snapshot(self, auth_client: AsyncClient) -> None:
+        payload = {
+            "department_level1": "质量保证部",
+            "department_level2": "质量研究室",
+            "name": "历史人员",
+            "gender": "女",
+            "position": "质量研究员",
+            "hire_date": "2020-01-01",
+            "position_level": "员工级",
+            "personnel_identity": "正式工",
+            "leave_date": "2026-06-30",
+            "leave_category": "主动离职",
+            "leave_reason": "个人发展",
+            "education": "硕士",
+            "age": 35,
+            "group_classification": "研发一线",
+        }
+
+        response = await auth_client.post(LIST_URL, json=payload)
+
+        assert response.status_code == 200, response.text
+        data = response.json()["data"]
+        assert data["person_id"] is None
+        assert data["name"] == "历史人员"
+        assert data["department_level1"] == "质量保证部"
+        assert data["department_level2"] == "质量研究室"
+        assert data["position"] == "质量研究员"
+        assert data["hire_date"] == "2020-01-01"
+        assert data["tenure_years"] == 6.5
+
+    async def test_manual_record_requires_snapshot_fields(self, auth_client: AsyncClient) -> None:
+        payload = {
+            "department_level1": "质量保证部",
+            "position_level": "员工级",
+            "personnel_identity": "正式工",
+            "leave_date": "2026-06-30",
+            "leave_category": "主动离职",
+            "leave_reason": "个人发展",
+            "education": "硕士",
+            "age": 35,
+            "group_classification": "研发一线",
+        }
+
+        response = await auth_client.post(LIST_URL, json=payload)
+
+        assert response.status_code == 422, response.text
 
     async def test_delete_unknown_id_returns_404(self, auth_client: AsyncClient) -> None:
         response = await auth_client.delete(f"{LIST_URL}/00000000-0000-0000-0000-000000000000")

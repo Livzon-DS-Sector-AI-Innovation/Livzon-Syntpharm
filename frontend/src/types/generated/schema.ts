@@ -29237,10 +29237,39 @@ export interface components {
         DepartureRecordCreate: {
             /**
              * Person Id
-             * Format: uuid
-             * @description 员工档案人员 id
+             * @description 员工档案人员 id；不在档案中时留空并手工填写快照字段
              */
-            person_id: string;
+            person_id?: string | null;
+            /**
+             * Department Level1
+             * @description 一级部门（手动录入时必填）
+             */
+            department_level1?: string | null;
+            /**
+             * Department Level2
+             * @description 二级部门（手动录入时必填）
+             */
+            department_level2?: string | null;
+            /**
+             * Name
+             * @description 姓名（手动录入时必填）
+             */
+            name?: string | null;
+            /**
+             * Gender
+             * @description 性别（手动录入时必填）
+             */
+            gender?: ("男" | "女") | null;
+            /**
+             * Position
+             * @description 岗位（手动录入时必填）
+             */
+            position?: string | null;
+            /**
+             * Hire Date
+             * @description 入职日期（手动录入时必填）
+             */
+            hire_date?: string | null;
             /**
              * Position Level
              * @description 岗位层级
@@ -29332,11 +29361,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /**
-             * Person Id
-             * Format: uuid
-             */
-            person_id: string;
+            /** Person Id */
+            person_id: string | null;
             /** Department Level1 */
             department_level1: string;
             /** Department Level2 */

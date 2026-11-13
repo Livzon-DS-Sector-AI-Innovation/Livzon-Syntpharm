@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Button, DatePicker, Drawer, Form, Input, InputNumber, Select, message } from 'antd'
+import { Button, DatePicker, Drawer, Form, Input, InputNumber, Radio, Select, message } from 'antd'
 import dayjs from 'dayjs'
 import { useQuery } from '@tanstack/react-query'
 
@@ -26,7 +26,7 @@ interface DepartureRecordFormDrawerProps {
 }
 
 interface FormValues {
-  person_id: string
+  person_id?: string
   department_level1: string
   department_level2: string
   name: string
@@ -45,7 +45,7 @@ interface FormValues {
 
 function toFormValues(record: DepartureRecord): FormValues {
   return {
-    person_id: record.person_id,
+    person_id: record.person_id ?? undefined,
     department_level1: record.department_level1,
     department_level2: record.department_level2,
     name: record.name,
@@ -75,6 +75,7 @@ export default function DepartureRecordFormDrawer({
   const editing = Boolean(record)
   const [personKeyword, setPersonKeyword] = useState('')
   const [loadingSnapshot, setLoadingSnapshot] = useState(false)
+  const [manual, setManual] = useState(false)
 
   const { data: people, isFetching: loadingPeople } = useQuery({
     queryKey: ['hr-people-picker', personKeyword],
@@ -117,6 +118,11 @@ export default function DepartureRecordFormDrawer({
     }
   }
 
+  const closeDrawer = () => {
+    setManual(false)
+    onClose()
+  }
+
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
@@ -135,13 +141,22 @@ export default function DepartureRecordFormDrawer({
         message.success('离职记录已更新')
       } else {
         await createDepartureRecord({
-          person_id: values.person_id,
+          ...(manual
+            ? {
+                department_level1: values.department_level1,
+                department_level2: values.department_level2,
+                name: values.name,
+                gender: values.gender,
+                position: values.position,
+                hire_date: values.hire_date ? values.hire_date.format('YYYY-MM-DD') : undefined,
+              }
+            : { person_id: values.person_id }),
           ...mutable,
         } as DepartureRecordCreateInput)
         message.success('离职记录已创建')
       }
       onSaved()
-      onClose()
+      closeDrawer()
     } catch (error) {
       if (error instanceof Error) message.error(error.message || '保存失败')
     }
@@ -155,13 +170,13 @@ export default function DepartureRecordFormDrawer({
   return (
     <Drawer
       open={open}
-      onClose={onClose}
+      onClose={closeDrawer}
       width={620}
       title={editing ? '编辑离职记录' : '新建离职记录'}
       destroyOnHidden
       footer={
         <div className="flex justify-end gap-2">
-          <Button onClick={onClose}>取消</Button>
+          <Button onClick={closeDrawer}>取消</Button>
           <Button type="primary" loading={loadingSnapshot} onClick={handleSubmit}>
             保存
           </Button>
@@ -171,6 +186,25 @@ export default function DepartureRecordFormDrawer({
       <Form form={form} layout="vertical" requiredMark>
         <div className="grid gap-x-4 sm:grid-cols-2">
           {!editing && (
+            <Form.Item label="人员来源" className="sm:col-span-2">
+              <Radio.Group
+                value={manual ? 'manual' : 'profile'}
+                onChange={(event) => {
+                  const nextManual = event.target.value === 'manual'
+                  setManual(nextManual)
+                  if (nextManual) {
+                    form.setFieldsValue({ person_id: undefined, name: undefined, department_level1: undefined, department_level2: undefined, position: undefined, gender: undefined, hire_date: null })
+                  }
+                }}
+                options={[
+                  { label: '从员工档案选择', value: 'profile' },
+                  { label: '不在档案中，手动录入', value: 'manual' },
+                ]}
+                optionType="button"
+              />
+            </Form.Item>
+          )}
+          {!editing && !manual && (
             <Form.Item label="选择人员" name="person_id" rules={[required]}>
               <Select
                 showSearch
@@ -184,16 +218,16 @@ export default function DepartureRecordFormDrawer({
             </Form.Item>
           )}
           <Form.Item label="姓名" name="name" rules={[required]}>
-            <Input disabled />
+            <Input disabled={!manual} />
           </Form.Item>
           <Form.Item label="一级部门" name="department_level1" rules={[required]}>
-            <Input disabled />
+            <Input disabled={!manual} />
           </Form.Item>
           <Form.Item label="二级部门" name="department_level2" rules={[required]}>
-            <Input disabled />
+            <Input disabled={!manual} />
           </Form.Item>
           <Form.Item label="岗位" name="position" rules={[required]}>
-            <Input disabled />
+            <Input disabled={!manual} />
           </Form.Item>
           <Form.Item label="岗位层级" name="position_level" rules={[required]}>
             <Select options={toOptions(POSITION_LEVEL_OPTIONS)} placeholder="请选择" />
@@ -202,10 +236,10 @@ export default function DepartureRecordFormDrawer({
             <Select options={toOptions(PERSONNEL_IDENTITY_OPTIONS)} placeholder="请选择" />
           </Form.Item>
           <Form.Item label="性别" name="gender" rules={[required]}>
-            <Select options={toOptions(GENDER_OPTIONS)} disabled />
+            <Select options={toOptions(GENDER_OPTIONS)} disabled={!manual} />
           </Form.Item>
           <Form.Item label="入职日期" name="hire_date" rules={[required]}>
-            <DatePicker className="w-full" disabled />
+            <DatePicker className="w-full" disabled={!manual} />
           </Form.Item>
           <Form.Item label="离职日期" name="leave_date" rules={[required]}>
             <DatePicker className="w-full" />
