@@ -271,6 +271,7 @@ def build_transition_summary(
     next_role_label: str = "",
     elapsed_hours: float | None = None,
     deadline_days: int | None = None,
+    return_step_label: str | None = None,
 ) -> str:
     """审批信息摘要（lark_md）：编号/标题、级别/发现日期、部门/上报人、待办环节、上一步、意见。"""
     lines = [
@@ -279,8 +280,13 @@ def build_transition_summary(
         f"部门：{notice.department}｜上报人：{notice.reporter_name}",
     ]
     if result == "rejected":
-        lines.append(f"退回环节：{step_label}")
-        lines.append(f"当前状态：待{next_role_label or '上报人'}修改后重新提交")
+        if return_step_label:
+            lines.append(f"退回环节：{step_label}｜退回到：{return_step_label}")
+            lines.append(f"当前状态：待{next_role_label or '该环节处理人'}处理")
+        else:
+            #: 历史「已退回」数据没有目标环节，保留原提示
+            lines.append(f"退回环节：{step_label}")
+            lines.append(f"当前状态：待{next_role_label or '上报人'}修改后重新提交")
     else:
         current = f"当前环节：{next_status_label}"
         if next_role_label:
@@ -313,8 +319,9 @@ async def notify_transition(
     next_role_label: str = "",
     elapsed_hours: float | None = None,
     deadline_days: int | None = None,
+    return_step_label: str | None = None,
 ) -> None:
-    """流转即时通知：通过 → 下一环节处理人；退回 → 上报人 + 调查人。"""
+    """流转即时通知：通过 → 下一环节处理人；退回 → 目标环节处理人 + 上报人。"""
     config = await load_notify_settings()
     ai_done = result == "approved" and step_label == "AI 智能分析"
     if ai_done and not config.enabled_for("ai_done"):
@@ -333,6 +340,7 @@ async def notify_transition(
         next_role_label=next_role_label,
         elapsed_hours=elapsed_hours,
         deadline_days=deadline_days,
+        return_step_label=return_step_label,
     )
     title = _transition_title(step_label=step_label, result=result, next_status_label=next_status_label)
 

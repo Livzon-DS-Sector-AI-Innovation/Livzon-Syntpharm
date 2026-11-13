@@ -14,8 +14,14 @@ PROTECTED_ENDPOINTS: list[tuple[str, str, dict[str, object] | None]] = [
     ("get", "/api/v1/quality/deviation/ledger/department-contact-options", None),
     ("get", "/api/v1/quality/deviation/ledger/investigator-options", None),
     ("get", "/api/v1/quality/deviation/ledger/status-options", None),
+    ("get", "/api/v1/quality/deviation/ledger/jobs/{job_id}", None),
     ("get", "/api/v1/quality/deviation/ledger/{ledger_id}", None),
     ("post", "/api/v1/quality/deviation/ledger", {}),
+    ("post", "/api/v1/quality/deviation/ledger/{ledger_id}/investigation-submit", {}),
+    ("post", "/api/v1/quality/deviation/ledger/{ledger_id}/investigation-drafts", {}),
+    ("delete", "/api/v1/quality/deviation/ledger/{ledger_id}/investigation-drafts", None),
+    ("post", "/api/v1/quality/deviation/ledger/{ledger_id}/cross-dept-investigation", {}),
+    ("post", "/api/v1/quality/deviation/ledger/{ledger_id}/cross-dept-review/reject", {}),
 ]
 
 
@@ -31,7 +37,7 @@ async def test_ledger_endpoints_require_auth(
     body: dict[str, object] | None,
 ) -> None:
     """未登录一律 401。"""
-    url = path.format(ledger_id=uuid.uuid4())
+    url = path.format(ledger_id=uuid.uuid4(), job_id=uuid.uuid4())
     response = await anonymous_client.request(method, url, json=body)
     assert response.status_code == 401, f"{method.upper()} {url} returned {response.status_code}"
 

@@ -30,6 +30,10 @@ class LedgerStatus(StrEnum):
 #: 所有合法状态值（供 DB CHECK 与应用层校验共用）
 LEDGER_STATUSES: tuple[str, ...] = tuple(status.value for status in LedgerStatus)
 
+#: 跨部门行级调查状态（存于 ``cross_dept_reviewers`` 行的 ``investigate_state`` 字段）
+CROSS_DEPT_INVESTIGATION_PENDING = "pending"
+CROSS_DEPT_INVESTIGATION_SUBMITTED = "submitted"
+
 #: 新建后落库的初始状态：与妙搭一致，创建即进入 AI 分析环节
 INITIAL_STATUS = LedgerStatus.PENDING_AI_ANALYSIS.value
 

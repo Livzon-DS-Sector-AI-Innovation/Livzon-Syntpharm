@@ -50,7 +50,13 @@ class DeviationLedgerRepository:
         end_date: date | None = None,
     ) -> Select[Any]:
         stmt = stmt.where(DeviationLedger.is_deleted.is_(False))
-        if status:
+        if status == LedgerStatus.RETURNED.value:
+            #: 新语义下退回不再落 returned 态，改按「存在未处理的退回标记」筛选
+            stmt = stmt.where(
+                DeviationLedger.returned_step.isnot(None),
+                DeviationLedger.status.notin_((LedgerStatus.CLOSED.value, LedgerStatus.CANCELLED.value)),
+            )
+        elif status:
             stmt = stmt.where(DeviationLedger.status == status)
         if department:
             stmt = stmt.where(DeviationLedger.department == department)
@@ -149,7 +155,13 @@ class DeviationLedgerRepository:
         card_stmt = select(
             func.count().label("total"),
             func.count().filter(DeviationLedger.status.like("pending_%")).label("pending"),
-            func.count().filter(DeviationLedger.status == LedgerStatus.RETURNED.value).label("pending_returned"),
+            #: 「已退回」= 存在未处理退回标记（目标环节重新通过后服务端会清空）
+            func.count()
+            .filter(
+                DeviationLedger.returned_step.isnot(None),
+                DeviationLedger.status.notin_((LedgerStatus.CLOSED.value, LedgerStatus.CANCELLED.value)),
+            )
+            .label("pending_returned"),
             func.count().filter(DeviationLedger.status == LedgerStatus.CLOSED.value).label("closed"),
         ).where(active)
         card = (await self.db.execute(card_stmt)).one()
