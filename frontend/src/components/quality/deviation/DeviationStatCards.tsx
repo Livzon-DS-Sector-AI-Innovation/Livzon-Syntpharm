@@ -55,7 +55,7 @@ export function DeviationStatCards({ statistics, loading = false }: DeviationSta
     {
       key: 'returned',
       label: '已退回',
-      hint: '退回发起人修改',
+      hint: '已退回，待目标环节重新处理',
       value: stats.returned,
       icon: <RollbackOutlined />,
       accent: 'var(--color-error)',

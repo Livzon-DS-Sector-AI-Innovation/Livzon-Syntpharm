@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { App, Button, Card, DatePicker, Form, Input, Select, Switch } from 'antd'
+import { App, Button, DatePicker, Form, Input, Select, Switch } from 'antd'
 import dayjs from 'dayjs'
 import { updateDeviationLedger } from '@/actions/quality'
 import { RemoteUserMultiSelect } from '@/components/common/RemoteUserSelect'
@@ -16,6 +16,7 @@ import type {
   DeviationLedgerOption,
   DeviationLedgerUpdateInput,
 } from '@/types/quality'
+import { SectionCard } from './SectionCard'
 
 interface BasicInfoCardProps {
   ledger: DeviationLedgerDetail
@@ -34,7 +35,12 @@ interface BasicFormValues {
   description: string
   handler_ids?: string[]
   needs_cross_dept_review: boolean
-  cross_dept_reviewers?: { department: string; investigator_ids?: string[] }[]
+  cross_dept_reviewers?: {
+    department: string
+    investigator_ids?: string[]
+    dept_head_id?: string | null
+    dept_head_name?: string | null
+  }[]
 }
 
 export function BasicInfoCard({
@@ -60,6 +66,9 @@ export function BasicInfoCard({
         if (map.has(id)) return
         map.set(id, { name: names[index] ?? '未知人员' })
       })
+      if (reviewer.dept_head_id && !map.has(reviewer.dept_head_id)) {
+        map.set(reviewer.dept_head_id, { name: reviewer.dept_head_name ?? '未知人员' })
+      }
     }
     return map
   }, [ledger.handlers, ledger.cross_dept_reviewers])
@@ -76,7 +85,7 @@ export function BasicInfoCard({
     const values = await form.validateFields()
     const rows = values.needs_cross_dept_review ? toCrossDeptRowsPayload(values.cross_dept_reviewers ?? []) : []
     if (values.needs_cross_dept_review && rows.length === 0) {
-      message.warning('开启跨部门审核后至少需要一行跨部门（部门必选）')
+      message.warning('开启跨部门审核后至少需要一行跨部门（部门与部门负责人必选）')
       return
     }
     const crossDeptPayload: DeviationLedgerUpdateInput = {
@@ -109,11 +118,9 @@ export function BasicInfoCard({
   }
 
   return (
-    <Card
-      id="basic-info"
-      size="small"
-      title="基本信息"
-      className="scroll-mt-6 shadow-sm"
+    <SectionCard
+      section="basic-info"
+      ledger={ledger}
       extra={
         (ledger.editable || ledger.can_edit_cross_dept) && (
           <Button type="primary" size="small" loading={saving} onClick={handleSave}>
@@ -190,7 +197,7 @@ export function BasicInfoCard({
         <div className={canEditCrossDeptOnly ? 'rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-3' : undefined}>
           {canEditCrossDeptOnly && (
             <p className="mb-2 text-xs text-[var(--color-slate)]">
-              调查环节中仅可维护跨部门会签名单；已通过的行在保存后保持通过状态。
+              调查环节中仅可维护跨部门会签名单（部门 + 调查人 + 部门负责人）；已通过的行在保存后保持通过状态。
             </p>
           )}
           <Form.Item
@@ -212,6 +219,6 @@ export function BasicInfoCard({
           )}
         </div>
       </Form>
-    </Card>
+    </SectionCard>
   )
 }

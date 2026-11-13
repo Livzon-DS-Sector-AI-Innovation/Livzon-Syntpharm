@@ -1,23 +1,29 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { App, Button, Card, Empty, Popconfirm, Space, Timeline, Tooltip, Upload } from 'antd'
-import { DeleteOutlined, EyeOutlined, MessageOutlined, UploadOutlined, WarningOutlined } from '@ant-design/icons'
-import { deleteDeviationAttachment, uploadDeviationAttachment } from '@/actions/quality'
-import { fetchDeviationAttachmentCommentSummary } from '@/lib/api/client/quality'
-import type { DeviationAttachment, DeviationInvestigationRecord, DeviationLedgerDetail } from '@/types/quality'
+import { useCallback, useEffect, useState } from 'react'
+import { App, Button, Empty, Input, Modal, Space } from 'antd'
+import { DownloadOutlined, FileTextOutlined, SendOutlined, WarningOutlined } from '@ant-design/icons'
+import { submitDeviationInvestigationForReview } from '@/actions/quality'
+import type {
+  DeviationAttachment,
+  DeviationInvestigationPrefill,
+  DeviationInvestigationRecord,
+  DeviationLedgerDetail,
+} from '@/types/quality'
 import { PersonInline } from '../PersonInline'
 import { AttachmentPreviewDrawer } from './AttachmentPreviewDrawer'
 import { InvestigationRecordForm } from './InvestigationRecordForm'
+import { SectionCard } from './SectionCard'
+import { scrollToSection } from './detailScroll'
 
 interface InvestigationCardProps {
   ledger: DeviationLedgerDetail
   onUpdated: (ledger: DeviationLedgerDetail) => void
+  /** AI 分析带入调查表单的一次性载荷（只填空白，不提交） */
+  prefill?: DeviationInvestigationPrefill | null
+  /** 表单应用完 prefill 后回调实际写入项数，父级据此清空载荷并提示 */
+  onPrefillApplied?: (filled: number) => void
 }
-
-/** 单文件上限 20MB，与后端保持一致 */
-const MAX_ATTACHMENT_SIZE = 20 * 1024 * 1024
 
 function attachmentUrl(ledgerId: string, fileId: string): string {
   return `/api/v1/quality/deviation/ledger/${ledgerId}/attachments/${fileId}/download`
@@ -37,24 +43,41 @@ function formatTime(value?: string | null): string {
   return date.toLocaleString('zh-CN', { hour12: false })
 }
 
+/** 正文小节：统一「灰字标题 + 正文」排版 */
+function Section({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-md bg-[var(--color-surface-soft,#fafafa)] px-2.5 py-2">
+      <div className="text-[12px] font-medium text-[var(--color-slate)]">{title}</div>
+      <p className="mt-0.5 whitespace-pre-wrap break-words text-[13px] leading-5 text-[var(--color-ink)]">{text}</p>
+    </div>
+  )
+}
+
 /** 记录正文：不符合事项 → 根因 → 风险 → CAPA → 紧急措施 → 记录附件；旧纯文本记录降级为段落展示 */
 function RecordBody({
+  ledgerId,
   record,
   onPreview,
 }: {
+  ledgerId: string
   record: DeviationInvestigationRecord
   onPreview: (attachment: DeviationAttachment) => void
 }) {
   const capaRows = record.capa_proposals ?? []
   const recordAttachments = record.attachments ?? []
-  const isStructured = Boolean(
+  const hasTextContent = Boolean(
     record.nonconformity_description ||
       record.root_cause_analysis ||
       record.risk_assessment ||
       record.urgent_measures ||
       capaRows.length,
   )
-  if (!isStructured) {
+  // 附件路线：只引用了调查报告附件、未填文本，属于有效提交形态
+  const viaAttachmentOnly = !hasTextContent && recordAttachments.length > 0
+  if (!hasTextContent && !record.content && !viaAttachmentOnly) {
+    return <p className="text-[13px] text-[var(--color-stone)]">（无文本内容）</p>
+  }
+  if (!hasTextContent && record.content) {
     return (
       <p className="whitespace-pre-wrap break-words text-[13px] leading-5 text-[var(--color-ink)]">{record.content}</p>
     )
@@ -66,16 +89,14 @@ function RecordBody({
   ].filter((section) => section.text)
   return (
     <div className="flex flex-col gap-2">
+      {viaAttachmentOnly && (
+        <span className="text-[12px] text-[#2f6fed]">以调查报告附件形式提交，文本内容见下方附件。</span>
+      )}
       {sections.map((section) => (
-        <div key={section.title}>
-          <div className="text-[12px] font-medium text-[var(--color-slate)]">{section.title}</div>
-          <p className="whitespace-pre-wrap break-words text-[13px] leading-5 text-[var(--color-ink)]">
-            {section.text}
-          </p>
-        </div>
+        <Section key={section.title} title={section.title} text={section.text ?? ''} />
       ))}
       {capaRows.length > 0 && (
-        <div>
+        <div className="rounded-md bg-[var(--color-surface-soft,#fafafa)] px-2.5 py-2">
           <div className="text-[12px] font-medium text-[var(--color-slate)]">改进建议（CAPA）</div>
           <ol className="mt-1 flex list-decimal flex-col gap-1 pl-5 text-[13px] text-[var(--color-ink)]">
             {capaRows.map((row, index) => (
@@ -105,18 +126,35 @@ function RecordBody({
         </div>
       )}
       {recordAttachments.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1">
-          <span className="text-[12px] text-[var(--color-slate)]">记录附件：</span>
+        <div className="flex flex-col gap-1">
+          <span className="text-[12px] font-medium text-[var(--color-slate)]">
+            {viaAttachmentOnly ? '调查报告' : '记录附件'}
+          </span>
           {recordAttachments.map((attachment) => (
-            <Button
+            <div
               key={attachment.file_id}
-              type="link"
-              size="small"
-              className="!h-auto !px-0 !text-[12px]"
-              onClick={() => onPreview(attachment)}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--color-hairline)] px-2.5 py-1.5 transition-colors hover:bg-[var(--color-fill,#f4f4f5)]"
             >
-              {attachment.file_name}
-            </Button>
+              <span className="flex min-w-0 items-center gap-1.5 text-[12px]">
+                <FileTextOutlined className="shrink-0 text-[var(--color-slate)]" />
+                <span className="truncate text-[var(--color-ink)]">{attachment.file_name}</span>
+                <span className="shrink-0 text-[var(--color-stone)]">{formatSize(attachment.size)}</span>
+              </span>
+              <Space size={2} className="shrink-0">
+                <Button type="link" size="small" className="!px-1" onClick={() => onPreview(attachment)}>
+                  预览
+                </Button>
+                <Button
+                  type="link"
+                  size="small"
+                  className="!px-1"
+                  icon={<DownloadOutlined />}
+                  href={attachmentUrl(ledgerId, attachment.file_id)}
+                >
+                  下载
+                </Button>
+              </Space>
+            </div>
           ))}
         </div>
       )}
@@ -124,34 +162,20 @@ function RecordBody({
   )
 }
 
-/** 调查记录：过程记录 + 调查文档（上传的文档在此呈现），提交后进入部门负责人审核 */
-export function InvestigationCard({ ledger, onUpdated }: InvestigationCardProps) {
+/**
+ * 调查记录：时间线改为卡片流（作者/部门/时间 + 分区正文 + 附件预览下载）。
+ * 附件只在调查记录内维护：未提交时在表单中上传/删除，提交后只能预览与下载。
+ */
+export function InvestigationCard({ ledger, onUpdated, prefill, onPrefillApplied }: InvestigationCardProps) {
   const { message } = App.useApp()
   // 结构化调查表单：submit=提交调查（流转），append=追加记录（不流转），null=收起
   const [formMode, setFormMode] = useState<'submit' | 'append' | null>(null)
-  const [uploading, setUploading] = useState(false)
+  // 卡片快捷提交：调查记录已填写后可直接提交审核（不新建记录）
+  const [submitOpen, setSubmitOpen] = useState(false)
+  const [submitInfo, setSubmitInfo] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   // 当前正在预览的附件：非空即打开预览抽屉（左文档 + 右批注）
   const [previewAttachment, setPreviewAttachment] = useState<DeviationAttachment | null>(null)
-  // 抽屉内批注变化后的即时覆盖值，避免关闭再开详情才刷新角标
-  const [commentOverrides, setCommentOverrides] = useState<Record<string, { open: number; total: number }>>({})
-
-  const { data: commentSummary } = useQuery({
-    queryKey: ['deviation-attachment-comment-summary', ledger.id],
-    queryFn: () => fetchDeviationAttachmentCommentSummary(ledger.id),
-    staleTime: 30_000,
-  })
-
-  const commentCounts = useMemo(() => {
-    const merged: Record<string, { open: number; total: number }> = {}
-    for (const item of commentSummary?.items ?? []) {
-      merged[item.file_id] = { open: item.open_count ?? 0, total: item.total_count ?? 0 }
-    }
-    return { ...merged, ...commentOverrides }
-  }, [commentSummary, commentOverrides])
-
-  const handleCommentCountChange = useCallback((fileId: string, openCount: number, total: number) => {
-    setCommentOverrides((prev) => ({ ...prev, [fileId]: { open: openCount, total } }))
-  }, [])
 
   const handlePreview = useCallback((attachment: DeviationAttachment) => {
     setPreviewAttachment(attachment)
@@ -164,92 +188,142 @@ export function InvestigationCard({ ledger, onUpdated }: InvestigationCardProps)
   const actions = ledger.allowed_actions ?? []
   const canInvestigate = actions.includes('investigate')
   const records = ledger.investigation_records ?? []
-  const attachments = ledger.attachments ?? []
-  // 调查人 / 上报人在调查中与审核阶段都可维护调查记录与文档（后端单一真源）
+  // 主流程调查草稿（department 为空的本人草稿）；跨部门行草稿在跨部门卡片内使用
+  const mainDraft =
+    (ledger.investigation_drafts ?? []).find((draft) => (draft.department ?? null) === null) ?? null
+  // 调查人 / 上报人在调查中与审核阶段都可维护调查记录（后端单一真源）
   const canEditInvestigation = ledger.can_edit_investigation === true
   // 已进入审核（不再有提交调查动作）时，展示「只追加不流转」的补录入口
   const canAppend = canEditInvestigation && !canInvestigate
+  const lastUpdated = records.length > 0 ? records[records.length - 1].create_time : null
+  // 二选一：已有主流程调查记录（文本 / CAPA / 引用附件）或台账已有调查报告附件，才允许直接提交审核
+  const hasInvestigationMaterial =
+    records.some(
+      (record) =>
+        !record.department &&
+        Boolean(
+          record.content ||
+            record.nonconformity_description ||
+            record.root_cause_analysis ||
+            record.risk_assessment ||
+            (record.capa_proposals ?? []).length ||
+            (record.attachments ?? []).length,
+        ),
+    ) || (ledger.attachments ?? []).length > 0
 
-  const handleUpload = async (file: File) => {
-    if (file.size > MAX_ATTACHMENT_SIZE) {
-      message.error(`单个文档不能超过 20MB（当前 ${formatSize(file.size)}）`)
+  const handleSubmitForReview = async () => {
+    setSubmitting(true)
+    const result = await submitDeviationInvestigationForReview(ledger.id, {
+      content: submitInfo.trim() || null,
+    })
+    setSubmitting(false)
+    if (result.code === 200 && result.data) {
+      setSubmitOpen(false)
+      setSubmitInfo('')
+      message.success('调查已提交审核，进入部门负责人审核')
+      onUpdated(result.data)
+    } else {
+      message.error(result.message)
+    }
+  }
+
+  // AI 一键填写：展开提交表单并滚动到本卡片；表单内部按 nonce 去重并只补空白
+  useEffect(() => {
+    if (!prefill) return
+    if (!canInvestigate) {
+      //: 调查表单不可打开的节点（如审核、已关闭）直接消费掉，避免悬挂
+      onPrefillApplied?.(0)
       return
     }
-    const formData = new FormData()
-    formData.append('file', file)
-    setUploading(true)
-    const result = await uploadDeviationAttachment(ledger.id, formData)
-    setUploading(false)
-    if (result.code === 200 && result.data) {
-      onUpdated(result.data)
-      message.success('文档已上传')
-    } else {
-      message.error(result.message)
-    }
-  }
-
-  const handleDelete = async (fileId: string) => {
-    const result = await deleteDeviationAttachment(ledger.id, fileId)
-    if (result.code === 200 && result.data) {
-      onUpdated(result.data)
-      message.success('文档已删除')
-    } else {
-      message.error(result.message)
-    }
-  }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- AI 卡片发出的一次性跨组件指令；改为派生会在填充完成、父级清空 prefill 时误关表单
+    setFormMode('submit')
+    const timer = window.setTimeout(() => {
+      scrollToSection('investigation')
+    }, 60)
+    return () => window.clearTimeout(timer)
+  }, [prefill, canInvestigate, onPrefillApplied])
 
   return (
-    <Card
-      id="investigation"
-      size="small"
-      title="调查记录"
-      className="scroll-mt-6 shadow-sm"
+    <SectionCard
+      section="investigation"
+      ledger={ledger}
       extra={
         <span className="text-[12px] text-[var(--color-stone)]">
-          {records.length} 条记录 · {attachments.length} 份文档
+          {records.length} 条记录
+          {lastUpdated ? ` · 最近更新 ${formatTime(lastUpdated)}` : ''}
         </span>
       }
     >
+      {mainDraft && formMode === null && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#c7d7fb] bg-[#eff4ff] px-3 py-2">
+          <span className="text-[12px] text-[#2f4b8f]">
+            有未提交的调查草稿 · 暂存于 {formatTime(mainDraft.updated_at)}
+          </span>
+          <Button type="link" size="small" className="!h-auto !p-0 !text-[12px]" onClick={() => setFormMode('submit')}>
+            继续填写
+          </Button>
+        </div>
+      )}
+
       {records.length === 0 ? (
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无调查记录" />
       ) : (
-        <Timeline
-          className="mb-2"
-          items={records.map((record, index) => ({
-            key: index,
-            color: 'blue',
-            content: (
-              <div className="flex flex-col gap-1">
-                <span className="flex flex-wrap items-center gap-1 text-[12px] text-[var(--color-slate)]">
-                  <PersonInline
-                    person={{ id: record.author_id, name: record.author_name, avatar_url: record.author_avatar }}
-                    avatarSize={20}
-                  />
-                  <span>
-                    ·{' '}
-                    {record.create_time
-                      ? new Date(record.create_time).toLocaleString('zh-CN', { hour12: false })
-                      : '-'}
-                  </span>
+        <div className="flex flex-col gap-2.5">
+          {records.map((record, index) => (
+            <div
+              key={`${record.create_time ?? ''}-${index}`}
+              className="rounded-lg border border-[var(--color-hairline)] bg-white p-3 transition-all hover:border-[#c7d7fb] hover:shadow-sm"
+            >
+              <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[12px] text-[var(--color-slate)]">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#eff4ff] text-[11px] font-medium text-[#2f6fed]">
+                  {index + 1}
                 </span>
-                <RecordBody record={record} onPreview={handlePreview} />
+                <PersonInline
+                  person={{ id: record.author_id, name: record.author_name, avatar_url: record.author_avatar }}
+                  avatarSize={20}
+                />
+                {record.department && (
+                  <span className="rounded-full bg-[var(--color-fill,#f4f4f5)] px-1.5 py-0.5 text-[11px]">
+                    跨部门 · {record.department}
+                  </span>
+                )}
+                <span>· {formatTime(record.create_time)}</span>
               </div>
-            ),
-          }))}
-        />
+              <RecordBody ledgerId={ledger.id} record={record} onPreview={handlePreview} />
+            </div>
+          ))}
+        </div>
       )}
 
       {(canInvestigate || canAppend) && formMode === null && (
         <div className="mt-3 flex flex-col gap-2 border-t border-[var(--color-hairline)] pt-3">
           <span className="text-[12px] text-[var(--color-stone)]">
             {canInvestigate
-              ? '填写结构化调查报告（不符合事项 / 根因 / 风险 / CAPA / 紧急措施），提交后进入部门负责人审核。'
+              ? '填写结构化调查报告，或上传调查报告文档——二者满足其一即可提交，提交后进入部门负责人审核。'
               : '流程已进入审核，此处补充调查记录仅追加内容，不会改变流程状态。'}
           </span>
           <div className="flex flex-wrap justify-end gap-2">
-            <Button type={canInvestigate ? 'primary' : 'default'} onClick={() => setFormMode(canInvestigate ? 'submit' : 'append')}>
-              {canInvestigate ? '填写调查报告' : '追加调查记录'}
+            <Button
+              type={canInvestigate && !hasInvestigationMaterial ? 'primary' : 'default'}
+              onClick={() => setFormMode(canInvestigate ? 'submit' : 'append')}
+            >
+              {canInvestigate ? (mainDraft ? '继续填写调查报告' : '填写调查报告') : '追加调查记录'}
             </Button>
+            {canInvestigate && (
+              <Button
+                type="primary"
+                icon={<SendOutlined />}
+                onClick={() => {
+                  if (!hasInvestigationMaterial) {
+                    message.warning('请先填写调查记录，或上传并引用调查报告附件后再提交审核')
+                    return
+                  }
+                  setSubmitOpen(true)
+                }}
+              >
+                提交审核
+              </Button>
+            )}
           </div>
         </div>
       )}
@@ -259,6 +333,10 @@ export function InvestigationCard({ ledger, onUpdated }: InvestigationCardProps)
           key={formMode}
           ledger={ledger}
           mode={formMode}
+          initialDraft={mainDraft}
+          prefill={prefill}
+          onPrefillApplied={onPrefillApplied}
+          onPreviewAttachment={handlePreview}
           onCancel={() => setFormMode(null)}
           onSubmitted={(next) => {
             onUpdated(next)
@@ -268,83 +346,36 @@ export function InvestigationCard({ ledger, onUpdated }: InvestigationCardProps)
         />
       )}
 
-      <div className="mt-4 border-t border-[var(--color-hairline)] pt-3">
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-[13px] font-semibold text-[var(--color-ink)]">调查文档</h3>
-          {canEditInvestigation && (
-            <Upload
-              showUploadList={false}
-              beforeUpload={(file) => {
-                void handleUpload(file)
-                return false
-              }}
-            >
-              <Button size="small" icon={<UploadOutlined />} loading={uploading}>
-                上传文档
-              </Button>
-            </Upload>
-          )}
-        </div>
-        {attachments.length === 0 ? (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无文档" />
-        ) : (
-          <div className="flex flex-col divide-y divide-[var(--color-hairline-soft)]">
-            {attachments.map((attachment) => {
-              const openComments = commentCounts[attachment.file_id]?.open ?? 0
-              return (
-                <div key={attachment.file_id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                  <div className="min-w-0">
-                    <p className="flex items-center gap-1.5 text-[13px] text-[var(--color-ink)]">
-                      <span className="truncate">{attachment.file_name}</span>
-                      {openComments > 0 && (
-                        <Tooltip title={`${openComments} 条待处理批注`}>
-                          <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-[#f1efff] px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-primary,#5645d4)]">
-                            <MessageOutlined className="text-[10px]" />
-                            {openComments}
-                          </span>
-                        </Tooltip>
-                      )}
-                    </p>
-                    <span className="flex flex-wrap items-center gap-1 text-[12px] text-[var(--color-stone)]">
-                      <span>{formatSize(attachment.size)} ·</span>
-                      <PersonInline
-                        person={{
-                          id: attachment.uploaded_by,
-                          name: attachment.uploaded_by_name,
-                          avatar_url: attachment.uploaded_by_avatar,
-                        }}
-                        avatarSize={20}
-                      />
-                      <span>· {formatTime(attachment.uploaded_at)}</span>
-                    </span>
-                  </div>
-                  <Space size={4} className="shrink-0">
-                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handlePreview(attachment)}>
-                      预览
-                    </Button>
-                    <Button type="link" size="small" href={attachmentUrl(ledger.id, attachment.file_id)}>
-                      下载
-                    </Button>
-                    {canEditInvestigation && (
-                      <Popconfirm title="删除该文档？" onConfirm={() => handleDelete(attachment.file_id)}>
-                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-                          删除
-                        </Button>
-                      </Popconfirm>
-                    )}
-                  </Space>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {ledger.status === 'returned' && ledger.returned_step === 'investigation' && (
+      {ledger.returned_step === 'investigation' && (
         <p className="mt-3 text-[13px] text-[var(--color-error)]">
-          调查报告已被退回：请先补充调查报告内容，再到「审核与流转」区重新提交。
+          调查报告已被退回：请补充调查记录或调查报告附件后，点击「提交审核」重新提交。
         </p>
       )}
+
+      <Modal
+        open={submitOpen}
+        title="确认提交审核？"
+        okText="确认提交"
+        cancelText="取消"
+        confirmLoading={submitting}
+        onOk={() => void handleSubmitForReview()}
+        onCancel={() => setSubmitOpen(false)}
+        destroyOnHidden
+      >
+        <div className="flex flex-col gap-2">
+          <p className="text-[13px] text-[var(--color-slate)]">
+            已填写的调查记录将提交部门负责人审核，本次提交说明会记录在「审核记录」中。
+          </p>
+          <Input.TextArea
+            rows={3}
+            value={submitInfo}
+            maxLength={500}
+            showCount
+            placeholder="提交信息（选填），如：已按退回意见补充根本原因分析"
+            onChange={(event) => setSubmitInfo(event.target.value)}
+          />
+        </div>
+      </Modal>
 
       <AttachmentPreviewDrawer
         open={previewAttachment !== null}
@@ -352,8 +383,8 @@ export function InvestigationCard({ ledger, onUpdated }: InvestigationCardProps)
         attachment={previewAttachment}
         frozen={commentsFrozen}
         onClose={closePreview}
-        onCommentCountChange={handleCommentCountChange}
+        onCommentCountChange={() => undefined}
       />
-    </Card>
+    </SectionCard>
   )
 }

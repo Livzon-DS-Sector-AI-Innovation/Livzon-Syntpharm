@@ -71,7 +71,7 @@ export function DeviationCreateForm({
       ? toCrossDeptRowsPayload(values.cross_dept_reviewers ?? [])
       : []
     if (values.needs_cross_dept_review && crossDeptRows.length === 0) {
-      message.warning('开启跨部门审核后至少需要一行跨部门（部门必选）')
+      message.warning('开启跨部门审核后至少需要一行跨部门（部门与部门负责人必选）')
       return
     }
     setSubmitting(true)
@@ -263,7 +263,8 @@ export function DeviationCreateForm({
               <Col span={24}>
                 <div className="-mt-2 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-3">
                   <p className="mb-2 text-xs text-[var(--color-slate)]">
-                    每个跨部门 = 一行会签：留空调查人时由该部门负责人审核；行内任一审核人通过即该行通过，全部行通过后才会进入所属QA审核。
+                    每个跨部门 = 一行两节点：该部门调查人提交调查记录 → 该部门负责人审核。调查人可留空（由负责人直接审核）；
+                    全部行通过后才会进入所属QA审核。
                   </p>
                   <CrossDeptReviewerFields form={form} departmentOptions={departmentOptions} />
                 </div>

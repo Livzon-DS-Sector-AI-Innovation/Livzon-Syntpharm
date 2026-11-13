@@ -14,7 +14,7 @@ import logging
 import os
 import threading
 import uuid
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import UTC, date, datetime
 from typing import Any, NamedTuple, cast
 
@@ -47,16 +47,25 @@ from .deviation_flow import (
     approve_cross_dept_row,
     build_flow_context,
     cross_dept_review_rows,
+    cross_dept_row_investigator_ids,
     cross_dept_row_payloads,
+    cross_dept_row_requires_investigation,
     cross_dept_row_reviewer_ids,
     is_cross_dept_row_approved,
+    is_cross_dept_row_investigated,
     load_contacts,
+    reject_cross_dept_row,
     resolve_step_handlers,
+    returnable_steps,
     step_note,
     submit_final_code,
     transition,
 )
-from .deviation_ledger_constants import LedgerStatus
+from .deviation_ledger_constants import (
+    CROSS_DEPT_INVESTIGATION_PENDING,
+    CROSS_DEPT_INVESTIGATION_SUBMITTED,
+    LedgerStatus,
+)
 from .deviation_ledger_models import DeviationAttachmentComment, DeviationLedger
 from .deviation_ledger_repository import DeviationAttachmentCommentRepository, DeviationLedgerRepository
 from .deviation_ledger_schemas import (
@@ -72,13 +81,19 @@ from .deviation_ledger_schemas import (
     CapaProposalItem,
     CompleteAiAnalysisRequest,
     CrossDeptApproveRequest,
+    CrossDeptInvestigationRequest,
+    CrossDeptRejectRequest,
     CrossDeptReviewerItem,
     CrossDeptStepSubItem,
     DeleteResultData,
     DistributionItem,
+    DraftCapaItem,
     FinalCodeRequest,
+    InvestigationDraftItem,
+    InvestigationDraftRequest,
     InvestigationRecordItem,
     InvestigationRequest,
+    InvestigationSubmitRequest,
     LedgerCreateRequest,
     LedgerDetail,
     LedgerItem,
@@ -89,6 +104,7 @@ from .deviation_ledger_schemas import (
     ReportSaveRequest,
     ReportVersionItem,
     ResubmitRequest,
+    ReturnTargetItem,
     ReviewOpinionItem,
     ReviewRequest,
     StatusDistributionItem,
@@ -125,6 +141,9 @@ _STORAGE_MODULE = "quality"
 
 #: 终态偏差（已关闭 / 已取消）的批注只读，仅可查阅
 _COMMENT_FROZEN_STATUSES: tuple[str, ...] = (LedgerStatus.CLOSED.value, LedgerStatus.CANCELLED.value)
+
+#: AI 分析冻结状态：除这两个终态外，任意节点都保留 AI 分析（生成 / 编辑 / 保存）
+_AI_ANALYSIS_FROZEN_STATUSES: tuple[str, ...] = (LedgerStatus.CLOSED.value, LedgerStatus.CANCELLED.value)
 
 #: 批注「待处理」状态值
 _COMMENT_STATUS_OPEN = "open"
@@ -175,11 +194,22 @@ _INVESTIGATION_DOC_STEPS: tuple[str, ...] = ("ai_analysis", *_INVESTIGATION_EDIT
 #: 提交调查报告时隐式确认 AI 分析环节的审核意见正文
 _AI_ANALYSIS_IMPLICIT_CONTENT = "AI 分析已完成，随调查报告提交"
 
+#: 附件路线（未填写文本）提交调查时的审核意见正文
+_ATTACHMENT_ONLY_CONTENT = "以调查报告附件形式提交"
+
+#: 卡片快捷提交（不新建记录）时未填写提交说明的默认文案
+_INVESTIGATION_SUBMIT_CONTENT = "调查记录已填写，提交审核"
+
 
 def _normalized_cross_dept_rows(rows: Sequence[CrossDeptReviewerItem]) -> list[dict[str, Any]]:
-    """跨部门行落库形态：只保留部门与调查人，审核进度由服务端逐行审批维护。"""
+    """跨部门行落库形态：部门 + 调查人 + 行内部门负责人，进度由服务端逐行维护。"""
     return [
-        {"department": row.department, "investigator_ids": [str(uid) for uid in row.investigator_ids]} for row in rows
+        {
+            "department": row.department,
+            "investigator_ids": [str(uid) for uid in row.investigator_ids],
+            "dept_head_id": str(row.dept_head_id) if row.dept_head_id is not None else None,
+        }
+        for row in rows
     ]
 
 
@@ -187,23 +217,16 @@ def _merge_cross_dept_states(
     old_rows: Sequence[dict[str, Any]],
     new_rows: Sequence[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """名单更新后保留已通过行的审核状态（部门与调查人集合完全一致才保留）。"""
-    approved_index: dict[tuple[str, frozenset[str]], dict[str, Any]] = {}
+    """名单更新后保留已通过行的审核状态（部门、调查人集合、部门负责人完全一致才保留）。"""
+    approved_index: dict[tuple[str, frozenset[str], str | None], dict[str, Any]] = {}
     for entry in old_rows:
         if not isinstance(entry, dict) or not is_cross_dept_row_approved(entry):
             continue
-        key = (
-            str(entry.get("department") or "").strip(),
-            frozenset(str(token) for token in (entry.get("investigator_ids") or [])),
-        )
+        key = _cross_dept_row_identity(entry)
         approved_index[key] = entry
     merged: list[dict[str, Any]] = []
     for entry in new_rows:
-        key = (
-            str(entry.get("department") or "").strip(),
-            frozenset(str(token) for token in (entry.get("investigator_ids") or [])),
-        )
-        previous = approved_index.get(key)
+        previous = approved_index.get(_cross_dept_row_identity(entry))
         if previous is None:
             merged.append(dict(entry))
         else:
@@ -215,9 +238,23 @@ def _merge_cross_dept_states(
                     "approved_name": previous.get("approved_name"),
                     "approved_at": previous.get("approved_at"),
                     "opinion": previous.get("opinion"),
+                    "investigate_state": previous.get("investigate_state") or CROSS_DEPT_INVESTIGATION_PENDING,
+                    "investigate_submitted_by": previous.get("investigate_submitted_by"),
+                    "investigate_submitted_name": previous.get("investigate_submitted_name"),
+                    "investigate_submitted_at": previous.get("investigate_submitted_at"),
                 }
             )
     return merged
+
+
+def _cross_dept_row_identity(entry: Mapping[str, Any]) -> tuple[str, frozenset[str], str | None]:
+    """跨部门行身份键：部门 + 调查人集合 + 部门负责人（任一变化即视为新行，进度重置）。"""
+    head = entry.get("dept_head_id")
+    return (
+        str(entry.get("department") or "").strip(),
+        frozenset(str(token) for token in (entry.get("investigator_ids") or [])),
+        str(head) if head else None,
+    )
 
 
 class DeviationLedgerService:
@@ -354,10 +391,12 @@ class DeviationLedgerService:
         row = await self.repo.get_by_id_for_update(ledger_id)
         if row is None:
             raise NotFoundException("偏差记录不存在")
-        cross_dept_only = row.status == LedgerStatus.PENDING_INVESTIGATION.value
-        if row.status not in _EDITABLE_STATUSES and not cross_dept_only:
+        cross_dept_only = row.status == LedgerStatus.PENDING_INVESTIGATION.value and not row.returned_step
+        #: 新语义下退回不再落 returned 态，改用 returned_step 标记「退回未被消费」
+        is_returned = row.status == LedgerStatus.RETURNED.value or bool(row.returned_step)
+        if row.status not in _EDITABLE_STATUSES and not cross_dept_only and not is_returned:
             raise BadRequestException("当前状态不允许修改基础信息")
-        if row.status == LedgerStatus.RETURNED.value and not actor_is_superuser:
+        if is_returned and not actor_is_superuser:
             actors = set(row.handler_ids or []) | {row.reporter_id}
             if actor_id not in actors:
                 raise ForbiddenException("只有上报人或调查人可以修改已退回偏差的基础信息")
@@ -409,8 +448,9 @@ class DeviationLedgerService:
         row = await self.repo.get_by_id_for_update(ledger_id)
         if row is None:
             raise NotFoundException("偏差记录不存在")
-        if row.status not in _EDITABLE_STATUSES and not actor_is_superuser:
-            raise BadRequestException("当前状态不允许保存 AI 分析结果")
+        #: 除已关闭 / 已取消外任意节点都可保存（允许覆盖旧结论，变更痕迹靠审计日志）
+        if row.status in _AI_ANALYSIS_FROZEN_STATUSES:
+            raise BadRequestException("已关闭或已取消的偏差不再提供 AI 分析")
         if not self._can_edit_analysis(row, actor_id, actor_is_superuser):
             raise ForbiddenException("仅上报人或调查人可保存 AI 分析结果")
         row.ai_analysis = payload.ai_analysis.model_dump(mode="json")
@@ -451,12 +491,61 @@ class DeviationLedgerService:
                 actor_is_superuser=actor_is_superuser,
             )
         row.investigation_records = [*(row.investigation_records or []), record]
+        #: 提交成功后清掉本人主调查草稿（与记录写入同一次 commit）
+        row.investigation_drafts = _drop_investigation_draft(row.investigation_drafts, actor_id, None)
         outcome = await transition(
             self.db,
             ledger_id=ledger_id,
             step="investigation",
             result="approved",
-            content=record["nonconformity_description"],
+            content=payload.submit_content or record["nonconformity_description"] or _ATTACHMENT_ONLY_CONTENT,
+            actor_id=actor_id,
+            actor_name=actor_name,
+            actor_is_superuser=actor_is_superuser,
+        )
+        self._schedule_transition_notice(outcome)
+        return await self._build_detail(outcome.ledger, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
+
+    async def submit_investigation_for_review(
+        self,
+        ledger_id: uuid.UUID,
+        payload: InvestigationSubmitRequest,
+        *,
+        actor_id: uuid.UUID,
+        actor_name: str,
+        actor_is_superuser: bool = False,
+    ) -> LedgerDetail:
+        """调查记录已填写后直接提交审核：不新建记录，只做二选一材料校验 + 流转。
+
+        用于卡片底部「提交审核」入口：调查人补完材料（或退回后已改好）时不必再补一条记录。
+        """
+        row = await self.repo.get_by_id_for_update(ledger_id)
+        if row is None:
+            raise NotFoundException("偏差记录不存在")
+        if row.status not in (
+            LedgerStatus.PENDING_AI_ANALYSIS.value,
+            LedgerStatus.PENDING_INVESTIGATION.value,
+        ):
+            raise BadRequestException("当前状态不在调查环节，不能提交审核")
+        if not _has_investigation_material(row):
+            raise BadRequestException("请先填写调查记录或上传调查报告附件后再提交审核")
+        if row.status == LedgerStatus.PENDING_AI_ANALYSIS.value:
+            await transition(
+                self.db,
+                ledger_id=ledger_id,
+                step="ai_analysis",
+                result="approved",
+                content=_AI_ANALYSIS_IMPLICIT_CONTENT,
+                actor_id=actor_id,
+                actor_name=actor_name,
+                actor_is_superuser=actor_is_superuser,
+            )
+        outcome = await transition(
+            self.db,
+            ledger_id=ledger_id,
+            step="investigation",
+            result="approved",
+            content=payload.content or _INVESTIGATION_SUBMIT_CONTENT,
             actor_id=actor_id,
             actor_name=actor_name,
             actor_is_superuser=actor_is_superuser,
@@ -485,12 +574,117 @@ class DeviationLedgerService:
             raise ForbiddenException("只有调查人可以新增调查记录")
         record = self._build_investigation_record(row, payload, actor_id=actor_id, actor_name=actor_name)
         row.investigation_records = [*(row.investigation_records or []), record]
+        #: 追加成功后本人主调查草稿即失效，避免下次打开表单回填已提交的内容
+        row.investigation_drafts = _drop_investigation_draft(row.investigation_drafts, actor_id, None)
         row.updated_by = actor_id
         await self.db.commit()
         await self.db.refresh(row)
         logger.info(
             "deviation investigation record appended",
             extra={"app_module": "quality", "ledger_id": str(ledger_id), "actor": actor_name},
+        )
+        return await self._build_detail(row, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
+
+    async def save_investigation_draft(
+        self,
+        ledger_id: uuid.UUID,
+        payload: InvestigationDraftRequest,
+        *,
+        actor_id: uuid.UUID,
+        actor_name: str,
+        actor_is_superuser: bool = False,
+    ) -> LedgerDetail:
+        """暂存调查记录草稿：按（本人, 部门）唯一覆盖，不推进任何流程。"""
+        row = await self.repo.get_by_id_for_update(ledger_id)
+        if row is None:
+            raise NotFoundException("偏差记录不存在")
+        self._assert_can_edit_investigation(row, actor_id, actor_is_superuser=actor_is_superuser)
+        department = payload.department
+        if department is not None:
+            entry = next(
+                (
+                    item
+                    for item in cross_dept_review_rows(row)
+                    if str(item.get("department") or "").strip() == department
+                ),
+                None,
+            )
+            if entry is None:
+                raise NotFoundException("该跨部门行不存在")
+            if not actor_is_superuser and str(actor_id) not in {
+                str(token) for token in (entry.get("investigator_ids") or [])
+            }:
+                raise ForbiddenException("只有该部门的调查人可以暂存该行调查草稿")
+            if is_cross_dept_row_approved(entry):
+                raise BadRequestException("该部门已审核通过，不能再暂存调查草稿")
+
+        drafts = _drop_investigation_draft(row.investigation_drafts, actor_id, department)
+        drafts.append(
+            {
+                "author_id": str(actor_id),
+                "author_name": actor_name,
+                "department": department,
+                "nonconformity_description": payload.nonconformity_description,
+                "root_cause_analysis": payload.root_cause_analysis,
+                "risk_assessment": payload.risk_assessment,
+                "capa_proposals": [
+                    {
+                        "sequence": index,
+                        "summary": capa.summary,
+                        "executor": capa.executor,
+                        "expected_completion_date": capa.expected_completion_date.isoformat()
+                        if capa.expected_completion_date
+                        else None,
+                    }
+                    for index, capa in enumerate(payload.capa_proposals, start=1)
+                ],
+                "has_urgent": payload.has_urgent,
+                "urgent_measures": payload.urgent_measures,
+                "attachment_file_ids": [str(file_id) for file_id in payload.attachment_file_ids],
+                "updated_at": datetime.now(UTC).isoformat(),
+            }
+        )
+        #: JSONB 原地修改不会被 SQLAlchemy 感知，必须整体重新赋值
+        row.investigation_drafts = drafts
+        row.updated_by = actor_id
+        await self.db.commit()
+        await self.db.refresh(row)
+        logger.info(
+            "deviation investigation draft saved",
+            extra={
+                "app_module": "quality",
+                "ledger_id": str(ledger_id),
+                "department": department or "",
+                "actor": actor_name,
+            },
+        )
+        return await self._build_detail(row, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
+
+    async def delete_investigation_draft(
+        self,
+        ledger_id: uuid.UUID,
+        *,
+        department: str | None = None,
+        actor_id: uuid.UUID,
+        actor_is_superuser: bool = False,
+    ) -> LedgerDetail:
+        """清除本人某范围的调查草稿（department 为空即主流程调查草稿）。"""
+        row = await self.repo.get_by_id_for_update(ledger_id)
+        if row is None:
+            raise NotFoundException("偏差记录不存在")
+        target_department = department.strip() if department else None
+        row.investigation_drafts = _drop_investigation_draft(row.investigation_drafts, actor_id, target_department)
+        row.updated_by = actor_id
+        await self.db.commit()
+        await self.db.refresh(row)
+        logger.info(
+            "deviation investigation draft cleared",
+            extra={
+                "app_module": "quality",
+                "ledger_id": str(ledger_id),
+                "department": target_department or "",
+                "actor": str(actor_id),
+            },
         )
         return await self._build_detail(row, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
 
@@ -501,9 +695,14 @@ class DeviationLedgerService:
         *,
         actor_id: uuid.UUID,
         actor_name: str,
+        department: str | None = None,
     ) -> dict[str, Any]:
-        """构造结构化调查记录：CAPA 序号回填、附件 file_id 引用校验快照。"""
+        """构造结构化调查记录：CAPA 序号回填、附件 file_id 引用校验快照。
+
+        ``department`` 为跨部门调查记录的部门标记；主流程调查记录为 ``None``。
+        """
         return {
+            "department": department,
             "nonconformity_description": payload.nonconformity_description.strip(),
             "root_cause_analysis": payload.root_cause_analysis.strip(),
             "risk_assessment": payload.risk_assessment.strip(),
@@ -583,6 +782,113 @@ class DeviationLedgerService:
             viewer_is_superuser=actor_is_superuser,
         )
 
+    async def reject_cross_dept(
+        self,
+        ledger_id: uuid.UUID,
+        payload: CrossDeptRejectRequest,
+        *,
+        actor_id: uuid.UUID,
+        actor_name: str,
+        actor_is_superuser: bool = False,
+    ) -> LedgerDetail:
+        """跨部门单行退回：只重置该部门的调查与审核，流程仍停留在跨部门审核环节。"""
+        outcome = await reject_cross_dept_row(
+            self.db,
+            ledger_id=ledger_id,
+            department=payload.department,
+            content=payload.opinion,
+            actor_id=actor_id,
+            actor_name=actor_name,
+            actor_is_superuser=actor_is_superuser,
+        )
+        self._schedule_cross_dept_row_reject_notice(outcome, department=payload.department)
+        logger.info(
+            "deviation cross-dept row rejected",
+            extra={
+                "app_module": "quality",
+                "ledger_id": str(ledger_id),
+                "department": payload.department,
+                "actor": actor_name,
+            },
+        )
+        return await self._build_detail(
+            outcome.ledger,
+            viewer_id=actor_id,
+            viewer_is_superuser=actor_is_superuser,
+        )
+
+    async def submit_cross_dept_investigation(
+        self,
+        ledger_id: uuid.UUID,
+        payload: CrossDeptInvestigationRequest,
+        *,
+        actor_id: uuid.UUID,
+        actor_name: str,
+        actor_is_superuser: bool = False,
+    ) -> LedgerDetail:
+        """跨部门调查节点：行内调查人向本部门行提交调查记录并标记该行「调查已提交」。
+
+        不推进台账状态（仍停留待跨部门审核），仅完成行级「调查 → 审核」的第一节点；
+        行内其他调查人在该行审核通过前仍可继续补充记录。
+        """
+        row = await self.repo.get_by_id_for_update(ledger_id)
+        if row is None:
+            raise NotFoundException("偏差记录不存在")
+        if row.status != LedgerStatus.PENDING_CROSS_DEPT_HEAD_REVIEW.value:
+            raise BadRequestException("当前状态不在跨部门审核环节，不能提交部门调查")
+        target_department = payload.department.strip()
+        rows = cross_dept_review_rows(row)
+        entry = next((item for item in rows if str(item.get("department") or "").strip() == target_department), None)
+        if entry is None:
+            raise NotFoundException("该跨部门行不存在")
+        if is_cross_dept_row_approved(entry):
+            raise BadRequestException("该部门已审核通过，不能再提交调查记录")
+        investigator_ids = [str(token) for token in (entry.get("investigator_ids") or [])]
+        if not investigator_ids:
+            raise BadRequestException("该跨部门行未配置调查人，无需提交调查，请直接由部门负责人审核")
+        if not actor_is_superuser and str(actor_id) not in investigator_ids:
+            raise ForbiddenException("只有该部门的调查人可以提交调查记录")
+
+        record = self._build_investigation_record(
+            row,
+            payload,
+            actor_id=actor_id,
+            actor_name=actor_name,
+            department=target_department,
+        )
+        row.investigation_records = [*(row.investigation_records or []), record]
+        if not is_cross_dept_row_investigated(entry):
+            updated_rows: list[dict[str, Any]] = []
+            for item in rows:
+                if item is entry:
+                    updated_rows.append(
+                        {
+                            **item,
+                            "investigate_state": CROSS_DEPT_INVESTIGATION_SUBMITTED,
+                            "investigate_submitted_by": str(actor_id),
+                            "investigate_submitted_name": actor_name,
+                            "investigate_submitted_at": datetime.now(UTC).isoformat(),
+                        }
+                    )
+                else:
+                    updated_rows.append(dict(item))
+            #: JSONB 原地修改不会被 SQLAlchemy 感知，必须整体重新赋值
+            row.cross_dept_reviewers = updated_rows
+        row.investigation_drafts = _drop_investigation_draft(row.investigation_drafts, actor_id, target_department)
+        row.updated_by = actor_id
+        await self.db.commit()
+        await self.db.refresh(row)
+        logger.info(
+            "deviation cross-dept investigation submitted",
+            extra={
+                "app_module": "quality",
+                "ledger_id": str(ledger_id),
+                "department": target_department,
+                "actor": actor_name,
+            },
+        )
+        return await self._build_detail(row, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
+
     async def review(
         self,
         ledger_id: uuid.UUID,
@@ -592,7 +898,7 @@ class DeviationLedgerService:
         actor_name: str,
         actor_is_superuser: bool = False,
     ) -> LedgerDetail:
-        """审核通过 / 退回。退回必须填写意见。"""
+        """审核通过 / 退回。退回必须填写意见，可指定退回到哪个前置环节。"""
         step = payload.step or await self._current_review_step(ledger_id)
         if step not in _REVIEW_STEPS:
             raise BadRequestException("该环节不支持审核操作")
@@ -607,11 +913,16 @@ class DeviationLedgerService:
             actor_id=actor_id,
             actor_name=actor_name,
             actor_is_superuser=actor_is_superuser,
+            target_step=payload.target_step,
             reason_category=payload.reason_category,
             deviation_level=payload.deviation_level,
         )
         self._schedule_transition_notice(outcome)
-        return await self._build_detail(outcome.ledger, viewer_id=actor_id)
+        return await self._build_detail(
+            outcome.ledger,
+            viewer_id=actor_id,
+            viewer_is_superuser=actor_is_superuser,
+        )
 
     async def resubmit(
         self,
@@ -639,7 +950,11 @@ class DeviationLedgerService:
             actor_is_superuser=actor_is_superuser,
         )
         self._schedule_transition_notice(outcome)
-        return await self._build_detail(outcome.ledger, viewer_id=actor_id)
+        return await self._build_detail(
+            outcome.ledger,
+            viewer_id=actor_id,
+            viewer_is_superuser=actor_is_superuser,
+        )
 
     async def submit_final_code(
         self,
@@ -669,13 +984,24 @@ class DeviationLedgerService:
 
     # ── AI 分析 ──────────────────────────────────────────────────────
 
-    async def generate_ai_analysis(self, ledger_id: uuid.UUID) -> AiAnalysisData:
-        """调用大模型生成结构化分析（只返回不落库，由确认动作保存）。"""
+    async def generate_ai_analysis(
+        self,
+        ledger_id: uuid.UUID,
+        *,
+        actor_id: uuid.UUID | None = None,
+        actor_is_superuser: bool = False,
+    ) -> AiAnalysisData:
+        """调用大模型生成结构化分析（只返回不落库，由确认动作保存）。
+
+        除已关闭 / 已取消外任意节点可用；人员范围与保存一致（上报人 / 调查人 / 超管）。
+        """
         row = await self.repo.get_by_id(ledger_id)
         if row is None:
             raise NotFoundException("偏差记录不存在")
-        if row.status not in _EDITABLE_STATUSES:
-            raise BadRequestException("当前状态不需要重新生成 AI 分析")
+        if row.status in _AI_ANALYSIS_FROZEN_STATUSES:
+            raise BadRequestException("已关闭或已取消的偏差不再提供 AI 分析")
+        if not actor_is_superuser and (actor_id is None or not self._can_edit_analysis(row, actor_id, False)):
+            raise ForbiddenException("仅上报人或调查人可生成 AI 分析")
 
         messages = _build_ai_messages(row)
         result = await llm_client.chat_json(
@@ -789,11 +1115,11 @@ class DeviationLedgerService:
         actor_id: uuid.UUID,
         actor_is_superuser: bool = False,
     ) -> LedgerDetail:
-        """删除附件元数据与对象存储文件。"""
+        """删除附件元数据与对象存储文件（仅调查节点、本人提交前开放）。"""
         row = await self.repo.get_by_id_for_update(ledger_id)
         if row is None:
             raise NotFoundException("偏差记录不存在")
-        self._assert_can_edit_investigation(row, actor_id, actor_is_superuser=actor_is_superuser)
+        self._assert_can_delete_attachment(row, actor_id, actor_is_superuser=actor_is_superuser)
 
         items = list(row.attachments or [])
         target = next((item for item in items if str(item.get("file_id")) == str(file_id)), None)
@@ -1254,6 +1580,7 @@ class DeviationLedgerService:
             viewer_id=viewer_id,
             viewer_is_superuser=viewer_is_superuser,
         )
+        return_targets = self._return_targets(row, current_step, flow, actions)
         step_models = []
         for definition in STEP_DEFS.values():
             applicable, skip_reason, auto_skip = step_note(row, definition.step)
@@ -1280,7 +1607,10 @@ class DeviationLedgerService:
             )
 
         is_investigator = viewer_id is not None and (
-            viewer_is_superuser or viewer_id == row.reporter_id or viewer_id in set(row.handler_ids or [])
+            viewer_is_superuser
+            or viewer_id == row.reporter_id
+            or viewer_id in set(row.handler_ids or [])
+            or _is_cross_dept_investigator(row, viewer_id)
         )
         investigation_step = (
             row.returned_step if row.status == LedgerStatus.RETURNED.value else STATUS_TO_STEP.get(row.status)
@@ -1289,7 +1619,7 @@ class DeviationLedgerService:
             viewer_is_superuser or investigation_step in _INVESTIGATION_DOC_STEPS
         )
         editable = row.status == LedgerStatus.PENDING_AI_ANALYSIS.value or (
-            row.status == LedgerStatus.RETURNED.value and is_investigator
+            (row.status == LedgerStatus.RETURNED.value or bool(row.returned_step)) and is_investigator
         )
         can_edit_cross_dept = editable or (
             row.status == LedgerStatus.PENDING_INVESTIGATION.value
@@ -1331,6 +1661,7 @@ class DeviationLedgerService:
             investigation_records=[
                 InvestigationRecordItem(
                     content=str(entry.get("content") or ""),
+                    department=entry.get("department"),
                     nonconformity_description=str(entry.get("nonconformity_description") or ""),
                     root_cause_analysis=str(entry.get("root_cause_analysis") or ""),
                     risk_assessment=str(entry.get("risk_assessment") or ""),
@@ -1395,7 +1726,55 @@ class DeviationLedgerService:
             editable=editable,
             can_edit_investigation=can_edit_investigation,
             can_edit_cross_dept=can_edit_cross_dept,
+            can_delete_attachment=_can_delete_attachment(row, viewer_id, viewer_is_superuser),
+            investigation_drafts=[
+                InvestigationDraftItem(
+                    author_id=_as_uuid(entry.get("author_id")),
+                    author_name=entry.get("author_name") or names.get(str(entry.get("author_id"))),
+                    author_avatar=_avatar_of(profiles, entry.get("author_id")),
+                    department=entry.get("department"),
+                    nonconformity_description=str(entry.get("nonconformity_description") or ""),
+                    root_cause_analysis=str(entry.get("root_cause_analysis") or ""),
+                    risk_assessment=str(entry.get("risk_assessment") or ""),
+                    capa_proposals=[
+                        DraftCapaItem(**capa) for capa in (entry.get("capa_proposals") or []) if isinstance(capa, dict)
+                    ],
+                    has_urgent=bool(entry.get("has_urgent")),
+                    urgent_measures=str(entry.get("urgent_measures") or "") or None,
+                    attachment_file_ids=[
+                        uuid.UUID(str(file_id))
+                        for file_id in (entry.get("attachment_file_ids") or [])
+                        if _is_uuid(file_id)
+                    ],
+                    updated_at=_as_datetime(entry.get("updated_at")),
+                )
+                for entry in (row.investigation_drafts or [])
+                if isinstance(entry, dict) and viewer_id is not None and _as_uuid(entry.get("author_id")) == viewer_id
+            ],
+            return_targets=return_targets,
         )
+
+    @staticmethod
+    def _return_targets(
+        row: DeviationLedger,
+        current_step: str | None,
+        flow: FlowContext,
+        actions: Sequence[str],
+    ) -> list[ReturnTargetItem]:
+        """当前查看人可退回的前置环节；无退回权限时返回空列表（前端据此隐藏弹窗数据）。"""
+        if not current_step or "reject" not in actions:
+            return []
+        return [
+            ReturnTargetItem(
+                step=step,
+                label=STEP_DEFS[step].label,
+                role_label=STEP_DEFS[step].role_label,
+                handlers=[
+                    StepHandlerPerson(id=ref.id, name=ref.name, avatar_url=ref.avatar_url) for ref in flow.refs(step)
+                ],
+            )
+            for step in returnable_steps(row, current_step, flow.handlers)
+        ]
 
     @staticmethod
     def _build_cross_dept_item(
@@ -1406,14 +1785,25 @@ class DeviationLedgerService:
         viewer_id: uuid.UUID | None,
         viewer_is_superuser: bool,
     ) -> CrossDeptReviewerItem:
-        """跨部门行输出：审核人解析（空行回退部门负责人）+ 行状态 + 查看人可审批标记。"""
+        """跨部门行输出：审核人解析（行内负责人优先）+ 两节点状态 + 查看人可操作标记。"""
         reviewer_ids = cross_dept_row_reviewer_ids(entry, flow.contacts, flow.directory)
+        investigator_ids_resolved = cross_dept_row_investigator_ids(entry, flow.directory)
         approved = is_cross_dept_row_approved(entry)
+        investigated = is_cross_dept_row_investigated(entry)
+        dept_head_id = _as_uuid(entry.get("dept_head_id"))
+        in_cross_step = row.status == LedgerStatus.PENDING_CROSS_DEPT_HEAD_REVIEW.value
         return CrossDeptReviewerItem(
             department=str(entry.get("department") or ""),
             investigator_ids=[uuid.UUID(token) for token in (entry.get("investigator_ids") or []) if _is_uuid(token)],
             investigator_names=[names.get(str(token), "-") for token in (entry.get("investigator_ids") or [])],
+            dept_head_id=dept_head_id,
+            dept_head_name=names.get(str(entry.get("dept_head_id") or ""), None) if entry.get("dept_head_id") else None,
             reviewer_names=[flow.directory.name(uid) or "-" for uid in reviewer_ids],
+            investigate_state=(
+                CROSS_DEPT_INVESTIGATION_SUBMITTED if investigated else CROSS_DEPT_INVESTIGATION_PENDING
+            ),
+            investigate_submitted_name=str(entry.get("investigate_submitted_name") or "") or None,
+            investigate_submitted_at=_as_datetime(entry.get("investigate_submitted_at")),
             review_state=CROSS_DEPT_ROW_APPROVED if approved else CROSS_DEPT_ROW_PENDING,
             approved_by=_as_uuid(entry.get("approved_by")),
             approved_name=str(entry.get("approved_name") or "") or None,
@@ -1421,9 +1811,19 @@ class DeviationLedgerService:
             opinion=str(entry.get("opinion") or "") or None,
             can_approve=bool(
                 not approved
-                and row.status == LedgerStatus.PENDING_CROSS_DEPT_HEAD_REVIEW.value
+                and (not cross_dept_row_requires_investigation(entry) or investigated)
+                and in_cross_step
                 and viewer_id is not None
                 and (viewer_is_superuser or viewer_id in set(reviewer_ids))
+            ),
+            can_reject=bool(
+                in_cross_step and viewer_id is not None and (viewer_is_superuser or viewer_id in set(reviewer_ids))
+            ),
+            can_investigate=bool(
+                not approved
+                and in_cross_step
+                and viewer_id is not None
+                and (viewer_is_superuser or viewer_id in set(investigator_ids_resolved))
             ),
         )
 
@@ -1534,26 +1934,27 @@ class DeviationLedgerService:
         return outcome.directory.name(user_id) or "-"
 
     def _schedule_transition_notice(self, outcome: TransitionOutcome) -> None:
-        """提交成功后异步发送流转通知（不阻塞接口、不影响事务）。"""
+        """提交成功后异步发送流转通知（不阻塞接口、不影响事务）。
+
+        退回通知发给「目标环节」处理人（新语义下状态已落到该环节待办），并抄送上报人。
+        """
         ledger = outcome.ledger
+        next_step = STATUS_TO_STEP.get(outcome.next_status)
+        deadline_days: int | None
         if outcome.result == REJECTED:
-            recipients = outcome.refs_for(outcome.step) or outcome.directory.refs(list(ledger.handler_ids or []))
+            recipients = list(outcome.next_handlers)
             reporter = outcome.directory.ref(ledger.reporter_id)
             if reporter is not None and all(ref.id != reporter.id for ref in recipients):
                 recipients.append(reporter)
+            next_role_label = STEP_DEFS[next_step].role_label if next_step else "上报人/调查人"
+            deadline_days = None
         else:
             recipients = outcome.next_handlers
+            next_role_label = STEP_DEFS[next_step].role_label if next_step else ""
+            deadline_days = constants.STEP_OVERDUE_DAYS.get(outcome.next_status)
         cross_recipients: list[HandlerRef] = []
         if outcome.next_status == LedgerStatus.PENDING_CROSS_DEPT_HEAD_REVIEW.value:
             cross_recipients = outcome.refs_for("cross_dept_head_review")
-        # 待办角色/时限取自下一环节；退回时由上报人与调查人修改后重新提交
-        next_step = STATUS_TO_STEP.get(outcome.next_status)
-        if outcome.result == REJECTED:
-            next_role_label = "上报人/调查人"
-            deadline_days = None
-        else:
-            next_role_label = STEP_DEFS[next_step].role_label if next_step else ""
-            deadline_days = constants.STEP_OVERDUE_DAYS.get(outcome.next_status)
         notice = notify.to_notice(ledger, reporter_name=self._name_of(outcome, ledger.reporter_id))
         notify.spawn(
             notify.notify_transition(
@@ -1567,8 +1968,35 @@ class DeviationLedgerService:
                 reporter=outcome.directory.ref(ledger.reporter_id),
                 cross_recipients=cross_recipients,
                 next_role_label=next_role_label,
+                return_step_label=_step_label(ledger.returned_step) if outcome.result == REJECTED else None,
                 elapsed_hours=outcome.elapsed_hours,
                 deadline_days=deadline_days,
+            )
+        )
+
+    def _schedule_cross_dept_row_reject_notice(self, outcome: TransitionOutcome, *, department: str) -> None:
+        """跨部门单行退回：只通知该行的调查人与审核人，并抄送上报人。"""
+        ledger = outcome.ledger
+        recipients = list(outcome.next_handlers)
+        reporter = outcome.directory.ref(ledger.reporter_id)
+        if reporter is not None and all(ref.id != reporter.id for ref in recipients):
+            recipients.append(reporter)
+        if not recipients:
+            return
+        notice = notify.to_notice(ledger, reporter_name=self._name_of(outcome, ledger.reporter_id))
+        notify.spawn(
+            notify.notify_transition(
+                notice,
+                step_label=f"{STEP_DEFS[CROSS_DEPT_STEP].label}（{department}）",
+                result=REJECTED,
+                content=outcome.content,
+                actor_name=outcome.actor_name,
+                next_status_label=constants.status_label(outcome.next_status),
+                recipients=recipients,
+                reporter=None,
+                next_role_label="该部门调查人/部门负责人",
+                return_step_label=STEP_DEFS[CROSS_DEPT_STEP].label,
+                elapsed_hours=outcome.elapsed_hours,
             )
         )
 
@@ -1600,16 +2028,118 @@ class DeviationLedgerService:
         *,
         actor_is_superuser: bool = False,
     ) -> None:
-        """调查记录 / 调查文档的编辑校验：待 AI 分析、调查中与审核阶段均允许，限调查人与上报人。"""
+        """调查记录 / 调查文档的编辑校验：待 AI 分析、调查中与审核阶段均允许，限调查人与上报人。
+
+        跨部门行的调查人同样可编辑（用于上传本部门调查报告），否则附件路线无法提交。
+        """
         step = row.returned_step if row.status == LedgerStatus.RETURNED.value else STATUS_TO_STEP.get(row.status)
         if step not in _INVESTIGATION_DOC_STEPS and not actor_is_superuser:
             raise BadRequestException("当前状态不允许编辑调查记录与调查文档")
         actors = set(row.handler_ids or []) | {row.reporter_id}
-        if not actor_is_superuser and actor_id not in actors:
+        if not actor_is_superuser and actor_id not in actors and not _is_cross_dept_investigator(row, actor_id):
             raise ForbiddenException("只有调查人可以编辑调查记录与调查文档")
+
+    def _assert_can_delete_attachment(
+        self,
+        row: DeviationLedger,
+        actor_id: uuid.UUID,
+        *,
+        actor_is_superuser: bool = False,
+    ) -> None:
+        """附件删除窗口：仅调查节点、本人提交前；提交后附件只能预览与下载。"""
+        if actor_is_superuser:
+            return
+        stage = _investigation_stage(row)
+        if stage == "investigation":
+            if actor_id not in (set(row.handler_ids or []) | {row.reporter_id}):
+                raise ForbiddenException("只有调查人可以删除调查附件")
+            return
+        if stage == CROSS_DEPT_STEP:
+            target = str(actor_id)
+            mine = [
+                entry
+                for entry in cross_dept_review_rows(row)
+                if target in {str(token) for token in (entry.get("investigator_ids") or [])}
+            ]
+            if not mine:
+                raise ForbiddenException("只有该部门调查人可以删除调查附件")
+            if all(is_cross_dept_row_approved(entry) or is_cross_dept_row_investigated(entry) for entry in mine):
+                raise BadRequestException("本部门调查已提交，附件只能预览与下载")
+            return
+        raise BadRequestException("提交后调查附件只能预览与下载；删除仅在调查节点、本人提交前开放")
 
 
 # ── 模块级辅助 ────────────────────────────────────────────────────────
+
+
+def _investigation_stage(row: DeviationLedger) -> str:
+    """当前所处环节：退回态取退回环节，其余按状态映射。"""
+    if row.status == LedgerStatus.RETURNED.value:
+        return row.returned_step or ""
+    return STATUS_TO_STEP.get(row.status, "")
+
+
+def _has_investigation_material(row: DeviationLedger) -> bool:
+    """提交审核前的二选一校验：有调查记录（文本 / CAPA / 引用附件）或台账已有调查报告附件。
+
+    与表单校验口径一致：调查报告附件走「引用附件即可」的入口，两者有其一就能提交。
+    """
+    for record in row.investigation_records or []:
+        if not isinstance(record, dict) or record.get("department"):
+            continue
+        if any(
+            str(record.get(field) or "").strip()
+            for field in ("content", "nonconformity_description", "root_cause_analysis", "risk_assessment")
+        ):
+            return True
+        if record.get("attachments") or record.get("capa_proposals"):
+            return True
+    return bool(row.attachments)
+
+
+def _can_delete_attachment(
+    row: DeviationLedger,
+    viewer_id: uuid.UUID | None,
+    viewer_is_superuser: bool,
+) -> bool:
+    """与 ``_assert_can_delete_attachment`` 保持同一判定，供详情输出开关。"""
+    if viewer_id is None:
+        return False
+    if viewer_is_superuser:
+        return True
+    stage = _investigation_stage(row)
+    if stage == "investigation":
+        return viewer_id in (set(row.handler_ids or []) | {row.reporter_id})
+    if stage == CROSS_DEPT_STEP:
+        target = str(viewer_id)
+        mine = [
+            entry
+            for entry in cross_dept_review_rows(row)
+            if target in {str(token) for token in (entry.get("investigator_ids") or [])}
+        ]
+        return any(
+            not is_cross_dept_row_approved(entry) and not is_cross_dept_row_investigated(entry) for entry in mine
+        )
+    return False
+
+
+def _drop_investigation_draft(
+    drafts: list[dict[str, Any]] | None,
+    author_id: uuid.UUID,
+    department: str | None,
+) -> list[dict[str, Any]]:
+    """移除指定（作者, 部门）的草稿，其余草稿原样保留（JSONB 需整体重新赋值）。"""
+    target_author = str(author_id)
+    target_department = department.strip() if department else None
+    kept: list[dict[str, Any]] = []
+    for entry in drafts or []:
+        if not isinstance(entry, dict):
+            continue
+        entry_department = str(entry.get("department") or "").strip() or None
+        if str(entry.get("author_id") or "") == target_author and entry_department == target_department:
+            continue
+        kept.append(dict(entry))
+    return kept
 
 
 def _allowed_actions(
@@ -1630,19 +2160,22 @@ def _allowed_actions(
     is_investigator = viewer_id in set(row.handler_ids or [])
 
     can_edit_analysis = viewer_is_superuser or is_reporter or is_investigator
+    actions: list[str] = []
     if status == LedgerStatus.PENDING_AI_ANALYSIS.value:
         #: 分析只保存不流转，调查报告的提交才是流程推进入口，故此处同时放行调查
-        return ["analyze", "investigate"] if can_edit_analysis else []
-    if status == LedgerStatus.RETURNED.value:
-        if not can_edit_analysis:
-            return []
+        if can_edit_analysis:
+            actions = ["investigate"]
+    elif status == LedgerStatus.RETURNED.value:
         #: 退回后既要重新提交，也要允许重新分析并保存结论
-        return ["resubmit", "edit", "analyze"]
-    if status == LedgerStatus.PENDING_INVESTIGATION.value:
-        return ["investigate"] if is_handler or is_investigator else []
-    if status == LedgerStatus.PENDING_FINAL_CODE.value:
-        return ["final_code"] if is_handler else []
-    if current_step in _REVIEW_STEPS and is_handler:
+        if can_edit_analysis:
+            actions = ["resubmit", "edit"]
+    elif status == LedgerStatus.PENDING_INVESTIGATION.value:
+        if is_handler or is_investigator:
+            actions = ["investigate"]
+    elif status == LedgerStatus.PENDING_FINAL_CODE.value:
+        if is_handler:
+            actions = ["final_code"]
+    elif current_step in _REVIEW_STEPS and is_handler:
         definition = STEP_DEFS[current_step]
         #: 跨部门环节改由逐行审批（cross_dept_reviewers[].can_approve），整环节只保留退回
         actions = [] if current_step == CROSS_DEPT_STEP else ["approve"]
@@ -1652,8 +2185,22 @@ def _allowed_actions(
             actions.append("grade")
         if "reason_category" in definition.requires:
             actions.append("reason_category")
-        return actions
-    return []
+
+    #: 除已关闭 / 已取消外，任意节点都保留 AI 分析入口（人员范围沿用上报人 / 调查人 / 超管）
+    if can_edit_analysis and status not in _AI_ANALYSIS_FROZEN_STATUSES:
+        actions.append("analyze")
+    return actions
+
+
+def _is_cross_dept_investigator(row: DeviationLedger, actor_id: uuid.UUID) -> bool:
+    """操作人是否为任一跨部门行的调查人（跨部门调查与文档维护的权限来源）。"""
+    target = str(actor_id)
+    for entry in row.cross_dept_reviewers or []:
+        if not isinstance(entry, dict):
+            continue
+        if target in {str(token) for token in (entry.get("investigator_ids") or [])}:
+            return True
+    return False
 
 
 def _collect_detail_user_ids(
@@ -1666,6 +2213,9 @@ def _collect_detail_user_ids(
     investigation_ids = {
         uuid_value for entry in (row.investigation_records or []) if (uuid_value := _as_uuid(entry.get("author_id")))
     }
+    investigation_ids |= {
+        uuid_value for entry in (row.investigation_drafts or []) if (uuid_value := _as_uuid(entry.get("author_id")))
+    }
     uploader_ids = {
         uuid_value for entry in (row.attachments or []) if (uuid_value := _as_uuid(entry.get("uploaded_by")))
     }
@@ -1674,6 +2224,14 @@ def _collect_detail_user_ids(
     }
     for entry in row.cross_dept_reviewers or []:
         for token in entry.get("investigator_ids") or []:
+            parsed = _as_uuid(token)
+            if parsed is not None:
+                uploader_ids.add(parsed)
+        for token in (
+            entry.get("dept_head_id"),
+            entry.get("investigate_submitted_by"),
+            entry.get("approved_by"),
+        ):
             parsed = _as_uuid(token)
             if parsed is not None:
                 uploader_ids.add(parsed)
