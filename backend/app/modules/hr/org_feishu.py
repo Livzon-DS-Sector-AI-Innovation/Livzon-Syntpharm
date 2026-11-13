@@ -210,7 +210,15 @@ class FeishuOrgDepartmentFetcher:
                 children = await self._list_children(parent_id)
             except RuntimeError as exc:
                 if "40004" in str(exc):
-                    logger.warning("部门 %s 超出应用可见范围，跳过其子部门", parent_id)
+                    logger.warning(
+                        "部门 %s 超出应用可见范围，跳过其子部门",
+                        parent_id,
+                        extra={
+                            "biz_module": "hr",
+                            "department_id": parent_id,
+                            "skip_reason": "40004",
+                        },
+                    )
                     continue
                 raise
             for raw in children:
