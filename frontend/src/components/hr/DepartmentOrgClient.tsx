@@ -36,7 +36,7 @@ function filterTree(nodes: OrgDepartmentNode[], keyword: string): OrgDepartmentN
   if (!q) return nodes
   return nodes.flatMap((node) => {
     const selfMatched = node.name.includes(q)
-    const children = (node.children ?? []).filter((child) => child.name.includes(q))
+    const children = filterTree(node.children ?? [], q)
     if (selfMatched) return [node]
     if (children.length === 0) return []
     return [{ ...node, children }]
@@ -44,9 +44,11 @@ function filterTree(nodes: OrgDepartmentNode[], keyword: string): OrgDepartmentN
 }
 
 function searchExpandedKeys(nodes: OrgDepartmentNode[]): string[] {
-  return nodes
-    .filter((node) => (node.children ?? []).length > 0)
-    .map((node) => node.id)
+  return nodes.flatMap((node) => {
+    const children = node.children ?? []
+    if (children.length === 0) return []
+    return [node.id, ...searchExpandedKeys(children)]
+  })
 }
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -61,7 +63,9 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 export default function DepartmentOrgClient({ initialTree, initialStatus }: DepartmentOrgClientProps) {
   const router = useRouter()
   const [keyword, setKeyword] = useState('')
-  const [expandedKeys, setExpandedKeys] = useState<string[]>([])
+  const [expandedKeys, setExpandedKeys] = useState<string[]>(() =>
+    initialTree[0]?.level === 0 ? [initialTree[0].id] : [],
+  )
   const [selected, setSelected] = useState<OrgDepartmentNode | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const queryClient = useQueryClient()
@@ -106,7 +110,7 @@ export default function DepartmentOrgClient({ initialTree, initialStatus }: Depa
       title: '部门名称',
       dataIndex: 'name',
       render: (value: string, record) => (
-        <span className={record.level === 1 ? 'font-medium text-[var(--color-ink)]' : 'text-[var(--color-charcoal)]'}>{value}</span>
+        <span className={record.level <= 1 ? 'font-medium text-[var(--color-ink)]' : 'text-[var(--color-charcoal)]'}>{value}</span>
       ),
     },
     {
@@ -114,7 +118,11 @@ export default function DepartmentOrgClient({ initialTree, initialStatus }: Depa
       width: 90,
       dataIndex: 'level',
       render: (level: number) =>
-        level === 1 ? (
+        level === 0 ? (
+          <Tag color="purple" variant="filled">
+            0级
+          </Tag>
+        ) : level === 1 ? (
           <Tag>一级</Tag>
         ) : (
           <Tag color="blue" variant="filled">
@@ -163,7 +171,10 @@ export default function DepartmentOrgClient({ initialTree, initialStatus }: Depa
   const detailRows: { label: string; value: React.ReactNode }[] = selected
     ? [
         { label: '部门名称', value: selected.name },
-        { label: '层级', value: selected.level === 1 ? '一级部门' : '二级部门' },
+        {
+          label: '层级',
+          value: selected.level === 0 ? '0级部门（公司）' : selected.level === 1 ? '一级部门' : '二级部门',
+        },
         { label: '负责人', value: selected.leader_display || '—' },
         { label: '上级部门', value: selected.parent_name || '—' },
         {

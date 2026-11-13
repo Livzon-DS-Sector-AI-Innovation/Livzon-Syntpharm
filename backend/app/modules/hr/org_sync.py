@@ -127,11 +127,12 @@ def _fallback_path(
 
 
 def _select_in_scope(contacts: list[OrgDepartmentRecord], scope: OrgScope) -> list[OrgDepartmentRecord]:
-    """Keep only 一级部门 (children of the scope root) and 二级部门."""
+    """Keep the company root, 一级部门 (children of the scope root) and 二级部门."""
+    company = [record for record in contacts if record.id and scope.is_root(record.id)]
     level_one = [record for record in contacts if record.id and scope.is_direct_child(record.parent_id)]
     level_one_ids = {record.id for record in level_one}
     level_two = [record for record in contacts if record.id and record.parent_id in level_one_ids]
-    return [*level_one, *level_two]
+    return [*company, *level_one, *level_two]
 
 
 def _merge_detail(
