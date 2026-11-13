@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react'
 import { Button, DatePicker, Drawer, Form, Input, InputNumber, Radio, Select, message } from 'antd'
 import dayjs from 'dayjs'
-import { useQuery } from '@tanstack/react-query'
+
+import { RemoteEmployeeSelect } from './RemoteEmployeeSelect'
 
 import { createDepartureRecord, updateDepartureRecord } from '@/actions/hr'
-import { fetchEmployeeProfileDetail, fetchEmployeeProfiles } from '@/lib/api/client/hr'
+import { fetchEmployeeProfileDetail } from '@/lib/api/client/hr'
 import type { DepartureRecord, DepartureRecordCreateInput, DepartureRecordUpdateInput } from '@/types/hr'
 import {
   EDUCATION_OPTIONS,
@@ -73,20 +74,8 @@ export default function DepartureRecordFormDrawer({
 }: DepartureRecordFormDrawerProps) {
   const [form] = Form.useForm<FormValues>()
   const editing = Boolean(record)
-  const [personKeyword, setPersonKeyword] = useState('')
   const [loadingSnapshot, setLoadingSnapshot] = useState(false)
   const [manual, setManual] = useState(false)
-
-  const { data: people, isFetching: loadingPeople } = useQuery({
-    queryKey: ['hr-people-picker', personKeyword],
-    queryFn: () =>
-      fetchEmployeeProfiles({
-        keyword: personKeyword || undefined,
-        page: 1,
-        page_size: 50,
-      }),
-    enabled: open && !editing,
-  })
 
   useEffect(() => {
     if (!open) return
@@ -162,11 +151,6 @@ export default function DepartureRecordFormDrawer({
     }
   }
 
-  const personOptions = (people?.items ?? []).map((person) => ({
-    value: person.id,
-    label: `${person.name} · ${person.job_title_name ?? ''} ${person.department_level1_name ?? ''}`,
-  }))
-
   return (
     <Drawer
       open={open}
@@ -206,14 +190,10 @@ export default function DepartureRecordFormDrawer({
           )}
           {!editing && !manual && (
             <Form.Item label="选择人员" name="person_id" rules={[required]}>
-              <Select
-                showSearch
-                placeholder="从员工档案选择"
-                filterOption={false}
-                loading={loadingPeople}
-                options={personOptions}
-                onSearch={setPersonKeyword}
-                onChange={handlePersonChange}
+              <RemoteEmployeeSelect
+                onSelect={(employee) => {
+                  if (employee) void handlePersonChange(employee.id)
+                }}
               />
             </Form.Item>
           )}
