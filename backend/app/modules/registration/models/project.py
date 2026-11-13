@@ -30,6 +30,7 @@ class RegistrationProject(BaseModel):
             name="ck_registration_projects_pre_stage",
         ),
         UniqueConstraint("project_no", name="uq_registration_projects_project_no"),
+        Index("ix_registration_projects_drug_id", "drug_id"),
         {"schema": "registration"},
     )
 

@@ -72,6 +72,8 @@ RETIRED_TABLES: frozenset[tuple[str | None, str]] = frozenset(
         ("quality", "sop_rule"),
         ("quality", "dev_task"),
         ("quality", "report_template"),
+        # 已下线的异步 OCR 任务模式，历史表保留待单独评审
+        ("dossier_writer", "ocr_extraction_tasks"),
     }
 )
 
@@ -86,7 +88,7 @@ def include_object(object, name, type_, reflected, compare_to):
 
     if not TARGET_SCHEMA:
         return True
-    
+
     if type_ == "table":
         return object.schema == TARGET_SCHEMA
     elif type_ in ("column", "index", "unique_constraint"):
@@ -94,7 +96,7 @@ def include_object(object, name, type_, reflected, compare_to):
     elif type_ == "foreign_key_constraint":
         # For foreign keys, check the parent table's schema
         return object.parent.schema == TARGET_SCHEMA
-    
+
     return True
 
 
@@ -114,7 +116,7 @@ def include_name(
     ],
 ) -> bool:
     """Limit autogenerate to schemas owned by this application.
-    
+
     If ALEMBIC_TARGET_SCHEMA is set, only include that specific schema.
     """
     if type_ == "schema":
@@ -218,7 +220,10 @@ def run_migrations_online() -> None:
     db_name = parsed.path.lstrip("/") or "postgres"
 
     # Build connection URL with db name for pg8000
-    sync_url = f"postgresql+pg8000://{quote_plus(parsed.username)}:{quote_plus(parsed.password)}@{parsed.hostname}:{parsed.port or 5432}/{db_name}"
+    sync_url = (
+        f"postgresql+pg8000://{quote_plus(parsed.username)}:{quote_plus(parsed.password)}"
+        f"@{parsed.hostname}:{parsed.port or 5432}/{db_name}"
+    )
 
     engine = create_engine(
         sync_url,
@@ -228,9 +233,7 @@ def run_migrations_online() -> None:
 
     with engine.connect() as connection:
         connection.execute(
-            text(
-                "CREATE TABLE IF NOT EXISTS alembic_version (version_num varchar(255) NOT NULL PRIMARY KEY)"
-            )
+            text("CREATE TABLE IF NOT EXISTS alembic_version (version_num varchar(255) NOT NULL PRIMARY KEY)")
         )
         connection.commit()
 
