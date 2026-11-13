@@ -308,3 +308,43 @@ async def test_sync_rolls_back_partial_writes_before_recording_failure() -> None
     assert store.hidden == []
     assert store.runs[-1].status == "failed"
     assert "database write failed" in (store.runs[-1].error_message or "")
+
+
+@pytest.mark.asyncio
+async def test_sync_stores_company_root_and_requests_its_detail() -> None:
+    fetcher = FakeFetcher(
+        departments=[
+            {
+                "department_id": IN_SCOPE_COMPANY_ID,
+                "name": IN_SCOPE_COMPANY_NAME,
+                "parent_department_id": None,
+                "order": 0,
+            },
+            _contact("od-101", "101车间", IN_SCOPE_COMPANY_ID),
+        ],
+        details=[
+            _detail(
+                IN_SCOPE_COMPANY_ID,
+                IN_SCOPE_COMPANY_NAME,
+                "0",
+                path=[
+                    {
+                        "department_id": IN_SCOPE_COMPANY_ID,
+                        "department_name": {"default_value": IN_SCOPE_COMPANY_NAME},
+                    }
+                ],
+            ),
+            _detail("od-101", "101车间", IN_SCOPE_COMPANY_ID),
+        ],
+    )
+    store = FakeStore()
+
+    stats = await sync_org_departments(store, fetcher)
+
+    assert stats.total == 2
+    company = store.records[IN_SCOPE_COMPANY_ID]
+    assert company.name == IN_SCOPE_COMPANY_NAME
+    assert company.parent_id is None
+    assert company.hidden is False
+    assert company.recursive_members_count == 42
+    assert fetcher.detail_requests == [[IN_SCOPE_COMPANY_ID, "od-101"]]

@@ -18,6 +18,7 @@ DEFAULT_SYNC_ROOT_DEPARTMENT_NAME = "珠海保税区丽珠合成制药有限公�
 IN_SCOPE_COMPANY_ID = DEFAULT_SYNC_ROOT_DEPARTMENT_ID
 IN_SCOPE_COMPANY_NAME = DEFAULT_SYNC_ROOT_DEPARTMENT_NAME
 
+COMPANY_LEVEL = 0
 ROOT_LEVEL = 1
 SECOND_LEVEL = 2
 
@@ -175,9 +176,11 @@ def _path_for(
     parent: OrgDepartmentRecord | None,
     scope: OrgScope,
 ) -> list[dict[str, str]]:
+    root = scope.root_path_node
+    if scope.is_root(record.id):
+        return [root]
     if record.department_path:
         return record.department_path
-    root = scope.root_path_node
     if parent is None:
         return [root, {"id": record.id or "", "name": record.name}]
     parent_path = parent.department_path or [root, {"id": parent.id or "", "name": parent.name}]
@@ -202,7 +205,7 @@ def _node(
         "name": record.name,
         "level": level,
         "parent_id": record.parent_id,
-        "parent_name": parent.name if parent else scope.department_name,
+        "parent_name": None if level == COMPANY_LEVEL else (parent.name if parent else scope.department_name),
         "leader_ids": record.leader_ids,
         "leader_names": resolved,
         "leader_avatars": avatars,
@@ -227,16 +230,17 @@ def build_org_tree(
     leader_avatars: dict[str, str] | None = None,
     scope: OrgScope = DEFAULT_ORG_SCOPE,
 ) -> list[dict[str, Any]]:
-    """Build the two-level tree: 一级部门 under the configured scope root.
+    """Build the company tree: company (level 0) → 一级部门 → 二级部门.
 
-    The scope root itself is not a level, branches outside the scope are
-    dropped, hidden/removed rows are dropped, and anything deeper than level 2
-    is ignored.
+    If the company row is not stored yet, fall back to returning the 一级 roots
+    so the page still works before the first sync. Branches outside the scope,
+    hidden/removed rows, and anything deeper than level 2 are dropped.
     """
     names = leader_names or {}
     avatars = leader_avatars or {}
     visible = [record for record in records if record.id and not record.hidden]
 
+    company = next((record for record in visible if scope.is_root(record.id)), None)
     level_one = sorted(
         (record for record in visible if scope.is_direct_child(record.parent_id)),
         key=_sort_key,
@@ -248,7 +252,7 @@ def build_org_tree(
         if record.parent_id in level_one_ids:
             children_by_parent.setdefault(record.parent_id or "", []).append(record)
 
-    tree: list[dict[str, Any]] = []
+    level_one_nodes: list[dict[str, Any]] = []
     for parent in level_one:
         children = sorted(children_by_parent.get(parent.id or "", []), key=_sort_key)
         child_nodes = [
@@ -262,7 +266,7 @@ def build_org_tree(
             )
             for child in children
         ]
-        tree.append(
+        level_one_nodes.append(
             _node(
                 parent,
                 level=ROOT_LEVEL,
@@ -273,7 +277,20 @@ def build_org_tree(
                 children=child_nodes,
             )
         )
-    return tree
+
+    if company is None:
+        return level_one_nodes
+    return [
+        _node(
+            company,
+            level=COMPANY_LEVEL,
+            parent=None,
+            leader_names=names,
+            leader_avatars=avatars,
+            scope=scope,
+            children=level_one_nodes,
+        )
+    ]
 
 
 def select_departments_to_hide(

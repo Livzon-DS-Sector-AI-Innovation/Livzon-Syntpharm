@@ -88,11 +88,13 @@ class FeishuOrgDepartmentFetcher:
         app_id: str,
         app_secret: str,
         root_department_id: str = DEFAULT_SYNC_ROOT_DEPARTMENT_ID,
+        root_department_name: str = "",
         client: httpx.AsyncClient | None = None,
     ) -> None:
         self._app_id = app_id
         self._app_secret = app_secret
         self._root_department_id = root_department_id
+        self._root_department_name = root_department_name
         self._client = client
 
     async def _get_client(self) -> httpx.AsyncClient:
@@ -178,9 +180,16 @@ class FeishuOrgDepartmentFetcher:
         return items
 
     async def fetch_departments(self) -> list[dict[str, Any]]:
-        """Return the company's 一级部门 + 二级部门 as flat contact rows."""
+        """Return the company (level 0), 一级部门 and 二级部门 as flat contact rows."""
         level_one_raw = await self._list_children(self._root_department_id)
-        departments: list[dict[str, Any]] = []
+        departments: list[dict[str, Any]] = [
+            {
+                "department_id": self._root_department_id,
+                "name": self._root_department_name,
+                "parent_department_id": None,
+                "order": 0,
+            }
+        ]
         level_one_ids: list[str] = []
         for raw in level_one_raw:
             dept_id = str(raw.get("open_department_id") or raw.get("department_id") or "").strip()
@@ -247,4 +256,5 @@ async def build_default_fetcher(session: AsyncSession) -> FeishuOrgDepartmentFet
         app_id=app_id,
         app_secret=app_secret,
         root_department_id=scope.department_id,
+        root_department_name=scope.department_name,
     )

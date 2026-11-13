@@ -169,6 +169,14 @@ function PersonDrawer({
   )
 }
 
+function toTreeNode(node: OrgDepartmentNode): DataNode {
+  return {
+    key: node.id,
+    title: node.name,
+    children: (node.children ?? []).map(toTreeNode),
+  }
+}
+
 export default function EmployeeDirectoryClient({
   initialTree,
   initialPeople,
@@ -219,20 +227,18 @@ export default function EmployeeDirectoryClient({
     }
   }
 
-  const treeData: DataNode[] = useMemo(
-    () => [
+  const companyNode = initialTree.find((node) => node.level === 0)
+  const companyKey = companyNode?.id ?? 'all'
+  const treeData: DataNode[] = useMemo(() => {
+    if (companyNode) return [toTreeNode(companyNode)]
+    return [
       {
         key: 'all',
         title: initialCompanyName || '公司',
-        children: initialTree.map((node) => ({
-          key: node.id,
-          title: node.name,
-          children: (node.children ?? []).map((child) => ({ key: child.id, title: child.name })),
-        })),
+        children: initialTree.map(toTreeNode),
       },
-    ],
-    [initialTree, initialCompanyName]
-  )
+    ]
+  }, [companyNode, initialTree, initialCompanyName])
 
   const isInitialQuery =
     selectedDepartment === null && status === '' && deferredKeyword === '' && page === 1 && pageSize === 20
@@ -306,7 +312,7 @@ export default function EmployeeDirectoryClient({
 
   const handleDepartmentSelect = (keys: React.Key[]) => {
     const key = keys[0]
-    setSelectedDepartment(!key || key === 'all' ? null : String(key))
+    setSelectedDepartment(!key || key === 'all' || key === companyKey ? null : String(key))
     setPage(1)
   }
 
@@ -318,7 +324,7 @@ export default function EmployeeDirectoryClient({
           blockNode
           defaultExpandAll
           treeData={treeData}
-          selectedKeys={[selectedDepartment ?? 'all']}
+          selectedKeys={[selectedDepartment ?? companyKey]}
           onSelect={handleDepartmentSelect}
         />
       </div>
