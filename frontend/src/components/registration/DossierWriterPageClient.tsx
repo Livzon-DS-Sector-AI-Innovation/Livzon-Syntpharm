@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import {
-  Table, Button, Space, Tag, Modal, Form, Input, Select, Popconfirm, Card, App,
+  Table, Space, Modal, Form, Input, Select, Popconfirm, App,
 } from 'antd'
-import {
-  PlusOutlined, EyeOutlined, DeleteOutlined, ReloadOutlined, FileWordOutlined, UploadOutlined,
-} from '@ant-design/icons'
+import { FileWordOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import dayjs from 'dayjs'
 import { useDossierWriterStore } from '@/stores/dossier-writer'
@@ -16,27 +14,31 @@ import {
 import { uploadTemplates } from '@/actions/dossier-writer'
 import type { ProductDossier, ProductDossierCreate } from '@/types/dossier-writer'
 import type { UploadResponse } from '@/types/dossier-writer'
+import { RegistrationPageHeader } from './RegistrationPageHeader'
+import ui from './registration-ui.module.css'
+import { IconEdit, IconPlus, IconTrash } from './registration-icons'
 
 const STERILE_OPTIONS = [
   { label: '无菌', value: '无菌' },
   { label: '非无菌', value: '非无菌' },
 ]
 
-const STATUS_MAP: Record<string, { color: string; label: string }> = {
-  draft: { color: 'default', label: '草稿' },
-  template_uploaded: { color: 'blue', label: '模板已上传' },
-  parsed: { color: 'cyan', label: '已解析' },
-  editing: { color: 'processing', label: '撰写中' },
-  exported: { color: 'green', label: '已导出' },
-  failed: { color: 'error', label: '处理失败' },
+// 状态语义：紫=品牌/蓝=信息/橙=进行中/绿=完成/红=失败，灰=初始
+const STATUS_MAP: Record<string, { className: string; label: string }> = {
+  draft: { className: ui.tagPlain, label: '草稿' },
+  template_uploaded: { className: ui.tagBrand, label: '模板已上传' },
+  parsed: { className: ui.tagInfo, label: '已解析' },
+  editing: { className: ui.tagWarn, label: '撰写中' },
+  exported: { className: ui.tagOk, label: '已导出' },
+  failed: { className: ui.tagRisk, label: '处理失败' },
 }
 
-const PARSE_STATUS_MAP: Record<string, { color: string; label: string }> = {
-  pending: { color: 'default', label: '待上传' },
-  template_uploaded: { color: 'blue', label: '待解析' },
-  parsing: { color: 'processing', label: '解析中' },
-  parsed: { color: 'success', label: '已解析' },
-  failed: { color: 'error', label: '解析失败' },
+const PARSE_STATUS_MAP: Record<string, { className: string; label: string }> = {
+  pending: { className: ui.tagPlain, label: '待上传' },
+  template_uploaded: { className: ui.tagBrand, label: '待解析' },
+  parsing: { className: ui.tagWarn, label: '解析中' },
+  parsed: { className: ui.tagOk, label: '已解析' },
+  failed: { className: ui.tagRisk, label: '解析失败' },
 }
 
 export function DossierWriterPageClient() {
@@ -150,7 +152,7 @@ export function DossierWriterPageClient() {
       dataIndex: 'sterile_type',
       key: 'sterile_type',
       width: '12%',
-      render: (text: string) => <Tag>{text}</Tag>,
+      render: (text: string) => <span className={ui.tagInfo}>{text}</span>,
     },
     {
       title: '生产商',
@@ -164,8 +166,8 @@ export function DossierWriterPageClient() {
       key: 'status',
       width: '10%',
       render: (status: string) => {
-        const s = STATUS_MAP[status] || { color: 'default', label: status }
-        return <Tag color={s.color}>{s.label}</Tag>
+        const s = STATUS_MAP[status] || { className: ui.tagPlain, label: status }
+        return <span className={s.className}>{s.label}</span>
       },
     },
     {
@@ -174,10 +176,10 @@ export function DossierWriterPageClient() {
       key: 'parse_status',
       width: '12%',
       render: (status: string, record: ProductDossier) => {
-        const s = PARSE_STATUS_MAP[status] || { color: 'default', label: status }
+        const s = PARSE_STATUS_MAP[status] || { className: ui.tagPlain, label: status }
         return (
-          <Space>
-            <Tag color={s.color}>{s.label}</Tag>
+          <Space size={6}>
+            <span className={s.className}>{s.label}</span>
             {record.chapter_count > 0 && (
               <span className="text-xs text-gray-500">{record.chapter_count}章</span>
             )}
@@ -197,46 +199,44 @@ export function DossierWriterPageClient() {
       key: 'action',
       width: '15%',
       render: (_: unknown, record: ProductDossier) => (
-        <Space>
-          <Button
-            type="link"
-            size="small"
-            icon={<UploadOutlined />}
+        <Space size={10}>
+          <button
+            type="button"
+            className={ui.opLink}
             onClick={() => {
               setCurrentDossier(record)
               setUploadModalOpen(true)
             }}
           >
             上传模板
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            icon={<EyeOutlined />}
+          </button>
+          <button
+            type="button"
+            className={ui.opLink}
             onClick={() => handleView(record.id)}
             disabled={record.parse_status !== 'parsed'}
+            style={record.parse_status !== 'parsed' ? { color: 'var(--ink-3)', cursor: 'not-allowed' } : undefined}
           >
             查看
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            icon={<ReloadOutlined />}
+          </button>
+          <button
+            type="button"
+            className={ui.opLink}
             onClick={() => handleReparse(record)}
-            loading={parsingId === record.id}
-            disabled={record.parse_status === 'pending'}
+            disabled={parsingId === record.id || record.parse_status === 'pending'}
+            style={record.parse_status === 'pending' ? { color: 'var(--ink-3)', cursor: 'not-allowed' } : undefined}
           >
-            解析
-          </Button>
+            {parsingId === record.id ? '解析中…' : '解析'}
+          </button>
           <Popconfirm
             title="确定删除此品种资料？"
             onConfirm={() => handleDelete(record.id)}
             okText="确定"
             cancelText="取消"
           >
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-              删除
-            </Button>
+            <button type="button" className={ui.opDel} title="删除">
+              {IconTrash}
+            </button>
           </Popconfirm>
         </Space>
       ),
@@ -245,42 +245,36 @@ export function DossierWriterPageClient() {
 
   return (
     <App>
-    <div className="p-6">
-      {/* 页面标题 */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)] mb-2">
-            申报资料撰写
-          </h1>
-          <p className="text-[14px] text-[var(--color-steel)]">
-            基于模板的原料药申报资料撰写工具
-          </p>
-        </div>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          size="large"
-          onClick={() => setAddModalOpen(true)}
-        >
-          新增品种资料
-        </Button>
-      </div>
+    <div className={ui.regUi}>
+      <RegistrationPageHeader
+        icon={IconEdit}
+        title="申报资料撰写"
+        sub="基于模板的原料药申报资料撰写工具"
+        actions={
+          <button type="button" className={ui.btnPrimary} onClick={() => setAddModalOpen(true)}>
+            {IconPlus}
+            新增品种资料
+          </button>
+        }
+      />
 
       {/* 列表 */}
-      <Card>
-        <Table
-          columns={columns}
-          dataSource={dossiers}
-          rowKey="id"
-          loading={dossiersLoading}
-          pagination={{
-            total: dossiersTotal,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total) => `共 ${total} 条`,
-          }}
-        />
-      </Card>
+      <div className={ui.panel}>
+        <div className={`${ui.tableWrap} ${ui.tableStd}`}>
+          <Table
+            columns={columns}
+            dataSource={dossiers}
+            rowKey="id"
+            loading={dossiersLoading}
+            pagination={{
+              total: dossiersTotal,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total) => `共 ${total} 条`,
+            }}
+          />
+        </div>
+      </div>
 
       {/* 新增品种资料弹窗 */}
       <Modal
@@ -344,8 +338,8 @@ export function DossierWriterPageClient() {
           <p className="mb-4 text-gray-600">
             请上传 Word 格式的申报资料模板文件（.docx），支持多文件批量上传
           </p>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-            <FileWordOutlined className="text-4xl text-blue-500 mb-4" />
+          <div className="border-2 border-dashed rounded-lg p-8 text-center" style={{ borderColor: 'var(--line)' }}>
+            <FileWordOutlined className="text-4xl mb-4" style={{ color: 'var(--brand-500)' }} />
             <p className="mb-4">点击或拖拽文件到此处上传（可多选）</p>
             <input
               type="file"
@@ -357,10 +351,7 @@ export function DossierWriterPageClient() {
               className="hidden"
               id="template-upload"
             />
-            <label
-              htmlFor="template-upload"
-              className="cursor-pointer inline-block px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
+            <label htmlFor="template-upload" className={ui.btnPrimary} style={{ cursor: 'pointer' }}>
               选择文件
             </label>
           </div>

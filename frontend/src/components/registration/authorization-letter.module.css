@@ -1,0 +1,252 @@
+/*
+ * 授权书管理页专属样式（按 loa-management-redesign 原型与最终字号阶梯）
+ * 字号：表格内容/正文 17px；表头/辅助说明 16px；小标签 15px；禁止 12/13px。
+ * 设计令牌继承自 registration-ui.module.css 的 .regUi / .tokenScope 祖先节点。
+ */
+
+/* ============ 筛选工具栏 ============ */
+.toolbar {
+  composes: toolbar from './registration-ui.module.css';
+}
+.toolbarGroup {
+  composes: toolbarGroup from './registration-ui.module.css';
+}
+/* 工具栏内 antd 控件字号对齐 16px 阶梯 */
+.toolbar :global(.ant-input-affix-wrapper),
+.toolbar :global(.ant-input),
+.toolbar :global(.ant-select .ant-select-selection-item),
+.toolbar :global(.ant-select .ant-select-selection-placeholder) {
+  font-size: 16px;
+}
+.cntChip {
+  align-self: center;
+  font-size: 15px;
+  color: var(--brand-600);
+  background: var(--brand-50);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.toolbarHint {
+  align-self: center;
+  font-size: 16px;
+  color: var(--ink-3);
+}
+.toolbarRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ============ 表格（17/16 字号阶梯，列两端钉死对齐） ============ */
+.tableStd :global(.ant-table-tbody > tr > td) {
+  font-size: 17px;
+  padding: 14px 18px !important;
+  vertical-align: middle;
+}
+.tableStd :global(.ant-table-tbody > tr:hover > td) {
+  background: var(--brand-50) !important;
+}
+.tableStd :global(.ant-table-thead > tr > th) {
+  background: #FAFBFE !important;
+  font-size: 16px;
+  color: var(--ink-3) !important;
+  font-weight: 500;
+  padding: 11px 18px !important;
+}
+.tableStd :global(.ant-table-thead > tr > th::before) {
+  display: none !important;
+}
+
+.pName {
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--ink-1);
+}
+.code {
+  font-size: 16px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.genTime {
+  font-size: 16px;
+  color: var(--ink-1);
+  font-variant-numeric: tabular-nums;
+}
+.genBy {
+  font-size: 15px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+/* 操作列：下载=紫文字；记录=灰文字悬停变紫；删除=灰图标悬停变红 */
+.opGroup {
+  display: inline-flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: flex-end;
+}
+.opLink {
+  composes: opLink from './registration-ui.module.css';
+  font-size: 17px;
+  font-weight: 500;
+}
+.opLinkGray {
+  composes: opLink;
+  color: var(--ink-3);
+}
+.opLinkGray:hover {
+  color: var(--brand-600);
+  text-decoration: none;
+}
+.opDel {
+  composes: opDel from './registration-ui.module.css';
+  margin-left: 0;
+}
+
+/* 空状态（原型文案） */
+.empty {
+  padding: 56px 0;
+  text-align: center;
+}
+.emptyIco {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--brand-50);
+  color: var(--brand-500);
+  display: grid;
+  place-items: center;
+  margin: 0 auto 12px;
+}
+.emptyT1 {
+  font-size: 17px;
+  font-weight: 600;
+}
+.emptyT2 {
+  font-size: 16px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+
+/* 表格底部栏 */
+.tableFoot {
+  composes: tableFoot from './projects.module.css';
+}
+.totalText {
+  composes: totalText from './projects.module.css';
+}
+
+/* ============ 留痕抽屉（520px） ============ */
+.drawerName {
+  composes: drawerName from './projects.module.css';
+}
+.drawerSub {
+  composes: drawerSub from './projects.module.css';
+}
+.drawerBody {
+  composes: drawerBody from './projects.module.css';
+}
+.kvGrid {
+  composes: kvGrid from './projects.module.css';
+}
+.kv {
+  composes: kv from './projects.module.css';
+}
+.kvK {
+  composes: kvK from './projects.module.css';
+}
+.kvV {
+  composes: kvV from './projects.module.css';
+}
+.secTitle {
+  composes: secTitle from './projects.module.css';
+}
+.secCnt {
+  composes: secCnt from './projects.module.css';
+}
+.lockHint {
+  composes: logLock from './projects.module.css';
+  background: var(--bg);
+  border-radius: var(--r-md);
+  padding: 9px 12px;
+}
+
+/* 留痕时间线：紫点=生成、蓝点=下载 */
+.logList {
+  position: relative;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.logList::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--line);
+}
+.logItem {
+  position: relative;
+}
+.logDot {
+  position: absolute;
+  left: -22px;
+  top: 5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  z-index: 1;
+  border: 2px solid;
+  background: #fff;
+}
+.logGen .logDot {
+  border-color: var(--brand-500);
+  background: var(--brand-500);
+}
+.logDl .logDot {
+  border-color: var(--info-600);
+  background: var(--info-50);
+}
+.logAct {
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.logBadge {
+  font-size: 15px;
+  font-weight: 500;
+  padding: 1px 8px;
+  border-radius: 6px;
+}
+.logGen .logBadge {
+  background: var(--brand-50);
+  color: var(--brand-600);
+}
+.logDl .logBadge {
+  background: var(--info-50);
+  color: var(--info-600);
+}
+.logDesc {
+  font-size: 16px;
+  color: var(--ink-2);
+  margin-top: 3px;
+}
+.logMeta {
+  font-size: 15px;
+  color: var(--ink-3);
+  margin-top: 3px;
+}
+
+/* 弹窗内控件字号对齐最终阶梯 */
+.modalRoot {
+  composes: modalRoot from './projects.module.css';
+}

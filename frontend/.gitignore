@@ -67,3 +67,4 @@ playwright-report/
 test-results/
 /.next-e2e/
 .pnpm-store/
+.screenshots/

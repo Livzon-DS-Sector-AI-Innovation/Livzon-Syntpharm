@@ -4,7 +4,7 @@ import { useState, useMemo, Suspense } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { Segmented, Input, Select, DatePicker, Spin } from 'antd'
 import {
-  LoadingOutlined, SearchOutlined, FilterOutlined, ReloadOutlined,
+  LoadingOutlined, SearchOutlined, FilterOutlined,
   InboxOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
@@ -14,6 +14,9 @@ import {
   fetchDocuments,
 } from '@/lib/api/client/regulatory-tracker'
 import { DataUnavailable } from '@/components/common/DataUnavailable'
+import { RegistrationPageHeader } from '@/components/registration/RegistrationPageHeader'
+import ui from '@/components/registration/registration-ui.module.css'
+import { IconBook, IconRefresh } from '@/components/registration/registration-icons'
 
 const { RangePicker } = DatePicker
 
@@ -37,12 +40,12 @@ const CATEGORY_API_MAP: Record<string, string | undefined> = {
   failed: 'failed',
 }
 
-// 低饱和度影响等级配色
+// 影响等级配色（注册模块设计令牌）
 const IMPACT_TAG_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
-  high:   { color: '#dc2626', bg: '#fef2f2', label: '高影响' },
-  medium: { color: '#d97706', bg: '#fffbeb', label: '中影响' },
-  low:    { color: '#475569', bg: '#f8fafc', label: '低影响' },
-  none:   { color: '#94a3b8', bg: '#f8fafc', label: '无影响' },
+  high:   { color: '#C03A2E', bg: '#FBEBE9', label: '高影响' },
+  medium: { color: '#B4640A', bg: '#FCF3E3', label: '中影响' },
+  low:    { color: '#0B6CAD', bg: '#EAF4FB', label: '低影响' },
+  none:   { color: '#878DA3', bg: '#F5F6FA', label: '无影响' },
 }
 
 const REGULATION_TYPE_OPTIONS = [
@@ -159,18 +162,11 @@ function WorkspaceContent() {
 
   const renderImpactTag = (doc: RegulatoryDocument) => {
     if (doc.aiAnalysisStatus === 'failed') {
-      return (
-        <span
-          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-          style={{ color: '#dc2626', backgroundColor: '#fef2f2' }}
-        >
-          分析失败
-        </span>
-      )
+      return <span className={ui.tagRisk}>分析失败</span>
     }
     if (doc.aiAnalysisStatus === 'pending' || doc.aiAnalysisStatus === 'analyzing') {
       return (
-        <span className="text-xs text-gray-400 flex items-center gap-1">
+        <span className={ui.tagPlain}>
           <LoadingOutlined spin style={{ fontSize: 10 }} />
           分析中
         </span>
@@ -186,7 +182,7 @@ function WorkspaceContent() {
 
     return (
       <span
-        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+        className="inline-flex items-center px-2 py-0.5 rounded-md text-[13px] font-medium"
         style={{ color: config.color, backgroundColor: config.bg }}
       >
         {config.label}
@@ -228,13 +224,14 @@ function WorkspaceContent() {
     }
 
     // 左侧边框：高影响法规显示红色细线
-    const borderClass = isHigh ? 'border-l-[3px] border-l-red-500' : 'border-l-[3px] border-l-transparent'
+    const highBorder = isHigh ? '3px solid var(--risk-600)' : '3px solid transparent'
 
     return (
       <div
         key={doc.id}
         onClick={() => router.push(`/registration/regulation/${doc.id}`)}
-        className={`block px-6 py-4 hover:bg-gray-50/60 transition-colors duration-150 cursor-pointer ${borderClass}`}
+        className="block px-6 py-4 hover:bg-gray-50/60 transition-colors duration-150 cursor-pointer"
+        style={{ borderLeft: highBorder }}
       >
         <div className="flex items-start gap-4">
           {/* 主内容区 */}
@@ -296,96 +293,92 @@ function WorkspaceContent() {
   // ====== 主渲染 ======
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* 页头 */}
-      <div className="border-b border-gray-100">
-        <div className="max-w-[1400px] mx-auto px-8 pt-7 pb-5">
-          <div className="flex items-center justify-between mb-5">
-            <h1 className="text-xl font-semibold text-gray-900 tracking-tight">法规工作台</h1>
+    <div className={ui.regUi}>
+      <RegistrationPageHeader
+        icon={IconBook}
+        title="法规工作台"
+        sub="按分类检索法规动态，查看 AI 影响评估"
+        actions={
+          <button type="button" className={ui.btn} onClick={handleRefresh} title="刷新">
+            {IconRefresh}
+            刷新
+          </button>
+        }
+      />
+
+      <div className={ui.panel}>
+        {/* 分类 + 搜索 + 筛选 */}
+        <div className={ui.toolbar}>
+          <Segmented
+            options={CATEGORY_OPTIONS}
+            value={category}
+            onChange={handleCategoryChange}
+            size="middle"
+          />
+          <div className={ui.toolbarGroup}>
+            <Input
+              placeholder="搜索法规标题"
+              prefix={<SearchOutlined className="text-gray-300" />}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onPressEnter={() => handleSearch(searchInput)}
+              allowClear
+              onClear={() => handleSearch('')}
+              style={{ width: 240 }}
+              className="rounded-md"
+            />
             <button
-              onClick={handleRefresh}
-              className="text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-md hover:bg-gray-50"
-              title="刷新"
+              onClick={() => setFiltersOpen(!filtersOpen)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border transition-colors ${
+                filtersOpen
+                  ? 'border-[#C9C9F0] text-[#4F46C9] bg-[#F3F4FE]'
+                  : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-600'
+              }`}
             >
-              <ReloadOutlined />
+              <FilterOutlined style={{ fontSize: 12 }} />
+              筛选
             </button>
           </div>
+        </div>
 
-          {/* Segmented Control + 搜索 + 筛选 */}
-          <div className="flex items-center justify-between gap-4">
-            <Segmented
-              options={CATEGORY_OPTIONS}
-              value={category}
-              onChange={handleCategoryChange}
-              size="middle"
+        {/* 二级筛选（默认折叠） */}
+        {filtersOpen && (
+          <div className="flex items-center gap-3 px-[18px] py-3 border-b border-[var(--line)]">
+            <Select
+              placeholder="法规类型"
+              allowClear
+              style={{ width: 140 }}
+              value={regulationType}
+              onChange={(v) => { setRegulationType(v); setPage(1) }}
+              options={REGULATION_TYPE_OPTIONS.map(t => ({ label: t, value: t }))}
             />
-            <div className="flex items-center gap-2">
-              <Input
-                placeholder="搜索法规标题"
-                prefix={<SearchOutlined className="text-gray-300" />}
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onPressEnter={() => handleSearch(searchInput)}
-                allowClear
-                onClear={() => handleSearch('')}
-                style={{ width: 240 }}
-                className="rounded-md"
-              />
+            <RangePicker
+              value={dateRange as [dayjs.Dayjs | null, dayjs.Dayjs | null]}
+              onChange={(dates) => {
+                setDateRange(dates as [dayjs.Dayjs | null, dayjs.Dayjs | null])
+                setPage(1)
+              }}
+              placeholder={['发现日期起', '发现日期止']}
+              className="rounded-md"
+            />
+            {(regulationType || dateRange || keyword) && (
               <button
-                onClick={() => setFiltersOpen(!filtersOpen)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border transition-colors ${
-                  filtersOpen
-                    ? 'border-blue-200 text-blue-600 bg-blue-50/50'
-                    : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-600'
-                }`}
-              >
-                <FilterOutlined style={{ fontSize: 12 }} />
-                筛选
-              </button>
-            </div>
-          </div>
-
-          {/* 二级筛选（默认折叠） */}
-          {filtersOpen && (
-            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-50">
-              <Select
-                placeholder="法规类型"
-                allowClear
-                style={{ width: 140 }}
-                value={regulationType}
-                onChange={(v) => { setRegulationType(v); setPage(1) }}
-                options={REGULATION_TYPE_OPTIONS.map(t => ({ label: t, value: t }))}
-              />
-              <RangePicker
-                value={dateRange as [dayjs.Dayjs | null, dayjs.Dayjs | null]}
-                onChange={(dates) => {
-                  setDateRange(dates as [dayjs.Dayjs | null, dayjs.Dayjs | null])
+                onClick={() => {
+                  setRegulationType(undefined)
+                  setDateRange(null)
+                  setKeyword('')
+                  setSearchInput('')
                   setPage(1)
                 }}
-                placeholder={['发现日期起', '发现日期止']}
-                className="rounded-md"
-              />
-              {(regulationType || dateRange || keyword) && (
-                <button
-                  onClick={() => {
-                    setRegulationType(undefined)
-                    setDateRange(null)
-                    setKeyword('')
-                    setSearchInput('')
-                    setPage(1)
-                  }}
-                  className="text-xs text-gray-400 hover:text-gray-600"
-                >
-                  清除筛选
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+                className="text-xs text-gray-400 hover:text-gray-600"
+              >
+                清除筛选
+              </button>
+            )}
+          </div>
+        )}
 
-      {/* 列表内容 */}
-      <div className="max-w-[1400px] mx-auto">
+        {/* 列表内容 */}
         {documentsQuery.isError ? (
           <DataUnavailable onRetry={() => void documentsQuery.refetch()} />
         ) : documentsQuery.isPending ? (
@@ -395,14 +388,14 @@ function WorkspaceContent() {
         ) : documents.length === 0 ? (
           renderEmptyState()
         ) : (
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-gray-100">
             {documents.map(doc => renderDocRow(doc))}
           </div>
         )}
 
         {/* 分页 */}
         {total > pageSize && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-50">
+          <div className="flex items-center justify-between px-[18px] py-3.5 border-t border-[var(--line)]">
             <span className="text-sm text-gray-400">
               共 {total} 条法规
             </span>

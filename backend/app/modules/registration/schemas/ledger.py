@@ -169,6 +169,17 @@ class WcCertificateResponse(WcCertificateBase):
 # ── Ledger Summary (for Dashboard) ─────────────────────────────────
 
 
+class ExpiringCertificateItem(BaseModel):
+    """即将到期/已过期的证书条目（用于概览页"需要关注"预警）"""
+
+    id: UUID
+    product_name: str
+    certificate_name: str | None = None
+    valid_until: date
+    days_left: int  # 距到期天数；负数表示已过期天数
+    ledger_type: str  # domestic / overseas / copp / wc / certificate（主证书表），供前端生成台账定位链接
+
+
 class LedgerSummary(BaseModel):
     domestic_count: int
     overseas_count: int
@@ -178,6 +189,15 @@ class LedgerSummary(BaseModel):
     wc_count: int
     reviewing_count: int
     planned_count: int
+    # 今年新增（按发证日期统计）
+    domestic_new_this_year: int = 0
+    overseas_new_this_year: int = 0
+    copp_new_this_year: int = 0
+    wc_new_this_year: int = 0
+    # 证书有效期预警（已过期 + 90 天内到期）
+    expiring_certificates: list[ExpiringCertificateItem] = Field(default_factory=list)
+    expired_count: int = 0
+    expiring_soon_count: int = 0
 
 
 # ── Excel 导入 / 审评中品种 ─────────────────────────────────────────

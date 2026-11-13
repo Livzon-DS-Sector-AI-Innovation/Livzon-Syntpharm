@@ -40,6 +40,7 @@ class AuthorizationLetterResponse(BaseModel):
     preparation_name: str
     administration_route: str
     remarks: str | None = None
+    template_file_name: str | None = None
     output_file_name: str | None = None
     created_at: datetime
     updated_at: datetime
@@ -55,8 +56,31 @@ class AuthorizationLetterListItem(BaseModel):
     preparation_name: str
     administration_route: str
     output_file_name: str | None = None
+    created_by: UUID | None = None
+    created_by_name: str | None = None
     created_at: datetime
     updated_at: datetime
+
+
+class AuthorizationLetterTrailItem(BaseModel):
+    """授权书留痕记录（生成/下载，只增不删）"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    letter_id: UUID
+    action: str = Field(..., description="动作：generate=生成 / download=下载")
+    detail: str = Field(..., description="留痕描述（生成时含模板版本）")
+    created_by: UUID | None = None
+    created_by_name: str | None = None
+    created_at: datetime
+
+
+class AuthorizationLetterFilterOptions(BaseModel):
+    """授权书列表筛选下拉选项"""
+
+    products: list[str] = Field(default_factory=list, description="品种选项（品种主数据 ∪ 已有记录品种）")
+    years: list[int] = Field(default_factory=list, description="年份选项（按生成时间提取，降序）")
 
 
 class SupplementaryReplyCreate(BaseModel):

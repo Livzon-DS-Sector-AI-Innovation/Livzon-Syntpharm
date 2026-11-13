@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR ?? '.next',
   output: 'standalone',
   reactCompiler: true,
+  // API 路径带尾斜杠时不再 308 去斜杠，避免与 FastAPI 斜杠重定向形成循环
+  skipTrailingSlashRedirect: true,
   allowedDevOrigins: process.env.ALLOWED_DEV_ORIGINS
     ? process.env.ALLOWED_DEV_ORIGINS.split(',').filter(Boolean)
     : ['localhost', '127.0.0.1'],

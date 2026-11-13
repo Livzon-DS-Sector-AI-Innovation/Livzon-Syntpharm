@@ -4,6 +4,7 @@ import uuid
 from datetime import date
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     Date,
     ForeignKey,
@@ -31,6 +32,7 @@ class Drug(BaseModel):
     name: Mapped[str] = mapped_column(String(255), comment="药品名称")
     type: Mapped[str] = mapped_column(String(20), comment="药品类型：仿制药/创新药/原料药")
     acceptance_date: Mapped[date] = mapped_column(Date, comment="受理日期")
+    acceptance_number: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="受理号")
     current_node: Mapped[int] = mapped_column(Integer, default=0, comment="当前审评节点")
 
     # 关系
@@ -61,6 +63,12 @@ class DrugNode(BaseModel):
     )
     node_index: Mapped[int] = mapped_column(Integer, comment="节点序号（1-10）")
     actual_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="实际完成日期")
+    skipped: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        server_default="false",
+        comment="是否跳过（节点不发生，如核查豁免/无发补），与 actual_date 互斥",
+    )
 
     # 关系
     drug: Mapped["Drug"] = relationship(

@@ -2,12 +2,13 @@
 """Registration ledger service."""
 
 import io
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from openpyxl import Workbook, load_workbook
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.registration.models.certificate import RegistrationCertificate
 from app.modules.registration.models.copp_certificate import CoppCertificate
 from app.modules.registration.models.domestic_approval import DomesticApproval
 from app.modules.registration.models.international_review import InternationalReview
@@ -16,11 +17,18 @@ from app.modules.registration.models.wc_certificate import WcCertificate
 from app.modules.registration.schemas.ledger import (
     CoppCertificateCreate,
     DomesticApprovalCreate,
+    ExpiringCertificateItem,
     InternationalReviewCreate,
     LedgerSummary,
     OverseasApprovalCreate,
     WcCertificateCreate,
 )
+
+# 证书有效期预警窗口：已过期 + 未来 N 天内到期。
+# 法规依据：《药品注册管理办法》第82条要求再注册申请在有效期届满前6个月提出，
+# NMPA 2024年第38号通告明确申报窗口为届满前12个月至6个月——故窗口取 365 天，
+# 前端再按 180 天（死线）/365 天（窗口）分「紧急」「临期」两档。
+EXPIRING_SOON_DAYS = 365
 
 # ── Excel Parsing Helpers ──────────────────────────────────────────
 
@@ -237,6 +245,77 @@ async def get_ledger_summary(db: AsyncSession) -> LedgerSummary:
     # 计划申报（暂时为0）
     planned_count = 0
 
+    # 今年新增：仅台账 4 张证书表（按发证日期）；有效期预警：台账 4 表 + 主证书表
+    today = date.today()
+    current_year = today.year
+    expiring_threshold = today + timedelta(days=EXPIRING_SOON_DAYS)
+    cert_tables = (
+        (DomesticApproval, "domestic"),
+        (OverseasApproval, "overseas"),
+        (CoppCertificate, "copp"),
+        (WcCertificate, "wc"),
+    )
+
+    new_this_year: dict[str, int] = {}
+    expiring: list[ExpiringCertificateItem] = []
+    for model, ledger_type in cert_tables:
+        stmt = (
+            select(func.count())
+            .select_from(model)
+            .where(
+                ~model.is_deleted,
+                model.issue_date.isnot(None),
+                func.extract("year", model.issue_date) == current_year,
+            )
+        )
+        new_this_year[ledger_type] = (await db.execute(stmt)).scalar() or 0
+
+        stmt = (
+            select(model)
+            .where(
+                ~model.is_deleted,
+                model.valid_until.isnot(None),
+                model.valid_until <= expiring_threshold,
+            )
+            .order_by(model.valid_until.asc())
+        )
+        for row in (await db.execute(stmt)).scalars().all():
+            expiring.append(
+                ExpiringCertificateItem(
+                    id=row.id,
+                    product_name=row.product_name,
+                    certificate_name=row.certificate_name,
+                    valid_until=row.valid_until,
+                    days_left=(row.valid_until - today).days,
+                    ledger_type=ledger_type,
+                )
+            )
+
+    # 主证书表：无发证日期/证书名字段，仅纳入有效期预警，不计入"今年新增"
+    stmt = (
+        select(RegistrationCertificate)
+        .where(
+            ~RegistrationCertificate.is_deleted,
+            RegistrationCertificate.valid_until.isnot(None),
+            RegistrationCertificate.valid_until <= expiring_threshold,
+        )
+        .order_by(RegistrationCertificate.valid_until.asc())
+    )
+    for row in (await db.execute(stmt)).scalars().all():
+        expiring.append(
+            ExpiringCertificateItem(
+                id=row.id,
+                product_name=row.product_name,
+                certificate_name=None,
+                valid_until=row.valid_until,
+                days_left=(row.valid_until - today).days,
+                ledger_type="certificate",
+            )
+        )
+
+    expiring.sort(key=lambda item: item.valid_until)
+    expired_count = sum(1 for item in expiring if item.days_left < 0)
+
     return LedgerSummary(
         domestic_count=domestic_count,
         overseas_count=overseas_count,
@@ -246,6 +325,13 @@ async def get_ledger_summary(db: AsyncSession) -> LedgerSummary:
         wc_count=wc_count,
         reviewing_count=reviewing_count,
         planned_count=planned_count,
+        domestic_new_this_year=new_this_year["domestic"],
+        overseas_new_this_year=new_this_year["overseas"],
+        copp_new_this_year=new_this_year["copp"],
+        wc_new_this_year=new_this_year["wc"],
+        expiring_certificates=expiring,
+        expired_count=expired_count,
+        expiring_soon_count=len(expiring) - expired_count,
     )
 
 

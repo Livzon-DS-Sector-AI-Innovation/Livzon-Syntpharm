@@ -12,6 +12,7 @@ from app.modules.registration import service
 from app.modules.registration.models.review import ReviewNode
 from app.modules.registration.schemas.drug import (
     DrugCreate,
+    DrugPredictionResponse,
     DrugResponse,
     DrugUpdate,
     DrugWithNodesResponse,
@@ -21,7 +22,7 @@ from app.modules.registration.schemas.review import ReviewNodeConfig
 router = APIRouter()
 
 
-@router.get("/", summary="获取药品列表")
+@router.get("", summary="获取药品列表")
 async def list_drugs(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:drug:read")),
@@ -33,7 +34,7 @@ async def list_drugs(
     return DataResponse[list[DrugWithNodesResponse]](data=data)
 
 
-@router.post("/", summary="创建药品")
+@router.post("", summary="创建药品")
 async def create_drug(
     current_user: RequiredUser,
     data: DrugCreate,
@@ -65,6 +66,19 @@ async def get_drug(
     """获取单个药品及其审评节点"""
     drug = await service.get_drug(db, drug_id)
     return DataResponse[DrugWithNodesResponse](data=DrugWithNodesResponse.model_validate(drug))
+
+
+@router.get("/{drug_id}/prediction", summary="获取药品审评进度预测")
+async def get_drug_prediction(
+    current_user: RequiredUser,
+    drug_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:drug:read")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[DrugPredictionResponse]:
+    """规则预测（工作日推算）+ 历史统计修正区间的双轨预测"""
+    drug = await service.get_drug(db, drug_id)
+    prediction = await service.predict_drug(db, drug)
+    return DataResponse[DrugPredictionResponse](data=prediction)
 
 
 @router.put("/{drug_id}", summary="更新药品")

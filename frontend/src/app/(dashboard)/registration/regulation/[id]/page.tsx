@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { Spin, Button, Tag } from 'antd'
+import { Spin } from 'antd'
 import {
   ArrowLeftOutlined, LinkOutlined, FileTextOutlined,
   WarningOutlined, CheckCircleOutlined, ClockCircleOutlined,
@@ -13,13 +13,14 @@ import Link from 'next/link'
 import { fetchDocumentDetail } from '@/lib/api/client/regulatory-tracker'
 import { markDocumentRead } from '@/actions/regulatory-tracker'
 import { DataUnavailable } from '@/components/common/DataUnavailable'
+import ui from '@/components/registration/registration-ui.module.css'
 
-// 影响等级配置
+// 影响等级配色（注册模块设计令牌）
 const IMPACT_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
-  high: { color: '#dc2626', bg: '#fef2f2', label: '高影响' },
-  medium: { color: '#d97706', bg: '#fffbeb', label: '中影响' },
-  low: { color: '#475569', bg: '#f8fafc', label: '低影响' },
-  none: { color: '#94a3b8', bg: '#f8fafc', label: '无影响' },
+  high: { color: '#C03A2E', bg: '#FBEBE9', label: '高影响' },
+  medium: { color: '#B4640A', bg: '#FCF3E3', label: '中影响' },
+  low: { color: '#0B6CAD', bg: '#EAF4FB', label: '低影响' },
+  none: { color: '#878DA3', bg: '#F5F6FA', label: '无影响' },
 }
 
 // 结构化影响评估类型
@@ -53,6 +54,7 @@ const DEPARTMENTS = ['注册', 'QA', 'QC', '研发', '生产', '验证']
 
 export default function RegulatoryDocumentDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const docId = params.id as string
 
   const detailQuery = useQuery({
@@ -99,8 +101,8 @@ export default function RegulatoryDocumentDetailPage() {
       <div className="text-center py-20 text-gray-500">
         <FileTextOutlined style={{ fontSize: 48, marginBottom: 16 }} />
         <p>法规文档不存在</p>
-        <Link href="/registration/regulation/list">
-          <Button type="link">返回列表</Button>
+        <Link href="/registration/regulation/list" style={{ color: '#4F46C9' }}>
+          返回列表
         </Link>
       </div>
     )
@@ -176,27 +178,33 @@ export default function RegulatoryDocumentDetailPage() {
   const keyPoints = getKeyPoints()
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+    <div className={ui.regUi}>
+      <div className="max-w-4xl mx-auto w-full space-y-5 pb-6">
       {/* 顶部导航 */}
       <div className="flex items-center justify-between">
-        <Link href="/registration/regulation/list">
-          <Button icon={<ArrowLeftOutlined />}>返回列表</Button>
-        </Link>
+        <button type="button" className={ui.btn} onClick={() => router.push('/registration/regulation/list')}>
+          <ArrowLeftOutlined />
+          返回列表
+        </button>
         {doc.originalUrl && (
-          <Button icon={<LinkOutlined />} href={doc.originalUrl} target="_blank">
+          <button type="button" className={ui.btn} onClick={() => window.open(doc.originalUrl, '_blank')}>
+            <LinkOutlined />
             查看原文
-          </Button>
+          </button>
         )}
       </div>
 
       {/* 1. 顶部结论区 */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-xl border border-[#E7E8F0] p-6">
         <h1 className="text-xl font-semibold text-gray-900 mb-4">{doc.title}</h1>
         
         <div className="flex items-center gap-4 mb-4">
-          <Tag color={impactConfig.color} style={{ backgroundColor: impactConfig.bg }}>
+          <span
+            className="inline-flex items-center px-2 py-0.5 rounded-md text-[13px] font-medium"
+            style={{ color: impactConfig.color, backgroundColor: impactConfig.bg }}
+          >
             {impactConfig.label}
-          </Tag>
+          </span>
           {impactData?.regulation_type && (
             <span className="text-sm text-gray-500">{impactData.regulation_type}</span>
           )}
@@ -230,7 +238,7 @@ export default function RegulatoryDocumentDetailPage() {
       {isAnalyzed && impactData && (
         <>
           {/* 2. 法规指南解读 */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-[#E7E8F0] p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">法规指南解读</h2>
             
             <div className="space-y-3">
@@ -264,7 +272,7 @@ export default function RegulatoryDocumentDetailPage() {
 
           {/* 3. 工作建议 */}
           {impactData.recommended_actions && impactData.recommended_actions.length > 0 && (
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-xl border border-[#E7E8F0] p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">工作建议</h2>
               
               <div className="space-y-4">
@@ -273,7 +281,7 @@ export default function RegulatoryDocumentDetailPage() {
                   if (!impacts || impacts.length === 0) return null
                   
                   return (
-                    <div key={dept} className="border-l-2 border-blue-200 pl-4">
+                    <div key={dept} className="border-l-2 border-[#C9C9F0] pl-4">
                       <div className="font-medium text-gray-800 mb-2">{dept}</div>
                       <ul className="space-y-1">
                         {impacts.map((item, idx) => (
@@ -303,7 +311,7 @@ export default function RegulatoryDocumentDetailPage() {
           )}
 
           {/* 4. 文件要点总结 */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-[#E7E8F0] p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">文件要点总结</h2>
             
             <div className="space-y-3">
@@ -334,7 +342,7 @@ export default function RegulatoryDocumentDetailPage() {
           </div>
 
           {/* 5. 影响分析 */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-[#E7E8F0] p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">影响分析</h2>
             
             <div className="space-y-4">
@@ -345,7 +353,7 @@ export default function RegulatoryDocumentDetailPage() {
                   <div className="grid grid-cols-2 gap-2">
                     {impactData.lifecycle_impacts.filter(i => i.affected).map((item, idx) => (
                       <div key={idx} className="text-sm text-gray-600 flex items-center gap-2">
-                        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 12 }} />
+                        <CheckCircleOutlined style={{ color: '#0E8568', fontSize: 12 }} />
                         <span>{item.area}</span>
                       </div>
                     ))}
@@ -359,7 +367,7 @@ export default function RegulatoryDocumentDetailPage() {
                   <div className="text-sm font-medium text-gray-700 mb-2">影响部门</div>
                   <div className="flex flex-wrap gap-2">
                     {impactData.departments.map((dept, idx) => (
-                      <Tag key={idx} className="text-xs">{dept}</Tag>
+                      <span key={idx} className={ui.tagPlain}>{dept}</span>
                     ))}
                   </div>
                 </div>
@@ -371,7 +379,7 @@ export default function RegulatoryDocumentDetailPage() {
                   <div className="text-sm font-medium text-gray-700 mb-2">CTD 章节</div>
                   <div className="flex flex-wrap gap-2">
                     {impactData.ctd_sections.map((section, idx) => (
-                      <Tag key={idx} color="blue" className="text-xs">{section}</Tag>
+                      <span key={idx} className={ui.tagInfo}>{section}</span>
                     ))}
                   </div>
                 </div>
@@ -403,7 +411,7 @@ export default function RegulatoryDocumentDetailPage() {
       )}
 
       {/* 正文内容 */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-xl border border-[#E7E8F0] p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">正文内容</h2>
         {doc.detailText ? (
           <div className="text-gray-600 leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto">
@@ -416,14 +424,14 @@ export default function RegulatoryDocumentDetailPage() {
 
       {/* 相关法规 */}
       {doc.relatedDocuments && doc.relatedDocuments.length > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white rounded-xl border border-[#E7E8F0] p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">相关法规</h2>
           <div className="space-y-2">
             {doc.relatedDocuments.map((item) => (
               <div key={item.id} className="flex items-center gap-2 py-1">
                 <Link
                   href={`/registration/regulation/${item.id}`}
-                  className="text-blue-600 hover:text-blue-800"
+                  className="text-[#4F46C9] hover:underline"
                 >
                   {item.title}
                 </Link>
@@ -436,6 +444,7 @@ export default function RegulatoryDocumentDetailPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }
