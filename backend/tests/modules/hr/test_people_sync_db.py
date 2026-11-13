@@ -1,14 +1,13 @@
 """DB-backed personnel sync adapter test (ticket #198).
 
 Verifies the sync port maps onto the real ``hr.employee_profiles`` mirror,
-resolves department names/path from ``identity.departments``, scopes known
-people to the in-scope company, and records a real people count on the shared
-org sync run.
+resolves department names/path from ``hr.departments``, scopes the department
+ids passed to the Feishu filter, and records a real people count on the org
+sync run.
 """
 
 from __future__ import annotations
 
-import json
 from datetime import date
 from typing import Any
 
@@ -23,7 +22,6 @@ from app.modules.hr.org_repository import SqlAlchemyOrgDepartmentStore
 from app.modules.hr.org_sync import sync_org_departments
 from app.modules.hr.people_repository import SqlAlchemyEmployeeProfileStore
 from app.modules.hr.people_sync import sync_employee_profiles
-from app.platform.identity.models import User
 
 ROOT = {"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME}
 
@@ -31,9 +29,11 @@ ROOT = {"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME}
 class _EmployeeFetcher:
     def __init__(self, payload: dict[str, Any]) -> None:
         self.payload = payload
+        self.department_requests: list[list[str]] = []
 
-    async def fetch_employees(self, open_ids: list[str]) -> list[dict[str, Any]]:
-        return [self.payload] if self.payload.get("open_id") in open_ids else []
+    async def fetch_employees_by_filter(self, department_ids: list[str]) -> list[dict[str, Any]]:
+        self.department_requests.append(list(department_ids))
+        return [self.payload] if department_ids else []
 
 
 def _department(dept_id: str, name: str, parent_id: str, path: list[dict[str, str]]) -> Department:
@@ -43,6 +43,7 @@ def _department(dept_id: str, name: str, parent_id: str, path: list[dict[str, st
         parent_feishu_department_id=parent_id,
         status_is_deleted=False,
         order=0,
+        level=max(len(path) - 1, 0) if path else None,
         department_path=path,
     )
 
@@ -54,24 +55,26 @@ async def test_sync_persists_profile_and_resolves_department_names_and_path(db_s
         [
             _department("od-101", "101车间", IN_SCOPE_COMPANY_ID, level1_path),
             _department("od-101-1", "合成工段", "od-101", level2_path),
-            User(
-                name="张三",
-                employee_no="109000586",
-                feishu_open_id="ou-zhang",
-                feishu_department_ids=json.dumps(["od-101-1", "od-101"]),
-            ),
         ]
     )
     await db_session.flush()
     fetcher = _EmployeeFetcher(
         {
-            "open_id": "ou-zhang",
-            "name": {"default_value": "张三"},
-            "mobile": "13800000000",
-            "job_number": "109000586",
-            "job_title": {"job_title_id": "jt-1", "job_title_name": {"default_value": "车间班长"}},
-            "join_date": "2018-03-06",
-            "staff_status": 1,
+            "base_info": {
+                "employee_id": "ou-zhang",
+                "name": {"name": {"default_value": "张三"}},
+                "mobile": "13800000000",
+                "departments": [
+                    {"department_id": "od-101-1", "name": {"default_value": "合成工段"}},
+                    {"department_id": "od-101", "name": {"default_value": "101车间"}},
+                ],
+            },
+            "work_info": {
+                "job_number": "109000586",
+                "job_title": {"job_title_id": "jt-1", "job_title_name": {"default_value": "车间班长"}},
+                "join_date": "2018-03-06",
+                "staff_status": 1,
+            },
         }
     )
 
@@ -93,42 +96,42 @@ async def test_sync_persists_profile_and_resolves_department_names_and_path(db_s
     assert profile.last_synced_at is not None
 
 
-async def test_known_people_exclude_the_out_of_scope_trade_company(db_session: AsyncSession) -> None:
+async def test_scope_department_ids_exclude_company_root_hidden_and_trade(db_session: AsyncSession) -> None:
     db_session.add_all(
         [
+            Department(
+                feishu_department_id=IN_SCOPE_COMPANY_ID,
+                name=IN_SCOPE_COMPANY_NAME,
+                parent_feishu_department_id=None,
+                level=0,
+                status_is_deleted=False,
+                order=0,
+            ),
             _department("od-101", "101车间", IN_SCOPE_COMPANY_ID, [ROOT, {"id": "od-101", "name": "101车间"}]),
+            _department(
+                "od-101-1",
+                "合成工段",
+                "od-101",
+                [ROOT, {"id": "od-101", "name": "101车间"}, {"id": "od-101-1", "name": "合成工段"}],
+            ),
             Department(
                 feishu_department_id="od-trade",
                 name="贸易一部",
                 parent_feishu_department_id="od-other-company",
-                status_is_deleted=False,
+                level=1,
+                status_is_deleted=True,
                 order=0,
-                department_path=[
-                    {"id": "od-other-company", "name": "珠海市丽珠医药贸易有限公司"},
-                    {"id": "od-trade", "name": "贸易一部"},
-                ],
             ),
-            User(name="张三", employee_no="E-1", feishu_open_id="ou-in", feishu_department_ids='["od-101"]'),
-            User(name="贸易同事", employee_no="E-2", feishu_open_id="ou-out", feishu_department_ids='["od-trade"]'),
-            EmployeeProfile(open_id="ou-known", name="历史人员", department_ids=["od-101"]),
         ]
     )
     await db_session.flush()
 
-    known = await SqlAlchemyEmployeeProfileStore(db_session).list_known_people()
+    ids = await SqlAlchemyEmployeeProfileStore(db_session).list_scope_department_ids()
 
-    assert {person.open_id for person in known} == {"ou-in", "ou-known"}
+    assert set(ids) == {"od-101", "od-101-1"}
 
 
 async def test_org_sync_records_real_people_count(db_session: AsyncSession) -> None:
-    db_session.add(
-        User(
-            name="张三",
-            employee_no="109000586",
-            feishu_open_id="ou-zhang",
-            feishu_department_ids='["od-101"]',
-        )
-    )
     await db_session.flush()
 
     class _DepartmentFetcher:
@@ -163,7 +166,16 @@ async def test_org_sync_records_real_people_count(db_session: AsyncSession) -> N
         SqlAlchemyOrgDepartmentStore(db_session),
         _DepartmentFetcher(),
         people_store=SqlAlchemyEmployeeProfileStore(db_session),
-        people_fetcher=_EmployeeFetcher({"open_id": "ou-zhang", "name": "张三", "staff_status": 1}),
+        people_fetcher=_EmployeeFetcher(
+            {
+                "base_info": {
+                    "employee_id": "ou-zhang",
+                    "name": {"name": {"default_value": "张三"}},
+                    "departments": [{"department_id": "od-101"}],
+                },
+                "work_info": {"staff_status": 1},
+            }
+        ),
     )
 
     assert stats.people == 1

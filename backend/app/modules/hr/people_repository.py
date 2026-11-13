@@ -8,7 +8,6 @@ the nightly sync only enriches known people.
 
 from __future__ import annotations
 
-import json
 import uuid
 from datetime import datetime
 from typing import Any
@@ -21,8 +20,6 @@ from app.modules.hr.models import EmployeeProfile, HrDepartment
 from app.modules.hr.org_domain import OrgScope
 from app.modules.hr.org_settings import load_org_scope
 from app.modules.hr.people_domain import EmployeeProfileRecord
-from app.modules.hr.people_sync import KnownPerson
-from app.platform.identity.models import User
 
 _STAFF_STATUS_BY_LABEL: dict[str, int] = {
     "在职": 1,
@@ -30,20 +27,6 @@ _STAFF_STATUS_BY_LABEL: dict[str, int] = {
     "待入职": 3,
     "取消入职": 4,
 }
-
-
-def parse_json_list(value: Any) -> list[str]:
-    if isinstance(value, list):
-        return [str(item) for item in value if item]
-    if not isinstance(value, str) or not value.strip():
-        return []
-    try:
-        parsed = json.loads(value)
-    except (TypeError, ValueError):
-        return []
-    if not isinstance(parsed, list):
-        return []
-    return [str(item) for item in parsed if item]
 
 
 def parse_staff_status(value: str | None) -> int | None:
@@ -135,32 +118,16 @@ class SqlAlchemyEmployeeProfileStore:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def list_known_people(self) -> list[KnownPerson]:
-        scope = await in_scope_department_ids(self.session)
-        if not scope:
-            return []
-
+    async def list_scope_department_ids(self) -> list[str]:
         result = await self.session.execute(
-            select(User).where(User.is_deleted.is_(False), User.feishu_open_id.isnot(None))
-        )
-        known: dict[str, KnownPerson] = {}
-        for user in result.scalars().all():
-            department_ids = parse_json_list(user.feishu_department_ids)
-            if not user.feishu_open_id or not set(department_ids) & scope:
-                continue
-            known[user.feishu_open_id] = KnownPerson(
-                open_id=user.feishu_open_id,
-                department_ids=department_ids,
+            select(HrDepartment.feishu_department_id).where(
+                HrDepartment.is_deleted.is_(False),
+                HrDepartment.status_is_deleted.is_(False),
+                HrDepartment.level.in_([1, 2]),
+                HrDepartment.feishu_department_id.isnot(None),
             )
-
-        profiles = await self.session.execute(select(EmployeeProfile).where(EmployeeProfile.is_deleted.is_(False)))
-        for profile in profiles.scalars().all():
-            if profile.open_id in known:
-                continue
-            department_ids = list(profile.department_ids or [])
-            if set(department_ids) & scope:
-                known[profile.open_id] = KnownPerson(open_id=profile.open_id, department_ids=department_ids)
-        return list(known.values())
+        )
+        return [department_id for department_id in result.scalars().all() if department_id]
 
     async def upsert_profile(
         self,
