@@ -9256,8 +9256,7 @@ export interface paths {
         /** 部门列表 */
         get: operations["list_departments_api_v1_hr_departments_get"];
         put?: never;
-        /** 创建部门 */
-        post: operations["create_department_api_v1_hr_departments_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -9273,11 +9272,9 @@ export interface paths {
         };
         /** 部门详情 */
         get: operations["get_department_api_v1_hr_departments__department_id__get"];
-        /** 更新部门 */
-        put: operations["update_department_api_v1_hr_departments__department_id__put"];
+        put?: never;
         post?: never;
-        /** 删除部门 */
-        delete: operations["delete_department_api_v1_hr_departments__department_id__delete"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -29187,24 +29184,6 @@ export interface components {
             /** Is Production Workshop */
             is_production_workshop?: boolean | null;
         };
-        /** DepartmentCreate */
-        DepartmentCreate: {
-            /**
-             * Name
-             * @description 部门名称
-             */
-            name: string;
-            /**
-             * Code
-             * @description 部门编码
-             */
-            code: string;
-            /**
-             * Description
-             * @description 部门描述
-             */
-            description?: string | null;
-        };
         /**
          * DepartmentLeaderApiResponse
          * @description Department leader response wrapper
@@ -29381,15 +29360,6 @@ export interface components {
              * @description 安全员 UUID
              */
             safety_officer_id?: string | null;
-        };
-        /** DepartmentUpdate */
-        DepartmentUpdate: {
-            /** Name */
-            name?: string | null;
-            /** Code */
-            code?: string | null;
-            /** Description */
-            description?: string | null;
         };
         /** DepartureRecordApiResponse */
         DepartureRecordApiResponse: {
@@ -83166,112 +83136,7 @@ export interface operations {
             };
         };
     };
-    create_department_api_v1_hr_departments_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DepartmentCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_department_api_v1_hr_departments__department_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                department_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_department_api_v1_hr_departments__department_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                department_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DepartmentUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_department_api_v1_hr_departments__department_id__delete: {
         parameters: {
             query?: never;
             header?: never;

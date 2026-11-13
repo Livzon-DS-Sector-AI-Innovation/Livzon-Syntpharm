@@ -16,12 +16,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.hr.models import EmployeeProfile
+from app.modules.hr.models import HrDepartment as Department
+from app.modules.hr.models import HrOrgSyncRun as OrgSyncRun
 from app.modules.hr.org_domain import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
 from app.modules.hr.org_repository import SqlAlchemyOrgDepartmentStore
 from app.modules.hr.org_sync import sync_org_departments
 from app.modules.hr.people_repository import SqlAlchemyEmployeeProfileStore
 from app.modules.hr.people_sync import sync_employee_profiles
-from app.platform.identity.models import Department, OrgSyncRun, User
+from app.platform.identity.models import User
 
 ROOT = {"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME}
 

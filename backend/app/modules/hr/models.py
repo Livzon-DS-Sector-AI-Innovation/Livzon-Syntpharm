@@ -29,12 +29,58 @@ class HrDepartment(BaseModel):
     __tablename__ = "departments"
     __table_args__ = (
         Index("ix_departments_code", "code"),
+        UniqueConstraint("feishu_department_id", name="uq_hr_departments_feishu_id"),
         {"schema": "hr"},
     )
 
-    name: Mapped[str] = mapped_column(String(64), nullable=False, comment="部门名称")
-    code: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, comment="部门编码")
+    name: Mapped[str] = mapped_column(String(200), nullable=False, comment="部门名称")
+    code: Mapped[str | None] = mapped_column(String(32), unique=True, nullable=True, comment="部门编码（飞书部门可空）")
     description: Mapped[str | None] = mapped_column(String(256), nullable=True, comment="部门描述")
+
+    # ── 飞书组织目录镜像字段 ──
+    feishu_department_id: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, comment="飞书部门 open_department_id"
+    )
+    parent_feishu_department_id: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="父部门 open_id")
+    level: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="层级：0 公司 / 1 一级 / 2 二级")
+    order: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="同级排序")
+    order_weight: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="飞书排序权重（原始字符串）")
+    leader_ids: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True, comment="负责人 open_id，按飞书返回顺序")
+    department_path: Mapped[list[dict[str, Any]] | None] = mapped_column(
+        JSONB, nullable=True, comment="部门路径，按根到自身的顺序存储 id+名称"
+    )
+    recursive_members_count: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="递归成员数")
+    direct_members_count: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="直属成员数")
+    recursive_departments_count: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="递归下级部门数")
+    direct_departments_count: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="直属下级部门数")
+    enabled_status: Mapped[bool | None] = mapped_column(Boolean, nullable=True, comment="飞书启用状态")
+    data_source: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="飞书数据来源枚举")
+    custom_fields: Mapped[list[dict[str, Any]] | None] = mapped_column(
+        JSONB, nullable=True, comment="飞书部门自定义字段"
+    )
+    directory_synced_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="最近一次同步时间"
+    )
+    status_is_deleted: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false", comment="是否在飞书中移除/不在范围内"
+    )
+
+
+class HrOrgSyncRun(BaseModel):
+    """一次 HR 组织目录同步的运行记录。"""
+
+    __tablename__ = "org_sync_runs"
+    __table_args__ = (
+        Index("ix_hr_org_sync_runs_started_at", "started_at"),
+        {"schema": "hr"},
+    )
+
+    status: Mapped[str] = mapped_column(String(20), nullable=False, comment="running / success / failed")
+    department_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    people_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class Employee(BaseModel):

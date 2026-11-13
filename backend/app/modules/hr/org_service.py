@@ -14,6 +14,7 @@ from app.core.database import async_session_factory
 from app.core.exceptions import AppException
 from app.core.jobs import submit_job
 from app.core.redis import acquire_lock, release_lock
+from app.modules.hr.models import HrOrgSyncRun
 from app.modules.hr.org_domain import OrgDepartmentRecord, build_org_tree
 from app.modules.hr.org_feishu import build_default_fetcher
 from app.modules.hr.org_repository import (
@@ -26,7 +27,6 @@ from app.modules.hr.org_settings import load_org_scope
 from app.modules.hr.org_sync import SyncRunRecord, sync_org_departments
 from app.modules.hr.people_feishu import build_default_employee_fetcher
 from app.modules.hr.people_repository import SqlAlchemyEmployeeProfileStore
-from app.platform.identity.models import OrgSyncRun
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +108,7 @@ async def _sync_with_session(
 
 async def _mark_run_failed(run_id: UUID, message: str) -> None:
     async with async_session_factory() as session:
-        run = await session.get(OrgSyncRun, run_id)
+        run = await session.get(HrOrgSyncRun, run_id)
         started = run.started_at if run is not None else datetime.now(UTC)
         await SqlAlchemyOrgDepartmentStore(session).record_sync_run(
             SyncRunRecord(
@@ -157,7 +157,7 @@ async def enqueue_manual_org_sync(session: AsyncSession) -> dict[str, Any]:
         if datetime.now(UTC) - started < timedelta(seconds=SYNC_LOCK_TIMEOUT_SECONDS):
             raise AppException(status_code=409, message="组织架构同步正在进行中，请稍后再试")
 
-    run = OrgSyncRun(
+    run = HrOrgSyncRun(
         status="running",
         department_count=0,
         people_count=0,
@@ -181,7 +181,7 @@ async def enqueue_manual_org_sync(session: AsyncSession) -> dict[str, Any]:
     return await get_sync_status(session)
 
 
-def _already_synced_today(run: OrgSyncRun | None) -> bool:
+def _already_synced_today(run: HrOrgSyncRun | None) -> bool:
     """Avoid a full org sync on every process restart after the daily one succeeded."""
     if run is None or run.status != "success":
         return False
@@ -200,7 +200,7 @@ async def run_scheduled_org_sync() -> None:
         if _already_synced_today(await get_latest_sync_run(session)):
             logger.info("hr org scheduled sync skipped: already succeeded today", extra={"biz_module": "hr"})
             return
-        run = OrgSyncRun(
+        run = HrOrgSyncRun(
             status="running",
             department_count=0,
             people_count=0,

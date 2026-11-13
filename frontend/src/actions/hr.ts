@@ -8,8 +8,6 @@ import {
   EmployeeCreateInput,
   EmployeeUpdateInput,
   EmployeeListResponse,
-  DepartmentCreateInput,
-  DepartmentUpdateInput,
   DepartmentListResponse,
   TrainingSessionCreateInput,
   TrainingSessionUpdateInput,
@@ -17,7 +15,6 @@ import {
   TrainingSessionResponse,
   SelectTask,
   Employee,
-  Department,
   OnboardingRecordListResponse,
   OnboardingRecordApiResponse,
   OnboardingRecordCreateInput,
@@ -67,9 +64,6 @@ import {
   fetchOrgDepartmentsApi,
   fetchOrgSyncStatusApi,
   triggerOrgSyncApi,
-  createDepartmentApi,
-  updateDepartmentApi,
-  deleteDepartmentApi,
   createAnnualTrainingPlanApi,
   deleteAnnualTrainingPlanApi,
   deleteAnnualPlanItemApi,
@@ -219,23 +213,8 @@ export async function fetchDepartmentsAction(
   return fetchDepartmentsApi(params) as Promise<DepartmentListResponse>
 }
 
-export async function createDepartment(data: DepartmentCreateInput) {
-  const res = await createDepartmentApi(data)
-  revalidatePath('/hr/departments')
-  return res as Department
-}
 
-export async function updateDepartment(id: string, data: DepartmentUpdateInput) {
-  const res = await updateDepartmentApi(id, data)
-  revalidatePath('/hr/departments')
-  return res as Department
-}
 
-export async function deleteDepartment(id: string) {
-  const res = await deleteDepartmentApi(id)
-  revalidatePath('/hr/departments')
-  return res as DeleteResponse
-}
 
 // ─── Annual Training Plan Actions ───
 

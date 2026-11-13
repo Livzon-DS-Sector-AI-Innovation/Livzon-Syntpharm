@@ -55,9 +55,7 @@ from app.modules.hr.schemas import (
     CandidateResponse,
     CandidateUpdate,
     CandidateUpdateRecommendationLevel,
-    DepartmentCreate,
     DepartmentResponse,
-    DepartmentUpdate,
     EmployeeCreate,
     EmployeeResponse,
     EmployeeUpdate,
@@ -1027,21 +1025,6 @@ async def list_departments(  # type: ignore[no-untyped-def]
     )
 
 
-@router.post("/departments", summary="创建部门")
-async def create_department(  # type: ignore[no-untyped-def]
-    payload: DepartmentCreate,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:departments:create")),
-    service: DepartmentService = Depends(get_department_service),
-):
-    department = await service.create_department(payload)
-    return build_response(
-        data=DepartmentResponse.model_validate(department).model_dump(mode="json"),
-        message="部门创建成功",
-        status_code=201,
-    )
-
-
 @router.get("/departments/{department_id}", summary="部门详情")
 async def get_department(  # type: ignore[no-untyped-def]
     department_id: UUID,
@@ -1053,32 +1036,6 @@ async def get_department(  # type: ignore[no-untyped-def]
     return build_response(
         data=DepartmentResponse.model_validate(department).model_dump(mode="json"),
     )
-
-
-@router.put("/departments/{department_id}", summary="更新部门")
-async def update_department(  # type: ignore[no-untyped-def]
-    department_id: UUID,
-    payload: DepartmentUpdate,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:departments:update")),
-    service: DepartmentService = Depends(get_department_service),
-):
-    department = await service.update_department(department_id, payload)
-    return build_response(
-        data=DepartmentResponse.model_validate(department).model_dump(mode="json"),
-        message="部门更新成功",
-    )
-
-
-@router.delete("/departments/{department_id}", summary="删除部门")
-async def delete_department(  # type: ignore[no-untyped-def]
-    department_id: UUID,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:departments:delete")),
-    service: DepartmentService = Depends(get_department_service),
-):
-    await service.delete_department(department_id)
-    return build_response(message="部门删除成功")
 
 
 # ─── TrainingLedger Routes ───
