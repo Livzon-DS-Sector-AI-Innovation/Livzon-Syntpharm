@@ -190,7 +190,7 @@ export default function EmployeeDirectoryClient({
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null)
   const [keyword, setKeyword] = useState('')
   const deferredKeyword = useDeferredValue(keyword)
-  const [status, setStatus] = useState<string>('')
+  const [status, setStatus] = useState<string>('1')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null)
@@ -241,7 +241,7 @@ export default function EmployeeDirectoryClient({
   }, [companyNode, initialTree, initialCompanyName])
 
   const isInitialQuery =
-    selectedDepartment === null && status === '' && deferredKeyword === '' && page === 1 && pageSize === 20
+    selectedDepartment === null && status === '1' && deferredKeyword === '' && page === 1 && pageSize === 20
 
   const { data, isFetching } = useQuery({
     queryKey: ['hr-people', selectedDepartment, status, deferredKeyword, page, pageSize],

@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 export default async function EmployeeProfilePage() {
   const [treeResult, peopleResult, statusResult] = await Promise.allSettled([
     fetchEmployeeDepartmentsAction(),
-    fetchEmployeeProfilesAction({ page: 1, page_size: 20 }),
+    fetchEmployeeProfilesAction({ status: '1', page: 1, page_size: 20 }),
     fetchOrgSyncStatus(),
   ])
 
