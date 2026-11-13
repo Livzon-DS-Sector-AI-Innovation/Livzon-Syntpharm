@@ -6,24 +6,37 @@ from datetime import date, datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
-from .deviation_ledger_constants import LEDGER_STATUSES
+from .deviation_ledger_constants import CROSS_DEPT_INVESTIGATION_PENDING, LEDGER_STATUSES
 
 
 class CrossDeptReviewerItem(BaseModel):
-    """跨部门审核行：部门 + 行内调查人 + 逐行审核状态。"""
+    """跨部门审核行：部门 + 行内调查人 + 行内部门负责人 + 逐行两节点（调查 → 审核）状态。"""
 
     department: str
     investigator_ids: list[UUID] = Field(default_factory=list)
     investigator_names: list[str] = Field(default_factory=list)
-    reviewer_names: list[str] = Field(default_factory=list, description="该行实际审核人（调查人为空时回退部门负责人）")
+    dept_head_id: UUID | None = Field(
+        None, description="该行部门负责人（表单显式指定；存量行缺省时运行时回退联系人配置）"
+    )
+    dept_head_name: str | None = Field(None, description="该行部门负责人姓名（展示用，读取时解析）")
+    reviewer_names: list[str] = Field(
+        default_factory=list, description="该行实际审核人（行内负责人优先，缺省回退部门联系人）"
+    )
+    investigate_state: str = Field(
+        CROSS_DEPT_INVESTIGATION_PENDING, description="行调查状态：pending（待调查）/ submitted（调查已提交）"
+    )
+    investigate_submitted_name: str | None = Field(None, description="首个提交调查的行内调查人姓名")
+    investigate_submitted_at: datetime | None = Field(None, description="行调查提交时间")
     review_state: str = Field("pending", description="行审核状态：pending / approved")
     approved_by: UUID | None = None
     approved_name: str | None = None
     approved_at: datetime | None = None
     opinion: str | None = Field(None, description="该行审核意见")
     can_approve: bool = Field(False, description="当前查看人可对该行执行通过操作")
+    can_reject: bool = Field(False, description="当前查看人可对该行执行退回操作")
+    can_investigate: bool = Field(False, description="当前查看人可向该行提交调查记录")
 
     @field_validator("department")
     @classmethod
@@ -36,6 +49,9 @@ class CrossDeptStepSubItem(BaseModel):
 
     department: str
     reviewer_names: list[str] = Field(default_factory=list)
+    investigate_state: str = Field(
+        CROSS_DEPT_INVESTIGATION_PENDING, description="pending / submitted（行内调查人是否已提交调查）"
+    )
     state: str = Field("pending", description="pending / approved")
     approved_by_name: str | None = None
     approved_at: datetime | None = None
@@ -57,11 +73,34 @@ class CrossDeptApproveRequest(BaseModel):
         return cleaned
 
 
+class CrossDeptRejectRequest(BaseModel):
+    """跨部门逐行退回请求体：只重置该部门行，流程仍停留在跨部门审核环节。"""
+
+    department: str = Field(..., min_length=1, max_length=255, description="跨部门部门名（行标识）")
+    opinion: str = Field(..., min_length=1, max_length=2000, description="退回理由（必填）")
+
+    @field_validator("department")
+    @classmethod
+    def _strip_department(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("跨部门部门不能为空")
+        return cleaned
+
+    @field_validator("opinion")
+    @classmethod
+    def _strip_opinion(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("退回时必须填写退回理由")
+        return cleaned
+
+
 def _validated_cross_dept_rows(
     needs: bool | None,
     rows: list[CrossDeptReviewerItem] | None,
 ) -> list[CrossDeptReviewerItem] | None:
-    """跨部门行公共校验：部门非空、行间不重复、开启开关至少一行。"""
+    """跨部门行公共校验：部门非空、行间不重复、开启开关至少一行、每行显式指定部门负责人。"""
     if rows is None:
         return rows
     departments = [row.department.strip() for row in rows]
@@ -71,6 +110,11 @@ def _validated_cross_dept_rows(
         raise ValueError("跨部门部门不能重复")
     if needs and not rows:
         raise ValueError("开启跨部门审核时至少添加一个跨部门")
+    if needs is not False:
+        #: 两节点流转要求每行有明确的部门负责人（审核人）；needs=False 的行会被服务端整体丢弃，不校验
+        for row in rows:
+            if row.dept_head_id is None:
+                raise ValueError(f"请为跨部门「{row.department.strip() or '未命名'}」指定部门负责人")
     return rows
 
 
@@ -146,6 +190,15 @@ class StepHandlerPerson(BaseModel):
     id: UUID = Field(..., description="用户 ID")
     name: str = Field("-", description="姓名")
     avatar_url: str | None = Field(None, description="头像地址（飞书缩略图优先）")
+
+
+class ReturnTargetItem(BaseModel):
+    """可退回的前置环节（退回弹窗下拉数据）。"""
+
+    step: str = Field(..., description="环节标识（退回时作为 target_step 回传）")
+    label: str = Field(..., description="环节名称")
+    role_label: str = Field(..., description="该环节责任角色")
+    handlers: list[StepHandlerPerson] = Field(default_factory=list, description="该环节处理人")
 
 
 class LedgerItem(BaseModel):
@@ -227,6 +280,7 @@ class InvestigationRecordItem(BaseModel):
     """一条调查记录（结构化；旧记录仅 content，前端降级纯文本展示）。"""
 
     content: str = Field("", description="旧格式纯文本内容；新记录为空串")
+    department: str | None = Field(None, description="跨部门调查记录的部门标记；主流程调查记录为 None")
     nonconformity_description: str = Field("", description="不符合事项描述")
     root_cause_analysis: str = Field("", description="根本原因分析")
     risk_assessment: str = Field("", description="风险评估")
@@ -314,6 +368,18 @@ class LedgerDetail(LedgerItem):
     can_edit_cross_dept: bool = Field(
         False,
         description="可否增删改跨部门行（基础信息可编辑；或待调查时由调查人+上报人动态添加审核节点）",
+    )
+    can_delete_attachment: bool = Field(
+        False,
+        description="是否可删除台账附件（仅调查节点、本人提交前开放；提交后附件只能预览与下载）",
+    )
+    investigation_drafts: list[InvestigationDraftItem] = Field(
+        default_factory=list,
+        description="当前查看人本人的调查记录草稿（按人隔离，提交后由服务端清除）",
+    )
+    return_targets: list[ReturnTargetItem] = Field(
+        default_factory=list,
+        description="当前查看人可退回的前置环节（按流程顺序，最近的在最后）；无退回权限时为空",
     )
 
 
@@ -422,20 +488,39 @@ class CompleteAiAnalysisRequest(BaseModel):
 class InvestigationRequest(BaseModel):
     """结构化调查记录（「提交调查」与「追加调查记录」共用）。"""
 
-    nonconformity_description: str = Field(..., min_length=1, max_length=5000, description="不符合事项描述")
-    root_cause_analysis: str = Field(..., min_length=1, max_length=5000, description="根本原因分析")
-    risk_assessment: str = Field(..., min_length=1, max_length=5000, description="风险评估")
-    capa_proposals: list[CapaProposalItem] = Field(..., min_length=1, description="改进建议（CAPA），至少一条")
+    nonconformity_description: str = Field("", max_length=5000, description="不符合事项描述（未引用附件时必填）")
+    root_cause_analysis: str = Field("", max_length=5000, description="根本原因分析（未引用附件时必填）")
+    risk_assessment: str = Field("", max_length=5000, description="风险评估（未引用附件时必填）")
+    capa_proposals: list[CapaProposalItem] = Field(
+        default_factory=list, description="改进建议（CAPA），未引用附件时至少一条"
+    )
     urgent_measures: str | None = Field(None, max_length=5000, description="紧急处理措施，勾选后必填")
     attachment_file_ids: list[UUID] = Field(default_factory=list, description="记录附件（已上传台账的 file_id）")
+    submit_content: str | None = Field(
+        None, max_length=500, description="提交审核说明（选填，写入本次流转记录；为空时用默认文案）"
+    )
 
     @field_validator("nonconformity_description", "root_cause_analysis", "risk_assessment")
     @classmethod
-    def _strip_required(cls, value: str) -> str:
-        cleaned = value.strip()
-        if not cleaned:
-            raise ValueError("该字段不能为空")
-        return cleaned
+    def _strip_text_fields(cls, value: str) -> str:
+        #: 只做归一化 strip，必填与否由 model_validator 结合附件引用统一判定
+        return value.strip()
+
+    @model_validator(mode="after")
+    def _check_required_without_attachments(self) -> InvestigationRequest:
+        """二选一规则：引用了台账附件（调查报告）即可提交；否则文本与 CAPA 维持必填。"""
+        if self.attachment_file_ids:
+            return self
+        for label, value in (
+            ("不符合事项描述", self.nonconformity_description),
+            ("根本原因分析", self.root_cause_analysis),
+            ("风险评估", self.risk_assessment),
+        ):
+            if not value.strip():
+                raise ValueError(f"{label}不能为空；如以调查报告附件代替，请先引用至少 1 个附件")
+        if not self.capa_proposals:
+            raise ValueError("改进建议（CAPA）至少一条；如以调查报告附件代替，请先引用至少 1 个附件")
+        return self
 
     @field_validator("urgent_measures")
     @classmethod
@@ -458,6 +543,112 @@ class InvestigationRequest(BaseModel):
                 result.append(item)
         return result
 
+    @field_validator("submit_content")
+    @classmethod
+    def _strip_submit_content(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value.strip() or None
+
+
+class InvestigationSubmitRequest(BaseModel):
+    """已填写调查记录后，直接提交审核（不新建调查记录）。"""
+
+    content: str | None = Field(None, max_length=500, description="提交审核说明（选填，写入本次流转记录）")
+
+    @field_validator("content")
+    @classmethod
+    def _strip_content(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value.strip() or None
+
+
+class CrossDeptInvestigationRequest(InvestigationRequest):
+    """跨部门调查人向本部门行提交调查记录（复用调查记录二选一校验）。"""
+
+    department: str = Field(..., min_length=1, max_length=255, description="跨部门部门名（行标识）")
+
+    @field_validator("department")
+    @classmethod
+    def _strip_department(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("跨部门部门不能为空")
+        return cleaned
+
+
+class DraftCapaItem(BaseModel):
+    """草稿里的 CAPA 行：允许未填完（正式提交时仍按 ``CapaProposalItem`` 校验）。"""
+
+    sequence: int = Field(0, ge=0, description="序号，请求方不传时按顺序回填")
+    summary: str = Field("", max_length=2000, description="CAPA 内容简述（草稿可空）")
+    executor: str | None = Field(None, max_length=255, description="执行人")
+    expected_completion_date: date | None = Field(None, description="预计完成日期")
+
+
+class InvestigationDraftRequest(BaseModel):
+    """调查记录草稿：只做长度与格式约束，必填规则留到正式提交时再校验。"""
+
+    department: str | None = Field(None, max_length=255, description="跨部门行草稿的部门名；主流程调查草稿为空")
+    nonconformity_description: str = Field("", max_length=5000, description="不符合事项描述")
+    root_cause_analysis: str = Field("", max_length=5000, description="根本原因分析")
+    risk_assessment: str = Field("", max_length=5000, description="风险评估")
+    capa_proposals: list[DraftCapaItem] = Field(default_factory=list, description="改进建议（CAPA）行")
+    has_urgent: bool = Field(False, description="是否勾选「有紧急处理措施」（保留勾选状态，便于回填）")
+    urgent_measures: str | None = Field(None, max_length=5000, description="紧急处理措施")
+    attachment_file_ids: list[UUID] = Field(default_factory=list, description="记录附件（已上传台账的 file_id）")
+
+    @field_validator("department")
+    @classmethod
+    def _strip_draft_department(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("跨部门部门不能为空")
+        return cleaned
+
+    @field_validator("nonconformity_description", "root_cause_analysis", "risk_assessment")
+    @classmethod
+    def _strip_draft_text(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("urgent_measures")
+    @classmethod
+    def _strip_draft_urgent(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value.strip() or None
+
+    @field_validator("attachment_file_ids")
+    @classmethod
+    def _dedup_draft_attachment_ids(cls, value: list[UUID]) -> list[UUID]:
+        seen: set[UUID] = set()
+        result: list[UUID] = []
+        for item in value:
+            if item not in seen:
+                seen.add(item)
+                result.append(item)
+        return result
+
+
+class InvestigationDraftItem(BaseModel):
+    """一条调查记录草稿（仅返回当前查看人本人的草稿）。"""
+
+    author_id: UUID | None = None
+    author_name: str | None = None
+    author_avatar: str | None = Field(None, description="作者头像地址")
+    department: str | None = Field(None, description="跨部门行草稿的部门名；主流程调查草稿为 None")
+    nonconformity_description: str = ""
+    root_cause_analysis: str = ""
+    risk_assessment: str = ""
+    capa_proposals: list[DraftCapaItem] = Field(default_factory=list)
+    has_urgent: bool = False
+    urgent_measures: str | None = None
+    attachment_file_ids: list[UUID] = Field(default_factory=list)
+    updated_at: datetime | None = None
+
 
 class ReviewRequest(BaseModel):
     """审核操作。步骤缺省时按当前状态推导。"""
@@ -465,6 +656,10 @@ class ReviewRequest(BaseModel):
     step: str | None = Field(None, description="审核环节，缺省按当前状态推导")
     result: str = Field(..., description="approved / rejected")
     content: str = Field("", description="审核意见（退回时必填）")
+    target_step: str | None = Field(
+        None,
+        description="退回目标环节（仅 rejected 生效）：缺省退到上一环节，可选范围见详情 return_targets",
+    )
     reason_category: str | None = Field(None, description="原因分类（QA 审核通过必填）")
     deviation_level: str | None = Field(None, description="偏差分级（QA 负责人通过前必填）")
 

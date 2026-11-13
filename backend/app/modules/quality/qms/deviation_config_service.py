@@ -272,7 +272,10 @@ class DeviationConfigService:
                     extra={"app_module": "quality", "user_id": str(actor_id)},
                     exc_info=True,
                 )
-                error = f"发送失败：{exc}"
+                if isinstance(exc, TimeoutError):
+                    error = "发送失败：飞书接口 5 秒内未响应，请稍后重试"
+                else:
+                    error = f"发送失败：{exc}"
 
         unbound = [item for item in contacts if not item.bound]
         if sent:

@@ -8,6 +8,7 @@ import re
 import subprocess
 import tempfile
 import threading
+import time
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -15,8 +16,8 @@ logger = logging.getLogger(__name__)
 #: 默认转换超时（本地文件路径场景，沿用历史 120s）
 _DEFAULT_TIMEOUT = 120
 
-#: 在线预览场景的字节转换超时（HTTP 请求内，必须短）
-_PREVIEW_TIMEOUT = 30
+#: 在线预览场景的字节转换超时（HTTP 请求内，AGENTS.md 要求不超过 5s）
+_PREVIEW_TIMEOUT = 5
 
 #: libreoffice 并发上限：同一 user profile 并发实例会互相锁死，串行化到 2 个
 _MAX_CONCURRENT_CONVERSIONS = 2
@@ -80,10 +81,16 @@ class FileConversionService:
         suffix = Path(filename).suffix.lower() or ".doc"
         stem = _safe_stem(filename)
 
+        # 排队等待与转换共享同一时间预算：HTTP 请求内调用时总耗时不得突破 timeout。
+        deadline = time.monotonic() + timeout
         if not self._semaphore.acquire(timeout=timeout):
             logger.warning("libreoffice conversion queue saturated, skipped: %s", filename)
             return None
         try:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                logger.warning("libreoffice conversion budget exhausted while queued: %s", filename)
+                return None
             with tempfile.TemporaryDirectory() as tmpdir:
                 source = Path(tmpdir) / f"{stem}{suffix}"
                 source.write_bytes(data)
@@ -103,7 +110,7 @@ class FileConversionService:
                     ],
                     capture_output=True,
                     text=True,
-                    timeout=timeout,
+                    timeout=remaining,
                 )
                 if result.returncode == 0:
                     converted = outdir / f"{source.stem}.docx"

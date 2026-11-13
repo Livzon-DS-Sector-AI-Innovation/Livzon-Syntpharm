@@ -2434,6 +2434,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("quality:deviation:delete", "DELETE", "/api/v1/quality/deviation/ledger/{id}"),
     ApiBindingDef("quality:deviation:update", "PATCH", "/api/v1/quality/deviation/ledger/batch-status"),
     ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/ledger/{id}/ai-analysis"),
+ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/deviation/ledger/jobs/{job_id}"),
     ApiBindingDef(
         "quality:deviation:update",
         "POST",

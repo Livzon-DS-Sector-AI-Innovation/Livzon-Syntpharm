@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from collections.abc import Coroutine, Sequence
@@ -203,6 +204,11 @@ async def send_to_chat(chat_id: str, *, title: str, content: str, url: str | Non
     await _send(chat_id, title=title, content=content, url=url, receive_id_type="chat_id")
 
 
+#: 自检接口在 HTTP 请求内同步执行：飞书客户端默认 3 次重试 × 30s 超时最坏可达 ~93s，
+#: 而 AGENTS.md 要求请求内操作不超过 5s。自检只验证链路，不需要重试，用硬超时兜底。
+_TEST_SEND_TIMEOUT = 5.0
+
+
 async def send_test_card(ref: HandlerRef, *, operator_name: str = "") -> None:
     """给指定用户发一张测试卡片（配置页自检用），失败直接抛给调用方。"""
     receive_id = ref.feishu_id
@@ -216,14 +222,15 @@ async def send_test_card(ref: HandlerRef, *, operator_name: str = "") -> None:
             "后续偏差流转到你的环节时，会收到带「去审批」按钮的卡片。",
         ]
     )
-    await _send(
-        receive_id,
-        title="偏差通知测试",
-        content=content,
-        url=absolute_url("/quality/deviation"),
-        receive_id_type=ref.feishu_id_type,
-        action_text="打开偏差台账",
-    )
+    async with asyncio.timeout(_TEST_SEND_TIMEOUT):
+        await _send(
+            receive_id,
+            title="偏差通知测试",
+            content=content,
+            url=absolute_url("/quality/deviation"),
+            receive_id_type=ref.feishu_id_type,
+            action_text="打开偏差台账",
+        )
 
 
 def _clip(text: str, limit: int = MAX_CONTENT_LENGTH) -> str:
@@ -264,6 +271,7 @@ def build_transition_summary(
     next_role_label: str = "",
     elapsed_hours: float | None = None,
     deadline_days: int | None = None,
+    return_step_label: str | None = None,
 ) -> str:
     """审批信息摘要（lark_md）：编号/标题、级别/发现日期、部门/上报人、待办环节、上一步、意见。"""
     lines = [
@@ -272,8 +280,13 @@ def build_transition_summary(
         f"部门：{notice.department}｜上报人：{notice.reporter_name}",
     ]
     if result == "rejected":
-        lines.append(f"退回环节：{step_label}")
-        lines.append(f"当前状态：待{next_role_label or '上报人'}修改后重新提交")
+        if return_step_label:
+            lines.append(f"退回环节：{step_label}｜退回到：{return_step_label}")
+            lines.append(f"当前状态：待{next_role_label or '该环节处理人'}处理")
+        else:
+            #: 历史「已退回」数据没有目标环节，保留原提示
+            lines.append(f"退回环节：{step_label}")
+            lines.append(f"当前状态：待{next_role_label or '上报人'}修改后重新提交")
     else:
         current = f"当前环节：{next_status_label}"
         if next_role_label:
@@ -306,8 +319,9 @@ async def notify_transition(
     next_role_label: str = "",
     elapsed_hours: float | None = None,
     deadline_days: int | None = None,
+    return_step_label: str | None = None,
 ) -> None:
-    """流转即时通知：通过 → 下一环节处理人；退回 → 上报人 + 调查人。"""
+    """流转即时通知：通过 → 下一环节处理人；退回 → 目标环节处理人 + 上报人。"""
     config = await load_notify_settings()
     ai_done = result == "approved" and step_label == "AI 智能分析"
     if ai_done and not config.enabled_for("ai_done"):
@@ -326,6 +340,7 @@ async def notify_transition(
         next_role_label=next_role_label,
         elapsed_hours=elapsed_hours,
         deadline_days=deadline_days,
+        return_step_label=return_step_label,
     )
     title = _transition_title(step_label=step_label, result=result, next_status_label=next_status_label)
 

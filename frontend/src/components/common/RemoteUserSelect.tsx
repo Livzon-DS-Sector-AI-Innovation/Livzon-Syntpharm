@@ -55,6 +55,10 @@ export interface RemoteUserSelectProps {
   ) => void
   /** 单选（默认）或多选 */
   mode?: 'single' | 'multiple'
+  /** 单选已保存值的姓名快照（等价于单条 fallbackOptions），未出现在结果里时用于回显 */
+  label?: string | null
+  /** 单选已保存值的头像快照（可选），缺省走姓名首字兜底 */
+  avatarSrc?: string | null
   placeholder?: string
   /** 默认允许清空 */
   allowClear?: boolean
@@ -232,6 +236,8 @@ export function RemoteUserSelect({
   value,
   onChange,
   mode = 'single',
+  label,
+  avatarSrc,
   placeholder = '搜索姓名选择系统用户',
   allowClear = true,
   disabled,
@@ -259,8 +265,13 @@ export function RemoteUserSelect({
         avatar: option.avatar ?? undefined,
       })
     }
+    // 单选便捷快照：表单只存 UUID 时，用 label/avatarSrc 保证收起状态也显示姓名与头像
+    const singleId = multiple ? null : selectedIds[0]
+    if (singleId && (label || avatarSrc) && !map.has(singleId)) {
+      map.set(singleId, { id: singleId, name: label || singleId, avatar: avatarSrc ?? undefined })
+    }
     return map
-  }, [fallbackOptions])
+  }, [fallbackOptions, multiple, selectedIds, label, avatarSrc])
 
   // 回显：已保存但不在当前结果里的人补到最前面（用快照显示姓名与头像）
   const displayRows = useMemo<PersonRow[]>(() => {
@@ -337,6 +348,66 @@ export function RemoteUserSelect({
       optionRender={(option): ReactNode => {
         const row = rowById.get(String(option.value))
         return row ? <PersonOptionRow person={row} showUsername={showUsername} /> : (option.label as ReactNode)
+      }}
+    />
+  )
+}
+
+/** 多选回写的人选结构（与 `lib/utils/form-person` 的 `PickedPerson` 一致） */
+export interface PickedPerson {
+  id: string
+  name: string
+  avatar?: string | null
+}
+
+export interface RemoteUserMultiSelectProps {
+  /** 已选用户 UUID 列表 */
+  value?: string[]
+  /** 已保存的姓名快照（与 value 顺序一致），未搜索时用于回显，避免显示 UUID */
+  labels?: string[]
+  /** 已保存的头像快照（与 value 顺序一致），缺省走姓名首字兜底 */
+  avatarSrcs?: Array<string | null | undefined>
+  feishuBoundOnly?: boolean
+  showUsername?: boolean
+  allowClear?: boolean
+  placeholder?: string
+  disabled?: boolean
+  style?: React.CSSProperties
+  /** 回写人选数组；表单侧用 `toPersonIds` 折回 UUID */
+  onChange?: (persons: PickedPerson[]) => void
+}
+
+/**
+ * 远端人员多选：与单选共用同一套取数逻辑（50 条一页、滚动续载、服务端搜索），
+ * 受控值为 UUID 数组，姓名/头像快照按位置由 `labels`/`avatarSrcs` 传入。
+ */
+export function RemoteUserMultiSelect({ value, labels, avatarSrcs, onChange, ...rest }: RemoteUserMultiSelectProps) {
+  const fallbackOptions = useMemo<RemoteUserSelectOption[]>(
+    () =>
+      (value ?? []).map((id, index) => ({
+        value: id,
+        label: labels?.[index] ?? id,
+        avatar: avatarSrcs?.[index] ?? undefined,
+      })),
+    [value, labels, avatarSrcs],
+  )
+
+  return (
+    <RemoteUserSelect
+      {...rest}
+      mode="multiple"
+      value={value}
+      fallbackOptions={fallbackOptions}
+      onChange={(next, picked) => {
+        const ids = Array.isArray(next) ? next : next ? [next] : []
+        const chosen = Array.isArray(picked) ? picked : picked ? [picked] : []
+        const byId = new Map(chosen.map((item) => [item.value, item]))
+        onChange?.(
+          ids.map((id) => {
+            const option = byId.get(id)
+            return { id, name: option?.label ?? id, avatar: option?.avatar ?? null }
+          }),
+        )
       }}
     />
   )

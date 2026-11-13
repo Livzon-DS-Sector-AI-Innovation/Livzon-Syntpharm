@@ -1,7 +1,7 @@
 
 // Quality management types (from shared/api.interface.ts)
 
-import type { components } from '@/types/generated/schema'
+import type { components, operations } from '@/types/generated/schema'
 
 // ============ Deviation Types ============
 export type DeviationLevel = 'minor' | 'moderate' | 'major';
@@ -509,13 +509,10 @@ export interface AiLogListResponse {
   page_size: number
 }
 
-export interface AiLogFilter {
-  operate_type?: string
-  operator?: string
-  start_date?: string
-  end_date?: string
-  keyword?: string
-}
+/** AI 交互日志查询参数：来自 OpenAPI 契约（list_ai_logs），含 page/page_size */
+export type AiLogFilter = NonNullable<
+  NonNullable<operations['list_ai_logs_api_v1_quality_ai_logs_get']['parameters']>['query']
+>
 
 // ============ 偏差台账（quality.deviation_ledger） ============
 
@@ -536,7 +533,18 @@ export type DeviationLedgerUpdateInput = components['schemas']['LedgerUpdateRequ
 export type DeviationLedgerBatchStatusInput = components['schemas']['BatchStatusRequest']
 export type DeviationAiAnalysisInput = components['schemas']['CompleteAiAnalysisRequest']
 export type DeviationAiAnalysisData = components['schemas']['AiAnalysisData']
+
+/** AI 结果带入调查表单的载荷（本地应用类型，非契约生成；nonce 用于去重与一次性消费） */
+export interface DeviationInvestigationPrefill {
+  nonce: string
+  nonconformity_description: string
+  root_cause_analysis: string
+  risk_assessment: string
+  capa_proposals: { summary: string }[]
+}
 export type DeviationInvestigationInput = components['schemas']['InvestigationRequest']
+export type DeviationInvestigationDraftInput = components['schemas']['InvestigationDraftRequest']
+export type DeviationInvestigationDraft = components['schemas']['InvestigationDraftItem']
 export type DeviationInvestigationRecord = components['schemas']['InvestigationRecordItem']
 export type DeviationReviewInput = components['schemas']['ReviewRequest']
 export type DeviationReviewOpinion = components['schemas']['ReviewOpinionItem']
@@ -552,12 +560,17 @@ export type DeviationAttachmentCommentUpdateInput = components['schemas']['Attac
 export type DeviationLedgerStep = components['schemas']['LedgerStep']
 export type DeviationCrossDeptReviewer = components['schemas']['CrossDeptReviewerItem']
 export type DeviationCrossDeptApproveInput = components['schemas']['CrossDeptApproveRequest']
+export type DeviationCrossDeptRejectInput = components['schemas']['CrossDeptRejectRequest']
+export type DeviationCrossDeptInvestigationInput = components['schemas']['CrossDeptInvestigationRequest']
+export type DeviationInvestigationSubmitInput = components['schemas']['InvestigationSubmitRequest']
 export type DeviationCrossDeptStepSubItem = components['schemas']['CrossDeptStepSubItem']
 export type DeviationCapaProposalInput = components['schemas']['CapaProposalItem']
 export type DeviationLedgerOptionResult = components['schemas']['OptionListData']
 export type DeviationBatchResult =
   components['schemas']['app__modules__quality__qms__deviation_ledger_schemas__BatchResultData']
 export type DeviationDeleteResult = components['schemas']['DeleteResultData']
+export type DeviationMemberOptionResult = components['schemas']['MemberOptionListData']
+export type DeviationJobState = components['schemas']['AsyncJobState']
 
 /** 台账查询参数：只在前端 URL / 请求 query 上使用 */
 export interface DeviationLedgerFilters {

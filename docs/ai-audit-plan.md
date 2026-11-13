@@ -1,6 +1,6 @@
 # AI Audit Plan
 
-This document defines a fixed audit procedure for the Livzon-Syntpharm monorepo. The audit checks compliance with `AGENTS.md` using 15 fixed categories. Each category references specific AGENTS.md rules, defines exact directories to inspect, and specifies questions to answer.
+This document defines a fixed audit procedure for the Livzon-Syntpharm monorepo. The audit checks compliance with `AGENTS.md` using 16 fixed categories. Each category references specific AGENTS.md rules, defines exact directories to inspect, and specifies questions to answer.
 
 No scanners, scripts, or automation. This document IS the procedure. Feed one category at a time to an AI auditor with the relevant source files.
 
@@ -719,6 +719,13 @@ Full audit
   ✓ import { BatchTable } from '@/components/production'
   ```
 
+**人员选择（人员下拉）:**
+- 凡是需要选择系统人员的地方，统一使用 `components/common/RemoteUserSelect.tsx`（`@/components/common/RemoteUserSelect`）
+- 禁止页面级 `options={userOptions}` 的全量人员 `Select`
+- 禁止在 Client 组件里自己 `fetch` 人员接口（人员检索走 `lib/api/client/identity.ts` 的 `searchPersonnel` 只读封装）
+- 值只存 UUID（单选 `string`，多选 `string[]`），姓名/头像通过 `fallbackOptions` 快照回显
+- 多选场景传 `mode="multiple"`
+
 **命名规范:**
 - 组件文件：PascalCase（`BatchTable.tsx`）
 - 非组件文件：camelCase（`useBatch.ts`、`batchApi.ts`）
@@ -748,6 +755,7 @@ Full audit
 7. Do API request function names start with `fetch`?
 8. Has `proxy.ts`, `components/common/`, or `hooks/usePermission.ts` been modified in a way that requires architecture approval?
 9. Does every `page.tsx` have a semantic `<h1>` heading (using `<h1>` or `<Title level={1}>`) that is NOT provided via `<Card title="...">`?
+10. Do all person pickers use `RemoteUserSelect` from `components/common/RemoteUserSelect.tsx`? Flag any page-level `Select` populated from a full user list (e.g. `options={userOptions}`), and any Client component that fetches a personnel endpoint directly instead of `lib/api/client/identity.ts` `searchPersonnel`. Also check that the value stores only UUIDs (with names/avatars restored via `fallbackOptions`) and that multi-select passes `mode="multiple"`.
 
 
 
