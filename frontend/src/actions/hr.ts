@@ -361,19 +361,19 @@ export async function fetchDepartureRecords(
 
 export async function createDepartureRecord(data: DepartureRecordCreateInput) {
   const res = await createDepartureRecordApi(data)
-  revalidatePath('/hr/departure')
+  revalidatePath('/hr/offboarding')
   return res as DepartureRecordApiResponse
 }
 
 export async function updateDepartureRecord(id: string, data: DepartureRecordUpdateInput) {
   const res = await updateDepartureRecordApi(id, data)
-  revalidatePath('/hr/departure')
+  revalidatePath('/hr/offboarding')
   return res as DepartureRecordApiResponse
 }
 
 export async function deleteDepartureRecord(id: string) {
   const res = await deleteDepartureRecordApi(id)
-  revalidatePath('/hr/departure')
+  revalidatePath('/hr/offboarding')
   return res as DepartureRecordDeleteResponse
 }
 
