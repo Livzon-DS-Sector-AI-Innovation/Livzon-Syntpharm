@@ -8,8 +8,6 @@ import {
   EmployeeCreateInput,
   EmployeeUpdateInput,
   EmployeeListResponse,
-  DepartmentCreateInput,
-  DepartmentUpdateInput,
   DepartmentListResponse,
   TrainingSessionCreateInput,
   TrainingSessionUpdateInput,
@@ -17,7 +15,6 @@ import {
   TrainingSessionResponse,
   SelectTask,
   Employee,
-  Department,
   OnboardingRecordListResponse,
   OnboardingRecordApiResponse,
   OnboardingRecordCreateInput,
@@ -34,6 +31,8 @@ import {
   AnnualTrainingPlan,
   AnnualTrainingPlanListResponse,
   AnnualTrainingPlanItem,
+  AnnualTrainingPlanCreateInput,
+  AnnualTrainingPlanItemBatchUpdateInput,
   TrainingLedgerListResponse,
   TrainingSession,
   TrainingTeam,
@@ -67,9 +66,6 @@ import {
   fetchOrgDepartmentsApi,
   fetchOrgSyncStatusApi,
   triggerOrgSyncApi,
-  createDepartmentApi,
-  updateDepartmentApi,
-  deleteDepartmentApi,
   createAnnualTrainingPlanApi,
   deleteAnnualTrainingPlanApi,
   deleteAnnualPlanItemApi,
@@ -219,27 +215,12 @@ export async function fetchDepartmentsAction(
   return fetchDepartmentsApi(params) as Promise<DepartmentListResponse>
 }
 
-export async function createDepartment(data: DepartmentCreateInput) {
-  const res = await createDepartmentApi(data)
-  revalidatePath('/hr/departments')
-  return res as Department
-}
 
-export async function updateDepartment(id: string, data: DepartmentUpdateInput) {
-  const res = await updateDepartmentApi(id, data)
-  revalidatePath('/hr/departments')
-  return res as Department
-}
 
-export async function deleteDepartment(id: string) {
-  const res = await deleteDepartmentApi(id)
-  revalidatePath('/hr/departments')
-  return res as DeleteResponse
-}
 
 // ─── Annual Training Plan Actions ───
 
-export async function createAnnualTrainingPlan(data: { year: number; department: string; status: string }) {
+export async function createAnnualTrainingPlan(data: AnnualTrainingPlanCreateInput) {
   const res = await createAnnualTrainingPlanApi(data)
   revalidatePath('/hr/training/annual-plan')
   return res as ApiResponse<AnnualTrainingPlan>
@@ -257,7 +238,7 @@ export async function deleteAnnualPlanItem(planId: string, itemId: string) {
   return res as DeleteResponse
 }
 
-export async function batchUpdatePlanItems(planId: string, data: { items: unknown[] }) {
+export async function batchUpdatePlanItems(planId: string, data: AnnualTrainingPlanItemBatchUpdateInput) {
   const res = await batchUpdatePlanItemsApi(planId, data)
   revalidatePath('/hr/training/annual-plan')
   return res as AnnualTrainingPlanItem[]
@@ -382,19 +363,19 @@ export async function fetchDepartureRecords(
 
 export async function createDepartureRecord(data: DepartureRecordCreateInput) {
   const res = await createDepartureRecordApi(data)
-  revalidatePath('/hr/departure')
+  revalidatePath('/hr/offboarding')
   return res as DepartureRecordApiResponse
 }
 
 export async function updateDepartureRecord(id: string, data: DepartureRecordUpdateInput) {
   const res = await updateDepartureRecordApi(id, data)
-  revalidatePath('/hr/departure')
+  revalidatePath('/hr/offboarding')
   return res as DepartureRecordApiResponse
 }
 
 export async function deleteDepartureRecord(id: string) {
   const res = await deleteDepartureRecordApi(id)
-  revalidatePath('/hr/departure')
+  revalidatePath('/hr/offboarding')
   return res as DepartureRecordDeleteResponse
 }
 

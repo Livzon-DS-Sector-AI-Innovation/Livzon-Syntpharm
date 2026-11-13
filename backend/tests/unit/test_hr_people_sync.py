@@ -1,12 +1,12 @@
-"""Personnel mirror sync seam (ticket #198).
+"""Personnel mirror sync seam (ticket #198 / filter-based sync).
 
 Seam: ``sync_employee_profiles(store, fetcher)`` with an in-memory store and a
-fake directory fetcher. Catches:
-- batching of known open ids into requests of at most 100;
+fake employee-filter fetcher. Catches:
+- in-scope department ids passed to the Feishu filter;
+- duplicate people deduped by open id;
 - omitted Feishu keys stored as empty values;
-- resigned fields captured from the directory payload;
-- no deletion or disabling of known people that this run did not return;
-- department ids falling back to the platform directory membership.
+- resigned fields captured;
+- no deletion or disabling of known people missing from the response.
 """
 
 from __future__ import annotations
@@ -15,36 +15,31 @@ from datetime import UTC, date, datetime
 from typing import Any
 
 from app.modules.hr.people_domain import EmployeeProfileRecord
-from app.modules.hr.people_sync import (
-    KnownPerson,
-    PeopleSyncStats,
-    sync_employee_profiles,
-)
+from app.modules.hr.people_sync import PeopleSyncStats, sync_employee_profiles
 
 
 class FakeFetcher:
-    def __init__(self, payload_by_open_id: dict[str, dict[str, Any]]) -> None:
-        self.payload_by_open_id = payload_by_open_id
-        self.batches: list[list[str]] = []
+    def __init__(self, payloads: list[dict[str, Any]]) -> None:
+        self.payloads = payloads
+        self.department_requests: list[list[str]] = []
 
-    async def fetch_employees(self, open_ids: list[str]) -> list[dict[str, Any]]:
-        self.batches.append(list(open_ids))
-        return [self.payload_by_open_id[open_id] for open_id in open_ids if open_id in self.payload_by_open_id]
+    async def fetch_employees_by_filter(self, department_ids: list[str]) -> list[dict[str, Any]]:
+        self.department_requests.append(list(department_ids))
+        return list(self.payloads)
 
 
 class FakeStore:
     def __init__(
         self,
-        known: list[KnownPerson],
+        department_ids: list[str],
         existing: list[EmployeeProfileRecord] | None = None,
     ) -> None:
-        self.known = known
+        self.department_ids = department_ids
         self.profiles: dict[str, EmployeeProfileRecord] = {p.open_id: p for p in existing or []}
         self.department_ids_by_open_id: dict[str, list[str]] = {}
-        self.deleted: list[str] = []
 
-    async def list_known_people(self) -> list[KnownPerson]:
-        return list(self.known)
+    async def list_scope_department_ids(self) -> list[str]:
+        return list(self.department_ids)
 
     async def upsert_profile(
         self,
@@ -57,29 +52,34 @@ class FakeStore:
         self.profiles[record.open_id] = record
         return created
 
-    async def delete_profile(self, open_id: str) -> None:
-        self.deleted.append(open_id)
+
+def _payload(open_id: str, name: str, **extra: Any) -> dict[str, Any]:
+    return {
+        "base_info": {
+            "employee_id": open_id,
+            "name": {"name": {"default_value": name}},
+            "departments": [{"department_id": "od-101", "name": {"default_value": "101车间"}}],
+        },
+        "work_info": {},
+        **extra,
+    }
 
 
-def _known(*open_ids: str) -> list[KnownPerson]:
-    return [KnownPerson(open_id=open_id, department_ids=["od-101"]) for open_id in open_ids]
-
-
-async def test_sync_fetches_known_people_in_batches_of_at_most_100() -> None:
-    open_ids = [f"ou-{index:03d}" for index in range(205)]
-    fetcher = FakeFetcher({open_id: {"open_id": open_id, "name": open_id} for open_id in open_ids})
-    store = FakeStore(known=_known(*open_ids))
+async def test_sync_passes_scope_departments_and_upserts_filter_results() -> None:
+    payloads = [_payload("ou-1", "张三"), _payload("ou-2", "李四"), _payload("ou-1", "张三")]
+    fetcher = FakeFetcher(payloads)
+    store = FakeStore(department_ids=["od-101", "od-101-1"])
 
     stats = await sync_employee_profiles(store, fetcher)
 
-    assert [len(batch) for batch in fetcher.batches] == [100, 100, 5]
-    assert stats == PeopleSyncStats(total=205, created=205, updated=0, batches=3)
-    assert set(store.profiles) == set(open_ids)
+    assert fetcher.department_requests == [["od-101", "od-101-1"]]
+    assert stats == PeopleSyncStats(total=2, created=2, updated=0, batches=1)
+    assert set(store.profiles) == {"ou-1", "ou-2"}
 
 
 async def test_sync_stores_omitted_fields_as_empty_values() -> None:
-    fetcher = FakeFetcher({"ou-empty": {"open_id": "ou-empty", "name": "李四"}})
-    store = FakeStore(known=_known("ou-empty"))
+    fetcher = FakeFetcher([_payload("ou-empty", "李四")])
+    store = FakeStore(department_ids=["od-101"])
 
     await sync_employee_profiles(store, fetcher)
 
@@ -95,31 +95,36 @@ async def test_sync_stores_omitted_fields_as_empty_values() -> None:
     assert record.work_place_id == ""
     assert record.dotted_line_leader_ids == []
     assert record.positions == []
-    assert record.department_ids == []
 
 
 async def test_sync_captures_resigned_fields() -> None:
-    fetcher = FakeFetcher(
-        {
-            "ou-left": {
-                "open_id": "ou-left",
-                "name": "王五",
+    payload = _payload(
+        "ou-left",
+        "王五",
+        **{
+            "base_info": {
+                "employee_id": "ou-left",
+                "name": {"name": {"default_value": "王五"}},
+                "departments": [{"department_id": "od-101"}],
                 "is_resigned": True,
-                "resign_time": "2026-10-01 12:00:00",
+                "resign_time": "2026-10-01",
+            },
+            "work_info": {
                 "resign_date": "2026-10-01",
                 "resign_type": "主动离职",
                 "resign_reason": "个人原因",
                 "resign_remark": "已交接",
-            }
-        }
+            },
+        },
     )
-    store = FakeStore(known=_known("ou-left"))
+    fetcher = FakeFetcher([payload])
+    store = FakeStore(department_ids=["od-101"])
 
     await sync_employee_profiles(store, fetcher)
 
     record = store.profiles["ou-left"]
     assert record.is_resigned is True
-    assert record.resign_time == "2026-10-01 12:00:00"
+    assert record.resign_time == "2026-10-01"
     assert record.resign_date == date(2026, 10, 1)
     assert record.resign_type == "主动离职"
     assert record.resign_reason == "个人原因"
@@ -128,38 +133,31 @@ async def test_sync_captures_resigned_fields() -> None:
 
 async def test_sync_never_deletes_people_missing_from_the_response() -> None:
     existing = EmployeeProfileRecord(open_id="ou-gone", name="已离开")
-    fetcher = FakeFetcher({"ou-1": {"open_id": "ou-1", "name": "张三"}})
-    store = FakeStore(known=_known("ou-1", "ou-gone"), existing=[existing])
+    fetcher = FakeFetcher([_payload("ou-1", "张三")])
+    store = FakeStore(department_ids=["od-101"], existing=[existing])
 
     stats = await sync_employee_profiles(store, fetcher)
 
     assert stats.total == 1
     assert "ou-gone" in store.profiles
     assert store.profiles["ou-gone"].name == "已离开"
-    assert store.deleted == []
 
 
-async def test_sync_falls_back_to_platform_department_membership() -> None:
-    fetcher = FakeFetcher(
-        {
-            "ou-1": {"open_id": "ou-1", "name": "张三"},
-            "ou-2": {
-                "open_id": "ou-2",
-                "name": "李四",
-                "employee_order_in_departments": [{"department_id": "od-202"}],
-            },
-        }
-    )
-    store = FakeStore(
-        known=[
-            KnownPerson(open_id="ou-1", department_ids=["od-101"]),
-            KnownPerson(open_id="ou-2", department_ids=["od-101"]),
-        ]
-    )
+async def test_sync_skips_fetch_without_scope_departments() -> None:
+    fetcher = FakeFetcher([_payload("ou-1", "张三")])
+    store = FakeStore(department_ids=[])
+
+    stats = await sync_employee_profiles(store, fetcher)
+
+    assert stats == PeopleSyncStats(total=0, created=0, updated=0, batches=0)
+    assert fetcher.department_requests == []
+
+
+async def test_sync_stamps_last_synced_at() -> None:
+    fetcher = FakeFetcher([_payload("ou-1", "张三")])
+    store = FakeStore(department_ids=["od-101"])
     synced_at = datetime(2026, 11, 12, 0, 0, tzinfo=UTC)
 
     await sync_employee_profiles(store, fetcher, synced_at=synced_at)
 
-    assert store.department_ids_by_open_id["ou-1"] == ["od-101"]
-    assert store.department_ids_by_open_id["ou-2"] == ["od-202"]
     assert store.profiles["ou-1"].last_synced_at == synced_at

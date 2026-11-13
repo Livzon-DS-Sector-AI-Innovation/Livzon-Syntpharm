@@ -43,6 +43,8 @@ from app.modules.hr.org_settings import (
     ORG_SCOPE_SETTING_DEFAULTS,
     ORG_SYNC_ROOT_ID_SETTING,
     ORG_SYNC_ROOT_NAME_SETTING,
+    load_org_scope,
+    save_org_scope_value,
 )
 from app.modules.hr.people_api import router as people_router
 from app.modules.hr.prejob_document_generator import generate_prejob_training_plan
@@ -55,12 +57,11 @@ from app.modules.hr.schemas import (
     CandidateResponse,
     CandidateUpdate,
     CandidateUpdateRecommendationLevel,
-    DepartmentCreate,
     DepartmentResponse,
-    DepartmentUpdate,
     EmployeeCreate,
     EmployeeResponse,
     EmployeeUpdate,
+    HrSystemSettingsApiResponse,
     OnboardingEvaluationInput,
     PrejobTemplateCreate,
     PrejobTemplateItem,
@@ -1027,21 +1028,6 @@ async def list_departments(  # type: ignore[no-untyped-def]
     )
 
 
-@router.post("/departments", summary="创建部门")
-async def create_department(  # type: ignore[no-untyped-def]
-    payload: DepartmentCreate,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:departments:create")),
-    service: DepartmentService = Depends(get_department_service),
-):
-    department = await service.create_department(payload)
-    return build_response(
-        data=DepartmentResponse.model_validate(department).model_dump(mode="json"),
-        message="部门创建成功",
-        status_code=201,
-    )
-
-
 @router.get("/departments/{department_id}", summary="部门详情")
 async def get_department(  # type: ignore[no-untyped-def]
     department_id: UUID,
@@ -1053,32 +1039,6 @@ async def get_department(  # type: ignore[no-untyped-def]
     return build_response(
         data=DepartmentResponse.model_validate(department).model_dump(mode="json"),
     )
-
-
-@router.put("/departments/{department_id}", summary="更新部门")
-async def update_department(  # type: ignore[no-untyped-def]
-    department_id: UUID,
-    payload: DepartmentUpdate,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:departments:update")),
-    service: DepartmentService = Depends(get_department_service),
-):
-    department = await service.update_department(department_id, payload)
-    return build_response(
-        data=DepartmentResponse.model_validate(department).model_dump(mode="json"),
-        message="部门更新成功",
-    )
-
-
-@router.delete("/departments/{department_id}", summary="删除部门")
-async def delete_department(  # type: ignore[no-untyped-def]
-    department_id: UUID,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:departments:delete")),
-    service: DepartmentService = Depends(get_department_service),
-):
-    await service.delete_department(department_id)
-    return build_response(message="部门删除成功")
 
 
 # ─── TrainingLedger Routes ───
@@ -2513,7 +2473,11 @@ def _get_db_setting(db_settings: dict[str, str], key: str) -> str:
     try:
         return decrypt_secret(raw)
     except RuntimeError:
-        logger.exception("HR 系统设置解密失败 key=%s（ENCRYPTION_KEY 不匹配？）", key)
+        logger.exception(
+            "HR 系统设置解密失败 key=%s（ENCRYPTION_KEY 不匹配？）",
+            key,
+            extra={"biz_module": "hr", "setting_key": key},
+        )
         return ""
 
 
@@ -2527,7 +2491,7 @@ def _get_setting_value(settings, key: str) -> str:
     return str(value) if value else ""
 
 
-@router.get("/system-settings", summary="获取系统设置")
+@router.get("/system-settings", summary="获取系统设置", response_model=HrSystemSettingsApiResponse)
 async def get_system_settings(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:system-settings:read")),
@@ -2540,7 +2504,14 @@ async def get_system_settings(  # type: ignore[no-untyped-def]
     r = await session.execute(sql_text("SELECT key, value FROM hr.system_settings"))
     db_settings = {row[0]: row[1] for row in r.fetchall()}
 
+    scope = await load_org_scope(session)
     for key in SETTING_KEYS:
+        if key == ORG_SYNC_ROOT_ID_SETTING:
+            result[key] = scope.department_id
+            continue
+        if key == ORG_SYNC_ROOT_NAME_SETTING:
+            result[key] = scope.department_name
+            continue
         val = _get_db_setting(db_settings, key)
         if not val:
             val = ORG_SCOPE_SETTING_DEFAULTS.get(_canonical_setting_key(key), "")
@@ -2570,6 +2541,10 @@ async def save_system_settings(  # type: ignore[no-untyped-def]
             continue
         canonical_key = _canonical_setting_key(key)
         value_text = "" if raw_value is None else str(raw_value)
+        if key in ORG_SCOPE_SETTING_DEFAULTS:
+            await save_org_scope_value(session, key, value_text)
+            updated.append(key)
+            continue
         if key in SECRET_SETTING_KEYS:
             if not value_text or MASK_PLACEHOLDER in value_text:
                 continue
@@ -2610,6 +2585,9 @@ async def save_system_settings(  # type: ignore[no-untyped-def]
         with open(ENV_PATH, "w", encoding="utf-8") as f:
             f.writelines(lines)
     except Exception:
-        logger.exception("写入 .env 失败（设置已保存到数据库，但需手工补环境变量）")
+        logger.exception(
+            "写入 .env 失败（设置已保存到数据库，但需手工补环境变量）",
+            extra={"biz_module": "hr", "setting_count": len(env_updates)},
+        )
 
     return build_response(data={"updated": updated}, message=f"已保存 {len(updated)} 项设置")

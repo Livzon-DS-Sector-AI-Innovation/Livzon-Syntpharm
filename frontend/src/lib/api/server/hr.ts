@@ -110,25 +110,8 @@ export async function fetchDepartmentsApi(params?: {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departments?${searchParams.toString()}`)
 }
 
-export async function createDepartmentApi(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departments`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
 
-export async function updateDepartmentApi(id: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departments/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  })
-}
 
-export async function deleteDepartmentApi(id: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departments/${id}`, {
-    method: 'DELETE',
-  })
-}
 
 
 

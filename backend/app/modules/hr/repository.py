@@ -307,7 +307,7 @@ class DepartmentRepository:
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[HrDepartment], int]:
-        stmt = select(HrDepartment).where(HrDepartment.is_deleted.is_(False))
+        stmt = select(HrDepartment).where(HrDepartment.is_deleted.is_(False), HrDepartment.status_is_deleted.is_(False))
 
         if keyword:
             stmt = stmt.where(HrDepartment.name.ilike(f"%{keyword}%") | HrDepartment.code.ilike(f"%{keyword}%"))

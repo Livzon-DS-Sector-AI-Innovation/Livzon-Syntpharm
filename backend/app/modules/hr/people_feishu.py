@@ -7,6 +7,7 @@ never logged.
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -55,27 +56,71 @@ EMPLOYEE_REQUIRED_FIELDS = (
 
 
 class FeishuEmployeeProfileFetcher(FeishuOrgDepartmentFetcher):
-    """Single-batch directory employee mget call."""
+    """Directory employee filter call for the whole in-scope org."""
 
-    async def fetch_employees(self, open_ids: list[str]) -> list[dict[str, Any]]:
-        if not open_ids:
+    async def fetch_employees_by_filter(self, department_ids: list[str]) -> list[dict[str, Any]]:
+        if not department_ids:
             return []
-        data = await self._request(
-            "POST",
-            "/directory/v1/employees/mget",
-            params={
-                "employee_id_type": "open_id",
-                "department_id_type": "open_department_id",
-            },
-            json={
-                "employee_ids": open_ids,
-                "required_fields": list(EMPLOYEE_REQUIRED_FIELDS),
-            },
-        )
-        items = data.get("employees")
-        if not isinstance(items, list):
-            return []
-        return [item for item in items if isinstance(item, dict)]
+        status_condition = {
+            "field": "work_info.staff_status",
+            "operator": "in",
+            "value": json.dumps([1, 2, 3, 4, 5], separators=(",", ":")),
+        }
+        try:
+            return await self._fetch_by_conditions(
+                [
+                    {
+                        "field": "base_info.departments.department_id",
+                        "operator": "in",
+                        "value": json.dumps(department_ids, separators=(",", ":")),
+                    },
+                    status_condition,
+                ]
+            )
+        except RuntimeError as exc:
+            if "code=2220009" not in str(exc) and "code=2220013" not in str(exc):
+                raise
+        results: list[dict[str, Any]] = []
+        for department_id in department_ids:
+            results.extend(
+                await self._fetch_by_conditions(
+                    [
+                        {
+                            "field": "base_info.departments.department_id",
+                            "operator": "eq",
+                            "value": json.dumps(department_id),
+                        },
+                        status_condition,
+                    ]
+                )
+            )
+        return results
+
+    async def _fetch_by_conditions(self, conditions: list[dict[str, str]]) -> list[dict[str, Any]]:
+        results: list[dict[str, Any]] = []
+        page_token = ""
+        while True:
+            data = await self._request(
+                "POST",
+                "/directory/v1/employees/filter",
+                params={
+                    "employee_id_type": "open_id",
+                    "department_id_type": "open_department_id",
+                },
+                json={
+                    "filter": {"conditions": conditions},
+                    "required_fields": list(EMPLOYEE_REQUIRED_FIELDS),
+                    "page_request": {"page_size": 100, "page_token": page_token},
+                },
+            )
+            items = data.get("employees")
+            if isinstance(items, list):
+                results.extend(item for item in items if isinstance(item, dict))
+            page = data.get("page_response") or {}
+            page_token = str(page.get("page_token") or "")
+            if not page.get("has_more") or not page_token:
+                break
+        return results
 
 
 async def build_default_employee_fetcher(session: AsyncSession) -> FeishuEmployeeProfileFetcher:

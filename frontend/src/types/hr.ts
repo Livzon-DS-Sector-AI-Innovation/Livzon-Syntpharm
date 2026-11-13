@@ -107,9 +107,7 @@ export interface Department {
   updated_at?: string
 }
 
-export type DepartmentCreateInput = components['schemas']['DepartmentCreate']
 
-export type DepartmentUpdateInput = components['schemas']['DepartmentUpdate']
 
 export interface DepartmentListResponse {
   code: number
@@ -358,17 +356,8 @@ export interface AnnualTrainingPlan {
   updated_at?: string
 }
 
-export interface AnnualTrainingPlanCreateInput {
-  year: number
-  department: string
-  status?: string
-}
-
-export interface AnnualTrainingPlanUpdateInput {
-  year?: number
-  department?: string
-  status?: string
-}
+export type AnnualTrainingPlanCreateInput = components['schemas']['AnnualTrainingPlanCreate']
+export type AnnualTrainingPlanUpdateInput = components['schemas']['AnnualTrainingPlanUpdate']
 
 export interface AnnualTrainingPlanListResponse {
   code: number
@@ -401,9 +390,7 @@ export interface AnnualTrainingPlanItem {
   updated_at?: string
 }
 
-export interface AnnualTrainingPlanItemBatchUpdateInput {
-  items: Omit<AnnualTrainingPlanItem, 'id' | 'plan_id' | 'created_at' | 'updated_at'>[]
-}
+export type AnnualTrainingPlanItemBatchUpdateInput = components['schemas']['AnnualTrainingPlanItemBatchUpdate']
 export interface Candidate {
   id: string
   name: string

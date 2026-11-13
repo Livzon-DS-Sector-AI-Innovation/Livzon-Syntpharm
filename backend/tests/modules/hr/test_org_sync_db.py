@@ -12,12 +12,13 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.hr.models import SystemSetting
+from app.core.config_model import ModuleSetting
+from app.modules.hr.models import HrDepartment as Department
+from app.modules.hr.models import HrOrgSyncRun as OrgSyncRun
 from app.modules.hr.org_domain import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
 from app.modules.hr.org_repository import SqlAlchemyOrgDepartmentStore
 from app.modules.hr.org_settings import ORG_SYNC_ROOT_ID_SETTING, ORG_SYNC_ROOT_NAME_SETTING, load_org_scope
 from app.modules.hr.org_sync import sync_org_departments
-from app.platform.identity.models import Department, OrgSyncRun
 
 
 class _Fetcher:
@@ -112,8 +113,8 @@ async def test_sync_persists_mirror_fields_and_hides_stale_department(db_session
 async def test_load_org_scope_reads_runtime_settings(db_session: AsyncSession) -> None:
     db_session.add_all(
         [
-            SystemSetting(key=ORG_SYNC_ROOT_ID_SETTING, value="od-configured-root"),
-            SystemSetting(key=ORG_SYNC_ROOT_NAME_SETTING, value="配置的公司"),
+            ModuleSetting(module="hr", key=ORG_SYNC_ROOT_ID_SETTING, value="od-configured-root"),
+            ModuleSetting(module="hr", key=ORG_SYNC_ROOT_NAME_SETTING, value="配置的公司"),
         ]
     )
     await db_session.flush()

@@ -1,8 +1,6 @@
 'use client'
 export { default as EmployeeTable } from './EmployeeTable'
 export { default as EmployeeForm } from './EmployeeForm'
-export { default as EmployeeProfileClient } from './EmployeeProfileClient'
-export { default as RosterClient } from './RosterClient'
 export { default as DepartmentOrgClient } from './DepartmentOrgClient'
 export { default as EmployeeDirectoryClient } from './EmployeeDirectoryClient'
 export { default as OnboardingClient } from './OnboardingClient'

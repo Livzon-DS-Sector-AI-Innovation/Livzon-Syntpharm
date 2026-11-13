@@ -44524,61 +44524,6 @@
             }
           }
         }
-      },
-      "post": {
-        "tags": [
-          "\u4eba\u4e8b\u7ba1\u7406"
-        ],
-        "summary": "\u521b\u5efa\u90e8\u95e8",
-        "operationId": "create_department_api_v1_hr_departments_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DepartmentCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
       }
     },
     "/api/v1/hr/departments/{department_id}": {
@@ -44588,126 +44533,6 @@
         ],
         "summary": "\u90e8\u95e8\u8be6\u60c5",
         "operationId": "get_department_api_v1_hr_departments__department_id__get",
-        "parameters": [
-          {
-            "name": "department_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Department Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "\u4eba\u4e8b\u7ba1\u7406"
-        ],
-        "summary": "\u66f4\u65b0\u90e8\u95e8",
-        "operationId": "update_department_api_v1_hr_departments__department_id__put",
-        "parameters": [
-          {
-            "name": "department_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Department Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DepartmentUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "\u4eba\u4e8b\u7ba1\u7406"
-        ],
-        "summary": "\u5220\u9664\u90e8\u95e8",
-        "operationId": "delete_department_api_v1_hr_departments__department_id__delete",
         "parameters": [
           {
             "name": "department_id",
@@ -48919,7 +48744,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/HrSystemSettingsApiResponse"
+                }
               }
             }
           },
@@ -115436,41 +115263,6 @@
         "title": "DepartmentContactUpdateRequest",
         "description": "\u7f16\u8f91\u90e8\u95e8\u8054\u7cfb\u4eba\u3002\u90e8\u95e8\u540d\u79f0\u4f5c\u4e3a\u552f\u4e00\u952e\u4e0d\u5141\u8bb8\u4fee\u6539\u3002"
       },
-      "DepartmentCreate": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "maxLength": 64,
-            "title": "Name",
-            "description": "\u90e8\u95e8\u540d\u79f0"
-          },
-          "code": {
-            "type": "string",
-            "maxLength": 32,
-            "title": "Code",
-            "description": "\u90e8\u95e8\u7f16\u7801"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 256
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description",
-            "description": "\u90e8\u95e8\u63cf\u8ff0"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "code"
-        ],
-        "title": "DepartmentCreate"
-      },
       "DepartmentLeaderApiResponse": {
         "properties": {
           "code": {
@@ -115866,48 +115658,6 @@
         ],
         "title": "DepartmentSafetyOfficerResponse",
         "description": "\u90e8\u95e8\u5206\u7ba1\u5b89\u5168\u5458\u67e5\u8be2\u54cd\u5e94"
-      },
-      "DepartmentUpdate": {
-        "properties": {
-          "name": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "code": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 32
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Code"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 256
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "title": "DepartmentUpdate"
       },
       "DepartureRecordApiResponse": {
         "properties": {
@@ -133705,6 +133455,45 @@
         "type": "object",
         "title": "HplcReferenceUpdate",
         "description": "Update HPLC Reference Substance"
+      },
+      "HrSystemSettingsApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "data"
+        ],
+        "title": "HrSystemSettingsApiResponse",
+        "description": "`GET /hr/system-settings` \u7684\u5b8c\u6574\u54cd\u5e94\u4f53\u3002"
       },
       "IPQCApprovalCreate": {
         "properties": {

@@ -68,9 +68,11 @@ async def seed_hr_org_settings(conn: asyncpg.Connection) -> None:
     for key, value in HR_ORG_SYNC_SETTINGS.items():
         await conn.execute(
             """
-            INSERT INTO hr.system_settings (key, value, updated_at)
-            VALUES ($1, $2, NOW())
-            ON CONFLICT (key) DO NOTHING
+            INSERT INTO core.module_settings (
+                id, module, key, value, value_type, created_at, updated_at, is_deleted
+            )
+            VALUES (gen_random_uuid(), 'hr', $1, $2, 'string', NOW(), NOW(), false)
+            ON CONFLICT (module, key) DO NOTHING
             """,
             key,
             value,
@@ -82,9 +84,6 @@ async def main() -> None:
     print("Connecting to database...")
     conn = await asyncpg.connect(DATABASE_URL)
     try:
-        print("Seeding departments...")
-        await seed_departments(conn)
-
         print("Seeding HR org-sync settings...")
         await seed_hr_org_settings(conn)
 
