@@ -262,6 +262,7 @@ export default function EmployeeDirectoryClient({
           last_synced_at: initialLastSyncedAt,
         }
       : undefined,
+    placeholderData: (previous) => previous,
   })
 
   const items = data?.items ?? []
