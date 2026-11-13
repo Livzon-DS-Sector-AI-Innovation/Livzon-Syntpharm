@@ -45,7 +45,6 @@ export const KNOWN_STATIC_ROUTES: readonly string[] = [
   '/hr',
   '/hr/attendance',
   '/hr/departments',
-  '/hr/departure',
   '/hr/offboarding',
   '/hr/onboarding',
   '/hr/profile',

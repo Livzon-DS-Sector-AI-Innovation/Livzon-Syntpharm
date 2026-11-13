@@ -2,7 +2,6 @@ import {
   EmployeeListResponse,
   EmployeeResponse,
   DepartmentListResponse,
-  OffboardingRecordListResponse,
   OnboardingRecordListResponse,
   DepartureRecordListResponse,
   SyncStatusResponse,
@@ -90,27 +89,6 @@ export async function fetchDepartments(
     cache: 'no-store',
   })
   if (!res.ok) throw new Error('获取部门列表失败')
-  return res.json()
-}
-
-export async function fetchOffboardingRecords(
-  params?: {
-    employee_id?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<OffboardingRecordListResponse> {
-  const searchParams = new URLSearchParams()
-  if (params?.employee_id) searchParams.set('employee_id', params.employee_id)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 20))
-
-  const res = await fetch(`${API_BASE}/hr/offboarding-records?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取离职记录失败')
   return res.json()
 }
 

@@ -132,7 +132,7 @@ export default function DepartureClient({ initialRecords, initialTotal }: Depart
 
   return (
     <LedgerTableShell<DepartureRecord>
-      title="离职台账"
+      title="离职管理"
       total={total}
       department={department}
       keywordPlaceholder="搜索姓名、部门、岗位"

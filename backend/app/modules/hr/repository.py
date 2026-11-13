@@ -14,7 +14,6 @@ from app.modules.hr.models import (
     Candidate,
     Employee,
     HrDepartment,
-    OffboardingRecord,
     PrejobTrainingPlanTemplate,
     TrainingLedger,
     TrainingLedgerPage,
@@ -342,68 +341,6 @@ class DepartmentRepository:
 
     async def soft_delete(self, department: HrDepartment) -> None:
         department.is_deleted = True
-        await self.session.flush()
-
-
-class OffboardingRecordRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-
-    async def get_by_id(self, record_id: UUID) -> OffboardingRecord | None:
-        result = await self.session.execute(
-            select(OffboardingRecord)
-            .where(
-                OffboardingRecord.id == record_id,
-                OffboardingRecord.is_deleted.is_(False),
-            )
-            .options(selectinload(OffboardingRecord.employee))
-        )
-        return result.scalar_one_or_none()
-
-    async def list_records(
-        self,
-        *,
-        employee_id: UUID | None = None,
-        keyword: str | None = None,
-        page: int = 1,
-        page_size: int = 20,
-    ) -> tuple[list[OffboardingRecord], int]:
-        stmt = (
-            select(OffboardingRecord)
-            .where(OffboardingRecord.is_deleted.is_(False))
-            .options(selectinload(OffboardingRecord.employee))
-        )
-
-        if employee_id:
-            stmt = stmt.where(OffboardingRecord.employee_id == employee_id)
-        if keyword:
-            stmt = stmt.join(Employee).where(
-                Employee.name.ilike(f"%{keyword}%") | Employee.employee_number.ilike(f"%{keyword}%")
-            )
-
-        count_stmt = select(func.count()).select_from(stmt.subquery())
-        total_result = await self.session.execute(count_stmt)
-        total = total_result.scalar() or 0
-
-        stmt = stmt.order_by(desc(OffboardingRecord.created_at))
-        stmt = stmt.offset((page - 1) * page_size).limit(page_size)
-
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all()), total
-
-    async def create(self, record: OffboardingRecord) -> OffboardingRecord:
-        self.session.add(record)
-        await self.session.flush()
-        await self.session.refresh(record)
-        return record
-
-    async def update(self, record: OffboardingRecord) -> OffboardingRecord:
-        await self.session.flush()
-        await self.session.refresh(record)
-        return record
-
-    async def soft_delete(self, record: OffboardingRecord) -> None:
-        record.is_deleted = True
         await self.session.flush()
 
 

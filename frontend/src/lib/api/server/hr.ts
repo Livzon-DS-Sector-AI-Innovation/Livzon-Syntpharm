@@ -130,39 +130,9 @@ export async function deleteDepartmentApi(id: string) {
   })
 }
 
-export async function fetchOffboardingRecordsApi(params?: {
-  employee_id?: string
-  keyword?: string
-  page?: number
-  page_size?: number
-}) {
-  const searchParams = new URLSearchParams()
-  if (params?.employee_id) searchParams.set('employee_id', String(params.employee_id))
-  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 20))
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/offboarding-records?${searchParams.toString()}`)
-}
 
-export async function createOffboardingRecordApi(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/offboarding-records`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
 
-export async function updateOffboardingRecordApi(id: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/offboarding-records/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  })
-}
 
-export async function deleteOffboardingRecordApi(id: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/offboarding-records/${id}`, {
-    method: 'DELETE',
-  })
-}
 
 export async function createAnnualTrainingPlanApi(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/annual-training-plans`, {

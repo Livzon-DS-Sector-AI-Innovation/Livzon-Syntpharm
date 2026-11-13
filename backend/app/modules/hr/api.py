@@ -61,9 +61,6 @@ from app.modules.hr.schemas import (
     EmployeeCreate,
     EmployeeResponse,
     EmployeeUpdate,
-    OffboardingRecordCreate,
-    OffboardingRecordResponse,
-    OffboardingRecordUpdate,
     OnboardingEvaluationInput,
     PrejobTemplateCreate,
     PrejobTemplateItem,
@@ -105,7 +102,6 @@ from app.modules.hr.service import (  # type: ignore[attr-defined]
     CandidateService,
     DepartmentService,
     EmployeeService,
-    OffboardingRecordService,
     TrainingLedgerPageService,
     TrainingLedgerService,
     TrainingSessionService,
@@ -203,12 +199,6 @@ def get_department_service(
     session: AsyncSession = Depends(get_db),
 ) -> DepartmentService:
     return DepartmentService(session)
-
-
-def get_offboarding_service(
-    session: AsyncSession = Depends(get_db),
-) -> OffboardingRecordService:
-    return OffboardingRecordService(session)
 
 
 def get_training_ledger_service(
@@ -1089,99 +1079,6 @@ async def delete_department(  # type: ignore[no-untyped-def]
 ):
     await service.delete_department(department_id)
     return build_response(message="部门删除成功")
-
-
-# ─── OffboardingRecord Routes ───
-
-
-@router.get("/offboarding-records", summary="离职记录列表")
-async def list_offboarding_records(  # type: ignore[no-untyped-def]
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:offboarding-records:read")),
-    employee_id: UUID | None = Query(None, description="员工ID筛选"),
-    keyword: str | None = Query(None, description="姓名或工号关键词"),
-    page_params: PageParams = Depends(),
-    service: OffboardingRecordService = Depends(get_offboarding_service),
-):
-    records, total = await service.list_records(
-        employee_id=employee_id,
-        keyword=keyword,
-        page=page_params.page,
-        page_size=page_params.page_size,
-    )
-    data = [OffboardingRecordResponse.model_validate(r).model_dump(mode="json") for r in records]
-    return paginated_response(
-        data=data,
-        page=page_params.page,
-        page_size=page_params.page_size,
-        total=total,
-    )
-
-
-@router.post("/offboarding-records", summary="创建离职记录")
-async def create_offboarding_record(  # type: ignore[no-untyped-def]
-    payload: OffboardingRecordCreate,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:offboarding-records:create")),
-    service: OffboardingRecordService = Depends(get_offboarding_service),
-):
-    record = await service.create_record(payload)
-    # 手动构建响应，避免触发未加载的 relationship
-    data = {
-        "id": str(record.id),
-        "employee_id": str(record.employee_id),
-        "offboarding_date": (record.offboarding_date.isoformat() if record.offboarding_date else None),
-        "offboarding_type": record.offboarding_type,
-        "reason": record.reason,
-        "handover_status": record.handover_status,
-        "notes": record.notes,
-        "created_at": record.created_at.isoformat() if record.created_at else None,
-        "updated_at": record.updated_at.isoformat() if record.updated_at else None,
-    }
-    return build_response(
-        data=data,
-        message="离职记录创建成功，员工状态已更新为离职",
-        status_code=201,
-    )
-
-
-@router.get("/offboarding-records/{record_id}", summary="离职记录详情")
-async def get_offboarding_record(  # type: ignore[no-untyped-def]
-    record_id: UUID,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:offboarding-records:read")),
-    service: OffboardingRecordService = Depends(get_offboarding_service),
-):
-    record = await service.get_record(record_id)
-    return build_response(
-        data=OffboardingRecordResponse.model_validate(record).model_dump(mode="json"),
-    )
-
-
-@router.put("/offboarding-records/{record_id}", summary="更新离职记录")
-async def update_offboarding_record(  # type: ignore[no-untyped-def]
-    record_id: UUID,
-    payload: OffboardingRecordUpdate,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:offboarding-records:update")),
-    service: OffboardingRecordService = Depends(get_offboarding_service),
-):
-    record = await service.update_record(record_id, payload)
-    return build_response(
-        data=OffboardingRecordResponse.model_validate(record).model_dump(mode="json"),
-        message="离职记录更新成功",
-    )
-
-
-@router.delete("/offboarding-records/{record_id}", summary="删除离职记录")
-async def delete_offboarding_record(  # type: ignore[no-untyped-def]
-    record_id: UUID,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("hr:offboarding-records:delete")),
-    service: OffboardingRecordService = Depends(get_offboarding_service),
-):
-    await service.delete_record(record_id)
-    return build_response(message="离职记录删除成功")
 
 
 # ─── TrainingLedger Routes ───
