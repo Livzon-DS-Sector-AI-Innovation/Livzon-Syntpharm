@@ -61,40 +61,22 @@ class FeishuEmployeeProfileFetcher(FeishuOrgDepartmentFetcher):
     async def fetch_employees_by_filter(self, department_ids: list[str]) -> list[dict[str, Any]]:
         if not department_ids:
             return []
+        # 飞书只支持 staff_status eq 单个整数；in 会返回 2220014，且状态 2–5 不可过滤。
         status_condition = {
             "field": "work_info.staff_status",
-            "operator": "in",
-            "value": json.dumps([1, 2, 3, 4, 5], separators=(",", ":")),
+            "operator": "eq",
+            "value": json.dumps(1),
         }
-        try:
-            return await self._fetch_by_conditions(
-                [
-                    {
-                        "field": "base_info.departments.department_id",
-                        "operator": "in",
-                        "value": json.dumps(department_ids, separators=(",", ":")),
-                    },
-                    status_condition,
-                ]
-            )
-        except RuntimeError as exc:
-            if "code=2220009" not in str(exc) and "code=2220013" not in str(exc):
-                raise
-        results: list[dict[str, Any]] = []
-        for department_id in department_ids:
-            results.extend(
-                await self._fetch_by_conditions(
-                    [
-                        {
-                            "field": "base_info.departments.department_id",
-                            "operator": "eq",
-                            "value": json.dumps(department_id),
-                        },
-                        status_condition,
-                    ]
-                )
-            )
-        return results
+        return await self._fetch_by_conditions(
+            [
+                {
+                    "field": "base_info.departments.department_id",
+                    "operator": "in",
+                    "value": json.dumps(department_ids, separators=(",", ":")),
+                },
+                status_condition,
+            ]
+        )
 
     async def _fetch_by_conditions(self, conditions: list[dict[str, str]]) -> list[dict[str, Any]]:
         results: list[dict[str, Any]] = []
