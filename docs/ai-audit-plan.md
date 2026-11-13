@@ -370,9 +370,9 @@ Full audit
 - 业务异常使用 `app/core/exceptions.py`
 - 删除业务数据默认软删除（`is_deleted`），不做物理删除（除非需求明确要求）
 
-**禁止** `response_model=dict`：所有结构化 JSON 响应的 endpoint 必须使用具体的 Pydantic 响应模型，且该模型必须描述完整的实际响应体（包括 `code`、`data`、`message` 等实际返回字段），不能仅描述 `data`。具体业务响应模型定义在对应模块的 `schemas.py` 中。
+**禁止** `response_model=dict` 或 `response_model=ApiResponse`：所有结构化 JSON 响应的 endpoint 必须使用具体的 Pydantic 响应模型，且该模型必须描述完整的实际响应体（包括 `code`、`data`、`message` 等实际返回字段），不能仅描述 `data`。具体业务响应模型定义在对应模块的 `schemas.py` 中。
 
-`response_model=dict` 会生成缺乏具体字段类型的 OpenAPI schema（如 `{type: object}`），导致前端无法获得可靠的生成类型。
+`response_model=dict` 会生成缺乏具体字段类型的 OpenAPI schema（如 `{type: object}`），导致前端无法获得可靠的生成类型；`response_model=ApiResponse` 的 `data` 为 `Any`，OpenAPI 同样无法推断实际数据结构。
 
 正常结构化 JSON 成功响应必须通过 `build_response()` 构建并直接返回 Pydantic 数据，由 FastAPI 根据声明的 `response_model` 负责响应校验、序列化和 OpenAPI schema 生成；不得通过 `success_response()` 返回 `JSONResponse` 绕过该流程。文件下载、流式响应、重定向等需要直接控制 HTTP Response 的场景除外。
 
@@ -445,7 +445,7 @@ from app.core.deps import RequiredUser, OptionalUser
 8. Do Feishu webhook endpoints verify the request using `_verify_feishu_callback_signature()` from `app/platform/identity/service.py`?
 9. Are Feishu webhook endpoints free of `RequiredUser`, `get_current_user`, and missing token verification?
 10. Do webhook handlers return the challenge response for Feishu URL verification?
-11. Are there any endpoints using `response_model=dict`?
+11. Are there any endpoints using `response_model=dict` or `response_model=ApiResponse`?
 12. Do structured JSON endpoints return Pydantic data via `build_response()` instead of `success_response()` → `JSONResponse`?
 13. For endpoints with typed response models, does the model describe the full response body (including `code`, `data`, `message` fields), not just the inner `data` type?
 
@@ -566,7 +566,7 @@ from app.core.config import get_settings
 **日志规范:**
 - 每个模块使用 `logger = logging.getLogger(__name__)`
 - 级别：`ERROR`（失败）、`WARNING`（降级/重试）、`INFO`（业务事件）、`DEBUG`（开发调试）
-- 始终包含上下文：`logger.info("batch created", extra={"batch_id": id, "module": "production"})`
+- 始终包含上下文：`logger.info("batch created", extra={"batch_id": id, "biz_module": "production"})`（`biz_module` 这类非保留键；不要用 `module`、`name`、`message` 等 `LogRecord` 自带属性名）
 - 异常处理用 `logger.exception()`（自动附带 traceback）
 - 禁止记录 API key、token、密码等敏感信息
 
@@ -1024,7 +1024,7 @@ AGENTS.md includes exception clauses that auditors must check before reporting a
 | Types may be defined in `'use server'` files when they are not duplicated in `types/` and are only used within that specific action file (not imported by other files). | Type definition placement | 10 |
 | `components/<module>/index.ts` barrel files — `'use client'` is "最佳实践" (best practice), not a hard requirement when components only use basic hooks. | Barrel 文件规则 | 9 |
 | Birdirectional dependency: module may import from itself freely (same module = allowed). | 模块所有权 — 禁止直接 import 内部文件 | 3 |
-| FormData / file upload may use custom `uploadFetch<T>()` (`apiFetch` sets `Content-Type: application/json`, breaking multipart). | apiFetch 一致性 — 自定义 apiFetch | 10 |
+| FormData / file upload may use custom `uploadFetch<T>()` when it needs a custom timeout or upload progress. `apiFetch` already detects `FormData` and skips `Content-Type`, so multipart is not broken by default. | apiFetch 一致性 — 自定义 apiFetch | 10 |
 | Streaming responses (SSE/ReadableStream) may use `apiFetchRaw` or raw fetch. | apiFetch 一致性 — 自定义 apiFetch | 10 |
 | Login API (`loginApi` in `auth.ts`) may use raw `fetch()` because no auth token exists before login and the caller must distinguish HTTP status codes (401 vs 500) from business errors. | apiFetch 一致性 — 自定义 apiFetch | 10 |
 | File download, streaming responses, and redirects may return the HTTP Response object directly (e.g. `FileResponse`, `StreamingResponse`) instead of `build_response()`. | API 规范 — 禁止 response_model=dict / 禁止 success_response() for structured JSON | 4 |
