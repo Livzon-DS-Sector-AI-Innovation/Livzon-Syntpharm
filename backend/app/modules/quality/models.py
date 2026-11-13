@@ -9,21 +9,16 @@ from app.modules.quality.ai.config_model import (
 from app.modules.quality.ai.models import (
     QmsAiLog,
 )
-from app.modules.quality.qms.deviation_automation_models import (
-    DevTask,
-    SOPRule,
+
+# 第 0 代偏差表的模型只为 capas.deviation_id 的外键目标而保留（业务代码不用），
+# 表本身已列入 alembic/env.py 的 RETIRED_TABLES，autogenerate 不会碰它们。
+from app.modules.quality.qms import deviation_models as _legacy_deviation_models  # noqa: F401
+from app.modules.quality.qms.deviation_department_models import (
+    DepartmentContact,
+    DepartmentWeeklyConfirmation,
 )
-from app.modules.quality.qms.deviation_flow_models import (
-    QmsDeviation,
-    QmsDeviationAttachment,
-    QmsDeviationAutoTrigger,
-    QmsDeviationFeishuBotConfig,
-    QmsDeviationLog,
-    QmsDeviationMessageTemplate,
-)
-from app.modules.quality.qms.deviation_settings_models import (
-    DeviationLeaderConfig,
-    DeviationQAConfig,
+from app.modules.quality.qms.deviation_ledger_models import (
+    DeviationLedger,
 )
 from app.modules.quality.qms.inspection_table_models import (
     InspectionTable,
@@ -61,16 +56,15 @@ from app.modules.quality.sop_ai.models import (
 )
 
 __all__ = [
-    "DeviationLeaderConfig",
-    "DeviationQAConfig",
+    "DepartmentContact",
+    "DepartmentWeeklyConfirmation",
+    "DeviationLedger",
     "InspectionTable",
     "InspectionTableRow",
     "MaterialReport",
     "MaterialReportItem",
     "ReportTemplate",
     "ReportImage",
-    "DevTask",
-    "SOPRule",
     "SopAiConfig",
     "SopAiCheckMain",
     "SopAiCheckProblem",
@@ -78,12 +72,6 @@ __all__ = [
     "ReagentQuality",
     "QmsDeviationReminderRule",
     "QmsReagentItemReminderConfig",
-    "QmsDeviation",
-    "QmsDeviationAttachment",
-    "QmsDeviationAutoTrigger",
-    "QmsDeviationFeishuBotConfig",
-    "QmsDeviationLog",
-    "QmsDeviationMessageTemplate",
     "StorageCondition",
     "Unit",
     "HplcReference",

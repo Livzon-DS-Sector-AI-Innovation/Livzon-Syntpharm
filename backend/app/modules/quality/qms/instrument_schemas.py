@@ -480,12 +480,40 @@ class InstrumentMessageApiResponse(BaseModel):
     data: None = None
 
 
+class InstrumentListRow(BaseModel):
+    """仪器列表行（service 层返回的展示字段，含校准有效期与超期标记）"""
+
+    id: str
+    instrument_no: str
+    instrument_name: str
+    model: str | None = None
+    manufacturer: str | None = None
+    category: str | None = None
+    serial_no: str | None = None
+    location: str | None = None
+    is_active: bool = True
+    status: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    valid_until: str | None = None
+    is_overdue: bool = False
+
+
+class InstrumentListData(BaseModel):
+    """仪器列表分页数据"""
+
+    items: list[InstrumentListRow]
+    total: int
+    page: int
+    page_size: int
+
+
 class InstrumentListApiResponse(BaseModel):
     """仪器列表响应包装"""
 
     code: int = 200
     message: str = "success"
-    data: dict[str, Any] | None = None
+    data: InstrumentListData | None = None
 
 
 class InstrumentApiResponse(BaseModel):
