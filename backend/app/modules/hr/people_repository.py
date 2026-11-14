@@ -17,8 +17,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ColumnElement
 
 from app.modules.hr.models import EmployeeProfile, HrDepartment
-from app.modules.hr.org_domain import OrgScope
-from app.modules.hr.org_settings import load_org_scope
+from app.modules.hr.org_domain import OrgScopes
+from app.modules.hr.org_settings import load_org_scopes
 from app.modules.hr.people_domain import EmployeeProfileRecord
 
 _STAFF_STATUS_BY_LABEL: dict[str, int] = {
@@ -41,30 +41,42 @@ def parse_staff_status(value: str | None) -> int | None:
         return None
 
 
-async def in_scope_department_ids(session: AsyncSession, scope: OrgScope | None = None) -> set[str]:
-    """Return the Feishu department ids that belong to the configured company."""
-    org_scope = scope or await load_org_scope(session)
-    result = await session.execute(select(HrDepartment).where(HrDepartment.is_deleted.is_(False)))
-    departments = list(result.scalars().all())
+async def _list_department_rows(session: AsyncSession) -> list[HrDepartment]:
+    result = await session.execute(
+        select(HrDepartment).where(
+            HrDepartment.is_deleted.is_(False),
+            HrDepartment.status_is_deleted.is_(False),
+        )
+    )
+    return list(result.scalars().all())
+
+
+async def in_scope_department_ids(session: AsyncSession, scopes: OrgScopes | None = None) -> set[str]:
+    """Return every department id under any configured company root."""
+    org_scopes = scopes if scopes is not None else await load_org_scopes(session)
+    departments = await _list_department_rows(session)
     scoped: set[str] = set()
     for department in departments:
-        if not department.feishu_department_id:
+        department_id = department.feishu_department_id
+        if not department_id:
             continue
-        if org_scope.is_direct_child(department.parent_feishu_department_id):
-            scoped.add(department.feishu_department_id)
-        if org_scope.covers_path(department.department_path):
-            scoped.add(department.feishu_department_id)
+        if org_scopes.is_root(department_id):
+            scoped.add(department_id)
+        elif org_scopes.is_direct_child(department.parent_feishu_department_id):
+            scoped.add(department_id)
+        elif org_scopes.covers_path(department.department_path):
+            scoped.add(department_id)
 
+    # Close over missing/incomplete paths so deep departments are never lost.
     changed = True
     while changed:
         changed = False
         for department in departments:
-            if not department.feishu_department_id:
-                continue
-            if department.feishu_department_id in scoped:
+            department_id = department.feishu_department_id
+            if not department_id or department_id in scoped:
                 continue
             if department.parent_feishu_department_id in scoped:
-                scoped.add(department.feishu_department_id)
+                scoped.add(department_id)
                 changed = True
     return scoped
 
@@ -72,23 +84,35 @@ async def in_scope_department_ids(session: AsyncSession, scope: OrgScope | None 
 async def resolve_filter_department_ids(session: AsyncSession, selected: str | None) -> set[str] | None:
     """Expand a tree selection to the department ids its people may belong to.
 
-    ``None`` means "no department filter" (company node). A selected 一级部门
-    also matches its 二级部门 children; a selected 二级部门 matches itself.
+    ``None`` means "no department filter" (all companies). Any selected node
+    (company root or deeper) matches itself plus all descendants at any depth.
     """
-    org_scope = await load_org_scope(session)
-    if not selected or org_scope.is_root(selected):
+    if not selected:
         return None
-    scope = await in_scope_department_ids(session, org_scope)
+    org_scopes = await load_org_scopes(session)
+    scope = await in_scope_department_ids(session, org_scopes)
     if selected not in scope:
         return set()
-    result = await session.execute(
-        select(HrDepartment.feishu_department_id).where(
-            HrDepartment.is_deleted.is_(False),
-            HrDepartment.parent_feishu_department_id == selected,
-        )
-    )
-    children = {row[0] for row in result.all()} & scope
-    return {selected, *children}
+    departments = await _list_department_rows(session)
+    selected_ids = {selected}
+    changed = True
+    while changed:
+        changed = False
+        for department in departments:
+            department_id = department.feishu_department_id
+            if not department_id or department_id in selected_ids or department_id not in scope:
+                continue
+            in_selected_path = bool(
+                department.department_path
+                and any(
+                    isinstance(entry, dict) and str(entry.get("id")) == selected
+                    for entry in department.department_path
+                )
+            )
+            if department.parent_feishu_department_id in selected_ids or in_selected_path:
+                selected_ids.add(department_id)
+                changed = True
+    return selected_ids
 
 
 async def _resolve_department_fields(
@@ -119,15 +143,7 @@ class SqlAlchemyEmployeeProfileStore:
         self.session = session
 
     async def list_scope_department_ids(self) -> list[str]:
-        result = await self.session.execute(
-            select(HrDepartment.feishu_department_id).where(
-                HrDepartment.is_deleted.is_(False),
-                HrDepartment.status_is_deleted.is_(False),
-                HrDepartment.level.in_([1, 2]),
-                HrDepartment.feishu_department_id.isnot(None),
-            )
-        )
-        return [department_id for department_id in result.scalars().all() if department_id]
+        return sorted(await in_scope_department_ids(self.session))
 
     async def upsert_profile(
         self,

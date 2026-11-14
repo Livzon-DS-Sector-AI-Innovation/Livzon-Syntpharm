@@ -1,7 +1,7 @@
 """HTTP seam for the 部门管理 org browser (ticket #197).
 
 These tests observe only the public API payloads, against a transactional
-database. They cover the two-level tree shape, scope filtering, hidden rows,
+database. They cover the recursive multi-company tree shape, scope filtering, hidden rows,
 leader-name rendering and the persisted sync status.
 """
 
@@ -85,15 +85,20 @@ class TestOrgDepartmentTree:
 
         assert response.status_code == 401
 
-    async def test_empty_tree(self, auth_client: AsyncClient) -> None:
+    async def test_empty_tree_still_renders_configured_company(self, auth_client: AsyncClient) -> None:
         response = await auth_client.get(TREE_URL)
 
         assert response.status_code == 200
         body = response.json()
         assert body["code"] == 200
-        assert body["data"]["items"] == []
+        assert body["data"]["companies"] == [
+            {"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME},
+        ]
+        assert [node["name"] for node in body["data"]["items"]] == [IN_SCOPE_COMPANY_NAME]
+        assert body["data"]["items"][0]["level"] == 0
+        assert body["data"]["items"][0]["children"] == []
 
-    async def test_tree_is_two_levels_under_company_root(
+    async def test_tree_renders_all_levels_under_company_root(
         self,
         auth_client: AsyncClient,
         db_session: AsyncSession,
@@ -126,15 +131,19 @@ class TestOrgDepartmentTree:
 
         assert response.status_code == 200
         items = response.json()["data"]["items"]
-        assert [node["name"] for node in items] == ["102车间", "101车间"]
-        parent = items[1]
+        assert [node["name"] for node in items] == [IN_SCOPE_COMPANY_NAME]
+        company = items[0]
+        assert company["level"] == 0
+        assert [node["name"] for node in company["children"]] == ["102车间", "101车间"]
+        parent = company["children"][1]
         assert parent["level"] == 1
         assert parent["parent_name"] == IN_SCOPE_COMPANY_NAME
         assert [child["name"] for child in parent["children"]] == ["精制工段", "合成工段"]
         assert parent["children"][0]["level"] == 2
-        assert all(child["name"] != "超深班组" for node in items for child in node["children"])
-        assert all(node["name"] != "已撤销车间" for node in items)
-        assert all(node["name"] != "贸易一部" for node in items)
+        assert parent["children"][1]["children"][0]["name"] == "超深班组"
+        assert parent["children"][1]["children"][0]["level"] == 3
+        assert all(node["name"] != "已撤销车间" for node in company["children"])
+        assert all(node["name"] != "贸易一部" for node in company["children"])
 
     async def test_tree_exposes_counts_path_status_ordering_and_leader_name(
         self,
@@ -155,7 +164,7 @@ class TestOrgDepartmentTree:
 
         response = await auth_client.get(TREE_URL)
 
-        node = response.json()["data"]["items"][0]
+        node = response.json()["data"]["items"][0]["children"][0]
         assert node["id"] == "od-101"
         assert node["leader_ids"] == ["ou-leader", "ou-missing"]
         assert node["leader_names"] == ["张三"]
@@ -180,7 +189,7 @@ class TestOrgDepartmentTree:
 
         response = await auth_client.get(TREE_URL)
 
-        node = response.json()["data"]["items"][0]
+        node = response.json()["data"]["items"][0]["children"][0]
         assert node["leader_names"] == []
         assert node["leader_display"] == "—"
 

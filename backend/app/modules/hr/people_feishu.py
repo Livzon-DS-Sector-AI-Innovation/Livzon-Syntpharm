@@ -13,7 +13,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.hr.org_feishu import FeishuOrgDepartmentFetcher, load_hr_platform_credentials
-from app.modules.hr.org_settings import load_org_scope
+from app.modules.hr.org_settings import load_org_scopes
 
 EMPLOYEE_REQUIRED_FIELDS = (
     "base_info.employee_id",
@@ -108,10 +108,9 @@ class FeishuEmployeeProfileFetcher(FeishuOrgDepartmentFetcher):
 
 async def build_default_employee_fetcher(session: AsyncSession) -> FeishuEmployeeProfileFetcher:
     app_id, app_secret = await load_hr_platform_credentials(session)
-    scope = await load_org_scope(session)
+    scopes = await load_org_scopes(session)
     return FeishuEmployeeProfileFetcher(
         app_id=app_id,
         app_secret=app_secret,
-        root_department_id=scope.department_id,
-        root_department_name=scope.department_name,
+        roots=list(scopes.roots),
     )

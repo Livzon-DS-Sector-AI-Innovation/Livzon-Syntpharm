@@ -733,12 +733,36 @@ class PrejobTemplateResponse(BaseModel):
     updated_at: datetime | None = None
 
 
+class OrgScopeInput(BaseModel):
+    """One configured company root for the HR org mirror."""
+
+    department_id: str = Field(..., min_length=1, max_length=128, description="飞书 open_department_id")
+    name: str = Field(..., min_length=1, max_length=256, description="公司（根部门）名称")
+
+
+class HrSystemSettingsData(BaseModel):
+    """`GET /hr/system-settings` 的数据体（凭据字段只返回掩码）。"""
+
+    FEISHU__PLATFORM__APP_ID: str = ""
+    FEISHU__PLATFORM__APP_SECRET: str = ""
+    FEISHU__VEHICLE__CREDENTIALS__APP_ID: str = ""
+    FEISHU__VEHICLE__CREDENTIALS__APP_SECRET: str = ""
+    FEISHU__TRAINING__CREDENTIALS__APP_ID: str = ""
+    FEISHU__TRAINING__CREDENTIALS__APP_SECRET: str = ""
+    AI_BASE_URL: str = ""
+    AI_API_KEY: str = ""
+    AI_MODEL: str = ""
+    HR_ORG_SYNC_ROOTS: list[OrgScopeInput] = Field(
+        default_factory=list, description="已配置的同步根公司（按展示顺序）"
+    )
+
+
 class HrSystemSettingsApiResponse(BaseModel):
     """`GET /hr/system-settings` 的完整响应体。"""
 
     code: int
     message: str
-    data: dict[str, str]
+    data: HrSystemSettingsData
     meta: dict[str, Any] | None = None
 
 
@@ -760,6 +784,8 @@ class HrSystemSettingsUpdate(BaseModel):
     AI_BASE_URL: str | None = None
     AI_API_KEY: str | None = None
     AI_MODEL: str | None = None
+    HR_ORG_SYNC_ROOTS: list[OrgScopeInput] | None = None
+    # 兼容旧前端/旧脚本：只给单个根部门时转换为单元素列表。
     HR_ORG_SYNC_ROOT_DEPARTMENT_ID: str | None = None
     HR_ORG_SYNC_ROOT_DEPARTMENT_NAME: str | None = None
 

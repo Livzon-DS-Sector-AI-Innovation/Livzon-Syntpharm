@@ -21,7 +21,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.secrets import decrypt_secret
 from app.modules.hr.feishu_values import int_value
-from app.modules.hr.org_settings import load_org_scope
+from app.modules.hr.org_domain import OrgScope
+from app.modules.hr.org_settings import load_org_scopes
 from app.platform.integrations.feishu.utils import OPEN_API_BASE_URL, get_tenant_access_token
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,8 @@ _PAGE_SIZE = 50
 _DETAIL_BATCH_SIZE = 50
 _MAX_RETRIES = 3
 _RETRY_BACKOFF_SECONDS = (1, 2, 4)
+_FETCH_CONCURRENCY = 8
+_MAX_DEPARTMENT_DEPTH = 20
 
 REQUIRED_DETAIL_FIELDS = (
     "department_id",
@@ -86,18 +89,19 @@ class FeishuOrgDepartmentFetcher:
         *,
         app_id: str,
         app_secret: str,
-        root_department_id: str,
-        root_department_name: str = "",
+        roots: list[OrgScope],
         client: httpx.AsyncClient | None = None,
     ) -> None:
         self._app_id = app_id
         self._app_secret = app_secret
-        self._root_department_id = root_department_id
-        self._root_department_name = root_department_name
-        self._client = client
+        self._roots = list(roots)
+        self._client = client or httpx.AsyncClient(
+            base_url=OPEN_API_BASE_URL,
+            timeout=httpx.Timeout(20.0, connect=5.0),
+        )
 
     async def _get_client(self) -> httpx.AsyncClient:
-        if self._client is None or self._client.is_closed:
+        if self._client.is_closed:
             self._client = httpx.AsyncClient(
                 base_url=OPEN_API_BASE_URL,
                 timeout=httpx.Timeout(20.0, connect=5.0),
@@ -138,6 +142,8 @@ class FeishuOrgDepartmentFetcher:
                 )
                 if response.status_code >= 500:
                     raise RuntimeError(f"飞书接口 {path} 返回 HTTP {response.status_code}")
+                if response.status_code == 429:
+                    raise RuntimeError(f"飞书接口 {path} 触发限流 (HTTP 429)")
                 payload = response.json()
                 code = payload.get("code")
                 if code == 99991663 and not token_refreshed:
@@ -178,60 +184,102 @@ class FeishuOrgDepartmentFetcher:
                 break
         return items
 
+    async def _list_children_many(self, parent_ids: list[str]) -> list[list[dict[str, Any]] | RuntimeError]:
+        """Fetch children for a frontier with bounded concurrency.
+
+        40004 (department outside the app's visibility) is returned as an error
+        value so the caller can skip that branch; other failures propagate.
+        """
+        semaphore = asyncio.Semaphore(_FETCH_CONCURRENCY)
+
+        async def fetch_one(parent_id: str) -> list[dict[str, Any]] | RuntimeError:
+            async with semaphore:
+                try:
+                    return await self._list_children(parent_id)
+                except RuntimeError as exc:
+                    if "40004" in str(exc):
+                        return exc
+                    raise
+
+        return await asyncio.gather(*(fetch_one(parent_id) for parent_id in parent_ids))
+
     async def fetch_departments(self) -> list[dict[str, Any]]:
-        """Return the company (level 0), 一级部门 and 二级部门 as flat contact rows."""
-        level_one_raw = await self._list_children(self._root_department_id)
-        departments: list[dict[str, Any]] = [
-            {
-                "department_id": self._root_department_id,
-                "name": self._root_department_name,
-                "parent_department_id": None,
-                "order": 0,
-            }
-        ]
-        level_one_ids: list[str] = []
-        for raw in level_one_raw:
-            dept_id = str(raw.get("open_department_id") or raw.get("department_id") or "").strip()
-            if not dept_id or dept_id == self._root_department_id:
+        """Walk every configured root breadth-first until no children remain.
+
+        Each returned row is flat (``parent_department_id`` + ``level``); the
+        mirror derives depth from this value. Branches the bot cannot see
+        (40004) are skipped; a 40004 on a configured root fails the sync because
+        the configured scope itself is invisible.
+        """
+        departments: list[dict[str, Any]] = []
+        seen: set[str] = set()
+
+        for root in self._roots:
+            root_id = root.department_id
+            if not root_id or root_id in seen:
                 continue
-            level_one_ids.append(dept_id)
+            seen.add(root_id)
             departments.append(
                 {
-                    "department_id": dept_id,
-                    "name": raw.get("name") or "",
-                    "parent_department_id": self._root_department_id,
-                    "order": int_value(raw.get("order")),
+                    "department_id": root_id,
+                    "name": root.department_name,
+                    "parent_department_id": None,
+                    "level": 0,
+                    "order": 0,
                 }
             )
 
-        for parent_id in level_one_ids:
-            try:
-                children = await self._list_children(parent_id)
-            except RuntimeError as exc:
-                if "40004" in str(exc):
-                    logger.warning(
-                        "部门 %s 超出应用可见范围，跳过其子部门",
-                        parent_id,
-                        extra={
-                            "biz_module": "hr",
-                            "department_id": parent_id,
-                            "skip_reason": "40004",
-                        },
-                    )
-                    continue
-                raise
-            for raw in children:
-                dept_id = str(raw.get("open_department_id") or raw.get("department_id") or "").strip()
-                if not dept_id:
-                    continue
-                departments.append(
-                    {
-                        "department_id": dept_id,
-                        "name": raw.get("name") or "",
-                        "parent_department_id": parent_id,
-                        "order": int_value(raw.get("order")),
-                    }
-                )
+            frontier: list[tuple[str, int]] = [(root_id, 0)]
+            while frontier:
+                active: list[tuple[str, int]] = []
+                for parent_id, depth in frontier:
+                    if depth >= _MAX_DEPARTMENT_DEPTH:
+                        logger.warning(
+                            "部门层级超过上限，跳过其子部门",
+                            extra={
+                                "biz_module": "hr",
+                                "department_id": parent_id,
+                                "max_depth": _MAX_DEPARTMENT_DEPTH,
+                            },
+                        )
+                        continue
+                    active.append((parent_id, depth))
+                if not active:
+                    break
+                results = await self._list_children_many([parent_id for parent_id, _ in active])
+                next_frontier: list[tuple[str, int]] = []
+                for (parent_id, depth), children in zip(active, results):
+                    if isinstance(children, RuntimeError):
+                        if depth == 0:
+                            raise RuntimeError(
+                                f"HR 组织同步：根部门 {parent_id} 不在飞书应用可见范围内（40004）"
+                            ) from children
+                        logger.warning(
+                            "部门 %s 超出应用可见范围，跳过其子部门",
+                            parent_id,
+                            extra={
+                                "biz_module": "hr",
+                                "department_id": parent_id,
+                                "skip_reason": "40004",
+                            },
+                        )
+                        continue
+                    for raw in children:
+                        dept_id = str(raw.get("open_department_id") or raw.get("department_id") or "").strip()
+                        if not dept_id or dept_id in seen:
+                            continue
+                        seen.add(dept_id)
+                        departments.append(
+                            {
+                                "department_id": dept_id,
+                                "name": raw.get("name") or "",
+                                "parent_department_id": parent_id,
+                                "level": depth + 1,
+                                "order": int_value(raw.get("order")),
+                            }
+                        )
+                        next_frontier.append((dept_id, depth + 1))
+                frontier = next_frontier
         return departments
 
     async def fetch_departments_detail(self, department_ids: list[str]) -> list[dict[str, Any]]:
@@ -258,10 +306,9 @@ class FeishuOrgDepartmentFetcher:
 
 async def build_default_fetcher(session: AsyncSession) -> FeishuOrgDepartmentFetcher:
     app_id, app_secret = await load_hr_platform_credentials(session)
-    scope = await load_org_scope(session)
+    scopes = await load_org_scopes(session)
     return FeishuOrgDepartmentFetcher(
         app_id=app_id,
         app_secret=app_secret,
-        root_department_id=scope.department_id,
-        root_department_name=scope.department_name,
+        roots=list(scopes.roots),
     )

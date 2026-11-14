@@ -19,7 +19,6 @@ interface EmployeeDirectoryClientProps {
   initialPeople: EmployeeProfileListItem[]
   initialTotal: number
   initialLastSyncedAt: string | null
-  initialCompanyName: string
   initialStatus: OrgSyncStatusData
 }
 
@@ -182,7 +181,6 @@ export default function EmployeeDirectoryClient({
   initialPeople,
   initialTotal,
   initialLastSyncedAt,
-  initialCompanyName,
   initialStatus,
 }: EmployeeDirectoryClientProps) {
   const router = useRouter()
@@ -227,18 +225,7 @@ export default function EmployeeDirectoryClient({
     }
   }
 
-  const companyNode = initialTree.find((node) => node.level === 0)
-  const companyKey = companyNode?.id ?? 'all'
-  const treeData: DataNode[] = useMemo(() => {
-    if (companyNode) return [toTreeNode(companyNode)]
-    return [
-      {
-        key: 'all',
-        title: initialCompanyName || '公司',
-        children: initialTree.map(toTreeNode),
-      },
-    ]
-  }, [companyNode, initialTree, initialCompanyName])
+  const treeData: DataNode[] = useMemo(() => initialTree.map(toTreeNode), [initialTree])
 
   const isInitialQuery =
     selectedDepartment === null && status === '1' && deferredKeyword === '' && page === 1 && pageSize === 20
@@ -312,7 +299,7 @@ export default function EmployeeDirectoryClient({
 
   const handleDepartmentSelect = (keys: React.Key[]) => {
     const key = keys[0]
-    setSelectedDepartment(!key || key === 'all' || key === companyKey ? null : String(key))
+    setSelectedDepartment(key ? String(key) : null)
     setPage(1)
   }
 
@@ -324,7 +311,7 @@ export default function EmployeeDirectoryClient({
           blockNode
           defaultExpandAll
           treeData={treeData}
-          selectedKeys={[selectedDepartment ?? companyKey]}
+          selectedKeys={selectedDepartment ? [selectedDepartment] : []}
           onSelect={handleDepartmentSelect}
         />
       </div>

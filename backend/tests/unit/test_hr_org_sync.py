@@ -6,7 +6,7 @@ Feishu fetchers. Catches:
 - stale/removed departments flagged hidden, never deleted;
 - out-of-scope mirror rows left untouched;
 - detail-less / empty-field departments still upserted with empty values;
-- level > 2 departments ignored.
+- deep (3+) departments kept, with level derived from the path.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ import pytest
 from app.modules.hr.org_domain import OrgDepartmentRecord
 from app.modules.hr.org_sync import OrgSyncStats, SyncRunRecord, sync_org_departments
 from tests.fixtures.org_scope import (
-    DEFAULT_ORG_SCOPE,
+    DEFAULT_ORG_SCOPES,
     IN_SCOPE_COMPANY_ID,
     IN_SCOPE_COMPANY_NAME,
 )
@@ -136,7 +136,7 @@ async def test_sync_upserts_tree_and_directory_fields() -> None:
     )
     store = FakeStore()
 
-    stats = await sync_org_departments(store, fetcher, scope=DEFAULT_ORG_SCOPE)
+    stats = await sync_org_departments(store, fetcher, scopes=DEFAULT_ORG_SCOPES)
 
     assert stats == OrgSyncStats(total=2, created=2, updated=0, hidden=0)
     parent = store.records["od-101"]
@@ -178,7 +178,7 @@ async def test_sync_hides_removed_and_out_of_scope_rows() -> None:
         details=[_detail("od-101", "101车间", IN_SCOPE_COMPANY_ID)],
     )
 
-    stats = await sync_org_departments(store, fetcher, scope=DEFAULT_ORG_SCOPE)
+    stats = await sync_org_departments(store, fetcher, scopes=DEFAULT_ORG_SCOPES)
 
     assert stats.hidden == 2
     assert store.hidden == ["od-stale", "od-trade"]
@@ -192,7 +192,7 @@ async def test_sync_upserts_department_when_directory_detail_is_missing() -> Non
     )
     store = FakeStore()
 
-    stats = await sync_org_departments(store, fetcher, scope=DEFAULT_ORG_SCOPE)
+    stats = await sync_org_departments(store, fetcher, scopes=DEFAULT_ORG_SCOPES)
 
     assert stats.total == 1
     record = store.records["od-101"]
@@ -206,7 +206,7 @@ async def test_sync_upserts_department_when_directory_detail_is_missing() -> Non
     assert record.recursive_members_count == 0
 
 
-async def test_sync_ignores_departments_deeper_than_two_levels() -> None:
+async def test_sync_keeps_departments_deeper_than_two_levels() -> None:
     fetcher = FakeFetcher(
         departments=[
             _contact("od-101", "101车间", IN_SCOPE_COMPANY_ID),
@@ -214,18 +214,46 @@ async def test_sync_ignores_departments_deeper_than_two_levels() -> None:
             _contact("od-101-1-1", "班组", "od-101-1"),
         ],
         details=[
-            _detail("od-101", "101车间", IN_SCOPE_COMPANY_ID),
-            _detail("od-101-1", "合成工段", "od-101"),
-            _detail("od-101-1-1", "班组", "od-101-1"),
+            _detail(
+                "od-101",
+                "101车间",
+                IN_SCOPE_COMPANY_ID,
+                path=[
+                    {"department_id": IN_SCOPE_COMPANY_ID, "department_name": {"default_value": IN_SCOPE_COMPANY_NAME}},
+                    {"department_id": "od-101", "department_name": {"default_value": "101车间"}},
+                ],
+            ),
+            _detail(
+                "od-101-1",
+                "合成工段",
+                "od-101",
+                path=[
+                    {"department_id": IN_SCOPE_COMPANY_ID, "department_name": {"default_value": IN_SCOPE_COMPANY_NAME}},
+                    {"department_id": "od-101", "department_name": {"default_value": "101车间"}},
+                    {"department_id": "od-101-1", "department_name": {"default_value": "合成工段"}},
+                ],
+            ),
+            _detail(
+                "od-101-1-1",
+                "班组",
+                "od-101-1",
+                path=[
+                    {"department_id": IN_SCOPE_COMPANY_ID, "department_name": {"default_value": IN_SCOPE_COMPANY_NAME}},
+                    {"department_id": "od-101", "department_name": {"default_value": "101车间"}},
+                    {"department_id": "od-101-1", "department_name": {"default_value": "合成工段"}},
+                    {"department_id": "od-101-1-1", "department_name": {"default_value": "班组"}},
+                ],
+            ),
         ],
     )
     store = FakeStore()
 
-    stats = await sync_org_departments(store, fetcher, scope=DEFAULT_ORG_SCOPE)
+    stats = await sync_org_departments(store, fetcher, scopes=DEFAULT_ORG_SCOPES)
 
-    assert stats.total == 2
-    assert "od-101-1-1" not in store.records
-    assert fetcher.detail_requests == [["od-101", "od-101-1"]]
+    assert stats.total == 3
+    assert "od-101-1-1" in store.records
+    assert store.records["od-101-1-1"].level == 3
+    assert set(fetcher.detail_requests[0]) == {"od-101", "od-101-1", "od-101-1-1"}
 
 
 async def test_sync_records_last_sync_metadata_with_counts() -> None:
@@ -236,7 +264,7 @@ async def test_sync_records_last_sync_metadata_with_counts() -> None:
     store = FakeStore()
     started = datetime(2026, 11, 12, 0, 0, tzinfo=UTC)
 
-    await sync_org_departments(store, fetcher, started_at=started, scope=DEFAULT_ORG_SCOPE)
+    await sync_org_departments(store, fetcher, started_at=started, scopes=DEFAULT_ORG_SCOPES)
 
     assert len(store.runs) == 1
     run = store.runs[0]
@@ -260,7 +288,7 @@ async def test_sync_records_failed_run_and_keeps_existing_data() -> None:
         await sync_org_departments(
             store,
             BrokenFetcher(departments=[], details=[]),
-            scope=DEFAULT_ORG_SCOPE,
+            scopes=DEFAULT_ORG_SCOPES,
         )
 
     assert store.records["od-101"].name == "101车间"
@@ -296,7 +324,7 @@ async def test_sync_rolls_back_partial_writes_before_recording_failure() -> None
     store = FailingStore()
 
     with pytest.raises(RuntimeError, match="database write failed"):
-        await sync_org_departments(store, fetcher, scope=DEFAULT_ORG_SCOPE)
+        await sync_org_departments(store, fetcher, scopes=DEFAULT_ORG_SCOPES)
 
     assert set(store.records) == {"od-existing"}
     assert store.records["od-existing"].name == "既有部门"
@@ -333,7 +361,7 @@ async def test_sync_stores_company_root_and_requests_its_detail() -> None:
     )
     store = FakeStore()
 
-    stats = await sync_org_departments(store, fetcher, scope=DEFAULT_ORG_SCOPE)
+    stats = await sync_org_departments(store, fetcher, scopes=DEFAULT_ORG_SCOPES)
 
     assert stats.total == 2
     company = store.records[IN_SCOPE_COMPANY_ID]

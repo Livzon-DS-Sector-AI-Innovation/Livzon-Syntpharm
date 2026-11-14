@@ -14,9 +14,10 @@ from app.modules.hr.org_schemas import (
     OrgDepartmentNode,
     OrgDepartmentTreeApiResponse,
     OrgDepartmentTreeData,
+    OrgPathNode,
 )
 from app.modules.hr.org_service import get_org_tree
-from app.modules.hr.org_settings import load_org_scope
+from app.modules.hr.org_settings import load_org_scopes
 from app.modules.hr.people_schemas import (
     EmployeeProfileDetail,
     EmployeeProfileDetailApiResponse,
@@ -35,11 +36,11 @@ async def list_people_departments(
     ctx: PermissionContext = Depends(require_permission("hr:personnel:read")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
-    """返回公司根节点下的两级部门树，供员工档案左侧筛选使用。"""
-    scope = await load_org_scope(session)
+    """返回配置的同步根公司（可多个）下的完整部门树，供员工档案左侧筛选使用。"""
+    scopes = await load_org_scopes(session)
     items = await get_org_tree(session)
     data = OrgDepartmentTreeData(
-        company_name=scope.department_name,
+        companies=[OrgPathNode(id=root.department_id, name=root.department_name) for root in scopes.roots],
         items=[OrgDepartmentNode.model_validate(item) for item in items],
     )
     return build_response(data=data.model_dump(mode="json"))

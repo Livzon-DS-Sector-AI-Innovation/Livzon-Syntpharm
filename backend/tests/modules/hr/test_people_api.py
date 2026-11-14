@@ -261,7 +261,7 @@ class TestPeopleList:
 
 
 class TestPeopleTree:
-    async def test_tree_is_two_levels_under_company_root(
+    async def test_tree_renders_company_and_all_levels(
         self,
         auth_client: AsyncClient,
         db_session: AsyncSession,
@@ -271,9 +271,12 @@ class TestPeopleTree:
         response = await auth_client.get(TREE_URL)
 
         assert response.status_code == 200
-        items = response.json()["data"]["items"]
-        assert [node["name"] for node in items] == ["101车间", "102车间"]
-        assert [child["name"] for child in items[0]["children"]] == ["合成工段"]
+        body = response.json()["data"]
+        assert body["companies"] == [{"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME}]
+        assert [node["name"] for node in body["items"]] == [IN_SCOPE_COMPANY_NAME]
+        company = body["items"][0]
+        assert [node["name"] for node in company["children"]] == ["101车间", "102车间"]
+        assert [child["name"] for child in company["children"][0]["children"]] == ["合成工段"]
 
 
 class TestPeopleDetail:

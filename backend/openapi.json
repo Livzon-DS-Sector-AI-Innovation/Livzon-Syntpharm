@@ -45776,7 +45776,7 @@
           "HR \u7ec4\u7ec7\u67b6\u6784"
         ],
         "summary": "\u90e8\u95e8\u6811\uff08\u53ea\u8bfb\uff09",
-        "description": "\u8fd4\u56de\u914d\u7f6e\u7684\u540c\u6b65\u6839\u90e8\u95e8\uff08\u9ed8\u8ba4\u73e0\u6d77\u4fdd\u7a0e\u533a\u4e3d\u73e0\u5408\u6210\u5236\u836f\u6709\u9650\u516c\u53f8\uff09\u4e0b\u7684\u4e24\u7ea7\u90e8\u95e8\u6811\u3002",
+        "description": "\u8fd4\u56de\u914d\u7f6e\u7684\u540c\u6b65\u6839\u516c\u53f8\uff08\u53ef\u591a\u4e2a\uff09\u4e0b\u7684\u5b8c\u6574\u90e8\u95e8\u6811\u3002",
         "operationId": "list_org_departments_api_v1_hr_org_departments_get",
         "parameters": [
           {
@@ -46635,7 +46635,7 @@
           "HR \u5458\u5de5\u6863\u6848"
         ],
         "summary": "\u5458\u5de5\u6863\u6848\u90e8\u95e8\u6811\uff08\u53ea\u8bfb\uff09",
-        "description": "\u8fd4\u56de\u516c\u53f8\u6839\u8282\u70b9\u4e0b\u7684\u4e24\u7ea7\u90e8\u95e8\u6811\uff0c\u4f9b\u5458\u5de5\u6863\u6848\u5de6\u4fa7\u7b5b\u9009\u4f7f\u7528\u3002",
+        "description": "\u8fd4\u56de\u914d\u7f6e\u7684\u540c\u6b65\u6839\u516c\u53f8\uff08\u53ef\u591a\u4e2a\uff09\u4e0b\u7684\u5b8c\u6574\u90e8\u95e8\u6811\uff0c\u4f9b\u5458\u5de5\u6863\u6848\u5de6\u4fa7\u7b5b\u9009\u4f7f\u7528\u3002",
         "operationId": "list_people_departments_api_v1_hr_people_departments_get",
         "parameters": [
           {
@@ -131442,11 +131442,7 @@
             "title": "Message"
           },
           "data": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Data"
+            "$ref": "#/components/schemas/HrSystemSettingsData"
           },
           "meta": {
             "anyOf": [
@@ -131469,6 +131465,66 @@
         ],
         "title": "HrSystemSettingsApiResponse",
         "description": "`GET /hr/system-settings` \u7684\u5b8c\u6574\u54cd\u5e94\u4f53\u3002"
+      },
+      "HrSystemSettingsData": {
+        "properties": {
+          "FEISHU__PLATFORM__APP_ID": {
+            "type": "string",
+            "title": "Feishu  Platform  App Id",
+            "default": ""
+          },
+          "FEISHU__PLATFORM__APP_SECRET": {
+            "type": "string",
+            "title": "Feishu  Platform  App Secret",
+            "default": ""
+          },
+          "FEISHU__VEHICLE__CREDENTIALS__APP_ID": {
+            "type": "string",
+            "title": "Feishu  Vehicle  Credentials  App Id",
+            "default": ""
+          },
+          "FEISHU__VEHICLE__CREDENTIALS__APP_SECRET": {
+            "type": "string",
+            "title": "Feishu  Vehicle  Credentials  App Secret",
+            "default": ""
+          },
+          "FEISHU__TRAINING__CREDENTIALS__APP_ID": {
+            "type": "string",
+            "title": "Feishu  Training  Credentials  App Id",
+            "default": ""
+          },
+          "FEISHU__TRAINING__CREDENTIALS__APP_SECRET": {
+            "type": "string",
+            "title": "Feishu  Training  Credentials  App Secret",
+            "default": ""
+          },
+          "AI_BASE_URL": {
+            "type": "string",
+            "title": "Ai Base Url",
+            "default": ""
+          },
+          "AI_API_KEY": {
+            "type": "string",
+            "title": "Ai Api Key",
+            "default": ""
+          },
+          "AI_MODEL": {
+            "type": "string",
+            "title": "Ai Model",
+            "default": ""
+          },
+          "HR_ORG_SYNC_ROOTS": {
+            "items": {
+              "$ref": "#/components/schemas/OrgScopeInput"
+            },
+            "type": "array",
+            "title": "Hr Org Sync Roots",
+            "description": "\u5df2\u914d\u7f6e\u7684\u540c\u6b65\u6839\u516c\u53f8\uff08\u6309\u5c55\u793a\u987a\u5e8f\uff09"
+          }
+        },
+        "type": "object",
+        "title": "HrSystemSettingsData",
+        "description": "`GET /hr/system-settings` \u7684\u6570\u636e\u4f53\uff08\u51ed\u636e\u5b57\u6bb5\u53ea\u8fd4\u56de\u63a9\u7801\uff09\u3002"
       },
       "HrSystemSettingsSaveData": {
         "properties": {
@@ -131619,6 +131675,20 @@
               }
             ],
             "title": "Ai Model"
+          },
+          "HR_ORG_SYNC_ROOTS": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OrgScopeInput"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hr Org Sync Roots"
           },
           "HR_ORG_SYNC_ROOT_DEPARTMENT_ID": {
             "anyOf": [
@@ -146033,7 +146103,7 @@
           "level": {
             "type": "integer",
             "title": "Level",
-            "description": "1 = \u4e00\u7ea7\u90e8\u95e8\uff0c2 = \u4e8c\u7ea7\u90e8\u95e8"
+            "description": "0 = \u516c\u53f8\uff0cN = \u7b2c N \u7ea7\u90e8\u95e8"
           },
           "parent_id": {
             "anyOf": [
@@ -146199,10 +146269,13 @@
       },
       "OrgDepartmentTreeData": {
         "properties": {
-          "company_name": {
-            "type": "string",
-            "title": "Company Name",
-            "default": ""
+          "companies": {
+            "items": {
+              "$ref": "#/components/schemas/OrgPathNode"
+            },
+            "type": "array",
+            "title": "Companies",
+            "description": "\u5df2\u914d\u7f6e\u7684\u540c\u6b65\u6839\u516c\u53f8"
           },
           "items": {
             "items": {
@@ -146232,6 +146305,31 @@
           "name"
         ],
         "title": "OrgPathNode"
+      },
+      "OrgScopeInput": {
+        "properties": {
+          "department_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Department Id",
+            "description": "\u98de\u4e66 open_department_id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Name",
+            "description": "\u516c\u53f8\uff08\u6839\u90e8\u95e8\uff09\u540d\u79f0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "name"
+        ],
+        "title": "OrgScopeInput",
+        "description": "One configured company root for the HR org mirror."
       },
       "OrgSyncStatusApiResponse": {
         "properties": {

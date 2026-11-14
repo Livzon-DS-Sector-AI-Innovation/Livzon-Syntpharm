@@ -42,7 +42,7 @@ class HrDepartment(BaseModel):
         String(64), nullable=True, comment="飞书部门 open_department_id"
     )
     parent_feishu_department_id: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="父部门 open_id")
-    level: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="层级：0 公司 / 1 一级 / 2 二级")
+    level: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="层级：0 公司 / N 第 N 级")
     order: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="同级排序")
     order_weight: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="飞书排序权重（原始字符串）")
     leader_ids: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True, comment="负责人 open_id，按飞书返回顺序")

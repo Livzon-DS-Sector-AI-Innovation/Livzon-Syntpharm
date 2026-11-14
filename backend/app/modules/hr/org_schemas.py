@@ -18,7 +18,7 @@ class OrgPathNode(BaseModel):
 class OrgDepartmentNode(BaseModel):
     id: str
     name: str
-    level: int = Field(..., description="1 = 一级部门，2 = 二级部门")
+    level: int = Field(..., description="0 = 公司，N = 第 N 级部门")
     parent_id: str | None = None
     parent_name: str | None = None
     leader_ids: list[str] = Field(default_factory=list)
@@ -38,7 +38,7 @@ class OrgDepartmentNode(BaseModel):
 
 
 class OrgDepartmentTreeData(BaseModel):
-    company_name: str = ""
+    companies: list[OrgPathNode] = Field(default_factory=list, description="已配置的同步根公司")
     items: list[OrgDepartmentNode] = Field(default_factory=list)
 
 

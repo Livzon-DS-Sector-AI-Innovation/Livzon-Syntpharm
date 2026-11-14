@@ -9484,7 +9484,7 @@ export interface paths {
         };
         /**
          * 部门树（只读）
-         * @description 返回配置的同步根部门（默认珠海保税区丽珠合成制药有限公司）下的两级部门树。
+         * @description 返回配置的同步根公司（可多个）下的完整部门树。
          */
         get: operations["list_org_departments_api_v1_hr_org_departments_get"];
         put?: never;
@@ -9618,7 +9618,7 @@ export interface paths {
         };
         /**
          * 员工档案部门树（只读）
-         * @description 返回公司根节点下的两级部门树，供员工档案左侧筛选使用。
+         * @description 返回配置的同步根公司（可多个）下的完整部门树，供员工档案左侧筛选使用。
          */
         get: operations["list_people_departments_api_v1_hr_people_departments_get"];
         put?: never;
@@ -36496,14 +36496,67 @@ export interface components {
             code: number;
             /** Message */
             message: string;
-            /** Data */
-            data: {
-                [key: string]: string;
-            };
+            data: components["schemas"]["HrSystemSettingsData"];
             /** Meta */
             meta?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /**
+         * HrSystemSettingsData
+         * @description `GET /hr/system-settings` 的数据体（凭据字段只返回掩码）。
+         */
+        HrSystemSettingsData: {
+            /**
+             * Feishu  Platform  App Id
+             * @default
+             */
+            FEISHU__PLATFORM__APP_ID: string;
+            /**
+             * Feishu  Platform  App Secret
+             * @default
+             */
+            FEISHU__PLATFORM__APP_SECRET: string;
+            /**
+             * Feishu  Vehicle  Credentials  App Id
+             * @default
+             */
+            FEISHU__VEHICLE__CREDENTIALS__APP_ID: string;
+            /**
+             * Feishu  Vehicle  Credentials  App Secret
+             * @default
+             */
+            FEISHU__VEHICLE__CREDENTIALS__APP_SECRET: string;
+            /**
+             * Feishu  Training  Credentials  App Id
+             * @default
+             */
+            FEISHU__TRAINING__CREDENTIALS__APP_ID: string;
+            /**
+             * Feishu  Training  Credentials  App Secret
+             * @default
+             */
+            FEISHU__TRAINING__CREDENTIALS__APP_SECRET: string;
+            /**
+             * Ai Base Url
+             * @default
+             */
+            AI_BASE_URL: string;
+            /**
+             * Ai Api Key
+             * @default
+             */
+            AI_API_KEY: string;
+            /**
+             * Ai Model
+             * @default
+             */
+            AI_MODEL: string;
+            /**
+             * Hr Org Sync Roots
+             * @description 已配置的同步根公司（按展示顺序）
+             */
+            HR_ORG_SYNC_ROOTS?: components["schemas"]["OrgScopeInput"][];
         };
         /** HrSystemSettingsSaveData */
         HrSystemSettingsSaveData: {
@@ -36554,6 +36607,8 @@ export interface components {
             AI_API_KEY?: string | null;
             /** Ai Model */
             AI_MODEL?: string | null;
+            /** Hr Org Sync Roots */
+            HR_ORG_SYNC_ROOTS?: components["schemas"]["OrgScopeInput"][] | null;
             /** Hr Org Sync Root Department Id */
             HR_ORG_SYNC_ROOT_DEPARTMENT_ID?: string | null;
             /** Hr Org Sync Root Department Name */
@@ -43067,7 +43122,7 @@ export interface components {
             name: string;
             /**
              * Level
-             * @description 1 = 一级部门，2 = 二级部门
+             * @description 0 = 公司，N = 第 N 级部门
              */
             level: number;
             /** Parent Id */
@@ -43148,10 +43203,10 @@ export interface components {
         /** OrgDepartmentTreeData */
         OrgDepartmentTreeData: {
             /**
-             * Company Name
-             * @default
+             * Companies
+             * @description 已配置的同步根公司
              */
-            company_name: string;
+            companies?: components["schemas"]["OrgPathNode"][];
             /** Items */
             items?: components["schemas"]["OrgDepartmentNode"][];
         };
@@ -43160,6 +43215,22 @@ export interface components {
             /** Id */
             id: string;
             /** Name */
+            name: string;
+        };
+        /**
+         * OrgScopeInput
+         * @description One configured company root for the HR org mirror.
+         */
+        OrgScopeInput: {
+            /**
+             * Department Id
+             * @description 飞书 open_department_id
+             */
+            department_id: string;
+            /**
+             * Name
+             * @description 公司（根部门）名称
+             */
             name: string;
         };
         /** OrgSyncStatusApiResponse */

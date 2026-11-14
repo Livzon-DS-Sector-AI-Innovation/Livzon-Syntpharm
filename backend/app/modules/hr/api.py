@@ -38,12 +38,15 @@ from app.modules.hr.onboarding_evaluation_document_generator import (
     generate_onboarding_evaluation,
 )
 from app.modules.hr.org_api import router as org_router
+from app.modules.hr.org_domain import OrgScope
 from app.modules.hr.org_settings import (
     ORG_SCOPE_SETTING_KEYS,
     ORG_SYNC_ROOT_ID_SETTING,
     ORG_SYNC_ROOT_NAME_SETTING,
-    load_org_scope,
+    ORG_SYNC_ROOTS_SETTING,
+    load_org_scopes,
     save_org_scope_value,
+    save_org_scopes,
 )
 from app.modules.hr.people_api import router as people_router
 from app.modules.hr.prejob_document_generator import generate_prejob_training_plan
@@ -62,9 +65,11 @@ from app.modules.hr.schemas import (
     EmployeeResponse,
     EmployeeUpdate,
     HrSystemSettingsApiResponse,
+    HrSystemSettingsData,
     HrSystemSettingsSaveResponse,
     HrSystemSettingsUpdate,
     OnboardingEvaluationInput,
+    OrgScopeInput,
     PrejobTemplateCreate,
     PrejobTemplateItem,
     PrejobTemplateResponse,
@@ -2739,6 +2744,7 @@ SETTING_KEYS = [
     "AI_BASE_URL",
     "AI_API_KEY",
     "AI_MODEL",
+    ORG_SYNC_ROOTS_SETTING,
     ORG_SYNC_ROOT_ID_SETTING,
     ORG_SYNC_ROOT_NAME_SETTING,
 ]
@@ -2797,25 +2803,28 @@ async def get_system_settings(  # type: ignore[no-untyped-def]
     session: AsyncSession = Depends(get_db),
 ):
     """获取所有系统配置。凭据类字段只返回掩码（如 `cli_ab****cd12`），绝不返回明文。"""
-    result = {}
     from sqlalchemy import text as sql_text
 
     r = await session.execute(sql_text("SELECT key, value FROM hr.system_settings"))
     db_settings = {row[0]: row[1] for row in r.fetchall()}
 
     # 未配置组织同步范围时也允许打开设置页（否则无法录入该配置）。
-    scope = await load_org_scope(session, required=False)
-    for key in SETTING_KEYS:
-        if key == ORG_SYNC_ROOT_ID_SETTING:
-            result[key] = scope.department_id
-            continue
-        if key == ORG_SYNC_ROOT_NAME_SETTING:
-            result[key] = scope.department_name
-            continue
-        val = _get_db_setting(db_settings, key)
-        result[key] = mask_secret(val) if key in SECRET_SETTING_KEYS else val
+    scopes = await load_org_scopes(session, required=False)
+    values = {
+        key: _get_db_setting(db_settings, key)
+        for key in SETTING_KEYS
+        if key not in ORG_SCOPE_SETTING_KEYS
+    }
+    for key in SECRET_SETTING_KEYS:
+        values[key] = mask_secret(values.get(key, ""))
+    data = HrSystemSettingsData(
+        **values,
+        HR_ORG_SYNC_ROOTS=[
+            OrgScopeInput(department_id=root.department_id, name=root.department_name) for root in scopes.roots
+        ],
+    )
 
-    return build_response(data=result)
+    return build_response(data=data.model_dump(mode="json"))
 
 
 @router.put(
@@ -2839,7 +2848,25 @@ async def save_system_settings(  # type: ignore[no-untyped-def]
 
     updated: list[str] = []
     env_updates: dict[str, str] = {}
-    for key, raw_value in payload.model_dump(exclude_unset=True).items():
+    payload_data = payload.model_dump(exclude_unset=True)
+
+    roots_raw = payload_data.pop(ORG_SYNC_ROOTS_SETTING, None)
+    if roots_raw is not None:
+        roots = [
+            OrgScope(
+                department_id=str(item.get("department_id") or "").strip(),
+                department_name=str(item.get("name") or "").strip(),
+            )
+            for item in roots_raw
+        ]
+        if not roots or any(not root.department_id or not root.department_name for root in roots):
+            raise BadRequestException("请至少配置一个完整的同步公司（公司名称 + 根部门 ID）")
+        if len({root.department_id for root in roots}) != len(roots):
+            raise BadRequestException("同步公司的根部门 ID 不能重复")
+        await save_org_scopes(session, roots)
+        updated.append(ORG_SYNC_ROOTS_SETTING)
+
+    for key, raw_value in payload_data.items():
         canonical_key = _canonical_setting_key(key)
         if key not in SETTING_KEYS and canonical_key not in SETTING_KEYS:
             continue
