@@ -733,13 +733,6 @@ class PrejobTemplateResponse(BaseModel):
     updated_at: datetime | None = None
 
 
-class OrgScopeInput(BaseModel):
-    """One configured company root for the HR org mirror."""
-
-    department_id: str = Field(..., min_length=1, max_length=128, description="飞书 open_department_id")
-    name: str = Field(..., min_length=1, max_length=256, description="公司（根部门）名称")
-
-
 class HrSystemSettingsData(BaseModel):
     """`GET /hr/system-settings` 的数据体（凭据字段只返回掩码）。"""
 
@@ -752,7 +745,6 @@ class HrSystemSettingsData(BaseModel):
     AI_BASE_URL: str = ""
     AI_API_KEY: str = ""
     AI_MODEL: str = ""
-    HR_ORG_SYNC_ROOTS: list[OrgScopeInput] = Field(default_factory=list, description="已配置的同步根公司（按展示顺序）")
 
 
 class HrSystemSettingsApiResponse(BaseModel):
@@ -782,8 +774,8 @@ class HrSystemSettingsUpdate(BaseModel):
     AI_BASE_URL: str | None = None
     AI_API_KEY: str | None = None
     AI_MODEL: str | None = None
-    HR_ORG_SYNC_ROOTS: list[OrgScopeInput] | None = None
-    # 兼容旧前端/旧脚本：只给单个根部门时转换为单元素列表。
+    # 已废弃：保留一个版本，避免旧前端在滚动发布时收到 422；服务端忽略这些键。
+    HR_ORG_SYNC_ROOTS: list[dict[str, Any]] | None = None
     HR_ORG_SYNC_ROOT_DEPARTMENT_ID: str | None = None
     HR_ORG_SYNC_ROOT_DEPARTMENT_NAME: str | None = None
 

@@ -21,7 +21,6 @@ import pytest
 from app.modules.hr.org_domain import OrgDepartmentRecord
 from app.modules.hr.org_sync import OrgSyncStats, SyncRunRecord, sync_org_departments
 from tests.fixtures.org_scope import (
-    DEFAULT_ORG_SCOPES,
     IN_SCOPE_COMPANY_ID,
     IN_SCOPE_COMPANY_NAME,
 )
@@ -76,7 +75,7 @@ class FakeStore:
         self.hidden = []
 
 
-def _contact(dept_id: str, name: str, parent_id: str) -> dict[str, Any]:
+def _contact(dept_id: str, name: str, parent_id: str | None) -> dict[str, Any]:
     return {"department_id": dept_id, "name": name, "parent_department_id": parent_id}
 
 
@@ -136,7 +135,7 @@ async def test_sync_upserts_tree_and_directory_fields() -> None:
     )
     store = FakeStore()
 
-    stats = await sync_org_departments(store, fetcher, scopes=DEFAULT_ORG_SCOPES)
+    stats = await sync_org_departments(store, fetcher)
 
     assert stats == OrgSyncStats(total=2, created=2, updated=0, hidden=0)
     parent = store.records["od-101"]
@@ -178,7 +177,7 @@ async def test_sync_hides_removed_and_out_of_scope_rows() -> None:
         details=[_detail("od-101", "101车间", IN_SCOPE_COMPANY_ID)],
     )
 
-    stats = await sync_org_departments(store, fetcher, scopes=DEFAULT_ORG_SCOPES)
+    stats = await sync_org_departments(store, fetcher)
 
     assert stats.hidden == 2
     assert store.hidden == ["od-stale", "od-trade"]
@@ -187,14 +186,17 @@ async def test_sync_hides_removed_and_out_of_scope_rows() -> None:
 
 async def test_sync_upserts_department_when_directory_detail_is_missing() -> None:
     fetcher = FakeFetcher(
-        departments=[_contact("od-101", "101车间", IN_SCOPE_COMPANY_ID)],
+        departments=[
+            _contact(IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME, None),
+            _contact("od-101", "101车间", IN_SCOPE_COMPANY_ID),
+        ],
         details=[],
     )
     store = FakeStore()
 
-    stats = await sync_org_departments(store, fetcher, scopes=DEFAULT_ORG_SCOPES)
+    stats = await sync_org_departments(store, fetcher)
 
-    assert stats.total == 1
+    assert stats.total == 2
     record = store.records["od-101"]
     assert record.name == "101车间"
     assert record.leader_ids == []
@@ -209,6 +211,7 @@ async def test_sync_upserts_department_when_directory_detail_is_missing() -> Non
 async def test_sync_keeps_departments_deeper_than_two_levels() -> None:
     fetcher = FakeFetcher(
         departments=[
+            _contact(IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME, None),
             _contact("od-101", "101车间", IN_SCOPE_COMPANY_ID),
             _contact("od-101-1", "合成工段", "od-101"),
             _contact("od-101-1-1", "班组", "od-101-1"),
@@ -248,12 +251,12 @@ async def test_sync_keeps_departments_deeper_than_two_levels() -> None:
     )
     store = FakeStore()
 
-    stats = await sync_org_departments(store, fetcher, scopes=DEFAULT_ORG_SCOPES)
+    stats = await sync_org_departments(store, fetcher)
 
-    assert stats.total == 3
+    assert stats.total == 4
     assert "od-101-1-1" in store.records
     assert store.records["od-101-1-1"].level == 3
-    assert set(fetcher.detail_requests[0]) == {"od-101", "od-101-1", "od-101-1-1"}
+    assert set(fetcher.detail_requests[0]) == {IN_SCOPE_COMPANY_ID, "od-101", "od-101-1", "od-101-1-1"}
 
 
 async def test_sync_records_last_sync_metadata_with_counts() -> None:
@@ -264,7 +267,7 @@ async def test_sync_records_last_sync_metadata_with_counts() -> None:
     store = FakeStore()
     started = datetime(2026, 11, 12, 0, 0, tzinfo=UTC)
 
-    await sync_org_departments(store, fetcher, started_at=started, scopes=DEFAULT_ORG_SCOPES)
+    await sync_org_departments(store, fetcher, started_at=started)
 
     assert len(store.runs) == 1
     run = store.runs[0]
@@ -288,7 +291,6 @@ async def test_sync_records_failed_run_and_keeps_existing_data() -> None:
         await sync_org_departments(
             store,
             BrokenFetcher(departments=[], details=[]),
-            scopes=DEFAULT_ORG_SCOPES,
         )
 
     assert store.records["od-101"].name == "101车间"
@@ -324,7 +326,7 @@ async def test_sync_rolls_back_partial_writes_before_recording_failure() -> None
     store = FailingStore()
 
     with pytest.raises(RuntimeError, match="database write failed"):
-        await sync_org_departments(store, fetcher, scopes=DEFAULT_ORG_SCOPES)
+        await sync_org_departments(store, fetcher)
 
     assert set(store.records) == {"od-existing"}
     assert store.records["od-existing"].name == "既有部门"
@@ -361,7 +363,7 @@ async def test_sync_stores_company_root_and_requests_its_detail() -> None:
     )
     store = FakeStore()
 
-    stats = await sync_org_departments(store, fetcher, scopes=DEFAULT_ORG_SCOPES)
+    stats = await sync_org_departments(store, fetcher)
 
     assert stats.total == 2
     company = store.records[IN_SCOPE_COMPANY_ID]

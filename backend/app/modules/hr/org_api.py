@@ -14,13 +14,11 @@ from app.modules.hr.org_schemas import (
     OrgDepartmentNode,
     OrgDepartmentTreeApiResponse,
     OrgDepartmentTreeData,
-    OrgPathNode,
     OrgSyncStatusApiResponse,
     OrgSyncStatusData,
     OrgSyncTriggerApiResponse,
 )
 from app.modules.hr.org_service import enqueue_manual_org_sync, get_org_tree, get_sync_status
-from app.modules.hr.org_settings import load_org_scopes
 
 router = APIRouter(prefix="/org", tags=["HR 组织架构"])
 
@@ -31,13 +29,9 @@ async def list_org_departments(
     ctx: PermissionContext = Depends(require_permission("hr:departments:read")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
-    """返回配置的同步根公司（可多个）下的完整部门树。"""
-    scopes = await load_org_scopes(session)
+    """返回飞书应用可见范围内的完整部门树（根部门自动发现，可多个）。"""
     items = await get_org_tree(session)
-    data = OrgDepartmentTreeData(
-        companies=[OrgPathNode(id=root.department_id, name=root.department_name) for root in scopes.roots],
-        items=[OrgDepartmentNode.model_validate(item) for item in items],
-    )
+    data = OrgDepartmentTreeData(items=[OrgDepartmentNode.model_validate(item) for item in items])
     return build_response(data=data.model_dump(mode="json"))
 
 

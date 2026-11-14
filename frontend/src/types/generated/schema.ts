@@ -9484,7 +9484,7 @@ export interface paths {
         };
         /**
          * 部门树（只读）
-         * @description 返回配置的同步根公司（可多个）下的完整部门树。
+         * @description 返回飞书应用可见范围内的完整部门树（根部门自动发现，可多个）。
          */
         get: operations["list_org_departments_api_v1_hr_org_departments_get"];
         put?: never;
@@ -9618,7 +9618,7 @@ export interface paths {
         };
         /**
          * 员工档案部门树（只读）
-         * @description 返回配置的同步根公司（可多个）下的完整部门树，供员工档案左侧筛选使用。
+         * @description 返回飞书应用可见范围内的完整部门树，供员工档案左侧筛选使用。
          */
         get: operations["list_people_departments_api_v1_hr_people_departments_get"];
         put?: never;
@@ -37740,11 +37740,6 @@ export interface components {
              * @default
              */
             AI_MODEL: string;
-            /**
-             * Hr Org Sync Roots
-             * @description 已配置的同步根公司（按展示顺序）
-             */
-            HR_ORG_SYNC_ROOTS?: components["schemas"]["OrgScopeInput"][];
         };
         /** HrSystemSettingsSaveData */
         HrSystemSettingsSaveData: {
@@ -37796,7 +37791,9 @@ export interface components {
             /** Ai Model */
             AI_MODEL?: string | null;
             /** Hr Org Sync Roots */
-            HR_ORG_SYNC_ROOTS?: components["schemas"]["OrgScopeInput"][] | null;
+            HR_ORG_SYNC_ROOTS?: {
+                [key: string]: unknown;
+            }[] | null;
             /** Hr Org Sync Root Department Id */
             HR_ORG_SYNC_ROOT_DEPARTMENT_ID?: string | null;
             /** Hr Org Sync Root Department Name */
@@ -44449,11 +44446,6 @@ export interface components {
         };
         /** OrgDepartmentTreeData */
         OrgDepartmentTreeData: {
-            /**
-             * Companies
-             * @description 已配置的同步根公司
-             */
-            companies?: components["schemas"]["OrgPathNode"][];
             /** Items */
             items?: components["schemas"]["OrgDepartmentNode"][];
         };
@@ -44462,22 +44454,6 @@ export interface components {
             /** Id */
             id: string;
             /** Name */
-            name: string;
-        };
-        /**
-         * OrgScopeInput
-         * @description One configured company root for the HR org mirror.
-         */
-        OrgScopeInput: {
-            /**
-             * Department Id
-             * @description 飞书 open_department_id
-             */
-            department_id: string;
-            /**
-             * Name
-             * @description 公司（根部门）名称
-             */
             name: string;
         };
         /** OrgSyncStatusApiResponse */

@@ -6,26 +6,17 @@ and persists the run log, not just into the in-memory fake used by the unit seam
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config_model import ModuleSetting
 from app.modules.hr.models import HrDepartment as Department
 from app.modules.hr.models import HrOrgSyncRun as OrgSyncRun
 from app.modules.hr.org_repository import SqlAlchemyOrgDepartmentStore
-from app.modules.hr.org_settings import (
-    ORG_SYNC_ROOT_ID_SETTING,
-    ORG_SYNC_ROOT_NAME_SETTING,
-    ORG_SYNC_ROOTS_SETTING,
-    load_org_scope,
-    load_org_scopes,
-)
 from app.modules.hr.org_sync import sync_org_departments
-from tests.fixtures.org_scope import DEFAULT_ORG_SCOPES, IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
+from tests.fixtures.org_scope import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
 
 
 class _Fetcher:
@@ -83,7 +74,7 @@ async def test_sync_persists_mirror_fields_and_hides_stale_department(db_session
     await db_session.flush()
     store = SqlAlchemyOrgDepartmentStore(db_session)
 
-    stats = await sync_org_departments(store, _Fetcher(), scopes=DEFAULT_ORG_SCOPES)
+    stats = await sync_org_departments(store, _Fetcher())
 
     assert stats.total == 1
     assert stats.created == 1
@@ -117,47 +108,6 @@ async def test_sync_persists_mirror_fields_and_hides_stale_department(db_session
     assert run.finished_at is not None
 
 
-async def test_load_org_scope_reads_runtime_settings(db_session: AsyncSession) -> None:
-    db_session.add_all(
-        [
-            ModuleSetting(module="hr", key=ORG_SYNC_ROOT_ID_SETTING, value="od-configured-root"),
-            ModuleSetting(module="hr", key=ORG_SYNC_ROOT_NAME_SETTING, value="配置的公司"),
-        ]
-    )
-    await db_session.flush()
-
-    scope = await load_org_scope(db_session)
-
-    assert scope.department_id == "od-configured-root"
-    assert scope.department_name == "配置的公司"
-
-
-async def test_load_org_scopes_prefers_json_list(db_session: AsyncSession) -> None:
-    db_session.add_all(
-        [
-            ModuleSetting(module="hr", key=ORG_SYNC_ROOT_ID_SETTING, value="od-legacy-root"),
-            ModuleSetting(module="hr", key=ORG_SYNC_ROOT_NAME_SETTING, value="旧公司"),
-            ModuleSetting(
-                module="hr",
-                key=ORG_SYNC_ROOTS_SETTING,
-                value=json.dumps(
-                    [
-                        {"department_id": "od-company-a", "name": "公司A"},
-                        {"department_id": "od-company-b", "name": "公司B"},
-                    ]
-                ),
-                value_type="json",
-            ),
-        ]
-    )
-    await db_session.flush()
-
-    scopes = await load_org_scopes(db_session)
-
-    assert [root.department_id for root in scopes.roots] == ["od-company-a", "od-company-b"]
-    assert [root.department_name for root in scopes.roots] == ["公司A", "公司B"]
-
-
 async def test_failed_sync_rolls_back_department_writes_and_records_failure(db_session: AsyncSession) -> None:
     db_session.add(
         Department(
@@ -178,7 +128,7 @@ async def test_failed_sync_rolls_back_department_writes_and_records_failure(db_s
             raise RuntimeError("database write failed")
 
     with pytest.raises(RuntimeError, match="database write failed"):
-        await sync_org_departments(_FailingStore(db_session), _Fetcher(), scopes=DEFAULT_ORG_SCOPES)
+        await sync_org_departments(_FailingStore(db_session), _Fetcher())
 
     created = (
         await db_session.execute(select(Department).where(Department.feishu_department_id == "od-101"))

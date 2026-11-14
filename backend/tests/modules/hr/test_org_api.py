@@ -10,7 +10,6 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,11 +20,22 @@ from app.modules.hr.models import HrOrgSyncRun as OrgSyncRun
 from app.platform.identity.models import User
 from tests.fixtures.org_scope import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
 
-pytestmark = pytest.mark.usefixtures("org_scope_settings")
-
 TREE_URL = "/api/v1/hr/org/departments"
 STATUS_URL = "/api/v1/hr/org/sync-status"
 SYNC_URL = "/api/v1/hr/org/sync"
+
+
+def _company_root() -> Department:
+    return Department(
+        feishu_department_id=IN_SCOPE_COMPANY_ID,
+        name=IN_SCOPE_COMPANY_NAME,
+        parent_feishu_department_id=None,
+        status_is_deleted=False,
+        order=0,
+        order_weight="0",
+        enabled_status=True,
+        department_path=[{"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME}],
+    )
 
 
 def _company_child(
@@ -85,18 +95,13 @@ class TestOrgDepartmentTree:
 
         assert response.status_code == 401
 
-    async def test_empty_tree_still_renders_configured_company(self, auth_client: AsyncClient) -> None:
+    async def test_empty_tree(self, auth_client: AsyncClient) -> None:
         response = await auth_client.get(TREE_URL)
 
         assert response.status_code == 200
         body = response.json()
         assert body["code"] == 200
-        assert body["data"]["companies"] == [
-            {"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME},
-        ]
-        assert [node["name"] for node in body["data"]["items"]] == [IN_SCOPE_COMPANY_NAME]
-        assert body["data"]["items"][0]["level"] == 0
-        assert body["data"]["items"][0]["children"] == []
+        assert body["data"]["items"] == []
 
     async def test_tree_renders_all_levels_under_company_root(
         self,
@@ -105,6 +110,7 @@ class TestOrgDepartmentTree:
     ) -> None:
         db_session.add_all(
             [
+                _company_root(),
                 _company_child("od-101", "101车间", order=2),
                 _company_child("od-102", "102车间", order=1),
                 _child_of("od-101", "od-101-1", "合成工段", order=2),
@@ -150,6 +156,7 @@ class TestOrgDepartmentTree:
         auth_client: AsyncClient,
         db_session: AsyncSession,
     ) -> None:
+        db_session.add(_company_root())
         db_session.add(
             _company_child("od-101", "101车间", order=3, leaders=["ou-leader", "ou-missing"]),
         )
@@ -184,6 +191,7 @@ class TestOrgDepartmentTree:
         auth_client: AsyncClient,
         db_session: AsyncSession,
     ) -> None:
+        db_session.add(_company_root())
         db_session.add(_company_child("od-101", "101车间", order=1))
         await db_session.flush()
 
