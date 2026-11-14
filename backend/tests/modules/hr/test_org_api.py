@@ -121,7 +121,7 @@ class TestOrgDepartmentTree:
                     feishu_department_id="od-trade",
                     name="贸易一部",
                     parent_feishu_department_id="od-other-company",
-                    status_is_deleted=False,
+                    status_is_deleted=True,
                     order=0,
                     enabled_status=True,
                     department_path=[
