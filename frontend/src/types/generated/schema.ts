@@ -8867,7 +8867,7 @@ export interface paths {
         put?: never;
         /**
          * 从飞书多维表格同步员工数据
-         * @description 手动触发：从飞书多维表格拉取全部员工数据并 upsert 到本地 PG。
+         * @description 提交员工同步后台任务（全量拉取 >5s）；轮询 GET /hr/jobs/{job_id} 拿结果。
          */
         post: operations["sync_employees_from_feishu_api_v1_hr_employees_sync_from_feishu_post"];
         delete?: never;
@@ -8967,6 +8967,12 @@ export interface paths {
          *
          *     鉴权方式见 `_verify_feishu_approval_callback`：飞书回调没有用户登录态，
          *     用签名 + verification token 校验替代 JWT。
+         *
+         *     返回码语义（飞书对非 2xx 会重试）：
+         *     - 校验失败 → 401/503（配置问题，重试无意义但也不该静默 200）
+         *     - 缺少工号 → 400（载荷错误，重试不会成功）
+         *     - 业务异常（员工不存在等）→ 原样抛出 4xx
+         *     - 未预期异常 → 500，由飞书重试
          */
         post: operations["feishu_approval_webhook_api_v1_hr_webhook_feishu_approval_post"];
         delete?: never;
@@ -9460,6 +9466,7 @@ export interface paths {
          * @description 提交分析后台任务（LLM 报告生成 >5s，不再在 GET 请求里内联执行）。
          *
          *     轮询 GET /api/v1/hr/jobs/{job_id}；`result.data` 即原响应体 `data`。
+         *     后台任务在响应返回后执行，必须自建 session —— 请求级 session 此时已关闭。
          */
         post: operations["submit_api_v1_hr_turnover_analysis_post"];
         delete?: never;
@@ -9477,7 +9484,7 @@ export interface paths {
         };
         /**
          * 部门树（只读）
-         * @description 返回配置的同步根部门（默认珠海保税区丽珠合成制药有限公司）下的两级部门树。
+         * @description 返回配置的同步根公司（可多个）下的完整部门树。
          */
         get: operations["list_org_departments_api_v1_hr_org_departments_get"];
         put?: never;
@@ -9611,7 +9618,7 @@ export interface paths {
         };
         /**
          * 员工档案部门树（只读）
-         * @description 返回公司根节点下的两级部门树，供员工档案左侧筛选使用。
+         * @description 返回配置的同步根公司（可多个）下的完整部门树，供员工档案左侧筛选使用。
          */
         get: operations["list_people_departments_api_v1_hr_people_departments_get"];
         put?: never;
@@ -9728,7 +9735,7 @@ export interface paths {
         put?: never;
         /**
          * 从飞书同步候选人数据
-         * @description 手动触发：从飞书多维表格拉取全部候选人数据并 upsert 到本地 PG。
+         * @description 提交候选人同步后台任务（全量拉取 >5s）；轮询 GET /hr/jobs/{job_id} 拿结果。
          */
         post: operations["sync_candidates_from_feishu_api_v1_hr_candidates_sync_from_feishu_post"];
         delete?: never;
@@ -9898,7 +9905,11 @@ export interface paths {
         put?: never;
         /**
          * 发送多部门选择受训人员任务
-         * @description 为培训记录的每个受训部门发送选择受训人员任务。
+         * @description 为培训记录的每个受训部门发送选择受训人员任务（后台任务）。
+         *
+         *     多部门 IM 发送耗时 >5s，因此提交后立即返回 job_id，轮询
+         *     GET /hr/jobs/{job_id} 拿结果；任务完成后页面重新读取培训记录的
+         *     select_tasks（本接口不再同步返回各部门结果）。
          *
          *     - 为每个部门生成 UUID token
          *     - 将任务数据存入 Redis（24h 有效）
@@ -9978,7 +9989,10 @@ export interface paths {
         put?: never;
         /**
          * 同步培训专员飞书 open_id
-         * @description 从员工表或飞书 API 批量获取培训专员的 open_id 并持久化。
+         * @description 批量获取培训专员的 open_id 并持久化（后台任务）。
+         *
+         *     逐人查询员工表 + 飞书通讯录，耗时随人数线性增长，因此异步执行；
+         *     轮询 GET /hr/jobs/{job_id} 拿结果。
          */
         post: operations["sync_specialist_feishu_openids_api_v1_hr_training_specialists_sync_feishu_openids_post"];
         delete?: never;
@@ -10064,7 +10078,8 @@ export interface paths {
          * @description 批量保存系统配置到 DB，同时写入 .env 文件。
          *
          *     凭据类字段加密后落库；空值或前端回传的掩码（****）视为「不修改」，
-         *     避免把掩码当成新密钥写进库。
+         *     避免把掩码当成新密钥写进库。未知键由 `HrSystemSettingsUpdate`
+         *     的 `extra="forbid"` 拒绝（422）。
          */
         put: operations["save_system_settings_api_v1_hr_system_settings_put"];
         post?: never;
@@ -20268,6 +20283,117 @@ export interface components {
              */
             sort_order: number;
         };
+        /** AnnualTrainingPlanItemResponse */
+        AnnualTrainingPlanItemResponse: {
+            /**
+             * Month
+             * @description 月份/季度
+             */
+            month?: string | null;
+            /**
+             * Trainee Count
+             * @description 培训人数
+             */
+            trainee_count?: number | null;
+            /**
+             * Duration Hours
+             * @description 课时
+             */
+            duration_hours?: number | null;
+            /**
+             * Content And Textbook
+             * @description 培训内容及使用教材
+             */
+            content_and_textbook?: string | null;
+            /**
+             * Target Audience
+             * @description 培训对象
+             */
+            target_audience?: string | null;
+            /**
+             * Position And Count
+             * @description 参加岗位/参加人数
+             */
+            position_and_count?: string | null;
+            /**
+             * Training Method
+             * @description 培训方式
+             */
+            training_method?: string | null;
+            /**
+             * Training Hours
+             * @description 培训学时
+             */
+            training_hours?: number | null;
+            /**
+             * Confirmer
+             * @description 确认者
+             */
+            confirmer?: string | null;
+            /**
+             * Confirm Date
+             * @description 确认日期
+             */
+            confirm_date?: string | null;
+            /**
+             * Remarks
+             * @description 备注
+             */
+            remarks?: string | null;
+            /**
+             * Tracking Status
+             * @description 培训跟踪: 完成, 未完成
+             */
+            tracking_status?: string | null;
+            /**
+             * Sort Order
+             * @description 排序
+             * @default 0
+             */
+            sort_order: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Plan Id
+             * Format: uuid
+             */
+            plan_id: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /** AnnualTrainingPlanResponse */
+        AnnualTrainingPlanResponse: {
+            /**
+             * Year
+             * @description 年度
+             */
+            year: number;
+            /**
+             * Department
+             * @description 部门
+             */
+            department: string;
+            /**
+             * Status
+             * @description 状态: 草稿, 已确认
+             * @default 草稿
+             */
+            status: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
         /** AnnualTrainingPlanUpdate */
         AnnualTrainingPlanUpdate: {
             /**
@@ -22968,27 +23094,6 @@ export interface components {
             warning_days?: number | null;
             /** Is Active */
             is_active?: boolean | null;
-        };
-        /**
-         * CandidateResponse
-         * @description 可分配人员信息（供其他业务模块调用）
-         */
-        CandidateResponse: {
-            /**
-             * Personnel Id
-             * Format: uuid
-             */
-            personnel_id: string;
-            /** Name */
-            name: string;
-            /** Department */
-            department: string | null;
-            /** Feishu User Id */
-            feishu_user_id: string | null;
-            /** Feishu Open Id */
-            feishu_open_id: string | null;
-            /** Roles */
-            roles?: components["schemas"]["PersonnelRoleInfo"][];
         };
         /** CandidateUpdate */
         CandidateUpdate: {
@@ -26823,6 +26928,21 @@ export interface components {
             data?: components["schemas"]["AiModelsDiscoverResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[AnnualTrainingPlanResponse] */
+        DataResponse_AnnualTrainingPlanResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["AnnualTrainingPlanResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[AuthorizationLetterResponse] */
         DataResponse_AuthorizationLetterResponse_: {
             /**
@@ -26851,6 +26971,21 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["BatchCheckResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[CandidateResponse] */
+        DataResponse_CandidateResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["app__modules__hr__schemas__CandidateResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[CertificateResponse] */
@@ -26988,6 +27123,21 @@ export interface components {
             data?: components["schemas"]["DeliverableUploadResult"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[DepartmentResponse] */
+        DataResponse_DepartmentResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["app__modules__hr__schemas__DepartmentResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[DownloadUrlResponse] */
         DataResponse_DownloadUrlResponse_: {
             /**
@@ -27046,6 +27196,36 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["EditableShapeList"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[EmployeeFeishuSyncResult] */
+        DataResponse_EmployeeFeishuSyncResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["EmployeeFeishuSyncResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[EmployeeResponse] */
+        DataResponse_EmployeeResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["EmployeeResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[ExperimentCreateResult] */
@@ -27437,6 +27617,21 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["PilotWorkflowStepResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[PrejobTemplateResponse] */
+        DataResponse_PrejobTemplateResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["PrejobTemplateResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[PreviewResponse] */
@@ -27994,6 +28189,156 @@ export interface components {
             data?: components["schemas"]["SupplementaryReplyResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[SyncStatusResponse] */
+        DataResponse_SyncStatusResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["SyncStatusResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[TrainingLedgerPageResponse] */
+        DataResponse_TrainingLedgerPageResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["TrainingLedgerPageResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[TrainingLedgerResponse] */
+        DataResponse_TrainingLedgerResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["TrainingLedgerResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[TrainingNotifyResult] */
+        DataResponse_TrainingNotifyResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["TrainingNotifyResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[TrainingSelectTaskSendResult] */
+        DataResponse_TrainingSelectTaskSendResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["TrainingSelectTaskSendResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[TrainingSelectTask] */
+        DataResponse_TrainingSelectTask_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["TrainingSelectTask"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[TrainingSessionResponse] */
+        DataResponse_TrainingSessionResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["TrainingSessionResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[TrainingSpecialistResponse] */
+        DataResponse_TrainingSpecialistResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["TrainingSpecialistResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[TrainingTeamBrief] */
+        DataResponse_TrainingTeamBrief_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["TrainingTeamBrief"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[TrainingTeamUpdateResult] */
+        DataResponse_TrainingTeamUpdateResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["TrainingTeamUpdateResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[Union[JobState, NoneType]] */
         DataResponse_Union_JobState__NoneType__: {
             /**
@@ -28039,6 +28384,38 @@ export interface components {
             data?: components["schemas"]["WorkOrderResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[list[AnnualTrainingPlanItemResponse]] */
+        DataResponse_list_AnnualTrainingPlanItemResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["AnnualTrainingPlanItemResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[AnnualTrainingPlanResponse]] */
+        DataResponse_list_AnnualTrainingPlanResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["AnnualTrainingPlanResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[list[AuthorizationLetterListItem]] */
         DataResponse_list_AuthorizationLetterListItem__: {
             /**
@@ -28053,22 +28430,6 @@ export interface components {
             message: string;
             /** Data */
             data?: components["schemas"]["AuthorizationLetterListItem"][] | null;
-            meta?: components["schemas"]["PaginationMeta"] | null;
-        };
-        /** DataResponse[list[CandidateResponse]] */
-        DataResponse_list_CandidateResponse__: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            /** Data */
-            data?: components["schemas"]["CandidateResponse"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[list[CertificateResponse]] */
@@ -28135,6 +28496,22 @@ export interface components {
             data?: components["schemas"]["CpvImportTaskResponse"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[list[DepartmentResponse]] */
+        DataResponse_list_DepartmentResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["app__modules__hr__schemas__DepartmentResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[list[DomesticApprovalResponse]] */
         DataResponse_list_DomesticApprovalResponse__: {
             /**
@@ -28165,6 +28542,22 @@ export interface components {
             message: string;
             /** Data */
             data?: components["schemas"]["DrugWithNodesResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[EmployeeResponse]] */
+        DataResponse_list_EmployeeResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["EmployeeResponse"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[list[FailureCodeResponse]] */
@@ -28663,6 +29056,118 @@ export interface components {
             data?: components["schemas"]["SupplementaryReplyListItem"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[list[TrainingLedgerPageResponse]] */
+        DataResponse_list_TrainingLedgerPageResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["TrainingLedgerPageResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[TrainingLedgerResponse]] */
+        DataResponse_list_TrainingLedgerResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["TrainingLedgerResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[TrainingSelectTaskListItem]] */
+        DataResponse_list_TrainingSelectTaskListItem__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["TrainingSelectTaskListItem"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[TrainingSessionResponse]] */
+        DataResponse_list_TrainingSessionResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["TrainingSessionResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[TrainingSessionSelectTask]] */
+        DataResponse_list_TrainingSessionSelectTask__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["TrainingSessionSelectTask"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[TrainingSpecialistResponse]] */
+        DataResponse_list_TrainingSpecialistResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["TrainingSpecialistResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[TrainingTeamResponse]] */
+        DataResponse_list_TrainingTeamResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["TrainingTeamResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[list[UserBrief]] */
         DataResponse_list_UserBrief__: {
             /**
@@ -28954,7 +29459,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data?: components["schemas"]["DepartmentResponse"] | null;
+            data?: components["schemas"]["app__platform__identity__schemas__DepartmentResponse"] | null;
         };
         /** DepartmentContactApiResponse */
         DepartmentContactApiResponse: {
@@ -29298,30 +29803,6 @@ export interface components {
             message: string;
             /** Data */
             data: components["schemas"]["DepartmentOption"][];
-        };
-        /** DepartmentResponse */
-        DepartmentResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Feishu Department Id */
-            feishu_department_id: string;
-            /** Name */
-            name: string;
-            /** Parent Feishu Department Id */
-            parent_feishu_department_id?: string | null;
-            /** Leader User Id */
-            leader_user_id?: string | null;
-            /** Member Count */
-            member_count?: number | null;
-            /** Status Is Deleted */
-            status_is_deleted?: boolean | null;
-            /** Path */
-            path?: string | null;
-            /** Order */
-            order?: number | null;
         };
         /**
          * DepartmentSafetyOfficerApiResponse
@@ -31280,6 +31761,14 @@ export interface components {
              */
             status: string;
         };
+        /** EmployeeFeishuSyncResult */
+        EmployeeFeishuSyncResult: {
+            /**
+             * Feishu Record Id
+             * @description 飞书记录 ID
+             */
+            feishu_record_id?: string | null;
+        };
         /** EmployeeProfileDetail */
         EmployeeProfileDetail: {
             /** Id */
@@ -31597,6 +32086,306 @@ export interface components {
             is_resigned: boolean;
             /** Last Synced At */
             last_synced_at?: string | null;
+        };
+        /** EmployeeResponse */
+        EmployeeResponse: {
+            /**
+             * Employee Number
+             * @description 工号
+             */
+            employee_number: string;
+            /**
+             * Name
+             * @description 姓名
+             */
+            name: string;
+            /**
+             * Domain Account
+             * @description 域账号
+             */
+            domain_account?: string | null;
+            /**
+             * Department
+             * @description 部门
+             */
+            department: string;
+            /**
+             * Team
+             * @description 班组
+             */
+            team?: string | null;
+            /**
+             * Position
+             * @description 职位
+             */
+            position: string;
+            /**
+             * Job Category
+             * @description 职类
+             */
+            job_category?: string | null;
+            /**
+             * Level
+             * @description 级别
+             */
+            level?: string | null;
+            /**
+             * Position Level
+             * @description 职位级别(自动判定): 普通员工/工程师级/主管级
+             */
+            position_level?: string | null;
+            /**
+             * Qualifications
+             * @description 职称／职业资格
+             */
+            qualifications?: string[] | null;
+            /**
+             * Qualification Type
+             * @description 职称类型
+             */
+            qualification_type?: string | null;
+            /**
+             * Gender
+             * @description 性别
+             */
+            gender?: string | null;
+            /**
+             * Native Place
+             * @description 籍贯
+             */
+            native_place?: string | null;
+            /**
+             * Political Status
+             * @description 政治面貌
+             */
+            political_status?: string | null;
+            /**
+             * Marital Status
+             * @description 婚姻状况
+             */
+            marital_status?: string | null;
+            /**
+             * Household Type
+             * @description 户籍类型
+             */
+            household_type?: string | null;
+            /**
+             * Status Category
+             * @description 统计类别
+             */
+            status_category?: string | null;
+            /**
+             * Birth Year
+             * @description 出生年份
+             */
+            birth_year?: number | null;
+            /**
+             * Birth Month
+             * @description 出生月份
+             */
+            birth_month?: number | null;
+            /**
+             * Birth Day
+             * @description 出生日期
+             */
+            birth_day?: number | null;
+            /**
+             * Age
+             * @description 年龄
+             */
+            age?: number | null;
+            /**
+             * Work Start Date
+             * @description 参加工作时间
+             */
+            work_start_date?: string | null;
+            /**
+             * Factory Entry Date
+             * @description 进厂时间
+             */
+            factory_entry_date?: string | null;
+            /**
+             * Livo Entry Date
+             * @description 入丽珠时间
+             */
+            livo_entry_date?: string | null;
+            /**
+             * Hire Date
+             * Format: date
+             * @description 入职日期
+             */
+            hire_date: string;
+            /**
+             * Graduation Date
+             * @description 毕业时间
+             */
+            graduation_date?: string | null;
+            /**
+             * Work Years
+             * @description 工作年限
+             */
+            work_years?: number | null;
+            /**
+             * Factory Tenure
+             * @description 厂龄
+             */
+            factory_tenure?: string | null;
+            /**
+             * Company Tenure
+             * @description 司龄
+             */
+            company_tenure?: string | null;
+            /**
+             * Education
+             * @description 学历
+             */
+            education?: string | null;
+            /**
+             * Classification
+             * @description 分类
+             */
+            classification?: string | null;
+            /**
+             * School
+             * @description 毕业学校
+             */
+            school?: string | null;
+            /**
+             * Major
+             * @description 专业
+             */
+            major?: string | null;
+            /**
+             * Id Card
+             * @description 身份证号
+             */
+            id_card?: string | null;
+            /**
+             * Id Card Expiry
+             * @description 身份证到期日
+             */
+            id_card_expiry?: string | null;
+            /**
+             * Id Card Address
+             * @description 身份证地址|家庭地址
+             */
+            id_card_address?: string | null;
+            /**
+             * Current Address
+             * @description 现住址
+             */
+            current_address?: string | null;
+            /**
+             * Contract Type
+             * @description 合同期限
+             */
+            contract_type?: string | null;
+            /**
+             * Contract Start Date
+             * @description 合同开始日期
+             */
+            contract_start_date?: string | null;
+            /**
+             * Contract End Date
+             * @description 合同结束日期
+             */
+            contract_end_date?: string | null;
+            /**
+             * Contract Start 2
+             * @description 第二次合同起点
+             */
+            contract_start_2?: string | null;
+            /**
+             * Contract End 2
+             * @description 第二次合同终止
+             */
+            contract_end_2?: string | null;
+            /**
+             * Contract Start 3
+             * @description 第三次合同起点
+             */
+            contract_start_3?: string | null;
+            /**
+             * Contract End 3
+             * @description 第三次合同终止
+             */
+            contract_end_3?: string | null;
+            /**
+             * Contract Start 4
+             * @description 第四次合同起点
+             */
+            contract_start_4?: string | null;
+            /**
+             * Contract End 4
+             * @description 第四次合同终止
+             */
+            contract_end_4?: string | null;
+            /**
+             * Phone
+             * @description 手机
+             */
+            phone?: string | null;
+            /**
+             * Email
+             * @description 邮箱
+             */
+            email?: string | null;
+            /**
+             * Emergency Contact Name
+             * @description 紧急联系人姓名
+             */
+            emergency_contact_name?: string | null;
+            /**
+             * Emergency Contact Phone
+             * @description 紧急联系人电话
+             */
+            emergency_contact_phone?: string | null;
+            /**
+             * Emergency Contact Relation
+             * @description 紧急联系人关系
+             */
+            emergency_contact_relation?: string | null;
+            /**
+             * Bank Account
+             * @description 银行卡号
+             */
+            bank_account?: string | null;
+            /**
+             * Training Id
+             * @description 培训档案编号
+             */
+            training_id?: string | null;
+            /**
+             * Transfer History
+             * @description 异动记录
+             */
+            transfer_history?: string | null;
+            /**
+             * Remarks
+             * @description 备注
+             */
+            remarks?: string[] | null;
+            /**
+             * Status
+             * @description 状态
+             * @default 待审批
+             */
+            status: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Feishu Open Id */
+            feishu_open_id?: string | null;
+            /** Feishu Record Id */
+            feishu_record_id?: string | null;
+            /** Feishu Synced At */
+            feishu_synced_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
         };
         /** EmployeeUpdate */
         EmployeeUpdate: {
@@ -36895,14 +37684,123 @@ export interface components {
             code: number;
             /** Message */
             message: string;
-            /** Data */
-            data: {
-                [key: string]: string;
-            };
+            data: components["schemas"]["HrSystemSettingsData"];
             /** Meta */
             meta?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /**
+         * HrSystemSettingsData
+         * @description `GET /hr/system-settings` 的数据体（凭据字段只返回掩码）。
+         */
+        HrSystemSettingsData: {
+            /**
+             * Feishu  Platform  App Id
+             * @default
+             */
+            FEISHU__PLATFORM__APP_ID: string;
+            /**
+             * Feishu  Platform  App Secret
+             * @default
+             */
+            FEISHU__PLATFORM__APP_SECRET: string;
+            /**
+             * Feishu  Vehicle  Credentials  App Id
+             * @default
+             */
+            FEISHU__VEHICLE__CREDENTIALS__APP_ID: string;
+            /**
+             * Feishu  Vehicle  Credentials  App Secret
+             * @default
+             */
+            FEISHU__VEHICLE__CREDENTIALS__APP_SECRET: string;
+            /**
+             * Feishu  Training  Credentials  App Id
+             * @default
+             */
+            FEISHU__TRAINING__CREDENTIALS__APP_ID: string;
+            /**
+             * Feishu  Training  Credentials  App Secret
+             * @default
+             */
+            FEISHU__TRAINING__CREDENTIALS__APP_SECRET: string;
+            /**
+             * Ai Base Url
+             * @default
+             */
+            AI_BASE_URL: string;
+            /**
+             * Ai Api Key
+             * @default
+             */
+            AI_API_KEY: string;
+            /**
+             * Ai Model
+             * @default
+             */
+            AI_MODEL: string;
+            /**
+             * Hr Org Sync Roots
+             * @description 已配置的同步根公司（按展示顺序）
+             */
+            HR_ORG_SYNC_ROOTS?: components["schemas"]["OrgScopeInput"][];
+        };
+        /** HrSystemSettingsSaveData */
+        HrSystemSettingsSaveData: {
+            /**
+             * Updated
+             * @description 本次保存的键
+             */
+            updated?: string[];
+        };
+        /**
+         * HrSystemSettingsSaveResponse
+         * @description `PUT /hr/system-settings` 的完整响应体。
+         */
+        HrSystemSettingsSaveResponse: {
+            /** Code */
+            code: number;
+            /** Message */
+            message: string;
+            data: components["schemas"]["HrSystemSettingsSaveData"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * HrSystemSettingsUpdate
+         * @description `PUT /hr/system-settings` 的请求体。
+         *
+         *     只接受页面实际维护的键；未知键返回 422（`extra="forbid"`），
+         *     避免配置接口退化成任意键值写入。
+         */
+        HrSystemSettingsUpdate: {
+            /** Feishu  Platform  App Id */
+            FEISHU__PLATFORM__APP_ID?: string | null;
+            /** Feishu  Platform  App Secret */
+            FEISHU__PLATFORM__APP_SECRET?: string | null;
+            /** Feishu  Vehicle  Credentials  App Id */
+            FEISHU__VEHICLE__CREDENTIALS__APP_ID?: string | null;
+            /** Feishu  Vehicle  Credentials  App Secret */
+            FEISHU__VEHICLE__CREDENTIALS__APP_SECRET?: string | null;
+            /** Feishu  Training  Credentials  App Id */
+            FEISHU__TRAINING__CREDENTIALS__APP_ID?: string | null;
+            /** Feishu  Training  Credentials  App Secret */
+            FEISHU__TRAINING__CREDENTIALS__APP_SECRET?: string | null;
+            /** Ai Base Url */
+            AI_BASE_URL?: string | null;
+            /** Ai Api Key */
+            AI_API_KEY?: string | null;
+            /** Ai Model */
+            AI_MODEL?: string | null;
+            /** Hr Org Sync Roots */
+            HR_ORG_SYNC_ROOTS?: components["schemas"]["OrgScopeInput"][] | null;
+            /** Hr Org Sync Root Department Id */
+            HR_ORG_SYNC_ROOT_DEPARTMENT_ID?: string | null;
+            /** Hr Org Sync Root Department Name */
+            HR_ORG_SYNC_ROOT_DEPARTMENT_NAME?: string | null;
         };
         /**
          * IPQCApprovalCreate
@@ -43471,7 +44369,7 @@ export interface components {
             name: string;
             /**
              * Level
-             * @description 1 = 一级部门，2 = 二级部门
+             * @description 0 = 公司，N = 第 N 级部门
              */
             level: number;
             /** Parent Id */
@@ -43552,10 +44450,10 @@ export interface components {
         /** OrgDepartmentTreeData */
         OrgDepartmentTreeData: {
             /**
-             * Company Name
-             * @default
+             * Companies
+             * @description 已配置的同步根公司
              */
-            company_name: string;
+            companies?: components["schemas"]["OrgPathNode"][];
             /** Items */
             items?: components["schemas"]["OrgDepartmentNode"][];
         };
@@ -43564,6 +44462,22 @@ export interface components {
             /** Id */
             id: string;
             /** Name */
+            name: string;
+        };
+        /**
+         * OrgScopeInput
+         * @description One configured company root for the HR org mirror.
+         */
+        OrgScopeInput: {
+            /**
+             * Department Id
+             * @description 飞书 open_department_id
+             */
+            department_id: string;
+            /**
+             * Name
+             * @description 公司（根部门）名称
+             */
             name: string;
         };
         /** OrgSyncStatusApiResponse */
@@ -44856,6 +45770,24 @@ export interface components {
              * @default
              */
             trainer: string;
+        };
+        /** PrejobTemplateResponse */
+        PrejobTemplateResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Department */
+            department: string;
+            /** Factory */
+            factory: string;
+            /** Items */
+            items: components["schemas"]["PrejobTemplateItem"][];
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
         };
         /** PreviewResponse */
         PreviewResponse: {
@@ -57006,6 +57938,31 @@ export interface components {
             /** Target Dept Id */
             target_dept_id: string;
         };
+        /** SyncStatusResponse */
+        SyncStatusResponse: {
+            /** Local Total */
+            local_total: number;
+            /** Feishu Total */
+            feishu_total: number;
+            /** Synced Count */
+            synced_count: number;
+            /** Unsynced Count */
+            unsynced_count: number;
+            /** Conflict Count */
+            conflict_count: number;
+            /**
+             * Pending Count
+             * @default 0
+             */
+            pending_count: number;
+            /**
+             * Failed Count
+             * @default 0
+             */
+            failed_count: number;
+            /** Last Sync At */
+            last_sync_at?: string | null;
+        };
         /** SyncTriggerRequest */
         SyncTriggerRequest: {
             /**
@@ -57532,6 +58489,113 @@ export interface components {
              */
             ledger_type: string;
         };
+        /** TrainingLedgerPageResponse */
+        TrainingLedgerPageResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Employee Number */
+            employee_number: string;
+            /** Employee Name */
+            employee_name: string;
+            /**
+             * Ledger Type
+             * @description 台账类型
+             * @default event
+             */
+            ledger_type: string;
+            /**
+             * Department
+             * @description 所属部门
+             */
+            department?: string | null;
+            /**
+             * Factory
+             * @description 厂区: old=旧厂, new=新厂
+             */
+            factory?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /** TrainingLedgerResponse */
+        TrainingLedgerResponse: {
+            /**
+             * Employee Number
+             * @description 工号
+             */
+            employee_number: string;
+            /**
+             * Training Date
+             * Format: date
+             * @description 培训日期
+             */
+            training_date: string;
+            /**
+             * Training Subject
+             * @description 培训课程/主题
+             */
+            training_subject: string;
+            /**
+             * Training Method
+             * @description 培训方式
+             */
+            training_method?: string | null;
+            /**
+             * Duration Hours
+             * @description 课时
+             */
+            duration_hours?: number | null;
+            /**
+             * Location
+             * @description 培训地点
+             */
+            location?: string | null;
+            /**
+             * Trainer
+             * @description 培训单位/培训师
+             */
+            trainer?: string | null;
+            /**
+             * Assessment Result
+             * @description 考核成绩
+             */
+            assessment_result?: string | null;
+            /**
+             * Source Type
+             * @description 来源: manual, notification
+             * @default manual
+             */
+            source_type: string;
+            /**
+             * Source Id
+             * @description 来源ID
+             */
+            source_id?: string | null;
+            /**
+             * Remarks
+             * @description 备注
+             */
+            remarks?: string | null;
+            /**
+             * Ledger Type
+             * @description 台账类型: event=事件台账, sop=SOP培训台账
+             * @default event
+             */
+            ledger_type: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
         /** TrainingLedgerUpdate */
         TrainingLedgerUpdate: {
             /** Employee Number */
@@ -57701,6 +58765,21 @@ export interface components {
              * @description 厂区: old=旧厂, new=新厂
              */
             factory?: string | null;
+        };
+        /** TrainingNotifyResult */
+        TrainingNotifyResult: {
+            /**
+             * Sent
+             * @description 发送成功人数
+             * @default 0
+             */
+            sent: number;
+            /**
+             * Failed
+             * @description 发送失败人数
+             * @default 0
+             */
+            failed: number;
         };
         /**
          * TrainingRecordApiResponse
@@ -57967,6 +59046,40 @@ export interface components {
             notes?: string | null;
         };
         /**
+         * TrainingSelectTask
+         * @description Redis 中的临时选择任务（创建时的字段 + 提交后的选择结果）。
+         */
+        TrainingSelectTask: {
+            /** Department */
+            department?: string | null;
+            /** Training Date */
+            training_date?: string | null;
+            /** Subject */
+            subject?: string | null;
+            /** Training Time Start */
+            training_time_start?: string | null;
+            /** Training Time End */
+            training_time_end?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Trainer */
+            trainer?: string | null;
+            /** Content */
+            content?: string | null;
+            /** Training Method */
+            training_method?: string | null;
+            /** Issuer Department */
+            issuer_department?: string | null;
+            /** Issue Date */
+            issue_date?: string | null;
+            /** Factory */
+            factory?: string | null;
+            /** Employee Numbers */
+            employee_numbers?: string[] | null;
+            /** Employee Names */
+            employee_names?: string[] | null;
+        };
+        /**
          * TrainingSelectTaskCreate
          * @description Create a temporary task for selecting trainees via Feishu.
          */
@@ -58031,6 +59144,44 @@ export interface components {
              * @description 厂区: old=旧厂, new=新厂
              */
             factory?: string | null;
+        };
+        /** TrainingSelectTaskListItem */
+        TrainingSelectTaskListItem: {
+            /** Token */
+            token: string;
+            /** Department */
+            department?: string | null;
+            /** Training Date */
+            training_date?: string | null;
+            /** Subject */
+            subject?: string | null;
+            /** Factory */
+            factory?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Trainer */
+            trainer?: string | null;
+            /** Training Method */
+            training_method?: string | null;
+            /**
+             * Has Result
+             * @default false
+             */
+            has_result: boolean;
+            /**
+             * Selected Count
+             * @default 0
+             */
+            selected_count: number;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /** TrainingSelectTaskSendResult */
+        TrainingSelectTaskSendResult: {
+            /** Token */
+            token: string;
+            /** Url */
+            url: string;
         };
         /**
          * TrainingSelectTaskSubmit
@@ -58150,6 +59301,138 @@ export interface components {
             select_tasks?: {
                 [key: string]: unknown;
             }[] | null;
+        };
+        /** TrainingSessionResponse */
+        TrainingSessionResponse: {
+            /**
+             * Factory
+             * @description 厂区: old=旧厂, new=新厂
+             * @default old
+             */
+            factory: string;
+            /**
+             * Department
+             * @description 主办部门
+             */
+            department: string;
+            /**
+             * Training Date
+             * Format: date
+             * @description 培训日期
+             */
+            training_date: string;
+            /**
+             * Subject
+             * @description 培训主题
+             */
+            subject: string;
+            /**
+             * Training Time Start
+             * @description 培训开始时间
+             */
+            training_time_start?: string | null;
+            /**
+             * Training Time End
+             * @description 培训结束时间
+             */
+            training_time_end?: string | null;
+            /**
+             * Location
+             * @description 培训地点
+             */
+            location?: string | null;
+            /**
+             * Trainer
+             * @description 培训师
+             */
+            trainer?: string | null;
+            /**
+             * Training Method
+             * @description 培训方式
+             */
+            training_method?: string | null;
+            /**
+             * Content
+             * @description 培训内容
+             */
+            content?: string | null;
+            /**
+             * Trainee Departments
+             * @description 受训部门列表
+             */
+            trainee_departments?: string[] | null;
+            /**
+             * Employee Names
+             * @description 应出席受训人员姓名列表
+             */
+            employee_names?: string[] | null;
+            /**
+             * Employee Numbers
+             * @description 应出席受训人员工号列表
+             */
+            employee_numbers?: string[] | null;
+            /**
+             * Issuer Department
+             * @description 落款部门
+             */
+            issuer_department?: string | null;
+            /**
+             * Issue Date
+             * @description 落款日期
+             */
+            issue_date?: string | null;
+            /**
+             * Remarks
+             * @description 备注
+             */
+            remarks?: string | null;
+            /**
+             * Status
+             * @description 状态: draft, notified, selecting, confirmed, evaluated, archived
+             * @default draft
+             */
+            status: string | null;
+            /**
+             * Select Task Token
+             * @description 飞书选择任务token
+             */
+            select_task_token?: string | null;
+            /**
+             * Select Tasks
+             * @description 多部门选择任务列表
+             */
+            select_tasks?: {
+                [key: string]: unknown;
+            }[] | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /** TrainingSessionSelectTask */
+        TrainingSessionSelectTask: {
+            /** Department */
+            department: string;
+            /** Token */
+            token: string;
+            /** Status */
+            status: string;
+            /** Employee Names */
+            employee_names?: string[];
+            /** Employee Numbers */
+            employee_numbers?: string[];
+            /**
+             * Specialist Found
+             * @default false
+             */
+            specialist_found: boolean;
+            /** Specialist Name */
+            specialist_name?: string | null;
         };
         /** TrainingSessionStatusUpdate */
         TrainingSessionStatusUpdate: {
@@ -58283,6 +59566,43 @@ export interface components {
              */
             factory: string;
         };
+        /** TrainingSpecialistResponse */
+        TrainingSpecialistResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Department */
+            department: string;
+            /** Employee Number */
+            employee_number: string;
+            /** Employee Name */
+            employee_name: string;
+            /** Factory */
+            factory: string;
+            /** Feishu Open Id */
+            feishu_open_id?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /**
+         * TrainingTeamBrief
+         * @description 班组新建回执。
+         */
+        TrainingTeamBrief: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Factory */
+            factory: string;
+        };
         /** TrainingTeamCreate */
         TrainingTeamCreate: {
             /**
@@ -58322,6 +59642,32 @@ export interface components {
              */
             employee_numbers?: string[];
         };
+        /** TrainingTeamResponse */
+        TrainingTeamResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Factory */
+            factory: string;
+            /** Department */
+            department: string;
+            /** Specialist Employee Number */
+            specialist_employee_number: string;
+            /** Specialist Name */
+            specialist_name: string;
+            /** Employee Names */
+            employee_names?: unknown[] | null;
+            /** Employee Numbers */
+            employee_numbers?: unknown[] | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
         /** TrainingTeamUpdate */
         TrainingTeamUpdate: {
             /** Name */
@@ -58336,6 +59682,19 @@ export interface components {
             employee_names?: string[] | null;
             /** Employee Numbers */
             employee_numbers?: string[] | null;
+        };
+        /**
+         * TrainingTeamUpdateResult
+         * @description 班组编辑回执。
+         */
+        TrainingTeamUpdateResult: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
         };
         /**
          * TrainingType
@@ -59978,6 +61337,14 @@ export interface components {
              */
             updated_at: string;
         };
+        /**
+         * WebhookChallenge
+         * @description 飞书回调地址校验挑战。
+         */
+        WebhookChallenge: {
+            /** Challenge */
+            challenge: string;
+        };
         /** WeeklyConfirmationApiResponse */
         WeeklyConfirmationApiResponse: {
             /**
@@ -60717,6 +62084,27 @@ export interface components {
             remark?: string | null;
         };
         /**
+         * CandidateResponse
+         * @description 可分配人员信息（供其他业务模块调用）
+         */
+        app__modules__equipment__schemas__personnel__CandidateResponse: {
+            /**
+             * Personnel Id
+             * Format: uuid
+             */
+            personnel_id: string;
+            /** Name */
+            name: string;
+            /** Department */
+            department: string | null;
+            /** Feishu User Id */
+            feishu_user_id: string | null;
+            /** Feishu Open Id */
+            feishu_open_id: string | null;
+            /** Roles */
+            roles?: components["schemas"]["PersonnelRoleInfo"][];
+        };
+        /**
          * RoleCreate
          * @description 创建角色请求
          */
@@ -60774,6 +62162,97 @@ export interface components {
              * @description 是否启用
              */
             is_active?: boolean | null;
+        };
+        /** CandidateResponse */
+        app__modules__hr__schemas__CandidateResponse: {
+            /**
+             * Name
+             * @description 候选人姓名
+             */
+            name: string;
+            /**
+             * Position
+             * @description 应聘职位名称
+             */
+            position: string;
+            /**
+             * Gender
+             * @description 性别
+             */
+            gender?: string | null;
+            /**
+             * School
+             * @description 学校名称
+             */
+            school?: string | null;
+            /**
+             * Education
+             * @description 学历
+             */
+            education?: string | null;
+            /**
+             * Major
+             * @description 专业
+             */
+            major?: string | null;
+            /**
+             * Match Report
+             * @description 候选人匹配度报告
+             */
+            match_report?: string | null;
+            /**
+             * Recommendation Level
+             * @description 推荐等级
+             */
+            recommendation_level?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Resume Attachments */
+            resume_attachments?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Feishu Record Id */
+            feishu_record_id?: string | null;
+            /** Feishu Synced At */
+            feishu_synced_at?: string | null;
+            /** Feishu Sync Status */
+            feishu_sync_status?: string | null;
+            /** Feishu Sync Error */
+            feishu_sync_error?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /** DepartmentResponse */
+        app__modules__hr__schemas__DepartmentResponse: {
+            /**
+             * Name
+             * @description 部门名称
+             */
+            name: string;
+            /**
+             * Code
+             * @description 部门编码
+             */
+            code: string;
+            /**
+             * Description
+             * @description 部门描述
+             */
+            description?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
         };
         /**
          * MessageApiResponse
@@ -60980,6 +62459,30 @@ export interface components {
          * @enum {string}
          */
         app__modules__safety__schemas__enums__OperationType: "hot_work" | "confined_space" | "blind_plate" | "height_work" | "lifting" | "temporary_electricity" | "excavation" | "road_breaking";
+        /** DepartmentResponse */
+        app__platform__identity__schemas__DepartmentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Feishu Department Id */
+            feishu_department_id: string;
+            /** Name */
+            name: string;
+            /** Parent Feishu Department Id */
+            parent_feishu_department_id?: string | null;
+            /** Leader User Id */
+            leader_user_id?: string | null;
+            /** Member Count */
+            member_count?: number | null;
+            /** Status Is Deleted */
+            status_is_deleted?: boolean | null;
+            /** Path */
+            path?: string | null;
+            /** Order */
+            order?: number | null;
+        };
         /** BatchResultApiResponse */
         app__platform__permission__schemas__BatchResultApiResponse: {
             /**
@@ -61051,6 +62554,56 @@ export interface components {
             succeeded?: string[];
             /** Failed */
             failed?: components["schemas"]["BatchFailure"][];
+        };
+        /** DataResponse[list[CandidateResponse]] */
+        app__shared__schemas__DataResponse_list_CandidateResponse____1: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["app__modules__equipment__schemas__personnel__CandidateResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[CandidateResponse]] */
+        app__shared__schemas__DataResponse_list_CandidateResponse____2: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["app__modules__hr__schemas__CandidateResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /**
+         * MessageApiResponse
+         * @description Message response wrapper
+         */
+        app__shared__schemas__MessageApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: null;
         };
     };
     responses: never;
@@ -69378,7 +70931,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_CandidateResponse__"];
+                    "application/json; charset=utf-8": components["schemas"]["app__shared__schemas__DataResponse_list_CandidateResponse____1"];
                 };
             };
             /** @description Validation Error */
@@ -82299,7 +83852,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_EmployeeResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -82329,12 +83882,12 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_EmployeeResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -82360,12 +83913,12 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            200: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobAcceptedResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82396,7 +83949,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_SyncStatusResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -82429,7 +83982,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_EmployeeResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -82462,7 +84015,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_EmployeeResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -82499,7 +84052,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_EmployeeResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -82532,7 +84085,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["app__shared__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82565,7 +84118,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_EmployeeFeishuSyncResult_"];
                 };
             };
             /** @description Validation Error */
@@ -82600,7 +84153,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["WebhookChallenge"] | components["schemas"]["DataResponse_EmployeeResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -82821,7 +84374,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_TrainingNotifyResult_"];
                 };
             };
             /** @description Validation Error */
@@ -82856,7 +84409,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_TrainingSelectTaskSendResult_"];
                 };
             };
             /** @description Validation Error */
@@ -82889,7 +84442,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_TrainingSelectTask_"];
                 };
             };
             /** @description Validation Error */
@@ -82926,7 +84479,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_TrainingSelectTask_"];
                 };
             };
             /** @description Validation Error */
@@ -82957,7 +84510,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_TrainingSelectTaskListItem__"];
                 };
             };
             /** @description Validation Error */
@@ -82990,7 +84543,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_TrainingSelectTask_"];
                 };
             };
             /** @description Validation Error */
@@ -83140,7 +84693,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_DepartmentResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -83173,7 +84726,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DepartmentResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -83213,7 +84766,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_TrainingLedgerResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -83243,12 +84796,12 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_TrainingLedgerResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -83279,7 +84832,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_TrainingLedgerPageResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -83309,12 +84862,12 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_TrainingLedgerPageResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -83385,7 +84938,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_TrainingLedgerResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -83422,7 +84975,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_TrainingLedgerResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -83455,7 +85008,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["app__shared__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83493,7 +85046,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_AnnualTrainingPlanResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -83523,12 +85076,12 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_AnnualTrainingPlanResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -83561,7 +85114,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_AnnualTrainingPlanResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -83598,7 +85151,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_AnnualTrainingPlanResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -83631,7 +85184,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["app__shared__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83664,7 +85217,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_AnnualTrainingPlanItemResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -83701,7 +85254,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_AnnualTrainingPlanItemResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -84358,7 +85911,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["app__shared__schemas__DataResponse_list_CandidateResponse____2"];
                 };
             };
             /** @description Validation Error */
@@ -84393,7 +85946,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_CandidateResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -84487,12 +86040,12 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            200: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobAcceptedResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84523,7 +86076,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_SyncStatusResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -84556,7 +86109,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_CandidateResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -84589,7 +86142,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_CandidateResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -84626,7 +86179,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_CandidateResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -84659,7 +86212,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["app__shared__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84696,7 +86249,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_CandidateResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -84771,7 +86324,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_TrainingSessionResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -84801,12 +86354,12 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_TrainingSessionResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -84843,7 +86396,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_TrainingSessionResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -84876,7 +86429,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_TrainingSessionResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -84913,7 +86466,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_TrainingSessionResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -84946,7 +86499,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["app__shared__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84974,12 +86527,12 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            200: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobAcceptedResponse"];
                 };
             };
             /** @description Validation Error */
@@ -85012,7 +86565,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_TrainingSessionSelectTask__"];
                 };
             };
             /** @description Validation Error */
@@ -85043,7 +86596,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_TrainingSpecialistResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -85078,7 +86631,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_TrainingSpecialistResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -85111,7 +86664,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["app__shared__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -85137,12 +86690,12 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            200: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobAcceptedResponse"];
                 };
             };
             /** @description Validation Error */
@@ -85176,7 +86729,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_TrainingTeamResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -85211,7 +86764,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_TrainingTeamBrief_"];
                 };
             };
             /** @description Validation Error */
@@ -85248,7 +86801,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_TrainingTeamUpdateResult_"];
                 };
             };
             /** @description Validation Error */
@@ -85281,7 +86834,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["app__shared__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -85317,7 +86870,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_PrejobTemplateResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -85352,7 +86905,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_PrejobTemplateResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -85408,9 +86961,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["HrSystemSettingsUpdate"];
             };
         };
         responses: {
@@ -85420,7 +86971,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["HrSystemSettingsSaveResponse"];
                 };
             };
             /** @description Validation Error */

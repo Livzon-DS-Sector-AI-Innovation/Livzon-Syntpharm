@@ -17,11 +17,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.hr.models import EmployeeProfile
 from app.modules.hr.models import HrDepartment as Department
 from app.modules.hr.models import HrOrgSyncRun as OrgSyncRun
-from app.modules.hr.org_domain import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
 from app.modules.hr.org_repository import SqlAlchemyOrgDepartmentStore
 from app.modules.hr.org_sync import sync_org_departments
 from app.modules.hr.people_repository import SqlAlchemyEmployeeProfileStore
 from app.modules.hr.people_sync import sync_employee_profiles
+from tests.fixtures.org_scope import DEFAULT_ORG_SCOPES, IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
 
 ROOT = {"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME}
 
@@ -128,7 +128,7 @@ async def test_scope_department_ids_exclude_company_root_hidden_and_trade(db_ses
 
     ids = await SqlAlchemyEmployeeProfileStore(db_session).list_scope_department_ids()
 
-    assert set(ids) == {"od-101", "od-101-1"}
+    assert set(ids) == {IN_SCOPE_COMPANY_ID, "od-101", "od-101-1"}
 
 
 async def test_org_sync_records_real_people_count(db_session: AsyncSession) -> None:
@@ -166,6 +166,7 @@ async def test_org_sync_records_real_people_count(db_session: AsyncSession) -> N
         SqlAlchemyOrgDepartmentStore(db_session),
         _DepartmentFetcher(),
         people_store=SqlAlchemyEmployeeProfileStore(db_session),
+        scopes=DEFAULT_ORG_SCOPES,
         people_fetcher=_EmployeeFetcher(
             {
                 "base_info": {

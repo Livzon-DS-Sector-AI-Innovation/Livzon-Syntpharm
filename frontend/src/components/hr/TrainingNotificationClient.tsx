@@ -199,18 +199,18 @@ export default function TrainingNotificationClient() {
       const payload = {
         department: values.department,
         training_date: values.training_date.format('YYYY-MM-DD'),
-        subject: values.subject,
         training_time_start: values.training_time
           ? dayjs(values.training_time[0]).format('HH:mm')
           : undefined,
         training_time_end: values.training_time
           ? dayjs(values.training_time[1]).format('HH:mm')
           : undefined,
+        training_subject: values.subject,
+        topic: [values.subject, values.content].filter(Boolean).join(' '),
         location: values.location,
-        trainer: values.trainer,
+        instructor: values.trainer,
         training_method: values.training_method,
-        content: values.content,
-        trainee_names: traineeDepts,
+        employee_names: traineeDepts,
       }
       await generateTrainingSignInSheet(payload)
       message.success('签到表已生成')
@@ -242,6 +242,7 @@ export default function TrainingNotificationClient() {
         assessment_method: values.assessment_method,
         content: values.content,
         trainee_names: traineeDepts,
+        is_exam: false,
       }
       await generateTrainingEvaluation(payload)
       message.success('效果评估表已生成')
@@ -360,6 +361,7 @@ export default function TrainingNotificationClient() {
         await createTrainingLedgerPage({
           employee_number: number,
           employee_name: name,
+          ledger_type: 'event',
         })
         await createTrainingLedger({
           employee_number: number,

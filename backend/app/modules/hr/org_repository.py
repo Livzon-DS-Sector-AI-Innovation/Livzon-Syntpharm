@@ -41,7 +41,12 @@ class SqlAlchemyOrgDepartmentStore:
             self.session.add(department)
 
         department.name = record.name
-        department.level = max(len(record.department_path) - 1, 0) if record.department_path else None
+        if record.level is not None:
+            department.level = record.level
+        elif record.department_path:
+            department.level = max(len(record.department_path) - 1, 0)
+        else:
+            department.level = None
         department.parent_feishu_department_id = record.parent_id
         department.order = record.order
         department.order_weight = record.order_weight
@@ -90,6 +95,7 @@ class SqlAlchemyOrgDepartmentStore:
             id=row.feishu_department_id,
             name=row.name,
             parent_id=row.parent_feishu_department_id,
+            level=row.level,
             order=row.order or 0,
             order_weight=row.order_weight,
             hidden=bool(row.status_is_deleted),

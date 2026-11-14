@@ -175,8 +175,8 @@ export async function apiFetchPaginated<T>(
  * All server-side API responses follow the shape `{code, data, message, meta}`.
  * Use this helper instead of ad-hoc `.data` access at call sites.
  */
-export function unwrapResponse<T>(raw: { code: number; data: T; message?: string; meta?: unknown }): T {
-  return raw.data
+export function unwrapResponse<T>(raw: { code: number; data?: T | null; message?: string; meta?: unknown }): T {
+  return raw.data as T
 }
 
 export function buildQueryString(params: Record<string, unknown>): string {

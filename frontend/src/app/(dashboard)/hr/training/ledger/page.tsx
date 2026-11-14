@@ -1,8 +1,10 @@
 
+import { unwrapResponse } from '@/lib/api/server/base'
 import { Suspense } from 'react'
 import { TrainingLedgerClient } from '@/components/hr'
 import { fetchEmployeeByNumberApi as fetchEmployeeByNumber } from '@/lib/api/server/hr'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
+import type { Employee } from '@/types/hr'
 export const dynamic = 'force-dynamic'
 
 
@@ -19,9 +21,10 @@ export async function generateMetadata({ searchParams }: PageProps) {
   if (employeeNumber) {
     try {
       const res = await fetchEmployeeByNumber(employeeNumber)
-      if (res.data?.name) {
+      const emp = unwrapResponse<Employee>(res)
+      if (emp?.name) {
         return {
-          title: `${res.data.name}培训台账`,
+          title: `${emp.name}培训台账`,
         }
       }
     } catch {
@@ -42,7 +45,7 @@ export default async function TrainingLedgerPage({ searchParams }: PageProps) {
   if (employeeNumber) {
     try {
       const res = await fetchEmployeeByNumber(employeeNumber)
-      employeeName = res.data?.name || null
+      employeeName = unwrapResponse<Employee>(res)?.name || null
     } catch {
       employeeName = null
     }

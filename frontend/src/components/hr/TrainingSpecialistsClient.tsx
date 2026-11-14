@@ -1,16 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, Card, Form, Input, Modal, Popconfirm, Select, Space, Table, Tabs, message } from 'antd'
 import { PlusOutlined, DeleteOutlined, EditOutlined, SyncOutlined } from '@ant-design/icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { TrainingTeam, TrainingTeamCreateInput, TrainingTeamUpdateInput, TrainingSpecialist, Employee } from '@/types/hr'
-import {
-  fetchTrainingSpecialists,
-  fetchTrainingTeams,
-  fetchDepartments,
-  fetchEmployees,
-} from '@/lib/api/client/hr'
+import type { TrainingTeam, TrainingTeamCreateInput, TrainingTeamUpdateInput, TrainingSpecialist } from '@/types/hr'
+import { fetchTrainingSpecialists, fetchTrainingTeams, fetchDepartments, fetchHrJob } from '@/lib/api/client/hr'
+import { usePollingJob } from '@/hooks/usePollingJob'
 import {
   upsertTrainingSpecialistAction,
   deleteTrainingSpecialistAction,
@@ -19,6 +15,12 @@ import {
   deleteTrainingTeamAction,
   syncTrainingSpecialistsFeishuOpenIds,
 } from '@/actions/hr'
+import { RemoteEmployeeSelect, type RemoteEmployeeOption } from '@/components/hr/RemoteEmployeeSelect'
+
+interface SyncOpenIdsResult {
+  synced: number
+  failed: number
+}
 
 export default function TrainingSpecialistsClient() {
   const queryClient = useQueryClient()
@@ -27,18 +29,43 @@ export default function TrainingSpecialistsClient() {
   const [editingRecord, setEditingRecord] = useState<TrainingSpecialist | null>(null)
   const [form] = Form.useForm()
   const factory = 'old'
-  const [employees, setEmployees] = useState<{ value: string; label: string; number: string }[]>([])
   const [saving, setSaving] = useState(false)
+  const specialistDepartment = Form.useWatch('department', form) as string | undefined
 
   // ── Team state ──
   const [teamModalOpen, setTeamModalOpen] = useState(false)
   const [editingTeam, setEditingTeam] = useState<TrainingTeam | null>(null)
   const [teamForm] = Form.useForm()
   const teamFactory = 'old'
-  const [teamSpecialists, setTeamSpecialists] = useState<{ value: string; label: string; department: string; number: string }[]>([])
-  const [teamEmployees, setTeamEmployees] = useState<{ value: string; label: string; number: string }[]>([])
   const [teamSaving, setTeamSaving] = useState(false)
-  const [_teamDept, setTeamDept] = useState('')
+  const teamDepartment = Form.useWatch('department', teamForm) as string | undefined
+
+  // ── Feishu open_id sync (background job) ──
+  const [syncJobId, setSyncJobId] = useState<string | null>(null)
+  const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
+  const syncJob = usePollingJob<SyncOpenIdsResult>({
+    jobId: syncJobId,
+    startedAt: syncStartedAt,
+    queryKey: ['hr-job', syncJobId],
+    fetchJob: async (id) => {
+      const state = await fetchHrJob(id)
+      return { job_id: id, status: state.status, result: state.result as SyncOpenIdsResult | null, error: state.error }
+    },
+  })
+
+  useEffect(() => {
+    if (syncJob.phase === 'done') {
+      const result = syncJob.result
+      message.success(`同步完成: ${result?.synced ?? 0} 人已更新, ${result?.failed ?? 0} 人未找到`)
+      queryClient.invalidateQueries({ queryKey: ['hr-training-specialists'] })
+    } else if (syncJob.phase === 'failed') {
+      message.error(syncJob.errorMessage || '同步失败')
+    } else if (syncJob.phase === 'timeout') {
+      message.error('同步超时，请稍后在列表中确认结果')
+    } else if (syncJob.phase === 'unavailable') {
+      message.warning('任务状态不可用（服务可能已重启），请刷新列表确认结果')
+    }
+  }, [syncJob.phase, syncJob.errorMessage, syncJob.result, queryClient])
 
   const { data: specialistsData, isLoading: loading, refetch: loadData } = useQuery<TrainingSpecialist[]>({
     queryKey: ['hr-training-specialists'],
@@ -66,65 +93,34 @@ export default function TrainingSpecialistsClient() {
   })
 
   const teams = teamsData || []
+
   const handleSyncOpenIds = async () => {
     try {
       const json = await syncTrainingSpecialistsFeishuOpenIds()
-      if (json.code === 200) {
-        message.success(`同步完成: ${json.data.synced} 人已更新, ${json.data.failed} 人未找到`)
-        queryClient.invalidateQueries({ queryKey: ['hr-training-specialists'] })
-      } else {
-        message.error(json.message || '同步失败')
-      }
+      setSyncJobId(json.data.job_id)
+      setSyncStartedAt(Date.now())
+      message.info('同步任务已提交，正在后台处理…')
     } catch (err: unknown) {
       message.error('同步失败: ' + (err instanceof Error ? err.message : '未知错误'))
     }
-  }
-
-  const loadEmployees = async (dept: string) => {
-    if (!dept) { setEmployees([]); return }
-    try {
-      const res = await fetchEmployees({ department: dept, page_size: 200 })
-      const list = (res.data || []).map((e: Employee) => ({
-        value: e.name,
-        label: `${e.name} (${e.employee_number})`,
-        number: e.employee_number,
-      }))
-      setEmployees(list)
-    } catch { /* ignore */ }
-  }
-
-  const loadEmployeesForEdit = async (dept: string) => {
-    try {
-      const res = await fetchEmployees({ department: dept, page_size: 200 })
-      const list = (res.data || []).map((e: Employee) => ({
-        value: e.name,
-        label: `${e.name} (${e.employee_number})`,
-        number: e.employee_number,
-      }))
-      setEmployees(list)
-    } catch { /* ignore */ }
   }
 
   const handleAdd = () => {
     setEditingRecord(null)
     form.resetFields()
     form.setFieldsValue({ factory: 'old' })
-    setEmployees([])
     setModalOpen(true)
   }
 
   const handleEdit = (record: TrainingSpecialist) => {
     setEditingRecord(record)
-    const f = 'old'
     form.setFieldsValue({
-      factory: f,
+      factory: 'old',
       department: record.department,
       employee_name: record.employee_name,
       employee_number: record.employee_number,
     })
-    setEmployees([{ value: record.employee_name || "", label: `${record.employee_name || ""} (${record.employee_number || ""})`, number: record.employee_number || "" }])
     setModalOpen(true)
-    loadEmployeesForEdit(record.department || "")
   }
 
   const handleDelete = async (id: string) => {
@@ -142,7 +138,6 @@ export default function TrainingSpecialistsClient() {
     setSaving(true)
     try {
       await upsertTrainingSpecialistAction({
-        id: editingRecord?.id,
         factory,
         department: values.department,
         employee_name: values.employee_name,
@@ -162,16 +157,13 @@ export default function TrainingSpecialistsClient() {
     setEditingTeam(null)
     teamForm.resetFields()
     teamForm.setFieldsValue({ factory: 'old', employee_names: [], employee_numbers: [] })
-    setTeamEmployees([])
     setTeamModalOpen(true)
-    loadTeamSpecialists()
   }
 
   const handleTeamEdit = (record: TrainingTeam) => {
     setEditingTeam(record)
-    const f = 'old'
     teamForm.setFieldsValue({
-      factory: f,
+      factory: 'old',
       name: record.name,
       specialist_employee_number: record.specialist_employee_number,
       specialist_name: record.specialist_name,
@@ -180,43 +172,21 @@ export default function TrainingSpecialistsClient() {
       employee_numbers: record.employee_numbers || [],
     })
     setTeamModalOpen(true)
-    loadTeamSpecialists()
-    loadTeamEmployees(record.department || '')
   }
 
-  const loadTeamSpecialists = async () => {
-    try {
-      const res = await fetchTrainingSpecialists()
-      const list = ((res.data || []) as TrainingSpecialist[]).map((s: TrainingSpecialist) => ({
-        value: s.employee_number || '',
-        label: `${s.employee_name} (${s.employee_number})`,
-        department: s.department || '',
-        number: s.employee_number || '',
-      }))
-      setTeamSpecialists(list)
-    } catch { /* ignore */ }
+  const handleTeamSpecialistSelect = (employee: RemoteEmployeeOption | null) => {
+    if (!employee) return
+    teamForm.setFieldsValue({
+      specialist_name: employee.name,
+      department: employee.department || teamForm.getFieldValue('department'),
+    })
   }
 
-  const loadTeamEmployees = async (dept: string) => {
-    if (!dept) { setTeamEmployees([]); return }
-    try {
-      const res = await fetchEmployees({ department: dept, page_size: 200 })
-      const list = (res.data || []).map((e: Employee) => ({
-        value: e.name,
-        label: `${e.name} (${e.employee_number})`,
-        number: e.employee_number,
-      }))
-      setTeamEmployees(list)
-    } catch { /* ignore */ }
-  }
-
-  const handleTeamSpecialistChange = async (employeeNumber: string) => {
-    const spec = teamSpecialists.find(s => s.value === employeeNumber)
-    if (spec) {
-      teamForm.setFieldsValue({ specialist_name: spec.label.split(' ')[0], department: spec.department })
-      setTeamDept(spec.department)
-      await loadTeamEmployees(spec.department)
-    }
+  const handleTeamEmployeesSelect = (employees: RemoteEmployeeOption[]) => {
+    teamForm.setFieldsValue({
+      employee_names: employees.map((e) => e.name),
+      employee_numbers: employees.map((e) => e.employee_number).filter(Boolean),
+    })
   }
 
   const handleTeamDelete = async (id: string) => {
@@ -236,9 +206,10 @@ export default function TrainingSpecialistsClient() {
       const payload: TrainingTeamCreateInput | TrainingTeamUpdateInput = {
         factory: teamFactory,
         name: values.name,
-        specialist_employee_number: values.specialist_employee_number,
-        
         department: values.department,
+        specialist_employee_number: values.specialist_employee_number,
+        specialist_name: values.specialist_name,
+        employee_names: values.employee_names || [],
         employee_numbers: values.employee_numbers || [],
       }
       if (editingTeam) {
@@ -293,6 +264,8 @@ export default function TrainingSpecialistsClient() {
     },
   ]
 
+  const syncRunning = syncJob.phase === 'running'
+
   const tabItems = [
     {
       key: 'specialists',
@@ -302,7 +275,7 @@ export default function TrainingSpecialistsClient() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">培训专员列表</h2>
             <Space>
-              <Button icon={<SyncOutlined />} onClick={handleSyncOpenIds}>同步飞书 Open ID</Button>
+              <Button icon={<SyncOutlined />} onClick={handleSyncOpenIds} loading={syncRunning}>同步飞书 Open ID</Button>
               <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>新增培训专员</Button>
             </Space>
           </div>
@@ -311,16 +284,23 @@ export default function TrainingSpecialistsClient() {
           <Modal title={editingRecord ? '编辑培训专员' : '新增培训专员'} open={modalOpen} onCancel={() => setModalOpen(false)} onOk={handleSave} confirmLoading={saving} destroyOnHidden>
             <Form form={form} layout="vertical" className="mt-4" initialValues={{ factory: 'old' }}>
               <Form.Item label="部门" name="department" rules={[{ required: true, message: '请选择部门' }]}>
-                <Select showSearch placeholder="选择部门" options={departments}
-                  onChange={(dept: string) => { form.setFieldsValue({ employee_name: undefined, employee_number: undefined }); loadEmployees(dept) }} />
+                <Select showSearch placeholder="选择部门" options={departments} />
               </Form.Item>
               <Form.Item label="培训专员" name="employee_name" rules={[{ required: true, message: '请选择人员' }]}>
-                <Select showSearch placeholder="先选部门，再选人员" options={employees} filterOption={(input, option) => (option?.label ?? '').includes(input)}
-                  notFoundContent={employees.length === 0 ? '请先选择部门' : '无匹配人员'}
-                  onChange={(name: string) => {
-                    const emp = employees.find(e => e.value === name)
-                    if (emp) form.setFieldsValue({ employee_number: emp.number })
-                  }} />
+                <RemoteEmployeeSelect
+                  source="employees"
+                  valueKey="employee_number"
+                  department={specialistDepartment}
+                  placeholder="搜索姓名或工号选择人员"
+                  onSelect={(employee) => {
+                    if (!employee) return
+                    form.setFieldsValue({
+                      employee_name: employee.name,
+                      employee_number: employee.employee_number,
+                      department: employee.department || form.getFieldValue('department'),
+                    })
+                  }}
+                />
               </Form.Item>
               <Form.Item name="employee_number" hidden><Input /></Form.Item>
             </Form>
@@ -347,21 +327,30 @@ export default function TrainingSpecialistsClient() {
                 <Input placeholder="如：提取车间班组A" />
               </Form.Item>
               <Form.Item label="培训专员" name="specialist_employee_number" rules={[{ required: true, message: '请选择培训专员' }]}>
-                <Select showSearch placeholder="选择培训专员" options={teamSpecialists}
-                  filterOption={(input, option) => (option?.label ?? '').includes(input)}
-                  onChange={handleTeamSpecialistChange} />
+                <RemoteEmployeeSelect
+                  source="employees"
+                  valueKey="employee_number"
+                  placeholder="搜索姓名或工号选择培训专员"
+                  onSelect={handleTeamSpecialistSelect}
+                />
               </Form.Item>
               <Form.Item name="specialist_name" hidden><Input /></Form.Item>
               <Form.Item label="所属部门" name="department" rules={[{ required: true, message: '请先选择培训专员' }]}>
                 <Select showSearch placeholder="选择培训专员后自动填入" options={departments} disabled />
               </Form.Item>
-              <Form.Item label="受训人员" name="employee_names" rules={[{ required: true, message: '请选择受训人员', type: 'array', min: 1 }]}>
-                <Select mode="multiple" showSearch placeholder="选择受训人员（可多选）" options={teamEmployees}
-                  filterOption={(input, option) => (option?.label ?? '').includes(input)}
-                  onChange={(names: string[]) => {
-                    const nums = names.map(n => teamEmployees.find(e => e.value === n)?.number || '').filter(Boolean)
-                    teamForm.setFieldsValue({ employee_numbers: nums })
-                  }} />
+              <Form.Item
+                label="受训人员"
+                name="employee_names"
+                rules={[{ required: true, message: '请选择受训人员', type: 'array', min: 1 }]}
+              >
+                <RemoteEmployeeSelect
+                  mode="multiple"
+                  source="employees"
+                  valueKey="employee_number"
+                  department={teamDepartment}
+                  placeholder="搜索姓名或工号选择受训人员（可多选）"
+                  onSelectionChange={handleTeamEmployeesSelect}
+                />
               </Form.Item>
               <Form.Item name="employee_numbers" hidden><Input /></Form.Item>
             </Form>
