@@ -28,7 +28,12 @@ class _FakeClient:
 
 async def test_request_refreshes_cached_token_once_on_99991663() -> None:
     client = _FakeClient()
-    fetcher = FeishuOrgDepartmentFetcher(app_id="cli_x", app_secret="secret", client=client)  # type: ignore[arg-type]
+    fetcher = FeishuOrgDepartmentFetcher(
+        app_id="cli_x",
+        app_secret="secret",
+        root_department_id="od-root",
+        client=client,
+    )  # type: ignore[arg-type]
     force_flags: list[bool] = []
 
     async def fake_token(*, force_refresh: bool = False) -> str:

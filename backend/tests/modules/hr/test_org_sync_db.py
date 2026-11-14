@@ -15,10 +15,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config_model import ModuleSetting
 from app.modules.hr.models import HrDepartment as Department
 from app.modules.hr.models import HrOrgSyncRun as OrgSyncRun
-from app.modules.hr.org_domain import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
 from app.modules.hr.org_repository import SqlAlchemyOrgDepartmentStore
 from app.modules.hr.org_settings import ORG_SYNC_ROOT_ID_SETTING, ORG_SYNC_ROOT_NAME_SETTING, load_org_scope
 from app.modules.hr.org_sync import sync_org_departments
+from tests.fixtures.org_scope import DEFAULT_ORG_SCOPE, IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
 
 
 class _Fetcher:
@@ -76,7 +76,7 @@ async def test_sync_persists_mirror_fields_and_hides_stale_department(db_session
     await db_session.flush()
     store = SqlAlchemyOrgDepartmentStore(db_session)
 
-    stats = await sync_org_departments(store, _Fetcher())
+    stats = await sync_org_departments(store, _Fetcher(), scope=DEFAULT_ORG_SCOPE)
 
     assert stats.total == 1
     assert stats.created == 1
@@ -145,7 +145,7 @@ async def test_failed_sync_rolls_back_department_writes_and_records_failure(db_s
             raise RuntimeError("database write failed")
 
     with pytest.raises(RuntimeError, match="database write failed"):
-        await sync_org_departments(_FailingStore(db_session), _Fetcher())
+        await sync_org_departments(_FailingStore(db_session), _Fetcher(), scope=DEFAULT_ORG_SCOPE)
 
     created = (
         await db_session.execute(select(Department).where(Department.feishu_department_id == "od-101"))

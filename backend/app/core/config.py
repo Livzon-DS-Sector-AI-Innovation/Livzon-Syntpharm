@@ -169,9 +169,6 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "dazah-backend"
     APP_ENV: str = "development"
-    ENERGY_AUTO_COLLECT_ENABLED: bool = False
-    ENERGY_BITABLE_AUTO_SYNC_ENABLED: bool = False
-    ENERGY_BITABLE_SYNC_HOUR: int = 17
     DEBUG: bool = False
     # 权限：是否强制执行「接口精确绑定兜底」（未登记绑定的受保护接口一律 403）。
     # 默认关闭，待存量业务接口全部接入绑定登记后再开启。
@@ -282,7 +279,8 @@ class Settings(BaseSettings):
     HERMES_AGENT_TOKEN: str = ""
 
     # HR Bitable
-    HR_BITABLE_APP_TOKEN: str = ""
+    # HR 多维表格配置统一走嵌套键 FEISHU__HR_BITABLE__*（见 FeishuHRBitableConfig），
+    # 扁平键已删除（audit #11）。
 
     # HR 飞书「审批完成」事件回调校验凭据（飞书开放平台 → 事件与回调 → 加密策略）。
     # 回调由飞书服务器发起、没有用户登录态，只能靠这两个凭据鉴权：

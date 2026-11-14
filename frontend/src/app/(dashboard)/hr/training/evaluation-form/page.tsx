@@ -6,7 +6,7 @@ import { Card, Form, Input, InputNumber, Select, Button, message, Alert } from '
 import { DownloadOutlined } from '@ant-design/icons'
 import EvaluationPreview from '@/components/hr/EvaluationPreview'
 import { apiGet } from '@/lib/api/client'
-import { generateEvaluationForm } from '@/lib/api/client/hr'
+import { generateTrainingEvaluation } from '@/actions/hr'
 
 const METHODS = [{v:'面授',l:'面授'},{v:'自学',l:'自学'},{v:'自学+面授',l:'自学+面授'}]
 const ASSESSMENT = [{v:'笔试',l:'笔试'},{v:'问答',l:'问答'}]
@@ -80,10 +80,14 @@ export default function EvaluationFormPage() {
         excellent_count: vals.excellent_count, qualified_count: vals.qualified_count,
         unqualified_count: vals.unqualified_count,
       }
-      const blob = await generateEvaluationForm(payload)
+      const { base64, filename } = await generateTrainingEvaluation(payload)
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
+      const blob = new Blob([bytes], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      })
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a'); a.href = url
-      a.download = `培训效果评估表_${payload.training_date||'nodate'}.docx`
+      a.download = filename
       document.body.appendChild(a); a.click(); document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
       message.success('评估表已生成，台账已更新')

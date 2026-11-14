@@ -1,3 +1,4 @@
+import { unwrapResponse } from '@/lib/api/server/base'
 import { fetchCandidates } from '@/actions/hr'
 import { RecruitmentClient } from '@/components/hr'
 
@@ -8,7 +9,7 @@ export default async function RecruitmentPage() {
 
   return (
     <RecruitmentClient
-      initialCandidates={res.data}
+      initialCandidates={unwrapResponse(res)}
       initialTotal={res.meta?.total || 0}
     />
   )

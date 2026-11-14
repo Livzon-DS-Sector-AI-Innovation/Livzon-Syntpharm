@@ -10,6 +10,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
+import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,8 +18,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.hr.models import EmployeeProfile
 from app.modules.hr.models import HrDepartment as Department
 from app.modules.hr.models import HrOrgSyncRun as OrgSyncRun
-from app.modules.hr.org_domain import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
 from app.platform.identity.models import User
+from tests.fixtures.org_scope import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
+
+pytestmark = pytest.mark.usefixtures("org_scope_settings")
 
 TREE_URL = "/api/v1/hr/org/departments"
 STATUS_URL = "/api/v1/hr/org/sync-status"

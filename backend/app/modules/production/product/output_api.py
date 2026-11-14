@@ -598,8 +598,7 @@ async def import_from_bitable(
     resolved_table_id = table_id
     if not resolved_table_id:
         try:
-            bitable_temp = BitableClient()
-            bitable_temp.app_token = app_token
+            bitable_temp = BitableClient(app_token=app_token)
             tables = await bitable_temp.get_tables()
             if not tables:
                 return MessageApiResponse(code=400, message="该多维表格中没有数据表", data=None)

@@ -5,8 +5,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Table, Input, Select, Card, Space, Upload, Button, App } from 'antd'
 import { SearchOutlined, UploadOutlined } from '@ant-design/icons'
-import { fetchSopCatalog } from '@/lib/api/client/hr'
-import { apiGet } from '@/lib/api/client'
+import { apiFetchPaginated, apiGet } from '@/lib/api/client'
 
 export default function SopCatalogPage() {
   const { message } = App.useApp()
@@ -42,12 +41,15 @@ export default function SopCatalogPage() {
   const { data: catalogData, isLoading, refetch } = useQuery({
     queryKey: ['hr-sop-catalog', { page, keyword, dept, cat }],
     queryFn: async () => {
-      const res = await fetchSopCatalog({ page, page_size: 50, keyword: keyword || undefined, department: dept, category: cat })
-      return { data: res.data || [], total: res.meta?.total || 0 }
+      const params = new URLSearchParams({ page: String(page), page_size: '50' })
+      if (keyword) params.set('keyword', keyword)
+      if (dept) params.set('department', dept)
+      if (cat) params.set('category', cat)
+      return apiFetchPaginated<Record<string, unknown>>(`/api/v1/hr/sop-catalog?${params.toString()}`)
     },
   })
 
-  const data = catalogData?.data || []
+  const data = catalogData?.items || []
   const total = catalogData?.total || 0
 
   const load = (p = 1) => {

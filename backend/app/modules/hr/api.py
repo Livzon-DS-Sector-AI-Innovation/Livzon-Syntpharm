@@ -1,5 +1,4 @@
 # mypy: ignore-errors
-import hashlib
 import hmac
 import logging
 import os
@@ -40,7 +39,7 @@ from app.modules.hr.onboarding_evaluation_document_generator import (
 )
 from app.modules.hr.org_api import router as org_router
 from app.modules.hr.org_settings import (
-    ORG_SCOPE_SETTING_DEFAULTS,
+    ORG_SCOPE_SETTING_KEYS,
     ORG_SYNC_ROOT_ID_SETTING,
     ORG_SYNC_ROOT_NAME_SETTING,
     load_org_scope,
@@ -59,13 +58,17 @@ from app.modules.hr.schemas import (
     CandidateUpdateRecommendationLevel,
     DepartmentResponse,
     EmployeeCreate,
+    EmployeeFeishuSyncResult,
     EmployeeResponse,
     EmployeeUpdate,
     HrSystemSettingsApiResponse,
+    HrSystemSettingsSaveResponse,
+    HrSystemSettingsUpdate,
     OnboardingEvaluationInput,
     PrejobTemplateCreate,
     PrejobTemplateItem,
     PrejobTemplateResponse,
+    SyncStatusResponse,
     TrainingEvaluationInput,
     TrainingLedgerCreate,
     TrainingLedgerPageCreate,
@@ -74,18 +77,29 @@ from app.modules.hr.schemas import (
     TrainingLedgerUpdate,
     TrainingNotificationInput,
     TrainingNotifyInput,
+    TrainingNotifyResult,
+    TrainingSelectTask,
     TrainingSelectTaskCreate,
+    TrainingSelectTaskListItem,
+    TrainingSelectTaskSendResult,
     TrainingSelectTaskSubmit,
     TrainingSessionCreate,
     TrainingSessionResponse,
+    TrainingSessionSelectTask,
     TrainingSessionStatusUpdate,
     TrainingSessionUpdate,
     TrainingSignInSheetInput,
     TrainingSpecialistCreate,
+    TrainingSpecialistResponse,
+    TrainingTeamBrief,
     TrainingTeamCreate,
+    TrainingTeamResponse,
     TrainingTeamUpdate,
+    TrainingTeamUpdateResult,
+    WebhookChallenge,
 )
 from app.modules.hr.signin_document_generator import generate_training_sign_in_sheet
+from app.platform.identity.public_api import verify_feishu_callback_signature
 
 try:
     from app.modules.hr.attendance_api import router as attendance_router  # type: ignore[import-not-found]
@@ -113,6 +127,8 @@ from app.shared.schemas import (
     AsyncJobAccepted,
     AsyncJobAcceptedResponse,
     AsyncJobStateResponse,
+    DataResponse,
+    MessageApiResponse,
     PageParams,
 )
 
@@ -241,7 +257,11 @@ def get_candidate_service(
 # ─── Employee Routes ───
 
 
-@router.get("/employees", summary="员工列表")
+@router.get(
+    "/employees",
+    response_model=DataResponse[list[EmployeeResponse]],
+    summary="员工列表",
+)
 async def list_employees(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:employees:read")),
@@ -267,7 +287,12 @@ async def list_employees(  # type: ignore[no-untyped-def]
     )
 
 
-@router.post("/employees", summary="创建员工")
+@router.post(
+    "/employees",
+    response_model=DataResponse[EmployeeResponse],
+    status_code=201,
+    summary="创建员工",
+)
 async def create_employee(  # type: ignore[no-untyped-def]
     payload: EmployeeCreate,
     current_user: RequiredUser,
@@ -278,26 +303,34 @@ async def create_employee(  # type: ignore[no-untyped-def]
     return build_response(
         data=EmployeeResponse.model_validate(employee).model_dump(mode="json"),
         message="员工创建成功",
-        status_code=201,
     )
 
 
-@router.post("/employees/sync-from-feishu", summary="从飞书多维表格同步员工数据")
+@router.post(
+    "/employees/sync-from-feishu",
+    response_model=AsyncJobAcceptedResponse,
+    status_code=202,
+    summary="从飞书多维表格同步员工数据",
+)
 async def sync_employees_from_feishu(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:employees:sync")),
-    service: EmployeeService = Depends(get_employee_service),
-):
-    """手动触发：从飞书多维表格拉取全部员工数据并 upsert 到本地 PG。"""
-    stats = await service.sync_from_feishu()
-    msg = f"同步完成：新增 {stats['created']} 条，更新 {stats['updated']} 条，失败 {stats['failed']} 条"
-    return build_response(
-        data=stats,
-        message=msg,
-    )
+) -> AsyncJobAcceptedResponse:
+    """提交员工同步后台任务（全量拉取 >5s）；轮询 GET /hr/jobs/{job_id} 拿结果。"""
+
+    async def _run(_job: str) -> dict[str, Any] | None:
+        async with async_session_factory() as job_db:
+            return await EmployeeService(job_db).sync_from_feishu()
+
+    job_id = start_job(hr_job_store, "hr-employees-sync", _run)
+    return AsyncJobAcceptedResponse(data=AsyncJobAccepted(job_id=job_id))
 
 
-@router.get("/employees/sync-status", summary="飞书同步状态")
+@router.get(
+    "/employees/sync-status",
+    response_model=DataResponse[SyncStatusResponse],
+    summary="飞书同步状态",
+)
 async def get_employee_sync_status(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:employees:sync")),
@@ -310,7 +343,11 @@ async def get_employee_sync_status(  # type: ignore[no-untyped-def]
     )
 
 
-@router.get("/employees/by-number/{employee_number}", summary="根据工号查询员工")
+@router.get(
+    "/employees/by-number/{employee_number}",
+    response_model=DataResponse[EmployeeResponse],
+    summary="根据工号查询员工",
+)
 async def get_employee_by_number(  # type: ignore[no-untyped-def]
     employee_number: str,
     current_user: RequiredUser,
@@ -323,7 +360,11 @@ async def get_employee_by_number(  # type: ignore[no-untyped-def]
     )
 
 
-@router.get("/employees/{employee_id}", summary="员工详情")
+@router.get(
+    "/employees/{employee_id}",
+    response_model=DataResponse[EmployeeResponse],
+    summary="员工详情",
+)
 async def get_employee(  # type: ignore[no-untyped-def]
     employee_id: UUID,
     current_user: RequiredUser,
@@ -336,7 +377,11 @@ async def get_employee(  # type: ignore[no-untyped-def]
     )
 
 
-@router.put("/employees/{employee_id}", summary="更新员工")
+@router.put(
+    "/employees/{employee_id}",
+    response_model=DataResponse[EmployeeResponse],
+    summary="更新员工",
+)
 async def update_employee(  # type: ignore[no-untyped-def]
     employee_id: UUID,
     payload: EmployeeUpdate,
@@ -351,7 +396,11 @@ async def update_employee(  # type: ignore[no-untyped-def]
     )
 
 
-@router.delete("/employees/{employee_id}", summary="删除员工")
+@router.delete(
+    "/employees/{employee_id}",
+    response_model=MessageApiResponse,
+    summary="删除员工",
+)
 async def delete_employee(  # type: ignore[no-untyped-def]
     employee_id: UUID,
     current_user: RequiredUser,
@@ -362,7 +411,11 @@ async def delete_employee(  # type: ignore[no-untyped-def]
     return build_response(message="员工删除成功")
 
 
-@router.post("/employees/{employee_id}/sync-to-feishu", summary="同步单个员工到飞书")
+@router.post(
+    "/employees/{employee_id}/sync-to-feishu",
+    response_model=DataResponse[EmployeeFeishuSyncResult],
+    summary="同步单个员工到飞书",
+)
 async def sync_employee_to_feishu(  # type: ignore[no-untyped-def]
     employee_id: UUID,
     current_user: RequiredUser,
@@ -386,6 +439,9 @@ async def _verify_feishu_approval_callback(request: Request, payload: dict) -> N
     - 配置了 Encrypt Key：必须带齐 timestamp/nonce/signature，且 HMAC-SHA256 校验通过；
     - 配置了 Verification Token：payload.token 或 payload.header.token 必须一致；
     - 两者都没配置：直接拒绝，避免留下一个无鉴权的数据变更入口。
+
+    签名校验复用 identity 模块的 `verify_feishu_callback_signature`（通过 public_api），
+    不在 HR 模块内重复实现 HMAC 逻辑。
     """
     settings = get_settings()
     encrypt_key = settings.HR_FEISHU_APPROVAL_ENCRYPT_KEY
@@ -395,18 +451,19 @@ async def _verify_feishu_approval_callback(request: Request, payload: dict) -> N
         logger.error(
             "HR 飞书审批回调未配置校验凭据（HR_FEISHU_APPROVAL_ENCRYPT_KEY / "
             "HR_FEISHU_APPROVAL_VERIFICATION_TOKEN），已拒绝回调",
+            extra={"biz_module": "hr"},
         )
         raise AppException(status_code=503, message="飞书审批回调未配置校验凭据")
 
     if encrypt_key:
-        timestamp = request.headers.get("X-Lark-Request-Timestamp")
-        nonce = request.headers.get("X-Lark-Request-Nonce")
-        signature = request.headers.get("X-Lark-Signature")
-        if not timestamp or not nonce or not signature:
-            raise UnauthorizedException("飞书回调缺少签名头")
-        raw_body = await request.body()
-        expected = hashlib.sha256(f"{timestamp}{nonce}{encrypt_key}".encode() + raw_body).hexdigest()
-        if not hmac.compare_digest(expected, signature):
+        signature_ok = verify_feishu_callback_signature(
+            encrypt_key=encrypt_key,
+            raw_body=await request.body(),
+            timestamp=request.headers.get("X-Lark-Request-Timestamp"),
+            nonce=request.headers.get("X-Lark-Request-Nonce"),
+            signature=request.headers.get("X-Lark-Signature"),
+        )
+        if not signature_ok:
             raise UnauthorizedException("飞书回调签名校验失败")
 
     if verification_token:
@@ -418,7 +475,11 @@ async def _verify_feishu_approval_callback(request: Request, payload: dict) -> N
             raise UnauthorizedException("飞书回调 token 校验失败")
 
 
-@router.post("/webhook/feishu-approval", summary="飞书审批完成回调")
+@router.post(
+    "/webhook/feishu-approval",
+    response_model=WebhookChallenge | DataResponse[EmployeeResponse],
+    summary="飞书审批完成回调",
+)
 async def feishu_approval_webhook(  # type: ignore[no-untyped-def]
     request: Request,
     payload: dict,  # type: ignore[type-arg]
@@ -428,26 +489,39 @@ async def feishu_approval_webhook(  # type: ignore[no-untyped-def]
 
     鉴权方式见 `_verify_feishu_approval_callback`：飞书回调没有用户登录态，
     用签名 + verification token 校验替代 JWT。
+
+    返回码语义（飞书对非 2xx 会重试）：
+    - 校验失败 → 401/503（配置问题，重试无意义但也不该静默 200）
+    - 缺少工号 → 400（载荷错误，重试不会成功）
+    - 业务异常（员工不存在等）→ 原样抛出 4xx
+    - 未预期异常 → 500，由飞书重试
     """
     await _verify_feishu_approval_callback(request, payload)
 
     # 飞书配置回调地址时会先发一次 url_verification 挑战请求
     challenge = payload.get("challenge")
     if isinstance(challenge, str):
-        return {"challenge": challenge}
+        return WebhookChallenge(challenge=challenge)
 
     employee_number = payload.get("employee_number")
     if not employee_number:
-        return build_response(message="缺少工号")
+        raise BadRequestException("缺少工号")
 
     try:
         employee = await service.approve_employee(employee_number)
-        return build_response(
-            data=EmployeeResponse.model_validate(employee).model_dump(mode="json"),
-            message="员工审批通过，状态已更新为在职",
+    except AppException:
+        raise
+    except Exception as exc:
+        logger.exception(
+            "飞书审批回调处理失败",
+            extra={"biz_module": "hr", "employee_number": str(employee_number)},
         )
-    except Exception as e:
-        return build_response(message=f"审批处理失败: {str(e)}")
+        raise AppException(status_code=500, message="审批处理失败") from exc
+
+    return build_response(
+        data=EmployeeResponse.model_validate(employee).model_dump(mode="json"),
+        message="员工审批通过，状态已更新为在职",
+    )
 
 
 @router.get(
@@ -676,7 +750,11 @@ async def export_training_sign_in_sheet(  # type: ignore[no-untyped-def]
     )
 
 
-@router.post("/training-notifications/send", summary="发送培训通知到飞书")
+@router.post(
+    "/training-notifications/send",
+    response_model=DataResponse[TrainingNotifyResult],
+    summary="发送培训通知到飞书",
+)
 async def send_training_notification(  # type: ignore[no-untyped-def]
     payload: TrainingNotifyInput,
     current_user: RequiredUser,
@@ -698,7 +776,11 @@ from app.core.config import get_settings  # noqa: E402
 from app.platform.integrations.feishu.im import FeishuIM  # noqa: E402
 
 
-@router.post("/training-select-tasks/send", summary="发送飞书选择受训人员任务")
+@router.post(
+    "/training-select-tasks/send",
+    response_model=DataResponse[TrainingSelectTaskSendResult],
+    summary="发送飞书选择受训人员任务",
+)
 async def send_training_select_task(  # type: ignore[no-untyped-def]
     payload: TrainingSelectTaskCreate,
     current_user: RequiredUser,
@@ -762,7 +844,7 @@ async def send_training_select_task(  # type: ignore[no-untyped-def]
                 await service.repo.session.execute(update_sql, {"oid": open_id, "eno": li_employee.employee_number})
                 await service.repo.session.flush()
         except Exception:
-            logger.exception("unexpected error in feishu open_id lookup for employee %s", li_employee.employee_number)
+            logger.exception("查询员工飞书 open_id 失败", extra={"biz_module": "hr", "employee_number": li_employee.employee_number})
 
     if not open_id:
         raise BadRequestException("李文兆缺少飞书 open_id 且无法实时获取")
@@ -786,7 +868,11 @@ async def send_training_select_task(  # type: ignore[no-untyped-def]
     )
 
 
-@router.get("/training-select-tasks/{token}", summary="获取选择任务")
+@router.get(
+    "/training-select-tasks/{token}",
+    response_model=DataResponse[TrainingSelectTask],
+    summary="获取选择任务",
+)
 async def get_training_select_task(
     token: str,
     current_user: RequiredUser,
@@ -800,7 +886,11 @@ async def get_training_select_task(
     return build_response(data=json.loads(data))
 
 
-@router.post("/training-select-tasks/{token}/submit", summary="提交选择结果")
+@router.post(
+    "/training-select-tasks/{token}/submit",
+    response_model=DataResponse[TrainingSelectTask],
+    summary="提交选择结果",
+)
 async def submit_training_select_task(  # type: ignore[no-untyped-def]
     token: str,
     payload: TrainingSelectTaskSubmit,
@@ -841,7 +931,11 @@ async def submit_training_select_task(  # type: ignore[no-untyped-def]
     )
 
 
-@router.get("/training-select-tasks", summary="获取培训选择任务列表")
+@router.get(
+    "/training-select-tasks",
+    response_model=DataResponse[list[TrainingSelectTaskListItem]],
+    summary="获取培训选择任务列表",
+)
 async def list_training_select_tasks(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:training-select-tasks:read")),
@@ -880,7 +974,11 @@ async def list_training_select_tasks(
     return build_response(data=results)
 
 
-@router.get("/training-select-tasks/{token}/result", summary="获取选择结果")
+@router.get(
+    "/training-select-tasks/{token}/result",
+    response_model=DataResponse[TrainingSelectTask],
+    summary="获取选择结果",
+)
 async def get_training_select_task_result(
     token: str,
     current_user: RequiredUser,
@@ -1006,7 +1104,11 @@ async def export_onboarding_evaluation(  # type: ignore[no-untyped-def]
 # ─── Department Routes ───
 
 
-@router.get("/departments", summary="部门列表")
+@router.get(
+    "/departments",
+    response_model=DataResponse[list[DepartmentResponse]],
+    summary="部门列表",
+)
 async def list_departments(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:departments:read")),
@@ -1028,7 +1130,11 @@ async def list_departments(  # type: ignore[no-untyped-def]
     )
 
 
-@router.get("/departments/{department_id}", summary="部门详情")
+@router.get(
+    "/departments/{department_id}",
+    response_model=DataResponse[DepartmentResponse],
+    summary="部门详情",
+)
 async def get_department(  # type: ignore[no-untyped-def]
     department_id: UUID,
     current_user: RequiredUser,
@@ -1044,7 +1150,11 @@ async def get_department(  # type: ignore[no-untyped-def]
 # ─── TrainingLedger Routes ───
 
 
-@router.get("/training-ledgers", summary="培训台账列表")
+@router.get(
+    "/training-ledgers",
+    response_model=DataResponse[list[TrainingLedgerResponse]],
+    summary="培训台账列表",
+)
 async def list_training_ledgers(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:training-ledgers:read")),
@@ -1072,7 +1182,12 @@ async def list_training_ledgers(  # type: ignore[no-untyped-def]
     )
 
 
-@router.post("/training-ledgers", summary="创建培训台账记录")
+@router.post(
+    "/training-ledgers",
+    response_model=DataResponse[TrainingLedgerResponse],
+    status_code=201,
+    summary="创建培训台账记录",
+)
 async def create_training_ledger(  # type: ignore[no-untyped-def]
     payload: TrainingLedgerCreate,
     current_user: RequiredUser,
@@ -1083,14 +1198,17 @@ async def create_training_ledger(  # type: ignore[no-untyped-def]
     return build_response(
         data=TrainingLedgerResponse.model_validate(record).model_dump(mode="json"),
         message="培训台账记录创建成功",
-        status_code=201,
     )
 
 
 # ─── TrainingLedgerPage Routes (must be before /{record_id}) ───
 
 
-@router.get("/training-ledgers/pages", summary="已创建的培训台账页面列表")
+@router.get(
+    "/training-ledgers/pages",
+    response_model=DataResponse[list[TrainingLedgerPageResponse]],
+    summary="已创建的培训台账页面列表",
+)
 async def list_training_ledger_pages(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:training-ledgers:read")),
@@ -1113,7 +1231,12 @@ async def list_training_ledger_pages(  # type: ignore[no-untyped-def]
     return build_response(data=data)
 
 
-@router.post("/training-ledgers/pages", summary="创建培训台账页面")
+@router.post(
+    "/training-ledgers/pages",
+    response_model=DataResponse[TrainingLedgerPageResponse],
+    status_code=201,
+    summary="创建培训台账页面",
+)
 async def create_training_ledger_page(  # type: ignore[no-untyped-def]
     payload: TrainingLedgerPageCreate,
     current_user: RequiredUser,
@@ -1131,7 +1254,6 @@ async def create_training_ledger_page(  # type: ignore[no-untyped-def]
             updated_at=page.updated_at,
         ).model_dump(mode="json"),
         message="培训台账页面创建成功",
-        status_code=201,
     )
 
 
@@ -1336,7 +1458,11 @@ async def export_training_ledger(  # type: ignore[no-untyped-def]
     )
 
 
-@router.get("/training-ledgers/{record_id}", summary="培训台账记录详情")
+@router.get(
+    "/training-ledgers/{record_id}",
+    response_model=DataResponse[TrainingLedgerResponse],
+    summary="培训台账记录详情",
+)
 async def get_training_ledger(  # type: ignore[no-untyped-def]
     record_id: UUID,
     current_user: RequiredUser,
@@ -1349,7 +1475,11 @@ async def get_training_ledger(  # type: ignore[no-untyped-def]
     )
 
 
-@router.put("/training-ledgers/{record_id}", summary="更新培训台账记录")
+@router.put(
+    "/training-ledgers/{record_id}",
+    response_model=DataResponse[TrainingLedgerResponse],
+    summary="更新培训台账记录",
+)
 async def update_training_ledger(  # type: ignore[no-untyped-def]
     record_id: UUID,
     payload: TrainingLedgerUpdate,
@@ -1364,7 +1494,11 @@ async def update_training_ledger(  # type: ignore[no-untyped-def]
     )
 
 
-@router.delete("/training-ledgers/{record_id}", summary="删除培训台账记录")
+@router.delete(
+    "/training-ledgers/{record_id}",
+    response_model=MessageApiResponse,
+    summary="删除培训台账记录",
+)
 async def delete_training_ledger(  # type: ignore[no-untyped-def]
     record_id: UUID,
     current_user: RequiredUser,
@@ -1378,7 +1512,11 @@ async def delete_training_ledger(  # type: ignore[no-untyped-def]
 # ─── AnnualTrainingPlan Routes ───
 
 
-@router.get("/annual-training-plans", summary="年度培训计划列表")
+@router.get(
+    "/annual-training-plans",
+    response_model=DataResponse[list[AnnualTrainingPlanResponse]],
+    summary="年度培训计划列表",
+)
 async def list_annual_training_plans(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:annual-training-plans:read")),
@@ -1402,7 +1540,12 @@ async def list_annual_training_plans(  # type: ignore[no-untyped-def]
     )
 
 
-@router.post("/annual-training-plans", summary="创建年度培训计划")
+@router.post(
+    "/annual-training-plans",
+    response_model=DataResponse[AnnualTrainingPlanResponse],
+    status_code=201,
+    summary="创建年度培训计划",
+)
 async def create_annual_training_plan(  # type: ignore[no-untyped-def]
     payload: AnnualTrainingPlanCreate,
     current_user: RequiredUser,
@@ -1413,11 +1556,14 @@ async def create_annual_training_plan(  # type: ignore[no-untyped-def]
     return build_response(
         data=AnnualTrainingPlanResponse.model_validate(plan).model_dump(mode="json"),
         message="年度培训计划创建成功",
-        status_code=201,
     )
 
 
-@router.get("/annual-training-plans/{plan_id}", summary="年度培训计划详情")
+@router.get(
+    "/annual-training-plans/{plan_id}",
+    response_model=DataResponse[AnnualTrainingPlanResponse],
+    summary="年度培训计划详情",
+)
 async def get_annual_training_plan(  # type: ignore[no-untyped-def]
     plan_id: UUID,
     current_user: RequiredUser,
@@ -1430,7 +1576,11 @@ async def get_annual_training_plan(  # type: ignore[no-untyped-def]
     )
 
 
-@router.put("/annual-training-plans/{plan_id}", summary="更新年度培训计划")
+@router.put(
+    "/annual-training-plans/{plan_id}",
+    response_model=DataResponse[AnnualTrainingPlanResponse],
+    summary="更新年度培训计划",
+)
 async def update_annual_training_plan(  # type: ignore[no-untyped-def]
     plan_id: UUID,
     payload: AnnualTrainingPlanUpdate,
@@ -1445,7 +1595,11 @@ async def update_annual_training_plan(  # type: ignore[no-untyped-def]
     )
 
 
-@router.delete("/annual-training-plans/{plan_id}", summary="删除年度培训计划")
+@router.delete(
+    "/annual-training-plans/{plan_id}",
+    response_model=MessageApiResponse,
+    summary="删除年度培训计划",
+)
 async def delete_annual_training_plan(  # type: ignore[no-untyped-def]
     plan_id: UUID,
     current_user: RequiredUser,
@@ -1456,7 +1610,11 @@ async def delete_annual_training_plan(  # type: ignore[no-untyped-def]
     return build_response(message="年度培训计划删除成功")
 
 
-@router.get("/annual-training-plans/{plan_id}/items", summary="年度计划明细列表")
+@router.get(
+    "/annual-training-plans/{plan_id}/items",
+    response_model=DataResponse[list[AnnualTrainingPlanItemResponse]],
+    summary="年度计划明细列表",
+)
 async def list_annual_training_plan_items(  # type: ignore[no-untyped-def]
     plan_id: UUID,
     current_user: RequiredUser,
@@ -1468,7 +1626,11 @@ async def list_annual_training_plan_items(  # type: ignore[no-untyped-def]
     return build_response(data=data)
 
 
-@router.put("/annual-training-plans/{plan_id}/items/batch", summary="批量更新年度计划明细")
+@router.put(
+    "/annual-training-plans/{plan_id}/items/batch",
+    response_model=DataResponse[list[AnnualTrainingPlanItemResponse]],
+    summary="批量更新年度计划明细",
+)
 async def batch_update_annual_training_plan_items(  # type: ignore[no-untyped-def]
     plan_id: UUID,
     payload: AnnualTrainingPlanItemBatchUpdate,
@@ -1644,7 +1806,11 @@ if attendance_router is not None:
 # ─── Candidate Routes ───
 
 
-@router.get("/candidates", summary="候选人列表")
+@router.get(
+    "/candidates",
+    response_model=DataResponse[list[CandidateResponse]],
+    summary="候选人列表",
+)
 async def list_candidates(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:candidates:read")),
@@ -1665,7 +1831,7 @@ async def list_candidates(  # type: ignore[no-untyped-def]
         page=page_params.page,
         page_size=page_params.page_size,
     )
-    logger.debug("API recommendation_level=%s, total=%s", recommendation_level, total)
+    logger.debug("API candidate list", extra={"biz_module": "hr", "recommendation_level": recommendation_level, "total": total})
     data = [CandidateResponse.model_validate(c).model_dump(mode="json") for c in candidates]
     return paginated_response(
         data=data,
@@ -1703,7 +1869,11 @@ async def preview_resume_parse(  # type: ignore[no-untyped-def]
     return AsyncJobAcceptedResponse(data=AsyncJobAccepted(job_id=job_id))
 
 
-@router.post("/candidates", summary="新建候选人")
+@router.post(
+    "/candidates",
+    response_model=DataResponse[CandidateResponse],
+    summary="新建候选人",
+)
 async def create_candidate(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:candidates:create")),
@@ -1738,22 +1908,31 @@ async def create_candidate(  # type: ignore[no-untyped-def]
     )
 
 
-@router.post("/candidates/sync-from-feishu", summary="从飞书同步候选人数据")
+@router.post(
+    "/candidates/sync-from-feishu",
+    response_model=AsyncJobAcceptedResponse,
+    status_code=202,
+    summary="从飞书同步候选人数据",
+)
 async def sync_candidates_from_feishu(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:candidates:sync")),
-    service: CandidateService = Depends(get_candidate_service),
-):
-    """手动触发：从飞书多维表格拉取全部候选人数据并 upsert 到本地 PG。"""
-    stats = await service.sync_from_feishu()
-    msg = f"同步完成：新增 {stats['created']} 条，更新 {stats['updated']} 条，失败 {stats['failed']} 条"
-    return build_response(
-        data=stats,
-        message=msg,
-    )
+) -> AsyncJobAcceptedResponse:
+    """提交候选人同步后台任务（全量拉取 >5s）；轮询 GET /hr/jobs/{job_id} 拿结果。"""
+
+    async def _run(_job: str) -> dict[str, Any] | None:
+        async with async_session_factory() as job_db:
+            return await CandidateService(job_db).sync_from_feishu()
+
+    job_id = start_job(hr_job_store, "hr-candidates-sync", _run)
+    return AsyncJobAcceptedResponse(data=AsyncJobAccepted(job_id=job_id))
 
 
-@router.get("/candidates/sync-status", summary="候选人同步状态")
+@router.get(
+    "/candidates/sync-status",
+    response_model=DataResponse[SyncStatusResponse],
+    summary="候选人同步状态",
+)
 async def get_candidates_sync_status(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:candidates:sync")),
@@ -1766,7 +1945,11 @@ async def get_candidates_sync_status(  # type: ignore[no-untyped-def]
     )
 
 
-@router.post("/candidates/{candidate_id}/sync-to-feishu", summary="同步候选人到飞书")
+@router.post(
+    "/candidates/{candidate_id}/sync-to-feishu",
+    response_model=DataResponse[CandidateResponse],
+    summary="同步候选人到飞书",
+)
 async def sync_candidate_to_feishu(  # type: ignore[no-untyped-def]
     candidate_id: UUID,
     current_user: RequiredUser,
@@ -1781,7 +1964,11 @@ async def sync_candidate_to_feishu(  # type: ignore[no-untyped-def]
     )
 
 
-@router.get("/candidates/{candidate_id}", summary="候选人详情")
+@router.get(
+    "/candidates/{candidate_id}",
+    response_model=DataResponse[CandidateResponse],
+    summary="候选人详情",
+)
 async def get_candidate(  # type: ignore[no-untyped-def]
     candidate_id: UUID,
     current_user: RequiredUser,
@@ -1794,7 +1981,11 @@ async def get_candidate(  # type: ignore[no-untyped-def]
     )
 
 
-@router.put("/candidates/{candidate_id}", summary="更新候选人信息")
+@router.put(
+    "/candidates/{candidate_id}",
+    response_model=DataResponse[CandidateResponse],
+    summary="更新候选人信息",
+)
 async def update_candidate(  # type: ignore[no-untyped-def]
     candidate_id: UUID,
     payload: CandidateUpdate,
@@ -1809,7 +2000,11 @@ async def update_candidate(  # type: ignore[no-untyped-def]
     )
 
 
-@router.delete("/candidates/{candidate_id}", summary="删除候选人")
+@router.delete(
+    "/candidates/{candidate_id}",
+    response_model=MessageApiResponse,
+    summary="删除候选人",
+)
 async def delete_candidate(  # type: ignore[no-untyped-def]
     candidate_id: UUID,
     current_user: RequiredUser,
@@ -1820,7 +2015,11 @@ async def delete_candidate(  # type: ignore[no-untyped-def]
     return build_response(message="候选人删除成功")
 
 
-@router.put("/candidates/{candidate_id}/recommendation-level", summary="更新候选人推荐等级")
+@router.put(
+    "/candidates/{candidate_id}/recommendation-level",
+    response_model=DataResponse[CandidateResponse],
+    summary="更新候选人推荐等级",
+)
 async def update_candidate_recommendation_level(  # type: ignore[no-untyped-def]
     candidate_id: UUID,
     payload: CandidateUpdateRecommendationLevel,
@@ -1875,7 +2074,7 @@ async def preview_candidate_resume(  # type: ignore[no-untyped-def]
     try:
         tmp_download_url = await service.bitable.get_resume_download_url(file_token)
     except Exception as exc:
-        logger.warning("Failed to get feishu download url for candidate %s: %s", candidate_id, exc)
+        logger.warning("获取候选人简历下载地址失败: %s", exc, extra={"biz_module": "hr", "candidate_id": str(candidate_id)}, exc_info=True)
         raise NotFoundException("简历附件", str(candidate_id)) from exc
 
     import httpx
@@ -1894,7 +2093,11 @@ async def preview_candidate_resume(  # type: ignore[no-untyped-def]
 # ─── TrainingSession Routes ───
 
 
-@router.get("/training-sessions", summary="培训记录列表")
+@router.get(
+    "/training-sessions",
+    response_model=DataResponse[list[TrainingSessionResponse]],
+    summary="培训记录列表",
+)
 async def list_training_sessions(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:training-sessions:read")),
@@ -1922,7 +2125,12 @@ async def list_training_sessions(  # type: ignore[no-untyped-def]
     )
 
 
-@router.post("/training-sessions", summary="创建培训记录")
+@router.post(
+    "/training-sessions",
+    response_model=DataResponse[TrainingSessionResponse],
+    status_code=201,
+    summary="创建培训记录",
+)
 async def create_training_session(  # type: ignore[no-untyped-def]
     payload: TrainingSessionCreate,
     current_user: RequiredUser,
@@ -1933,11 +2141,14 @@ async def create_training_session(  # type: ignore[no-untyped-def]
     return build_response(
         data=TrainingSessionResponse.model_validate(session_obj).model_dump(mode="json"),
         message="培训记录创建成功",
-        status_code=201,
     )
 
 
-@router.put("/training-sessions/{session_id}/status", summary="更新培训记录状态")
+@router.put(
+    "/training-sessions/{session_id}/status",
+    response_model=DataResponse[TrainingSessionResponse],
+    summary="更新培训记录状态",
+)
 async def update_training_session_status(  # type: ignore[no-untyped-def]
     session_id: UUID,
     payload: TrainingSessionStatusUpdate,
@@ -1952,7 +2163,11 @@ async def update_training_session_status(  # type: ignore[no-untyped-def]
     )
 
 
-@router.get("/training-sessions/{session_id}", summary="培训记录详情")
+@router.get(
+    "/training-sessions/{session_id}",
+    response_model=DataResponse[TrainingSessionResponse],
+    summary="培训记录详情",
+)
 async def get_training_session(  # type: ignore[no-untyped-def]
     session_id: UUID,
     current_user: RequiredUser,
@@ -1965,7 +2180,11 @@ async def get_training_session(  # type: ignore[no-untyped-def]
     )
 
 
-@router.put("/training-sessions/{session_id}", summary="更新培训记录")
+@router.put(
+    "/training-sessions/{session_id}",
+    response_model=DataResponse[TrainingSessionResponse],
+    summary="更新培训记录",
+)
 async def update_training_session(  # type: ignore[no-untyped-def]
     session_id: UUID,
     payload: TrainingSessionUpdate,
@@ -1980,7 +2199,11 @@ async def update_training_session(  # type: ignore[no-untyped-def]
     )
 
 
-@router.delete("/training-sessions/{session_id}", summary="删除培训记录")
+@router.delete(
+    "/training-sessions/{session_id}",
+    response_model=MessageApiResponse,
+    summary="删除培训记录",
+)
 async def delete_training_session(  # type: ignore[no-untyped-def]
     session_id: UUID,
     current_user: RequiredUser,
@@ -1993,6 +2216,8 @@ async def delete_training_session(  # type: ignore[no-untyped-def]
 
 @router.post(
     "/training-sessions/{session_id}/send-select-tasks",
+    response_model=AsyncJobAcceptedResponse,
+    status_code=202,
     summary="发送多部门选择受训人员任务",
 )
 async def send_training_session_select_tasks(  # type: ignore[no-untyped-def]
@@ -2000,9 +2225,12 @@ async def send_training_session_select_tasks(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:training-sessions:create")),
     service: TrainingSessionService = Depends(get_training_session_service),
-    employee_service: EmployeeService = Depends(get_employee_service),
-):
-    """为培训记录的每个受训部门发送选择受训人员任务。
+) -> AsyncJobAcceptedResponse:
+    """为培训记录的每个受训部门发送选择受训人员任务（后台任务）。
+
+    多部门 IM 发送耗时 >5s，因此提交后立即返回 job_id，轮询
+    GET /hr/jobs/{job_id} 拿结果；任务完成后页面重新读取培训记录的
+    select_tasks（本接口不再同步返回各部门结果）。
 
     - 为每个部门生成 UUID token
     - 将任务数据存入 Redis（24h 有效）
@@ -2010,142 +2238,160 @@ async def send_training_session_select_tasks(  # type: ignore[no-untyped-def]
     - 更新 TrainingSession.select_tasks 和 status
     """
     session_obj = await service.get_session(session_id)
-    trainee_departments = session_obj.trainee_departments or []
-    if not trainee_departments:
+    if not session_obj.trainee_departments:
         raise BadRequestException("该培训记录没有受训部门")
 
-    settings = get_settings()
-    select_tasks: list[dict] = []  # type: ignore[type-arg]
+    async def _run(_job: str) -> dict[str, Any] | None:
+        async with async_session_factory() as job_db:
+            job_session_service = TrainingSessionService(job_db)
+            employee_service = EmployeeService(job_db)
+            settings = get_settings()
+            session_obj = await job_session_service.get_session(session_id)
+            select_tasks: list[dict[str, Any]] = []
 
-    for dept in trainee_departments:
-        token = str(uuid.uuid4())
-        cache_key = f"training_select:{token}"
-        task_data = {
-            "department": dept,
-            "training_date": str(session_obj.training_date),
-            "subject": session_obj.subject,
-            "training_time_start": session_obj.training_time_start,
-            "training_time_end": session_obj.training_time_end,
-            "location": session_obj.location,
-            "trainer": session_obj.trainer,
-            "training_method": session_obj.training_method,
-            "content": session_obj.content,
-            "factory": session_obj.factory,
-            "issuer_department": session_obj.issuer_department,
-            "issue_date": str(session_obj.issue_date) if session_obj.issue_date else None,
-        }
-        await cache_set(cache_key, json.dumps(task_data, ensure_ascii=False), ex=86400)
-        await cache_set(
-            f"training_select_list:{token}",
-            json.dumps(task_data, ensure_ascii=False),
-            ex=86400,
-        )
-
-        # 同步更新共享任务列表
-        list_key = "training_select_list"
-        existing = await cache_get(list_key)
-        task_list = json.loads(existing) if existing else []
-        task_list.append(
-            {
-                "token": token,
-                "department": dept,
-                "training_date": str(session_obj.training_date),
-                "subject": session_obj.subject,
-                "factory": session_obj.factory,
-                "created_at": datetime.now().isoformat(),
-            }
-        )
-        await cache_set(list_key, json.dumps(task_list, ensure_ascii=False), ex=604800)
-
-        # 查找培训专员 — 从 training_specialists 表查询
-        specialist_repo = TrainingSpecialistRepository(employee_service.repo.session)
-        specialist_config = await specialist_repo.get_by_dept_factory(dept, session_obj.factory or "old")
-        specialist = None
-        specialist_table = None
-
-        if specialist_config:
-            # 根据工号从对应厂区的员工表查找
-            for table in _EMPLOYEE_SOURCE_TABLES:
-                sql = _SELECT_EMPLOYEE_BY_NUMBER_SQL[table]
-                result = await employee_service.repo.session.execute(sql, {"num": specialist_config.employee_number})
-                row = result.mappings().first()
-                if row:
-                    specialist = Employee(**dict(row))
-                    specialist_table = table
-                    break
-
-        if not specialist:
-            logger.warning(
-                "部门 %s（%s厂）未配置培训专员，跳过发送飞书消息",
-                dept,
-                session_obj.factory or "old",
-            )
-            select_tasks.append(
-                {
+            for dept in session_obj.trainee_departments or []:
+                token = str(uuid.uuid4())
+                cache_key = f"training_select:{token}"
+                task_data = {
                     "department": dept,
-                    "token": token,
-                    "status": "pending",
-                    "employee_names": [],
-                    "employee_numbers": [],
-                    "specialist_found": False,
+                    "training_date": str(session_obj.training_date),
+                    "subject": session_obj.subject,
+                    "training_time_start": session_obj.training_time_start,
+                    "training_time_end": session_obj.training_time_end,
+                    "location": session_obj.location,
+                    "trainer": session_obj.trainer,
+                    "training_method": session_obj.training_method,
+                    "content": session_obj.content,
+                    "factory": session_obj.factory,
+                    "issuer_department": session_obj.issuer_department,
+                    "issue_date": str(session_obj.issue_date) if session_obj.issue_date else None,
                 }
-            )
-            continue
+                await cache_set(cache_key, json.dumps(task_data, ensure_ascii=False), ex=86400)
+                await cache_set(
+                    f"training_select_list:{token}",
+                    json.dumps(task_data, ensure_ascii=False),
+                    ex=86400,
+                )
 
-        # 解析飞书 open_id
-        open_id = specialist.feishu_open_id
-        if not open_id and specialist.phone:
-            try:
-                im = FeishuIM()
-                mobile = specialist.phone if specialist.phone.startswith("+") else f"+86{specialist.phone}"
-                mapping = await im.batch_get_open_ids_by_mobile([mobile])
-                open_id = mapping.get(mobile) or mapping.get(specialist.phone)
-                if open_id:
-                    update_sql = _UPDATE_EMPLOYEE_OPEN_ID_SQL[specialist_table]
-                    await employee_service.repo.session.execute(
-                        update_sql, {"oid": open_id, "eno": specialist.employee_number}
+                # 同步更新共享任务列表
+                list_key = "training_select_list"
+                existing = await cache_get(list_key)
+                task_list = json.loads(existing) if existing else []
+                task_list.append(
+                    {
+                        "token": token,
+                        "department": dept,
+                        "training_date": str(session_obj.training_date),
+                        "subject": session_obj.subject,
+                        "factory": session_obj.factory,
+                        "created_at": datetime.now().isoformat(),
+                    }
+                )
+                await cache_set(list_key, json.dumps(task_list, ensure_ascii=False), ex=604800)
+
+                # 查找培训专员 — 从 training_specialists 表查询
+                specialist_repo = TrainingSpecialistRepository(employee_service.repo.session)
+                specialist_config = await specialist_repo.get_by_dept_factory(dept, session_obj.factory or "old")
+                specialist = None
+                specialist_table = None
+
+                if specialist_config:
+                    # 根据工号从对应厂区的员工表查找
+                    for table in _EMPLOYEE_SOURCE_TABLES:
+                        sql = _SELECT_EMPLOYEE_BY_NUMBER_SQL[table]
+                        result = await employee_service.repo.session.execute(
+                            sql, {"num": specialist_config.employee_number}
+                        )
+                        row = result.mappings().first()
+                        if row:
+                            specialist = Employee(**dict(row))
+                            specialist_table = table
+                            break
+
+                if not specialist:
+                    logger.warning(
+                        "部门 %s（%s厂）未配置培训专员，跳过发送飞书消息",
+                        dept,
+                        session_obj.factory or "old",
+                        extra={"biz_module": "hr", "session_id": str(session_id), "department": dept},
                     )
-                    await employee_service.repo.session.flush()
-            except Exception:
-                logger.warning("忽略异常 @ %s", "send_training_session_select_tasks", exc_info=True)
+                    select_tasks.append(
+                        {
+                            "department": dept,
+                            "token": token,
+                            "status": "pending",
+                            "employee_names": [],
+                            "employee_numbers": [],
+                            "specialist_found": False,
+                        }
+                    )
+                    continue
 
-        if open_id:
-            select_url = f"{settings.FRONTEND_URL}/hr/training/select?token={token}&department={quote(dept)}"
-            msg_content = (
-                f"【培训人员选择通知】\n"
-                f"请为 {dept} 的 {session_obj.training_date} {session_obj.subject} 培训选择受训人员。\n"
-                f"点击链接选择：{select_url}\n"
-                f"（链接 24 小时内有效）"
-            )
-            try:
-                im = FeishuIM()
-                await im.send_text_message(open_id, msg_content)
-            except Exception as e:
-                logger.warning("发送飞书消息给 %s 失败: %s", specialist.name, e)
+                # 解析飞书 open_id
+                open_id = specialist.feishu_open_id
+                if not open_id and specialist.phone:
+                    try:
+                        im = FeishuIM()
+                        mobile = specialist.phone if specialist.phone.startswith("+") else f"+86{specialist.phone}"
+                        mapping = await im.batch_get_open_ids_by_mobile([mobile])
+                        open_id = mapping.get(mobile) or mapping.get(specialist.phone)
+                        if open_id:
+                            update_sql = _UPDATE_EMPLOYEE_OPEN_ID_SQL[specialist_table]
+                            await employee_service.repo.session.execute(
+                                update_sql, {"oid": open_id, "eno": specialist.employee_number}
+                            )
+                            await employee_service.repo.session.flush()
+                    except Exception:
+                        logger.warning(
+                            "解析培训专员飞书 open_id 失败",
+                            extra={"biz_module": "hr", "employee_number": specialist.employee_number},
+                            exc_info=True,
+                        )
 
-        select_tasks.append(
-            {
-                "department": dept,
-                "token": token,
-                "status": "pending",
-                "employee_names": [],
-                "employee_numbers": [],
-                "specialist_found": True,
-                "specialist_name": specialist.name,
-            }
-        )
+                if open_id:
+                    select_url = f"{settings.FRONTEND_URL}/hr/training/select?token={token}&department={quote(dept)}"
+                    msg_content = (
+                        f"【培训人员选择通知】\n"
+                        f"请为 {dept} 的 {session_obj.training_date} {session_obj.subject} 培训选择受训人员。\n"
+                        f"点击链接选择：{select_url}\n"
+                        f"（链接 24 小时内有效）"
+                    )
+                    try:
+                        im = FeishuIM()
+                        await im.send_text_message(open_id, msg_content)
+                    except Exception as e:
+                        logger.warning(
+                            "发送飞书选择任务消息失败: %s",
+                            e,
+                            extra={"biz_module": "hr", "employee_number": specialist.employee_number},
+                        )
 
-    session_obj.select_tasks = select_tasks
-    session_obj.status = "selecting"
-    await service.repo.update(session_obj)
+                select_tasks.append(
+                    {
+                        "department": dept,
+                        "token": token,
+                        "status": "pending",
+                        "employee_names": [],
+                        "employee_numbers": [],
+                        "specialist_found": True,
+                        "specialist_name": specialist.name,
+                    }
+                )
 
-    return build_response(
-        data={"session_id": str(session_id), "select_tasks": select_tasks},
-        message="选择任务已发送",
-    )
+            session_obj.select_tasks = select_tasks
+            session_obj.status = "selecting"
+            await job_session_service.repo.update(session_obj)
+            return {"session_id": str(session_id), "select_tasks": select_tasks}
+
+    job_id = start_job(hr_job_store, "hr-select-tasks", _run)
+    return AsyncJobAcceptedResponse(data=AsyncJobAccepted(job_id=job_id))
 
 
-@router.get("/training-sessions/{session_id}/select-tasks", summary="获取培训记录的选择任务列表")
+@router.get(
+    "/training-sessions/{session_id}/select-tasks",
+    response_model=DataResponse[list[TrainingSessionSelectTask]],
+    summary="获取培训记录的选择任务列表",
+)
 async def get_training_session_select_tasks(  # type: ignore[no-untyped-def]
     session_id: UUID,
     current_user: RequiredUser,
@@ -2166,7 +2412,11 @@ def get_specialist_repo(
     return TrainingSpecialistRepository(session)
 
 
-@router.get("/training-specialists", summary="培训专员列表")
+@router.get(
+    "/training-specialists",
+    response_model=DataResponse[list[TrainingSpecialistResponse]],
+    summary="培训专员列表",
+)
 async def list_training_specialists(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:training-specialists:read")),
@@ -2187,7 +2437,11 @@ async def list_training_specialists(  # type: ignore[no-untyped-def]
     return build_response(data=data)
 
 
-@router.post("/training-specialists", summary="新增或更新培训专员")
+@router.post(
+    "/training-specialists",
+    response_model=DataResponse[TrainingSpecialistResponse],
+    summary="新增或更新培训专员",
+)
 async def upsert_training_specialist(  # type: ignore[no-untyped-def]
     payload: TrainingSpecialistCreate,
     current_user: RequiredUser,
@@ -2212,7 +2466,11 @@ async def upsert_training_specialist(  # type: ignore[no-untyped-def]
     )
 
 
-@router.delete("/training-specialists/{specialist_id}", summary="删除培训专员")
+@router.delete(
+    "/training-specialists/{specialist_id}",
+    response_model=MessageApiResponse,
+    summary="删除培训专员",
+)
 async def delete_training_specialist(  # type: ignore[no-untyped-def]
     specialist_id: UUID,
     current_user: RequiredUser,
@@ -2223,90 +2481,104 @@ async def delete_training_specialist(  # type: ignore[no-untyped-def]
     return build_response(message="培训专员已删除")
 
 
-@router.post("/training-specialists/sync-feishu-openids", summary="同步培训专员飞书 open_id")
+@router.post(
+    "/training-specialists/sync-feishu-openids",
+    response_model=AsyncJobAcceptedResponse,
+    status_code=202,
+    summary="同步培训专员飞书 open_id",
+)
 async def sync_specialist_feishu_openids(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:training-specialists:sync")),
-    repo: TrainingSpecialistRepository = Depends(get_specialist_repo),
-    employee_service: EmployeeService = Depends(get_employee_service),
-):
-    """从员工表或飞书 API 批量获取培训专员的 open_id 并持久化。"""
-    specialists = await repo.list_all()
-    results: list[dict] = []  # type: ignore[type-arg]
+) -> AsyncJobAcceptedResponse:
+    """批量获取培训专员的 open_id 并持久化（后台任务）。
 
-    for s in specialists:
-        if s.feishu_open_id:
-            continue  # already has open_id
+    逐人查询员工表 + 飞书通讯录，耗时随人数线性增长，因此异步执行；
+    轮询 GET /hr/jobs/{job_id} 拿结果。
+    """
 
-        open_id = None
-        source = ""
+    async def _run(_job: str) -> dict[str, Any] | None:
+        async with async_session_factory() as job_db:
+            repo = TrainingSpecialistRepository(job_db)
+            employee_service = EmployeeService(job_db)
+            specialists = await repo.list_all()
+            results: list[dict[str, Any]] = []
 
-        # 1) Try employees table (old factory)
-        if s.factory == "old":
-            emp = await employee_service.repo.get_by_employee_number(s.employee_number)
-            if emp and emp.feishu_open_id:
-                open_id = emp.feishu_open_id
-                source = "employees"
-        else:
-            # 2) Try employees_new table
-            emp = await employee_service.repo.get_new_employee_by_number(s.employee_number)
-            if emp and emp.feishu_open_id:
-                open_id = emp.feishu_open_id
-                source = "employees_new"
+            for s in specialists:
+                if s.feishu_open_id:
+                    continue  # already has open_id
 
-        # 3) Try Feishu API via phone
-        if not open_id:
-            try:
-                from app.platform.integrations.feishu_im import FeishuIM  # type: ignore[import-not-found]
+                open_id = None
+                source = ""
 
-                # Get phone from employees tables
-                phone = None
-                emp = await employee_service.repo.get_by_employee_number(s.employee_number)
-                if emp and emp.phone:
-                    phone = emp.phone
-                if not phone:
+                # 1) Try employees table (old factory)
+                if s.factory == "old":
+                    emp = await employee_service.repo.get_by_employee_number(s.employee_number)
+                    if emp and emp.feishu_open_id:
+                        open_id = emp.feishu_open_id
+                        source = "employees"
+                else:
+                    # 2) Try employees_new table
                     emp = await employee_service.repo.get_new_employee_by_number(s.employee_number)
-                    if emp and emp.phone:
-                        phone = emp.phone
-                if phone:
-                    im = FeishuIM()
-                    mapping = await im.batch_get_open_ids_by_mobile([phone])
-                    open_id = mapping.get(phone)
-                    if open_id:
-                        source = "feishu_api"
-            except Exception as e:
-                logger.warning("Feishu API lookup failed for %s: %s", s.employee_name, e)
+                    if emp and emp.feishu_open_id:
+                        open_id = emp.feishu_open_id
+                        source = "employees_new"
 
-        if open_id:
-            s.feishu_open_id = open_id
-            await repo.session.flush()
-            results.append(
-                {
-                    "employee_number": s.employee_number,
-                    "employee_name": s.employee_name,
-                    "open_id": open_id,
-                    "source": source,
-                    "status": "updated",
-                }
-            )
-        else:
-            results.append(
-                {
-                    "employee_number": s.employee_number,
-                    "employee_name": s.employee_name,
-                    "open_id": "",
-                    "source": "",
-                    "status": "not_found",
-                }
-            )
+                # 3) Try Feishu API via phone
+                if not open_id:
+                    try:
+                        phone = None
+                        emp = await employee_service.repo.get_by_employee_number(s.employee_number)
+                        if emp and emp.phone:
+                            phone = emp.phone
+                        if not phone:
+                            emp = await employee_service.repo.get_new_employee_by_number(s.employee_number)
+                            if emp and emp.phone:
+                                phone = emp.phone
+                        if phone:
+                            im = FeishuIM()
+                            mapping = await im.batch_get_open_ids_by_mobile([phone])
+                            open_id = mapping.get(phone)
+                            if open_id:
+                                source = "feishu_api"
+                    except Exception as e:
+                        logger.warning(
+                            "飞书通讯录查询培训专员 open_id 失败: %s",
+                            e,
+                            extra={"biz_module": "hr", "employee_number": s.employee_number},
+                        )
 
-    return build_response(
-        data={
-            "synced": len([r for r in results if r["status"] == "updated"]),
-            "failed": len([r for r in results if r["status"] == "not_found"]),
-            "details": results,
-        }
-    )
+                if open_id:
+                    s.feishu_open_id = open_id
+                    await repo.session.flush()
+                    results.append(
+                        {
+                            "employee_number": s.employee_number,
+                            "employee_name": s.employee_name,
+                            "open_id": open_id,
+                            "source": source,
+                            "status": "updated",
+                        }
+                    )
+                else:
+                    results.append(
+                        {
+                            "employee_number": s.employee_number,
+                            "employee_name": s.employee_name,
+                            "open_id": "",
+                            "source": "",
+                            "status": "not_found",
+                        }
+                    )
+
+            return {
+                "synced": len([r for r in results if r["status"] == "updated"]),
+                "failed": len([r for r in results if r["status"] == "not_found"]),
+                "details": results,
+            }
+
+    job_id = start_job(hr_job_store, "hr-specialists-sync", _run)
+    return AsyncJobAcceptedResponse(data=AsyncJobAccepted(job_id=job_id))
 
 
 # ─── Training Teams ───
@@ -2316,7 +2588,11 @@ def get_team_repo(session: AsyncSession = Depends(get_db)) -> TrainingTeamReposi
     return TrainingTeamRepository(session)
 
 
-@router.get("/training-teams", summary="自定义受训班组列表")
+@router.get(
+    "/training-teams",
+    response_model=DataResponse[list[TrainingTeamResponse]],
+    summary="自定义受训班组列表",
+)
 async def list_training_teams(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:training-teams:read")),
@@ -2340,7 +2616,11 @@ async def list_training_teams(  # type: ignore[no-untyped-def]
     return build_response(data=data)
 
 
-@router.post("/training-teams", summary="新增自定义受训班组")
+@router.post(
+    "/training-teams",
+    response_model=DataResponse[TrainingTeamBrief],
+    summary="新增自定义受训班组",
+)
 async def create_training_team(  # type: ignore[no-untyped-def]
     payload: TrainingTeamCreate,
     current_user: RequiredUser,
@@ -2354,7 +2634,11 @@ async def create_training_team(  # type: ignore[no-untyped-def]
     )
 
 
-@router.put("/training-teams/{team_id}", summary="编辑自定义受训班组")
+@router.put(
+    "/training-teams/{team_id}",
+    response_model=DataResponse[TrainingTeamUpdateResult],
+    summary="编辑自定义受训班组",
+)
 async def update_training_team(  # type: ignore[no-untyped-def]
     team_id: UUID,
     payload: TrainingTeamUpdate,
@@ -2369,7 +2653,11 @@ async def update_training_team(  # type: ignore[no-untyped-def]
     )
 
 
-@router.delete("/training-teams/{team_id}", summary="删除自定义受训班组")
+@router.delete(
+    "/training-teams/{team_id}",
+    response_model=MessageApiResponse,
+    summary="删除自定义受训班组",
+)
 async def delete_training_team(  # type: ignore[no-untyped-def]
     team_id: UUID,
     current_user: RequiredUser,
@@ -2391,6 +2679,7 @@ def get_prejob_template_repo(
 
 @router.get(
     "/prejob-training-templates",
+    response_model=DataResponse[PrejobTemplateResponse],
     summary="获取部门岗前培训计划模板",
 )
 async def get_prejob_template(  # type: ignore[no-untyped-def]
@@ -2409,6 +2698,7 @@ async def get_prejob_template(  # type: ignore[no-untyped-def]
 
 @router.put(
     "/prejob-training-templates",
+    response_model=DataResponse[PrejobTemplateResponse],
     summary="保存部门岗前培训计划模板",
 )
 async def save_prejob_template(  # type: ignore[no-untyped-def]
@@ -2429,22 +2719,22 @@ async def save_prejob_template(  # type: ignore[no-untyped-def]
 # ─── System Settings ───
 
 ENV_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env")
-# 主 Bot 使用平台标准嵌套键；车辆/培训 Bot 沿用页面原有的扁平键名，
-# 避免把与 HR 组织同步无关的凭证重命名扩散到本次改动。
+# 所有模块凭证使用嵌套键名（FEISHU__{MODULE}__{FIELD}），与 .env / core/config.py 一致。
 SETTING_KEYS = [
     "FEISHU__PLATFORM__APP_ID",
     "FEISHU__PLATFORM__APP_SECRET",
-    "FEISHU_VEHICLE_APP_ID",
-    "FEISHU_VEHICLE_APP_SECRET",
-    "FEISHU_TRAINING_APP_ID",
-    "FEISHU_TRAINING_APP_SECRET",
+    "FEISHU__VEHICLE__CREDENTIALS__APP_ID",
+    "FEISHU__VEHICLE__CREDENTIALS__APP_SECRET",
+    "FEISHU__TRAINING__CREDENTIALS__APP_ID",
+    "FEISHU__TRAINING__CREDENTIALS__APP_SECRET",
     "AI_BASE_URL",
     "AI_API_KEY",
     "AI_MODEL",
     ORG_SYNC_ROOT_ID_SETTING,
     ORG_SYNC_ROOT_NAME_SETTING,
 ]
-# 页面旧键名 -> 实际落库/环境变量键名。读取已有 hr.system_settings 行时使用。
+# 历史页面使用的扁平键名 -> 实际落库/环境变量键名。
+# 仅用于兼容已有的 hr.system_settings 行与旧前端请求，新代码一律使用嵌套键。
 SETTING_KEY_ALIASES = {
     "FEISHU_VEHICLE_APP_ID": "FEISHU__VEHICLE__CREDENTIALS__APP_ID",
     "FEISHU_VEHICLE_APP_SECRET": "FEISHU__VEHICLE__CREDENTIALS__APP_SECRET",
@@ -2504,7 +2794,8 @@ async def get_system_settings(  # type: ignore[no-untyped-def]
     r = await session.execute(sql_text("SELECT key, value FROM hr.system_settings"))
     db_settings = {row[0]: row[1] for row in r.fetchall()}
 
-    scope = await load_org_scope(session)
+    # 未配置组织同步范围时也允许打开设置页（否则无法录入该配置）。
+    scope = await load_org_scope(session, required=False)
     for key in SETTING_KEYS:
         if key == ORG_SYNC_ROOT_ID_SETTING:
             result[key] = scope.department_id
@@ -2513,35 +2804,38 @@ async def get_system_settings(  # type: ignore[no-untyped-def]
             result[key] = scope.department_name
             continue
         val = _get_db_setting(db_settings, key)
-        if not val:
-            val = ORG_SCOPE_SETTING_DEFAULTS.get(_canonical_setting_key(key), "")
         result[key] = mask_secret(val) if key in SECRET_SETTING_KEYS else val
 
     return build_response(data=result)
 
 
-@router.put("/system-settings", summary="保存系统设置")
+@router.put(
+    "/system-settings",
+    response_model=HrSystemSettingsSaveResponse,
+    summary="保存系统设置",
+)
 async def save_system_settings(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:system-settings:update")),
-    payload: dict = Body(...),  # type: ignore[type-arg]
+    payload: HrSystemSettingsUpdate = Body(...),
     session: AsyncSession = Depends(get_db),
 ):
     """批量保存系统配置到 DB，同时写入 .env 文件。
 
     凭据类字段加密后落库；空值或前端回传的掩码（****）视为「不修改」，
-    避免把掩码当成新密钥写进库。
+    避免把掩码当成新密钥写进库。未知键由 `HrSystemSettingsUpdate`
+    的 `extra="forbid"` 拒绝（422）。
     """
     from sqlalchemy import text as sql_text
 
     updated: list[str] = []
     env_updates: dict[str, str] = {}
-    for key, raw_value in payload.items():
-        if key not in SETTING_KEYS:
-            continue
+    for key, raw_value in payload.model_dump(exclude_unset=True).items():
         canonical_key = _canonical_setting_key(key)
+        if key not in SETTING_KEYS and canonical_key not in SETTING_KEYS:
+            continue
         value_text = "" if raw_value is None else str(raw_value)
-        if key in ORG_SCOPE_SETTING_DEFAULTS:
+        if key in ORG_SCOPE_SETTING_KEYS:
             await save_org_scope_value(session, key, value_text)
             updated.append(key)
             continue

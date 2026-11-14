@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import { unwrapResponse } from '@/lib/api/server/base'
 import { fetchTrainingSelectTasks } from '@/lib/api/server/hr'
 import TrainingSelectTasksClient from '@/components/hr/TrainingSelectTasksClient'
 
@@ -21,7 +22,7 @@ export default async function TrainingSelectTasksPage() {
   let tasks: TaskItem[] = []
   try {
     const res = await fetchTrainingSelectTasks()
-    tasks = res.data || []
+    tasks = unwrapResponse<TaskItem[]>(res) || []
   } catch {
     // Ignore errors, use empty array
   }

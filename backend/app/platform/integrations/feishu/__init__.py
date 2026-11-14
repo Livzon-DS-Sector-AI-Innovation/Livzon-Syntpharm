@@ -2,7 +2,6 @@
 
 from typing import Any
 
-from app.platform.integrations.feishu.bitable import FeishuBitableSync
 from app.platform.integrations.feishu.client import FeishuClient
 from app.platform.integrations.feishu.datasource import BitableDataSource
 from app.platform.integrations.feishu.employee_datasource import (
@@ -40,7 +39,6 @@ from app.shared.lifecycle import register_background_worker
 
 __all__ = [
     "FeishuClient",
-    "FeishuBitableSync",
     "BitableDataSource",
     "EmployeeBitableDataSource",
     "EmployeeRecord",

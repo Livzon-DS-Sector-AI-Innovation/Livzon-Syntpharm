@@ -14,14 +14,16 @@ These are pure functions: no DB, no HTTP.
 from __future__ import annotations
 
 from app.modules.hr.org_domain import (
-    DEFAULT_ORG_SCOPE,
-    IN_SCOPE_COMPANY_ID,
-    IN_SCOPE_COMPANY_NAME,
     OrgDepartmentRecord,
     OrgScope,
     build_org_tree,
     parse_directory_department,
     select_departments_to_hide,
+)
+from tests.fixtures.org_scope import (
+    DEFAULT_ORG_SCOPE,
+    IN_SCOPE_COMPANY_ID,
+    IN_SCOPE_COMPANY_NAME,
 )
 
 
@@ -146,7 +148,7 @@ def test_build_org_tree_keeps_only_two_levels_under_company_root() -> None:
         _record("od-other-1", "贸易一部", parent="od-other"),
     ]
 
-    tree = build_org_tree(records, leader_names={})
+    tree = build_org_tree(records, leader_names={}, scope=DEFAULT_ORG_SCOPE)
 
     assert [node["name"] for node in tree] == ["102车间", "101车间"]
     assert tree[1]["level"] == 1
@@ -167,6 +169,7 @@ def test_build_org_tree_filters_hidden_and_renders_unresolved_leaders_as_dash() 
         records,
         leader_names={"ou-known": "张三"},
         leader_avatars={"ou-known": "https://example.com/avatar.png"},
+        scope=DEFAULT_ORG_SCOPE,
     )
 
     assert [node["name"] for node in tree] == ["101车间"]
@@ -175,7 +178,7 @@ def test_build_org_tree_filters_hidden_and_renders_unresolved_leaders_as_dash() 
     assert tree[0]["leader_display"] == "张三"
 
     records[0].leader_ids = ["ou-missing"]
-    tree = build_org_tree(records, leader_names={})
+    tree = build_org_tree(records, leader_names={}, scope=DEFAULT_ORG_SCOPE)
     assert tree[0]["leader_names"] == []
     assert tree[0]["leader_display"] == "—"
 
@@ -215,7 +218,7 @@ def test_select_departments_to_hide_flags_missing_and_out_of_scope_rows() -> Non
         },
     ]
 
-    to_hide = select_departments_to_hide(rows, seen_ids={"od-seen"})
+    to_hide = select_departments_to_hide(rows, seen_ids={"od-seen"}, scope=DEFAULT_ORG_SCOPE)
 
     # Both the removed in-scope row and the out-of-scope branch are hidden:
     # only the configured root and the ids Feishu returned stay visible.
@@ -237,6 +240,7 @@ def test_build_org_tree_uses_configured_scope_root() -> None:
     assert tree[0]["parent_name"] == "新公司"
     assert tree[0]["department_path"][0] == {"id": "od-new-company", "name": "新公司"}
     assert DEFAULT_ORG_SCOPE.department_id == IN_SCOPE_COMPANY_ID
+    assert DEFAULT_ORG_SCOPE.department_id == "od-9c7089e0d3edc7822c0650a9b2ff4318"
 
 
 def test_build_org_tree_renders_company_as_level_zero() -> None:
@@ -246,7 +250,7 @@ def test_build_org_tree_renders_company_as_level_zero() -> None:
         _record("od-a1", "合成工段", parent="od-a"),
     ]
 
-    tree = build_org_tree(records, leader_names={})
+    tree = build_org_tree(records, leader_names={}, scope=DEFAULT_ORG_SCOPE)
 
     assert len(tree) == 1
     company = tree[0]

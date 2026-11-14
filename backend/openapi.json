@@ -16176,7 +16176,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/DataResponse_list_CandidateResponse__"
+                  "$ref": "#/components/schemas/app__shared__schemas__DataResponse_list_CandidateResponse____1"
                 }
               }
             }
@@ -43013,7 +43013,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_EmployeeResponse__"
+                }
               }
             }
           },
@@ -43064,11 +43066,13 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_EmployeeResponse_"
+                }
               }
             }
           },
@@ -43091,7 +43095,7 @@
           "\u4eba\u4e8b\u7ba1\u7406"
         ],
         "summary": "\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u540c\u6b65\u5458\u5de5\u6570\u636e",
-        "description": "\u624b\u52a8\u89e6\u53d1\uff1a\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u62c9\u53d6\u5168\u90e8\u5458\u5de5\u6570\u636e\u5e76 upsert \u5230\u672c\u5730 PG\u3002",
+        "description": "\u63d0\u4ea4\u5458\u5de5\u540c\u6b65\u540e\u53f0\u4efb\u52a1\uff08\u5168\u91cf\u62c9\u53d6 >5s\uff09\uff1b\u8f6e\u8be2 GET /hr/jobs/{job_id} \u62ff\u7ed3\u679c\u3002",
         "operationId": "sync_employees_from_feishu_api_v1_hr_employees_sync_from_feishu_post",
         "parameters": [
           {
@@ -43112,11 +43116,13 @@
           }
         ],
         "responses": {
-          "200": {
+          "202": {
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/AsyncJobAcceptedResponse"
+                }
               }
             }
           },
@@ -43164,7 +43170,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_SyncStatusResponse_"
+                }
               }
             }
           },
@@ -43220,7 +43228,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_EmployeeResponse_"
+                }
               }
             }
           },
@@ -43277,7 +43287,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_EmployeeResponse_"
+                }
               }
             }
           },
@@ -43342,7 +43354,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_EmployeeResponse_"
+                }
               }
             }
           },
@@ -43397,7 +43411,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/app__shared__schemas__MessageApiResponse"
+                }
               }
             }
           },
@@ -43455,7 +43471,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_EmployeeFeishuSyncResult_"
+                }
               }
             }
           },
@@ -43478,7 +43496,7 @@
           "\u4eba\u4e8b\u7ba1\u7406"
         ],
         "summary": "\u98de\u4e66\u5ba1\u6279\u5b8c\u6210\u56de\u8c03",
-        "description": "\u63a5\u6536\u98de\u4e66\u5ba1\u6279\u5b8c\u6210\u901a\u77e5\uff0c\u66f4\u65b0\u5458\u5de5\u72b6\u6001\u4e3a\u5728\u804c\u3002\n\n\u9274\u6743\u65b9\u5f0f\u89c1 `_verify_feishu_approval_callback`\uff1a\u98de\u4e66\u56de\u8c03\u6ca1\u6709\u7528\u6237\u767b\u5f55\u6001\uff0c\n\u7528\u7b7e\u540d + verification token \u6821\u9a8c\u66ff\u4ee3 JWT\u3002",
+        "description": "\u63a5\u6536\u98de\u4e66\u5ba1\u6279\u5b8c\u6210\u901a\u77e5\uff0c\u66f4\u65b0\u5458\u5de5\u72b6\u6001\u4e3a\u5728\u804c\u3002\n\n\u9274\u6743\u65b9\u5f0f\u89c1 `_verify_feishu_approval_callback`\uff1a\u98de\u4e66\u56de\u8c03\u6ca1\u6709\u7528\u6237\u767b\u5f55\u6001\uff0c\n\u7528\u7b7e\u540d + verification token \u6821\u9a8c\u66ff\u4ee3 JWT\u3002\n\n\u8fd4\u56de\u7801\u8bed\u4e49\uff08\u98de\u4e66\u5bf9\u975e 2xx \u4f1a\u91cd\u8bd5\uff09\uff1a\n- \u6821\u9a8c\u5931\u8d25 \u2192 401/503\uff08\u914d\u7f6e\u95ee\u9898\uff0c\u91cd\u8bd5\u65e0\u610f\u4e49\u4f46\u4e5f\u4e0d\u8be5\u9759\u9ed8 200\uff09\n- \u7f3a\u5c11\u5de5\u53f7 \u2192 400\uff08\u8f7d\u8377\u9519\u8bef\uff0c\u91cd\u8bd5\u4e0d\u4f1a\u6210\u529f\uff09\n- \u4e1a\u52a1\u5f02\u5e38\uff08\u5458\u5de5\u4e0d\u5b58\u5728\u7b49\uff09\u2192 \u539f\u6837\u629b\u51fa 4xx\n- \u672a\u9884\u671f\u5f02\u5e38 \u2192 500\uff0c\u7531\u98de\u4e66\u91cd\u8bd5",
         "operationId": "feishu_approval_webhook_api_v1_hr_webhook_feishu_approval_post",
         "requestBody": {
           "content": {
@@ -43497,7 +43515,17 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/WebhookChallenge"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DataResponse_EmployeeResponse_"
+                    }
+                  ],
+                  "title": "Response Feishu Approval Webhook Api V1 Hr Webhook Feishu Approval Post"
+                }
               }
             }
           },
@@ -43924,7 +43952,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_TrainingNotifyResult_"
+                }
               }
             }
           },
@@ -43982,7 +44012,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_TrainingSelectTaskSendResult_"
+                }
               }
             }
           },
@@ -44039,7 +44071,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_TrainingSelectTask_"
+                }
               }
             }
           },
@@ -44106,7 +44140,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_TrainingSelectTask_"
+                }
               }
             }
           },
@@ -44154,7 +44190,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_TrainingSelectTaskListItem__"
+                }
               }
             }
           },
@@ -44211,7 +44249,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_TrainingSelectTask_"
+                }
               }
             }
           },
@@ -44509,7 +44549,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_DepartmentResponse__"
+                }
               }
             }
           },
@@ -44566,7 +44608,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_DepartmentResponse_"
+                }
               }
             }
           },
@@ -44692,7 +44736,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_TrainingLedgerResponse__"
+                }
               }
             }
           },
@@ -44743,11 +44789,13 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_TrainingLedgerResponse_"
+                }
               }
             }
           },
@@ -44794,7 +44842,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_TrainingLedgerPageResponse__"
+                }
               }
             }
           },
@@ -44845,11 +44895,13 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_TrainingLedgerPageResponse_"
+                }
               }
             }
           },
@@ -44989,7 +45041,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_TrainingLedgerResponse_"
+                }
               }
             }
           },
@@ -45054,7 +45108,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_TrainingLedgerResponse_"
+                }
               }
             }
           },
@@ -45109,7 +45165,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/app__shared__schemas__MessageApiResponse"
+                }
               }
             }
           },
@@ -45215,7 +45273,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_AnnualTrainingPlanResponse__"
+                }
               }
             }
           },
@@ -45266,11 +45326,13 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_AnnualTrainingPlanResponse_"
+                }
               }
             }
           },
@@ -45327,7 +45389,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_AnnualTrainingPlanResponse_"
+                }
               }
             }
           },
@@ -45392,7 +45456,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_AnnualTrainingPlanResponse_"
+                }
               }
             }
           },
@@ -45447,7 +45513,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/app__shared__schemas__MessageApiResponse"
+                }
               }
             }
           },
@@ -45504,7 +45572,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_AnnualTrainingPlanItemResponse__"
+                }
               }
             }
           },
@@ -45571,7 +45641,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_AnnualTrainingPlanItemResponse__"
+                }
               }
             }
           },
@@ -45653,7 +45725,7 @@
           "HR\u4eba\u5458\u6d41\u52a8\u5206\u6790"
         ],
         "summary": "\u63d0\u4ea4\u4eba\u5458\u6d41\u52a8\u5206\u6790\u4efb\u52a1",
-        "description": "\u63d0\u4ea4\u5206\u6790\u540e\u53f0\u4efb\u52a1\uff08LLM \u62a5\u544a\u751f\u6210 >5s\uff0c\u4e0d\u518d\u5728 GET \u8bf7\u6c42\u91cc\u5185\u8054\u6267\u884c\uff09\u3002\n\n\u8f6e\u8be2 GET /api/v1/hr/jobs/{job_id}\uff1b`result.data` \u5373\u539f\u54cd\u5e94\u4f53 `data`\u3002",
+        "description": "\u63d0\u4ea4\u5206\u6790\u540e\u53f0\u4efb\u52a1\uff08LLM \u62a5\u544a\u751f\u6210 >5s\uff0c\u4e0d\u518d\u5728 GET \u8bf7\u6c42\u91cc\u5185\u8054\u6267\u884c\uff09\u3002\n\n\u8f6e\u8be2 GET /api/v1/hr/jobs/{job_id}\uff1b`result.data` \u5373\u539f\u54cd\u5e94\u4f53 `data`\u3002\n\u540e\u53f0\u4efb\u52a1\u5728\u54cd\u5e94\u8fd4\u56de\u540e\u6267\u884c\uff0c\u5fc5\u987b\u81ea\u5efa session \u2014\u2014 \u8bf7\u6c42\u7ea7 session \u6b64\u65f6\u5df2\u5173\u95ed\u3002",
         "operationId": "submit_api_v1_hr_turnover_analysis_post",
         "parameters": [
           {
@@ -46937,7 +47009,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/app__shared__schemas__DataResponse_list_CandidateResponse____2"
+                }
               }
             }
           },
@@ -46993,7 +47067,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_CandidateResponse_"
+                }
               }
             }
           },
@@ -47134,7 +47210,7 @@
           "\u4eba\u4e8b\u7ba1\u7406"
         ],
         "summary": "\u4ece\u98de\u4e66\u540c\u6b65\u5019\u9009\u4eba\u6570\u636e",
-        "description": "\u624b\u52a8\u89e6\u53d1\uff1a\u4ece\u98de\u4e66\u591a\u7ef4\u8868\u683c\u62c9\u53d6\u5168\u90e8\u5019\u9009\u4eba\u6570\u636e\u5e76 upsert \u5230\u672c\u5730 PG\u3002",
+        "description": "\u63d0\u4ea4\u5019\u9009\u4eba\u540c\u6b65\u540e\u53f0\u4efb\u52a1\uff08\u5168\u91cf\u62c9\u53d6 >5s\uff09\uff1b\u8f6e\u8be2 GET /hr/jobs/{job_id} \u62ff\u7ed3\u679c\u3002",
         "operationId": "sync_candidates_from_feishu_api_v1_hr_candidates_sync_from_feishu_post",
         "parameters": [
           {
@@ -47155,11 +47231,13 @@
           }
         ],
         "responses": {
-          "200": {
+          "202": {
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/AsyncJobAcceptedResponse"
+                }
               }
             }
           },
@@ -47207,7 +47285,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_SyncStatusResponse_"
+                }
               }
             }
           },
@@ -47265,7 +47345,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_CandidateResponse_"
+                }
               }
             }
           },
@@ -47322,7 +47404,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_CandidateResponse_"
+                }
               }
             }
           },
@@ -47387,7 +47471,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_CandidateResponse_"
+                }
               }
             }
           },
@@ -47442,7 +47528,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/app__shared__schemas__MessageApiResponse"
+                }
               }
             }
           },
@@ -47509,7 +47597,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_CandidateResponse_"
+                }
               }
             }
           },
@@ -47711,7 +47801,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_TrainingSessionResponse__"
+                }
               }
             }
           },
@@ -47762,11 +47854,13 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_TrainingSessionResponse_"
+                }
               }
             }
           },
@@ -47833,7 +47927,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_TrainingSessionResponse_"
+                }
               }
             }
           },
@@ -47890,7 +47986,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_TrainingSessionResponse_"
+                }
               }
             }
           },
@@ -47955,7 +48053,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_TrainingSessionResponse_"
+                }
               }
             }
           },
@@ -48010,7 +48110,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/app__shared__schemas__MessageApiResponse"
+                }
               }
             }
           },
@@ -48033,7 +48135,7 @@
           "\u4eba\u4e8b\u7ba1\u7406"
         ],
         "summary": "\u53d1\u9001\u591a\u90e8\u95e8\u9009\u62e9\u53d7\u8bad\u4eba\u5458\u4efb\u52a1",
-        "description": "\u4e3a\u57f9\u8bad\u8bb0\u5f55\u7684\u6bcf\u4e2a\u53d7\u8bad\u90e8\u95e8\u53d1\u9001\u9009\u62e9\u53d7\u8bad\u4eba\u5458\u4efb\u52a1\u3002\n\n- \u4e3a\u6bcf\u4e2a\u90e8\u95e8\u751f\u6210 UUID token\n- \u5c06\u4efb\u52a1\u6570\u636e\u5b58\u5165 Redis\uff0824h \u6709\u6548\uff09\n- \u67e5\u627e\u8be5\u90e8\u95e8\u57f9\u8bad\u4e13\u5458\u5e76\u53d1\u9001\u98de\u4e66 IM \u6d88\u606f\n- \u66f4\u65b0 TrainingSession.select_tasks \u548c status",
+        "description": "\u4e3a\u57f9\u8bad\u8bb0\u5f55\u7684\u6bcf\u4e2a\u53d7\u8bad\u90e8\u95e8\u53d1\u9001\u9009\u62e9\u53d7\u8bad\u4eba\u5458\u4efb\u52a1\uff08\u540e\u53f0\u4efb\u52a1\uff09\u3002\n\n\u591a\u90e8\u95e8 IM \u53d1\u9001\u8017\u65f6 >5s\uff0c\u56e0\u6b64\u63d0\u4ea4\u540e\u7acb\u5373\u8fd4\u56de job_id\uff0c\u8f6e\u8be2\nGET /hr/jobs/{job_id} \u62ff\u7ed3\u679c\uff1b\u4efb\u52a1\u5b8c\u6210\u540e\u9875\u9762\u91cd\u65b0\u8bfb\u53d6\u57f9\u8bad\u8bb0\u5f55\u7684\nselect_tasks\uff08\u672c\u63a5\u53e3\u4e0d\u518d\u540c\u6b65\u8fd4\u56de\u5404\u90e8\u95e8\u7ed3\u679c\uff09\u3002\n\n- \u4e3a\u6bcf\u4e2a\u90e8\u95e8\u751f\u6210 UUID token\n- \u5c06\u4efb\u52a1\u6570\u636e\u5b58\u5165 Redis\uff0824h \u6709\u6548\uff09\n- \u67e5\u627e\u8be5\u90e8\u95e8\u57f9\u8bad\u4e13\u5458\u5e76\u53d1\u9001\u98de\u4e66 IM \u6d88\u606f\n- \u66f4\u65b0 TrainingSession.select_tasks \u548c status",
         "operationId": "send_training_session_select_tasks_api_v1_hr_training_sessions__session_id__send_select_tasks_post",
         "parameters": [
           {
@@ -48064,11 +48166,13 @@
           }
         ],
         "responses": {
-          "200": {
+          "202": {
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/AsyncJobAcceptedResponse"
+                }
               }
             }
           },
@@ -48126,7 +48230,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_TrainingSessionSelectTask__"
+                }
               }
             }
           },
@@ -48173,7 +48279,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_TrainingSpecialistResponse__"
+                }
               }
             }
           },
@@ -48228,7 +48336,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_TrainingSpecialistResponse_"
+                }
               }
             }
           },
@@ -48285,7 +48395,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/app__shared__schemas__MessageApiResponse"
+                }
               }
             }
           },
@@ -48308,7 +48420,7 @@
           "\u4eba\u4e8b\u7ba1\u7406"
         ],
         "summary": "\u540c\u6b65\u57f9\u8bad\u4e13\u5458\u98de\u4e66 open_id",
-        "description": "\u4ece\u5458\u5de5\u8868\u6216\u98de\u4e66 API \u6279\u91cf\u83b7\u53d6\u57f9\u8bad\u4e13\u5458\u7684 open_id \u5e76\u6301\u4e45\u5316\u3002",
+        "description": "\u6279\u91cf\u83b7\u53d6\u57f9\u8bad\u4e13\u5458\u7684 open_id \u5e76\u6301\u4e45\u5316\uff08\u540e\u53f0\u4efb\u52a1\uff09\u3002\n\n\u9010\u4eba\u67e5\u8be2\u5458\u5de5\u8868 + \u98de\u4e66\u901a\u8baf\u5f55\uff0c\u8017\u65f6\u968f\u4eba\u6570\u7ebf\u6027\u589e\u957f\uff0c\u56e0\u6b64\u5f02\u6b65\u6267\u884c\uff1b\n\u8f6e\u8be2 GET /hr/jobs/{job_id} \u62ff\u7ed3\u679c\u3002",
         "operationId": "sync_specialist_feishu_openids_api_v1_hr_training_specialists_sync_feishu_openids_post",
         "parameters": [
           {
@@ -48329,11 +48441,13 @@
           }
         ],
         "responses": {
-          "200": {
+          "202": {
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/AsyncJobAcceptedResponse"
+                }
               }
             }
           },
@@ -48392,7 +48506,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_TrainingTeamResponse__"
+                }
               }
             }
           },
@@ -48447,7 +48563,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_TrainingTeamBrief_"
+                }
               }
             }
           },
@@ -48514,7 +48632,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_TrainingTeamUpdateResult_"
+                }
               }
             }
           },
@@ -48569,7 +48689,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/app__shared__schemas__MessageApiResponse"
+                }
               }
             }
           },
@@ -48640,7 +48762,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_PrejobTemplateResponse_"
+                }
               }
             }
           },
@@ -48696,7 +48820,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_PrejobTemplateResponse_"
+                }
               }
             }
           },
@@ -48767,7 +48893,7 @@
           "\u4eba\u4e8b\u7ba1\u7406"
         ],
         "summary": "\u4fdd\u5b58\u7cfb\u7edf\u8bbe\u7f6e",
-        "description": "\u6279\u91cf\u4fdd\u5b58\u7cfb\u7edf\u914d\u7f6e\u5230 DB\uff0c\u540c\u65f6\u5199\u5165 .env \u6587\u4ef6\u3002\n\n\u51ed\u636e\u7c7b\u5b57\u6bb5\u52a0\u5bc6\u540e\u843d\u5e93\uff1b\u7a7a\u503c\u6216\u524d\u7aef\u56de\u4f20\u7684\u63a9\u7801\uff08****\uff09\u89c6\u4e3a\u300c\u4e0d\u4fee\u6539\u300d\uff0c\n\u907f\u514d\u628a\u63a9\u7801\u5f53\u6210\u65b0\u5bc6\u94a5\u5199\u8fdb\u5e93\u3002",
+        "description": "\u6279\u91cf\u4fdd\u5b58\u7cfb\u7edf\u914d\u7f6e\u5230 DB\uff0c\u540c\u65f6\u5199\u5165 .env \u6587\u4ef6\u3002\n\n\u51ed\u636e\u7c7b\u5b57\u6bb5\u52a0\u5bc6\u540e\u843d\u5e93\uff1b\u7a7a\u503c\u6216\u524d\u7aef\u56de\u4f20\u7684\u63a9\u7801\uff08****\uff09\u89c6\u4e3a\u300c\u4e0d\u4fee\u6539\u300d\uff0c\n\u907f\u514d\u628a\u63a9\u7801\u5f53\u6210\u65b0\u5bc6\u94a5\u5199\u8fdb\u5e93\u3002\u672a\u77e5\u952e\u7531 `HrSystemSettingsUpdate`\n\u7684 `extra=\"forbid\"` \u62d2\u7edd\uff08422\uff09\u3002",
         "operationId": "save_system_settings_api_v1_hr_system_settings_put",
         "parameters": [
           {
@@ -48792,9 +48918,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true,
-                "title": "Payload"
+                "$ref": "#/components/schemas/HrSystemSettingsUpdate"
               }
             }
           }
@@ -48804,7 +48928,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/HrSystemSettingsSaveResponse"
+                }
               }
             }
           },
@@ -92209,6 +92335,267 @@
         "type": "object",
         "title": "AnnualTrainingPlanItemCreate"
       },
+      "AnnualTrainingPlanItemResponse": {
+        "properties": {
+          "month": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Month",
+            "description": "\u6708\u4efd/\u5b63\u5ea6"
+          },
+          "trainee_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trainee Count",
+            "description": "\u57f9\u8bad\u4eba\u6570"
+          },
+          "duration_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Hours",
+            "description": "\u8bfe\u65f6"
+          },
+          "content_and_textbook": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content And Textbook",
+            "description": "\u57f9\u8bad\u5185\u5bb9\u53ca\u4f7f\u7528\u6559\u6750"
+          },
+          "target_audience": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Audience",
+            "description": "\u57f9\u8bad\u5bf9\u8c61"
+          },
+          "position_and_count": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position And Count",
+            "description": "\u53c2\u52a0\u5c97\u4f4d/\u53c2\u52a0\u4eba\u6570"
+          },
+          "training_method": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Method",
+            "description": "\u57f9\u8bad\u65b9\u5f0f"
+          },
+          "training_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Hours",
+            "description": "\u57f9\u8bad\u5b66\u65f6"
+          },
+          "confirmer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmer",
+            "description": "\u786e\u8ba4\u8005"
+          },
+          "confirm_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirm Date",
+            "description": "\u786e\u8ba4\u65e5\u671f"
+          },
+          "remarks": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remarks",
+            "description": "\u5907\u6ce8"
+          },
+          "tracking_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tracking Status",
+            "description": "\u57f9\u8bad\u8ddf\u8e2a: \u5b8c\u6210, \u672a\u5b8c\u6210"
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order",
+            "description": "\u6392\u5e8f",
+            "default": 0
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "plan_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Plan Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "plan_id"
+        ],
+        "title": "AnnualTrainingPlanItemResponse"
+      },
+      "AnnualTrainingPlanResponse": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "title": "Year",
+            "description": "\u5e74\u5ea6"
+          },
+          "department": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Department",
+            "description": "\u90e8\u95e8"
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 16,
+            "title": "Status",
+            "description": "\u72b6\u6001: \u8349\u7a3f, \u5df2\u786e\u8ba4",
+            "default": "\u8349\u7a3f"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "department",
+          "id"
+        ],
+        "title": "AnnualTrainingPlanResponse"
+      },
       "AnnualTrainingPlanUpdate": {
         "properties": {
           "year": {
@@ -98061,69 +98448,6 @@
         "type": "object",
         "title": "CalibrationRuleUpdate",
         "description": "\u66f4\u65b0\u6821\u51c6\u89c4\u5219"
-      },
-      "CandidateResponse": {
-        "properties": {
-          "personnel_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Personnel Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "department": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department"
-          },
-          "feishu_user_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Feishu User Id"
-          },
-          "feishu_open_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Feishu Open Id"
-          },
-          "roles": {
-            "items": {
-              "$ref": "#/components/schemas/PersonnelRoleInfo"
-            },
-            "type": "array",
-            "title": "Roles"
-          }
-        },
-        "type": "object",
-        "required": [
-          "personnel_id",
-          "name",
-          "department",
-          "feishu_user_id",
-          "feishu_open_id"
-        ],
-        "title": "CandidateResponse",
-        "description": "\u53ef\u5206\u914d\u4eba\u5458\u4fe1\u606f\uff08\u4f9b\u5176\u4ed6\u4e1a\u52a1\u6a21\u5757\u8c03\u7528\uff09"
       },
       "CandidateUpdate": {
         "properties": {
@@ -106558,6 +106882,42 @@
         "type": "object",
         "title": "DataMasterUpdate"
       },
+      "DataResponse_AnnualTrainingPlanResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnnualTrainingPlanResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[AnnualTrainingPlanResponse]"
+      },
       "DataResponse_AuthorizationLetterResponse_": {
         "properties": {
           "code": {
@@ -106629,6 +106989,42 @@
         },
         "type": "object",
         "title": "DataResponse[BatchCheckResponse]"
+      },
+      "DataResponse_CandidateResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/app__modules__hr__schemas__CandidateResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[CandidateResponse]"
       },
       "DataResponse_CertificateResponse_": {
         "properties": {
@@ -106954,6 +107350,42 @@
         "type": "object",
         "title": "DataResponse[DeliverableUploadResult]"
       },
+      "DataResponse_DepartmentResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/app__modules__hr__schemas__DepartmentResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[DepartmentResponse]"
+      },
       "DataResponse_DownloadUrlResponse_": {
         "properties": {
           "code": {
@@ -107061,6 +107493,78 @@
         },
         "type": "object",
         "title": "DataResponse[DrugWithNodesResponse]"
+      },
+      "DataResponse_EmployeeFeishuSyncResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmployeeFeishuSyncResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[EmployeeFeishuSyncResult]"
+      },
+      "DataResponse_EmployeeResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmployeeResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[EmployeeResponse]"
       },
       "DataResponse_ExperimentCreateResult_": {
         "properties": {
@@ -107847,6 +108351,42 @@
         },
         "type": "object",
         "title": "DataResponse[PilotWorkflowStepResponse]"
+      },
+      "DataResponse_PrejobTemplateResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PrejobTemplateResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[PrejobTemplateResponse]"
       },
       "DataResponse_ProblemHandleResult_": {
         "properties": {
@@ -108784,6 +109324,366 @@
         "type": "object",
         "title": "DataResponse[SupplementaryReplyResponse]"
       },
+      "DataResponse_SyncStatusResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SyncStatusResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[SyncStatusResponse]"
+      },
+      "DataResponse_TrainingLedgerPageResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingLedgerPageResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[TrainingLedgerPageResponse]"
+      },
+      "DataResponse_TrainingLedgerResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingLedgerResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[TrainingLedgerResponse]"
+      },
+      "DataResponse_TrainingNotifyResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingNotifyResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[TrainingNotifyResult]"
+      },
+      "DataResponse_TrainingSelectTaskSendResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingSelectTaskSendResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[TrainingSelectTaskSendResult]"
+      },
+      "DataResponse_TrainingSelectTask_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingSelectTask"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[TrainingSelectTask]"
+      },
+      "DataResponse_TrainingSessionResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingSessionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[TrainingSessionResponse]"
+      },
+      "DataResponse_TrainingSpecialistResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingSpecialistResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[TrainingSpecialistResponse]"
+      },
+      "DataResponse_TrainingTeamBrief_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingTeamBrief"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[TrainingTeamBrief]"
+      },
+      "DataResponse_TrainingTeamUpdateResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingTeamUpdateResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[TrainingTeamUpdateResult]"
+      },
       "DataResponse_WorkOrderResponse_": {
         "properties": {
           "code": {
@@ -108819,6 +109719,86 @@
         },
         "type": "object",
         "title": "DataResponse[WorkOrderResponse]"
+      },
+      "DataResponse_list_AnnualTrainingPlanItemResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AnnualTrainingPlanItemResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[AnnualTrainingPlanItemResponse]]"
+      },
+      "DataResponse_list_AnnualTrainingPlanResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AnnualTrainingPlanResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[AnnualTrainingPlanResponse]]"
       },
       "DataResponse_list_AuthorizationLetterListItem__": {
         "properties": {
@@ -108859,46 +109839,6 @@
         },
         "type": "object",
         "title": "DataResponse[list[AuthorizationLetterListItem]]"
-      },
-      "DataResponse_list_CandidateResponse__": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/CandidateResponse"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          },
-          "meta": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMeta"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "title": "DataResponse[list[CandidateResponse]]"
       },
       "DataResponse_list_CertificateResponse__": {
         "properties": {
@@ -109060,6 +110000,46 @@
         "type": "object",
         "title": "DataResponse[list[CpvImportTaskResponse]]"
       },
+      "DataResponse_list_DepartmentResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__modules__hr__schemas__DepartmentResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[DepartmentResponse]]"
+      },
       "DataResponse_list_DomesticApprovalResponse__": {
         "properties": {
           "code": {
@@ -109139,6 +110119,46 @@
         },
         "type": "object",
         "title": "DataResponse[list[DrugWithNodesResponse]]"
+      },
+      "DataResponse_list_EmployeeResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EmployeeResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[EmployeeResponse]]"
       },
       "DataResponse_list_FailureCodeResponse__": {
         "properties": {
@@ -110380,6 +111400,286 @@
         "type": "object",
         "title": "DataResponse[list[SupplementaryReplyListItem]]"
       },
+      "DataResponse_list_TrainingLedgerPageResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TrainingLedgerPageResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[TrainingLedgerPageResponse]]"
+      },
+      "DataResponse_list_TrainingLedgerResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TrainingLedgerResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[TrainingLedgerResponse]]"
+      },
+      "DataResponse_list_TrainingSelectTaskListItem__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TrainingSelectTaskListItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[TrainingSelectTaskListItem]]"
+      },
+      "DataResponse_list_TrainingSessionResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TrainingSessionResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[TrainingSessionResponse]]"
+      },
+      "DataResponse_list_TrainingSessionSelectTask__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TrainingSessionSelectTask"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[TrainingSessionSelectTask]]"
+      },
+      "DataResponse_list_TrainingSpecialistResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TrainingSpecialistResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[TrainingSpecialistResponse]]"
+      },
+      "DataResponse_list_TrainingTeamResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TrainingTeamResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[TrainingTeamResponse]]"
+      },
       "DataResponse_list_UserBrief__": {
         "properties": {
           "code": {
@@ -110877,7 +112177,7 @@
           "data": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DepartmentResponse"
+                "$ref": "#/components/schemas/app__platform__identity__schemas__DepartmentResponse"
               },
               {
                 "type": "null"
@@ -111752,96 +113052,6 @@
           "data"
         ],
         "title": "DepartmentOptionListResponse"
-      },
-      "DepartmentResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "feishu_department_id": {
-            "type": "string",
-            "title": "Feishu Department Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "parent_feishu_department_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parent Feishu Department Id"
-          },
-          "leader_user_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Leader User Id"
-          },
-          "member_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Member Count"
-          },
-          "status_is_deleted": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status Is Deleted"
-          },
-          "path": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Path"
-          },
-          "order": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Order"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "feishu_department_id",
-          "name"
-        ],
-        "title": "DepartmentResponse"
       },
       "DepartmentSafetyOfficerApiResponse": {
         "properties": {
@@ -116206,6 +117416,24 @@
         ],
         "title": "EmployeeCreate"
       },
+      "EmployeeFeishuSyncResult": {
+        "properties": {
+          "feishu_record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Record Id",
+            "description": "\u98de\u4e66\u8bb0\u5f55 ID"
+          }
+        },
+        "type": "object",
+        "title": "EmployeeFeishuSyncResult"
+      },
       "EmployeeProfileDetail": {
         "properties": {
           "id": {
@@ -116750,6 +117978,766 @@
           "name"
         ],
         "title": "EmployeeProfileListItem"
+      },
+      "EmployeeResponse": {
+        "properties": {
+          "employee_number": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "Employee Number",
+            "description": "\u5de5\u53f7"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Name",
+            "description": "\u59d3\u540d"
+          },
+          "domain_account": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain Account",
+            "description": "\u57df\u8d26\u53f7"
+          },
+          "department": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Department",
+            "description": "\u90e8\u95e8"
+          },
+          "team": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Team",
+            "description": "\u73ed\u7ec4"
+          },
+          "position": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Position",
+            "description": "\u804c\u4f4d"
+          },
+          "job_category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Category",
+            "description": "\u804c\u7c7b"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level",
+            "description": "\u7ea7\u522b"
+          },
+          "position_level": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position Level",
+            "description": "\u804c\u4f4d\u7ea7\u522b(\u81ea\u52a8\u5224\u5b9a): \u666e\u901a\u5458\u5de5/\u5de5\u7a0b\u5e08\u7ea7/\u4e3b\u7ba1\u7ea7"
+          },
+          "qualifications": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualifications",
+            "description": "\u804c\u79f0\uff0f\u804c\u4e1a\u8d44\u683c"
+          },
+          "qualification_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualification Type",
+            "description": "\u804c\u79f0\u7c7b\u578b"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender",
+            "description": "\u6027\u522b"
+          },
+          "native_place": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Native Place",
+            "description": "\u7c4d\u8d2f"
+          },
+          "political_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Political Status",
+            "description": "\u653f\u6cbb\u9762\u8c8c"
+          },
+          "marital_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marital Status",
+            "description": "\u5a5a\u59fb\u72b6\u51b5"
+          },
+          "household_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Household Type",
+            "description": "\u6237\u7c4d\u7c7b\u578b"
+          },
+          "status_category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Category",
+            "description": "\u7edf\u8ba1\u7c7b\u522b"
+          },
+          "birth_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Year",
+            "description": "\u51fa\u751f\u5e74\u4efd"
+          },
+          "birth_month": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Month",
+            "description": "\u51fa\u751f\u6708\u4efd"
+          },
+          "birth_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Day",
+            "description": "\u51fa\u751f\u65e5\u671f"
+          },
+          "age": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age",
+            "description": "\u5e74\u9f84"
+          },
+          "work_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Start Date",
+            "description": "\u53c2\u52a0\u5de5\u4f5c\u65f6\u95f4"
+          },
+          "factory_entry_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Factory Entry Date",
+            "description": "\u8fdb\u5382\u65f6\u95f4"
+          },
+          "livo_entry_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Livo Entry Date",
+            "description": "\u5165\u4e3d\u73e0\u65f6\u95f4"
+          },
+          "hire_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Hire Date",
+            "description": "\u5165\u804c\u65e5\u671f"
+          },
+          "graduation_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Graduation Date",
+            "description": "\u6bd5\u4e1a\u65f6\u95f4"
+          },
+          "work_years": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Years",
+            "description": "\u5de5\u4f5c\u5e74\u9650"
+          },
+          "factory_tenure": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Factory Tenure",
+            "description": "\u5382\u9f84"
+          },
+          "company_tenure": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Tenure",
+            "description": "\u53f8\u9f84"
+          },
+          "education": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Education",
+            "description": "\u5b66\u5386"
+          },
+          "classification": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classification",
+            "description": "\u5206\u7c7b"
+          },
+          "school": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School",
+            "description": "\u6bd5\u4e1a\u5b66\u6821"
+          },
+          "major": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Major",
+            "description": "\u4e13\u4e1a"
+          },
+          "id_card": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 18
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id Card",
+            "description": "\u8eab\u4efd\u8bc1\u53f7"
+          },
+          "id_card_expiry": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id Card Expiry",
+            "description": "\u8eab\u4efd\u8bc1\u5230\u671f\u65e5"
+          },
+          "id_card_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id Card Address",
+            "description": "\u8eab\u4efd\u8bc1\u5730\u5740|\u5bb6\u5ead\u5730\u5740"
+          },
+          "current_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Address",
+            "description": "\u73b0\u4f4f\u5740"
+          },
+          "contract_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contract Type",
+            "description": "\u5408\u540c\u671f\u9650"
+          },
+          "contract_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contract Start Date",
+            "description": "\u5408\u540c\u5f00\u59cb\u65e5\u671f"
+          },
+          "contract_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contract End Date",
+            "description": "\u5408\u540c\u7ed3\u675f\u65e5\u671f"
+          },
+          "contract_start_2": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contract Start 2",
+            "description": "\u7b2c\u4e8c\u6b21\u5408\u540c\u8d77\u70b9"
+          },
+          "contract_end_2": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contract End 2",
+            "description": "\u7b2c\u4e8c\u6b21\u5408\u540c\u7ec8\u6b62"
+          },
+          "contract_start_3": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contract Start 3",
+            "description": "\u7b2c\u4e09\u6b21\u5408\u540c\u8d77\u70b9"
+          },
+          "contract_end_3": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contract End 3",
+            "description": "\u7b2c\u4e09\u6b21\u5408\u540c\u7ec8\u6b62"
+          },
+          "contract_start_4": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contract Start 4",
+            "description": "\u7b2c\u56db\u6b21\u5408\u540c\u8d77\u70b9"
+          },
+          "contract_end_4": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contract End 4",
+            "description": "\u7b2c\u56db\u6b21\u5408\u540c\u7ec8\u6b62"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone",
+            "description": "\u624b\u673a"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email",
+            "description": "\u90ae\u7bb1"
+          },
+          "emergency_contact_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Contact Name",
+            "description": "\u7d27\u6025\u8054\u7cfb\u4eba\u59d3\u540d"
+          },
+          "emergency_contact_phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Contact Phone",
+            "description": "\u7d27\u6025\u8054\u7cfb\u4eba\u7535\u8bdd"
+          },
+          "emergency_contact_relation": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Contact Relation",
+            "description": "\u7d27\u6025\u8054\u7cfb\u4eba\u5173\u7cfb"
+          },
+          "bank_account": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Account",
+            "description": "\u94f6\u884c\u5361\u53f7"
+          },
+          "training_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Id",
+            "description": "\u57f9\u8bad\u6863\u6848\u7f16\u53f7"
+          },
+          "transfer_history": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transfer History",
+            "description": "\u5f02\u52a8\u8bb0\u5f55"
+          },
+          "remarks": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remarks",
+            "description": "\u5907\u6ce8"
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 16,
+            "title": "Status",
+            "description": "\u72b6\u6001",
+            "default": "\u5f85\u5ba1\u6279"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "feishu_open_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Open Id"
+          },
+          "feishu_record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Record Id"
+          },
+          "feishu_synced_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Synced At"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "employee_number",
+          "name",
+          "department",
+          "position",
+          "hire_date",
+          "id"
+        ],
+        "title": "EmployeeResponse"
       },
       "EmployeeUpdate": {
         "properties": {
@@ -129481,6 +131469,184 @@
         ],
         "title": "HrSystemSettingsApiResponse",
         "description": "`GET /hr/system-settings` \u7684\u5b8c\u6574\u54cd\u5e94\u4f53\u3002"
+      },
+      "HrSystemSettingsSaveData": {
+        "properties": {
+          "updated": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Updated",
+            "description": "\u672c\u6b21\u4fdd\u5b58\u7684\u952e"
+          }
+        },
+        "type": "object",
+        "title": "HrSystemSettingsSaveData"
+      },
+      "HrSystemSettingsSaveResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HrSystemSettingsSaveData"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "data"
+        ],
+        "title": "HrSystemSettingsSaveResponse",
+        "description": "`PUT /hr/system-settings` \u7684\u5b8c\u6574\u54cd\u5e94\u4f53\u3002"
+      },
+      "HrSystemSettingsUpdate": {
+        "properties": {
+          "FEISHU__PLATFORM__APP_ID": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu  Platform  App Id"
+          },
+          "FEISHU__PLATFORM__APP_SECRET": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu  Platform  App Secret"
+          },
+          "FEISHU__VEHICLE__CREDENTIALS__APP_ID": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu  Vehicle  Credentials  App Id"
+          },
+          "FEISHU__VEHICLE__CREDENTIALS__APP_SECRET": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu  Vehicle  Credentials  App Secret"
+          },
+          "FEISHU__TRAINING__CREDENTIALS__APP_ID": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu  Training  Credentials  App Id"
+          },
+          "FEISHU__TRAINING__CREDENTIALS__APP_SECRET": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu  Training  Credentials  App Secret"
+          },
+          "AI_BASE_URL": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Base Url"
+          },
+          "AI_API_KEY": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Api Key"
+          },
+          "AI_MODEL": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Model"
+          },
+          "HR_ORG_SYNC_ROOT_DEPARTMENT_ID": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hr Org Sync Root Department Id"
+          },
+          "HR_ORG_SYNC_ROOT_DEPARTMENT_NAME": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hr Org Sync Root Department Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "HrSystemSettingsUpdate",
+        "description": "`PUT /hr/system-settings` \u7684\u8bf7\u6c42\u4f53\u3002\n\n\u53ea\u63a5\u53d7\u9875\u9762\u5b9e\u9645\u7ef4\u62a4\u7684\u952e\uff1b\u672a\u77e5\u952e\u8fd4\u56de 422\uff08`extra=\"forbid\"`\uff09\uff0c\n\u907f\u514d\u914d\u7f6e\u63a5\u53e3\u9000\u5316\u6210\u4efb\u610f\u952e\u503c\u5199\u5165\u3002"
       },
       "IPQCApprovalCreate": {
         "properties": {
@@ -146874,6 +149040,62 @@
         ],
         "title": "PrejobTemplateItem",
         "description": "\u5c97\u524d\u57f9\u8bad\u8ba1\u5212\u5355\u884c\u6761\u76ee\uff08\u517110\u884c\uff09\u3002"
+      },
+      "PrejobTemplateResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "department": {
+            "type": "string",
+            "title": "Department"
+          },
+          "factory": {
+            "type": "string",
+            "title": "Factory"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PrejobTemplateItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "department",
+          "factory",
+          "items"
+        ],
+        "title": "PrejobTemplateResponse"
       },
       "ProblemApiResponse": {
         "properties": {
@@ -173750,6 +175972,61 @@
         ],
         "title": "SyncMembersTriggerData"
       },
+      "SyncStatusResponse": {
+        "properties": {
+          "local_total": {
+            "type": "integer",
+            "title": "Local Total"
+          },
+          "feishu_total": {
+            "type": "integer",
+            "title": "Feishu Total"
+          },
+          "synced_count": {
+            "type": "integer",
+            "title": "Synced Count"
+          },
+          "unsynced_count": {
+            "type": "integer",
+            "title": "Unsynced Count"
+          },
+          "conflict_count": {
+            "type": "integer",
+            "title": "Conflict Count"
+          },
+          "pending_count": {
+            "type": "integer",
+            "title": "Pending Count",
+            "default": 0
+          },
+          "failed_count": {
+            "type": "integer",
+            "title": "Failed Count",
+            "default": 0
+          },
+          "last_sync_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sync At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "local_total",
+          "feishu_total",
+          "synced_count",
+          "unsynced_count",
+          "conflict_count"
+        ],
+        "title": "SyncStatusResponse"
+      },
       "SyncTriggerRequest": {
         "properties": {
           "sourceCode": {
@@ -174887,6 +177164,250 @@
         ],
         "title": "TrainingLedgerPageCreate"
       },
+      "TrainingLedgerPageResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "employee_number": {
+            "type": "string",
+            "title": "Employee Number"
+          },
+          "employee_name": {
+            "type": "string",
+            "title": "Employee Name"
+          },
+          "ledger_type": {
+            "type": "string",
+            "maxLength": 16,
+            "title": "Ledger Type",
+            "description": "\u53f0\u8d26\u7c7b\u578b",
+            "default": "event"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department",
+            "description": "\u6240\u5c5e\u90e8\u95e8"
+          },
+          "factory": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Factory",
+            "description": "\u5382\u533a: old=\u65e7\u5382, new=\u65b0\u5382"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "employee_number",
+          "employee_name"
+        ],
+        "title": "TrainingLedgerPageResponse"
+      },
+      "TrainingLedgerResponse": {
+        "properties": {
+          "employee_number": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "Employee Number",
+            "description": "\u5de5\u53f7"
+          },
+          "training_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Training Date",
+            "description": "\u57f9\u8bad\u65e5\u671f"
+          },
+          "training_subject": {
+            "type": "string",
+            "maxLength": 256,
+            "title": "Training Subject",
+            "description": "\u57f9\u8bad\u8bfe\u7a0b/\u4e3b\u9898"
+          },
+          "training_method": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Method",
+            "description": "\u57f9\u8bad\u65b9\u5f0f"
+          },
+          "duration_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Hours",
+            "description": "\u8bfe\u65f6"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location",
+            "description": "\u57f9\u8bad\u5730\u70b9"
+          },
+          "trainer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trainer",
+            "description": "\u57f9\u8bad\u5355\u4f4d/\u57f9\u8bad\u5e08"
+          },
+          "assessment_result": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment Result",
+            "description": "\u8003\u6838\u6210\u7ee9"
+          },
+          "source_type": {
+            "type": "string",
+            "maxLength": 16,
+            "title": "Source Type",
+            "description": "\u6765\u6e90: manual, notification",
+            "default": "manual"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id",
+            "description": "\u6765\u6e90ID"
+          },
+          "remarks": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remarks",
+            "description": "\u5907\u6ce8"
+          },
+          "ledger_type": {
+            "type": "string",
+            "maxLength": 16,
+            "title": "Ledger Type",
+            "description": "\u53f0\u8d26\u7c7b\u578b: event=\u4e8b\u4ef6\u53f0\u8d26, sop=SOP\u57f9\u8bad\u53f0\u8d26",
+            "default": "event"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "employee_number",
+          "training_date",
+          "training_subject",
+          "id"
+        ],
+        "title": "TrainingLedgerResponse"
+      },
       "TrainingLedgerUpdate": {
         "properties": {
           "employee_number": {
@@ -175334,6 +177855,24 @@
         ],
         "title": "TrainingNotifyInput",
         "description": "Send training notification via Feishu IM."
+      },
+      "TrainingNotifyResult": {
+        "properties": {
+          "sent": {
+            "type": "integer",
+            "title": "Sent",
+            "description": "\u53d1\u9001\u6210\u529f\u4eba\u6570",
+            "default": 0
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed",
+            "description": "\u53d1\u9001\u5931\u8d25\u4eba\u6570",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "TrainingNotifyResult"
       },
       "TrainingRecordApiResponse": {
         "properties": {
@@ -175906,6 +178445,173 @@
         "title": "TrainingRecordUpdate",
         "description": "\u66f4\u65b0\u57f9\u8bad\u8bb0\u5f55"
       },
+      "TrainingSelectTask": {
+        "properties": {
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department"
+          },
+          "training_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Date"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "training_time_start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Time Start"
+          },
+          "training_time_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Time End"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "trainer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trainer"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "training_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Method"
+          },
+          "issuer_department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer Department"
+          },
+          "issue_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issue Date"
+          },
+          "factory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Factory"
+          },
+          "employee_numbers": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee Numbers"
+          },
+          "employee_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee Names"
+          }
+        },
+        "type": "object",
+        "title": "TrainingSelectTask",
+        "description": "Redis \u4e2d\u7684\u4e34\u65f6\u9009\u62e9\u4efb\u52a1\uff08\u521b\u5efa\u65f6\u7684\u5b57\u6bb5 + \u63d0\u4ea4\u540e\u7684\u9009\u62e9\u7ed3\u679c\uff09\u3002"
+      },
       "TrainingSelectTaskCreate": {
         "properties": {
           "department": {
@@ -176052,6 +178758,135 @@
         ],
         "title": "TrainingSelectTaskCreate",
         "description": "Create a temporary task for selecting trainees via Feishu."
+      },
+      "TrainingSelectTaskListItem": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department"
+          },
+          "training_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Date"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "factory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Factory"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "trainer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trainer"
+          },
+          "training_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Method"
+          },
+          "has_result": {
+            "type": "boolean",
+            "title": "Has Result",
+            "default": false
+          },
+          "selected_count": {
+            "type": "integer",
+            "title": "Selected Count",
+            "default": 0
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token"
+        ],
+        "title": "TrainingSelectTaskListItem"
+      },
+      "TrainingSelectTaskSendResult": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "url"
+        ],
+        "title": "TrainingSelectTaskSendResult"
       },
       "TrainingSelectTaskSubmit": {
         "properties": {
@@ -176326,6 +179161,330 @@
           "subject"
         ],
         "title": "TrainingSessionCreate"
+      },
+      "TrainingSessionResponse": {
+        "properties": {
+          "factory": {
+            "type": "string",
+            "maxLength": 8,
+            "title": "Factory",
+            "description": "\u5382\u533a: old=\u65e7\u5382, new=\u65b0\u5382",
+            "default": "old"
+          },
+          "department": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Department",
+            "description": "\u4e3b\u529e\u90e8\u95e8"
+          },
+          "training_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Training Date",
+            "description": "\u57f9\u8bad\u65e5\u671f"
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 256,
+            "title": "Subject",
+            "description": "\u57f9\u8bad\u4e3b\u9898"
+          },
+          "training_time_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Time Start",
+            "description": "\u57f9\u8bad\u5f00\u59cb\u65f6\u95f4"
+          },
+          "training_time_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Time End",
+            "description": "\u57f9\u8bad\u7ed3\u675f\u65f6\u95f4"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location",
+            "description": "\u57f9\u8bad\u5730\u70b9"
+          },
+          "trainer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trainer",
+            "description": "\u57f9\u8bad\u5e08"
+          },
+          "training_method": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Method",
+            "description": "\u57f9\u8bad\u65b9\u5f0f"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content",
+            "description": "\u57f9\u8bad\u5185\u5bb9"
+          },
+          "trainee_departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trainee Departments",
+            "description": "\u53d7\u8bad\u90e8\u95e8\u5217\u8868"
+          },
+          "employee_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee Names",
+            "description": "\u5e94\u51fa\u5e2d\u53d7\u8bad\u4eba\u5458\u59d3\u540d\u5217\u8868"
+          },
+          "employee_numbers": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee Numbers",
+            "description": "\u5e94\u51fa\u5e2d\u53d7\u8bad\u4eba\u5458\u5de5\u53f7\u5217\u8868"
+          },
+          "issuer_department": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer Department",
+            "description": "\u843d\u6b3e\u90e8\u95e8"
+          },
+          "issue_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issue Date",
+            "description": "\u843d\u6b3e\u65e5\u671f"
+          },
+          "remarks": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remarks",
+            "description": "\u5907\u6ce8"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "\u72b6\u6001: draft, notified, selecting, confirmed, evaluated, archived",
+            "default": "draft"
+          },
+          "select_task_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Select Task Token",
+            "description": "\u98de\u4e66\u9009\u62e9\u4efb\u52a1token"
+          },
+          "select_tasks": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Select Tasks",
+            "description": "\u591a\u90e8\u95e8\u9009\u62e9\u4efb\u52a1\u5217\u8868"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department",
+          "training_date",
+          "subject",
+          "id"
+        ],
+        "title": "TrainingSessionResponse"
+      },
+      "TrainingSessionSelectTask": {
+        "properties": {
+          "department": {
+            "type": "string",
+            "title": "Department"
+          },
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "employee_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Employee Names"
+          },
+          "employee_numbers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Employee Numbers"
+          },
+          "specialist_found": {
+            "type": "boolean",
+            "title": "Specialist Found",
+            "default": false
+          },
+          "specialist_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specialist Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department",
+          "token",
+          "status"
+        ],
+        "title": "TrainingSessionSelectTask"
       },
       "TrainingSessionStatusUpdate": {
         "properties": {
@@ -176735,6 +179894,100 @@
         ],
         "title": "TrainingSpecialistCreate"
       },
+      "TrainingSpecialistResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "department": {
+            "type": "string",
+            "title": "Department"
+          },
+          "employee_number": {
+            "type": "string",
+            "title": "Employee Number"
+          },
+          "employee_name": {
+            "type": "string",
+            "title": "Employee Name"
+          },
+          "factory": {
+            "type": "string",
+            "title": "Factory"
+          },
+          "feishu_open_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Open Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "department",
+          "employee_number",
+          "employee_name",
+          "factory"
+        ],
+        "title": "TrainingSpecialistResponse"
+      },
+      "TrainingTeamBrief": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "factory": {
+            "type": "string",
+            "title": "Factory"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "factory"
+        ],
+        "title": "TrainingTeamBrief",
+        "description": "\u73ed\u7ec4\u65b0\u5efa\u56de\u6267\u3002"
+      },
       "TrainingTeamCreate": {
         "properties": {
           "name": {
@@ -176793,6 +180046,93 @@
           "specialist_name"
         ],
         "title": "TrainingTeamCreate"
+      },
+      "TrainingTeamResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "factory": {
+            "type": "string",
+            "title": "Factory"
+          },
+          "department": {
+            "type": "string",
+            "title": "Department"
+          },
+          "specialist_employee_number": {
+            "type": "string",
+            "title": "Specialist Employee Number"
+          },
+          "specialist_name": {
+            "type": "string",
+            "title": "Specialist Name"
+          },
+          "employee_names": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee Names"
+          },
+          "employee_numbers": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee Numbers"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "factory",
+          "department",
+          "specialist_employee_number",
+          "specialist_name"
+        ],
+        "title": "TrainingTeamResponse"
       },
       "TrainingTeamUpdate": {
         "properties": {
@@ -176875,6 +180215,26 @@
         },
         "type": "object",
         "title": "TrainingTeamUpdate"
+      },
+      "TrainingTeamUpdateResult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "TrainingTeamUpdateResult",
+        "description": "\u73ed\u7ec4\u7f16\u8f91\u56de\u6267\u3002"
       },
       "TrainingType": {
         "type": "string",
@@ -180968,6 +184328,20 @@
         ],
         "title": "WcCertificateResponse"
       },
+      "WebhookChallenge": {
+        "properties": {
+          "challenge": {
+            "type": "string",
+            "title": "Challenge"
+          }
+        },
+        "type": "object",
+        "required": [
+          "challenge"
+        ],
+        "title": "WebhookChallenge",
+        "description": "\u98de\u4e66\u56de\u8c03\u5730\u5740\u6821\u9a8c\u6311\u6218\u3002"
+      },
       "WeeklyConfirmationApiResponse": {
         "properties": {
           "code": {
@@ -182723,6 +186097,69 @@
         "title": "InspectionRecordItem",
         "description": "\u5de1\u68c0\u8bb0\u5f55\u9879"
       },
+      "app__modules__equipment__schemas__personnel__CandidateResponse": {
+        "properties": {
+          "personnel_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Personnel Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department"
+          },
+          "feishu_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu User Id"
+          },
+          "feishu_open_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Open Id"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/PersonnelRoleInfo"
+            },
+            "type": "array",
+            "title": "Roles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "personnel_id",
+          "name",
+          "department",
+          "feishu_user_id",
+          "feishu_open_id"
+        ],
+        "title": "CandidateResponse",
+        "description": "\u53ef\u5206\u914d\u4eba\u5458\u4fe1\u606f\uff08\u4f9b\u5176\u4ed6\u4e1a\u52a1\u6a21\u5757\u8c03\u7528\uff09"
+      },
       "app__modules__equipment__schemas__personnel__RoleCreate": {
         "properties": {
           "name": {
@@ -182830,6 +186267,260 @@
         "type": "object",
         "title": "RoleUpdate",
         "description": "\u66f4\u65b0\u89d2\u8272\u8bf7\u6c42"
+      },
+      "app__modules__hr__schemas__CandidateResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Name",
+            "description": "\u5019\u9009\u4eba\u59d3\u540d"
+          },
+          "position": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Position",
+            "description": "\u5e94\u8058\u804c\u4f4d\u540d\u79f0"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender",
+            "description": "\u6027\u522b"
+          },
+          "school": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School",
+            "description": "\u5b66\u6821\u540d\u79f0"
+          },
+          "education": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Education",
+            "description": "\u5b66\u5386"
+          },
+          "major": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Major",
+            "description": "\u4e13\u4e1a"
+          },
+          "match_report": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Match Report",
+            "description": "\u5019\u9009\u4eba\u5339\u914d\u5ea6\u62a5\u544a"
+          },
+          "recommendation_level": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommendation Level",
+            "description": "\u63a8\u8350\u7b49\u7ea7"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "resume_attachments": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resume Attachments"
+          },
+          "feishu_record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Record Id"
+          },
+          "feishu_synced_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Synced At"
+          },
+          "feishu_sync_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Sync Status"
+          },
+          "feishu_sync_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Sync Error"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "position",
+          "id"
+        ],
+        "title": "CandidateResponse"
+      },
+      "app__modules__hr__schemas__DepartmentResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Name",
+            "description": "\u90e8\u95e8\u540d\u79f0"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "Code",
+            "description": "\u90e8\u95e8\u7f16\u7801"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "\u90e8\u95e8\u63cf\u8ff0"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "code",
+          "id"
+        ],
+        "title": "DepartmentResponse"
       },
       "app__modules__production__schemas__MessageApiResponse": {
         "properties": {
@@ -183195,6 +186886,96 @@
         "title": "OperationType",
         "description": "\u7279\u6b8a\u4f5c\u4e1a\u7c7b\u578b\u679a\u4e3e\uff08GB 30871-2022\uff09"
       },
+      "app__platform__identity__schemas__DepartmentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "feishu_department_id": {
+            "type": "string",
+            "title": "Feishu Department Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "parent_feishu_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Feishu Department Id"
+          },
+          "leader_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leader User Id"
+          },
+          "member_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Count"
+          },
+          "status_is_deleted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Is Deleted"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "feishu_department_id",
+          "name"
+        ],
+        "title": "DepartmentResponse"
+      },
       "app__platform__permission__schemas__BatchResultApiResponse": {
         "properties": {
           "code": {
@@ -183392,6 +187173,107 @@
         },
         "type": "object",
         "title": "BatchResultData"
+      },
+      "app__shared__schemas__DataResponse_list_CandidateResponse____1": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__modules__equipment__schemas__personnel__CandidateResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[CandidateResponse]]"
+      },
+      "app__shared__schemas__DataResponse_list_CandidateResponse____2": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__modules__hr__schemas__CandidateResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[CandidateResponse]]"
+      },
+      "app__shared__schemas__MessageApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "MessageApiResponse",
+        "description": "Message response wrapper"
       }
     }
   }

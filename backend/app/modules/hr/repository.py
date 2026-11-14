@@ -1,5 +1,6 @@
 """HR database queries live here."""
 
+import logging
 from datetime import date
 from typing import Any
 from uuid import UUID
@@ -8,6 +9,7 @@ from sqlalchemy import asc, delete, desc, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.exceptions import NotFoundException
 from app.modules.hr.models import (
     AnnualTrainingPlan,
     AnnualTrainingPlanItem,
@@ -20,6 +22,8 @@ from app.modules.hr.models import (
     TrainingSession,
     TrainingTeam,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class EmployeeRepository:
@@ -789,7 +793,7 @@ class TrainingTeamRepository:
     async def update(self, team_id: UUID, data) -> Any:  # type: ignore[no-untyped-def]
         obj = await self.get_by_id(team_id)
         if not obj:
-            raise ValueError(f"TrainingTeam {team_id} not found")
+            raise NotFoundException("培训班组", str(team_id))
         update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(obj, key, value)
@@ -835,9 +839,6 @@ class CandidateRepository:
         sort_by: str = "created_at",
         sort_order: str = "desc",
     ) -> tuple[list[Candidate], int]:
-        import logging
-
-        _logger = logging.getLogger(__name__)
         stmt = select(Candidate).where(Candidate.is_deleted.is_(False))
 
         if position:
@@ -848,7 +849,7 @@ class CandidateRepository:
             stmt = stmt.where(Candidate.name.ilike(f"%{keyword}%") | Candidate.position.ilike(f"%{keyword}%"))
         if recommendation_level:
             levels = [level.strip() for level in recommendation_level.split(",") if level.strip()]
-            _logger.debug("REPO levels=%s", levels)
+            logger.debug("REPO levels=%s", levels, extra={"biz_module": "hr"})
             if levels:
                 stmt = stmt.where(Candidate.recommendation_level.in_(levels))
         if sync_status:

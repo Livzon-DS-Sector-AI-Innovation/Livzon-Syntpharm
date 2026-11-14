@@ -36,9 +36,8 @@ class BitableDataSource:
     """
 
     def __init__(self, app_token: str, table_id: str) -> None:
-        self.client = BitableClient()
-        # 覆盖 app_token，支持操作任意表格（不仅限于配置中的默认表格）
-        self.client.app_token = app_token
+        # 支持操作任意表格（不仅限于配置中的默认表格）
+        self.client = BitableClient(app_token=app_token)
         self.table_id = table_id
         self.app_token = app_token
 

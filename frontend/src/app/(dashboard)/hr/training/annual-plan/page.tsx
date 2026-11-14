@@ -1,4 +1,5 @@
 
+import { unwrapResponse } from '@/lib/api/server/base'
 import { Suspense } from 'react'
 import { AnnualPlanListClient } from '@/components/hr'
 import { AnnualPlanDeptClient } from '@/components/hr'
@@ -24,9 +25,10 @@ export async function generateMetadata({ searchParams }: PageProps) {
   if (planId) {
     try {
       const res = await fetchAnnualTrainingPlanById(planId)
-      if (res.data?.department) {
+      const planData = unwrapResponse<AnnualTrainingPlan>(res)
+      if (planData?.department) {
         return {
-          title: `${res.data.department}${res.data.year}年度培训计划`,
+          title: `${planData.department}${planData.year}年度培训计划`,
         }
       }
     } catch {
@@ -51,7 +53,7 @@ export default async function AnnualPlanPage({ searchParams }: PageProps) {
     let plan: AnnualTrainingPlan | null = null
     try {
       const res = await fetchAnnualTrainingPlanById(planId)
-      plan = res.data
+      plan = unwrapResponse<AnnualTrainingPlan>(res)
     } catch {
       plan = null
     }

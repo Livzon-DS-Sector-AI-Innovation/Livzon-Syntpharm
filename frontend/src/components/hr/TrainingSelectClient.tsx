@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {Button, Card, Checkbox, message, Select, Tag} from 'antd'
+import { Button, Card, message, Select, Tag } from 'antd'
 import {
   CalendarOutlined,
   EnvironmentOutlined,
@@ -10,9 +10,9 @@ import {
   TeamOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons'
-import { fetchDepartments, fetchEmployees } from '@/lib/api/client/hr'
+import { fetchDepartments } from '@/lib/api/client/hr'
 import { submitTrainingSelectTaskAction } from '@/actions/hr'
-import type { Employee } from '@/types/hr'
+import { RemoteEmployeeSelect, type RemoteEmployeeOption } from '@/components/hr/RemoteEmployeeSelect'
 
 interface TrainingSelectClientProps {
   token: string
@@ -25,12 +25,12 @@ export default function TrainingSelectClient({
 }: TrainingSelectClientProps) {
   const taskDept = (initialData?.department as string) || ''
   const [selectedDepts, setSelectedDepts] = useState<string[]>(taskDept ? [taskDept] : [])
-  const [selectedNumbers, setSelectedNumbers] = useState<string[]>([])
+  const [selectedEmployees, setSelectedEmployees] = useState<RemoteEmployeeOption[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [resultData, setResultData] = useState<Record<string, unknown> | null>(null)
 
-  const { data: departments = [] } = useQuery({
+  const { data: departments = [], isLoading: loading } = useQuery({
     queryKey: ['departments'],
     queryFn: async () => {
       const res = await fetchDepartments({ page_size: 100 })
@@ -38,35 +38,7 @@ export default function TrainingSelectClient({
     },
   })
 
-  const { data: employees = [] } = useQuery({
-    queryKey: ['employees', selectedDepts],
-    queryFn: async () => {
-      if (!selectedDepts || selectedDepts.length === 0) {
-        return []
-      }
-      const all: { value: string; label: string; number: string }[] = []
-      for (const dept of selectedDepts) {
-        try {
-          const res = await fetchEmployees({ department: dept, page_size: 100 })
-          const list = (res.data || []).map((e: Employee) => ({
-            value: e.employee_number,
-            label: `${e.name} (${e.employee_number || ''})`,
-            number: e.employee_number,
-          }))
-          all.push(...list)
-        } catch {
-          // ignore
-        }
-      }
-      const map = new Map(all.map((e) => [e.value, e]))
-      return Array.from(map.values())
-    },
-    enabled: departments.length > 0 && selectedDepts.length > 0,
-  })
-
-  const loading = false
-
-
+  const selectedNumbers = selectedEmployees.map((e) => e.employee_number).filter(Boolean)
 
   const handleSubmit = async () => {
     if (selectedNumbers.length === 0) {
@@ -75,11 +47,11 @@ export default function TrainingSelectClient({
     }
     setSubmitting(true)
     try {
-      const selectedNames = employees
-        .filter((e) => selectedNumbers.includes(e.value))
-        .map((e) => e.label.split(' ')[0])
-      const res = await submitTrainingSelectTaskAction(token, { selectedNumbers, selectedNames })
-      setResultData(res.data)
+      const res = await submitTrainingSelectTaskAction(token, {
+        employee_numbers: selectedNumbers,
+        employee_names: selectedEmployees.map((e) => e.name),
+      })
+      setResultData(res.data as Record<string, unknown>)
       setSubmitted(true)
       message.success('选择结果已提交')
     } catch (err: unknown) {
@@ -113,15 +85,13 @@ export default function TrainingSelectClient({
           </div>
 
           <div className="text-left">
-            <h3 className="font-semibold mb-2">已选择的受训人员（{selectedNumbers.length}人）</h3>
+            <h3 className="font-semibold mb-2">已选择的受训人员（{selectedEmployees.length}人）</h3>
             <div className="flex flex-wrap gap-2">
-              {employees
-                .filter((e) => selectedNumbers.includes(e.value))
-                .map((e) => (
-                  <Tag key={e.value} color="blue">
-                    {e.label}
-                  </Tag>
-                ))}
+              {selectedEmployees.map((e) => (
+                <Tag key={e.employee_number} color="blue">
+                  {e.name} ({e.employee_number})
+                </Tag>
+              ))}
             </div>
           </div>
         </div>
@@ -182,32 +152,24 @@ export default function TrainingSelectClient({
           options={departments}
           value={selectedDepts}
           className="w-full"
-          onChange={(value: string[]) => {
-            setSelectedDepts(value)
-          }}
+          onChange={(value: string[]) => setSelectedDepts(value)}
           loading={loading}
         />
       </Card>
 
       <Card className="shadow-sm">
         <h2 className="font-semibold mb-3">选择受训人员（{selectedNumbers.length}人）</h2>
-        {employees.length > 0 ? (
-          <Checkbox.Group
-            className="w-full"
-            value={selectedNumbers}
-            onChange={(value) => setSelectedNumbers(value as string[])}
-          >
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {employees.map((emp) => (
-                <Checkbox key={emp.value} value={emp.value}>
-                  {emp.label}
-                </Checkbox>
-              ))}
-            </div>
-          </Checkbox.Group>
-        ) : (
-          <p className="text-gray-400">请先选择受训部门加载人员</p>
-        )}
+        <RemoteEmployeeSelect
+          mode="multiple"
+          source="employees"
+          valueKey="employee_number"
+          departments={selectedDepts}
+          allowClear
+          placeholder="搜索姓名或工号选择受训人员（可多选）"
+          value={selectedNumbers}
+          fallbackOptions={selectedEmployees}
+          onSelectionChange={setSelectedEmployees}
+        />
       </Card>
 
       <div className="flex justify-center">

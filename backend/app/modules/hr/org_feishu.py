@@ -21,7 +21,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.secrets import decrypt_secret
 from app.modules.hr.feishu_values import int_value
-from app.modules.hr.org_domain import DEFAULT_SYNC_ROOT_DEPARTMENT_ID
 from app.modules.hr.org_settings import load_org_scope
 from app.platform.integrations.feishu.utils import OPEN_API_BASE_URL, get_tenant_access_token
 
@@ -87,7 +86,7 @@ class FeishuOrgDepartmentFetcher:
         *,
         app_id: str,
         app_secret: str,
-        root_department_id: str = DEFAULT_SYNC_ROOT_DEPARTMENT_ID,
+        root_department_id: str,
         root_department_name: str = "",
         client: httpx.AsyncClient | None = None,
     ) -> None:

@@ -8,6 +8,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import DuplicateException, NotFoundException
+from app.modules.hr.feishu.bitable import FeishuBitableSync
 from app.modules.hr.models import (
     AnnualTrainingPlan,
     AnnualTrainingPlanItem,
@@ -44,7 +45,6 @@ from app.modules.hr.schemas import (
     TrainingSessionCreate,
     TrainingSessionUpdate,
 )
-from app.platform.integrations.feishu import FeishuBitableSync
 from app.platform.integrations.feishu.candidate_datasource import (
     CandidateBitableDataSource,
 )
@@ -221,15 +221,14 @@ class EmployeeService:
                 if open_id:
                     employee.feishu_open_id = open_id
                     logger.info(
-                        "Fetched feishu_open_id for employee %s: %s",
+                        "Fetched feishu_open_id for employee %s",
                         data.employee_number,
-                        open_id,
+                        extra={"biz_module": "hr", "employee_number": data.employee_number},
                     )
-            except Exception as e:
-                logger.warning(
-                    "Failed to fetch feishu open_id for phone %s: %s",
-                    data.phone,
-                    e,
+            except Exception:
+                logger.exception(
+                    "获取员工飞书 open_id 失败",
+                    extra={"biz_module": "hr", "employee_number": data.employee_number},
                 )
 
         result = await self.repo.create(employee)
@@ -255,8 +254,11 @@ class EmployeeService:
 
         try:
             await self._sync_single_to_feishu(result)
-        except Exception as e:
-            logger.warning("Feishu sync failed for employee approved: %s", e)
+        except Exception:
+            logger.exception(
+                "审批通过后同步员工到飞书失败",
+                extra={"biz_module": "hr", "employee_number": employee_number},
+            )
 
         return result
 
@@ -276,8 +278,11 @@ class EmployeeService:
 
         try:
             await self._sync_single_to_feishu(result)
-        except Exception as e:
-            logger.warning("Feishu sync failed for employee updated: %s", e)
+        except Exception:
+            logger.exception(
+                "更新员工后同步到飞书失败",
+                extra={"biz_module": "hr", "employee_id": str(employee_id)},
+            )
 
         return result
 
@@ -291,8 +296,11 @@ class EmployeeService:
                 await self.bitable.delete(employee.feishu_record_id)
             else:
                 await self.feishu.sync_employee_deleted(employee_number)
-        except Exception as e:
-            logger.warning("Feishu sync failed for employee deleted: %s", e)
+        except Exception:
+            logger.exception(
+                "删除员工后同步到飞书失败",
+                extra={"biz_module": "hr", "employee_number": employee_number},
+            )
 
     async def list_employees(
         self,
@@ -370,10 +378,9 @@ class EmployeeService:
                     if emp and open_id:
                         emp.feishu_open_id = open_id
                         logger.info(
-                            "Fetched feishu_open_id for %s (%s): %s",
-                            emp.name,
+                            "Fetched feishu_open_id for employee %s",
                             emp.employee_number,
-                            open_id,
+                            extra={"biz_module": "hr", "employee_number": emp.employee_number},
                         )
                         # 把获取到的 openid 持久化到数据库
                         try:
@@ -389,16 +396,18 @@ class EmployeeService:
                                 update_sql,
                                 {"oid": open_id, "eno": emp.employee_number},
                             )
-                        except Exception as db_err:
-                            logger.warning(
-                                "Failed to persist feishu_open_id for %s: %s",
-                                emp.employee_number,
-                                db_err,
+                        except Exception:
+                            logger.exception(
+                                "持久化员工飞书 open_id 失败",
+                                extra={"biz_module": "hr", "employee_number": emp.employee_number},
                             )
                 # 统一 flush，让 get_db 在请求结束时统一 commit
                 await self.repo.session.flush()
-            except Exception as e:
-                logger.warning("Batch get open_id by mobile failed: %s", e)
+            except Exception:
+                logger.exception(
+                    "批量获取飞书 open_id 失败",
+                    extra={"biz_module": "hr", "subject": payload.subject},
+                )
 
         # 3. 组装消息内容
         time_str = ""
@@ -505,8 +514,11 @@ class EmployeeService:
                     stats["created"] += 1
                 else:
                     stats["updated"] += 1
-            except Exception as e:
-                logger.error("Failed to sync Feishu record %s: %s", rec.get("record_id"), e)
+            except Exception:
+                logger.exception(
+                    "同步飞书记录失败",
+                    extra={"biz_module": "hr", "feishu_record_id": rec.get("record_id")},
+                )
                 stats["failed"] += 1
 
         return stats
@@ -559,7 +571,7 @@ class EmployeeService:
         Filters out empty values to avoid Feishu validation errors
         (especially for phone fields which reject empty strings).
         """
-        from app.platform.integrations.feishu.bitable import _to_ms_timestamp
+        from app.modules.hr.feishu.bitable import _to_ms_timestamp
 
         # Build raw fields, keeping None/empty filtering for later
         raw: dict[str, Any] = {
@@ -660,8 +672,11 @@ class DepartmentService:
 
         try:
             await self.feishu.sync_department_created(result.__dict__)
-        except Exception as e:
-            logger.warning("Feishu sync failed for department created: %s", e)
+        except Exception:
+            logger.exception(
+                "新建部门后同步到飞书失败",
+                extra={"biz_module": "hr", "department_code": data.code},
+            )
 
         return result
 
@@ -681,8 +696,11 @@ class DepartmentService:
 
         try:
             await self.feishu.sync_department_updated(result.__dict__)
-        except Exception as e:
-            logger.warning("Feishu sync failed for department updated: %s", e)
+        except Exception:
+            logger.exception(
+                "更新部门后同步到飞书失败",
+                extra={"biz_module": "hr", "department_id": str(department_id)},
+            )
 
         return result
 
@@ -694,8 +712,11 @@ class DepartmentService:
         if code:
             try:
                 await self.feishu.sync_department_deleted(code)
-            except Exception as e:
-                logger.warning("Feishu sync failed for department deleted: %s", e)
+            except Exception:
+                logger.exception(
+                    "删除部门后同步到飞书失败",
+                    extra={"biz_module": "hr", "department_code": code},
+                )
 
     async def list_departments(
         self,
@@ -991,9 +1012,8 @@ class CandidateService:
     async def parse_resume_preview(self, resume_bytes: bytes, position: str) -> dict[str, str]:
         """Convert PDF to images and parse resume via vision-capable AI."""
         logger.info(
-            "parse_resume_preview called: position=%s, pdf_size=%d bytes",
-            position,
-            len(resume_bytes),
+            "parse_resume_preview called",
+            extra={"biz_module": "hr", "pdf_size": len(resume_bytes)},
         )
         images: list[bytes] = []
         try:
@@ -1001,19 +1021,19 @@ class CandidateService:
 
             doc = fitz.open(stream=resume_bytes, filetype="pdf")
             page_count = len(doc)
-            logger.info("PDF opened: %d pages", page_count)
+            logger.info("PDF opened", extra={"biz_module": "hr", "page_count": page_count})
             for idx, page in enumerate(doc):
                 if idx >= 5:
-                    logger.warning("Resume PDF has more than 5 pages, only first 5 will be parsed")
+                    logger.warning(
+                        "简历 PDF 超过 5 页，仅解析前 5 页",
+                        extra={"biz_module": "hr", "page_count": page_count},
+                    )
                     break
                 pix = page.get_pixmap(dpi=150)
                 img_bytes = pix.tobytes("png")
                 logger.info(
-                    "Page %d rendered: %dx%d, %d bytes",
-                    idx + 1,
-                    pix.width,
-                    pix.height,
-                    len(img_bytes),
+                    "PDF page rendered",
+                    extra={"biz_module": "hr", "page": idx + 1, "image_bytes": len(img_bytes)},
                 )
                 images.append(img_bytes)
             doc.close()
@@ -1029,7 +1049,7 @@ class CandidateService:
             }
 
         if not images:
-            logger.warning("No images extracted from PDF")
+            logger.warning("未能从简历 PDF 中提取图片", extra={"biz_module": "hr"})
             return {
                 "gender": "",
                 "school": "",
@@ -1040,9 +1060,8 @@ class CandidateService:
             }
 
         logger.info(
-            "Calling AI vision parser with %d images for position=%s",
-            len(images),
-            position,
+            "Calling AI vision parser",
+            extra={"biz_module": "hr", "image_count": len(images)},
         )
         try:
             result = {
@@ -1053,7 +1072,7 @@ class CandidateService:
                 "match_report": "",
                 "recommendation_level": "",
             }
-            logger.info("AI parser result: %s", result)
+            logger.info("AI parser finished", extra={"biz_module": "hr"})
             return result
         except Exception:
             logger.exception("Failed to parse resume images via AI")
@@ -1111,7 +1130,7 @@ class CandidateService:
         try:
             feishu_file = await self.bitable.upload_resume(resume_bytes, filename or f"{name}.pdf")
         except Exception as exc:
-            logger.exception("Failed to upload resume to Feishu Drive")
+            logger.exception("上传简历到飞书失败", extra={"biz_module": "hr", "candidate_name": name})
             sync_error_parts.append(f"Drive upload failed: {exc}")
 
         try:
@@ -1141,7 +1160,7 @@ class CandidateService:
             created.feishu_sync_error = None
             await self.repo.update(created)
         except Exception as exc:
-            logger.exception("Failed to create candidate record in Feishu")
+            logger.exception("在飞书创建候选人记录失败", extra={"biz_module": "hr", "candidate_name": name})
             sync_error_parts.append(f"Bitable create failed: {exc}")
             created.feishu_sync_status = "failed"
             created.feishu_sync_error = "; ".join(sync_error_parts) if sync_error_parts else str(exc)
@@ -1171,7 +1190,10 @@ class CandidateService:
                 try:
                     await self.bitable.update(candidate.feishu_record_id, feishu_fields)
                 except Exception as exc:
-                    logger.exception("Failed to sync candidate update to Feishu %s", candidate_id)
+                    logger.exception(
+                        "同步候选人更新到飞书失败",
+                        extra={"biz_module": "hr", "candidate_id": str(candidate_id)},
+                    )
                     updated.feishu_sync_status = "failed"
                     updated.feishu_sync_error = f"Update sync failed: {exc}"
                     await self.repo.update(updated)
@@ -1188,8 +1210,8 @@ class CandidateService:
                 await self.bitable.update_recommendation_level(candidate.feishu_record_id, level)
             except Exception as exc:
                 logger.exception(
-                    "Failed to sync recommendation level to Feishu for %s",
-                    candidate_id,
+                    "同步候选人推荐等级到飞书失败",
+                    extra={"biz_module": "hr", "candidate_id": str(candidate_id)},
                 )
                 updated.feishu_sync_status = "failed"
                 updated.feishu_sync_error = f"Recommendation level sync failed: {exc}"
@@ -1216,7 +1238,7 @@ class CandidateService:
         try:
             feishu_file = await self.bitable.upload_resume(resume_bytes, filename or f"{candidate.name}.pdf")
         except Exception as exc:
-            logger.exception("Failed to upload resume to Feishu Drive during retry")
+            logger.exception("重试时上传简历到飞书失败", extra={"biz_module": "hr", "candidate_id": str(candidate_id)})
             sync_error_parts.append(f"Drive upload failed: {exc}")
 
         try:
@@ -1251,7 +1273,10 @@ class CandidateService:
             candidate.feishu_sync_error = None
             await self.repo.update(candidate)
         except Exception as exc:
-            logger.exception("Failed to sync candidate record to Feishu during retry")
+            logger.exception(
+                "重试时同步候选人记录到飞书失败",
+                extra={"biz_module": "hr", "candidate_id": str(candidate_id)},
+            )
             sync_error_parts.append(f"Bitable write failed: {exc}")
             candidate.feishu_sync_status = "failed"
             candidate.feishu_sync_error = "; ".join(sync_error_parts) if sync_error_parts else str(exc)
@@ -1268,7 +1293,10 @@ class CandidateService:
             try:
                 await self.bitable.delete(candidate.feishu_record_id)
             except Exception:
-                logger.exception("Failed to delete candidate from Feishu %s", candidate_id)
+                logger.exception(
+                    "删除飞书候选人记录失败",
+                    extra={"biz_module": "hr", "candidate_id": str(candidate_id)},
+                )
 
     async def sync_from_feishu(self) -> dict[str, Any]:
         """Pull all candidate records from Feishu Bitable and upsert into local PG."""
@@ -1302,7 +1330,10 @@ class CandidateService:
                     if not has_local:
                         await self._download_resume(existing, rec.resume_attachments[0])
             except Exception:
-                logger.exception("Failed to sync candidate record %s", rec.record_id)
+                logger.exception(
+                    "同步飞书候选人记录失败",
+                    extra={"biz_module": "hr", "feishu_record_id": rec.record_id},
+                )
                 stats["failed"] += 1
 
         return stats
@@ -1312,7 +1343,10 @@ class CandidateService:
 
         file_token = attachment.get("file_token")
         if not file_token:
-            logger.warning("No file_token in attachment for candidate %s", candidate.id)
+            logger.warning(
+                "候选人简历附件缺少 file_token",
+                extra={"biz_module": "hr", "candidate_id": str(candidate.id)},
+            )
             return
 
         try:
@@ -1338,9 +1372,9 @@ class CandidateService:
 
             candidate.resume_storage_path = file_path
             await self.repo.update(candidate)
-            logger.info("Downloaded resume for candidate %s to %s", candidate.id, file_path)
+            logger.info("候选人简历已下载", extra={"biz_module": "hr", "candidate_id": str(candidate.id)})
         except Exception:
-            logger.exception("Failed to download resume for candidate %s", candidate.id)
+            logger.exception("下载候选人简历失败", extra={"biz_module": "hr", "candidate_id": str(candidate.id)})
 
     async def get_sync_status(self) -> SyncStatusResponse:
         local_total = await self.repo.count_total()

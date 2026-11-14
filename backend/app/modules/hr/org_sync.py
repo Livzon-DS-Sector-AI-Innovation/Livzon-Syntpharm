@@ -30,7 +30,6 @@ from typing import Any, Protocol
 from uuid import UUID
 
 from app.modules.hr.org_domain import (
-    DEFAULT_ORG_SCOPE,
     OrgDepartmentRecord,
     OrgScope,
     parse_directory_department,
@@ -177,7 +176,7 @@ async def sync_org_departments(
     people_store: EmployeeProfileStore | None = None,
     people_fetcher: EmployeeProfileFetcher | None = None,
     started_at: datetime | None = None,
-    scope: OrgScope = DEFAULT_ORG_SCOPE,
+    scope: OrgScope,
     run_id: UUID | None = None,
 ) -> OrgSyncStats:
     """Sync the scoped department tree, then people, into their mirrors.

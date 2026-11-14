@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import { unwrapResponse } from '@/lib/api/server/base'
 import { fetchTrainingSessionsAction } from '@/actions/hr'
 import TrainingSessionListClient from '@/components/hr/TrainingSessionListClient'
 
@@ -18,7 +19,7 @@ export default async function TrainingRecordsPage() {
       </div>
 
       <TrainingSessionListClient
-        initialData={res.data || []}
+        initialData={unwrapResponse(res) || []}
         initialMeta={res.meta}
       />
     </div>

@@ -11,13 +11,6 @@ from typing import Any
 
 from app.modules.hr.feishu_values import int_value, optional_int_value, text_value
 
-DEFAULT_SYNC_ROOT_DEPARTMENT_ID = "od-9c7089e0d3edc7822c0650a9b2ff4318"
-DEFAULT_SYNC_ROOT_DEPARTMENT_NAME = "珠海保税区丽珠合成制药有限公司"
-
-# Backwards-compatible aliases for callers/tests that still use the old names.
-IN_SCOPE_COMPANY_ID = DEFAULT_SYNC_ROOT_DEPARTMENT_ID
-IN_SCOPE_COMPANY_NAME = DEFAULT_SYNC_ROOT_DEPARTMENT_NAME
-
 COMPANY_LEVEL = 0
 ROOT_LEVEL = 1
 SECOND_LEVEL = 2
@@ -48,11 +41,6 @@ class OrgScope:
     def covers_path(self, path: list[dict[str, str]] | None) -> bool:
         return any(isinstance(entry, dict) and entry.get("id") == self.department_id for entry in path or [])
 
-
-DEFAULT_ORG_SCOPE = OrgScope(
-    department_id=DEFAULT_SYNC_ROOT_DEPARTMENT_ID,
-    department_name=DEFAULT_SYNC_ROOT_DEPARTMENT_NAME,
-)
 
 _DATA_SOURCE_LABELS: dict[int, str] = {
     1: "飞书",
@@ -228,7 +216,7 @@ def build_org_tree(
     *,
     leader_names: dict[str, str] | None = None,
     leader_avatars: dict[str, str] | None = None,
-    scope: OrgScope = DEFAULT_ORG_SCOPE,
+    scope: OrgScope,
 ) -> list[dict[str, Any]]:
     """Build the company tree: company (level 0) → 一级部门 → 二级部门.
 
@@ -297,7 +285,7 @@ def select_departments_to_hide(
     rows: list[dict[str, Any]],
     *,
     seen_ids: set[str],
-    scope: OrgScope = DEFAULT_ORG_SCOPE,
+    scope: OrgScope,
 ) -> list[str]:
     """Return mirror ids that Feishu no longer returns inside the configured scope.
 
