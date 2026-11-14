@@ -38,7 +38,6 @@ class OrgDepartmentNode(BaseModel):
 
 
 class OrgDepartmentTreeData(BaseModel):
-    companies: list[OrgPathNode] = Field(default_factory=list, description="已配置的同步根公司")
     items: list[OrgDepartmentNode] = Field(default_factory=list)
 
 

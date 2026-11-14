@@ -45776,7 +45776,7 @@
           "HR \u7ec4\u7ec7\u67b6\u6784"
         ],
         "summary": "\u90e8\u95e8\u6811\uff08\u53ea\u8bfb\uff09",
-        "description": "\u8fd4\u56de\u914d\u7f6e\u7684\u540c\u6b65\u6839\u516c\u53f8\uff08\u53ef\u591a\u4e2a\uff09\u4e0b\u7684\u5b8c\u6574\u90e8\u95e8\u6811\u3002",
+        "description": "\u8fd4\u56de\u98de\u4e66\u5e94\u7528\u53ef\u89c1\u8303\u56f4\u5185\u7684\u5b8c\u6574\u90e8\u95e8\u6811\uff08\u6839\u90e8\u95e8\u81ea\u52a8\u53d1\u73b0\uff0c\u53ef\u591a\u4e2a\uff09\u3002",
         "operationId": "list_org_departments_api_v1_hr_org_departments_get",
         "parameters": [
           {
@@ -46635,7 +46635,7 @@
           "HR \u5458\u5de5\u6863\u6848"
         ],
         "summary": "\u5458\u5de5\u6863\u6848\u90e8\u95e8\u6811\uff08\u53ea\u8bfb\uff09",
-        "description": "\u8fd4\u56de\u914d\u7f6e\u7684\u540c\u6b65\u6839\u516c\u53f8\uff08\u53ef\u591a\u4e2a\uff09\u4e0b\u7684\u5b8c\u6574\u90e8\u95e8\u6811\uff0c\u4f9b\u5458\u5de5\u6863\u6848\u5de6\u4fa7\u7b5b\u9009\u4f7f\u7528\u3002",
+        "description": "\u8fd4\u56de\u98de\u4e66\u5e94\u7528\u53ef\u89c1\u8303\u56f4\u5185\u7684\u5b8c\u6574\u90e8\u95e8\u6811\uff0c\u4f9b\u5458\u5de5\u6863\u6848\u5de6\u4fa7\u7b5b\u9009\u4f7f\u7528\u3002",
         "operationId": "list_people_departments_api_v1_hr_people_departments_get",
         "parameters": [
           {
@@ -135525,14 +135525,6 @@
             "type": "string",
             "title": "Ai Model",
             "default": ""
-          },
-          "HR_ORG_SYNC_ROOTS": {
-            "items": {
-              "$ref": "#/components/schemas/OrgScopeInput"
-            },
-            "type": "array",
-            "title": "Hr Org Sync Roots",
-            "description": "\u5df2\u914d\u7f6e\u7684\u540c\u6b65\u6839\u516c\u53f8\uff08\u6309\u5c55\u793a\u987a\u5e8f\uff09"
           }
         },
         "type": "object",
@@ -135693,7 +135685,8 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/OrgScopeInput"
+                  "additionalProperties": true,
+                  "type": "object"
                 },
                 "type": "array"
               },
@@ -150439,14 +150432,6 @@
       },
       "OrgDepartmentTreeData": {
         "properties": {
-          "companies": {
-            "items": {
-              "$ref": "#/components/schemas/OrgPathNode"
-            },
-            "type": "array",
-            "title": "Companies",
-            "description": "\u5df2\u914d\u7f6e\u7684\u540c\u6b65\u6839\u516c\u53f8"
-          },
           "items": {
             "items": {
               "$ref": "#/components/schemas/OrgDepartmentNode"
@@ -150475,31 +150460,6 @@
           "name"
         ],
         "title": "OrgPathNode"
-      },
-      "OrgScopeInput": {
-        "properties": {
-          "department_id": {
-            "type": "string",
-            "maxLength": 128,
-            "minLength": 1,
-            "title": "Department Id",
-            "description": "\u98de\u4e66 open_department_id"
-          },
-          "name": {
-            "type": "string",
-            "maxLength": 256,
-            "minLength": 1,
-            "title": "Name",
-            "description": "\u516c\u53f8\uff08\u6839\u90e8\u95e8\uff09\u540d\u79f0"
-          }
-        },
-        "type": "object",
-        "required": [
-          "department_id",
-          "name"
-        ],
-        "title": "OrgScopeInput",
-        "description": "One configured company root for the HR org mirror."
       },
       "OrgSyncStatusApiResponse": {
         "properties": {

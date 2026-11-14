@@ -31,10 +31,8 @@ from uuid import UUID
 
 from app.modules.hr.org_domain import (
     OrgDepartmentRecord,
-    OrgScopes,
     parse_directory_department,
     select_departments_to_hide,
-    trim_path_to_root,
 )
 from app.modules.hr.people_sync import (
     EmployeeProfileFetcher,
@@ -118,81 +116,62 @@ def _contact_record(raw: dict[str, Any]) -> OrgDepartmentRecord:
 def _fallback_path(
     dept_id: str,
     contact_by_id: dict[str, OrgDepartmentRecord],
-    scopes: OrgScopes,
 ) -> list[dict[str, str]]:
-    root = scopes.root_for_chain(contact_by_id, dept_id) or (scopes.roots[0] if scopes.roots else None)
+    """Build the path from the topmost known ancestor down to ``dept_id``.
+
+    Roots are discovered from the visible Feishu scope, so an invisible parent
+    simply terminates the chain: the topmost record becomes the path root.
+    """
     chain: list[dict[str, str]] = []
-    current = dept_id
+    current: str | None = dept_id
     visited: set[str] = set()
-    while current and (root is None or current != root.department_id) and current not in visited:
+    while current and current not in visited:
         visited.add(current)
         record = contact_by_id.get(current)
-        chain.append({"id": current, "name": record.name if record else ""})
-        current = record.parent_id if record and record.parent_id else ""
+        if record is None:
+            break
+        chain.append({"id": current, "name": record.name})
+        parent = record.parent_id
+        if not parent or parent not in contact_by_id:
+            break
+        current = parent
     chain.reverse()
-    return [root.root_path_node, *chain] if root is not None else chain
-
-
-def _select_in_scope(contacts: list[OrgDepartmentRecord], scopes: OrgScopes) -> list[OrgDepartmentRecord]:
-    """Keep records whose ancestor chain reaches one of the configured roots."""
-    by_id = {record.id: record for record in contacts if record.id}
-
-    def reaches_root(record: OrgDepartmentRecord) -> bool:
-        current = record.id
-        visited: set[str] = set()
-        while current and current not in visited:
-            visited.add(current)
-            if scopes.is_root(current):
-                return True
-            parent = by_id.get(current)
-            current = parent.parent_id if parent and parent.parent_id else None
-        return False
-
-    return [record for record in contacts if record.id and reaches_root(record)]
+    return chain
 
 
 def _merge_detail(
     contact: OrgDepartmentRecord,
     detail: dict[str, Any] | None,
     contact_by_id: dict[str, OrgDepartmentRecord],
-    scopes: OrgScopes,
 ) -> OrgDepartmentRecord:
-    root = scopes.root_for_chain(contact_by_id, contact.id) or (scopes.roots[0] if scopes.roots else None)
     if detail is None:
-        return OrgDepartmentRecord(
+        record = OrgDepartmentRecord(
             id=contact.id,
             name=contact.name,
             parent_id=contact.parent_id,
             level=contact.level,
             order=contact.order,
             order_weight=None,
-            department_path=_fallback_path(contact.id or "", contact_by_id, scopes),
+            department_path=_fallback_path(contact.id or "", contact_by_id),
         )
+    else:
+        raw = dict(detail)
+        # Trust the contact tree for ids/parents: mget can return "0" when the id was
+        # not requested explicitly, and the contact walk is the structural source.
+        raw["department_id"] = contact.id
+        raw["parent_department_id"] = contact.parent_id
+        if not raw.get("name"):
+            raw["name"] = contact.name
 
-    raw = dict(detail)
-    # Trust the contact tree for ids/parents: mget can return "0" when the id was
-    # not requested explicitly, and the contact walk is the structural source.
-    raw["department_id"] = contact.id
-    raw["parent_department_id"] = contact.parent_id
-    if not raw.get("name"):
-        raw["name"] = contact.name
-
-    record = parse_directory_department(raw)
-    record.id = contact.id
-    record.parent_id = contact.parent_id
-    record.level = contact.level
-    # directory order_weight is authoritative when present; contact order is the fallback.
-    if record.order_weight is None:
-        record.order = contact.order
-    if root is not None:
-        trimmed = trim_path_to_root(record.department_path, root.department_id)
-        if any(isinstance(entry, dict) and entry.get("id") == root.department_id for entry in trimmed):
-            record.department_path = trimmed
-        if record.id == root.department_id:
-            record.parent_id = None
-            record.department_path = [root.root_path_node]
-    if not record.department_path:
-        record.department_path = _fallback_path(contact.id or "", contact_by_id, scopes)
+        record = parse_directory_department(raw)
+        record.id = contact.id
+        record.parent_id = contact.parent_id
+        record.level = contact.level
+        # directory order_weight is authoritative when present; contact order is the fallback.
+        if record.order_weight is None:
+            record.order = contact.order
+        # Rebuild from the contact walk so an invisible ancestor never leaks in.
+        record.department_path = _fallback_path(contact.id or "", contact_by_id)
     if record.level is None and record.department_path:
         record.level = max(len(record.department_path) - 1, 0)
     return record
@@ -205,23 +184,21 @@ async def sync_org_departments(
     people_store: EmployeeProfileStore | None = None,
     people_fetcher: EmployeeProfileFetcher | None = None,
     started_at: datetime | None = None,
-    scopes: OrgScopes,
     run_id: UUID | None = None,
 ) -> OrgSyncStats:
-    """Sync the scoped department trees, then people, into their mirrors.
+    """Sync every visible department tree, then people, into their mirrors.
 
     Department reads happen before department writes; the people phase follows
-    so it can resolve scope from the mirror. Failures roll the mirror session
-    back and record the failed run, so previous data stays intact.
+    so it can resolve departments from the mirror. Failures roll the mirror
+    session back and record the failed run, so previous data stays intact.
     """
     started = started_at or datetime.now(UTC)
     try:
         raw_contacts = await fetcher.fetch_departments()
         contacts = [record for record in (_contact_record(raw) for raw in raw_contacts) if record.id]
-        scoped = _select_in_scope(contacts, scopes)
-        contact_by_id = {record.id: record for record in scoped if record.id}
+        contact_by_id = {record.id: record for record in contacts if record.id}
 
-        ids = [record.id for record in scoped if record.id]
+        ids = [record.id for record in contacts if record.id]
         details = await fetcher.fetch_departments_detail(ids) if ids else []
         detail_by_id = {
             str(detail.get("department_id")): detail
@@ -229,11 +206,22 @@ async def sync_org_departments(
             if isinstance(detail, dict) and detail.get("department_id")
         }
 
+        # A discovered root's name is not in the contact row; take it from mget.
+        # If mget omits the root, keep the id so the tree never shows a blank name.
+        for contact in contacts:
+            if (contact.parent_id is None or contact.parent_id not in contact_by_id) and not contact.name:
+                detail = detail_by_id.get(contact.id or "")
+                contact.name = parse_directory_department(detail).name if detail is not None else ""
+                if not contact.name:
+                    contact.name = contact.id or ""
+                    logger.warning(
+                        "部门详情缺失，使用部门 ID 作为名称",
+                        extra={"biz_module": "hr", "department_id": contact.id},
+                    )
+
         existing = await store.list_departments()
         records = [
-            _merge_detail(contact, detail_by_id.get(contact.id), contact_by_id, scopes)
-            for contact in scoped
-            if contact.id
+            _merge_detail(contact, detail_by_id.get(contact.id), contact_by_id) for contact in contacts if contact.id
         ]
 
         created = 0
@@ -256,15 +244,14 @@ async def sync_org_departments(
                 for record in existing
             ],
             seen_ids=set(ids),
-            scopes=scopes,
         )
         for department_id in to_hide:
             await store.hide_department(department_id)
 
         stats = OrgSyncStats(
-            total=len(scoped),
+            total=len(contacts),
             created=created,
-            updated=len(scoped) - created,
+            updated=len(contacts) - created,
             hidden=len(to_hide),
             people=people_count,
         )

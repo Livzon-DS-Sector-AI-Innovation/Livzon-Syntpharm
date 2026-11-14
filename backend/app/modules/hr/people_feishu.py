@@ -13,7 +13,6 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.hr.org_feishu import FeishuOrgDepartmentFetcher, load_hr_platform_credentials
-from app.modules.hr.org_settings import load_org_scopes
 
 EMPLOYEE_REQUIRED_FIELDS = (
     "base_info.employee_id",
@@ -55,6 +54,8 @@ EMPLOYEE_REQUIRED_FIELDS = (
     "work_info.resign_remark",
 )
 
+_EMPLOYEE_FILTER_CHUNK_SIZE = 50
+
 
 class FeishuEmployeeProfileFetcher(FeishuOrgDepartmentFetcher):
     """Directory employee filter call for the whole in-scope org."""
@@ -68,16 +69,34 @@ class FeishuEmployeeProfileFetcher(FeishuOrgDepartmentFetcher):
             "operator": "eq",
             "value": json.dumps(1),
         }
-        return await self._fetch_by_conditions(
-            [
-                {
-                    "field": "base_info.departments.department_id",
-                    "operator": "in",
-                    "value": json.dumps(department_ids, separators=(",", ":")),
-                },
-                status_condition,
-            ]
-        )
+        # A whole-org scope can contain hundreds of departments; chunk the `in`
+        # condition so the request body stays within Feishu's limits.
+        deduped_ids = list(dict.fromkeys(department_ids))
+        employees: list[dict[str, Any]] = []
+        seen_keys: set[str] = set()
+        for start in range(0, len(deduped_ids), _EMPLOYEE_FILTER_CHUNK_SIZE):
+            chunk = deduped_ids[start : start + _EMPLOYEE_FILTER_CHUNK_SIZE]
+            batch = await self._fetch_by_conditions(
+                [
+                    {
+                        "field": "base_info.departments.department_id",
+                        "operator": "in",
+                        "value": json.dumps(chunk, separators=(",", ":")),
+                    },
+                    status_condition,
+                ]
+            )
+            for employee in batch:
+                base_info = employee.get("base_info") if isinstance(employee, dict) else None
+                key = ""
+                if isinstance(base_info, dict):
+                    key = str(base_info.get("open_id") or base_info.get("employee_id") or "")
+                if key and key in seen_keys:
+                    continue
+                if key:
+                    seen_keys.add(key)
+                employees.append(employee)
+        return employees
 
     async def _fetch_by_conditions(self, conditions: list[dict[str, str]]) -> list[dict[str, Any]]:
         results: list[dict[str, Any]] = []
@@ -108,9 +127,4 @@ class FeishuEmployeeProfileFetcher(FeishuOrgDepartmentFetcher):
 
 async def build_default_employee_fetcher(session: AsyncSession) -> FeishuEmployeeProfileFetcher:
     app_id, app_secret = await load_hr_platform_credentials(session)
-    scopes = await load_org_scopes(session)
-    return FeishuEmployeeProfileFetcher(
-        app_id=app_id,
-        app_secret=app_secret,
-        roots=list(scopes.roots),
-    )
+    return FeishuEmployeeProfileFetcher(app_id=app_id, app_secret=app_secret)

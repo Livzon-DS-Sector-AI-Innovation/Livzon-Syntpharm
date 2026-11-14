@@ -10,7 +10,6 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 from typing import Any
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,14 +19,13 @@ from app.modules.hr.models import HrDepartment as Department
 from tests.fixtures.org_scope import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
 
 LIST_URL = "/api/v1/hr/people"
-pytestmark = pytest.mark.usefixtures("org_scope_settings")
 
 TREE_URL = "/api/v1/hr/people/departments"
 
 ROOT = {"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME}
 
 
-def _department(dept_id: str, name: str, parent_id: str, path: list[dict[str, str]]) -> Department:
+def _department(dept_id: str, name: str, parent_id: str | None, path: list[dict[str, str]]) -> Department:
     return Department(
         feishu_department_id=dept_id,
         name=name,
@@ -96,6 +94,7 @@ async def _seed(db_session: AsyncSession) -> None:
     level2b_path = [ROOT, {"id": "od-102", "name": "102车间"}, {"id": "od-102-1", "name": "精制工段"}]
     db_session.add_all(
         [
+            _department(IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME, None, [ROOT]),
             _department("od-101", "101车间", IN_SCOPE_COMPANY_ID, level1_path),
             _department("od-101-1", "合成工段", "od-101", level2_path),
             _department("od-102", "102车间", IN_SCOPE_COMPANY_ID, [ROOT, {"id": "od-102", "name": "102车间"}]),
@@ -272,7 +271,6 @@ class TestPeopleTree:
 
         assert response.status_code == 200
         body = response.json()["data"]
-        assert body["companies"] == [{"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME}]
         assert [node["name"] for node in body["items"]] == [IN_SCOPE_COMPANY_NAME]
         company = body["items"][0]
         assert [node["name"] for node in company["children"]] == ["101车间", "102车间"]
