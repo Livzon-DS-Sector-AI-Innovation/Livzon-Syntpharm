@@ -1,35 +1,24 @@
-"""部门管理 org domain seams (ticket #197).
+"""Department-management org domain seams (ticket #197).
 
 Seams under test:
-1. ``parse_directory_department`` — turns a raw Feishu ``directory/v1/departments/mget``
-   payload into mirror fields. Catches: i18n name handling, "0" ids, empty arrays,
-   string counts.
-2. ``build_org_tree`` — turns mirror rows into a recursive tree per configured
-   company root. Catches: missing synthetic roots, deeper levels, hidden rows,
-   multi-company filtering, ordering, leader-name fallback "—".
-3. ``OrgScopes`` / ``trim_path_to_root`` — any-root checks and invisible-parent
-   trimming.
+1. ``parse_directory_department`` — raw Feishu ``directory/v1/departments/mget``
+   payload → mirror fields.
+2. ``build_org_tree`` — mirror rows → recursive tree. Roots are derived from the
+   data (parent missing/None), so multiple visible companies appear naturally.
+3. ``select_departments_to_hide`` — rows no longer visible to the app.
 
-These are pure functions: no DB, no HTTP.
+Pure functions: no DB, no HTTP.
 """
 
 from __future__ import annotations
 
 from app.modules.hr.org_domain import (
     OrgDepartmentRecord,
-    OrgScope,
-    OrgScopes,
     build_org_tree,
     parse_directory_department,
     select_departments_to_hide,
-    trim_path_to_root,
 )
-from tests.fixtures.org_scope import (
-    DEFAULT_ORG_SCOPE,
-    DEFAULT_ORG_SCOPES,
-    IN_SCOPE_COMPANY_ID,
-    IN_SCOPE_COMPANY_NAME,
-)
+from tests.fixtures.org_scope import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
 
 
 def _mget_payload(**overrides: object) -> dict[str, object]:
@@ -143,14 +132,8 @@ def _record(
     )
 
 
-def _root_record() -> OrgDepartmentRecord:
-    return _record(
-        IN_SCOPE_COMPANY_ID,
-        IN_SCOPE_COMPANY_NAME,
-        parent=None,
-        path=[{"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME}],
-        level=0,
-    )
+def _root_record(dept_id: str = IN_SCOPE_COMPANY_ID, name: str = IN_SCOPE_COMPANY_NAME) -> OrgDepartmentRecord:
+    return _record(dept_id, name, parent=None, path=[{"id": dept_id, "name": name}], level=0)
 
 
 def test_build_org_tree_renders_company_and_all_levels() -> None:
@@ -160,15 +143,14 @@ def test_build_org_tree_renders_company_and_all_levels() -> None:
         _record("od-b", "102车间", parent=IN_SCOPE_COMPANY_ID, order=1),
         _record("od-a1", "合成工段", parent="od-a", order=1),
         _record("od-a1x", "更深的组", parent="od-a1"),
-        _record("od-other", "珠海市丽珠医药贸易有限公司", parent="0"),
+        _record("od-other", "珠海市丽珠医药贸易有限公司", parent=None),
         _record("od-other-1", "贸易一部", parent="od-other"),
     ]
 
-    tree = build_org_tree(records, leader_names={}, scopes=DEFAULT_ORG_SCOPES)
+    tree = build_org_tree(records, leader_names={})
 
-    assert len(tree) == 1
+    assert [node["name"] for node in tree] == [IN_SCOPE_COMPANY_NAME, "珠海市丽珠医药贸易有限公司"]
     company = tree[0]
-    assert company["id"] == IN_SCOPE_COMPANY_ID
     assert company["level"] == 0
     assert [child["name"] for child in company["children"]] == ["102车间", "101车间"]
     assert company["children"][1]["level"] == 1
@@ -176,10 +158,10 @@ def test_build_org_tree_renders_company_and_all_levels() -> None:
     assert company["children"][1]["children"][0]["level"] == 2
     assert company["children"][1]["children"][0]["children"][0]["name"] == "更深的组"
     assert company["children"][1]["children"][0]["children"][0]["level"] == 3
-    assert all(node["name"] != "珠海市丽珠医药贸易有限公司" for node in tree)
+    assert [child["name"] for child in tree[1]["children"]] == ["贸易一部"]
 
 
-def test_build_org_tree_synthesizes_missing_root_and_leaders_fallback_to_dash() -> None:
+def test_build_org_tree_derives_roots_when_company_row_is_missing() -> None:
     records = [
         _record("od-a", "101车间", parent=IN_SCOPE_COMPANY_ID, leaders=["ou-known", "ou-missing"]),
         _record("od-b", "已撤销车间", parent=IN_SCOPE_COMPANY_ID, hidden=True),
@@ -189,34 +171,32 @@ def test_build_org_tree_synthesizes_missing_root_and_leaders_fallback_to_dash() 
         records,
         leader_names={"ou-known": "张三"},
         leader_avatars={"ou-known": "https://example.com/avatar.png"},
-        scopes=DEFAULT_ORG_SCOPES,
     )
 
-    assert [node["name"] for node in tree] == [IN_SCOPE_COMPANY_NAME]
-    assert tree[0]["id"] == IN_SCOPE_COMPANY_ID
-    assert [child["name"] for child in tree[0]["children"]] == ["101车间"]
-    child = tree[0]["children"][0]
-    assert child["level"] == 1
+    assert [node["name"] for node in tree] == ["101车间"]
+    child = tree[0]
+    assert child["level"] == 0
+    assert child["parent_name"] is None
     assert child["leader_names"] == ["张三"]
     assert child["leader_avatars"] == ["https://example.com/avatar.png"]
     assert child["leader_display"] == "张三"
 
     records[0].leader_ids = ["ou-missing"]
-    tree = build_org_tree(records, leader_names={}, scopes=DEFAULT_ORG_SCOPES)
-    assert tree[0]["children"][0]["leader_names"] == []
-    assert tree[0]["children"][0]["leader_display"] == "—"
+    tree = build_org_tree(records, leader_names={})
+    assert tree[0]["leader_names"] == []
+    assert tree[0]["leader_display"] == "—"
 
 
-def test_build_org_tree_renders_two_companies() -> None:
-    second = OrgScope(department_id="od-company-b", department_name="第二公司")
-    scopes = OrgScopes(roots=(DEFAULT_ORG_SCOPE, second))
+def test_build_org_tree_renders_two_parentless_companies() -> None:
+    second = _root_record("od-company-b", "第二公司")
     records = [
         _root_record(),
         _record("od-a", "101车间", parent=IN_SCOPE_COMPANY_ID),
+        second,
         _record("od-b", "201车间", parent="od-company-b"),
     ]
 
-    tree = build_org_tree(records, leader_names={}, scopes=scopes)
+    tree = build_org_tree(records, leader_names={})
 
     assert [node["name"] for node in tree] == [IN_SCOPE_COMPANY_NAME, "第二公司"]
     assert [node["level"] for node in tree] == [0, 0]
@@ -224,85 +204,27 @@ def test_build_org_tree_renders_two_companies() -> None:
     assert [child["name"] for child in tree[1]["children"]] == ["201车间"]
 
 
-def test_build_org_tree_uses_configured_scope_root() -> None:
-    scope = OrgScope(department_id="od-new-company", department_name="新公司")
-    scoped = _record(
-        "od-a",
-        "101车间",
-        parent="od-new-company",
-        path=[{"id": "od-new-company", "name": "新公司"}, {"id": "od-a", "name": "101车间"}],
-    )
+def test_build_org_tree_treats_missing_parent_as_root() -> None:
     records = [
-        scoped,
-        _record("od-other", "旧公司部门", parent=IN_SCOPE_COMPANY_ID),
+        _record("od-a", "101车间", parent="od-invisible-parent"),
+        _record("od-a1", "合成工段", parent="od-a"),
     ]
 
-    tree = build_org_tree(records, leader_names={}, scopes=OrgScopes(roots=(scope,)))
+    tree = build_org_tree(records, leader_names={})
 
-    assert [node["name"] for node in tree] == ["新公司"]
-    assert [child["name"] for child in tree[0]["children"]] == ["101车间"]
-    assert tree[0]["children"][0]["parent_name"] == "新公司"
-    assert tree[0]["children"][0]["department_path"][0] == {"id": "od-new-company", "name": "新公司"}
-    assert DEFAULT_ORG_SCOPE.department_id == IN_SCOPE_COMPANY_ID
+    assert [node["name"] for node in tree] == ["101车间"]
+    assert [child["name"] for child in tree[0]["children"]] == ["合成工段"]
 
 
-def test_select_departments_to_hide_protects_all_roots() -> None:
+def test_select_departments_to_hide_hides_every_unseen_row() -> None:
     rows = [
-        {
-            "id": IN_SCOPE_COMPANY_ID,
-            "hidden": False,
-            "department_path": [{"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME}],
-        },
-        {
-            "id": "od-company-b",
-            "hidden": False,
-            "department_path": [{"id": "od-company-b", "name": "第二公司"}],
-        },
-        {
-            "id": "od-stale",
-            "hidden": False,
-            "department_path": [
-                {"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME},
-                {"id": "od-stale", "name": "已移除部门"},
-            ],
-        },
-        {
-            "id": "od-out-of-scope",
-            "hidden": False,
-            "department_path": [
-                {"id": "od-other-company", "name": "珠海市丽珠医药贸易有限公司"},
-                {"id": "od-out-of-scope", "name": "贸易一部"},
-            ],
-        },
-    ]
-    scopes = OrgScopes(roots=(DEFAULT_ORG_SCOPE, OrgScope(department_id="od-company-b", department_name="第二公司")))
-
-    to_hide = select_departments_to_hide(rows, seen_ids={"od-stale"}, scopes=scopes)
-
-    assert to_hide == ["od-out-of-scope"]
-
-
-def test_trim_path_to_root_drops_invisible_ancestors() -> None:
-    path = [
-        {"id": "od-invisible-parent", "name": "集团"},
-        {"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME},
-        {"id": "od-a", "name": "101车间"},
+        {"id": IN_SCOPE_COMPANY_ID, "hidden": False},
+        {"id": "od-company-b", "hidden": False},
+        {"id": "od-stale", "hidden": False},
+        {"id": "od-out-of-scope", "hidden": False},
+        {"id": "od-already-hidden", "hidden": True},
     ]
 
-    assert trim_path_to_root(path, IN_SCOPE_COMPANY_ID) == path[1:]
-    assert trim_path_to_root(path, "od-missing") == path
+    to_hide = select_departments_to_hide(rows, seen_ids={"od-stale"})
 
-
-def test_org_scopes_any_root_helpers() -> None:
-    second = OrgScope(department_id="od-company-b", department_name="第二公司")
-    scopes = OrgScopes(roots=(DEFAULT_ORG_SCOPE, second))
-
-    assert scopes
-    assert scopes.is_root(IN_SCOPE_COMPANY_ID)
-    assert scopes.is_root("od-company-b")
-    assert not scopes.is_root("od-a")
-    assert scopes.is_direct_child(IN_SCOPE_COMPANY_ID)
-    assert scopes.is_direct_child("od-company-b")
-    assert scopes.covers_path([{"id": "od-company-b", "name": "第二公司"}, {"id": "od-b", "name": "201"}])
-    assert not scopes.covers_path([{"id": "od-other", "name": "其他"}])
-    assert scopes.root_for_path([{"id": "od-company-b", "name": "第二公司"}]) is second
+    assert to_hide == [IN_SCOPE_COMPANY_ID, "od-company-b", "od-out-of-scope"]

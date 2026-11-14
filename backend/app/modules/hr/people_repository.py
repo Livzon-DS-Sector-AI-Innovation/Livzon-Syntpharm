@@ -17,8 +17,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ColumnElement
 
 from app.modules.hr.models import EmployeeProfile, HrDepartment
-from app.modules.hr.org_domain import OrgScopes
-from app.modules.hr.org_settings import load_org_scopes
 from app.modules.hr.people_domain import EmployeeProfileRecord
 
 _STAFF_STATUS_BY_LABEL: dict[str, int] = {
@@ -51,56 +49,38 @@ async def _list_department_rows(session: AsyncSession) -> list[HrDepartment]:
     return list(result.scalars().all())
 
 
-async def in_scope_department_ids(session: AsyncSession, scopes: OrgScopes | None = None) -> set[str]:
-    """Return every department id under any configured company root."""
-    org_scopes = scopes if scopes is not None else await load_org_scopes(session)
-    departments = await _list_department_rows(session)
-    scoped: set[str] = set()
-    for department in departments:
-        department_id = department.feishu_department_id
-        if not department_id:
-            continue
-        if org_scopes.is_root(department_id):
-            scoped.add(department_id)
-        elif org_scopes.is_direct_child(department.parent_feishu_department_id):
-            scoped.add(department_id)
-        elif org_scopes.covers_path(department.department_path):
-            scoped.add(department_id)
+async def in_scope_department_ids(session: AsyncSession) -> set[str]:
+    """Return every department id visible in the mirror.
 
-    # Close over missing/incomplete paths so deep departments are never lost.
-    changed = True
-    while changed:
-        changed = False
-        for department in departments:
-            department_id = department.feishu_department_id
-            if not department_id or department_id in scoped:
-                continue
-            if department.parent_feishu_department_id in scoped:
-                scoped.add(department_id)
-                changed = True
-    return scoped
+    The mirror only contains departments the Feishu app can see, so no separate
+    company-root scope is needed.
+    """
+    return {
+        department.feishu_department_id
+        for department in await _list_department_rows(session)
+        if department.feishu_department_id
+    }
 
 
 async def resolve_filter_department_ids(session: AsyncSession, selected: str | None) -> set[str] | None:
     """Expand a tree selection to the department ids its people may belong to.
 
-    ``None`` means "no department filter" (all companies). Any selected node
-    (company root or deeper) matches itself plus all descendants at any depth.
+    ``None`` means "no department filter" (every visible department). Any
+    selected node matches itself plus all descendants at any depth.
     """
     if not selected:
         return None
-    org_scopes = await load_org_scopes(session)
-    scope = await in_scope_department_ids(session, org_scopes)
-    if selected not in scope:
-        return set()
     departments = await _list_department_rows(session)
+    visible_ids = {department.feishu_department_id for department in departments if department.feishu_department_id}
+    if selected not in visible_ids:
+        return set()
     selected_ids = {selected}
     changed = True
     while changed:
         changed = False
         for department in departments:
             department_id = department.feishu_department_id
-            if not department_id or department_id in selected_ids or department_id not in scope:
+            if not department_id or department_id in selected_ids:
                 continue
             in_selected_path = bool(
                 department.department_path

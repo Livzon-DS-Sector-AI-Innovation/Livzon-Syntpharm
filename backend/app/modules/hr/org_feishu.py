@@ -21,8 +21,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.secrets import decrypt_secret
 from app.modules.hr.feishu_values import int_value
-from app.modules.hr.org_domain import OrgScope
-from app.modules.hr.org_settings import load_org_scopes
 from app.platform.integrations.feishu.utils import OPEN_API_BASE_URL, get_tenant_access_token
 
 logger = logging.getLogger(__name__)
@@ -89,12 +87,10 @@ class FeishuOrgDepartmentFetcher:
         *,
         app_id: str,
         app_secret: str,
-        roots: list[OrgScope],
         client: httpx.AsyncClient | None = None,
     ) -> None:
         self._app_id = app_id
         self._app_secret = app_secret
-        self._roots = list(roots)
         self._client = client or httpx.AsyncClient(
             base_url=OPEN_API_BASE_URL,
             timeout=httpx.Timeout(20.0, connect=5.0),
@@ -203,26 +199,72 @@ class FeishuOrgDepartmentFetcher:
 
         return await asyncio.gather(*(fetch_one(parent_id) for parent_id in parent_ids))
 
-    async def fetch_departments(self) -> list[dict[str, Any]]:
-        """Walk every configured root breadth-first until no children remain.
+    async def _visible_root_ids(self) -> list[str]:
+        """Return the top-level departments the bot can see.
 
-        Each returned row is flat (``parent_department_id`` + ``level``); the
-        mirror derives depth from this value. Branches the bot cannot see
-        (40004) are skipped; a 40004 on a configured root fails the sync because
-        the configured scope itself is invisible.
+        ``contact/v3/scopes`` returns the app's authorized top-level departments
+        (not their sub-departments); when the scope is "all members", Feishu
+        returns the tenant's first-level departments. An empty list is handled
+        by enumerating the children of the tenant root ``0``.
+        """
+        roots: list[str] = []
+        params: dict[str, Any] = {"department_id_type": "open_department_id", "page_size": 100}
+        while True:
+            try:
+                data = await self._request("GET", "/contact/v3/scopes", params=params)
+            except RuntimeError as exc:
+                if "40004" in str(exc):
+                    raise RuntimeError("无法读取飞书通讯录授权范围，请检查应用的通讯录权限范围 (40004)") from exc
+                raise
+            for value in data.get("department_ids") or []:
+                dept_id = str(value).strip()
+                if dept_id and dept_id != "0" and dept_id not in roots:
+                    roots.append(dept_id)
+            if not data.get("has_more"):
+                break
+            page_token = data.get("page_token")
+            if not page_token:
+                break
+            params["page_token"] = page_token
+        if roots:
+            logger.info(
+                "飞书通讯录授权范围包含 %d 个顶级部门",
+                len(roots),
+                extra={"biz_module": "hr", "root_department_ids": roots},
+            )
+            return roots
+
+        try:
+            children = await self._list_children("0")
+        except RuntimeError as exc:
+            if "40004" in str(exc):
+                raise RuntimeError("无法获取飞书通讯录授权范围：contact/v3/scopes 为空且无权读取租户根部门") from exc
+            raise
+        return [
+            str(raw.get("open_department_id") or raw.get("department_id") or "").strip()
+            for raw in children
+            if str(raw.get("open_department_id") or raw.get("department_id") or "").strip()
+        ]
+
+    async def fetch_departments(self) -> list[dict[str, Any]]:
+        """Walk every visible top-level department breadth-first.
+
+        Roots come from the app's Feishu contact scope, so no company list is
+        configured. Each returned row is flat (``parent_department_id`` +
+        ``level``); branches the bot cannot see (40004) are skipped; a 40004 on a
+        discovered root fails the sync because the scope itself is inaccessible.
         """
         departments: list[dict[str, Any]] = []
         seen: set[str] = set()
 
-        for root in self._roots:
-            root_id = root.department_id
+        for root_id in await self._visible_root_ids():
             if not root_id or root_id in seen:
                 continue
             seen.add(root_id)
             departments.append(
                 {
                     "department_id": root_id,
-                    "name": root.department_name,
+                    "name": "",
                     "parent_department_id": None,
                     "level": 0,
                     "order": 0,
@@ -306,9 +348,4 @@ class FeishuOrgDepartmentFetcher:
 
 async def build_default_fetcher(session: AsyncSession) -> FeishuOrgDepartmentFetcher:
     app_id, app_secret = await load_hr_platform_credentials(session)
-    scopes = await load_org_scopes(session)
-    return FeishuOrgDepartmentFetcher(
-        app_id=app_id,
-        app_secret=app_secret,
-        roots=list(scopes.roots),
-    )
+    return FeishuOrgDepartmentFetcher(app_id=app_id, app_secret=app_secret)
