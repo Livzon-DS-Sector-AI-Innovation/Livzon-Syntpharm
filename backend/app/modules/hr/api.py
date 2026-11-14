@@ -844,7 +844,9 @@ async def send_training_select_task(  # type: ignore[no-untyped-def]
                 await service.repo.session.execute(update_sql, {"oid": open_id, "eno": li_employee.employee_number})
                 await service.repo.session.flush()
         except Exception:
-            logger.exception("查询员工飞书 open_id 失败", extra={"biz_module": "hr", "employee_number": li_employee.employee_number})
+            logger.exception(
+                "查询员工飞书 open_id 失败", extra={"biz_module": "hr", "employee_number": li_employee.employee_number}
+            )
 
     if not open_id:
         raise BadRequestException("李文兆缺少飞书 open_id 且无法实时获取")
@@ -1831,7 +1833,9 @@ async def list_candidates(  # type: ignore[no-untyped-def]
         page=page_params.page,
         page_size=page_params.page_size,
     )
-    logger.debug("API candidate list", extra={"biz_module": "hr", "recommendation_level": recommendation_level, "total": total})
+    logger.debug(
+        "API candidate list", extra={"biz_module": "hr", "recommendation_level": recommendation_level, "total": total}
+    )
     data = [CandidateResponse.model_validate(c).model_dump(mode="json") for c in candidates]
     return paginated_response(
         data=data,
@@ -2074,7 +2078,12 @@ async def preview_candidate_resume(  # type: ignore[no-untyped-def]
     try:
         tmp_download_url = await service.bitable.get_resume_download_url(file_token)
     except Exception as exc:
-        logger.warning("获取候选人简历下载地址失败: %s", exc, extra={"biz_module": "hr", "candidate_id": str(candidate_id)}, exc_info=True)
+        logger.warning(
+            "获取候选人简历下载地址失败: %s",
+            exc,
+            extra={"biz_module": "hr", "candidate_id": str(candidate_id)},
+            exc_info=True,
+        )
         raise NotFoundException("简历附件", str(candidate_id)) from exc
 
     import httpx

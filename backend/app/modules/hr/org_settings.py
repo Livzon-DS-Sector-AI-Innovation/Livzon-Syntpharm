@@ -19,9 +19,7 @@ HR_MODULE = "hr"
 ORG_SYNC_ROOT_ID_SETTING = "HR_ORG_SYNC_ROOT_DEPARTMENT_ID"
 ORG_SYNC_ROOT_NAME_SETTING = "HR_ORG_SYNC_ROOT_DEPARTMENT_NAME"
 
-ORG_SCOPE_SETTING_KEYS: frozenset[str] = frozenset(
-    {ORG_SYNC_ROOT_ID_SETTING, ORG_SYNC_ROOT_NAME_SETTING}
-)
+ORG_SCOPE_SETTING_KEYS: frozenset[str] = frozenset({ORG_SYNC_ROOT_ID_SETTING, ORG_SYNC_ROOT_NAME_SETTING})
 
 
 async def load_org_scope(session: AsyncSession, *, required: bool = True) -> OrgScope:
