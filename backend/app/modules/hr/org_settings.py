@@ -68,9 +68,7 @@ async def load_org_scopes(session: AsyncSession, *, required: bool = True) -> Or
     result = await session.execute(
         select(ModuleSetting).where(
             ModuleSetting.module == HR_MODULE,
-            ModuleSetting.key.in_(
-                [ORG_SYNC_ROOTS_SETTING, ORG_SYNC_ROOT_ID_SETTING, ORG_SYNC_ROOT_NAME_SETTING]
-            ),
+            ModuleSetting.key.in_([ORG_SYNC_ROOTS_SETTING, ORG_SYNC_ROOT_ID_SETTING, ORG_SYNC_ROOT_NAME_SETTING]),
             ModuleSetting.is_deleted.is_(False),
         )
     )

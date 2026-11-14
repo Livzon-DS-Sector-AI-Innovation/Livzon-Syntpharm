@@ -333,9 +333,7 @@ def build_org_tree(
                 level=COMPANY_LEVEL,
                 department_path=[scope.root_path_node],
             )
-        companies.append(
-            build_node(company, level=COMPANY_LEVEL, parent=None, scope=scope, visited=set())
-        )
+        companies.append(build_node(company, level=COMPANY_LEVEL, parent=None, scope=scope, visited=set()))
     return companies
 
 

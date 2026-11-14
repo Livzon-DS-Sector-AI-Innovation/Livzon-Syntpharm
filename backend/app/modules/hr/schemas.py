@@ -752,9 +752,7 @@ class HrSystemSettingsData(BaseModel):
     AI_BASE_URL: str = ""
     AI_API_KEY: str = ""
     AI_MODEL: str = ""
-    HR_ORG_SYNC_ROOTS: list[OrgScopeInput] = Field(
-        default_factory=list, description="已配置的同步根公司（按展示顺序）"
-    )
+    HR_ORG_SYNC_ROOTS: list[OrgScopeInput] = Field(default_factory=list, description="已配置的同步根公司（按展示顺序）")
 
 
 class HrSystemSettingsApiResponse(BaseModel):

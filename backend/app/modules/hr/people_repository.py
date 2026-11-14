@@ -105,8 +105,7 @@ async def resolve_filter_department_ids(session: AsyncSession, selected: str | N
             in_selected_path = bool(
                 department.department_path
                 and any(
-                    isinstance(entry, dict) and str(entry.get("id")) == selected
-                    for entry in department.department_path
+                    isinstance(entry, dict) and str(entry.get("id")) == selected for entry in department.department_path
                 )
             )
             if department.parent_feishu_department_id in selected_ids or in_selected_path:

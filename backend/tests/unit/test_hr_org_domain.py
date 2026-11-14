@@ -275,9 +275,7 @@ def test_select_departments_to_hide_protects_all_roots() -> None:
             ],
         },
     ]
-    scopes = OrgScopes(
-        roots=(DEFAULT_ORG_SCOPE, OrgScope(department_id="od-company-b", department_name="第二公司"))
-    )
+    scopes = OrgScopes(roots=(DEFAULT_ORG_SCOPE, OrgScope(department_id="od-company-b", department_name="第二公司")))
 
     to_hide = select_departments_to_hide(rows, seen_ids={"od-stale"}, scopes=scopes)
 

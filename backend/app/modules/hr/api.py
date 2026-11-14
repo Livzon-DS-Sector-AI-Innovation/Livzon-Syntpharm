@@ -2810,11 +2810,7 @@ async def get_system_settings(  # type: ignore[no-untyped-def]
 
     # 未配置组织同步范围时也允许打开设置页（否则无法录入该配置）。
     scopes = await load_org_scopes(session, required=False)
-    values = {
-        key: _get_db_setting(db_settings, key)
-        for key in SETTING_KEYS
-        if key not in ORG_SCOPE_SETTING_KEYS
-    }
+    values = {key: _get_db_setting(db_settings, key) for key in SETTING_KEYS if key not in ORG_SCOPE_SETTING_KEYS}
     for key in SECRET_SETTING_KEYS:
         values[key] = mask_secret(values.get(key, ""))
     data = HrSystemSettingsData(
