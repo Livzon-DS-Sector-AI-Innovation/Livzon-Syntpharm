@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {Button, Card, DatePicker, Dropdown, Form, Input, Modal, Select, Space, Table, Tag, message} from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, DownOutlined, FileWordOutlined, FileExcelOutlined, BookOutlined, CheckCircleOutlined, ReloadOutlined, CopyOutlined, SendOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
@@ -20,7 +20,9 @@ import {
   fetchTrainingSessionSelectTasks,
   fetchTrainingLedgerPages,
   fetchEmployees,
+  fetchHrJob,
 } from '@/lib/api/client/hr'
+import { usePollingJob } from '@/hooks/usePollingJob'
 import type { TrainingSession, SelectTask, TrainingLedgerPageRecord } from '@/types/hr'
 
 const { RangePicker } = DatePicker
@@ -58,6 +60,17 @@ export default function TrainingSessionListClient({
   const [ledgerTypeOpen, setLedgerTypeOpen] = useState(false)
   const [ledgerTargets, setLedgerTargets] = useState<{ name: string; number: string }[]>([])
   const [pendingRecord, setPendingRecord] = useState<TrainingSession | null>(null)
+  const [selectJobId, setSelectJobId] = useState<string | null>(null)
+  const [selectStartedAt, setSelectStartedAt] = useState<number | null>(null)
+  const selectJob = usePollingJob({
+    jobId: selectJobId,
+    startedAt: selectStartedAt,
+    queryKey: ['hr-job', selectJobId],
+    fetchJob: async (id) => {
+      const state = await fetchHrJob(id)
+      return { job_id: id, status: state.status, result: state.result, error: state.error }
+    },
+  })
   const [filters, setFilters] = useState({
     department: '',
     keyword: '',
@@ -97,6 +110,21 @@ export default function TrainingSessionListClient({
     }
     return { names: Array.from(namesSet), numberMap }
   }
+
+  useEffect(() => {
+    if (!selectJobId) return
+    if (selectJob.phase === 'done') {
+      message.success('已发送选人任务给培训专员')
+      void handleRefresh()
+    } else if (selectJob.phase === 'failed') {
+      message.error(selectJob.errorMessage || '发送失败')
+    } else if (selectJob.phase === 'timeout') {
+      message.error('发送超时，请稍后刷新列表确认')
+    } else if (selectJob.phase === 'unavailable') {
+      message.warning('任务状态不可用（服务可能已重启），请刷新列表确认')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectJob.phase, selectJobId])
 
   const handleRefresh = async () => {
     setLoading(true)
@@ -197,7 +225,7 @@ export default function TrainingSessionListClient({
   const handleGenerateSignInSheet = async (record: TrainingSession) => {
     try {
       const factory = (record.factory as 'old' | 'new') || 'old'
-      let employeeNames = record.employee_names || []
+      let employeeNames = [...(record.employee_names ?? [])]
       // 如果员工列表为空，尝试从 select_tasks 加载实际选中的人员
       if (employeeNames.length === 0) {
         try {
@@ -240,7 +268,7 @@ export default function TrainingSessionListClient({
   const handleGenerateEvaluation = async (record: TrainingSession) => {
     try {
       const factory = (record.factory as 'old' | 'new') || 'old'
-      let employeeNames = record.employee_names || []
+      let employeeNames = [...(record.employee_names ?? [])]
       // 如果员工列表为空，尝试从 select_tasks 加载实际选中的人员
       if (employeeNames.length === 0) {
         try {
@@ -277,6 +305,7 @@ export default function TrainingSessionListClient({
         textbook: `${record.department || ''} / ${traineeDepts.join('、')} / ${employeeNames.length}人`,
         expected_count: employeeNames.length,
         employee_names: employeeNames,
+        is_exam: false,
       }
       await generateTrainingEvaluation({ ...payload, factory })
       message.success('培训效果评估表已生成')
@@ -460,9 +489,10 @@ export default function TrainingSessionListClient({
       content: `将为「${record.subject}」的受训部门发送飞书选人任务，是否继续？`,
       onOk: async () => {
         try {
-          await sendTrainingSessionSelectTasksAction(record.id)
-          message.success('已发送选人任务给培训专员')
-          handleRefresh()
+          const job = await sendTrainingSessionSelectTasksAction(record.id)
+          setSelectJobId(job.data.job_id)
+          setSelectStartedAt(Date.now())
+          message.info('选人任务已提交，正在后台发送…')
         } catch (err: unknown) {
           message.error(err instanceof Error ? err.message : '发送失败')
         }

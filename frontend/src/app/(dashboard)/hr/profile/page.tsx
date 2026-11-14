@@ -7,12 +7,11 @@ export const dynamic = 'force-dynamic'
 export default async function EmployeeProfilePage() {
   const [treeResult, peopleResult, statusResult] = await Promise.allSettled([
     fetchEmployeeDepartmentsAction(),
-    fetchEmployeeProfilesAction({ page: 1, page_size: 20 }),
+    fetchEmployeeProfilesAction({ status: '1', page: 1, page_size: 20 }),
     fetchOrgSyncStatus(),
   ])
 
   const tree = treeResult.status === 'fulfilled' ? treeResult.value.data.items ?? [] : []
-  const companyName = treeResult.status === 'fulfilled' ? treeResult.value.data.company_name ?? '' : ''
   const people = peopleResult.status === 'fulfilled' ? peopleResult.value.data : undefined
 
   return (
@@ -21,7 +20,6 @@ export default async function EmployeeProfilePage() {
       initialPeople={people?.items ?? []}
       initialTotal={peopleResult.status === 'fulfilled' ? Number(peopleResult.value.meta?.total ?? 0) : 0}
       initialLastSyncedAt={people?.last_synced_at ?? null}
-      initialCompanyName={companyName}
       initialStatus={statusResult.status === 'fulfilled' ? statusResult.value.data : unavailableOrgSyncStatus()}
     />
   )

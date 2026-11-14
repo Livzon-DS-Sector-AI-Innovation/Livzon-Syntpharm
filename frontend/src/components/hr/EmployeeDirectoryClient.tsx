@@ -19,7 +19,6 @@ interface EmployeeDirectoryClientProps {
   initialPeople: EmployeeProfileListItem[]
   initialTotal: number
   initialLastSyncedAt: string | null
-  initialCompanyName: string
   initialStatus: OrgSyncStatusData
 }
 
@@ -182,7 +181,6 @@ export default function EmployeeDirectoryClient({
   initialPeople,
   initialTotal,
   initialLastSyncedAt,
-  initialCompanyName,
   initialStatus,
 }: EmployeeDirectoryClientProps) {
   const router = useRouter()
@@ -190,7 +188,7 @@ export default function EmployeeDirectoryClient({
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null)
   const [keyword, setKeyword] = useState('')
   const deferredKeyword = useDeferredValue(keyword)
-  const [status, setStatus] = useState<string>('')
+  const [status, setStatus] = useState<string>('1')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null)
@@ -227,21 +225,10 @@ export default function EmployeeDirectoryClient({
     }
   }
 
-  const companyNode = initialTree.find((node) => node.level === 0)
-  const companyKey = companyNode?.id ?? 'all'
-  const treeData: DataNode[] = useMemo(() => {
-    if (companyNode) return [toTreeNode(companyNode)]
-    return [
-      {
-        key: 'all',
-        title: initialCompanyName || '公司',
-        children: initialTree.map(toTreeNode),
-      },
-    ]
-  }, [companyNode, initialTree, initialCompanyName])
+  const treeData: DataNode[] = useMemo(() => initialTree.map(toTreeNode), [initialTree])
 
   const isInitialQuery =
-    selectedDepartment === null && status === '' && deferredKeyword === '' && page === 1 && pageSize === 20
+    selectedDepartment === null && status === '1' && deferredKeyword === '' && page === 1 && pageSize === 20
 
   const { data, isFetching } = useQuery({
     queryKey: ['hr-people', selectedDepartment, status, deferredKeyword, page, pageSize],
@@ -312,7 +299,7 @@ export default function EmployeeDirectoryClient({
 
   const handleDepartmentSelect = (keys: React.Key[]) => {
     const key = keys[0]
-    setSelectedDepartment(!key || key === 'all' || key === companyKey ? null : String(key))
+    setSelectedDepartment(key ? String(key) : null)
     setPage(1)
   }
 
@@ -324,7 +311,7 @@ export default function EmployeeDirectoryClient({
           blockNode
           defaultExpandAll
           treeData={treeData}
-          selectedKeys={[selectedDepartment ?? companyKey]}
+          selectedKeys={selectedDepartment ? [selectedDepartment] : []}
           onSelect={handleDepartmentSelect}
         />
       </div>

@@ -23,7 +23,7 @@ from app.modules.hr.org_repository import (
     resolve_leader_avatars,
     resolve_leader_names,
 )
-from app.modules.hr.org_settings import load_org_scope
+from app.modules.hr.org_settings import load_org_scopes
 from app.modules.hr.org_sync import SyncRunRecord, sync_org_departments
 from app.modules.hr.people_feishu import build_default_employee_fetcher
 from app.modules.hr.people_repository import SqlAlchemyEmployeeProfileStore
@@ -31,7 +31,7 @@ from app.modules.hr.people_repository import SqlAlchemyEmployeeProfileStore
 logger = logging.getLogger(__name__)
 
 SYNC_LOCK_KEY = "hr-org-departments-sync"
-SYNC_LOCK_TIMEOUT_SECONDS = 900
+SYNC_LOCK_TIMEOUT_SECONDS = 1800
 SYNC_JOB_NAME = "hr.org-sync"
 
 
@@ -40,13 +40,13 @@ def _all_leader_ids(records: list[OrgDepartmentRecord]) -> set[str]:
 
 
 async def get_org_tree(session: AsyncSession) -> list[dict[str, Any]]:
-    scope = await load_org_scope(session)
+    scopes = await load_org_scopes(session)
     store = SqlAlchemyOrgDepartmentStore(session)
     records = await store.list_departments()
     leader_ids = _all_leader_ids(records)
     leader_names = await resolve_leader_names(session, leader_ids)
     leader_avatars = await resolve_leader_avatars(session, leader_ids)
-    return build_org_tree(records, leader_names=leader_names, leader_avatars=leader_avatars, scope=scope)
+    return build_org_tree(records, leader_names=leader_names, leader_avatars=leader_avatars, scopes=scopes)
 
 
 async def get_sync_status(session: AsyncSession) -> dict[str, Any]:
@@ -77,7 +77,7 @@ async def _sync_with_session(
     people_store = SqlAlchemyEmployeeProfileStore(session)
     started = datetime.now(UTC)
     try:
-        scope = await load_org_scope(session)
+        scopes = await load_org_scopes(session)
         fetcher = await build_default_fetcher(session)
         people_fetcher = await build_default_employee_fetcher(session)
     except Exception as exc:
@@ -101,7 +101,7 @@ async def _sync_with_session(
         people_store=people_store,
         people_fetcher=people_fetcher,
         started_at=started,
-        scope=scope,
+        scopes=scopes,
         run_id=run_id,
     )
 

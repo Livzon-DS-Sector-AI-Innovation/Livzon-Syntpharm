@@ -51,6 +51,13 @@ function searchExpandedKeys(nodes: OrgDepartmentNode[]): string[] {
   })
 }
 
+function levelLabel(level: number): string {
+  if (level === 0) return '公司'
+  if (level === 1) return '一级部门'
+  if (level === 2) return '二级部门'
+  return `${level}级部门`
+}
+
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex gap-3 border-b border-[var(--color-hairline-soft)] py-2.5 text-[13px]">
@@ -64,7 +71,7 @@ export default function DepartmentOrgClient({ initialTree, initialStatus }: Depa
   const router = useRouter()
   const [keyword, setKeyword] = useState('')
   const [expandedKeys, setExpandedKeys] = useState<string[]>(() =>
-    initialTree[0]?.level === 0 ? [initialTree[0].id] : [],
+    initialTree.filter((node) => node.level === 0).map((node) => node.id),
   )
   const [selected, setSelected] = useState<OrgDepartmentNode | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -120,13 +127,17 @@ export default function DepartmentOrgClient({ initialTree, initialStatus }: Depa
       render: (level: number) =>
         level === 0 ? (
           <Tag color="purple" variant="filled">
-            0级
+            公司
           </Tag>
         ) : level === 1 ? (
           <Tag>一级</Tag>
-        ) : (
+        ) : level === 2 ? (
           <Tag color="blue" variant="filled">
             二级
+          </Tag>
+        ) : (
+          <Tag color="blue" variant="filled">
+            {level}级
           </Tag>
         ),
     },
@@ -173,7 +184,7 @@ export default function DepartmentOrgClient({ initialTree, initialStatus }: Depa
         { label: '部门名称', value: selected.name },
         {
           label: '层级',
-          value: selected.level === 0 ? '0级部门（公司）' : selected.level === 1 ? '一级部门' : '二级部门',
+          value: levelLabel(selected.level),
         },
         { label: '负责人', value: selected.leader_display || '—' },
         { label: '上级部门', value: selected.parent_name || '—' },

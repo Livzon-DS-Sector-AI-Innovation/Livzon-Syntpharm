@@ -10,15 +10,18 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 from typing import Any
 
+import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.hr.models import EmployeeProfile
 from app.modules.hr.models import HrDepartment as Department
-from app.modules.hr.org_domain import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
+from tests.fixtures.org_scope import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
 
 LIST_URL = "/api/v1/hr/people"
+pytestmark = pytest.mark.usefixtures("org_scope_settings")
+
 TREE_URL = "/api/v1/hr/people/departments"
 
 ROOT = {"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME}
@@ -258,7 +261,7 @@ class TestPeopleList:
 
 
 class TestPeopleTree:
-    async def test_tree_is_two_levels_under_company_root(
+    async def test_tree_renders_company_and_all_levels(
         self,
         auth_client: AsyncClient,
         db_session: AsyncSession,
@@ -268,9 +271,12 @@ class TestPeopleTree:
         response = await auth_client.get(TREE_URL)
 
         assert response.status_code == 200
-        items = response.json()["data"]["items"]
-        assert [node["name"] for node in items] == ["101车间", "102车间"]
-        assert [child["name"] for child in items[0]["children"]] == ["合成工段"]
+        body = response.json()["data"]
+        assert body["companies"] == [{"id": IN_SCOPE_COMPANY_ID, "name": IN_SCOPE_COMPANY_NAME}]
+        assert [node["name"] for node in body["items"]] == [IN_SCOPE_COMPANY_NAME]
+        company = body["items"][0]
+        assert [node["name"] for node in company["children"]] == ["101车间", "102车间"]
+        assert [child["name"] for child in company["children"][0]["children"]] == ["合成工段"]
 
 
 class TestPeopleDetail:

@@ -30,7 +30,6 @@ import {
   EmployeeProfileListItem,
   OrgDepartmentTreeResponse,
 } from '@/types/hr'
-import type { components } from '@/types/generated/schema'
 
 const API_BASE = '/api/v1'
 
@@ -299,18 +298,6 @@ export async function fetchTrainingApprovalById(id: string): Promise<TrainingApp
 }
 
 export { fetchTrainingPlanSops as fetchTrainingSops }
-
-/** 提交人员流动分析后台任务，返回 job_id（结果轮询 fetchHrJob）。 */
-export async function submitTurnoverAnalysisJob(): Promise<string> {
-  const res = await fetch(`${API_BASE}/hr/turnover-analysis`, {
-    method: 'POST',
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('提交人员流动分析任务失败')
-  const json = (await res.json()) as { data?: { job_id?: string } }
-  if (!json.data?.job_id) throw new Error('任务提交失败：响应缺少 job_id')
-  return json.data.job_id
-}
 
 export interface HrJobState {
   status: 'running' | 'done' | 'failed'
@@ -590,21 +577,6 @@ export async function fetchTrainingSpecialists(_factory?: string): Promise<Gener
   if (!res.ok) throw new Error('获取培训专家列表失败')
   return res.json()
 }
-
-/** 生成培训效果评估表（返回 docx 二进制流，Server Action 无法回传 Blob） */
-export async function generateEvaluationForm(
-  payload: components['schemas']['TrainingEvaluationInput'],
-  factory: 'old' | 'new' = 'old',
-): Promise<Blob> {
-  const res = await fetch(`/api/v1/hr/training-evaluation?factory=${factory}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-  if (!res.ok) throw new Error('生成失败')
-  return res.blob()
-}
-
 
 // ── 员工档案（飞书通讯录只读镜像，ticket #198）──
 

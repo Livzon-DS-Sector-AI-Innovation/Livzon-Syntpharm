@@ -1,5 +1,6 @@
 import logging
 import os
+import tempfile
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -70,6 +71,11 @@ class FeishuHRBitableConfig(BaseModel):
     approval_table_id: str = ""
     candidate_app_token: str = ""
     candidate_table_id: str = ""
+    # 一次性旧/新克隆表迁移（scripts/sync/sync_feishu_to_clone_tables.py）
+    employees_old_table_id: str = ""
+    employees_new_table_id: str = ""
+    onboarding_old_table_id: str = ""
+    onboarding_new_table_id: str = ""
 
 
 class FeishuSafetyConfig(BaseModel):
@@ -163,9 +169,6 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "dazah-backend"
     APP_ENV: str = "development"
-    ENERGY_AUTO_COLLECT_ENABLED: bool = False
-    ENERGY_BITABLE_AUTO_SYNC_ENABLED: bool = False
-    ENERGY_BITABLE_SYNC_HOUR: int = 17
     DEBUG: bool = False
     # 权限：是否强制执行「接口精确绑定兜底」（未登记绑定的受保护接口一律 403）。
     # 默认关闭，待存量业务接口全部接入绑定登记后再开启。
@@ -198,8 +201,8 @@ class Settings(BaseSettings):
 
     # Upload
     UPLOAD_DIR: str = "./uploads"
-    # 历史版本附件曾落在 /tmp 下的根目录（读取旧附件时作兜底，可用空串关闭兜底）
-    LEGACY_UPLOAD_DIR: str = "/tmp/dazah_uploads"
+    # 历史版本附件曾落在系统临时目录下的根目录（读取旧附件时作兜底，可用空串关闭兜底）
+    LEGACY_UPLOAD_DIR: str = str(Path(tempfile.gettempdir()) / "dazah_uploads")
 
     # AI
     AI_API_KEY: str = ""
@@ -276,7 +279,8 @@ class Settings(BaseSettings):
     HERMES_AGENT_TOKEN: str = ""
 
     # HR Bitable
-    HR_BITABLE_APP_TOKEN: str = ""
+    # HR 多维表格配置统一走嵌套键 FEISHU__HR_BITABLE__*（见 FeishuHRBitableConfig），
+    # 扁平键已删除（audit #11）。
 
     # HR 飞书「审批完成」事件回调校验凭据（飞书开放平台 → 事件与回调 → 加密策略）。
     # 回调由飞书服务器发起、没有用户登录态，只能靠这两个凭据鉴权：
@@ -288,12 +292,8 @@ class Settings(BaseSettings):
 
     # Font
     CJK_FONT_PATH: str = ""
-    CJK_FONT_FALLBACK_PATHS: list[str] = [
-        "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
-        "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
-        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
-    ]
+    # 通过环境变量配置（JSON 数组）；默认不内置绝对路径
+    CJK_FONT_FALLBACK_PATHS: list[str] = []
 
     # LibreOffice
     SOFFICE_PATH: str = ""

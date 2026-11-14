@@ -1,8 +1,10 @@
 """Stateless Feishu parsing and connectivity helpers."""
 
+import asyncio
 import logging
 import re
 from dataclasses import dataclass
+from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 import httpx
@@ -13,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 OPEN_API_BASE_URL = "https://open.feishu.cn/open-apis"
 FEISHU_BITABLE_RECORD_CHANGED_EVENT = "feishu.bitable_record_changed"
+
+_TOKEN_MAX_ATTEMPTS = 3
+_TOKEN_RETRY_BACKOFF_SECONDS = (1, 2, 4)
 
 
 @dataclass(frozen=True)
@@ -120,16 +125,37 @@ async def get_tenant_access_token(
         except Exception:
             logger.warning("忽略异常 @ %s", "get_tenant_access_token", exc_info=True)
 
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(
-            f"{OPEN_API_BASE_URL}/auth/v3/tenant_access_token/internal",
-            json={"app_id": app_id, "app_secret": app_secret},
-        )
-        resp.raise_for_status()
-        body = resp.json()
+    body: dict[str, Any] = {}
+    for attempt in range(1, _TOKEN_MAX_ATTEMPTS + 1):
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.post(
+                    f"{OPEN_API_BASE_URL}/auth/v3/tenant_access_token/internal",
+                    json={"app_id": app_id, "app_secret": app_secret},
+                )
+                resp.raise_for_status()
+                body = resp.json()
 
-    if body.get("code") != 0:
-        raise RuntimeError(body.get("msg") or str(body))
+            if body.get("code") != 0:
+                raise RuntimeError(body.get("msg") or str(body))
+            break
+        except Exception:
+            if attempt == _TOKEN_MAX_ATTEMPTS:
+                logger.exception(
+                    "获取飞书 tenant_access_token 失败（已尝试 %d 次）",
+                    _TOKEN_MAX_ATTEMPTS,
+                    extra={"biz_module": "platform"},
+                )
+                raise
+            logger.warning(
+                "获取飞书 tenant_access_token 失败，%d 秒后重试（第 %d/%d 次）",
+                _TOKEN_RETRY_BACKOFF_SECONDS[attempt - 1],
+                attempt,
+                _TOKEN_MAX_ATTEMPTS,
+                extra={"biz_module": "platform"},
+                exc_info=True,
+            )
+            await asyncio.sleep(_TOKEN_RETRY_BACKOFF_SECONDS[attempt - 1])
 
     token = body.get("tenant_access_token")
     if not token:

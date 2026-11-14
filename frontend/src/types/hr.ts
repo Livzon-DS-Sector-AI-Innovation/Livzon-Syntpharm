@@ -1,89 +1,14 @@
 import type { components } from '@/types/generated/schema'
 
-export interface Employee {
-  id: string
-  employee_number: string
-  name: string
-  domain_account?: string
-  department: string
-  team?: string
-  position: string
-  job_category?: string
-  level?: string
-  concurrent_departments?: string
-  qualifications?: string[]
-  qualification_type?: string
-  gender?: string
-  native_place?: string
-  political_status?: string
-  marital_status?: string
-  household_type?: string
-  status_category?: string
-  birth_year?: number
-  birth_month?: number
-  birth_day?: number
-  age?: number
-  work_start_date?: string
-  factory_entry_date?: string
-  livo_entry_date?: string
-  hire_date: string
-  graduation_date?: string
-  work_years?: number
-  factory_tenure?: string
-  company_tenure?: string
-  education?: string
-  classification?: string
-  school?: string
-  major?: string
-  id_card?: string
-  id_card_expiry?: string
-  id_card_address?: string
-  current_address?: string
-  contract_type?: string
-  contract_start_date?: string
-  contract_end_date?: string
-  contract_start_2?: string
-  contract_end_2?: string
-  contract_start_3?: string
-  contract_end_3?: string
-  contract_start_4?: string
-  contract_end_4?: string
-  phone?: string
-  email?: string
-  emergency_contact_name?: string
-  emergency_contact_phone?: string
-  emergency_contact_relation?: string
-  bank_account?: string
-  training_id?: string
-  transfer_history?: string
-  remarks?: string[]
-  status: string
-  feishu_record_id?: string
-  feishu_synced_at?: string
-  created_at?: string
-  updated_at?: string
-}
+export type Employee = components['schemas']['EmployeeResponse']
 
 export type EmployeeCreateInput = components['schemas']['EmployeeCreate']
 
 export type EmployeeUpdateInput = components['schemas']['EmployeeUpdate']
 
-export interface EmployeeListResponse {
-  code: number
-  message: string
-  data: Employee[]
-  meta?: {
-    page: number
-    page_size: number
-    total: number
-  }
-}
+export type EmployeeListResponse = components['schemas']['DataResponse_list_EmployeeResponse__']
 
-export interface EmployeeResponse {
-  code: number
-  message: string
-  data: Employee
-}
+export type EmployeeResponse = components['schemas']['DataResponse_EmployeeResponse_']
 
 export interface SyncStatusResponse {
   code: number
@@ -94,6 +19,8 @@ export interface SyncStatusResponse {
     synced_count: number
     unsynced_count: number
     conflict_count: number
+    pending_count?: number
+    failed_count?: number
     last_sync_at: string | null
   }
 }
@@ -484,45 +411,9 @@ export interface TrainingSession {
   updated_at?: string
 }
 
-export interface TrainingSessionCreateInput {
-  factory: string
-  department: string
-  training_date: string
-  subject: string
-  training_time_start?: string
-  training_time_end?: string
-  location?: string
-  trainer?: string
-  training_method?: string
-  content?: string
-  trainee_departments?: string[]
-  employee_names?: string[]
-  employee_numbers?: string[]
-  issuer_department?: string
-  issue_date?: string
-  remarks?: string
-  status?: string
-}
+export type TrainingSessionCreateInput = components['schemas']['TrainingSessionCreate']
 
-export interface TrainingSessionUpdateInput {
-  factory?: string
-  department?: string
-  training_date?: string
-  subject?: string
-  training_time_start?: string
-  training_time_end?: string
-  location?: string
-  trainer?: string
-  training_method?: string
-  content?: string
-  trainee_departments?: string[]
-  employee_names?: string[]
-  employee_numbers?: string[]
-  issuer_department?: string
-  issue_date?: string
-  remarks?: string
-  status?: string
-}
+export type TrainingSessionUpdateInput = components['schemas']['TrainingSessionUpdate']
 
 export interface TrainingSessionListResponse {
   code: number
@@ -596,23 +487,9 @@ export interface TrainingTeam {
   updated_at?: string
 }
 
-export interface TrainingTeamCreateInput {
-  name: string
-  department?: string
-  factory?: string
-  specialist_employee_number?: string
-  employee_numbers?: string[]
-  description?: string
-}
+export type TrainingTeamCreateInput = components['schemas']['TrainingTeamCreate']
 
-export interface TrainingTeamUpdateInput {
-  name?: string
-  department?: string
-  factory?: string
-  specialist_employee_number?: string
-  employee_numbers?: string[]
-  description?: string
-}
+export type TrainingTeamUpdateInput = components['schemas']['TrainingTeamUpdate']
 
 export interface TrainingSpecialist {
   id: string

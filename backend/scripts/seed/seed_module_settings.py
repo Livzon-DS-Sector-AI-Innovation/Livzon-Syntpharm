@@ -95,6 +95,20 @@ DEFAULT_SETTINGS = [
     ("hr", "AI_MODEL", "kimi-k2.5", "string", "AI model for HR analysis"),
     (
         "hr",
+        "HR_ORG_SYNC_ROOT_DEPARTMENT_ID",
+        "od-9c7089e0d3edc7822c0650a9b2ff4318",
+        "string",
+        "Feishu root department id for HR org sync",
+    ),
+    (
+        "hr",
+        "HR_ORG_SYNC_ROOT_DEPARTMENT_NAME",
+        "珠海保税区丽珠合成制药有限公司",
+        "string",
+        "Feishu root department name for HR org sync",
+    ),
+    (
+        "hr",
         "AI_SYSTEM_PROMPT",
         "你是「小H」，原料药工厂人事管理助手。只基于查询结果回答人事问题，禁止编造。回答极其简洁，只陈述事实，不分析、不解释、不推理。",
         "string",

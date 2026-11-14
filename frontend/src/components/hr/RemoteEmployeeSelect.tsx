@@ -1,34 +1,74 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Divider, Select, Spin } from 'antd'
-import { fetchEmployeeProfiles } from '@/lib/api/client/hr'
-import { UserAvatar, UserLabel } from '@/components/common/UserAvatar'
-import type { EmployeeProfileListItem } from '@/types/hr'
+import { fetchEmployeeProfiles, fetchEmployees } from '@/lib/api/client/hr'
+import { UserLabel } from '@/components/common/UserAvatar'
+import type { Employee, EmployeeProfileListItem } from '@/types/hr'
 
 const SEARCH_DEBOUNCE_MS = 300
 const PAGE_SIZE = 50
 
-type Employee = { id: string; name: string; avatar?: string }
+export interface RemoteEmployeeOption {
+  /** 稳定标识：profiles 源为 employee_profiles.id，employees 源为 hr.employees.id */
+  id: string
+  name: string
+  employee_number: string
+  department?: string
+  job_title?: string
+  avatar?: string
+}
 
 export interface RemoteEmployeeSelectProps {
-  value?: string | null
-  label?: string | null
-  avatarSrc?: string | null
+  value?: string | string[] | null
   allowClear?: boolean
   placeholder?: string
   disabled?: boolean
+  /**
+   * 数据源：
+   * - `profiles`（默认）：员工档案（hr.employee_profiles，只读镜像）
+   * - `employees`：传统员工表（hr.employees），入职/培训等旧页面使用
+   */
+  source?: 'profiles' | 'employees'
+  /** onChange 返回的字段：`profiles` 恒为 id；`employees` 可选 id 或 employee_number */
+  valueKey?: 'id' | 'employee_number'
+  mode?: 'single' | 'multiple'
+  /** 服务端部门筛选（单部门） */
+  department?: string
+  /** 服务端部门筛选（多部门，按部门分别取首页后合并） */
+  departments?: string[]
+  /** 已选值回显（未展开下拉时也能显示姓名） */
+  fallbackOptions?: RemoteEmployeeOption[]
   /** Form.Item 注入的受控值回调 */
-  onChange?: (value: string | null) => void
-  /** 选中回调（Form.Item 会覆盖 onChange，副作用走这里） */
-  onSelect?: (employee: Employee | null) => void
+  onChange?: (value: string | string[] | null) => void
+  /** 单选选中回调（Form.Item 会覆盖 onChange，副作用走这里） */
+  onSelect?: (employee: RemoteEmployeeOption | null) => void
+  /** 多选选中回调，返回完整员工对象，便于同时回填姓名/工号 */
+  onSelectionChange?: (employees: RemoteEmployeeOption[]) => void
 }
 
-function toEmployee(item: EmployeeProfileListItem): Employee {
-  return { id: item.id, name: item.name, avatar: item.avatar_url || undefined }
+function profileToOption(item: EmployeeProfileListItem): RemoteEmployeeOption {
+  return {
+    id: item.id,
+    name: item.name,
+    employee_number: '',
+    department: item.department_level2_name || item.department_level1_name || undefined,
+    job_title: item.job_title_name || undefined,
+    avatar: item.avatar_url || undefined,
+  }
 }
 
-function mergeById(prev: EmployeeProfileListItem[], next: EmployeeProfileListItem[]): EmployeeProfileListItem[] {
+function employeeToOption(item: Employee): RemoteEmployeeOption {
+  return {
+    id: item.id,
+    name: item.name,
+    employee_number: item.employee_number,
+    department: item.department || undefined,
+    job_title: item.position || undefined,
+  }
+}
+
+function mergeById(prev: RemoteEmployeeOption[], next: RemoteEmployeeOption[]): RemoteEmployeeOption[] {
   const seen = new Set(prev.map((item) => item.id))
   const merged = [...prev]
   for (const item of next) {
@@ -41,24 +81,38 @@ function mergeById(prev: EmployeeProfileListItem[], next: EmployeeProfileListIte
 
 export function RemoteEmployeeSelect({
   value,
-  label,
-  avatarSrc,
   allowClear = false,
   placeholder = '搜索姓名选择员工',
   disabled,
+  source = 'profiles',
+  valueKey = 'id',
+  mode = 'single',
+  department,
+  departments,
+  fallbackOptions,
   onChange,
   onSelect,
+  onSelectionChange,
 }: RemoteEmployeeSelectProps) {
-  const [options, setOptions] = useState<EmployeeProfileListItem[]>([])
+  const [options, setOptions] = useState<RemoteEmployeeOption[]>([])
   const [loading, setLoading] = useState(false)
   const [searchValue, setSearchValue] = useState('')
-  const [picked, setPicked] = useState<Employee | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const requestSeq = useRef(0)
   const keywordRef = useRef('')
   const pageRef = useRef(1)
   const hasMoreRef = useRef(false)
   const loadingRef = useRef(false)
+
+  const deptList = useMemo(() => {
+    if (departments && departments.length > 0) return departments
+    return department ? [department] : []
+  }, [department, departments])
+
+  const optionValue = useCallback(
+    (employee: RemoteEmployeeOption) => (valueKey === 'employee_number' ? employee.employee_number : employee.id),
+    [valueKey],
+  )
 
   useEffect(
     () => () => {
@@ -67,30 +121,72 @@ export function RemoteEmployeeSelect({
     [],
   )
 
-  const fetchPage = useCallback(async (keyword: string, page: number) => {
-    const seq = ++requestSeq.current
-    loadingRef.current = true
-    setLoading(true)
-    try {
+  const fetchProfilesPage = useCallback(
+    async (keyword: string, page: number) => {
       const result = await fetchEmployeeProfiles({
         keyword: keyword || undefined,
         status: '1',
+        department_id: deptList.length === 1 ? deptList[0] : undefined,
         page,
         page_size: PAGE_SIZE,
       })
-      if (seq !== requestSeq.current) return
-      setOptions((prev) => (page === 1 ? result.items : mergeById(prev, result.items)))
-      pageRef.current = page
-      hasMoreRef.current = page * PAGE_SIZE < result.total
-    } catch {
-      if (seq === requestSeq.current && page === 1) setOptions([])
-    } finally {
-      if (seq === requestSeq.current) {
-        loadingRef.current = false
-        setLoading(false)
+      return {
+        items: result.items.map(profileToOption),
+        total: result.total,
       }
-    }
-  }, [])
+    },
+    [deptList],
+  )
+
+  const fetchEmployeesPage = useCallback(
+    async (keyword: string, page: number) => {
+      if (deptList.length > 1) {
+        // 后端只支持单部门筛选；多部门时按部门取首页合并（与旧页面行为一致）。
+        const pages = await Promise.all(
+          deptList.map((dept) =>
+            fetchEmployees({ department: dept, keyword: keyword || undefined, page: 1, page_size: PAGE_SIZE }),
+          ),
+        )
+        const items = pages.flatMap((res) => ((res.data ?? []) as Employee[]).map(employeeToOption))
+        return { items: mergeById([], items), total: items.length }
+      }
+      const res = await fetchEmployees({
+        department: deptList[0],
+        keyword: keyword || undefined,
+        page,
+        page_size: PAGE_SIZE,
+      })
+      return {
+        items: ((res.data ?? []) as Employee[]).map(employeeToOption),
+        total: res.meta?.total ?? 0,
+      }
+    },
+    [deptList],
+  )
+
+  const fetchPage = useCallback(
+    async (keyword: string, page: number) => {
+      const seq = ++requestSeq.current
+      loadingRef.current = true
+      setLoading(true)
+      try {
+        const result =
+          source === 'profiles' ? await fetchProfilesPage(keyword, page) : await fetchEmployeesPage(keyword, page)
+        if (seq !== requestSeq.current) return
+        setOptions((prev) => (page === 1 ? result.items : mergeById(prev, result.items)))
+        pageRef.current = page
+        hasMoreRef.current = page * PAGE_SIZE < result.total
+      } catch {
+        if (seq === requestSeq.current && page === 1) setOptions([])
+      } finally {
+        if (seq === requestSeq.current) {
+          loadingRef.current = false
+          setLoading(false)
+        }
+      }
+    },
+    [fetchEmployeesPage, fetchProfilesPage, source],
+  )
 
   const reload = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
@@ -115,8 +211,9 @@ export function RemoteEmployeeSelect({
 
   const loadMore = useCallback(() => {
     if (loadingRef.current || !hasMoreRef.current) return
+    if (deptList.length > 1) return
     void fetchPage(keywordRef.current, pageRef.current + 1)
-  }, [fetchPage])
+  }, [deptList.length, fetchPage])
 
   const handlePopupScroll = useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
@@ -127,18 +224,28 @@ export function RemoteEmployeeSelect({
     [loadMore],
   )
 
-  const snapshot = picked && picked.id === value ? picked : null
-  const selectedName = label || snapshot?.name
-  const selectedAvatar = avatarSrc || snapshot?.avatar
+  const allOptions = useMemo(() => {
+    if (!fallbackOptions || fallbackOptions.length === 0) return options
+    return mergeById(fallbackOptions, options)
+  }, [fallbackOptions, options])
 
-  const selectOptions = options.map((item) => {
-    const employee = toEmployee(item)
-    const secondary = [item.job_title_name, item.department_level1_name, item.department_level2_name]
-      .filter(Boolean)
-      .join(' · ')
+  const selectedValues = useMemo(() => {
+    if (mode === 'multiple') return Array.isArray(value) ? value : value ? [value] : []
+    return value ? [String(value)] : []
+  }, [mode, value])
+
+  const selectOptions = allOptions.map((employee) => {
+    const secondary = [employee.job_title, employee.department].filter(Boolean).join(' · ')
     return {
-      value: employee.id,
-      label: <UserLabel name={employee.name} src={employee.avatar} secondary={secondary || undefined} avatarSize={26} />,
+      value: optionValue(employee),
+      label: (
+        <UserLabel
+          name={employee.name}
+          src={employee.avatar}
+          secondary={secondary || undefined}
+          avatarSize={26}
+        />
+      ),
       employee,
     }
   })
@@ -150,7 +257,8 @@ export function RemoteEmployeeSelect({
       disabled={disabled}
       placeholder={placeholder}
       filterOption={false}
-      value={value ?? undefined}
+      mode={mode === 'multiple' ? 'multiple' : undefined}
+      value={mode === 'multiple' ? selectedValues : (value ?? undefined)}
       searchValue={searchValue}
       onSearch={handleSearch}
       onDropdownVisibleChange={(open) => {
@@ -158,21 +266,22 @@ export function RemoteEmployeeSelect({
         else setSearchValue('')
       }}
       onPopupScroll={handlePopupScroll}
-      onChange={(next: string | undefined, option) => {
-        const employee = (option as { employee?: Employee } | undefined)?.employee ?? null
-        setPicked(employee)
+      onChange={(next: string | string[] | undefined, option) => {
+        if (mode === 'multiple') {
+          const nextValues = Array.isArray(next) ? next : next ? [next] : []
+          const selectedOptions = Array.isArray(option) ? option : option ? [option] : []
+          const employees = selectedOptions
+            .map((item) => (item as { employee?: RemoteEmployeeOption } | undefined)?.employee)
+            .filter((item): item is RemoteEmployeeOption => Boolean(item))
+          onChange?.(nextValues)
+          onSelectionChange?.(employees)
+          return
+        }
+        const employee = (option as { employee?: RemoteEmployeeOption } | undefined)?.employee ?? null
         onChange?.(next ?? null)
         onSelect?.(employee)
       }}
       options={selectOptions}
-      labelRender={() =>
-        selectedName ? (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: '100%' }}>
-            <UserAvatar name={selectedName} src={selectedAvatar} size={18} />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedName}</span>
-          </span>
-        ) : null
-      }
       notFoundContent={loading ? <Spin size="small" /> : undefined}
       dropdownRender={(menu) => (
         <>

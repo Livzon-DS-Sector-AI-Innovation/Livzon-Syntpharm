@@ -30,9 +30,11 @@ def _to_ms_timestamp(value: date | datetime | str | None) -> int | str:
 
 
 class BitableClient:
-    def __init__(self, app_token: str | None = None) -> None:
+    def __init__(self, *, app_token: str) -> None:
+        if not app_token:
+            raise ValueError("BitableClient requires an explicit app_token")
         self.client = FeishuClient()
-        self.app_token = app_token or _settings.HR_BITABLE_APP_TOKEN
+        self.app_token = app_token
 
     def _path(self, table_id: str, suffix: str = "") -> str:
         base = f"/bitable/v1/apps/{self.app_token}/tables/{table_id}"
@@ -103,10 +105,10 @@ class FeishuBitableSync:
     """Sync HR data to Feishu Bitable."""
 
     def __init__(self) -> None:
-        self.bitable = BitableClient()
-        self.employee_table = _settings.HR_BITABLE_EMPLOYEE_TABLE_ID  # type: ignore[attr-defined]
-        self.department_table = _settings.HR_BITABLE_DEPARTMENT_TABLE_ID  # type: ignore[attr-defined]
-        self.approval_table = _settings.HR_BITABLE_APPROVAL_TABLE_ID  # type: ignore[attr-defined]
+        self.bitable = BitableClient(app_token=_settings.feishu.hr_bitable.app_token)
+        self.employee_table = _settings.feishu.hr_bitable.employee_table_id
+        self.department_table = _settings.feishu.hr_bitable.department_table_id
+        self.approval_table = _settings.feishu.hr_bitable.approval_table_id
 
     def _is_enabled(self) -> bool:
         return bool(self.bitable.app_token)
@@ -128,8 +130,8 @@ class FeishuBitableSync:
                 dept.get("name"),
                 record.get("record_id"),
             )
-        except Exception as e:
-            logger.error("Failed to sync department to Feishu: %s", e)
+        except Exception:
+            logger.exception("同步部门到飞书失败", extra={"biz_module": "hr", "department": dept.get("name")})
             raise
 
     async def sync_department_updated(self, dept: dict[str, Any]) -> None:
@@ -146,8 +148,8 @@ class FeishuBitableSync:
         try:
             await self.bitable.update_record(self.department_table, record_id, fields)
             logger.info("Department updated in Feishu: %s", dept.get("name"))
-        except Exception as e:
-            logger.error("Failed to update department in Feishu: %s", e)
+        except Exception:
+            logger.exception("更新飞书部门失败", extra={"biz_module": "hr", "department": dept.get("name")})
             raise
 
     async def sync_department_deleted(self, code: str) -> None:
@@ -158,8 +160,8 @@ class FeishuBitableSync:
             try:
                 await self.bitable.delete_record(self.department_table, record_id)
                 logger.info("Department deleted from Feishu: %s", code)
-            except Exception as e:
-                logger.error("Failed to delete department from Feishu: %s", e)
+            except Exception:
+                logger.exception("删除飞书部门失败", extra={"biz_module": "hr", "department_code": code})
                 raise
 
     async def _find_department_record(self, code: str | None) -> str | None:
@@ -213,8 +215,11 @@ class FeishuBitableSync:
                 emp.get("name"),
                 record.get("record_id"),
             )
-        except Exception as e:
-            logger.error("Failed to sync employee to Feishu: %s", e)
+        except Exception:
+            logger.exception(
+                "同步员工到飞书失败",
+                extra={"biz_module": "hr", "employee_number": emp.get("employee_number")},
+            )
             raise
 
     async def sync_employee_updated(self, emp: dict[str, Any]) -> None:
@@ -227,8 +232,11 @@ class FeishuBitableSync:
         try:
             await self.bitable.update_record(self.employee_table, record_id, fields)
             logger.info("Employee updated in Feishu: %s", emp.get("name"))
-        except Exception as e:
-            logger.error("Failed to update employee in Feishu: %s", e)
+        except Exception:
+            logger.exception(
+                "更新飞书员工失败",
+                extra={"biz_module": "hr", "employee_number": emp.get("employee_number")},
+            )
             raise
 
     async def sync_employee_deleted(self, employee_number: str) -> None:
@@ -239,8 +247,11 @@ class FeishuBitableSync:
             try:
                 await self.bitable.delete_record(self.employee_table, record_id)
                 logger.info("Employee deleted from Feishu: %s", employee_number)
-            except Exception as e:
-                logger.error("Failed to delete employee from Feishu: %s", e)
+            except Exception:
+                logger.exception(
+                    "删除飞书员工失败",
+                    extra={"biz_module": "hr", "employee_number": employee_number},
+                )
                 raise
 
     async def _find_employee_record(self, employee_number: str | None) -> str | None:
@@ -268,8 +279,11 @@ class FeishuBitableSync:
                 emp.get("name"),
                 record.get("record_id"),
             )
-        except Exception as e:
-            logger.error("Failed to sync approval record to Feishu: %s", e)
+        except Exception:
+            logger.exception(
+                "同步审批记录到飞书失败",
+                extra={"biz_module": "hr", "employee_number": emp.get("employee_number")},
+            )
             raise
 
     async def check_approval_status(self, employee_number: str) -> str | None:

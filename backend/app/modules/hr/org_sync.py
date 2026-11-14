@@ -30,11 +30,11 @@ from typing import Any, Protocol
 from uuid import UUID
 
 from app.modules.hr.org_domain import (
-    DEFAULT_ORG_SCOPE,
     OrgDepartmentRecord,
-    OrgScope,
+    OrgScopes,
     parse_directory_department,
     select_departments_to_hide,
+    trim_path_to_root,
 )
 from app.modules.hr.people_sync import (
     EmployeeProfileFetcher,
@@ -49,7 +49,7 @@ class OrgDepartmentFetcher(Protocol):
     """Feishu side of the department sync."""
 
     async def fetch_departments(self) -> list[dict[str, Any]]:
-        """Return the two-level contact tree as flat dicts with id/name/parent."""
+        """Return the recursively walked contact tree as flat dicts with id/name/parent/level."""
 
     async def fetch_departments_detail(self, department_ids: list[str]) -> list[dict[str, Any]]:
         """Return ``directory/v1/departments/mget`` payloads for the ids."""
@@ -101,10 +101,16 @@ def _contact_record(raw: dict[str, Any]) -> OrgDepartmentRecord:
         order_int = int(order) if order not in (None, "") else 0
     except (TypeError, ValueError):
         order_int = 0
+    level_raw = raw.get("level")
+    try:
+        level = int(level_raw) if level_raw not in (None, "") else None
+    except (TypeError, ValueError):
+        level = None
     return OrgDepartmentRecord(
         id=str(raw.get("department_id") or "").strip() or None,
         name=str(raw.get("name") or "").strip(),
         parent_id=str(raw.get("parent_department_id") or "").strip() or None,
+        level=level,
         order=order_int,
     )
 
@@ -112,43 +118,55 @@ def _contact_record(raw: dict[str, Any]) -> OrgDepartmentRecord:
 def _fallback_path(
     dept_id: str,
     contact_by_id: dict[str, OrgDepartmentRecord],
-    scope: OrgScope,
+    scopes: OrgScopes,
 ) -> list[dict[str, str]]:
+    root = scopes.root_for_chain(contact_by_id, dept_id) or (scopes.roots[0] if scopes.roots else None)
     chain: list[dict[str, str]] = []
     current = dept_id
     visited: set[str] = set()
-    while current and not scope.is_root(current) and current not in visited:
+    while current and (root is None or current != root.department_id) and current not in visited:
         visited.add(current)
         record = contact_by_id.get(current)
         chain.append({"id": current, "name": record.name if record else ""})
         current = record.parent_id if record and record.parent_id else ""
     chain.reverse()
-    return [scope.root_path_node, *chain]
+    return [root.root_path_node, *chain] if root is not None else chain
 
 
-def _select_in_scope(contacts: list[OrgDepartmentRecord], scope: OrgScope) -> list[OrgDepartmentRecord]:
-    """Keep the company root, 一级部门 (children of the scope root) and 二级部门."""
-    company = [record for record in contacts if record.id and scope.is_root(record.id)]
-    level_one = [record for record in contacts if record.id and scope.is_direct_child(record.parent_id)]
-    level_one_ids = {record.id for record in level_one}
-    level_two = [record for record in contacts if record.id and record.parent_id in level_one_ids]
-    return [*company, *level_one, *level_two]
+def _select_in_scope(contacts: list[OrgDepartmentRecord], scopes: OrgScopes) -> list[OrgDepartmentRecord]:
+    """Keep records whose ancestor chain reaches one of the configured roots."""
+    by_id = {record.id: record for record in contacts if record.id}
+
+    def reaches_root(record: OrgDepartmentRecord) -> bool:
+        current = record.id
+        visited: set[str] = set()
+        while current and current not in visited:
+            visited.add(current)
+            if scopes.is_root(current):
+                return True
+            parent = by_id.get(current)
+            current = parent.parent_id if parent and parent.parent_id else None
+        return False
+
+    return [record for record in contacts if record.id and reaches_root(record)]
 
 
 def _merge_detail(
     contact: OrgDepartmentRecord,
     detail: dict[str, Any] | None,
     contact_by_id: dict[str, OrgDepartmentRecord],
-    scope: OrgScope,
+    scopes: OrgScopes,
 ) -> OrgDepartmentRecord:
+    root = scopes.root_for_chain(contact_by_id, contact.id) or (scopes.roots[0] if scopes.roots else None)
     if detail is None:
         return OrgDepartmentRecord(
             id=contact.id,
             name=contact.name,
             parent_id=contact.parent_id,
+            level=contact.level,
             order=contact.order,
             order_weight=None,
-            department_path=_fallback_path(contact.id or "", contact_by_id, scope),
+            department_path=_fallback_path(contact.id or "", contact_by_id, scopes),
         )
 
     raw = dict(detail)
@@ -162,11 +180,21 @@ def _merge_detail(
     record = parse_directory_department(raw)
     record.id = contact.id
     record.parent_id = contact.parent_id
+    record.level = contact.level
     # directory order_weight is authoritative when present; contact order is the fallback.
     if record.order_weight is None:
         record.order = contact.order
+    if root is not None:
+        trimmed = trim_path_to_root(record.department_path, root.department_id)
+        if any(isinstance(entry, dict) and entry.get("id") == root.department_id for entry in trimmed):
+            record.department_path = trimmed
+        if record.id == root.department_id:
+            record.parent_id = None
+            record.department_path = [root.root_path_node]
     if not record.department_path:
-        record.department_path = _fallback_path(contact.id or "", contact_by_id, scope)
+        record.department_path = _fallback_path(contact.id or "", contact_by_id, scopes)
+    if record.level is None and record.department_path:
+        record.level = max(len(record.department_path) - 1, 0)
     return record
 
 
@@ -177,10 +205,10 @@ async def sync_org_departments(
     people_store: EmployeeProfileStore | None = None,
     people_fetcher: EmployeeProfileFetcher | None = None,
     started_at: datetime | None = None,
-    scope: OrgScope = DEFAULT_ORG_SCOPE,
+    scopes: OrgScopes,
     run_id: UUID | None = None,
 ) -> OrgSyncStats:
-    """Sync the scoped department tree, then people, into their mirrors.
+    """Sync the scoped department trees, then people, into their mirrors.
 
     Department reads happen before department writes; the people phase follows
     so it can resolve scope from the mirror. Failures roll the mirror session
@@ -190,7 +218,7 @@ async def sync_org_departments(
     try:
         raw_contacts = await fetcher.fetch_departments()
         contacts = [record for record in (_contact_record(raw) for raw in raw_contacts) if record.id]
-        scoped = _select_in_scope(contacts, scope)
+        scoped = _select_in_scope(contacts, scopes)
         contact_by_id = {record.id: record for record in scoped if record.id}
 
         ids = [record.id for record in scoped if record.id]
@@ -203,7 +231,7 @@ async def sync_org_departments(
 
         existing = await store.list_departments()
         records = [
-            _merge_detail(contact, detail_by_id.get(contact.id), contact_by_id, scope)
+            _merge_detail(contact, detail_by_id.get(contact.id), contact_by_id, scopes)
             for contact in scoped
             if contact.id
         ]
@@ -228,7 +256,7 @@ async def sync_org_departments(
                 for record in existing
             ],
             seen_ids=set(ids),
-            scope=scope,
+            scopes=scopes,
         )
         for department_id in to_hide:
             await store.hide_department(department_id)

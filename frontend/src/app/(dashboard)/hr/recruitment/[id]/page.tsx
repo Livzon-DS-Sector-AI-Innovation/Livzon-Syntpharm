@@ -1,3 +1,4 @@
+import { unwrapResponse } from '@/lib/api/server/base'
 import { fetchCandidateById } from '@/actions/hr'
 import { CandidateDetailClient } from '@/components/hr'
 
@@ -11,5 +12,5 @@ export default async function CandidateDetailPage({ params }: CandidateDetailPag
   const { id } = await params
   const res = await fetchCandidateById(id)
 
-  return <CandidateDetailClient candidate={res.data} />
+  return <CandidateDetailClient candidate={unwrapResponse(res)} />
 }

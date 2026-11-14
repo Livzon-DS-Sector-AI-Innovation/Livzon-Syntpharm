@@ -202,6 +202,8 @@ class SyncStatusResponse(BaseModel):
     synced_count: int
     unsynced_count: int
     conflict_count: int
+    pending_count: int = 0
+    failed_count: int = 0
     last_sync_at: datetime | None = None
 
 
@@ -731,10 +733,150 @@ class PrejobTemplateResponse(BaseModel):
     updated_at: datetime | None = None
 
 
+class OrgScopeInput(BaseModel):
+    """One configured company root for the HR org mirror."""
+
+    department_id: str = Field(..., min_length=1, max_length=128, description="飞书 open_department_id")
+    name: str = Field(..., min_length=1, max_length=256, description="公司（根部门）名称")
+
+
+class HrSystemSettingsData(BaseModel):
+    """`GET /hr/system-settings` 的数据体（凭据字段只返回掩码）。"""
+
+    FEISHU__PLATFORM__APP_ID: str = ""
+    FEISHU__PLATFORM__APP_SECRET: str = ""
+    FEISHU__VEHICLE__CREDENTIALS__APP_ID: str = ""
+    FEISHU__VEHICLE__CREDENTIALS__APP_SECRET: str = ""
+    FEISHU__TRAINING__CREDENTIALS__APP_ID: str = ""
+    FEISHU__TRAINING__CREDENTIALS__APP_SECRET: str = ""
+    AI_BASE_URL: str = ""
+    AI_API_KEY: str = ""
+    AI_MODEL: str = ""
+    HR_ORG_SYNC_ROOTS: list[OrgScopeInput] = Field(default_factory=list, description="已配置的同步根公司（按展示顺序）")
+
+
 class HrSystemSettingsApiResponse(BaseModel):
     """`GET /hr/system-settings` 的完整响应体。"""
 
     code: int
     message: str
-    data: dict[str, str]
+    data: HrSystemSettingsData
     meta: dict[str, Any] | None = None
+
+
+class HrSystemSettingsUpdate(BaseModel):
+    """`PUT /hr/system-settings` 的请求体。
+
+    只接受页面实际维护的键；未知键返回 422（`extra="forbid"`），
+    避免配置接口退化成任意键值写入。
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    FEISHU__PLATFORM__APP_ID: str | None = None
+    FEISHU__PLATFORM__APP_SECRET: str | None = None
+    FEISHU__VEHICLE__CREDENTIALS__APP_ID: str | None = None
+    FEISHU__VEHICLE__CREDENTIALS__APP_SECRET: str | None = None
+    FEISHU__TRAINING__CREDENTIALS__APP_ID: str | None = None
+    FEISHU__TRAINING__CREDENTIALS__APP_SECRET: str | None = None
+    AI_BASE_URL: str | None = None
+    AI_API_KEY: str | None = None
+    AI_MODEL: str | None = None
+    HR_ORG_SYNC_ROOTS: list[OrgScopeInput] | None = None
+    # 兼容旧前端/旧脚本：只给单个根部门时转换为单元素列表。
+    HR_ORG_SYNC_ROOT_DEPARTMENT_ID: str | None = None
+    HR_ORG_SYNC_ROOT_DEPARTMENT_NAME: str | None = None
+
+
+class HrSystemSettingsSaveData(BaseModel):
+    updated: list[str] = Field(default_factory=list, description="本次保存的键")
+
+
+class HrSystemSettingsSaveResponse(BaseModel):
+    """`PUT /hr/system-settings` 的完整响应体。"""
+
+    code: int
+    message: str
+    data: HrSystemSettingsSaveData
+    meta: dict[str, Any] | None = None
+
+
+# ─── Endpoint payload models (previously ad-hoc dicts) ───
+
+
+class EmployeeFeishuSyncResult(BaseModel):
+    feishu_record_id: str | None = Field(None, description="飞书记录 ID")
+
+
+class WebhookChallenge(BaseModel):
+    """飞书回调地址校验挑战。"""
+
+    challenge: str
+
+
+class TrainingNotifyResult(BaseModel):
+    sent: int = Field(0, description="发送成功人数")
+    failed: int = Field(0, description="发送失败人数")
+
+
+class TrainingSelectTaskSendResult(BaseModel):
+    token: str
+    url: str
+
+
+class TrainingSelectTask(BaseModel):
+    """Redis 中的临时选择任务（创建时的字段 + 提交后的选择结果）。"""
+
+    department: str | None = None
+    training_date: str | None = None
+    subject: str | None = None
+    training_time_start: str | None = None
+    training_time_end: str | None = None
+    location: str | None = None
+    trainer: str | None = None
+    content: str | None = None
+    training_method: str | None = None
+    issuer_department: str | None = None
+    issue_date: str | None = None
+    factory: str | None = None
+    employee_numbers: list[str] | None = None
+    employee_names: list[str] | None = None
+
+
+class TrainingSelectTaskListItem(BaseModel):
+    token: str
+    department: str | None = None
+    training_date: str | None = None
+    subject: str | None = None
+    factory: str | None = None
+    location: str | None = None
+    trainer: str | None = None
+    training_method: str | None = None
+    has_result: bool = False
+    selected_count: int = 0
+    created_at: str | None = None
+
+
+class TrainingSessionSelectTask(BaseModel):
+    department: str
+    token: str
+    status: str
+    employee_names: list[str] = Field(default_factory=list)
+    employee_numbers: list[str] = Field(default_factory=list)
+    specialist_found: bool = False
+    specialist_name: str | None = None
+
+
+class TrainingTeamBrief(BaseModel):
+    """班组新建回执。"""
+
+    id: UUID
+    name: str
+    factory: str
+
+
+class TrainingTeamUpdateResult(BaseModel):
+    """班组编辑回执。"""
+
+    id: UUID
+    name: str

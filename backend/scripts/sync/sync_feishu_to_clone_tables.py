@@ -5,7 +5,8 @@ Usage:
     cd dazah-backend
     uv run python scripts/sync_feishu_to_clone_tables.py
 
-Requires FEISHU__PLATFORM__APP_ID and FEISHU__PLATFORM__APP_SECRET in environment.
+Requires FEISHU__PLATFORM__APP_ID / FEISHU__PLATFORM__APP_SECRET plus
+FEISHU__HR_BITABLE__APP_TOKEN and the four FEISHU__HR_BITABLE__*_TABLE_ID values.
 """
 
 import asyncio
@@ -26,12 +27,23 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from sqlalchemy import delete, insert, table
 
 from app.core.database import engine
+from app.core.config import get_settings
 from app.platform.integrations.feishu.client import FeishuClient
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
-APP_TOKEN = "RfEmb1WyzasCg4sn6tsc4LbWnjf"
+settings = get_settings()
+_hr_bitable = settings.feishu.hr_bitable
+
+
+def _required(value: str, env_name: str) -> str:
+    if not value:
+        raise RuntimeError(f"缺少环境变量 {env_name}")
+    return value
+
+
+APP_TOKEN = _required(_hr_bitable.app_token, "FEISHU__HR_BITABLE__APP_TOKEN")
 
 # SQL 标识符（表名/列名）只允许常规小写命名，且表名可选带 schema 前缀；
 # PostgreSQL 不支持把标识符作为绑定参数，因此拼接前必须先过这道校验。
@@ -48,21 +60,25 @@ def _checked_identifier(name: str, kind: str) -> str:
 # ─── Table configs ───
 TABLE_CONFIGS = {
     "employees_old": {
-        "feishu_table_id": "tbllxa1JInvTuEoD",
+        "feishu_table_id": _required(_hr_bitable.employees_old_table_id, "FEISHU__HR_BITABLE__EMPLOYEES_OLD_TABLE_ID"),
         "db_table": "hr.employees_old",
         "status_default": "在职",
     },
     "employees_new": {
-        "feishu_table_id": "tblc0PEd0V1lhIq5",
+        "feishu_table_id": _required(_hr_bitable.employees_new_table_id, "FEISHU__HR_BITABLE__EMPLOYEES_NEW_TABLE_ID"),
         "db_table": "hr.employees_new",
         "status_default": "在职",
     },
     "onboarding_old": {
-        "feishu_table_id": "tblbyftLfLVlIXKd",
+        "feishu_table_id": _required(
+            _hr_bitable.onboarding_old_table_id, "FEISHU__HR_BITABLE__ONBOARDING_OLD_TABLE_ID"
+        ),
         "db_table": "hr.onboarding_records_old",
     },
     "onboarding_new": {
-        "feishu_table_id": "tblFum6xtGF98sti",
+        "feishu_table_id": _required(
+            _hr_bitable.onboarding_new_table_id, "FEISHU__HR_BITABLE__ONBOARDING_NEW_TABLE_ID"
+        ),
         "db_table": "hr.onboarding_records_new",
     },
 }
