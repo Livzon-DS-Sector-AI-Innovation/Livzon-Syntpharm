@@ -35,19 +35,22 @@ def _config(**overrides: object) -> ReportGenConfig:
     base: dict[str, object] = {
         "model": ModelBinding(),
         "fallback_model": ModelBinding(),
-        "structure_model": ModelBinding(),
         "tool_mode": "auto",
         "disabled_tools": frozenset(),
         "max_rounds": 16,
         "llm_timeout_seconds": 180.0,
         "tool_timeout_seconds": 60.0,
         "job_timeout_seconds": 2400.0,
+        "job_target_seconds": 600.0,
         "kb_top_k": 6,
         "max_steps": 400,
+        "write_batch_limit": 10,
+        "search_query_limit": 5,
+        "references_enabled": True,
+        "opinion_digest_enabled": True,
+        "opinion_max_items": 40,
         "agent_prompt": "agent",
-        "structure_prompt": "structure",
-        "examples_enabled": False,
-        "examples_limit": 0,
+        "opinion_digest_prompt": "digest {items}",
     }
     base.update(overrides)
     return ReportGenConfig(**base)  # type: ignore[arg-type]
@@ -174,11 +177,11 @@ async def test_execute_tool_refuses_disabled_tool() -> None:
         return ToolOutcome(ok=True, summary="不该被执行")
 
     runtime = SimpleNamespace(
-        config=SimpleNamespace(disabled_tools=frozenset({"mark_gap"})),
-        mark_gap=handler,
+        config=SimpleNamespace(disabled_tools=frozenset({"append_table_rows"})),
+        append_table_rows=handler,
     )
 
-    outcome = await execute_tool("mark_gap", {"reason": "缺资料"}, runtime)  # type: ignore[arg-type]
+    outcome = await execute_tool("append_table_rows", {"table_index": 0, "items": []}, runtime)  # type: ignore[arg-type]
 
     assert outcome.ok is False
     assert "停用" in outcome.summary
@@ -270,7 +273,7 @@ async def test_load_config_normalizes_disabled_tool_list(monkeypatch: pytest.Mon
     from app.modules.research.report_gen import config as config_module
 
     values = {
-        "REPORT_GEN_DISABLED_TOOLS": " Mark_Gap , search_knowledge_base ",
+        "REPORT_GEN_DISABLED_TOOLS": " Append_Table_Rows , search_knowledge_base ",
         "REPORT_GEN_TOOL_MODE": "tools",
     }
 
@@ -283,17 +286,17 @@ async def test_load_config_normalizes_disabled_tool_list(monkeypatch: pytest.Mon
     async def fake_float(_module: str, _key: str, default: float) -> float:
         return default
 
-    async def fake_bindings(*_args: object, **_kwargs: object) -> tuple[ModelBinding, ModelBinding, ModelBinding]:
-        return ModelBinding(), ModelBinding(), ModelBinding()
+    async def fake_binding(*_args: object, **_kwargs: object) -> ModelBinding:
+        return ModelBinding()
 
     monkeypatch.setattr(config_module, "get_module_setting", fake_setting)
     monkeypatch.setattr(config_module, "get_module_setting_int", fake_int)
     monkeypatch.setattr(config_module, "get_module_setting_float", fake_float)
-    monkeypatch.setattr(config_module, "resolve_bindings", fake_bindings)
+    monkeypatch.setattr(config_module, "resolve_binding", fake_binding)
 
     loaded = await config_module.load_config()
 
-    assert loaded.disabled_tools == frozenset({"mark_gap", "search_knowledge_base"})
+    assert loaded.disabled_tools == frozenset({"append_table_rows", "search_knowledge_base"})
     assert loaded.tool_mode == "tools"
 
 

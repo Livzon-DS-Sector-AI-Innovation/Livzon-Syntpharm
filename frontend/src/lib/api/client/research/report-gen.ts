@@ -8,14 +8,15 @@
 import { apiGet } from '@/lib/api/client'
 import {
   REPORT_GEN_METRIC_DEFAULT_WINDOW,
-  type ReportGenExampleList,
+  type ReportGenDocumentVersionList,
   type ReportGenFeedbackList,
   type ReportGenJob,
   type ReportGenJobList,
   type ReportGenMetrics,
-  type ReportGenSlotList,
+  type ReportGenOpinionDigestList,
+  type ReportGenOpinionList,
+  type ReportGenOutline,
   type ReportGenStepList,
-  type ReportGenStructureRunList,
 } from '@/types/research/report-gen'
 
 const API_BASE = '/api/v1/research/report-gen'
@@ -27,31 +28,32 @@ export async function fetchReportGenMetrics(
   return apiGet<ReportGenMetrics>(`${API_BASE}/settings/metrics?days=${days}`)
 }
 
-/**
- * 母本解析留痕（只读）：每次识别选了多少槽位，以及人工随后补了/否掉了多少。
- *
- * 统计是「解析当时的选择」对比「当前结构」，跨多次人工编辑会混在一起，只作趋势看。
- */
-export async function fetchTemplateStructureRuns(
-  templateId: string,
-  limit = 10,
-): Promise<ReportGenStructureRunList> {
-  const result = await apiGet<ReportGenStructureRunList>(
-    `${API_BASE}/templates/${templateId}/structure-runs?limit=${limit}`,
-  )
-  return result ?? { total: 0, items: [] }
-}
-
-/** 模板下已沉淀的槽位示例（只读）：写操作走 Server Action。 */
-export async function fetchTemplateExamples(templateId: string): Promise<ReportGenExampleList> {
-  const result = await apiGet<ReportGenExampleList>(`${API_BASE}/templates/${templateId}/examples`)
-  return result ?? { total: 0, active_total: 0, items: [] }
-}
-
 /** 某一版报告上提过的修改意见（只读）：写操作走 Server Action。 */
 export async function fetchReportGenFeedback(jobId: string): Promise<ReportGenFeedbackList> {
   const result = await apiGet<ReportGenFeedbackList>(`${API_BASE}/jobs/${jobId}/feedback`)
   return result ?? { total: 0, open_count: 0, items: [] }
+}
+
+/** 全局意见库：跨报告归并后的历史意见，次数高的在前。 */
+export async function fetchReportGenOpinions(params: {
+  status?: 'active' | 'disabled'
+  keyword?: string
+  limit?: number
+} = {}): Promise<ReportGenOpinionList> {
+  const qs = new URLSearchParams()
+  if (params.status) qs.set('status', params.status)
+  if (params.keyword) qs.set('keyword', params.keyword)
+  if (params.limit) qs.set('limit', String(params.limit))
+  const result = await apiGet<ReportGenOpinionList>(`${API_BASE}/opinion-library?${qs}`)
+  return result ?? { total: 0, active_count: 0, items: [] }
+}
+
+/** 历史意见汇总快照：回答「这一版按哪份写作要求生成」。 */
+export async function fetchReportGenOpinionDigests(limit = 20): Promise<ReportGenOpinionDigestList> {
+  const result = await apiGet<ReportGenOpinionDigestList>(
+    `${API_BASE}/opinion-library/digests?limit=${limit}`,
+  )
+  return result ?? { total: 0, items: [] }
 }
 
 export async function fetchReportGenJobs(
@@ -70,6 +72,20 @@ export async function fetchReportGenJob(jobId: string): Promise<ReportGenJob> {
   return apiGet<ReportGenJob>(`${API_BASE}/jobs/${jobId}`)
 }
 
+/**
+ * 详情页审阅清单：母本可写位置（含未写空位）+ 写入记录 + 成品结构自检数字。
+ * 生成中也能取：那时只有母本位置、还没有写入值，正好用来展示「准备写哪些地方」。
+ */
+export async function fetchReportGenOutline(jobId: string): Promise<ReportGenOutline> {
+  return apiGet<ReportGenOutline>(`${API_BASE}/jobs/${jobId}/outline`)
+}
+
+/** 文档版本时间线：AI 初稿、在线编辑、人工上传都在这里，用于对照与回滚。 */
+export async function fetchReportGenVersions(jobId: string): Promise<ReportGenDocumentVersionList> {
+  const result = await apiGet<ReportGenDocumentVersionList>(`${API_BASE}/jobs/${jobId}/versions`)
+  return result ?? { items: [], total: 0 }
+}
+
 export async function fetchReportGenSteps(
   jobId: string,
   afterSeq = 0,
@@ -78,11 +94,6 @@ export async function fetchReportGenSteps(
   const qs = new URLSearchParams({ after_seq: String(afterSeq), limit: String(limit) })
   const result = await apiGet<ReportGenStepList>(`${API_BASE}/jobs/${jobId}/steps?${qs}`)
   return result ?? { items: [], last_seq: afterSeq }
-}
-
-export async function fetchReportGenSlots(jobId: string): Promise<ReportGenSlotList> {
-  const result = await apiGet<ReportGenSlotList>(`${API_BASE}/jobs/${jobId}/slots`)
-  return result ?? { items: [], total: 0, filled: 0, gaps: 0 }
 }
 
 function authHeaders(): Record<string, string> {
@@ -105,15 +116,9 @@ function pickFileName(disposition: string | null, fallback: string): string {
   return plain ? plain[1] : fallback
 }
 
-/**
- * 取成品 docx（或对照表 Markdown）的 Blob，用于在线预览。
- * @param kind document=成品 Word；comparison=槽位填充对照表（纯文本 Markdown）
- */
-export async function fetchReportGenDocumentBlob(
-  jobId: string,
-  kind: 'document' | 'comparison' = 'document',
-): Promise<Blob> {
-  const response = await fetch(`${API_BASE}/jobs/${jobId}/${kind}`, {
+/** 取成品 docx 的 Blob，用于在线预览。 */
+export async function fetchReportGenDocumentBlob(jobId: string): Promise<Blob> {
+  const response = await fetch(`${API_BASE}/jobs/${jobId}/document`, {
     method: 'GET',
     headers: authHeaders(),
     credentials: 'include',
@@ -122,29 +127,45 @@ export async function fetchReportGenDocumentBlob(
   return response.blob()
 }
 
-/** 下载成品 docx 或槽位对照表；失败直接抛错，由调用方提示。 */
-export async function downloadReportGenFile(
-  jobId: string,
-  kind: 'document' | 'comparison',
-  fallbackName: string,
-): Promise<string> {
-  const response = await fetch(`${API_BASE}/jobs/${jobId}/${kind}`, {
+/** 取某一版 docx 的 Blob：版本对照时用来渲染旧版。 */
+export async function fetchReportGenVersionBlob(versionId: string): Promise<Blob> {
+  const response = await fetch(`${API_BASE}/versions/${versionId}/document`, {
+    method: 'GET',
+    headers: authHeaders(),
+    credentials: 'include',
+  })
+  if (!response.ok) throw new Error(response.status === 404 ? '这一版文件已不存在' : `加载失败（${response.status}）`)
+  return response.blob()
+}
+
+/** 下载成品 docx；失败直接抛错，由调用方提示。 */
+export async function downloadReportGenFile(jobId: string, fallbackName: string): Promise<string> {
+  return downloadBlob(`${API_BASE}/jobs/${jobId}/document`, fallbackName)
+}
+
+/** 下载某一版 docx。 */
+export async function downloadReportGenVersion(versionId: string, fallbackName: string): Promise<string> {
+  return downloadBlob(`${API_BASE}/versions/${versionId}/document`, fallbackName)
+}
+
+async function downloadBlob(url: string, fallbackName: string): Promise<string> {
+  const response = await fetch(url, {
     method: 'GET',
     headers: authHeaders(),
     credentials: 'include',
   })
   if (!response.ok) {
-    throw new Error(response.status === 404 ? '成品还未生成' : `下载失败（${response.status}）`)
+    throw new Error(response.status === 404 ? '文件还未生成' : `下载失败（${response.status}）`)
   }
   const blob = await response.blob()
   const filename = pickFileName(response.headers.get('Content-Disposition'), fallbackName)
-  const url = URL.createObjectURL(blob)
+  const objectUrl = URL.createObjectURL(blob)
   const link = document.createElement('a')
-  link.href = url
+  link.href = objectUrl
   link.download = filename
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
-  URL.revokeObjectURL(url)
+  URL.revokeObjectURL(objectUrl)
   return filename
 }

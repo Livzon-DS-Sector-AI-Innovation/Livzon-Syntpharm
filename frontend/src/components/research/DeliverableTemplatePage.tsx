@@ -28,7 +28,6 @@ import {
   EyeOutlined,
   HistoryOutlined,
   InboxOutlined,
-  NodeIndexOutlined,
   PlusOutlined,
   UploadOutlined,
 } from '@ant-design/icons'
@@ -55,7 +54,6 @@ import {
   updateDeliverableTemplate,
 } from '@/actions/research/rd-project'
 import { DeliverableTemplateVersionDrawer } from './DeliverableTemplateVersionDrawer'
-import { DeliverableTemplateSlotsDrawer } from './DeliverableTemplateSlotsDrawer'
 import { ModuleGuide } from './ModuleGuide'
 import { TEMPLATE_COPY, TERMS } from '@/lib/ui/research-copy'
 import { PermissionGate } from '@/components/auth/PermissionGate'
@@ -73,6 +71,12 @@ interface PreviewSource {
   ext: string
   /** 下载时的默认文件名 */
   fileName: string
+}
+
+/** 从模板快照里取「填写要求」：它存在 template_structure.instruction，不是独立列。 */
+function readInstruction(structure: Record<string, unknown> | null): string {
+  const value = structure?.instruction
+  return typeof value === 'string' ? value : ''
 }
 
 /** 交付物模板管理：模板一律以 Word 模板原件（docx/dotx/doc）为准，支持在线预览与下载。 */
@@ -111,9 +115,6 @@ export function DeliverableTemplatePage() {
 
   /** 版本历史抽屉的目标模板 */
   const [versionDrawer, setVersionDrawer] = useState<RdDeliverableTemplate | null>(null)
-
-  /** 槽位结构抽屉的目标模板 */
-  const [slotsDrawer, setSlotsDrawer] = useState<RdDeliverableTemplate | null>(null)
 
   /** 替换母本前收集版本说明（仅已有母本的模板需要，首次上传无需说明） */
   const [pendingNote, setPendingNote] = useState<{ record: RdDeliverableTemplate; file: File } | null>(null)
@@ -195,6 +196,8 @@ export function DeliverableTemplatePage() {
       description: template.description,
       template_code: template.template_code,
       template_content: template.template_content,
+      // 填写要求在 template_structure.instruction 里，表单单独一栏，保存时后端合并回去
+      instruction: readInstruction(template.template_structure),
       is_active: template.is_active,
     })
     setDrawerOpen(true)
@@ -365,13 +368,6 @@ export function DeliverableTemplatePage() {
                 历史版本
               </Button>
             </Tooltip>
-            <PermissionGate code={PERM.researchDeliverableTemplateUpdate}>
-              <Tooltip title={`查看并调整系统找出的可填位置，保存后下次生成生效`}>
-                <Button type="link" size="small" icon={<NodeIndexOutlined />} onClick={() => setSlotsDrawer(record)}>
-                  {TERMS.templateStructure.name}
-                </Button>
-              </Tooltip>
-            </PermissionGate>
           </Space>
         ) : (
           <Upload beforeUpload={(f) => handleUploadToTemplate(record, f)} showUploadList={false} accept={WORD_ACCEPT} disabled={uploadingFile}>
@@ -459,8 +455,8 @@ export function DeliverableTemplatePage() {
           type="info"
           showIcon
           style={{ marginBottom: 12 }}
-          title="上传后会自动找出可填位置，不需要手工标注"
-          description={`系统会读这份 Word 里的表格和标签，找出该填内容的地方（${TERMS.candidate.name}）。上传完成就能在研发报告页用它生成文档。`}
+          title="上传母本即可，不需要提前标注位置"
+          description="生成时由智能体自己读这份 Word 的章节与空位，检索项目知识库后把内容写进去；引用源只展示在详情页右侧，不写进文档。模板里可另填一句「填写要求」来约束写法。"
         />
         <Upload.Dragger
           multiple
@@ -570,6 +566,15 @@ export function DeliverableTemplatePage() {
               </Space>
             </Form.Item>
           )}
+          {editingTemplate && (
+            <Form.Item
+              name="instruction"
+              label="填写要求（可选）"
+              extra="会作为本次生成的写法要求下发给智能体，例如「数值保留两位小数，未查到资料的段落留空」；留空表示不加额外要求。"
+            >
+              <TextArea rows={4} maxLength={2000} showCount placeholder="可留空" />
+            </Form.Item>
+          )}
           <Form.Item name="template_content" label="文字备份（可选）" extra="一般不用填。AI 生成时只读上面那份 Word 文件，这里只是留一份文字底稿。">
             <TextArea rows={5} placeholder="可留空" style={{ fontFamily: 'monospace' }} />
           </Form.Item>
@@ -624,15 +629,6 @@ export function DeliverableTemplatePage() {
         onChanged={invalidateTemplates}
         onPreview={openVersionPreview}
         onDownload={(version) => void handleVersionDownload(version)}
-      />
-
-      <DeliverableTemplateSlotsDrawer
-        key={slotsDrawer?.id ?? 'none'}
-        open={slotsDrawer !== null}
-        templateId={slotsDrawer?.id ?? null}
-        templateName={slotsDrawer?.name ?? ''}
-        onClose={() => setSlotsDrawer(null)}
-        onChanged={invalidateTemplates}
       />
 
       <Modal

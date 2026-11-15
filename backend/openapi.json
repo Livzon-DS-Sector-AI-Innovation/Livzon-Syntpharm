@@ -58147,337 +58147,6 @@
         }
       }
     },
-    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/sample": {
-      "post": {
-        "tags": [
-          "\u7814\u53d1\u7ba1\u7406",
-          "\u7814\u53d1\u7ba1\u7406-\u4ea4\u4ed8\u7269\u6a21\u677f"
-        ],
-        "summary": "\u751f\u6210\u586b\u5145\u793a\u4f8b\u7a3f",
-        "description": "\u6309\u5df2\u4fdd\u5b58\u7684\u586b\u5145\u9879\u5728\u6bcd\u672c\u4e0a\u5c31\u5730\u6807\u6ce8\uff0c\u751f\u6210\u4e00\u4efd\u53ef\u9884\u89c8/\u4e0b\u8f7d\u7684\u793a\u4f8b\u7a3f\u3002\n\n\u793a\u4f8b\u7a3f\u5355\u72ec\u7559\u6863\u4e3a\u4e00\u4e2a\u7248\u672c\uff08\u4e0d\u6210\u4e3a\u5f53\u524d\u6bcd\u672c\uff09\uff0c\u636e\u6b64\u53ef\u5bf9\u7167\u6bcf\u5904\u8be5\u586b\u4ec0\u4e48\u3001\u586b\u5728\u54ea\u3002",
-        "operationId": "generate_template_sample_api_v1_research_doc_gen_deliverable_templates__template_id__sample_post",
-        "parameters": [
-          {
-            "name": "template_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Template Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocGenTemplateSampleResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots": {
-      "get": {
-        "tags": [
-          "\u7814\u53d1\u7ba1\u7406",
-          "\u7814\u53d1\u7ba1\u7406-\u4ea4\u4ed8\u7269\u6a21\u677f"
-        ],
-        "summary": "\u4ea4\u4ed8\u6587\u6863\u6a21\u677f\u7684\u586b\u5145\u9879\u8bbe\u7f6e",
-        "description": "\u8fd4\u56de\u69fd\u4f4d\u6e05\u5355\u4e0e\u6bcd\u672c\u5019\u9009\u4f4d\u7f6e\uff1b\u53ea\u8bfb\u6587\u4ef6\uff0c\u4e0d\u89e6\u53d1\u6a21\u578b\u8bc6\u522b\u3002",
-        "operationId": "get_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_get",
-        "parameters": [
-          {
-            "name": "template_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Template Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocGenTemplateSlotsResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "\u7814\u53d1\u7ba1\u7406",
-          "\u7814\u53d1\u7ba1\u7406-\u4ea4\u4ed8\u7269\u6a21\u677f"
-        ],
-        "summary": "\u4fdd\u5b58\u586b\u5145\u9879\u8bbe\u7f6e",
-        "description": "\u5168\u91cf\u8986\u76d6\u69fd\u4f4d\u7ed3\u6784\uff08\u4eba\u5de5\u589e\u5220\u6539\uff09\uff1b\u951a\u70b9\u5fc5\u987b\u5728\u5f53\u524d\u6bcd\u672c\u91cc\uff0c\u6362\u7248\u540e\u987b\u5148\u91cd\u65b0\u8bc6\u522b\u3002",
-        "operationId": "save_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_put",
-        "parameters": [
-          {
-            "name": "template_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Template Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DocGenTemplateSlotsSaveRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocGenTemplateSlotsSaveResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots/reparse": {
-      "post": {
-        "tags": [
-          "\u7814\u53d1\u7ba1\u7406",
-          "\u7814\u53d1\u7ba1\u7406-\u4ea4\u4ed8\u7269\u6a21\u677f"
-        ],
-        "summary": "\u91cd\u65b0\u5206\u6790\u6a21\u677f\u7ed3\u6784",
-        "description": "\u5f3a\u5236\u91cd\u89e3\u6790\u5e76\u6309\u4f4d\u7f6e\u5408\u5e76\uff1a\u4eba\u5de5\u6539\u8fc7\u7684\u5b57\u6bb5\u4fdd\u7559\uff0c\u53ea\u8865 AI \u65b0\u8bc6\u522b\u7684\u4f4d\u7f6e\u3002",
-        "operationId": "reparse_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_reparse_post",
-        "parameters": [
-          {
-            "name": "template_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Template Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DocGenTemplateSlotsReparseRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocGenTemplateSlotsReparseResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots/reparse/stream": {
-      "post": {
-        "tags": [
-          "\u7814\u53d1\u7ba1\u7406",
-          "\u7814\u53d1\u7ba1\u7406-\u4ea4\u4ed8\u7269\u6a21\u677f"
-        ],
-        "summary": "\u91cd\u65b0\u5206\u6790\u6a21\u677f\u7ed3\u6784\uff08\u6d41\u5f0f\uff09",
-        "description": "\u91cd\u89e3\u6790\u5e76\u8fb9\u5206\u6790\u8fb9\u63a8\u4e8b\u4ef6\uff1a\u9636\u6bb5\u3001\u601d\u8003\u589e\u91cf\u3001\u6700\u7ec8\u5408\u5e76\u7ed3\u679c\u3002\n\n\u540c\u6b65\u7248 ``/slots/reparse`` \u4fdd\u7559\u4e0d\u52a8\uff08\u811a\u672c\u4e0e\u8001\u524d\u7aef\u4ecd\u53ef\u7528\uff09\uff1b\u4e24\u4e2a\u5165\u53e3\u5171\u7528\n``service`` \u91cc\u7684\u540c\u4e00\u5957\u6821\u9a8c\u4e0e\u5408\u5e76\u903b\u8f91\uff0c\u533a\u522b\u53ea\u662f\u7b49\u5f85\u8fc7\u7a0b\u662f\u5426\u53ef\u89c1\u3002",
-        "operationId": "reparse_template_slots_stream_api_v1_research_doc_gen_deliverable_templates__template_id__slots_reparse_stream_post",
-        "parameters": [
-          {
-            "name": "template_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Template Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DocGenTemplateSlotsReparseRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/research/knowledge-bases/limits": {
       "get": {
         "tags": [
@@ -59545,6 +59214,67 @@
         }
       }
     },
+    "/api/v1/research/report-gen/jobs/{job_id}/outline": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u53ef\u5199\u5b57\u6bb5\u6e05\u5355\uff08\u5ba1\u9605\u5de5\u4f5c\u53f0\uff09",
+        "description": "\u6bcd\u672c\u53ef\u5199\u4f4d\u7f6e\u4e0e\u672c\u6b21\u5199\u5165\u8bb0\u5f55\u5408\u5e76\u540e\u7684\u9010\u5904\u6e05\u5355\u3002\n\n\u672a\u5199\u4f4d\u7f6e\u5728 ``rd_report_gen_slots`` \u91cc\u6ca1\u6709\u884c\uff0c\u5fc5\u987b\u4e0e\u6bcd\u672c\u4f4d\u7f6e\u53d6\u5e76\u96c6\u624d\u5217\u5f97\u51fa\u6765\uff1b\n\u6210\u54c1\u6bb5\u843d\u6570\u4e00\u5e76\u8fd4\u56de\uff0c\u524d\u7aef\u62ff\u5b83\u81ea\u68c0\u9884\u89c8 DOM \u4e0e\u6bb5\u843d\u4e0b\u6807\u662f\u5426\u5bf9\u5f97\u4e0a\u3002",
+        "operationId": "get_report_gen_outline_api_v1_research_report_gen_jobs__job_id__outline_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ReportGenOutlineData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/research/report-gen/jobs/{job_id}/steps": {
       "get": {
         "tags": [
@@ -59613,146 +59343,6 @@
               "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/DataResponse_ReportGenStepListData_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/research/report-gen/jobs/{job_id}/slots": {
-      "get": {
-        "tags": [
-          "\u7814\u53d1\u7ba1\u7406",
-          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
-        ],
-        "summary": "\u586b\u5145\u9879\u7ed3\u679c",
-        "operationId": "list_report_gen_slots_api_v1_research_report_gen_jobs__job_id__slots_get",
-        "parameters": [
-          {
-            "name": "job_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DataResponse_ReportGenSlotListData_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/research/report-gen/jobs/{job_id}/slots/{slot_key}": {
-      "put": {
-        "tags": [
-          "\u7814\u53d1\u7ba1\u7406",
-          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
-        ],
-        "summary": "\u624b\u52a8\u4fee\u6539\u586b\u5145\u5185\u5bb9",
-        "description": "\u53ea\u6539\u7ed3\u679c\u533a\u4e0e\u5bf9\u7167\u8868\u53e3\u5f84\uff1b\u6210\u54c1 docx \u4e0d\u91cd\u6e32\u67d3\uff08\u6309\u5df2\u786e\u8ba4\u7684\u9700\u6c42\u53e3\u5f84\uff09\u3002",
-        "operationId": "update_report_gen_slot_api_v1_research_report_gen_jobs__job_id__slots__slot_key__put",
-        "parameters": [
-          {
-            "name": "job_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
-            }
-          },
-          {
-            "name": "slot_key",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Slot Key"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReportGenSlotUpdateRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DataResponse_ReportGenSlotData_"
                 }
               }
             }
@@ -60031,24 +59621,64 @@
         }
       }
     },
-    "/api/v1/research/report-gen/feedback/{feedback_id}/promote": {
-      "post": {
+    "/api/v1/research/report-gen/opinion-library": {
+      "get": {
         "tags": [
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u628a\u5df2\u843d\u5b9e\u7684\u610f\u89c1\u5b58\u6210\u793a\u4f8b\u5199\u6cd5",
-        "description": "\u628a\u8fd9\u6b21\u88ab\u91c7\u7eb3\u7684\u5199\u6cd5\u6536\u8fdb\u793a\u4f8b\u5e93\uff0c\u4e0b\u6b21\u540c\u6a21\u677f\u751f\u6210\u76f4\u63a5\u5f53 few-shot \u53c2\u7167\u3002",
-        "operationId": "promote_report_gen_feedback_api_v1_research_report_gen_feedback__feedback_id__promote_post",
+        "summary": "\u610f\u89c1\u5e93\uff1a\u8de8\u62a5\u544a\u5f52\u5e76\u540e\u7684\u5386\u53f2\u610f\u89c1",
+        "description": "\u6bcf\u6761\u610f\u89c1\u90fd\u6709\u88ab\u63d0\u51fa\u6b21\u6570\uff1a\u6b21\u6570\u9ad8\u7684\u8981\u6c42\u4f1a\u88ab\u4f18\u5148\u6536\u8fdb\u751f\u6210\u524d\u7684\u5199\u4f5c\u8981\u6c42\u3002",
+        "operationId": "list_report_gen_opinions_api_v1_research_report_gen_opinion_library_get",
         "parameters": [
           {
-            "name": "feedback_id",
-            "in": "path",
-            "required": true,
+            "name": "status",
+            "in": "query",
+            "required": false,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Feedback Id"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(active|disabled)$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6309\u72b6\u6001\u8fc7\u6ee4",
+              "title": "Status"
+            },
+            "description": "\u6309\u72b6\u6001\u8fc7\u6ee4"
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6309\u5185\u5bb9\u641c\u7d22",
+              "title": "Keyword"
+            },
+            "description": "\u6309\u5185\u5bb9\u641c\u7d22"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 200,
+              "title": "Limit"
             }
           },
           {
@@ -60074,7 +59704,141 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/DataResponse_ReportGenExamplePromoteData_"
+                  "$ref": "#/components/schemas/DataResponse_ReportGenOpinionListData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/report-gen/opinion-library/{opinion_id}": {
+      "patch": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u505c\u7528 / \u6062\u590d\u4e00\u6761\u5386\u53f2\u610f\u89c1",
+        "description": "\u505c\u7528\u540e\u4e0d\u518d\u5f71\u54cd\u540e\u7eed\u751f\u6210\uff1b\u540c\u7c7b\u610f\u89c1\u518d\u6b21\u88ab\u63d0\u51fa\u4e5f\u4e0d\u4f1a\u81ea\u52a8\u6062\u590d\uff0c\u9700\u4eba\u5de5\u786e\u8ba4\u3002",
+        "operationId": "update_report_gen_opinion_api_v1_research_report_gen_opinion_library__opinion_id__patch",
+        "parameters": [
+          {
+            "name": "opinion_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Opinion Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportGenOpinionUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ReportGenOpinionData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/report-gen/opinion-library/digests": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u5386\u53f2\u610f\u89c1\u6c47\u603b\u8bb0\u5f55",
+        "description": "\u6bcf\u6b21\u751f\u6210\u524d\u7684\u6c47\u603b\u90fd\u7559\u6863\uff1a\u53ef\u56de\u7b54\u300c\u8fd9\u4e00\u7248\u6309\u54ea\u4efd\u5199\u4f5c\u8981\u6c42\u5199\u7684\u300d\u3002",
+        "operationId": "list_report_gen_opinion_digests_api_v1_research_report_gen_opinion_library_digests_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ReportGenOpinionDigestListData_"
                 }
               }
             }
@@ -60150,132 +59914,13 @@
         }
       }
     },
-    "/api/v1/research/report-gen/jobs/{job_id}/comparison": {
-      "get": {
-        "tags": [
-          "\u7814\u53d1\u7ba1\u7406",
-          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
-        ],
-        "summary": "\u4e0b\u8f7d\u586b\u5145\u9879\u5bf9\u7167\u8868",
-        "operationId": "download_report_gen_comparison_api_v1_research_report_gen_jobs__job_id__comparison_get",
-        "parameters": [
-          {
-            "name": "job_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/research/report-gen/jobs/{job_id}/render": {
-      "post": {
-        "tags": [
-          "\u7814\u53d1\u7ba1\u7406",
-          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
-        ],
-        "summary": "\u6309\u5f53\u524d\u586b\u5145\u5185\u5bb9\u91cd\u65b0\u751f\u6210 Word\uff08\u4e0d\u91cd\u8dd1 AI\uff09",
-        "description": "\u69fd\u4f4d\u6539\u5b8c\u540e\u6309\u5f53\u524d\u5185\u5bb9\u91cd\u51fa docx\uff1a\u7eaf\u672c\u5730\u6309\u951a\u70b9\u56de\u586b\uff0c\u4e0d\u8c03\u7528\u5927\u6a21\u578b\u3001\u79d2\u7ea7\u8fd4\u56de\u3002",
-        "operationId": "rerender_report_gen_document_api_v1_research_report_gen_jobs__job_id__render_post",
-        "parameters": [
-          {
-            "name": "job_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DataResponse_ReportGenRenderData_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/research/report-gen/jobs/{job_id}/versions": {
       "get": {
         "tags": [
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u6587\u6863\u7248\u672c\u5217\u8868\uff08AI \u521d\u7a3f / \u4eba\u5de5\u91cd\u6e32 / \u4eba\u5de5\u4e0a\u4f20\uff09",
+        "summary": "\u6587\u6863\u7248\u672c\u5217\u8868\uff08AI \u521d\u7a3f / \u91cd\u6e32 / \u4eba\u5de5\u4e0a\u4f20\uff09",
         "operationId": "list_report_gen_versions_api_v1_research_report_gen_jobs__job_id__versions_get",
         "parameters": [
           {
@@ -60312,77 +59957,6 @@
               "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/DataResponse_ReportGenDocumentVersionListData_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/research/report-gen/jobs/{job_id}/versions/upload": {
-      "post": {
-        "tags": [
-          "\u7814\u53d1\u7ba1\u7406",
-          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
-        ],
-        "summary": "\u4e0a\u4f20\u4eba\u5de5\u4fee\u6539\u540e\u7684 Word\uff08\u515c\u5e95\u6539\u7a3f\uff09",
-        "description": "\u4e0b\u8f7d\u6539\u5b8c\u518d\u4f20\u56de\u6765\uff1a\u843d\u4e00\u4e2a\u65b0\u7248\u672c\u5e76\u7f6e\u4e3a\u5f53\u524d\uff0cAI \u521d\u7a3f\u4ecd\u7136\u4fdd\u7559\u3002",
-        "operationId": "upload_report_gen_version_api_v1_research_report_gen_jobs__job_id__versions_upload_post",
-        "parameters": [
-          {
-            "name": "job_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Job Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_upload_report_gen_version_api_v1_research_report_gen_jobs__job_id__versions_upload_post"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DataResponse_ReportGenRenderData_"
                 }
               }
             }
@@ -60458,16 +60032,97 @@
         }
       }
     },
-    "/api/v1/research/report-gen/versions/{version_id}/activate": {
+    "/api/v1/research/report-gen/jobs/{job_id}/edits": {
       "post": {
         "tags": [
           "\u7814\u53d1\u7ba1\u7406",
           "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
         ],
-        "summary": "\u628a\u67d0\u4e2a\u5386\u53f2\u7248\u672c\u8bbe\u4e3a\u5f53\u524d",
-        "description": "\u6539\u574f\u4e86\u53ef\u4ee5\u9000\u56de\u4efb\u610f\u4e00\u7248\uff1b\u5f53\u524d\u7248\u51b3\u5b9a\u4ea4\u4ed8\u7269\u9644\u4ef6\u4e0e\u9884\u89c8\u5185\u5bb9\u3002",
-        "operationId": "activate_report_gen_version_api_v1_research_report_gen_versions__version_id__activate_post",
+        "summary": "\u5728\u7ebf\u7f16\u8f91\u6587\u6863\u5e76\u4fdd\u5b58\u4e3a\u65b0\u7248\u672c",
+        "description": "\u9010\u6761\u6821\u9a8c\u540e\u539f\u5730\u6539\u5199\u5f53\u524d\u7248\u672c docx\uff0c\u843d ``manual_edit`` \u65b0\u7248\u672c\u3002\n\n\u6821\u9a8c\u672a\u901a\u8fc7\u7684\u64cd\u4f5c\u53ea\u4e22\u5f03\u90a3\u4e00\u5904\u5e76\u8fd8\u539f\u4e3a\u6bcd\u672c\u539f\u6837\uff0c\u5176\u4f59\u4fee\u6539\u7167\u5e38\u4fdd\u5b58\uff1b\u8fd4\u56de\u9010\u6761\u539f\u56e0\uff0c\n\u524d\u7aef\u6309\u4f4d\u7f6e\u5c55\u793a\uff0c\u4e0d\u4f1a\u56e0\u4e3a\u4e00\u5904\u5199\u574f\u5c31\u4e22\u6389\u6574\u6279\u3002",
+        "operationId": "edit_report_gen_document_api_v1_research_report_gen_jobs__job_id__edits_post",
         "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportGenEditRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ReportGenEditResultData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/report-gen/jobs/{job_id}/versions/{version_id}/restore": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
+        ],
+        "summary": "\u56de\u6eda\u5230\u6307\u5b9a\u7248\u672c",
+        "description": "\u4e0d\u6539\u5199\u5386\u53f2\uff1a\u628a\u65e7\u7248\u6587\u4ef6\u518d\u843d\u4e00\u4e2a\u65b0\u7248\u672c\u5e76\u7f6e\u4e3a\u5f53\u524d\uff0c\u56de\u6eda\u672c\u8eab\u4e5f\u53ef\u518d\u56de\u6eda\u3002",
+        "operationId": "restore_report_gen_version_api_v1_research_report_gen_jobs__job_id__versions__version_id__restore_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
           {
             "name": "version_id",
             "in": "path",
@@ -60495,6 +60150,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportGenVersionRestoreRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -60628,296 +60293,6 @@
               "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/DataResponse_ReportGenMetricsData_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/research/report-gen/templates/{template_id}/structure-runs": {
-      "get": {
-        "tags": [
-          "\u7814\u53d1\u7ba1\u7406",
-          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
-        ],
-        "summary": "\u6a21\u677f\u7ed3\u6784\u5206\u6790\u8bb0\u5f55\uff08\u8bc6\u522b\u5230\u591a\u5c11\u3001\u4eba\u5de5\u53c8\u6539\u4e86\u591a\u5c11\uff09",
-        "description": "\u770b\u6bcf\u6b21\u89e3\u6790\u9009\u4e86\u591a\u5c11\u69fd\u4f4d\u3001\u4ee5\u53ca\u4eba\u5de5\u968f\u540e\u540e\u8865/\u5426\u6389\u4e86\u591a\u5c11\uff08\u53ea\u8bfb\uff09\u3002",
-        "operationId": "list_report_gen_structure_runs_api_v1_research_report_gen_templates__template_id__structure_runs_get",
-        "parameters": [
-          {
-            "name": "template_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Template Id"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 50,
-              "minimum": 1,
-              "description": "\u770b\u6700\u8fd1 N \u6b21\u5206\u6790\u8bb0\u5f55",
-              "default": 10,
-              "title": "Limit"
-            },
-            "description": "\u770b\u6700\u8fd1 N \u6b21\u5206\u6790\u8bb0\u5f55"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DataResponse_ReportGenStructureRunListData_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/research/report-gen/templates/{template_id}/examples": {
-      "get": {
-        "tags": [
-          "\u7814\u53d1\u7ba1\u7406",
-          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
-        ],
-        "summary": "\u8fd9\u4e2a\u6a21\u677f\u4e0b\u5df2\u5b58\u7684\u793a\u4f8b\u5199\u6cd5",
-        "description": "\u793a\u4f8b\u5e93\u7ba1\u7406\u7528\uff1a\u8fd9\u4e2a\u6a21\u677f\u4e0b\u6709\u54ea\u4e9b\u793a\u4f8b\u3001\u5404\u81ea\u4ece\u54ea\u6765\u3001\u88ab\u5f15\u7528\u8fc7\u51e0\u6b21\u3002",
-        "operationId": "list_report_gen_examples_api_v1_research_report_gen_templates__template_id__examples_get",
-        "parameters": [
-          {
-            "name": "template_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Template Id"
-            }
-          },
-          {
-            "name": "include_inactive",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "description": "\u662f\u5426\u8fde\u5df2\u505c\u7528\u7684\u793a\u4f8b\u4e00\u8d77\u8fd4\u56de",
-              "default": true,
-              "title": "Include Inactive"
-            },
-            "description": "\u662f\u5426\u8fde\u5df2\u505c\u7528\u7684\u793a\u4f8b\u4e00\u8d77\u8fd4\u56de"
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 500,
-              "minimum": 1,
-              "default": 200,
-              "title": "Limit"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DataResponse_ReportGenExampleListData_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/research/report-gen/examples/{example_id}": {
-      "patch": {
-        "tags": [
-          "\u7814\u53d1\u7ba1\u7406",
-          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
-        ],
-        "summary": "\u624b\u52a8\u7ef4\u62a4\u793a\u4f8b\u5199\u6cd5",
-        "description": "\u6539\u5199\u6cd5 / \u8865\u4f9d\u636e / \u505c\u7528\u9519\u4f8b\uff1b\u505c\u7528\u540e\u4e0d\u518d\u6ce8\u5165\u4e0b\u4e00\u6b21\u751f\u6210\u3002",
-        "operationId": "update_report_gen_example_api_v1_research_report_gen_examples__example_id__patch",
-        "parameters": [
-          {
-            "name": "example_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Example Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReportGenExampleUpdateRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DataResponse_ReportGenExampleData_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "\u7814\u53d1\u7ba1\u7406",
-          "\u7814\u53d1\u7ba1\u7406-AI\u62a5\u544a\u751f\u6210"
-        ],
-        "summary": "\u5220\u9664\u793a\u4f8b\u5199\u6cd5\uff08\u53ef\u6062\u590d\uff09",
-        "description": "\u5f7b\u5e95\u4e0d\u518d\u53c2\u4e0e\u6ce8\u5165\uff0c\u4f46\u4fdd\u7559\u8bb0\u5f55\u53ef\u8ffd\u300c\u4ee5\u524d\u4e3a\u4ec0\u4e48\u8fd9\u4e48\u5199\u300d\u3002",
-        "operationId": "delete_report_gen_example_api_v1_research_report_gen_examples__example_id__delete",
-        "parameters": [
-          {
-            "name": "example_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Example Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DataResponse_ReportGenExampleData_"
                 }
               }
             }
@@ -101607,20 +100982,6 @@
         ],
         "title": "Body_upload_pilot_document_api_v1_research_pilot_workflow__workflow_id__upload_post"
       },
-      "Body_upload_report_gen_version_api_v1_research_report_gen_jobs__job_id__versions_upload_post": {
-        "properties": {
-          "file": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "File"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file"
-        ],
-        "title": "Body_upload_report_gen_version_api_v1_research_report_gen_jobs__job_id__versions_upload_post"
-      },
       "Body_upload_task_photo_api_v1_equipment_inspection_tasks__task_id__photos_post": {
         "properties": {
           "file": {
@@ -112437,7 +111798,7 @@
         "type": "object",
         "title": "DataResponse[ReportGenDocumentVersionListData]"
       },
-      "DataResponse_ReportGenExampleData_": {
+      "DataResponse_ReportGenEditResultData_": {
         "properties": {
           "code": {
             "type": "integer",
@@ -112452,7 +111813,7 @@
           "data": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ReportGenExampleData"
+                "$ref": "#/components/schemas/ReportGenEditResultData"
               },
               {
                 "type": "null"
@@ -112471,79 +111832,7 @@
           }
         },
         "type": "object",
-        "title": "DataResponse[ReportGenExampleData]"
-      },
-      "DataResponse_ReportGenExampleListData_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ReportGenExampleListData"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "meta": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMeta"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "title": "DataResponse[ReportGenExampleListData]"
-      },
-      "DataResponse_ReportGenExamplePromoteData_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ReportGenExamplePromoteData"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "meta": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMeta"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "title": "DataResponse[ReportGenExamplePromoteData]"
+        "title": "DataResponse[ReportGenEditResultData]"
       },
       "DataResponse_ReportGenFeedbackData_": {
         "properties": {
@@ -112761,6 +112050,150 @@
         "type": "object",
         "title": "DataResponse[ReportGenModelTestData]"
       },
+      "DataResponse_ReportGenOpinionData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportGenOpinionData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ReportGenOpinionData]"
+      },
+      "DataResponse_ReportGenOpinionDigestListData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportGenOpinionDigestListData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ReportGenOpinionDigestListData]"
+      },
+      "DataResponse_ReportGenOpinionListData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportGenOpinionListData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ReportGenOpinionListData]"
+      },
+      "DataResponse_ReportGenOutlineData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportGenOutlineData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ReportGenOutlineData]"
+      },
       "DataResponse_ReportGenRenderData_": {
         "properties": {
           "code": {
@@ -112797,78 +112230,6 @@
         "type": "object",
         "title": "DataResponse[ReportGenRenderData]"
       },
-      "DataResponse_ReportGenSlotData_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ReportGenSlotData"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "meta": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMeta"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "title": "DataResponse[ReportGenSlotData]"
-      },
-      "DataResponse_ReportGenSlotListData_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ReportGenSlotListData"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "meta": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMeta"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "title": "DataResponse[ReportGenSlotListData]"
-      },
       "DataResponse_ReportGenStepListData_": {
         "properties": {
           "code": {
@@ -112904,42 +112265,6 @@
         },
         "type": "object",
         "title": "DataResponse[ReportGenStepListData]"
-      },
-      "DataResponse_ReportGenStructureRunListData_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ReportGenStructureRunListData"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "meta": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMeta"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "title": "DataResponse[ReportGenStructureRunListData]"
       },
       "DataResponse_ResearchProjectResponse_": {
         "properties": {
@@ -118924,257 +118249,6 @@
         "title": "DocGenOperationResponse",
         "description": "\u4ec5\u56de\u63d0\u793a\u8bed\u7684\u5199\u64cd\u4f5c\u54cd\u5e94\uff08\u5982\u5220\u9664\u5386\u53f2\u7248\u672c\uff09\u3002"
       },
-      "DocGenReparseStats": {
-        "properties": {
-          "added": {
-            "type": "integer",
-            "title": "Added",
-            "default": 0
-          },
-          "kept": {
-            "type": "integer",
-            "title": "Kept",
-            "default": 0
-          },
-          "removed": {
-            "type": "integer",
-            "title": "Removed",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "title": "DocGenReparseStats",
-        "description": "\u5408\u5e76\u91cd\u89e3\u6790\u7684\u589e\u51cf\u7edf\u8ba1\u3002"
-      },
-      "DocGenSlotAnchorData": {
-        "properties": {
-          "kind": {
-            "type": "string",
-            "title": "Kind",
-            "default": ""
-          },
-          "index": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Index"
-          },
-          "table_index": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Table Index"
-          },
-          "row": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Row"
-          },
-          "col": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Col"
-          },
-          "para_index": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Para Index"
-          },
-          "text": {
-            "type": "string",
-            "title": "Text",
-            "default": ""
-          },
-          "style": {
-            "type": "string",
-            "title": "Style",
-            "default": ""
-          },
-          "fingerprint": {
-            "type": "string",
-            "title": "Fingerprint",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "DocGenSlotAnchorData",
-        "description": "\u6bcd\u672c\u91cc\u7684\u4e00\u4e2a\u5177\u4f53\u4f4d\u7f6e\uff08\u6bb5\u843d\u6216\u8868\u683c\u5355\u5143\u683c\uff09\u3002"
-      },
-      "DocGenSlotCandidateItem": {
-        "properties": {
-          "candidate_id": {
-            "type": "string",
-            "title": "Candidate Id"
-          },
-          "kind": {
-            "type": "string",
-            "title": "Kind"
-          },
-          "label": {
-            "type": "string",
-            "title": "Label"
-          },
-          "text": {
-            "type": "string",
-            "title": "Text",
-            "default": ""
-          },
-          "style": {
-            "type": "string",
-            "title": "Style",
-            "default": ""
-          },
-          "context": {
-            "type": "string",
-            "title": "Context",
-            "default": ""
-          },
-          "used": {
-            "type": "boolean",
-            "title": "Used",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "candidate_id",
-          "kind",
-          "label"
-        ],
-        "title": "DocGenSlotCandidateItem",
-        "description": "\u6bcd\u672c\u91cc\u7684\u5019\u9009\u4f4d\u7f6e\uff1b``used`` \u8868\u793a\u5df2\u88ab\u67d0\u4e2a\u69fd\u4f4d\u5360\u7528\u3002"
-      },
-      "DocGenSlotItem": {
-        "properties": {
-          "slot_key": {
-            "type": "string",
-            "maxLength": 100,
-            "title": "Slot Key"
-          },
-          "label": {
-            "type": "string",
-            "maxLength": 200,
-            "title": "Label"
-          },
-          "value_type": {
-            "type": "string",
-            "maxLength": 20,
-            "title": "Value Type",
-            "default": "text"
-          },
-          "owner_hint": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 100
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Owner Hint"
-          },
-          "hint": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 300
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hint"
-          },
-          "location": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 200
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Location"
-          },
-          "candidate_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 80
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Candidate Id"
-          },
-          "anchor": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/DocGenSlotAnchorData"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "is_enabled": {
-            "type": "boolean",
-            "title": "Is Enabled",
-            "default": true
-          },
-          "origin": {
-            "type": "string",
-            "maxLength": 20,
-            "title": "Origin",
-            "default": "ai"
-          },
-          "edited_fields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Edited Fields"
-          }
-        },
-        "type": "object",
-        "required": [
-          "slot_key",
-          "label"
-        ],
-        "title": "DocGenSlotItem",
-        "description": "\u4e00\u4e2a\u53ef\u586b\u69fd\u4f4d\uff1b``candidate_id`` \u4e0e ``anchor`` \u4e8c\u9009\u4e00\u5373\u53ef\u6362\u7ed1\u4f4d\u7f6e\u3002"
-      },
       "DocGenTemplateFileData": {
         "properties": {
           "id": {
@@ -119233,435 +118307,6 @@
         ],
         "title": "DocGenTemplateFileResponse",
         "description": "POST /deliverable-templates/{id}/upload \u54cd\u5e94\u3002"
-      },
-      "DocGenTemplateSampleData": {
-        "properties": {
-          "version_id": {
-            "type": "string",
-            "title": "Version Id"
-          },
-          "version_no": {
-            "type": "integer",
-            "title": "Version No"
-          },
-          "file_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "File Name"
-          },
-          "slot_count": {
-            "type": "integer",
-            "title": "Slot Count",
-            "default": 0
-          },
-          "skipped_count": {
-            "type": "integer",
-            "title": "Skipped Count",
-            "default": 0
-          },
-          "unresolved_count": {
-            "type": "integer",
-            "title": "Unresolved Count",
-            "default": 0
-          },
-          "generated_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Generated At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "version_id",
-          "version_no",
-          "generated_at"
-        ],
-        "title": "DocGenTemplateSampleData",
-        "description": "\u586b\u5145\u793a\u4f8b\u7a3f\u751f\u6210\u7ed3\u679c\uff1a\u7248\u672c\u6807\u8bc6 + \u8986\u76d6\u7387\u7edf\u8ba1\u3002"
-      },
-      "DocGenTemplateSampleResponse": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "$ref": "#/components/schemas/DocGenTemplateSampleData"
-          }
-        },
-        "type": "object",
-        "required": [
-          "data"
-        ],
-        "title": "DocGenTemplateSampleResponse",
-        "description": "POST /deliverable-templates/{id}/sample \u54cd\u5e94\u3002"
-      },
-      "DocGenTemplateSlotsData": {
-        "properties": {
-          "template_id": {
-            "type": "string",
-            "title": "Template Id"
-          },
-          "template_name": {
-            "type": "string",
-            "title": "Template Name"
-          },
-          "file_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "File Name"
-          },
-          "version": {
-            "type": "integer",
-            "title": "Version",
-            "default": 2
-          },
-          "source_key": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Key"
-          },
-          "analyzed_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Analyzed At"
-          },
-          "edited_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Edited At"
-          },
-          "token": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Token"
-          },
-          "is_stale": {
-            "type": "boolean",
-            "title": "Is Stale",
-            "default": false
-          },
-          "slots": {
-            "items": {
-              "$ref": "#/components/schemas/DocGenSlotItem"
-            },
-            "type": "array",
-            "title": "Slots"
-          },
-          "candidates": {
-            "items": {
-              "$ref": "#/components/schemas/DocGenSlotCandidateItem"
-            },
-            "type": "array",
-            "title": "Candidates"
-          },
-          "candidate_total": {
-            "type": "integer",
-            "title": "Candidate Total",
-            "default": 0
-          },
-          "total_count": {
-            "type": "integer",
-            "title": "Total Count",
-            "default": 0
-          },
-          "enabled_count": {
-            "type": "integer",
-            "title": "Enabled Count",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "required": [
-          "template_id",
-          "template_name"
-        ],
-        "title": "DocGenTemplateSlotsData",
-        "description": "GET /deliverable-templates/{id}/slots \u54cd\u5e94\u4f53\u3002"
-      },
-      "DocGenTemplateSlotsReparseData": {
-        "properties": {
-          "slots": {
-            "items": {
-              "$ref": "#/components/schemas/DocGenSlotItem"
-            },
-            "type": "array",
-            "title": "Slots"
-          },
-          "token": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Token"
-          },
-          "analyzed_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Analyzed At"
-          },
-          "edited_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Edited At"
-          },
-          "total_count": {
-            "type": "integer",
-            "title": "Total Count",
-            "default": 0
-          },
-          "enabled_count": {
-            "type": "integer",
-            "title": "Enabled Count",
-            "default": 0
-          },
-          "ai_slots": {
-            "items": {
-              "$ref": "#/components/schemas/DocGenSlotItem"
-            },
-            "type": "array",
-            "title": "Ai Slots"
-          },
-          "stats": {
-            "$ref": "#/components/schemas/DocGenReparseStats"
-          }
-        },
-        "type": "object",
-        "title": "DocGenTemplateSlotsReparseData",
-        "description": "\u91cd\u89e3\u6790\u7ed3\u679c\uff1aAI \u672c\u6b21\u539f\u59cb\u8bc6\u522b + \u5408\u5e76\u540e\u7ed3\u679c + \u7edf\u8ba1\uff08diff \u53ea\u5728\u54cd\u5e94\u91cc\uff0c\u4e0d\u843d\u5e93\uff09\u3002"
-      },
-      "DocGenTemplateSlotsReparseRequest": {
-        "properties": {
-          "token": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Token"
-          }
-        },
-        "type": "object",
-        "title": "DocGenTemplateSlotsReparseRequest",
-        "description": "POST /deliverable-templates/{id}/slots/reparse \u5165\u53c2\u3002"
-      },
-      "DocGenTemplateSlotsReparseResponse": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "$ref": "#/components/schemas/DocGenTemplateSlotsReparseData"
-          }
-        },
-        "type": "object",
-        "required": [
-          "data"
-        ],
-        "title": "DocGenTemplateSlotsReparseResponse",
-        "description": "POST /deliverable-templates/{id}/slots/reparse \u54cd\u5e94\u3002"
-      },
-      "DocGenTemplateSlotsResponse": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "$ref": "#/components/schemas/DocGenTemplateSlotsData"
-          }
-        },
-        "type": "object",
-        "required": [
-          "data"
-        ],
-        "title": "DocGenTemplateSlotsResponse",
-        "description": "GET /deliverable-templates/{id}/slots \u54cd\u5e94\u3002"
-      },
-      "DocGenTemplateSlotsSaveData": {
-        "properties": {
-          "slots": {
-            "items": {
-              "$ref": "#/components/schemas/DocGenSlotItem"
-            },
-            "type": "array",
-            "title": "Slots"
-          },
-          "token": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Token"
-          },
-          "analyzed_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Analyzed At"
-          },
-          "edited_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Edited At"
-          },
-          "total_count": {
-            "type": "integer",
-            "title": "Total Count",
-            "default": 0
-          },
-          "enabled_count": {
-            "type": "integer",
-            "title": "Enabled Count",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "title": "DocGenTemplateSlotsSaveData",
-        "description": "\u4fdd\u5b58/\u91cd\u89e3\u6790\u540e\u7684\u56de\u663e\u3002"
-      },
-      "DocGenTemplateSlotsSaveRequest": {
-        "properties": {
-          "slots": {
-            "items": {
-              "$ref": "#/components/schemas/DocGenSlotItem"
-            },
-            "type": "array",
-            "minItems": 1,
-            "title": "Slots"
-          },
-          "token": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Token"
-          }
-        },
-        "type": "object",
-        "required": [
-          "slots"
-        ],
-        "title": "DocGenTemplateSlotsSaveRequest",
-        "description": "PUT /deliverable-templates/{id}/slots \u5165\u53c2\uff1a\u5168\u91cf\u8986\u76d6 + \u4e50\u89c2\u4ee4\u724c\u3002"
-      },
-      "DocGenTemplateSlotsSaveResponse": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "$ref": "#/components/schemas/DocGenTemplateSlotsSaveData"
-          }
-        },
-        "type": "object",
-        "required": [
-          "data"
-        ],
-        "title": "DocGenTemplateSlotsSaveResponse",
-        "description": "PUT /deliverable-templates/{id}/slots \u54cd\u5e94\u3002"
       },
       "DocGenTemplateVersionItem": {
         "properties": {
@@ -157088,6 +155733,19 @@
             ],
             "title": "Template Structure"
           },
+          "instruction": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instruction",
+            "description": "\u6a21\u677f\u7ea7\u300c\u586b\u5199\u8981\u6c42\u300d\uff1a\u5408\u5e76\u5199\u5165 template_structure.instruction\uff0c\u751f\u6210\u65f6\u4e0b\u53d1\u7ed9\u667a\u80fd\u4f53"
+          },
           "template_code": {
             "anyOf": [
               {
@@ -161847,7 +160505,7 @@
           "slot_gap": {
             "type": "integer",
             "title": "Slot Gap",
-            "description": "\u5f85\u8865\u5145\u69fd\u4f4d\u6570",
+            "description": "\u672a\u5199\u5165\u7684\u4f4d\u7f6e\u6570",
             "default": 0
           },
           "document_ready": {
@@ -165453,14 +164111,177 @@
         ],
         "title": "ReportGenDocumentVersionListData"
       },
-      "ReportGenExampleData": {
+      "ReportGenEditOperationRequest": {
         "properties": {
-          "id": {
+          "op": {
             "type": "string",
-            "format": "uuid",
-            "title": "Id"
+            "enum": [
+              "update_text",
+              "update_cell",
+              "restore_position",
+              "insert_paragraph",
+              "delete_paragraph",
+              "append_table_row",
+              "delete_table_row"
+            ],
+            "title": "Op"
           },
-          "template_id": {
+          "key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key",
+            "description": "\u76ee\u6807\u4f4d\u7f6e\uff1ap12 / t2r3c1 / ap1 / at1"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text",
+            "description": "\u6539\u540e\u7684\u5185\u5bb9\uff08\u591a\u884c\u6309\u6bb5\u843d\u62c6\u5206\uff09"
+          },
+          "cells": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cells",
+            "description": "\u8ffd\u52a0\u8868\u683c\u884c\u7684\u5404\u5217\u5185\u5bb9"
+          },
+          "clone_from_row": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clone From Row",
+            "description": "\u514b\u9686\u54ea\u4e00\u884c\u7684\u683c\u5f0f\uff1b\u9ed8\u8ba4\u6700\u540e\u4e00\u884c"
+          },
+          "table_index": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table Index",
+            "description": "\u8868\u683c\u4e0b\u6807\uff1bkey \u4e0d\u662f\u5355\u5143\u683c\u65f6\u7528\u5b83\u5b9a\u4f4d"
+          },
+          "row": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Row",
+            "description": "\u884c\u4e0b\u6807\uff1bkey \u4e0d\u662f\u5355\u5143\u683c\u65f6\u7528\u5b83\u5b9a\u4f4d"
+          }
+        },
+        "type": "object",
+        "required": [
+          "op"
+        ],
+        "title": "ReportGenEditOperationRequest",
+        "description": "\u4e00\u6761\u7f16\u8f91\u52a8\u4f5c\u3002\u767d\u540d\u5355\u5916\u7684\u64cd\u4f5c\u76f4\u63a5\u88ab\u6a21\u578b\u5c42\u62d2\u7edd\uff0c\u4e0d\u5728\u8fd9\u91cc\u515c\u3002\n\n``key`` \u8bed\u4e49\u6309 op \u4e0d\u540c\uff1a\u6539\u503c/\u5220\u6bb5\u843d\u6307\u5411\u76ee\u6807\u4f4d\u7f6e\uff1b\u63d2\u6bb5\u843d\u6307\u5411\u300c\u63d2\u5728\u8c01\u540e\u9762\u300d\u3002"
+      },
+      "ReportGenEditRejection": {
+        "properties": {
+          "key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key"
+          },
+          "op": {
+            "type": "string",
+            "title": "Op"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "op",
+          "reason"
+        ],
+        "title": "ReportGenEditRejection"
+      },
+      "ReportGenEditRemoval": {
+        "properties": {
+          "key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key"
+          },
+          "op": {
+            "type": "string",
+            "title": "Op"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "restored": {
+            "type": "boolean",
+            "title": "Restored",
+            "description": "\u8be5\u4f4d\u7f6e\u662f\u5426\u5df2\u8fd8\u539f\u6210\u6bcd\u672c\u539f\u59cb\u6587\u5b57\u4e0e\u683c\u5f0f",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "op",
+          "reason"
+        ],
+        "title": "ReportGenEditRemoval",
+        "description": "\u4e00\u6761\u6821\u9a8c\u672a\u901a\u8fc7\u3001\u5df2\u88ab\u4e22\u5f03\u5e76\u8fd8\u539f\u7684\u4f4d\u7f6e\u3002\n\n\u4e0e ``rejected`` \u7684\u533a\u522b\uff1a``rejected`` \u662f\u65e7\u7684\u300c\u6574\u6279\u5931\u8d25\u300d\u8bed\u4e49\uff0c\u4fdd\u7559\u53ea\u4e3a\u517c\u5bb9\u8001\u524d\u7aef\uff1b\n\u73b0\u5728\u6279\u91cf\u4fdd\u5b58\u5141\u8bb8\u591a\u6761\u91cc\u53ea\u5931\u8d25\u51e0\u6761\uff0c\u5931\u8d25\u9879\u7531\u8fd9\u91cc\u9010\u6761\u8bf4\u660e\u300c\u4e3a\u4ec0\u4e48\u6ca1\u6539\u3001\u6709\u6ca1\u6709\u8fd8\u539f\u300d\u3002"
+      },
+      "ReportGenEditRequest": {
+        "properties": {
+          "base_version_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -165470,174 +164291,76 @@
                 "type": "null"
               }
             ],
-            "title": "Template Id"
+            "title": "Base Version Id",
+            "description": "\u57fa\u4e8e\u54ea\u4e00\u7248\u6539\uff1b\u4e0e\u5f53\u524d\u7248\u672c\u4e0d\u4e00\u81f4\u65f6\u8fd4\u56de 409\uff0c\u907f\u514d\u8986\u76d6\u522b\u4eba\u7684\u6539\u52a8"
           },
-          "slot_key": {
-            "type": "string",
-            "title": "Slot Key"
-          },
-          "slot_label": {
-            "type": "string",
-            "title": "Slot Label",
-            "default": ""
-          },
-          "source": {
-            "type": "string",
-            "title": "Source",
-            "description": "manual_edit=\u4eba\u5de5\u4fee\u6b63 / agent_filled=\u6a21\u578b\u586b\u5145 / feedback_promoted=\u8bc4\u5ba1\u610f\u89c1\u6c89\u6dc0"
-          },
-          "value": {
-            "type": "string",
-            "title": "Value"
-          },
-          "evidence_text": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Evidence Text"
-          },
-          "usage_count": {
-            "type": "integer",
-            "title": "Usage Count",
-            "default": 0
-          },
-          "is_active": {
-            "type": "boolean",
-            "title": "Is Active",
-            "default": true
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Updated At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "slot_key",
-          "source",
-          "value",
-          "updated_at"
-        ],
-        "title": "ReportGenExampleData",
-        "description": "\u69fd\u4f4d\u793a\u4f8b\u5e93\u7684\u4e00\u6761\u8bb0\u5f55\uff1a\u4e0b\u6b21\u540c\u6a21\u677f\u751f\u6210\u4f1a\u628a\u5b83\u5f53 few-shot \u53c2\u7167\u3002"
-      },
-      "ReportGenExampleListData": {
-        "properties": {
-          "items": {
+          "operations": {
             "items": {
-              "$ref": "#/components/schemas/ReportGenExampleData"
+              "$ref": "#/components/schemas/ReportGenEditOperationRequest"
             },
             "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total",
-            "default": 0
-          },
-          "active_total": {
-            "type": "integer",
-            "title": "Active Total",
-            "default": 0
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Operations"
           }
         },
         "type": "object",
         "required": [
-          "items"
+          "operations"
         ],
-        "title": "ReportGenExampleListData"
+        "title": "ReportGenEditRequest",
+        "description": "\u4e00\u6b21\u4fdd\u5b58\u7684\u6574\u6279\u6539\u52a8\uff1a\u4efb\u4e00\u6761\u4e0d\u5408\u6cd5\u5219\u6574\u6279\u4e0d\u751f\u6548\u3002"
       },
-      "ReportGenExamplePromoteData": {
+      "ReportGenEditResultData": {
         "properties": {
-          "feedback_id": {
-            "type": "string",
-            "title": "Feedback Id"
+          "applied": {
+            "type": "integer",
+            "title": "Applied",
+            "description": "\u5b9e\u9645\u751f\u6548\u7684\u64cd\u4f5c\u6570",
+            "default": 0
           },
-          "slot_key": {
-            "type": "string",
-            "title": "Slot Key"
+          "removed": {
+            "items": {
+              "$ref": "#/components/schemas/ReportGenEditRemoval"
+            },
+            "type": "array",
+            "title": "Removed",
+            "description": "\u6821\u9a8c\u672a\u901a\u8fc7\u3001\u5df2\u4e22\u5f03\u5e76\u8fd8\u539f\u7684\u64cd\u4f5c"
           },
-          "slot_label": {
-            "type": "string",
-            "title": "Slot Label",
-            "default": ""
+          "restored": {
+            "type": "integer",
+            "title": "Restored",
+            "description": "\u5176\u4e2d\u5df2\u8fd8\u539f\u4e3a\u6bcd\u672c\u539f\u6837\u7684\u6761\u6570",
+            "default": 0
           },
-          "value": {
-            "type": "string",
-            "title": "Value",
-            "description": "\u88ab\u91c7\u7eb3\u7684\u69fd\u4f4d\u5199\u6cd5\uff08\u6765\u81ea\u843d\u5b9e\u8be5\u610f\u89c1\u7684\u90a3\u6b21\u751f\u6210\uff09"
+          "rejected": {
+            "items": {
+              "$ref": "#/components/schemas/ReportGenEditRejection"
+            },
+            "type": "array",
+            "title": "Rejected",
+            "description": "\u517c\u5bb9\u5b57\u6bb5\uff1a\u4e0e removed \u540c\u6e90\uff0c\u65e7\u524d\u7aef\u6309\u6574\u6279\u5931\u8d25\u5c55\u793a"
           },
-          "source": {
-            "type": "string",
-            "title": "Source",
-            "description": "\u793a\u4f8b\u6765\u6e90\uff0c\u6c89\u6dc0\u8def\u5f84\u56fa\u5b9a\u4e3a feedback_promoted"
+          "version": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportGenDocumentVersionData"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "\u4fdd\u5b58\u6210\u529f\u540e\u7684\u65b0\u7248\u672c"
           },
-          "created": {
+          "synced_deliverable": {
             "type": "boolean",
-            "title": "Created",
-            "description": "true=\u65b0\u5efa\u793a\u4f8b / false=\u8986\u76d6\u4e86\u8be5\u69fd\u4f4d\u539f\u6709\u793a\u4f8b"
+            "title": "Synced Deliverable",
+            "description": "\u662f\u5426\u5df2\u540c\u6b65\u56de\u5199\u9636\u6bb5\u4ea4\u4ed8\u7269\u9644\u4ef6",
+            "default": false
           }
         },
         "type": "object",
-        "required": [
-          "feedback_id",
-          "slot_key",
-          "value",
-          "source",
-          "created"
-        ],
-        "title": "ReportGenExamplePromoteData",
-        "description": "\u628a\u4e00\u6761\u5df2\u843d\u5b9e\u610f\u89c1\u6c89\u6dc0\u6210\u69fd\u4f4d\u793a\u4f8b\u7684\u7ed3\u679c\uff1a\u4e0b\u6b21\u540c\u6a21\u677f\u751f\u6210\u4f1a\u628a\u5b83\u5f53 few-shot \u53c2\u7167\u3002"
-      },
-      "ReportGenExampleUpdateRequest": {
-        "properties": {
-          "value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Value",
-            "description": "\u65b0\u7684\u793a\u4f8b\u5199\u6cd5\uff1b\u7559\u7a7a\u8868\u793a\u4e0d\u4fee\u6539"
-          },
-          "evidence_text": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Evidence Text",
-            "description": "\u793a\u4f8b\u4f9d\u636e"
-          },
-          "is_active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Is Active",
-            "description": "false=\u505c\u7528\uff0c\u4e0d\u518d\u6ce8\u5165\u4e0b\u6b21\u751f\u6210"
-          }
-        },
-        "type": "object",
-        "title": "ReportGenExampleUpdateRequest",
-        "description": "\u4eba\u5de5\u7ef4\u62a4\u793a\u4f8b\uff1a\u6539\u5199\u6cd5\u3001\u8865\u4f9d\u636e\u3001\u505c\u7528\u9519\u4f8b\u3002"
+        "title": "ReportGenEditResultData"
       },
       "ReportGenFeedbackBrief": {
         "properties": {
@@ -165656,7 +164379,7 @@
               }
             ],
             "title": "Slot Key",
-            "description": "\u9488\u5bf9\u7684\u69fd\u4f4d\uff1b\u7a7a=\u6574\u7bc7\u610f\u89c1"
+            "description": "\u9488\u5bf9\u7684\u4f4d\u7f6e\uff08p12 / t2r3c1\uff09\uff1b\u7a7a=\u6574\u7bc7\u610f\u89c1"
           },
           "content": {
             "type": "string",
@@ -165684,7 +164407,7 @@
               }
             ],
             "title": "Slot Key",
-            "description": "\u9488\u5bf9\u7684\u69fd\u4f4d\uff1b\u7559\u7a7a=\u6574\u7bc7\u610f\u89c1"
+            "description": "\u9488\u5bf9\u7684\u4f4d\u7f6e\uff1b\u7559\u7a7a=\u6574\u7bc7\u610f\u89c1"
           },
           "content": {
             "type": "string",
@@ -165699,7 +164422,7 @@
           "content"
         ],
         "title": "ReportGenFeedbackCreateRequest",
-        "description": "\u63d0\u4e00\u6761\u8bc4\u5ba1\u610f\u89c1\uff1a\u8981\u4e48\u9488\u5bf9\u6574\u7bc7\uff0c\u8981\u4e48\u9488\u5bf9\u67d0\u4e2a\u69fd\u4f4d\u3002"
+        "description": "\u63d0\u4e00\u6761\u8bc4\u5ba1\u610f\u89c1\uff1a\u8981\u4e48\u9488\u5bf9\u6574\u7bc7\uff0c\u8981\u4e48\u9488\u5bf9\u67d0\u4e2a\u4f4d\u7f6e\u3002"
       },
       "ReportGenFeedbackData": {
         "properties": {
@@ -165721,7 +164444,7 @@
               }
             ],
             "title": "Slot Key",
-            "description": "\u9488\u5bf9\u7684\u69fd\u4f4d\uff1b\u7a7a=\u6574\u7bc7\u610f\u89c1"
+            "description": "\u9488\u5bf9\u7684\u4f4d\u7f6e\uff1b\u7a7a=\u6574\u7bc7\u610f\u89c1"
           },
           "content": {
             "type": "string",
@@ -165789,12 +164512,12 @@
           "slot_key": {
             "type": "string",
             "title": "Slot Key",
-            "description": "\u69fd\u4f4d\u6807\u8bc6"
+            "description": "\u4f4d\u7f6e\u6807\u8bc6"
           },
           "count": {
             "type": "integer",
             "title": "Count",
-            "description": "\u7a97\u53e3\u5185\u8be5\u69fd\u4f4d\u88ab\u63d0\u610f\u89c1\u7684\u6761\u6570"
+            "description": "\u7a97\u53e3\u5185\u8be5\u4f4d\u7f6e\u88ab\u63d0\u610f\u89c1\u7684\u6761\u6570"
           }
         },
         "type": "object",
@@ -165803,7 +164526,7 @@
           "count"
         ],
         "title": "ReportGenFeedbackSlotStat",
-        "description": "\u610f\u89c1\u96c6\u4e2d\u5728\u54ea\u4e9b\u69fd\u4f4d\uff1a\u540c\u4e00\u69fd\u4f4d\u53cd\u590d\u88ab\u63d0\uff0c\u8bf4\u660e\u8fd9\u91cc\u9700\u8981\u7684\u4e0d\u662f\u6539\u4e00\u6b21\uff0c\u800c\u662f\u6539\u63d0\u793a\u8bcd\u6216\u52a0\u793a\u4f8b\u3002"
+        "description": "\u610f\u89c1\u96c6\u4e2d\u5728\u54ea\u4e9b\u4f4d\u7f6e\uff1a\u540c\u4e00\u4f4d\u7f6e\u53cd\u590d\u88ab\u63d0\uff0c\u8bf4\u660e\u90a3\u91cc\u9700\u8981\u7684\u4e0d\u662f\u6539\u4e00\u6b21\uff0c\u800c\u662f\u6539\u6a21\u677f\u6216\u5199\u6e05\u8981\u6c42\u3002"
       },
       "ReportGenFeedbackUpdateRequest": {
         "properties": {
@@ -165823,6 +164546,203 @@
         ],
         "title": "ReportGenFeedbackUpdateRequest",
         "description": "\u4eba\u5de5\u5904\u7f6e\u610f\u89c1\uff1a\u4e0d\u91c7\u7eb3\u6807 ignored\uff0c\u9700\u8981\u91cd\u65b0\u6253\u5f00\u6807 open\u3002"
+      },
+      "ReportGenFieldItemData": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "description": "paragraph / table_cell / append_paragraph / append_table_rows / references"
+          },
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section",
+            "description": "\u6240\u5c5e\u7ae0\u8282\u6807\u9898\uff1b\u7a7a=\u6b63\u6587\u5f00\u5934\u6216\u8ffd\u52a0\u5185\u5bb9"
+          },
+          "section_index": {
+            "type": "integer",
+            "title": "Section Index",
+            "description": "\u6240\u5c5e\u7ae0\u8282\u5728 sections \u91cc\u7684\u4e0b\u6807\uff1b-1=\u7b2c\u4e00\u4e2a\u6807\u9898\u4e4b\u524d",
+            "default": -1
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "\u53ef\u8bfb\u4f4d\u7f6e\u540d\uff0c\u5982\u300c\u6b63\u6587\u7b2c 12 \u6bb5\u300d\u300c\u8868 2 \u7b2c 3 \u884c\u7b2c 1 \u5217\u300d"
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order",
+            "description": "\u6587\u6863\u5185\u9605\u8bfb\u987a\u5e8f\uff1a\u6b63\u6587\u6bb5\u843d\u4e3a\u6bb5\u843d\u4e0b\u6807\uff0c\u8868\u683c\u4e3a\u5176\u524d\u6bb5\u843d\u6570",
+            "default": 0
+          },
+          "writable": {
+            "type": "boolean",
+            "title": "Writable",
+            "description": "\u6bcd\u672c\u5224\u5b9a\u4e3a AI \u53ef\u5199\uff1b\u56fa\u5b9a\u5185\u5bb9\u4e3a False\uff0c\u4f46\u4eba\u5de5\u4ecd\u53ef\u6539",
+            "default": true
+          },
+          "editable": {
+            "type": "boolean",
+            "title": "Editable",
+            "description": "\u4eba\u5de5\u662f\u5426\u53ef\u6539\uff1b\u56fa\u5b9a\u5185\u5bb9\u653e\u5f00\u540e\u6052\u4e3a True",
+            "default": true
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason",
+            "description": "\u4e0d\u53ef\u5199\u539f\u56e0\uff0c\u6216\u672a\u5199\u539f\u56e0"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text",
+            "description": "\u6bcd\u672c\u539f\u6587\uff08\u5199\u5165\u524d\uff09"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value",
+            "description": "\u5f53\u524d\u5185\u5bb9\uff08AI \u5199\u5165\u6216\u4eba\u5de5\u4fee\u6539\u540e\u7684\u503c\uff09"
+          },
+          "state": {
+            "type": "string",
+            "title": "State",
+            "description": "written / needs_verify / conflict / anchor_unresolved / blank / locked"
+          },
+          "edit_source": {
+            "type": "string",
+            "title": "Edit Source",
+            "description": "ai=\u751f\u6210\u5199\u5165 / manual=\u4eba\u5de5\u4fee\u6539",
+            "default": "ai"
+          },
+          "human_locked": {
+            "type": "boolean",
+            "title": "Human Locked",
+            "description": "\u4eba\u5de5\u786e\u8ba4\u8fc7\u7684\u503c\uff1a\u4e0b\u4e00\u6b21\u751f\u6210\u6cbf\u7528\uff0cAI \u4e0d\u5f97\u8986\u76d6",
+            "default": false
+          },
+          "source_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Name",
+            "description": "\u6765\u6e90\u6587\u4ef6\u6216\u6570\u636e\u8868"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence",
+            "description": "\u539f\u6587\u8bc1\u636e\uff08\u5f15\u6587\uff09"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context",
+            "description": "\u4e0a\u4e00\u6bb5\u6216\u8868\u5934\u63d0\u793a\uff0c\u5e2e\u52a9\u5224\u65ad\u8be5\u5904\u5199\u4ec0\u4e48"
+          },
+          "index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Index",
+            "description": "\u6bb5\u843d\u4e0b\u6807\uff1b\u8868\u683c\u4f4d\u7f6e\u4e3a table_index"
+          },
+          "row": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Row"
+          },
+          "col": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Col"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "kind",
+          "label",
+          "state"
+        ],
+        "title": "ReportGenFieldItemData",
+        "description": "\u4e00\u5904\u53ef\u5199\u4f4d\u7f6e\uff1a\u6bcd\u672c\u91cc\u7684\u6bb5\u843d/\u5355\u5143\u683c\uff0c\u6216\u751f\u6210\u65f6\u8ffd\u52a0\u7684\u6bb5\u843d/\u8868\u683c\u884c\u3002\n\n``key`` \u4e0e ``rd_report_gen_slots.slot_key`` \u540c\u4e00\u5957\u547d\u540d\uff1a\n``p{\u4e0b\u6807}`` / ``t{\u8868}r{\u884c}c{\u5217}`` / ``ap{n}`` / ``at{n}`` / ``ref``\u3002\n\u524d\u7aef\u7528\u5b83\u628a\u9884\u89c8 DOM \u4e0a\u7684\u6807\u8bb0\u3001\u53f3\u4fa7\u6e05\u5355\u884c\u4e0e\u7f16\u8f91\u5361\u4e32\u6210\u540c\u4e00\u6761\u8bb0\u5f55\u3002"
       },
       "ReportGenJobCreateRequest": {
         "properties": {
@@ -166012,6 +164932,17 @@
             "title": "Feedback Applied",
             "description": "\u672c\u6b21\u751f\u6210\u5e26\u8d70\u7684\u8bc4\u5ba1\u610f\u89c1\uff08\u5df2\u62fc\u5165\u8865\u5145\u8bf4\u660e\uff09"
           },
+          "opinion_digest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportGenOpinionDigestBrief"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "\u672c\u6b21\u751f\u6210\u5957\u7528\u7684\u5386\u53f2\u610f\u89c1\u6c47\u603b\u5feb\u7167\uff1b\u7a7a=\u5f53\u65f6\u610f\u89c1\u5e93\u4e3a\u7a7a\u6216\u6c47\u603b\u672a\u751f\u6210"
+          },
           "document_file_name": {
             "anyOf": [
               {
@@ -166025,15 +164956,21 @@
           },
           "slot_total": {
             "type": "integer",
-            "title": "Slot Total"
+            "title": "Slot Total",
+            "description": "\u6bcd\u672c\u53ef\u5199\u4f4d\u7f6e\u603b\u6570",
+            "default": 0
           },
           "slot_filled": {
             "type": "integer",
-            "title": "Slot Filled"
+            "title": "Slot Filled",
+            "description": "\u672c\u6b21\u5b9e\u9645\u5199\u5165\u7684\u4f4d\u7f6e\u6570",
+            "default": 0
           },
           "slot_gap": {
             "type": "integer",
-            "title": "Slot Gap"
+            "title": "Slot Gap",
+            "description": "\u4ecd\u4e3a\u7a7a\u7684\u53ef\u5199\u4f4d\u7f6e\u6570",
+            "default": 0
           },
           "rounds": {
             "type": "integer",
@@ -166081,7 +165018,8 @@
                 "type": "null"
               }
             ],
-            "title": "Structure Model Name"
+            "title": "Structure Model Name",
+            "description": "\u7ed3\u6784\u8bc6\u522b\u65f6\u4ee3\u7684\u9057\u7559\u5b57\u6bb5\uff0c\u65b0\u4efb\u52a1\u6052\u4e3a\u7a7a"
           },
           "fallback_model_name": {
             "anyOf": [
@@ -166146,14 +165084,11 @@
           "project_id",
           "status",
           "progress",
-          "slot_total",
-          "slot_filled",
-          "slot_gap",
           "rounds",
           "created_at"
         ],
         "title": "ReportGenJobData",
-        "description": "\u4efb\u52a1\u8be6\u60c5\uff1a\u8be6\u60c5\u9875\u5934\u90e8\u4e0e\u5217\u8868\u8fdb\u5ea6\u5217\u90fd\u7528\u5b83\u3002"
+        "description": "\u4efb\u52a1\u8be6\u60c5\uff1a\u8be6\u60c5\u9875\u5934\u90e8\u4e0e\u5217\u8868\u8fdb\u5ea6\u5217\u90fd\u7528\u5b83\u3002\n\n``slot_total / slot_filled / slot_gap`` \u662f\u6cbf\u7528\u4e0b\u6765\u7684\u5217\u540d\uff0c\u8bed\u4e49\u4e3a\n\u300c\u6bcd\u672c\u53ef\u5199\u4f4d\u7f6e\u603b\u6570 / \u5df2\u5199\u4f4d\u7f6e\u6570 / \u672a\u5199\u7a7a\u4f4d\u6570\u300d\uff0c\u4e0d\u5efa\u8fc1\u79fb\u4e5f\u80fd\u8868\u8fbe\u8986\u76d6\u7387\u3002"
       },
       "ReportGenJobListData": {
         "properties": {
@@ -166250,7 +165185,7 @@
               }
             ],
             "title": "Gap Rate",
-            "description": "\u03a3slot_gap \u00f7 \u03a3slot_total\uff08\u4ec5 completed\uff09"
+            "description": "\u03a3\u672a\u5199\u7a7a\u4f4d \u00f7 \u03a3\u53ef\u5199\u4f4d\u7f6e\uff08\u4ec5 completed\uff09"
           },
           "fallback_rate": {
             "anyOf": [
@@ -166306,17 +165241,12 @@
             },
             "type": "array",
             "title": "Feedback Slot Top",
-            "description": "\u88ab\u63d0\u610f\u89c1\u6700\u591a\u7684\u69fd\u4f4d\uff08\u6700\u591a 5 \u4e2a\uff0c\u6574\u7bc7\u610f\u89c1\u4e0d\u8ba1\u5165\uff09"
+            "description": "\u88ab\u63d0\u610f\u89c1\u6700\u591a\u7684\u4f4d\u7f6e\uff08\u6700\u591a 5 \u4e2a\uff0c\u6574\u7bc7\u610f\u89c1\u4e0d\u8ba1\u5165\uff09"
           },
           "agent_prompt_version": {
             "type": "string",
             "title": "Agent Prompt Version",
             "description": "\u6b63\u6587\u751f\u6210\u63d0\u793a\u8bcd\u6307\u7eb9\uff08sha256 \u524d 8 \u4f4d\uff09"
-          },
-          "structure_prompt_version": {
-            "type": "string",
-            "title": "Structure Prompt Version",
-            "description": "\u7ed3\u6784\u8bc6\u522b\u63d0\u793a\u8bcd\u6307\u7eb9\uff08sha256 \u524d 8 \u4f4d\uff09"
           },
           "generated_at": {
             "type": "string",
@@ -166329,7 +165259,6 @@
         "required": [
           "window_days",
           "agent_prompt_version",
-          "structure_prompt_version",
           "generated_at"
         ],
         "title": "ReportGenMetricsData",
@@ -166395,7 +165324,6 @@
             "type": "string",
             "enum": [
               "main",
-              "structure",
               "fallback"
             ],
             "title": "Slot",
@@ -166408,6 +165336,463 @@
         ],
         "title": "ReportGenModelTestRequest",
         "description": "\u914d\u7f6e\u9875\u7684\u300c\u6d4b\u8bd5\u8fde\u901a\u300d\uff1a\u53ea\u9a8c\u8bc1\u67d0\u4e00\u6863\u80fd\u4e0d\u80fd\u51fa\u5b57\uff0c\u4e0d\u6539\u4efb\u4f55\u914d\u7f6e\u3002"
+      },
+      "ReportGenOpinionData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "hit_count": {
+            "type": "integer",
+            "title": "Hit Count",
+            "description": "\u88ab\u63d0\u51fa\u6b21\u6570\uff1b\u6b21\u6570\u8d8a\u9ad8\u8d8a\u666e\u904d",
+            "default": 1
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "active=\u53c2\u4e0e\u6c47\u603b / disabled=\u4eba\u5de5\u505c\u7528"
+          },
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Seen At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "content",
+          "status",
+          "created_at"
+        ],
+        "title": "ReportGenOpinionData",
+        "description": "\u610f\u89c1\u5e93\u7684\u4e00\u6761\uff1a\u8de8\u62a5\u544a\u5f52\u5e76\u540e\u7684\u53ef\u590d\u7528\u5199\u4f5c\u8981\u6c42\u3002"
+      },
+      "ReportGenOpinionDigestBrief": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "item_count": {
+            "type": "integer",
+            "title": "Item Count",
+            "description": "\u5f52\u5e76\u4e86\u591a\u5c11\u6761\u6709\u6548\u610f\u89c1",
+            "default": 0
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "ok=\u6a21\u578b\u5f52\u5e76 / fallback=\u6a21\u578b\u4e0d\u53ef\u7528\u9000\u56de\u539f\u6587\u6e05\u5355",
+            "default": "ok"
+          },
+          "digest_preview": {
+            "type": "string",
+            "title": "Digest Preview",
+            "description": "\u6c47\u603b\u5168\u6587\u524d 300 \u5b57",
+            "default": ""
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at"
+        ],
+        "title": "ReportGenOpinionDigestBrief",
+        "description": "\u672c\u6b21\u751f\u6210\u5957\u7528\u7684\u610f\u89c1\u6c47\u603b\uff1a\u53ea\u5e26\u6458\u8981\uff0c\u5168\u6587\u7559\u7ed9\u610f\u89c1\u5e93\u9875\u3002"
+      },
+      "ReportGenOpinionDigestData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "item_count": {
+            "type": "integer",
+            "title": "Item Count",
+            "default": 0
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "ok=\u6a21\u578b\u5f52\u5e76 / fallback=\u6a21\u578b\u4e0d\u53ef\u7528\u9000\u56de\u539f\u6587\u6e05\u5355"
+          },
+          "digest_text": {
+            "type": "string",
+            "title": "Digest Text"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "digest_text",
+          "created_at"
+        ],
+        "title": "ReportGenOpinionDigestData"
+      },
+      "ReportGenOpinionDigestListData": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportGenOpinionDigestData"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "ReportGenOpinionDigestListData"
+      },
+      "ReportGenOpinionListData": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "active_count": {
+            "type": "integer",
+            "title": "Active Count",
+            "default": 0
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportGenOpinionData"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "ReportGenOpinionListData"
+      },
+      "ReportGenOpinionUpdateRequest": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "disabled"
+            ],
+            "title": "Status",
+            "description": "active=\u6062\u590d\u53c2\u4e0e / disabled=\u505c\u7528"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ReportGenOpinionUpdateRequest",
+        "description": "\u4eba\u5de5\u505c\u7528/\u542f\u7528\u4e00\u6761\u610f\u89c1\uff1a\u505c\u7528\u540e\u4e0d\u518d\u8fdb\u5165\u751f\u6210\u524d\u7684\u6c47\u603b\u3002"
+      },
+      "ReportGenOutlineData": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "has_document": {
+            "type": "boolean",
+            "title": "Has Document",
+            "default": false
+          },
+          "template_file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template File Name"
+          },
+          "template_paragraph_count": {
+            "type": "integer",
+            "title": "Template Paragraph Count",
+            "description": "\u6bcd\u672c\u6b63\u6587\u6bb5\u843d\u6570",
+            "default": 0
+          },
+          "template_table_count": {
+            "type": "integer",
+            "title": "Template Table Count",
+            "description": "\u6bcd\u672c\u8868\u683c\u6570",
+            "default": 0
+          },
+          "document_paragraph_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Paragraph Count",
+            "description": "\u6210\u54c1\u6b63\u6587\u6bb5\u843d\u6570\uff0c\u4f9b\u9884\u89c8\u6620\u5c04\u81ea\u68c0"
+          },
+          "document_table_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Table Count",
+            "description": "\u6210\u54c1\u8868\u683c\u6570\uff0c\u4f9b\u9884\u89c8\u6620\u5c04\u81ea\u68c0"
+          },
+          "document_paragraph_texts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Document Paragraph Texts",
+            "description": "\u6210\u54c1\u6b63\u6587\u6bb5\u843d\u6587\u672c\uff08\u622a\u65ad\uff09\uff0c\u9884\u89c8\u6309\u5185\u5bb9\u5bf9\u9f50\u7528\u3002docx-preview \u4f1a\u628a\u53ea\u542b\u5206\u9875\u7b26\u7684\u6bb5\u843d\u62c6\u6210\u4e24\u6bb5\uff0c\u6bb5\u843d\u6570\u4e0e\u6bcd\u672c\u5bf9\u4e0d\u4e0a\u65f6\u4e0d\u80fd\u6309\u4e0b\u6807\u786c\u5957"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/ReportGenOutlineStatsData"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/ReportGenSectionData"
+            },
+            "type": "array",
+            "title": "Sections"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportGenFieldItemData"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "locked_items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportGenFieldItemData"
+            },
+            "type": "array",
+            "title": "Locked Items",
+            "description": "\u4e0d\u53ef\u5199\u4f4d\u7f6e\uff08\u53ea\u5e26\u4f4d\u7f6e\u540d\u4e0e\u539f\u56e0\uff09\uff0c\u7528\u4e8e\u9884\u89c8\u70b9\u51fb\u65f6\u63d0\u793a\u9501\u5b9a"
+          },
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/ReportGenReferenceData"
+            },
+            "type": "array",
+            "title": "References",
+            "description": "\u53c2\u8003\u8d44\u6599\uff08\u5f15\u7528\u6e90\uff09\uff1a\u53ea\u5c55\u793a\u5728\u9875\u9762\u53f3\u4fa7\uff0c\u4e0d\u5199\u8fdb Word \u6587\u6863"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status"
+        ],
+        "title": "ReportGenOutlineData",
+        "description": "\u8be6\u60c5\u9875\u5ba1\u9605\u5de5\u4f5c\u53f0\u7684\u4e00\u6b21\u6027\u6570\u636e\uff1a\u6e05\u5355 + \u7edf\u8ba1 + \u4e24\u4fa7\u7ed3\u6784\u81ea\u68c0\u6570\u5b57\u3002"
+      },
+      "ReportGenOutlineStatsData": {
+        "properties": {
+          "writable_total": {
+            "type": "integer",
+            "title": "Writable Total",
+            "description": "\u6bcd\u672c\u53ef\u5199\u4f4d\u7f6e\u603b\u6570",
+            "default": 0
+          },
+          "written": {
+            "type": "integer",
+            "title": "Written",
+            "description": "\u6709\u5185\u5bb9\u7684\u4f4d\u7f6e\u6570\uff08\u542b\u9700\u6838\u5bf9/\u5931\u6548\uff09",
+            "default": 0
+          },
+          "blank": {
+            "type": "integer",
+            "title": "Blank",
+            "description": "\u4ecd\u7a7a\u7740\u7684\u53ef\u5199\u4f4d\u7f6e\u6570",
+            "default": 0
+          },
+          "needs_verify": {
+            "type": "integer",
+            "title": "Needs Verify",
+            "description": "\u5df2\u5199\u4f46\u6ca1\u6709\u53ef\u5f15\u7528\u6765\u6e90\uff0c\u9700\u4eba\u5de5\u6838\u5bf9",
+            "default": 0
+          },
+          "conflict": {
+            "type": "integer",
+            "title": "Conflict",
+            "description": "\u4fe1\u606f\u51b2\u7a81\uff0c\u9700\u4eba\u5de5\u5224\u65ad",
+            "default": 0
+          },
+          "anchor_unresolved": {
+            "type": "integer",
+            "title": "Anchor Unresolved",
+            "description": "\u6210\u54c1\u91cc\u627e\u4e0d\u5230\u4f4d\u7f6e\uff0c\u5199\u5165\u6ca1\u843d\u5230\u4f4d",
+            "default": 0
+          },
+          "manual": {
+            "type": "integer",
+            "title": "Manual",
+            "description": "\u4eba\u5de5\u6539\u8fc7\u7684\u4f4d\u7f6e\u6570",
+            "default": 0
+          },
+          "appended": {
+            "type": "integer",
+            "title": "Appended",
+            "description": "AI \u8ffd\u52a0\u7684\u6bb5\u843d/\u8868\u683c\u884c\u6761\u6570\uff08\u4e0d\u542b\u53c2\u8003\u8d44\u6599\uff09",
+            "default": 0
+          },
+          "references": {
+            "type": "integer",
+            "title": "References",
+            "description": "\u53c2\u8003\u8d44\u6599\u6761\u6570\uff08\u6309\u6765\u6e90\u53bb\u91cd\uff09",
+            "default": 0
+          },
+          "locked": {
+            "type": "integer",
+            "title": "Locked",
+            "description": "\u6bcd\u672c\u91cc\u4e0d\u53ef\u5199\u7684\u6bb5\u843d\u4e0e\u5355\u5143\u683c\u6570\uff08\u6807\u9898\u3001\u56fa\u5b9a\u7ae0\u8282\u7b49\uff09",
+            "default": 0
+          },
+          "coverage_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Rate",
+            "description": "written \u00f7 writable_total"
+          }
+        },
+        "type": "object",
+        "title": "ReportGenOutlineStatsData",
+        "description": "\u6e05\u5355\u7edf\u8ba1\uff1a\u53e3\u5f84\u4e0e\u751f\u6210\u671f coverage \u4e00\u81f4\uff0c\u53e6\u52a0\u4eba\u5de5\u4fee\u6539\u4e0e\u9501\u5b9a\u6570\u3002"
+      },
+      "ReportGenReferenceData": {
+        "properties": {
+          "index": {
+            "type": "integer",
+            "title": "Index",
+            "description": "\u5e8f\u53f7\uff0c\u4e0e\u9875\u9762\u4e0a\u7684 [n] \u4e00\u81f4",
+            "default": 0
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "\u6765\u6e90\u6587\u4ef6\u540d\u6216\u6570\u636e\u8868\u540d"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "\u8be5\u6765\u6e90\u5728\u6b63\u6587\u91cc\u7684\u5f15\u7528\u5904\u6570\uff08locations \u662f\u622a\u65ad\u540e\u7684\u5c55\u793a\u6837\u672c\uff09",
+            "default": 0
+          },
+          "locations": {
+            "items": {
+              "$ref": "#/components/schemas/ReportGenReferenceLocationData"
+            },
+            "type": "array",
+            "title": "Locations",
+            "description": "\u524d\u82e5\u5e72\u5904\u843d\u70b9\uff0c\u70b9\u4e00\u6761\u8df3\u5230\u6b63\u6587\u5bf9\u5e94\u4f4d\u7f6e"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "ReportGenReferenceData",
+        "description": "\u4e00\u6761\u53c2\u8003\u8d44\u6599\uff1a\u6765\u6e90\u540d + \u5b83\u5728\u6b63\u6587\u91cc\u7684\u843d\u70b9\uff08\u4e0d\u5199\u8fdb Word \u6587\u6863\uff09\u3002"
+      },
+      "ReportGenReferenceLocationData": {
+        "properties": {
+          "key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key",
+            "description": "\u53ef\u70b9\u51fb\u5b9a\u4f4d\u7684\u4f4d\u7f6e key\uff08p12 / t2r3c1\uff09\uff1b\u7a7a=\u6b63\u6587\u91cc\u6ca1\u6709\u951a\u70b9"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "\u4f4d\u7f6e\u540d\uff0c\u5982\u300c\u6b63\u6587\u7b2c 12 \u6bb5\u300d\u300c\u8868 2 \u7b2c 3 \u884c\u7b2c 1 \u5217\u300d",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "ReportGenReferenceLocationData",
+        "description": "\u53c2\u8003\u8d44\u6599\u91cc\u7684\u4e00\u5904\u5f15\u7528\u4f4d\u7f6e\u3002"
       },
       "ReportGenRenderData": {
         "properties": {
@@ -166430,7 +165815,7 @@
             },
             "type": "array",
             "title": "Unresolved",
-            "description": "\u6bcd\u672c\u91cc\u6ca1\u627e\u5230\u951a\u70b9\u7684\u69fd\u4f4d"
+            "description": "\u6bcd\u672c\u91cc\u6ca1\u627e\u5230\u951a\u70b9\u7684\u5199\u5165\u8bb0\u5f55"
           },
           "synced_deliverable": {
             "type": "boolean",
@@ -166444,171 +165829,62 @@
           "version"
         ],
         "title": "ReportGenRenderData",
-        "description": "\u6309\u5f53\u524d\u69fd\u4f4d\u91cd\u6e32\u67d3\u7684\u7ed3\u679c\uff1a\u7248\u672c\u4fe1\u606f + \u672c\u6b21\u586b\u5145\u60c5\u51b5\u3002"
+        "description": "\u6210\u54c1\u7248\u672c\u843d\u5e93\u540e\u7684\u7ed3\u679c\uff1a\u7248\u672c\u4fe1\u606f + \u4efb\u52a1\u5f53\u524d\u5199\u5165\u7edf\u8ba1\uff08\u4eba\u5de5\u6539\u7a3f\u4e0a\u4f20\u7528\uff09\u3002"
       },
-      "ReportGenSlotData": {
+      "ReportGenSectionData": {
         "properties": {
-          "slot_key": {
-            "type": "string",
-            "title": "Slot Key"
-          },
-          "slot_label": {
-            "type": "string",
-            "title": "Slot Label"
-          },
-          "location": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Location"
-          },
-          "state": {
-            "type": "string",
-            "title": "State"
-          },
-          "value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Value"
-          },
-          "source_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Name"
-          },
-          "evidence": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Evidence"
-          },
-          "confidence": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Confidence"
-          },
-          "owner_hint": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Owner Hint"
-          }
-        },
-        "type": "object",
-        "required": [
-          "slot_key",
-          "slot_label",
-          "state"
-        ],
-        "title": "ReportGenSlotData"
-      },
-      "ReportGenSlotListData": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/ReportGenSlotData"
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
+          "index": {
             "type": "integer",
-            "title": "Total",
+            "title": "Index",
             "default": 0
           },
-          "filled": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "\u5c55\u793a\u540d\uff1b\u6ca1\u6709\u6807\u9898\u7684\u6b63\u6587\u5f00\u5934\u7528\u300c\u6b63\u6587\u5f00\u5934\u300d"
+          },
+          "level": {
             "type": "integer",
-            "title": "Filled",
+            "title": "Level",
             "default": 0
           },
-          "gaps": {
+          "start": {
             "type": "integer",
-            "title": "Gaps",
+            "title": "Start",
+            "default": 0
+          },
+          "end": {
+            "type": "integer",
+            "title": "End",
+            "default": 0
+          },
+          "writable": {
+            "type": "integer",
+            "title": "Writable",
+            "default": 0
+          },
+          "written": {
+            "type": "integer",
+            "title": "Written",
+            "default": 0
+          },
+          "blank": {
+            "type": "integer",
+            "title": "Blank",
             "default": 0
           }
         },
         "type": "object",
         "required": [
-          "items"
+          "label"
         ],
-        "title": "ReportGenSlotListData"
-      },
-      "ReportGenSlotUpdateRequest": {
-        "properties": {
-          "value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Value",
-            "description": "\u65b0\u7684\u586b\u5145\u503c\uff0c\u7559\u7a7a\u8868\u793a\u6807\u8bb0\u7f3a\u53e3"
-          },
-          "evidence": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Evidence",
-            "description": "\u4eba\u5de5\u8865\u5145\u7684\u4f9d\u636e"
-          },
-          "owner_hint": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 100
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Owner Hint",
-            "description": "\u7f3a\u53e3\u8d23\u4efb\u65b9"
-          }
-        },
-        "type": "object",
-        "title": "ReportGenSlotUpdateRequest",
-        "description": "\u4eba\u5de5\u4fee\u6b63\u69fd\u4f4d\uff1a\u53ea\u6539\u7ed3\u679c\u4e0e\u5bf9\u7167\u8868\uff0c\u4e0d\u91cd\u65b0\u6e32\u67d3\u6210\u54c1\uff08\u6309\u9700\u6c42\u786e\u8ba4\u7684\u53e3\u5f84\uff09\u3002"
+        "title": "ReportGenSectionData",
+        "description": "\u7ae0\u8282\u6811\u7684\u4e00\u8282\uff1a\u8be6\u60c5\u9875\u6309\u5b83\u5206\u7ec4\u5c55\u793a\u4f4d\u7f6e\u6e05\u5355\u3002"
       },
       "ReportGenStepData": {
         "properties": {
@@ -166716,173 +165992,24 @@
         ],
         "title": "ReportGenStepListData"
       },
-      "ReportGenStructureDiff": {
+      "ReportGenVersionRestoreRequest": {
         "properties": {
-          "ai_slot_count": {
-            "type": "integer",
-            "title": "Ai Slot Count",
-            "description": "\u89e3\u6790\u5f53\u65f6\u6a21\u578b\u9009\u51fa\u7684\u69fd\u4f4d\u6570"
-          },
-          "current_slot_count": {
-            "type": "integer",
-            "title": "Current Slot Count",
-            "description": "\u5f53\u524d\u7ed3\u6784\u91cc\u7684\u69fd\u4f4d\u603b\u6570\uff08\u542b\u5df2\u505c\u7528\uff09"
-          },
-          "kept_count": {
-            "type": "integer",
-            "title": "Kept Count",
-            "description": "AI \u9009\u4e2d\u4e14\u5f53\u524d\u4ecd\u542f\u7528\u7684\u69fd\u4f4d\u6570"
-          },
-          "missing_count": {
-            "type": "integer",
-            "title": "Missing Count",
-            "description": "\u6f0f\u9009\u6570\uff1a\u5f53\u524d\u542f\u7528\u4f46 AI \u5f53\u65f6\u6ca1\u9009\uff08\u4eba\u5de5\u540e\u8865\uff09"
-          },
-          "extra_count": {
-            "type": "integer",
-            "title": "Extra Count",
-            "description": "\u591a\u9009\u6570\uff1aAI \u5f53\u65f6\u9009\u4e86\u4f46\u73b0\u5728\u88ab\u505c\u7528\u6216\u5220\u9664"
-          },
-          "missing_keys": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Missing Keys",
-            "description": "\u6f0f\u9009\u69fd\u4f4d\u6807\u8bc6\uff08\u6700\u591a 10 \u4e2a\uff09"
-          },
-          "extra_keys": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Extra Keys",
-            "description": "\u591a\u9009\u69fd\u4f4d\u6807\u8bc6\uff08\u6700\u591a 10 \u4e2a\uff09"
-          }
-        },
-        "type": "object",
-        "required": [
-          "ai_slot_count",
-          "current_slot_count",
-          "kept_count",
-          "missing_count",
-          "extra_count"
-        ],
-        "title": "ReportGenStructureDiff",
-        "description": "\u89e3\u6790\u7ed3\u679c\u4e0e\u5f53\u524d\u7ed3\u6784\u7684\u5dee\u5f02\uff1a\u6f0f\u9009=\u4eba\u5de5\u540e\u8865\uff0c\u591a\u9009=\u4eba\u5de5\u5426\u6389\u3002"
-      },
-      "ReportGenStructureRunData": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "source_key": {
+          "base_version_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Source Key",
-            "description": "\u89e3\u6790\u65f6\u7684\u6bcd\u672c\u5b58\u50a8\u952e\uff0c\u6362\u7248\u5373\u53d8"
-          },
-          "prompt_version": {
-            "type": "string",
-            "title": "Prompt Version",
-            "description": "\u89e3\u6790\u6240\u7528\u63d0\u793a\u8bcd\u6307\u7eb9"
-          },
-          "model_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Name",
-            "description": "\u89e3\u6790\u6240\u7528\u6a21\u578b"
-          },
-          "candidate_count": {
-            "type": "integer",
-            "title": "Candidate Count",
-            "description": "\u9001\u6a21\u578b\u7684\u5019\u9009\u4f4d\u7f6e\u6570"
-          },
-          "slot_count": {
-            "type": "integer",
-            "title": "Slot Count",
-            "description": "\u6a21\u578b\u5224\u5b9a\u51fa\u7684\u69fd\u4f4d\u6570"
-          },
-          "duration_ms": {
-            "type": "integer",
-            "title": "Duration Ms",
-            "description": "\u89e3\u6790\u8017\u65f6\uff08\u6beb\u79d2\uff09"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status",
-            "description": "ok / failed"
-          },
-          "error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error",
-            "description": "\u5931\u8d25\u539f\u56e0"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At",
-            "description": "\u89e3\u6790\u65f6\u95f4"
-          },
-          "diff": {
-            "$ref": "#/components/schemas/ReportGenStructureDiff",
-            "description": "\u4e0e\u5f53\u524d\u7ed3\u6784\u7684\u5dee\u5f02"
+            "title": "Base Version Id",
+            "description": "\u5e76\u53d1\u6821\u9a8c\uff1a\u4e0e\u5f53\u524d\u7248\u672c\u4e0d\u4e00\u81f4\u65f6\u62d2\u7edd"
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "prompt_version",
-          "candidate_count",
-          "slot_count",
-          "duration_ms",
-          "status",
-          "created_at",
-          "diff"
-        ],
-        "title": "ReportGenStructureRunData",
-        "description": "\u4e00\u6b21\u6bcd\u672c\u7ed3\u6784\u89e3\u6790\u7684\u7559\u75d5\u3002"
-      },
-      "ReportGenStructureRunListData": {
-        "properties": {
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/ReportGenStructureRunData"
-            },
-            "type": "array",
-            "title": "Items"
-          }
-        },
-        "type": "object",
-        "required": [
-          "total",
-          "items"
-        ],
-        "title": "ReportGenStructureRunListData"
+        "title": "ReportGenVersionRestoreRequest"
       },
       "ReportItemData": {
         "properties": {

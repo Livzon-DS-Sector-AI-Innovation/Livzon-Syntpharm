@@ -25,10 +25,6 @@ export interface TermCopy {
  */
 export const TERMS: Record<
   | 'templateFile'
-  | 'slot'
-  | 'candidate'
-  | 'anchor'
-  | 'templateStructure'
   | 'version'
   | 'fileCode'
   | 'kbDocument'
@@ -43,26 +39,6 @@ export const TERMS: Record<
     name: 'Word 模板文件',
     short: '模板文件',
     hint: '你上传的原始 Word 文档。AI 会在这份文件里按位置填写内容，原有排版、表格和字体都保持不变。',
-  },
-  slot: {
-    name: '填充项',
-    short: '填充项',
-    hint: '文档里留给 AI 填内容的一个位置，例如「批次数」对应的那一格。生成报告时 AI 会逐项填写。',
-  },
-  candidate: {
-    name: '可填位置',
-    short: '可填位置',
-    hint: '系统在模板文件里找到的、可以放内容的位置。把需要的位置挑出来，它就成为一个填充项。',
-  },
-  anchor: {
-    name: '定位位置',
-    short: '位置',
-    hint: '这个填充项最终要写进模板文件的哪一处，生成时靠它把内容写到正确的位置。',
-  },
-  templateStructure: {
-    name: '填充项设置',
-    short: '填充项',
-    hint: '文档里哪些位置需要 AI 填写、每个位置写什么。系统会自动分析，也可以人工调整。',
   },
   version: {
     name: '历史版本',
@@ -106,19 +82,19 @@ export const TEMPLATE_COPY = {
       description: '把排好版的 Word 拖进上传区，文件名就是模板名称。',
     },
     {
-      title: '系统自动分析可填位置',
-      description: `上传后自动找出文档里该填内容的位置，变成一个个${TERMS.slot.name}，不需要手工标注。`,
+      title: '上传后直接生成',
+      description: '不需要提前标注位置：生成时智能体会读这份 Word 的章节与空位，自己决定写哪、写什么。',
     },
     {
-      title: '按需调整填充项',
-      description: `对结果不满意时，点「${TERMS.templateStructure.name}」改名、补说明，或「重新分析结构」。`,
+      title: '需要时补一句填写要求',
+      description: '对写法有要求时，在模板的编辑抽屉里填「填写要求」，生成时会作为约束下发给智能体。',
     },
   ] satisfies GuideStep[],
   uploadTitle: `上传 ${TERMS.templateFile.name}`,
   emptyTitle: `还没有任何模板：先上传一份 ${TERMS.templateFile.name}`,
-  emptyDescription: '上传后系统会自动分析可填位置，随后就能在研发报告页用它生成文档。',
+  emptyDescription: '上传后就能在研发报告页选它生成文档，不需要提前标注填写位置。',
   deleteTitle: '删除这个模板？',
-  deleteDescription: `会同时删除它的${TERMS.version.name}、${TERMS.slot.name}设置和示例写法，已按它生成的报告文档不受影响但无法再用这个模板重新生成。删除后不可恢复。`,
+  deleteDescription: `会同时删除它的${TERMS.version.name}与「填写要求」，已按它生成的报告文档不受影响但无法再用这个模板重新生成。删除后不可恢复。`,
   replaceTitle: `将要替换 ${TERMS.templateFile.name}`,
   replaceDescription: `原来的文件会自动存为${TERMS.version.name}，随时可以恢复，不会真的丢失。`,
 } as const

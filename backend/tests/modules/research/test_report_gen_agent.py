@@ -7,20 +7,31 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 
 from app.core.llm.client import LLMToolCall, _load_arguments, _looks_like_tools_unsupported, _parse_tool_response
 from app.core.llm.exceptions import LLMOutputError
 from app.modules.research.report_gen.agent import resolve_initial_mode
-from app.modules.research.report_gen.tools import TOOL_NAMES, TOOL_SPECS, ToolOutcome, execute_tool
+from app.modules.research.report_gen.prompts import with_human_locked_summary, with_opinion_digest
+from app.modules.research.report_gen.tools import (
+    TOOL_NAMES,
+    TOOL_SPECS,
+    ReportGenRuntime,
+    ToolOutcome,
+    execute_tool,
+)
 
 EXPECTED_TOOLS = {
     "read_template_outline",
     "read_project_context",
     "search_knowledge_base",
-    "fill_slot",
-    "mark_gap",
+    "write_paragraph",
+    "write_cell",
+    "append_paragraph",
+    "append_table_rows",
+    "append_references",
     "finalize",
 }
 
@@ -83,13 +94,13 @@ async def test_missing_required_argument_short_circuits_before_handler() -> None
         called.append(arguments)
         return ToolOutcome(ok=True, summary="不该被调用")
 
-    runtime = _runtime(search_knowledge_base=handler)
+    runtime = _runtime(write_paragraph=handler)
 
-    outcome = await execute_tool("search_knowledge_base", {}, runtime)  # type: ignore[arg-type]
+    outcome = await execute_tool("write_paragraph", {}, cast(Any, runtime))
 
     assert outcome.ok is False
-    assert "query" in outcome.summary
-    assert outcome.payload["required"] == ["query"]
+    assert "items" in outcome.summary
+    assert outcome.payload["required"] == ["items"]
     assert called == []
 
 
@@ -98,8 +109,8 @@ async def test_tool_exception_is_swallowed_into_failed_outcome() -> None:
     async def boom(arguments: dict[str, object]) -> ToolOutcome:
         raise RuntimeError("知识库不可用")
 
-    outcome = await execute_tool(  # type: ignore[arg-type]
-        "search_knowledge_base", {"query": "合成路线"}, _runtime(search_knowledge_base=boom)
+    outcome = await execute_tool(
+        "search_knowledge_base", {"query": "合成路线"}, cast(Any, _runtime(search_knowledge_base=boom))
     )
     assert outcome.ok is False
     assert "知识库不可用" in outcome.summary
@@ -190,3 +201,74 @@ def test_load_arguments_handles_empty_invalid_and_non_object(
 )
 def test_tools_unsupported_detection(error_text: str, supported: bool) -> None:
     assert _looks_like_tools_unsupported(error_text) is supported
+
+
+def _patched_search(
+    monkeypatch: pytest.MonkeyPatch,
+    calls: list[tuple[str, int]],
+    counts: dict[str, int],
+) -> Any:
+    """造一个只跑检索预算逻辑的 runtime：三个检索源都换成记录调用的假实现。
+
+    ``counts`` 指定每个源最多返回几条，用来观察预算怎么分配。
+    """
+    runtime: Any = object.__new__(ReportGenRuntime)
+
+    async def facts(kb: object, query: str, top_k: int) -> list[dict[str, Any]]:
+        calls.append(("facts", top_k))
+        return [{"content": f"fact{index}"} for index in range(min(top_k, counts.get("facts", 0)))]
+
+    async def remote(kb: object, query: str, top_k: int) -> list[dict[str, Any]]:
+        calls.append(("remote", top_k))
+        return [{"content": f"chunk{index}"} for index in range(min(top_k, counts.get("remote", 0)))]
+
+    async def local(kb: object, query: str, top_k: int) -> list[dict[str, Any]]:
+        calls.append(("local", top_k))
+        return [{"content": f"local{index}"} for index in range(min(top_k, counts.get("local", 0)))]
+
+    monkeypatch.setattr(runtime, "_search_facts", facts, raising=False)
+    monkeypatch.setattr(runtime, "_search_chunks_remote", remote, raising=False)
+    monkeypatch.setattr(runtime, "_search_chunks_local", local, raising=False)
+    return runtime
+
+
+@pytest.mark.asyncio
+async def test_search_budget_reserves_half_for_remote_chunks(monkeypatch: pytest.MonkeyPatch) -> None:
+    """事实库不能吃满预算：查询带品种名时会把远程切片挤掉，正文就只能留空。"""
+    calls: list[tuple[str, int]] = []
+    runtime = _patched_search(monkeypatch, calls, {"facts": 99, "remote": 99})
+
+    items = await runtime._search_one(object(), "米诺地尔 合成路线 工艺", 6)  # noqa: SLF001
+
+    assert calls == [("facts", 3), ("remote", 3)]
+    assert len(items) == 6
+
+
+def test_opinion_digest_is_appended_as_writing_requirements() -> None:
+    prompt = with_opinion_digest("基础提示词", "1. 结果必须写因果")
+
+    assert prompt.startswith("基础提示词")
+    assert "【历史评审意见汇总" in prompt
+    assert "1. 结果必须写因果" in prompt
+    # 空汇总不产生空标题：否则每份报告都多一段无内容提示
+    assert with_opinion_digest("基础提示词", "  ") == "基础提示词"
+
+
+def test_human_locked_summary_lists_positions_without_values() -> None:
+    prompt = with_human_locked_summary("基础提示词", ["正文第2段", "表1第2行第2列"])
+
+    assert "【本次沿用上一版人工确认内容的位置" in prompt
+    assert "正文第2段、表1第2行第2列" in prompt
+    assert with_human_locked_summary("基础提示词", []) == "基础提示词"
+
+
+@pytest.mark.asyncio
+async def test_search_budget_falls_back_to_local_chunks_when_both_empty(monkeypatch: pytest.MonkeyPatch) -> None:
+    """事实库与 RAGFlow 都没命中时，本地切片仍按完整预算兜底。"""
+    calls: list[tuple[str, int]] = []
+    runtime = _patched_search(monkeypatch, calls, {"facts": 0, "remote": 0, "local": 99})
+
+    items = await runtime._search_one(object(), "米诺地尔 合成路线", 6)  # noqa: SLF001
+
+    assert calls == [("facts", 3), ("remote", 6), ("local", 6)]
+    assert len(items) == 6

@@ -19,29 +19,34 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import BadRequestException, NotFoundException
 from app.core.jobs import submit_job_safe
 from app.core.llm import llm_client
+from app.core.llm.config import get_active_config, get_env_config
 from app.modules.research.doc_template import store
 from app.modules.research.models import (
     RdDeliverableTemplate,
     RdReport,
-    RdReportGenExample,
+    RdReportGenEdit,
     RdReportGenFeedback,
     RdReportGenJob,
+    RdReportGenOpinion,
+    RdReportGenOpinionDigest,
     RdReportGenSlot,
     RdReportGenStep,
 )
+from app.modules.research.report_gen import editor as report_editor
+from app.modules.research.report_gen import opinions, review, versions
 from app.modules.research.report_gen.agent import run_report_gen
 from app.modules.research.report_gen.config import load_config
-from app.modules.research.report_gen.examples import record_manual_example
 from app.modules.research.report_gen.feedback import list_open as _list_open_feedback
 from app.modules.research.report_gen.feedback import mark_applied as _mark_feedback_applied
 from app.modules.research.report_gen.feedback import merge_supplement as _merge_feedback
 from app.modules.research.report_gen.feedback import strip_merged as _strip_feedback_text
-from app.modules.research.report_gen.prompts_version import agent_prompt_version, structure_prompt_version
+from app.modules.research.report_gen.outline import build_outline
+from app.modules.research.report_gen.prompts_version import agent_prompt_version
 from app.modules.research.report_gen.schemas import (
-    ReportGenExampleData,
-    ReportGenExampleListData,
-    ReportGenExamplePromoteData,
-    ReportGenExampleUpdateRequest,
+    ReportGenEditRejection,
+    ReportGenEditRemoval,
+    ReportGenEditRequest,
+    ReportGenEditResultData,
     ReportGenFeedbackBrief,
     ReportGenFeedbackCreateRequest,
     ReportGenFeedbackData,
@@ -53,17 +58,18 @@ from app.modules.research.report_gen.schemas import (
     ReportGenJobListData,
     ReportGenMetricsData,
     ReportGenModelTestData,
-    ReportGenSlotData,
-    ReportGenSlotListData,
-    ReportGenSlotUpdateRequest,
+    ReportGenOpinionData,
+    ReportGenOpinionDigestBrief,
+    ReportGenOpinionDigestData,
+    ReportGenOpinionDigestListData,
+    ReportGenOpinionListData,
+    ReportGenOpinionUpdateRequest,
+    ReportGenRenderData,
     ReportGenStepData,
     ReportGenStepListData,
-    ReportGenStructureDiff,
-    ReportGenStructureRunData,
-    ReportGenStructureRunListData,
 )
-from app.modules.research.report_gen.structure import normalize_structure
-from app.modules.research.report_gen.structure_runs import list_structure_runs as _list_structure_runs
+from app.modules.research.report_gen.structure import open_document
+from app.modules.research.report_gen.template_access import load_template_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -76,10 +82,47 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
+async def _effective_model_name(display: str | None) -> str | None:
+    """档位留空时记录实际生效的默认模型名，详情页才不会显示成「未记录」。"""
+    if display:
+        return display
+    try:
+        fallback = await get_active_config("text") or get_env_config()
+    except Exception:  # noqa: BLE001 - 仅展示字段，取不到不影响建任务
+        logger.warning("report-gen default model lookup failed", exc_info=True)
+        return None
+    return fallback.model_name if fallback else None
+
+
+def _digest_brief(row: RdReportGenOpinionDigest) -> ReportGenOpinionDigestBrief:
+    return ReportGenOpinionDigestBrief(
+        id=row.id,
+        item_count=row.item_count,
+        status=row.status,
+        digest_preview=(row.digest_text or "")[:300],
+        model_name=row.model_name,
+        created_at=row.created_at,
+    )
+
+
+async def _digest_briefs(
+    session: AsyncSession, digest_ids: list[UUID | None]
+) -> dict[UUID, ReportGenOpinionDigestBrief]:
+    """批量取汇总摘要：列表页一次查完，避免逐任务 N+1。"""
+    unique = [item for item in dict.fromkeys(digest_ids) if item is not None]
+    if not unique:
+        return {}
+    rows = await session.execute(
+        select(RdReportGenOpinionDigest).where(RdReportGenOpinionDigest.id.in_(unique))
+    )
+    return {row.id: _digest_brief(row) for row in rows.scalars().all()}
+
+
 def _to_job_data(
     job: RdReportGenJob,
     report_title: str | None = None,
     feedback_applied: list[ReportGenFeedbackBrief] | None = None,
+    opinion_digest: ReportGenOpinionDigestBrief | None = None,
 ) -> ReportGenJobData:
     return ReportGenJobData(
         id=job.id,
@@ -96,6 +139,7 @@ def _to_job_data(
         drug_name=job.drug_name,
         supplement_text=job.supplement_text,
         feedback_applied=feedback_applied or [],
+        opinion_digest=opinion_digest,
         document_file_name=job.document_file_name,
         slot_total=job.slot_total,
         slot_filled=job.slot_filled,
@@ -115,21 +159,6 @@ def _to_job_data(
     )
 
 
-def _anchor_sort_key(anchor: dict[str, Any] | None) -> tuple[int, int, int, int, int]:
-    """按母本中的阅读顺序排序；锚点缺失的排到最后。"""
-    if not isinstance(anchor, dict):
-        return (9, 0, 0, 0, 0)
-    if anchor.get("kind") == "paragraph":
-        return (0, int(anchor.get("index") or 0), 0, 0, 0)
-    return (
-        1,
-        int(anchor.get("table_index") or 0),
-        int(anchor.get("row") or 0),
-        int(anchor.get("col") or 0),
-        int(anchor.get("para_index") or 0),
-    )
-
-
 async def _titles(session: AsyncSession, report_ids: list[UUID]) -> dict[UUID, str]:
     """批量取报告标题：列表页避免 N+1。"""
     unique = [rid for rid in dict.fromkeys(report_ids)]
@@ -137,6 +166,145 @@ async def _titles(session: AsyncSession, report_ids: list[UUID]) -> dict[UUID, s
         return {}
     result = await session.execute(select(RdReport.id, RdReport.title).where(RdReport.id.in_(unique)))
     return {row[0]: row[1] for row in result.all()}
+
+
+def _carried_value(row: RdReportGenSlot) -> bool:
+    return bool((row.value or "").strip())
+
+
+def _manual_anchor(row: RdReportGenSlot) -> dict[str, Any]:
+    return row.anchor if isinstance(row.anchor, dict) else {}
+
+
+async def _carry_over_manual_slots(
+    session: AsyncSession,
+    job: RdReportGenJob,
+    template: RdDeliverableTemplate,
+    user_id: UUID | None,
+) -> int:
+    """把上一版人工确认过的内容带进新任务。
+
+    为什么在新任务里预置槽位行、而不是只写进提示词：预置行是「事实」——渲染直接按它
+    回放，AI 写入工具也会因为这些 key 已存在而拒写；只写提示词则模型仍可能覆盖。
+    母本换版后按指纹校验，定位不到的一律跳过（写错位置比少写更糟）。
+    """
+    previous = (
+        await session.execute(
+            select(RdReportGenJob)
+            .where(
+                RdReportGenJob.report_id == job.report_id,
+                RdReportGenJob.deliverable_template_id == job.deliverable_template_id,
+                RdReportGenJob.status == "completed",
+                RdReportGenJob.id != job.id,
+                RdReportGenJob.is_deleted.is_(False),
+            )
+            .order_by(RdReportGenJob.created_at.desc())
+            .limit(1)
+        )
+    ).scalars().first()
+    if previous is None:
+        return 0
+
+    rows = (
+        await session.execute(
+            select(RdReportGenSlot)
+            .where(
+                RdReportGenSlot.job_id == previous.id,
+                RdReportGenSlot.edit_source == "manual",
+                RdReportGenSlot.is_deleted.is_(False),
+            )
+            .order_by(RdReportGenSlot.created_at.asc())
+        )
+    ).scalars().all()
+    manual_rows = [row for row in rows if _carried_value(row)]
+    if not manual_rows:
+        return 0
+
+    try:
+        template_bytes = load_template_bytes(job, template)
+        outline = build_outline(open_document(template_bytes))
+    except Exception:  # noqa: BLE001 - 母本读不到时新任务照常跑，只是不继承人工值
+        logger.exception("report-gen carry-over: 母本读取失败", extra={"job_id": str(job.id)})
+        return 0
+
+    positions = outline.by_key()
+    key_map: dict[str, str] = {}
+    carried: list[RdReportGenSlot] = []
+    append_seq = 0
+    for row in manual_rows:
+        key = row.slot_key
+        anchor = _manual_anchor(row)
+
+        if key.startswith("ap"):
+            after = str(anchor.get("after") or "")
+            if after not in positions and after not in key_map:
+                logger.info(
+                    "report-gen carry-over: 追加段锚点失效，跳过",
+                    extra={"job_id": str(job.id), "slot_key": key},
+                )
+                continue
+            append_seq += 1
+            new_key = f"ap{append_seq}"
+            key_map[key] = new_key
+            new_anchor = {
+                **anchor,
+                "after": key_map.get(after, after),
+                "seq": append_seq,
+                "location": f"追加段落{append_seq}",
+                "human_locked": True,
+            }
+        elif key.startswith("at"):
+            table_index = anchor.get("table_index")
+            if not isinstance(table_index, int) or not (0 <= table_index < outline.table_count):
+                continue
+            append_seq += 1
+            new_key = f"at{append_seq}"
+            key_map[key] = new_key
+            new_anchor = {**anchor, "seq": append_seq, "human_locked": True}
+        else:
+            position = positions.get(key)
+            if position is None:
+                continue
+            stored_fp = anchor.get("fingerprint")
+            stored_text = str(anchor.get("text") or "").strip()
+            # 有指纹比指纹；老数据没有指纹时退回比原文。都对不上说明母本换版，跳过
+            if (stored_fp and stored_fp != position.fingerprint) or (
+                not stored_fp and stored_text != position.text.strip()
+            ):
+                logger.info(
+                    "report-gen carry-over: 母本已换版，跳过",
+                    extra={"job_id": str(job.id), "slot_key": key},
+                )
+                continue
+            new_key = key
+            new_anchor = {**anchor, "human_locked": True}
+
+        carried.append(
+            RdReportGenSlot(
+                job_id=job.id,
+                slot_key=new_key,
+                slot_label=row.slot_label,
+                anchor=new_anchor,
+                value=row.value,
+                state="filled",
+                source_name=row.source_name,
+                evidence=row.evidence,
+                confidence=row.confidence,
+                edit_source="manual",
+                edited_at=_now(),
+                created_by=user_id,
+                updated_by=user_id,
+            )
+        )
+
+    for item in carried:
+        session.add(item)
+    await session.flush()
+    logger.info(
+        "report-gen carry-over applied",
+        extra={"job_id": str(job.id), "carried": len(carried), "skipped": len(manual_rows) - len(carried)},
+    )
+    return len(carried)
 
 
 async def create_job(
@@ -188,8 +356,7 @@ async def create_job(
         template_file_key=template.file_object_key,
         template_file_name=template.file_name,
         model_config_name=config.model.raw,
-        model_name=config.model.display,
-        structure_model_name=config.structure_model.raw,
+        model_name=await _effective_model_name(config.model.display),
         fallback_model_name=config.fallback_model.raw,
         status="queued",
         progress=0,
@@ -202,6 +369,12 @@ async def create_job(
     )
     session.add(job)
     await session.flush()
+    carried = 0
+    try:
+        # 上一版人工确认的内容先落成本任务的槽位行：渲染与 AI 写入都以它为准
+        carried = await _carry_over_manual_slots(session, job, template, user_id)
+    except Exception:  # noqa: BLE001 - 继承失败只影响连续性，不能挡住新任务
+        logger.exception("report-gen carry-over failed", extra={"job_id": str(job.id)})
     if pending_feedback:
         try:
             await _mark_feedback_applied(session, pending_feedback, job.id)
@@ -224,7 +397,13 @@ async def create_job(
 
     logger.info(
         "report-gen job created",
-        extra={"job_id": str(job.id), "report_id": str(payload.report_id), "template_id": str(template.id)},
+        extra={
+            "job_id": str(job.id),
+            "report_id": str(payload.report_id),
+            "template_id": str(template.id),
+            "carried_manual": carried,
+            "biz_module": "research",
+        },
     )
     applied = [
         ReportGenFeedbackBrief(id=item.id, slot_key=item.slot_key, content=item.content) for item in pending_feedback
@@ -248,8 +427,16 @@ async def list_jobs(
     result = await session.execute(statement.order_by(RdReportGenJob.created_at.desc()).limit(min(limit, 200)))
     jobs = list(result.scalars().all())
     titles = await _titles(session, [job.report_id for job in jobs])
+    digests = await _digest_briefs(session, [job.opinion_digest_id for job in jobs])
     return ReportGenJobListData(
-        items=[_to_job_data(job, titles.get(job.report_id)) for job in jobs],
+        items=[
+            _to_job_data(
+                job,
+                titles.get(job.report_id),
+                opinion_digest=digests.get(job.opinion_digest_id) if job.opinion_digest_id else None,
+            )
+            for job in jobs
+        ],
         active_count=sum(1 for job in jobs if job.status in ACTIVE_STATUSES),
     )
 
@@ -277,7 +464,9 @@ async def get_job(session: AsyncSession, job_id: UUID) -> ReportGenJobData:
         raise NotFoundException("生成任务")
     titles = await _titles(session, [job.report_id])
     applied = await _applied_feedback(session, job_id)
-    return _to_job_data(job, titles.get(job.report_id), applied)
+    digests = await _digest_briefs(session, [job.opinion_digest_id])
+    digest = digests.get(job.opinion_digest_id) if job.opinion_digest_id else None
+    return _to_job_data(job, titles.get(job.report_id), applied, digest)
 
 
 async def list_steps(
@@ -315,101 +504,6 @@ async def list_steps(
     )
 
 
-async def list_slots(session: AsyncSession, job_id: UUID) -> ReportGenSlotListData:
-    result = await session.execute(
-        select(RdReportGenSlot).where(RdReportGenSlot.job_id == job_id, RdReportGenSlot.is_deleted.is_(False))
-    )
-    rows = sorted(result.scalars().all(), key=lambda row: _anchor_sort_key(row.anchor))
-    items = [
-        ReportGenSlotData(
-            slot_key=row.slot_key,
-            slot_label=row.slot_label,
-            location=str((row.anchor or {}).get("location") or "") or None,
-            state=row.state,
-            value=row.value,
-            source_name=row.source_name,
-            evidence=row.evidence,
-            confidence=row.confidence,
-            owner_hint=row.owner_hint,
-        )
-        for row in rows
-    ]
-    return ReportGenSlotListData(
-        items=items,
-        total=len(items),
-        filled=sum(1 for row in rows if row.state in ("filled", "conflict")),
-        gaps=sum(1 for row in rows if row.state in ("gap", "pending", "anchor_unresolved")),
-    )
-
-
-async def update_slot(
-    session: AsyncSession,
-    job_id: UUID,
-    slot_key: str,
-    payload: ReportGenSlotUpdateRequest,
-    user_id: UUID | None,
-) -> ReportGenSlotData:
-    """人工修正：只改槽位与对照表口径，成品 docx 不重渲染（按确认的需求口径）。"""
-    result = await session.execute(
-        select(RdReportGenSlot).where(
-            RdReportGenSlot.job_id == job_id,
-            RdReportGenSlot.slot_key == slot_key,
-            RdReportGenSlot.is_deleted.is_(False),
-        )
-    )
-    row = result.scalars().first()
-    if row is None:
-        raise NotFoundException("填充项")
-
-    value = (payload.value or "").strip()
-    if value:
-        row.value = value
-        row.state = "filled"
-        if payload.evidence:
-            row.evidence = f"[人工] {payload.evidence}"
-    else:
-        row.value = None
-        row.state = "gap"
-        if payload.evidence:
-            row.evidence = payload.evidence
-    if payload.owner_hint:
-        row.owner_hint = payload.owner_hint
-    row.updated_by = user_id
-    await session.flush()
-
-    job = await session.get(RdReportGenJob, job_id)
-    if job is not None:
-        slots = await list_slots(session, job_id)
-        job.slot_total = slots.total
-        job.slot_filled = slots.filled
-        job.slot_gap = slots.gaps
-        # 人工修正顺手沉淀成示例：下次同模板生成读它当 few-shot 参照（失败不影响保存）
-        try:
-            await record_manual_example(
-                session,
-                template_id=job.deliverable_template_id,
-                slot_key=row.slot_key,
-                slot_label=row.slot_label,
-                value=row.value,
-                evidence=payload.evidence or row.evidence,
-            )
-        except Exception:  # noqa: BLE001 - 示例库是增益项，不能反过来卡住人工保存
-            logger.exception("report-gen example record failed", extra={"job_id": str(job_id)})
-    await session.commit()
-
-    return ReportGenSlotData(
-        slot_key=row.slot_key,
-        slot_label=row.slot_label,
-        location=str((row.anchor or {}).get("location") or "") or None,
-        state=row.state,
-        value=row.value,
-        source_name=row.source_name,
-        evidence=row.evidence,
-        confidence=row.confidence,
-        owner_hint=row.owner_hint,
-    )
-
-
 async def cancel_job(session: AsyncSession, job_id: UUID, user_id: UUID | None) -> ReportGenJobData:
     job = await session.get(RdReportGenJob, job_id)
     if job is None or job.is_deleted:
@@ -429,29 +523,17 @@ async def cancel_job(session: AsyncSession, job_id: UUID, user_id: UUID | None) 
     return _to_job_data(job, titles.get(job.report_id))
 
 
-async def _artifact(session: AsyncSession, job_id: UUID, field: str) -> tuple[str, bytes, str]:
+async def document_payload(session: AsyncSession, job_id: UUID) -> tuple[str, bytes, str]:
+    """成品 docx 的下载/预览字节。"""
     job = await session.get(RdReportGenJob, job_id)
     if job is None or job.is_deleted:
         raise NotFoundException("生成任务")
-    key = getattr(job, field, None)
-    if not key:
+    if not job.document_object_key:
         raise BadRequestException("这次生成还没出结果，等它跑完再来下载")
-
-    data = store.load_bytes(str(key))
+    data = store.load_bytes(str(job.document_object_key))
     if data is None:
         raise BadRequestException("生成好的文件找不到了，请重新生成一次")
-
-    if field == "document_object_key":
-        return job.document_file_name or "report.docx", data, DOCX_CONTENT_TYPE
-    return "槽位对照表.md", data, "text/markdown; charset=utf-8"
-
-
-async def document_payload(session: AsyncSession, job_id: UUID) -> tuple[str, bytes, str]:
-    return await _artifact(session, job_id, "document_object_key")
-
-
-async def comparison_payload(session: AsyncSession, job_id: UUID) -> tuple[str, bytes, str]:
-    return await _artifact(session, job_id, "comparison_object_key")
+    return job.document_file_name or "report.docx", data, DOCX_CONTENT_TYPE
 
 
 _PROBE_TIMEOUT_SECONDS = 20
@@ -569,44 +651,8 @@ async def agent_metrics(session: AsyncSession, days: int = 30) -> ReportGenMetri
             for item in slot_rows
         ],
         agent_prompt_version=agent_prompt_version(config.agent_prompt),
-        structure_prompt_version=structure_prompt_version(config.structure_prompt),
         generated_at=_now(),
     )
-
-
-async def list_structure_runs(
-    session: AsyncSession,
-    template_id: UUID,
-    limit: int = 10,
-) -> ReportGenStructureRunListData:
-    """母本解析留痕 + 与当前结构的差异（漏选/多选）。只读，不改结构。"""
-    template = await session.get(RdDeliverableTemplate, template_id)
-    if template is None or template.is_deleted:
-        raise NotFoundException("模板")
-    current_slots = normalize_structure(template.template_structure).get("slots") or []
-    rows = await _list_structure_runs(
-        session,
-        template_id,
-        current_slots=current_slots,
-        limit=limit,
-    )
-    items = [
-        ReportGenStructureRunData(
-            id=str(row["id"]),
-            source_key=row["source_key"],
-            prompt_version=row["prompt_version"],
-            model_name=row["model_name"],
-            candidate_count=row["candidate_count"],
-            slot_count=row["slot_count"],
-            duration_ms=row["duration_ms"],
-            status=row["status"],
-            error=row["error"],
-            created_at=row["created_at"],
-            diff=ReportGenStructureDiff(**row["diff"]),
-        )
-        for row in rows
-    ]
-    return ReportGenStructureRunListData(total=len(items), items=items)
 
 
 def _to_feedback_data(row: RdReportGenFeedback) -> ReportGenFeedbackData:
@@ -627,7 +673,11 @@ async def create_feedback(
     payload: ReportGenFeedbackCreateRequest,
     user_id: UUID | None,
 ) -> ReportGenFeedbackData:
-    """对某一版报告提一条意见；槽位级意见必须落在本任务真实存在的槽位上。"""
+    """对某一版报告提一条意见；若指名位置，该位置必须属于这次生成。
+
+    位置清单页面已经下线，前端不再提供选择；保留校验是为了挡住带着旧页面缓存的提交，
+    避免落一条谁也定位不到的意见。
+    """
     job = await session.get(RdReportGenJob, job_id)
     if job is None or job.is_deleted:
         raise NotFoundException("生成任务")
@@ -642,7 +692,7 @@ async def create_feedback(
             )
         )
         if slot_exists.first() is None:
-            raise BadRequestException("这个填充项不属于这次生成，请刷新页面后重试")
+            raise BadRequestException("这个位置不属于这次生成，请刷新页面后重试")
 
     content = " ".join((payload.content or "").split())
     if not content:
@@ -658,6 +708,9 @@ async def create_feedback(
         updated_by=user_id,
     )
     session.add(row)
+    await session.flush()
+    # 每条意见都归入全局意见库：命中同类就累计次数，供生成前汇总使用
+    await opinions.record_feedback(session, row, user_id)
     await session.commit()
     await session.refresh(row)
     return _to_feedback_data(row)
@@ -705,162 +758,64 @@ async def update_feedback(
     return _to_feedback_data(row)
 
 
-async def promote_feedback(
+def _to_opinion_data(row: RdReportGenOpinion) -> ReportGenOpinionData:
+    return ReportGenOpinionData(
+        id=str(row.id),
+        content=row.content,
+        hit_count=row.hit_count,
+        status=row.status,
+        last_seen_at=row.last_seen_at,
+        created_at=row.created_at,
+    )
+
+
+async def list_opinions(
     session: AsyncSession,
-    feedback_id: UUID,
-    user_id: UUID | None,
-) -> ReportGenExamplePromoteData:
-    """把一条已落实的意见沉淀成槽位示例：下次同模板生成照这个写法填。
-
-    只接受「已落实 + 槽位级」的意见：整篇意见没有可对齐的槽位，未落实的意见也还没被
-    Agent 消化过，拿旧值当正确答案只会把原来的错法固化进示例库。
-    """
-    row = await session.get(RdReportGenFeedback, feedback_id)
-    if row is None or row.is_deleted:
-        raise NotFoundException("修改意见")
-    if not row.slot_key:
-        raise BadRequestException("这条意见讲的是整篇内容，没有对应的填充项，存不成示例写法")
-    if row.status != "applied" or row.applied_job_id is None:
-        raise BadRequestException("这条意见还没在文档里落实。请先点「重新生成」，落实后再存成示例写法")
-
-    slot_result = await session.execute(
-        select(RdReportGenSlot).where(
-            RdReportGenSlot.job_id == row.applied_job_id,
-            RdReportGenSlot.slot_key == row.slot_key,
-            RdReportGenSlot.is_deleted.is_(False),
-        )
-    )
-    slot = slot_result.scalars().first()
-    if slot is None:
-        raise BadRequestException("在落实这条意见的那次生成里，找不到对应的填充项")
-    value = (slot.value or "").strip()
-    if not value:
-        raise BadRequestException("这个填充项这次没有填内容，没有可以存成示例的写法")
-
-    job = await session.get(RdReportGenJob, row.applied_job_id)
-    if job is None:
-        raise BadRequestException("落实这条意见的那次生成记录已经被删除了")
-
-    template_id = job.deliverable_template_id
-    existing = await session.execute(
-        select(RdReportGenExample.id).where(
-            RdReportGenExample.template_id == template_id,
-            RdReportGenExample.slot_key == row.slot_key,
-            RdReportGenExample.is_deleted.is_(False),
-        )
-    )
-    created = existing.first() is None
-
-    # 意见原文存进 evidence：示例库要回答「为什么这里该这么写」，值本身答不了
-    await record_manual_example(
-        session,
-        template_id=template_id,
-        slot_key=row.slot_key,
-        slot_label=slot.slot_label,
-        value=value,
-        evidence=row.content,
-        source="feedback_promoted",
-    )
-    row.updated_by = user_id
-    await session.commit()
-    logger.info(
-        "report-gen feedback promoted",
-        extra={"feedback_id": str(row.id), "slot_key": row.slot_key, "created": created},
-    )
-    return ReportGenExamplePromoteData(
-        feedback_id=str(row.id),
-        slot_key=row.slot_key,
-        slot_label=slot.slot_label or "",
-        value=value,
-        source="feedback_promoted",
-        created=created,
-    )
-
-
-def _to_example_data(row: RdReportGenExample) -> ReportGenExampleData:
-    return ReportGenExampleData(
-        id=row.id,
-        template_id=row.template_id,
-        slot_key=row.slot_key,
-        slot_label=row.slot_label or "",
-        source=row.source,
-        value=row.value,
-        evidence_text=row.evidence_text,
-        usage_count=int(row.usage_count or 0),
-        is_active=bool(row.is_active),
-        updated_at=row.updated_at,
-    )
-
-
-async def list_examples(
-    session: AsyncSession,
-    template_id: UUID,
     *,
-    include_inactive: bool = True,
+    status: str | None = None,
+    keyword: str | None = None,
     limit: int = 200,
-) -> ReportGenExampleListData:
-    """模板下已沉淀的示例：默认连停用的一起返回，人工才好把错例重新打开。"""
-    statement = select(RdReportGenExample).where(
-        RdReportGenExample.template_id == template_id,
-        RdReportGenExample.is_deleted.is_(False),
-    )
-    if not include_inactive:
-        statement = statement.where(RdReportGenExample.is_active.is_(True))
-    result = await session.execute(statement.order_by(RdReportGenExample.updated_at.desc()).limit(min(limit, 500)))
-    items = [_to_example_data(row) for row in result.scalars().all()]
-    return ReportGenExampleListData(
-        items=items,
+) -> ReportGenOpinionListData:
+    """意见库列表：跨报告归并后的条目，次数高的在前。"""
+    rows = await opinions.list_library(session, status=status, keyword=keyword, limit=limit)
+    items = [_to_opinion_data(row) for row in rows]
+    return ReportGenOpinionListData(
         total=len(items),
-        active_total=sum(1 for item in items if item.is_active),
+        active_count=sum(1 for row in rows if row.status == "active"),
+        items=items,
     )
 
 
-async def update_example(
+async def update_opinion(
     session: AsyncSession,
-    example_id: UUID,
-    payload: ReportGenExampleUpdateRequest,
+    opinion_id: UUID,
+    payload: ReportGenOpinionUpdateRequest,
     user_id: UUID | None,
-) -> ReportGenExampleData:
-    """人工维护一条示例：改写法、补依据、停用。
+) -> ReportGenOpinionData:
+    """人工停用/恢复一条意见：停用后不再进入生成前的汇总。"""
+    row = await opinions.set_status(session, opinion_id, payload.status, user_id)
+    if row is None:
+        raise NotFoundException("意见库条目")
+    return _to_opinion_data(row)
 
-    停用而不是删除：历史值能回答「以前为什么这么写」，删掉就只剩一段没人理解的空白。
-    """
-    row = await session.get(RdReportGenExample, example_id)
-    if row is None or row.is_deleted:
-        raise NotFoundException("示例写法")
-    cleaned = (payload.value or "").strip()
-    if cleaned:
-        row.value = cleaned
-    if payload.evidence_text is not None:
-        row.evidence_text = payload.evidence_text.strip() or None
-    if payload.is_active is not None:
-        row.is_active = payload.is_active
-    row.updated_by = user_id
-    await session.commit()
-    await session.refresh(row)
-    logger.info(
-        "report-gen example updated",
-        extra={"example_id": str(row.id), "slot_key": row.slot_key, "is_active": row.is_active},
+
+async def list_opinion_digests(session: AsyncSession, *, limit: int = 20) -> ReportGenOpinionDigestListData:
+    """历史汇总快照：用于回答「某一版当时按哪份写作要求生成」。"""
+    rows = await opinions.list_digests(session, limit=limit)
+    return ReportGenOpinionDigestListData(
+        total=len(rows),
+        items=[
+            ReportGenOpinionDigestData(
+                id=str(row.id),
+                item_count=row.item_count,
+                status=row.status,
+                digest_text=row.digest_text,
+                model_name=row.model_name,
+                created_at=row.created_at,
+            )
+            for row in rows
+        ],
     )
-    return _to_example_data(row)
-
-
-async def delete_example(
-    session: AsyncSession,
-    example_id: UUID,
-    user_id: UUID | None,
-) -> ReportGenExampleData:
-    """软删除：这条示例彻底不再参与注入，但保留痕迹可追。"""
-    row = await session.get(RdReportGenExample, example_id)
-    if row is None or row.is_deleted:
-        raise NotFoundException("示例写法")
-    row.is_deleted = True
-    row.is_active = False
-    row.updated_by = user_id
-    await session.commit()
-    await session.refresh(row)
-    logger.info("report-gen example deleted", extra={"example_id": str(row.id), "slot_key": row.slot_key})
-    return _to_example_data(row)
 
 
 async def test_model(slot: str) -> ReportGenModelTestData:
@@ -870,11 +825,7 @@ async def test_model(slot: str) -> ReportGenModelTestData:
     状态码，响应里不出现端点、上游响应与密钥。
     """
     config = await load_config()
-    binding = {
-        "main": config.model,
-        "structure": config.structure_model,
-        "fallback": config.fallback_model,
-    }.get(slot)
+    binding = {"main": config.model, "fallback": config.fallback_model}.get(slot)
     if binding is None:
         return ReportGenModelTestData(ok=False, slot=slot, detail="未知档位")
     if binding.is_empty:
@@ -932,25 +883,187 @@ def _elapsed_ms(started: float) -> int:
     return int((time.perf_counter() - started) * 1000)
 
 
+async def _apply_slot_changes(
+    session: AsyncSession,
+    job: RdReportGenJob,
+    changes: list[report_editor.SlotChange],
+    rows: dict[str, RdReportGenSlot],
+    user_id: UUID | None,
+) -> None:
+    """把编辑器产出的槽位变更写回库；新增的追加段/追加行也要落行，下次清单才看得到。"""
+    now = _now()
+    for change in changes:
+        row = rows.get(change.key)
+        if change.action == "delete":
+            if row is not None:
+                row.is_deleted = True
+                row.edit_source = "manual"
+                row.edited_at = now
+                row.updated_by = user_id
+            continue
+        if row is None:
+            row = RdReportGenSlot(
+                job_id=job.id,
+                slot_key=change.key,
+                slot_label=change.label,
+                anchor=change.anchor,
+                value=change.value,
+                state="filled",
+                edit_source="manual",
+                edited_at=now,
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            session.add(row)
+            rows[change.key] = row
+            continue
+        row.value = change.value
+        row.state = "filled"
+        # 同批次里「先还原再改好」会把行软删过：重新写入时必须复活，否则新值不生效
+        row.is_deleted = False
+        if change.anchor:
+            row.anchor = change.anchor
+        row.edit_source = "manual"
+        row.edited_at = now
+        row.updated_by = user_id
+
+
+def _record_edit_logs(
+    session: AsyncSession,
+    job: RdReportGenJob,
+    run: report_editor.EditRun,
+    version_id: UUID | None,
+    user_id: UUID | None,
+) -> None:
+    """逐条记改前改后：版本只说「哪一版」，流水才能回答「这一段被谁改成了什么」。"""
+    for change in run.slot_changes:
+        session.add(
+            RdReportGenEdit(
+                job_id=job.id,
+                slot_key=change.key,
+                operation=change.operation,
+                anchor=change.anchor or None,
+                before_value=change.before,
+                after_value=change.value,
+                version_id=version_id,
+                created_by=user_id,
+                updated_by=user_id,
+            )
+        )
+
+
+async def _refresh_slot_counters(session: AsyncSession, job: RdReportGenJob) -> None:
+    """人工编辑后覆盖率会变；详情页与列表都读任务上的统计，必须一起刷新。"""
+    data = await review.build_review(session, job.id)
+    job.slot_total = data.stats.writable_total
+    job.slot_filled = data.stats.written
+    job.slot_gap = data.stats.blank
+
+
+async def apply_job_edits(
+    session: AsyncSession,
+    job_id: UUID,
+    payload: ReportGenEditRequest,
+    user_id: UUID | None,
+) -> ReportGenEditResultData:
+    """在线编辑一次保存：逐条校验 → 原地改写 docx → 落版本/流水/槽位。
+
+    不合法的操作只丢弃那一处（并尽量还原成母本原样），其余照常保存；只有一条都没生效
+    时才不落版本，返回逐条原因。
+    """
+    job, outline, _table_starts, rows = await review.load_outline(session, job_id)
+    if job.status != "completed" or not job.document_object_key:
+        raise BadRequestException("这次生成还没出稿，等完成后再在线编辑")
+
+    current_id = await versions.current_version_id(session, job.id)
+    if payload.base_version_id is not None and current_id != payload.base_version_id:
+        raise BadRequestException("这一版已经被改过，请刷新后再编辑")
+
+    document_bytes = store.load_bytes(str(job.document_object_key))
+    if not document_bytes:
+        raise BadRequestException("成品文件找不到了，请重新生成一次")
+
+    run = report_editor.apply_operations(document_bytes, outline, rows, payload.operations)
+    removed = [
+        ReportGenEditRemoval(key=item.key, op=item.op, reason=item.reason, restored=item.restored)
+        for item in run.removals
+    ]
+    rejected = [ReportGenEditRejection(key=item.key, op=item.op, reason=item.reason) for item in run.removals]
+    restored = sum(1 for item in run.removals if item.restored)
+    if run.applied == 0 or run.document is None:
+        # 一条都没生效：不落版本、不写流水，只回逐条原因（位置已按能定位到的范围还原）
+        return ReportGenEditResultData(
+            applied=0,
+            removed=removed,
+            restored=restored,
+            rejected=rejected,
+        )
+
+    file_name = job.document_file_name or "report.docx"
+    version, synced = await versions.record_manual_edit(
+        session,
+        job,
+        data=run.document,
+        file_name=file_name,
+        note=f"站内编辑 {run.applied} 处",
+        user_id=user_id,
+    )
+    await _apply_slot_changes(session, job, run.slot_changes, rows, user_id)
+    _record_edit_logs(session, job, run, version.id, user_id)
+    await _refresh_slot_counters(session, job)
+    await session.commit()
+
+    logger.info(
+        "report gen document edited",
+        extra={
+            "job_id": str(job.id),
+            "applied": run.applied,
+            "removed": len(run.removals),
+            "version_no": version.version_no,
+            "biz_module": "research",
+        },
+    )
+    return ReportGenEditResultData(
+        applied=run.applied,
+        removed=removed,
+        restored=restored,
+        rejected=rejected,
+        version=versions.to_version_data(version),
+        synced_deliverable=synced,
+    )
+
+
+async def restore_job_version(
+    session: AsyncSession,
+    job_id: UUID,
+    version_id: UUID,
+    *,
+    base_version_id: UUID | None,
+    user_id: UUID | None,
+) -> ReportGenRenderData:
+    """回滚到指定版本：不改写历史版本，而是把旧文件再落一个新版本。"""
+    return await versions.restore_version(
+        session, job_id, version_id, user_id, base_version_id=base_version_id
+    )
+
+
 __all__ = [
     "ACTIVE_STATUSES",
     "TERMINAL_STATUSES",
     "agent_metrics",
+    "apply_job_edits",
     "cancel_job",
-    "comparison_payload",
     "create_feedback",
     "create_job",
-    "delete_example",
     "document_payload",
     "get_job",
-    "list_examples",
     "list_feedback",
     "list_jobs",
-    "list_slots",
+    "list_opinion_digests",
+    "list_opinions",
     "list_steps",
-    "promote_feedback",
+    "restore_job_version",
     "test_model",
-    "update_example",
     "update_feedback",
-    "update_slot",
+    "update_opinion",
 ]

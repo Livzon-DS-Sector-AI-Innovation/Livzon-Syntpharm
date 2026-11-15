@@ -561,7 +561,7 @@ class RdStageDeliverableGenerationBrief(BaseModel):
     error_message: str | None = None
     slot_total: int = 0
     slot_filled: int = 0
-    slot_gap: int = Field(0, description="待补充槽位数")
+    slot_gap: int = Field(0, description="未写入的位置数")
     document_ready: bool = False
 
 
@@ -910,7 +910,7 @@ class RdDeliverableTemplateBase(BaseModel):
 
 
 class RdDeliverableTemplateCreate(RdDeliverableTemplateBase):
-    # 关联的填充项 code（可留空，上传 Word 母本时由后端自动识别）
+    # 关联的模板 code（可留空；上传 Word 母本时只留档文件，不做结构识别）
     template_code: str | None = Field(None, max_length=100)
 
 
@@ -923,6 +923,11 @@ class RdDeliverableTemplateUpdate(BaseModel):
     description: str | None = None
     template_content: str | None = None
     template_structure: dict[str, Any] | None = None
+    instruction: str | None = Field(
+        None,
+        max_length=2000,
+        description="模板级「填写要求」：合并写入 template_structure.instruction，生成时下发给智能体",
+    )
     template_code: str | None = Field(None, max_length=100)
     is_active: bool | None = None
 
@@ -931,7 +936,7 @@ class RdDeliverableTemplateResponse(RdDeliverableTemplateBase):
     id: UUID
     creator_id: UUID | None = None
     # 这几列由模板上传/自动匹配写入，必须在响应中回传：
-    # 否则前端列表拿不到 template_code/file_object_key，会误判为「尚未关联填充项」
+    # 否则前端列表拿不到 template_code/file_object_key，会误判为「尚未关联模板」
     # 并始终显示上传入口（而非预览/下载）。
     template_code: str | None = None
     file_object_key: str | None = None

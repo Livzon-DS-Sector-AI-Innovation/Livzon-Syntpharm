@@ -22,7 +22,6 @@ import { fetchReportGenDocumentBlob } from '@/lib/api/client/research/report-gen
 import { KnowledgeBaseModal } from './KnowledgeBaseModal'
 import { summarizeKb, useKbDocuments, useKnowledgeBase } from './useKnowledgeBase'
 import { DocxPreviewModal } from './DocxPreviewModal'
-import { MarkdownPreviewModal } from './MarkdownPreviewModal'
 import { withReturnTo } from '@/lib/navigation/returnTo'
 
 const { Text, Paragraph } = Typography
@@ -67,9 +66,6 @@ export function DeliverableGenerateWizard({
   const [submitting, setSubmitting] = useState(false)
   const [kbOpen, setKbOpen] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
-  const [comparisonOpen, setComparisonOpen] = useState(false)
-  const [comparisonText, setComparisonText] = useState('')
-  const [comparisonLoading, setComparisonLoading] = useState(false)
   // 表单/模板都是「后端预填值 + 用户改动」：改动按 key 存草稿，换了交付文档或预填版本就
   // 自动回落到新的预填值，不需要在 effect 里 setState（否则会触发级联渲染）
   const [formDraft, setFormDraft] = useState<{ key: string; value: FormState } | null>(null)
@@ -165,21 +161,6 @@ export function DeliverableGenerateWizard({
   const hasTemplate = !!options?.recommended_template_id
   const docDownloadUrl = targetId ? `/api/v1/research/rd-stage-deliverables/${targetId}/download` : null
   const jobId = submitted?.job_id ?? status?.job_id ?? null
-
-  /** 预览对照表：按需拉一次 Markdown，不随轮询反复拉 */
-  const openComparison = async () => {
-    setComparisonOpen(true)
-    if (!jobId || comparisonText || comparisonLoading) return
-    setComparisonLoading(true)
-    try {
-      const blob = await fetchReportGenDocumentBlob(jobId, 'comparison')
-      setComparisonText(await blob.text())
-    } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : '对照表加载失败')
-    } finally {
-      setComparisonLoading(false)
-    }
-  }
 
   const footer =
     step === 0
@@ -412,9 +393,9 @@ export function DeliverableGenerateWizard({
                     message="已生成并归档到这条交付文档"
                     description={
                       <span>
-                        {status.slot_filled} 项内容已自动填写
-                        {status.slot_gap > 0 ? `，还有 ${status.slot_gap} 项待补充` : ''}
-                        。下载后核对一遍，再把交付状态改为「已完成」。
+                        已写入 {status.slot_filled} 处内容
+                        {status.slot_gap > 0 ? `，还有 ${status.slot_gap} 处空位没有资料支撑` : ''}
+                        。引用源只在详情页右侧「参考资料」展示、不写进文档，下载后核对一遍，再把交付状态改为「已完成」。
                       </span>
                     }
                   />
@@ -432,9 +413,9 @@ export function DeliverableGenerateWizard({
 
                 {(status?.slot_total ?? 0) > 0 && (
                   <Space size={16}>
-                    <Text>共 {status?.slot_total} 项</Text>
-                    <Text type="success">已填 {status?.slot_filled}</Text>
-                    <Text type="warning">待补充 {status?.slot_gap}</Text>
+                    <Text>可写 {status?.slot_total} 处</Text>
+                    <Text type="success">已写 {status?.slot_filled}</Text>
+                    <Text type="warning">未写 {status?.slot_gap}</Text>
                   </Space>
                 )}
 
@@ -448,11 +429,6 @@ export function DeliverableGenerateWizard({
                     {docDownloadUrl ? (
                       <Button href={docDownloadUrl} target="_blank">
                         下载 Word
-                      </Button>
-                    ) : null}
-                    {jobId ? (
-                      <Button onClick={() => void openComparison()} loading={comparisonLoading}>
-                        查看对照表
                       </Button>
                     ) : null}
                     {jobId ? (
@@ -493,15 +469,9 @@ export function DeliverableGenerateWizard({
         title={`${deliverableLabel}预览`}
         loadBlob={() => {
           if (!jobId) return Promise.reject(new Error('还没有生成结果'))
-          return fetchReportGenDocumentBlob(jobId, 'document')
+          return fetchReportGenDocumentBlob(jobId)
         }}
         onClose={() => setPreviewOpen(false)}
-      />
-      <MarkdownPreviewModal
-        open={comparisonOpen}
-        title={`${deliverableLabel} · 填充项对照表`}
-        markdown={comparisonLoading ? '正在加载对照表…' : comparisonText}
-        onClose={() => setComparisonOpen(false)}
       />
     </>
   )

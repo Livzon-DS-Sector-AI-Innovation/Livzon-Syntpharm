@@ -21,10 +21,7 @@ from app.core.database import get_db
 from app.modules.research.report_gen import prompts as prompts_module
 from app.modules.research.report_gen import service as service_module
 from app.modules.research.report_gen.api import router as report_gen_router
-from app.modules.research.report_gen.prompts_version import (
-    agent_prompt_version,
-    structure_prompt_version,
-)
+from app.modules.research.report_gen.prompts_version import agent_prompt_version
 from app.modules.research.report_gen.schemas import ReportGenMetricsData
 from app.platform.identity.deps import require_current_user
 from app.platform.permission.deps import require_current_user as permission_require_current_user
@@ -84,10 +81,7 @@ def _stub_runtime_config(monkeypatch: pytest.MonkeyPatch) -> None:
     """指标要算「当前生效提示词」的指纹，会把 load_config() 拉进来；这里给个固定配置。"""
 
     async def _load_config() -> SimpleNamespace:
-        return SimpleNamespace(
-            agent_prompt=prompts_module.AGENT_SYSTEM_PROMPT,
-            structure_prompt=prompts_module.STRUCTURE_SYSTEM_PROMPT,
-        )
+        return SimpleNamespace(agent_prompt=prompts_module.AGENT_SYSTEM_PROMPT)
 
     monkeypatch.setattr(service_module, "load_config", _load_config)
 
@@ -124,7 +118,6 @@ async def test_metrics_compute_rates_from_completed_only() -> None:
     assert metrics.gap_rate == 0.25
     assert metrics.fallback_rate == 0.3333
     assert metrics.agent_prompt_version.startswith("prm-")
-    assert metrics.structure_prompt_version.startswith("prm-")
 
 
 async def test_metrics_return_none_when_window_is_empty() -> None:
@@ -197,7 +190,6 @@ def test_prompt_version_is_stable_and_sensitive() -> None:
     first = agent_prompt_version()
     assert first == agent_prompt_version()
     assert first.startswith("prm-") and len(first) == len("prm-") + 8
-    assert structure_prompt_version() == structure_prompt_version()
 
     # P2 之后指纹按「实际生效文本」算：库里覆盖过的段落一改就换指纹
     assert agent_prompt_version(prompts_module.AGENT_SYSTEM_PROMPT + "改动") != first
@@ -215,7 +207,6 @@ async def test_metrics_endpoint_passes_days(client: AsyncClient, monkeypatch: py
             completed=3,
             success_rate=0.75,
             agent_prompt_version="prm-1234abcd",
-            structure_prompt_version="prm-5678efgh",
             generated_at=NOW,
         )
 

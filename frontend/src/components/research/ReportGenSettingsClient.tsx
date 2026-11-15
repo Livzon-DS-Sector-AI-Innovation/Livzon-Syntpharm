@@ -41,29 +41,20 @@ const MODULE = 'research'
 
 const MODEL_KEYS: Record<ReportGenModelSlot, string> = {
   main: 'REPORT_GEN_MODEL',
-  structure: 'REPORT_GEN_STRUCTURE_MODEL',
   fallback: 'REPORT_GEN_FALLBACK_MODEL',
 }
 
 const DISABLED_TOOLS_KEY = 'REPORT_GEN_DISABLED_TOOLS'
 const TOOL_MODE_KEY = 'REPORT_GEN_TOOL_MODE'
 const AGENT_PROMPT_KEY = 'REPORT_GEN_AGENT_PROMPT'
-const STRUCTURE_PROMPT_KEY = 'REPORT_GEN_STRUCTURE_PROMPT'
-const EXAMPLES_ENABLED_KEY = 'REPORT_GEN_EXAMPLES_ENABLED'
 
 /** 提示词整段覆盖：留空用后端内置版本，支持 $变量 填空 */
 const PROMPT_FIELDS = [
   {
     key: AGENT_PROMPT_KEY,
     label: '正文生成规则',
-    variables: '$drug_name / $doc_code / $report_title / $template_name / $slot_total / $max_rounds',
-    hint: '写给 AI 的规则：怎么找资料、怎么填每个填充项、什么时候标「待补充」。留空使用系统内置版本。',
-  },
-  {
-    key: STRUCTURE_PROMPT_KEY,
-    label: '模板结构分析规则',
-    variables: '$template_name / $deliverable_type / $stage / $candidate_count',
-    hint: '写给 AI 的规则：从 Word 模板文件里挑哪些位置当填充项。改完对下一次「重新分析结构」生效。',
+    variables: '$drug_name / $doc_code / $report_title / $template_name / $writable_total / $max_rounds',
+    hint: '写给 AI 的规则：怎么读母本、怎么找资料、怎么写进模板与整理参考资料。留空使用系统内置版本。',
   },
 ] as const
 
@@ -95,14 +86,6 @@ const NUMERIC_FIELDS: NumericField[] = [
     hint: '单次问模型的等待上限，超时会自动换用「自动补齐」的模型。',
   },
   { key: 'REPORT_GEN_KB_TOP_K', label: '每次检索几条', unit: '条', min: 1, max: 30, hint: '每次在知识库里找依据，最多取回多少段文字。' },
-  {
-    key: 'REPORT_GEN_EXAMPLES_LIMIT',
-    label: '示例写法使用条数',
-    unit: '条',
-    min: 0,
-    max: 200,
-    hint: '每次生成最多参考多少条「人工改过的示例写法」；填 0 表示不使用。',
-  },
 ]
 
 const TOOL_MODE_OPTIONS = [
@@ -120,8 +103,8 @@ interface Props {
 }
 
 function initialModels(settings: ModuleSetting[]): Record<ReportGenModelSlot, string> {
-  const { main, structure, fallback } = pickReportGenModels(settings)
-  return { main, structure, fallback }
+  const { main, fallback } = pickReportGenModels(settings)
+  return { main, fallback }
 }
 
 function initialNumbers(settings: ModuleSetting[]): Record<string, number> {
@@ -158,9 +141,6 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
     parseDisabledTools(settings.find((item) => item.key === DISABLED_TOOLS_KEY)?.value)
   )
   const [prompts, setPrompts] = useState<Record<string, string>>(() => initialPrompts(settings))
-  const [examplesEnabled, setExamplesEnabled] = useState(
-    () => (settings.find((item) => item.key === EXAMPLES_ENABLED_KEY)?.value ?? 'true') !== 'false'
-  )
   const [baseline, setBaseline] = useState(() =>
     JSON.stringify({
       models: initialModels(settings),
@@ -168,13 +148,12 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
       toolMode: settings.find((item) => item.key === TOOL_MODE_KEY)?.value || 'auto',
       disabledTools: parseDisabledTools(settings.find((item) => item.key === DISABLED_TOOLS_KEY)?.value),
       prompts: initialPrompts(settings),
-      examplesEnabled: (settings.find((item) => item.key === EXAMPLES_ENABLED_KEY)?.value ?? 'true') !== 'false',
     })
   )
   const [saving, setSaving] = useState(false)
   const [testingSlot, setTestingSlot] = useState<ReportGenModelSlot | null>(null)
 
-  const current = JSON.stringify({ models, numbers, toolMode, disabledTools, prompts, examplesEnabled })
+  const current = JSON.stringify({ models, numbers, toolMode, disabledTools, prompts })
   const dirty = current !== baseline
   const missingKeys = useMemo(
     () =>
@@ -182,7 +161,6 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
         ...Object.values(MODEL_KEYS),
         DISABLED_TOOLS_KEY,
         TOOL_MODE_KEY,
-        EXAMPLES_ENABLED_KEY,
         ...NUMERIC_FIELDS.map((f) => f.key),
         ...PROMPT_FIELDS.map((f) => f.key),
       ].filter((key) => !existingKeys.has(key)),
@@ -223,10 +201,6 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
       // 只比较 trim 后的内容：末尾多一个换行不值得触发一次覆盖保存
       if (next !== saved.trim()) changes.push({ key: field.key, value: next })
     }
-    const savedExamples = (settings.find((item) => item.key === EXAMPLES_ENABLED_KEY)?.value ?? 'true') !== 'false'
-    if (examplesEnabled !== savedExamples) {
-      changes.push({ key: EXAMPLES_ENABLED_KEY, value: examplesEnabled ? 'true' : 'false' })
-    }
     return changes
   }
 
@@ -236,7 +210,6 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
     setToolMode(settings.find((item) => item.key === TOOL_MODE_KEY)?.value || 'auto')
     setDisabledTools(parseDisabledTools(settings.find((item) => item.key === DISABLED_TOOLS_KEY)?.value))
     setPrompts(initialPrompts(settings))
-    setExamplesEnabled((settings.find((item) => item.key === EXAMPLES_ENABLED_KEY)?.value ?? 'true') !== 'false')
   }
 
   async function handleSave() {
@@ -296,7 +269,6 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
             <Space size={6} wrap style={{ marginTop: 8 }}>
               <Typography.Text type="secondary">当前：</Typography.Text>
               <Tag color="blue">正文生成 {modelLabel(savedModels.main)}</Tag>
-              <Tag color="cyan">分析结构 {modelLabel(savedModels.structure)}</Tag>
               <Tag color={savedModels.fallback ? 'orange' : 'default'}>自动补齐 {modelLabel(savedModels.fallback)}</Tag>
             </Space>
             <div style={{ marginTop: 6 }}>
@@ -329,7 +301,7 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
       <Card
         size="small"
         title="用哪个模型"
-        extra={<Typography.Text type="secondary">留空就用默认：分析结构这一档会跟随正文生成</Typography.Text>}
+        extra={<Typography.Text type="secondary">留空就用默认模型；可填配置名或模型名</Typography.Text>}
       >
         <Row gutter={[16, 16]}>
           {REPORT_GEN_MODEL_SLOTS.map((item) => (
@@ -359,7 +331,7 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
                   value={models[item.slot]}
                   options={modelOptions}
                   allowClear
-                  placeholder={item.slot === 'structure' ? '留空就跟正文用同一个' : '留空就用系统默认'}
+                  placeholder="留空就用系统默认"
                   onChange={(value: string) => setModels((prev) => ({ ...prev, [item.slot]: value ?? '' }))}
                   filterOption={(input, option) => {
                     const text = `${option?.label ?? ''}${option?.value ?? ''}`.toLowerCase()
@@ -372,18 +344,14 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
                 </Typography.Paragraph>
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                   当前生效：
-                  {savedModels[item.slot]
-                    ? savedModels[item.slot]
-                    : item.slot === 'structure'
-                      ? `跟正文同一个（${modelLabel(savedModels.main)}）`
-                      : modelLabel(savedModels[item.slot])}
+                  {savedModels[item.slot] ? savedModels[item.slot] : modelLabel(savedModels[item.slot])}
                 </Typography.Text>
               </Card>
             </Col>
           ))}
         </Row>
         <Typography.Paragraph type="secondary" style={{ fontSize: 12, margin: '12px 0 0' }}>
-          「测试连通」用的是已经保存的配置，改了没保存不会生效。换了分析结构的模型后，已有模板需要到「填充项设置」里点一次「重新分析结构」，才会用新模型重新分析。
+          「测试连通」用的是已经保存的配置，改了没保存不会生效。保存后，下一次生成就会使用新的模型。
         </Typography.Paragraph>
       </Card>
 
@@ -453,21 +421,6 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
               </div>
             </Col>
           ))}
-          <Col xs={24} md={12}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <Space size={8}>
-                <Switch
-                  checked={examplesEnabled}
-                  disabled={!canManage}
-                  onChange={(checked) => setExamplesEnabled(checked)}
-                />
-                <Typography.Text>参考人工改过的示例写法</Typography.Text>
-              </Space>
-              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                打开后，人工在生成详情里改过的写法会当作样板一起交给 AI 参考；最多用几条见上方「示例写法使用条数」。
-              </Typography.Text>
-            </div>
-          </Col>
         </Row>
       </Card>
 

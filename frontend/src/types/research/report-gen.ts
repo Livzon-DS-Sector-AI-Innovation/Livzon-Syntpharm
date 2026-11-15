@@ -11,21 +11,13 @@ export type ReportGenJob = components['schemas']['ReportGenJobData']
 export type ReportGenJobList = components['schemas']['ReportGenJobListData']
 export type ReportGenStep = components['schemas']['ReportGenStepData']
 export type ReportGenStepList = components['schemas']['ReportGenStepListData']
-export type ReportGenSlot = components['schemas']['ReportGenSlotData']
-export type ReportGenSlotList = components['schemas']['ReportGenSlotListData']
 export type ReportGenJobCreate = components['schemas']['ReportGenJobCreateRequest']
-export type ReportGenSlotUpdate = components['schemas']['ReportGenSlotUpdateRequest']
 export type ReportGenFeedback = components['schemas']['ReportGenFeedbackData']
 export type ReportGenFeedbackList = components['schemas']['ReportGenFeedbackListData']
 export type ReportGenFeedbackCreate = components['schemas']['ReportGenFeedbackCreateRequest']
-export type ReportGenExamplePromote = components['schemas']['ReportGenExamplePromoteData']
-export type ReportGenExample = components['schemas']['ReportGenExampleData']
-export type ReportGenExampleList = components['schemas']['ReportGenExampleListData']
-export type ReportGenExampleUpdate = components['schemas']['ReportGenExampleUpdateRequest']
 
 export type ReportGenJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
 export type ReportGenStepKind = 'think' | 'tool_call' | 'tool_result' | 'error' | 'status'
-export type ReportGenSlotState = 'filled' | 'conflict' | 'pending' | 'gap' | 'anchor_unresolved'
 
 interface StatusMeta {
   label: string
@@ -40,14 +32,6 @@ export const REPORT_GEN_STATUS_META: Record<ReportGenJobStatus, StatusMeta> = {
   completed: { label: '已完成', color: 'success', stroke: '#52C41A' },
   failed: { label: '生成失败', color: 'error', stroke: '#FF4D4F' },
   cancelled: { label: '已停止', color: 'warning', stroke: '#FAAD14' },
-}
-
-export const REPORT_GEN_SLOT_STATE_META: Record<ReportGenSlotState, { label: string; color: string }> = {
-  filled: { label: '已填写', color: 'success' },
-  conflict: { label: '资料不一致', color: 'warning' },
-  pending: { label: '待确认', color: 'processing' },
-  gap: { label: '未填写', color: 'default' },
-  anchor_unresolved: { label: '未找到对应位置', color: 'error' },
 }
 
 export const REPORT_GEN_STEP_KIND_META: Record<ReportGenStepKind, { label: string; color: string }> = {
@@ -66,10 +50,6 @@ export function isTerminal(status: string): boolean {
 
 export function statusMeta(status: string): StatusMeta {
   return REPORT_GEN_STATUS_META[status as ReportGenJobStatus] ?? REPORT_GEN_STATUS_META.queued
-}
-
-export function slotStateMeta(state: string): { label: string; color: string } {
-  return REPORT_GEN_SLOT_STATE_META[state as ReportGenSlotState] ?? { label: state, color: 'default' }
 }
 
 export function stepKindMeta(kind: string): { label: string; color: string } {
@@ -112,13 +92,138 @@ export function latestJobByReport(jobs: ReportGenJob[]): Map<string, ReportGenJo
   return map
 }
 
+export type ReportGenOutline = components['schemas']['ReportGenOutlineData']
+export type ReportGenOutlineStats = components['schemas']['ReportGenOutlineStatsData']
+export type ReportGenOutlineSection = components['schemas']['ReportGenSectionData']
+export type ReportGenFieldItem = components['schemas']['ReportGenFieldItemData']
+export type ReportGenReference = components['schemas']['ReportGenReferenceData']
+export type ReportGenReferenceLocation = components['schemas']['ReportGenReferenceLocationData']
+
+/** AI 追加内容：预览按 DOM 标记、清单单独分组；参考资料不写进文档，不在此列 */
+export const APPENDED_ITEM_KINDS: readonly string[] = ['append_paragraph', 'append_table_rows']
+export type ReportGenDocumentVersion = components['schemas']['ReportGenDocumentVersionData']
+export type ReportGenDocumentVersionList = components['schemas']['ReportGenDocumentVersionListData']
+export type ReportGenRender = components['schemas']['ReportGenRenderData']
+export type ReportGenEditOperation = components['schemas']['ReportGenEditOperationRequest']
+export type ReportGenEditRequest = components['schemas']['ReportGenEditRequest']
+export type ReportGenEditRejection = components['schemas']['ReportGenEditRejection']
+export type ReportGenEditRemoval = components['schemas']['ReportGenEditRemoval']
+export type ReportGenEditResult = components['schemas']['ReportGenEditResultData']
+
+export type ReportGenOpinion = components['schemas']['ReportGenOpinionData']
+export type ReportGenOpinionList = components['schemas']['ReportGenOpinionListData']
+export type ReportGenOpinionDigestBrief = components['schemas']['ReportGenOpinionDigestBrief']
+export type ReportGenOpinionDigest = components['schemas']['ReportGenOpinionDigestData']
+export type ReportGenOpinionDigestList = components['schemas']['ReportGenOpinionDigestListData']
+export type ReportGenOpinionStatus = 'active' | 'disabled'
+
+export const REPORT_GEN_OPINION_STATUS_META: Record<ReportGenOpinionStatus, { label: string; color: string }> = {
+  active: { label: '生效中', color: 'processing' },
+  disabled: { label: '已停用', color: 'default' },
+}
+
+/** 汇总状态：fallback 要明确说出来，否则会被误以为「模型认真总结过」。 */
+export const REPORT_GEN_DIGEST_STATUS_META: Record<string, { label: string; color: string }> = {
+  ok: { label: '模型归并', color: 'success' },
+  fallback: { label: '兜底清单', color: 'warning' },
+}
+
+/** 版本来源标签：在线编辑与人工上传必须区分开，否则回溯时分不清是站内改的还是外面改的。 */
+export const REPORT_GEN_VERSION_KIND_LABEL: Record<string, string> = {
+  ai_draft: 'AI 初稿',
+  manual_upload: '人工上传',
+  manual_edit: '在线编辑',
+  manual_render: '重新渲染',
+}
+
+export function versionKindLabel(kind: string): string {
+  return REPORT_GEN_VERSION_KIND_LABEL[kind] ?? kind
+}
+
+/** 清单语义：已写 / 需核对 / 冲突 / 位置失效 / 空位 / 锁定（母本固定内容）。 */
+export type ReportGenFieldState =
+  | 'written'
+  | 'needs_verify'
+  | 'conflict'
+  | 'anchor_unresolved'
+  | 'blank'
+  | 'locked'
+
+interface FieldStateMeta {
+  label: string
+  /** antd Tag 的 color，沿用现有页面的语义色 */
+  color: string
+  text: string
+  bg: string
+  border: string
+  /** 预览标记用虚线框：只对「空位」生效，提示这里等着补 */
+  dashed?: boolean
+}
+
+export const REPORT_GEN_FIELD_STATE_META: Record<ReportGenFieldState, FieldStateMeta> = {
+  written: { label: '已写', color: 'processing', text: '#1677FF', bg: '#E6F4FF', border: '#91CAFF' },
+  needs_verify: { label: '需核对', color: 'warning', text: '#D97706', bg: '#FFF7E6', border: '#FFD591' },
+  conflict: { label: '有冲突', color: 'error', text: '#DC2626', bg: '#FEF2F2', border: '#FCA5A5' },
+  anchor_unresolved: { label: '位置失效', color: 'error', text: '#DC2626', bg: '#FEF2F2', border: '#FCA5A5' },
+  blank: { label: '空位', color: 'default', text: '#8C8C8C', bg: '#FAFBFC', border: '#D9D9D9', dashed: true },
+  locked: { label: '母本固定', color: 'default', text: '#595959', bg: '#F5F5F5', border: '#E5E5E5' },
+}
+
+const MANUAL_META: FieldStateMeta = {
+  label: '人工改过',
+  color: 'success',
+  text: '#16A34A',
+  bg: '#F0FDF4',
+  border: '#86EFAC',
+}
+
+/**
+ * 展示优先级：位置失效压过人工标记（改过但也失效了，必须让人先看到失效），
+ * 人工改过压过已写（同一处既被 AI 写过、又被人改过，说「人工改过」更准确）。
+ */
+export function fieldStateMeta(state: string, editSource?: string | null): FieldStateMeta {
+  if (state === 'anchor_unresolved') return REPORT_GEN_FIELD_STATE_META.anchor_unresolved
+  if (editSource === 'manual' && state !== 'blank') return MANUAL_META
+  return REPORT_GEN_FIELD_STATE_META[state as ReportGenFieldState] ?? REPORT_GEN_FIELD_STATE_META.blank
+}
+
+export const REPORT_GEN_FIELD_FILTERS = [
+  { value: 'all', label: '全部' },
+  { value: 'written', label: '已写' },
+  { value: 'blank', label: '空位' },
+  { value: 'fixed', label: '母本固定' },
+  { value: 'needs_verify', label: '需核对' },
+  { value: 'manual', label: '人工改过' },
+] as const
+
+export type ReportGenFieldFilter = (typeof REPORT_GEN_FIELD_FILTERS)[number]['value']
+
+/** 筛选口径：需核对把「无来源」「冲突」「位置失效」合成一类，都是要人看一眼才能定稿的情况。 */
+export function matchFieldFilter(item: ReportGenFieldItem, filter: ReportGenFieldFilter): boolean {
+  if (filter === 'all') return true
+  if (filter === 'written') return item.state === 'written'
+  // 「空位」沿用 AI 覆盖口径，和顶部统计一致；母本固定内容单独一类
+  if (filter === 'blank') return item.state === 'blank' && item.writable !== false
+  if (filter === 'fixed') return item.writable === false
+  if (filter === 'manual') return item.edit_source === 'manual'
+  return ['needs_verify', 'conflict', 'anchor_unresolved'].includes(item.state)
+}
+
+/** 位置 key 是给机器看的，人需要的是「第几段/第几行第几列」：列表右侧只显示缩写。 */
+export function fieldKeyLabel(key: string): string {
+  if (/^p\d+$/.test(key)) return `第 ${Number(key.slice(1)) + 1} 段`
+  const table = key.match(/^t(\d+)r(\d+)c(\d+)$/)
+  if (table) return `表${Number(table[1]) + 1} · ${Number(table[2]) + 1} 行 ${Number(table[3]) + 1} 列`
+  if (key === 'ref') return '参考资料'
+  if (key.startsWith('ap')) return `追加段 ${key.slice(2)}`
+  if (key.startsWith('at')) return `追加行 ${key.slice(2)}`
+  return key
+}
+
 export type ReportGenModelTest = components['schemas']['ReportGenModelTestData']
 export type ReportGenModelTestRequest = components['schemas']['ReportGenModelTestRequest']
 
 export type ReportGenMetrics = components['schemas']['ReportGenMetricsData']
-export type ReportGenStructureRun = components['schemas']['ReportGenStructureRunData']
-export type ReportGenStructureRunList = components['schemas']['ReportGenStructureRunListData']
-export type ReportGenStructureDiff = components['schemas']['ReportGenStructureDiff']
 
 /** 指标时间窗；顺序即 Segmented 顺序。 */
 export const REPORT_GEN_METRIC_WINDOWS = [7, 30, 90] as const
@@ -142,14 +247,9 @@ export function formatSeconds(seconds: number | null | undefined): string {
   return formatDuration(Math.round(seconds * 1000))
 }
 
-/** 三个模型档位；顺序即配置页卡片顺序。 */
+/** 两个模型档位；顺序即配置页卡片顺序。 */
 export const REPORT_GEN_MODEL_SLOTS = [
-  { slot: 'main', title: '正文生成', description: '写正文用的模型：查资料、填内容的调用都走这一档。' },
-  {
-    slot: 'structure',
-    title: '分析结构',
-    description: '分析 Word 模板文件、判断填充项时使用；留空则与正文生成用同一个模型。',
-  },
+  { slot: 'main', title: '正文生成', description: '写正文用的模型：读母本、查资料、写内容的调用都走这一档。' },
   { slot: 'fallback', title: '自动补齐', description: '主模型报错或超时后自动换用，只切换一次。' },
 ] as const
 
@@ -165,7 +265,11 @@ export interface ReportGenToolMeta {
 
 /** 工具开关清单；name 必须与后端 TOOL_NAMES 一致。 */
 export const REPORT_GEN_TOOLS: ReportGenToolMeta[] = [
-  { name: 'read_template_outline', label: '读取模板大纲', description: '读取模板里已分析好的填充项清单和章节顺序。' },
+  {
+    name: 'read_template_outline',
+    label: '读取模板位置',
+    description: '读取 Word 母本的可写段落与表格单元格，判断哪里能写。',
+  },
   {
     name: 'read_project_context',
     label: '读取项目信息',
@@ -174,17 +278,32 @@ export const REPORT_GEN_TOOLS: ReportGenToolMeta[] = [
   {
     name: 'search_knowledge_base',
     label: '检索知识库',
-    description: '在项目知识库里找依据，并给出来源。',
+    description: '在项目知识库里找依据，并给出来源编号供引用。',
   },
   {
-    name: 'fill_slot',
-    label: '填写填充项',
-    description: '把有依据的内容写进指定填充项；多处资料不一致时标出来。',
+    name: 'write_paragraph',
+    label: '写正文段落',
+    description: '把有依据的内容批量写进空段落或下划线占位段。',
   },
   {
-    name: 'mark_gap',
-    label: '标记未填写',
-    description: '没有依据时明确留空并标注，不猜着写。',
+    name: 'write_cell',
+    label: '写表格单元格',
+    description: '把有依据的内容写进表格里的空单元格。',
+  },
+  {
+    name: 'append_paragraph',
+    label: '追加段落',
+    description: '母本条目不够时，按已有段落格式插入新段落。',
+  },
+  {
+    name: 'append_table_rows',
+    label: '追加表格行',
+    description: '按模板行格式往表格末尾追加行。',
+  },
+  {
+    name: 'append_references',
+    label: '整理参考资料',
+    description: '按写入记录整理参考资料，只展示在页面右侧，不写进 Word 正文。',
   },
   {
     name: 'finalize',
@@ -212,19 +331,17 @@ export function modelLabel(value: string | null | undefined): string {
 export interface ReportGenModelValues {
   /** 正文生成档原值（LLM 配置名或模型名），空串表示全局默认 */
   main: string
-  structure: string
   fallback: string
   disabledTools: string[]
 }
 
-/** 从 core.module_settings 列表里抽三档模型与停用工具。 */
+/** 从 core.module_settings 列表里抽两档模型与停用工具。 */
 export function pickReportGenModels(
   settings: { key: string; value: string }[]
 ): ReportGenModelValues {
   const value = (key: string) => settings.find((item) => item.key === key)?.value?.trim() ?? ''
   return {
     main: value('REPORT_GEN_MODEL'),
-    structure: value('REPORT_GEN_STRUCTURE_MODEL'),
     fallback: value('REPORT_GEN_FALLBACK_MODEL'),
     disabledTools: parseDisabledTools(value('REPORT_GEN_DISABLED_TOOLS')),
   }
@@ -232,21 +349,20 @@ export function pickReportGenModels(
 
 export interface ReportGenJobModelSnapshot {
   main: string | null
-  structure: string | null
   fallback: string | null
   usedFallback: boolean
 }
 
 /**
  * 任务创建时落库的模型快照。
- * 三档全空 = 快照列上线前的历史任务，返回 null 让页面显示「未记录」。
+ * 两档全空 = 快照列上线前的历史任务，返回 null 让页面显示「未记录」。
+ * 结构识别档已下线：历史任务里的 structure_model_name 只是遗留数据，不再展示。
  */
 export function jobModelSnapshot(job: ReportGenJob): ReportGenJobModelSnapshot | null {
   const main = job.model_name ?? job.model_config_name ?? null
-  if (!main && !job.structure_model_name && !job.fallback_model_name) return null
+  if (!main && !job.fallback_model_name) return null
   return {
     main,
-    structure: job.structure_model_name ?? null,
     fallback: job.fallback_model_name ?? null,
     usedFallback: !!job.used_fallback,
   }

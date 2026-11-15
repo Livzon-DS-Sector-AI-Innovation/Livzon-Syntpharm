@@ -15,6 +15,7 @@ MODULE = "research"
 # 沿用 doc-gen 前缀：存量模板的 file_object_key 都是按此前缀写入的，
 # 改名会让所有历史版本的文件指向失效。
 PREFIX = "doc-gen"
+LOCAL_PREFIX = "local:"
 
 
 def save_bytes(name: str, data: bytes, content_type: str = "application/octet-stream") -> str:
@@ -28,13 +29,13 @@ def save_bytes(name: str, data: bytes, content_type: str = "application/octet-st
     target = Path(get_settings().UPLOAD_DIR) / key
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(data)
-    return f"local:{key}"
+    return f"{LOCAL_PREFIX}{key}"
 
 
 def load_bytes(key: str) -> bytes | None:
     """按键读取字节流。"""
-    if key.startswith("local:"):
-        path = Path(get_settings().UPLOAD_DIR) / key[len("local:") :]
+    if key.startswith(LOCAL_PREFIX):
+        path = Path(get_settings().UPLOAD_DIR) / key[len(LOCAL_PREFIX) :]
         return path.read_bytes() if path.exists() else None
     if not storage.is_enabled():
         return None
@@ -42,4 +43,4 @@ def load_bytes(key: str) -> bytes | None:
     return result[0] if result else None
 
 
-__all__ = ["MODULE", "load_bytes", "save_bytes"]
+__all__ = ["LOCAL_PREFIX", "MODULE", "load_bytes", "save_bytes"]

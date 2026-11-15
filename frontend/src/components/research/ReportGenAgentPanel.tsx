@@ -66,7 +66,7 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
           value: formatSeconds(metrics.avg_duration_seconds),
           hint: '从开始到结束的平均时间，只看已完成的任务',
         },
-        { label: '未填比例', value: formatRate(metrics.gap_rate), hint: '找不到依据的填充项 ÷ 全部填充项' },
+        { label: '未写比例', value: formatRate(metrics.gap_rate), hint: '没有写入的位置数 ÷ 全部可写位置数' },
         {
           label: '自动补齐比例',
           value: formatRate(metrics.fallback_rate),
@@ -106,7 +106,6 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
           规则版本
         </Typography.Text>
         <Tag>正文 {metrics?.agent_prompt_version ?? '—'}</Tag>
-        <Tag>分析结构 {metrics?.structure_prompt_version ?? '—'}</Tag>
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>
           由提示词和动作清单内容自动生成，内容一改就会变，用来确认线上跑的是哪一版
         </Typography.Text>
@@ -156,7 +155,7 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
       {!unavailable && slotTop.length > 0 && (
         <Space size={6} wrap style={{ marginTop: 12 }}>
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            意见集中在这些填充项
+            意见集中在这些位置
           </Typography.Text>
           {slotTop.map((item) => (
             <Tag key={item.slot_key}>
@@ -164,13 +163,13 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
             </Tag>
           ))}
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            同一个填充项总被提意见，说明该改规则或补示例写法，而不是一篇篇改
+            同一个位置总被提意见，说明该补模板填写要求或调整检索范围，而不是一篇篇改
           </Typography.Text>
         </Space>
       )}
 
       <Typography.Paragraph type="secondary" style={{ fontSize: 12, margin: '12px 0 0' }}>
-        时间范围按任务结束时间算（老任务没有结束时间就按创建时间）。成功率、轮次、用时、未填比例、自动补齐比例都只统计已完成的任务，避免失败任务把平均值拉偏。
+        时间范围按任务结束时间算（老任务没有结束时间就按创建时间）。成功率、轮次、用时、未写比例、自动补齐比例都只统计已完成的任务，避免失败任务把平均值拉偏。
         老任务没法追溯当时用的规则版本，这里只显示当前正在用的版本。
       </Typography.Paragraph>
     </>

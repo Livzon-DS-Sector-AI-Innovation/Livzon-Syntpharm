@@ -10,20 +10,18 @@ import logging
 from urllib.parse import quote
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Query, UploadFile
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import DataResponse
-from app.modules.research.report_gen import service, versions
+from app.modules.research.report_gen import review, service, versions
 from app.modules.research.report_gen.schemas import (
     ReportGenDocumentVersionListData,
-    ReportGenExampleData,
-    ReportGenExampleListData,
-    ReportGenExamplePromoteData,
-    ReportGenExampleUpdateRequest,
+    ReportGenEditRequest,
+    ReportGenEditResultData,
     ReportGenFeedbackCreateRequest,
     ReportGenFeedbackData,
     ReportGenFeedbackListData,
@@ -34,12 +32,14 @@ from app.modules.research.report_gen.schemas import (
     ReportGenMetricsData,
     ReportGenModelTestData,
     ReportGenModelTestRequest,
+    ReportGenOpinionData,
+    ReportGenOpinionDigestListData,
+    ReportGenOpinionListData,
+    ReportGenOpinionUpdateRequest,
+    ReportGenOutlineData,
     ReportGenRenderData,
-    ReportGenSlotData,
-    ReportGenSlotListData,
-    ReportGenSlotUpdateRequest,
     ReportGenStepListData,
-    ReportGenStructureRunListData,
+    ReportGenVersionRestoreRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -98,6 +98,26 @@ async def get_report_gen_job(
 
 
 @router.get(
+    "/jobs/{job_id}/outline",
+    summary="可写字段清单（审阅工作台）",
+    response_model=DataResponse[ReportGenOutlineData],
+)
+async def get_report_gen_outline(
+    job_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:report:read")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[ReportGenOutlineData]:
+    """母本可写位置与本次写入记录合并后的逐处清单。
+
+    未写位置在 ``rd_report_gen_slots`` 里没有行，必须与母本位置取并集才列得出来；
+    成品段落数一并返回，前端拿它自检预览 DOM 与段落下标是否对得上。
+    """
+    data = await review.build_review(db, job_id)
+    return DataResponse[ReportGenOutlineData](data=data)
+
+
+@router.get(
     "/jobs/{job_id}/steps",
     summary="生成过程记录（按序号增量拉取）",
     response_model=DataResponse[ReportGenStepListData],
@@ -112,39 +132,6 @@ async def list_report_gen_steps(
 ) -> DataResponse[ReportGenStepListData]:
     data = await service.list_steps(db, job_id, after_seq=after_seq, limit=limit)
     return DataResponse[ReportGenStepListData](data=data)
-
-
-@router.get(
-    "/jobs/{job_id}/slots",
-    summary="填充项结果",
-    response_model=DataResponse[ReportGenSlotListData],
-)
-async def list_report_gen_slots(
-    job_id: UUID,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:report:read")),
-    db: AsyncSession = Depends(get_db),
-) -> DataResponse[ReportGenSlotListData]:
-    data = await service.list_slots(db, job_id)
-    return DataResponse[ReportGenSlotListData](data=data)
-
-
-@router.put(
-    "/jobs/{job_id}/slots/{slot_key}",
-    summary="手动修改填充内容",
-    response_model=DataResponse[ReportGenSlotData],
-)
-async def update_report_gen_slot(
-    job_id: UUID,
-    slot_key: str,
-    payload: ReportGenSlotUpdateRequest,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:report:update")),
-    db: AsyncSession = Depends(get_db),
-) -> DataResponse[ReportGenSlotData]:
-    """只改结果区与对照表口径；成品 docx 不重渲染（按已确认的需求口径）。"""
-    data = await service.update_slot(db, job_id, slot_key, payload, current_user.id if current_user else None)
-    return DataResponse[ReportGenSlotData](data=data, message="已保存，下次生成会沿用")
 
 
 @router.post(
@@ -213,20 +200,55 @@ async def update_report_gen_feedback(
     return DataResponse[ReportGenFeedbackData](data=data, message="已更新")
 
 
-@router.post(
-    "/feedback/{feedback_id}/promote",
-    summary="把已落实的意见存成示例写法",
-    response_model=DataResponse[ReportGenExamplePromoteData],
+@router.get(
+    "/opinion-library",
+    summary="意见库：跨报告归并后的历史意见",
+    response_model=DataResponse[ReportGenOpinionListData],
 )
-async def promote_report_gen_feedback(
-    feedback_id: UUID,
+async def list_report_gen_opinions(
+    current_user: RequiredUser,
+    status: str | None = Query(None, pattern="^(active|disabled)$", description="按状态过滤"),
+    keyword: str | None = Query(None, max_length=100, description="按内容搜索"),
+    limit: int = Query(200, ge=1, le=500),
+    ctx: PermissionContext = Depends(require_permission("research:report:read")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[ReportGenOpinionListData]:
+    """每条意见都有被提出次数：次数高的要求会被优先收进生成前的写作要求。"""
+    data = await service.list_opinions(db, status=status, keyword=keyword, limit=limit)
+    return DataResponse[ReportGenOpinionListData](data=data)
+
+
+@router.patch(
+    "/opinion-library/{opinion_id}",
+    summary="停用 / 恢复一条历史意见",
+    response_model=DataResponse[ReportGenOpinionData],
+)
+async def update_report_gen_opinion(
+    opinion_id: UUID,
+    payload: ReportGenOpinionUpdateRequest,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:report:review")),
     db: AsyncSession = Depends(get_db),
-) -> DataResponse[ReportGenExamplePromoteData]:
-    """把这次被采纳的写法收进示例库，下次同模板生成直接当 few-shot 参照。"""
-    data = await service.promote_feedback(db, feedback_id, current_user.id if current_user else None)
-    return DataResponse[ReportGenExamplePromoteData](data=data, message="已存成示例写法，以后生成会参考")
+) -> DataResponse[ReportGenOpinionData]:
+    """停用后不再影响后续生成；同类意见再次被提出也不会自动恢复，需人工确认。"""
+    data = await service.update_opinion(db, opinion_id, payload, current_user.id if current_user else None)
+    return DataResponse[ReportGenOpinionData](data=data, message="已更新")
+
+
+@router.get(
+    "/opinion-library/digests",
+    summary="历史意见汇总记录",
+    response_model=DataResponse[ReportGenOpinionDigestListData],
+)
+async def list_report_gen_opinion_digests(
+    current_user: RequiredUser,
+    limit: int = Query(20, ge=1, le=100),
+    ctx: PermissionContext = Depends(require_permission("research:report:read")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[ReportGenOpinionDigestListData]:
+    """每次生成前的汇总都留档：可回答「这一版按哪份写作要求写的」。"""
+    data = await service.list_opinion_digests(db, limit=limit)
+    return DataResponse[ReportGenOpinionDigestListData](data=data)
 
 
 @router.get("/jobs/{job_id}/document", summary="下载生成的 Word 文档")
@@ -240,41 +262,9 @@ async def download_report_gen_document(
     return _attachment(data, name, mime)
 
 
-@router.get("/jobs/{job_id}/comparison", summary="下载填充项对照表")
-async def download_report_gen_comparison(
-    job_id: UUID,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:report:read")),
-    db: AsyncSession = Depends(get_db),
-) -> Response:
-    name, data, mime = await service.comparison_payload(db, job_id)
-    return _attachment(data, name, mime)
-
-
-@router.post(
-    "/jobs/{job_id}/render",
-    summary="按当前填充内容重新生成 Word（不重跑 AI）",
-    response_model=DataResponse[ReportGenRenderData],
-)
-async def rerender_report_gen_document(
-    job_id: UUID,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:report:update")),
-    db: AsyncSession = Depends(get_db),
-) -> DataResponse[ReportGenRenderData]:
-    """槽位改完后按当前内容重出 docx：纯本地按锚点回填，不调用大模型、秒级返回。"""
-    data = await versions.render_from_slots(db, job_id, current_user.id if current_user else None)
-    message = (
-        "已按当前内容重新生成 Word"
-        if data.synced_deliverable
-        else "已按当前内容重新生成 Word；交付物附件未同步，可到交付物页重新上传"
-    )
-    return DataResponse[ReportGenRenderData](data=data, message=message)
-
-
 @router.get(
     "/jobs/{job_id}/versions",
-    summary="文档版本列表（AI 初稿 / 人工重渲 / 人工上传）",
+    summary="文档版本列表（AI 初稿 / 重渲 / 人工上传）",
     response_model=DataResponse[ReportGenDocumentVersionListData],
 )
 async def list_report_gen_versions(
@@ -285,23 +275,6 @@ async def list_report_gen_versions(
 ) -> DataResponse[ReportGenDocumentVersionListData]:
     data = await versions.list_versions(db, job_id)
     return DataResponse[ReportGenDocumentVersionListData](data=data)
-
-
-@router.post(
-    "/jobs/{job_id}/versions/upload",
-    summary="上传人工修改后的 Word（兜底改稿）",
-    response_model=DataResponse[ReportGenRenderData],
-)
-async def upload_report_gen_version(
-    job_id: UUID,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:report:update")),
-    file: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db),
-) -> DataResponse[ReportGenRenderData]:
-    """下载改完再传回来：落一个新版本并置为当前，AI 初稿仍然保留。"""
-    data = await versions.upload_version(db, job_id, file, current_user.id if current_user else None)
-    return DataResponse[ReportGenRenderData](data=data, message="已上传并设为当前版本")
 
 
 @router.get("/versions/{version_id}/document", summary="下载某个版本的 Word 文档")
@@ -316,19 +289,54 @@ async def download_report_gen_version_document(
 
 
 @router.post(
-    "/versions/{version_id}/activate",
-    summary="把某个历史版本设为当前",
+    "/jobs/{job_id}/edits",
+    summary="在线编辑文档并保存为新版本",
+    response_model=DataResponse[ReportGenEditResultData],
+)
+async def edit_report_gen_document(
+    job_id: UUID,
+    payload: ReportGenEditRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:report:update")),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[ReportGenEditResultData]:
+    """逐条校验后原地改写当前版本 docx，落 ``manual_edit`` 新版本。
+
+    校验未通过的操作只丢弃那一处并还原为母本原样，其余修改照常保存；返回逐条原因，
+    前端按位置展示，不会因为一处写坏就丢掉整批。
+    """
+    data = await service.apply_job_edits(db, job_id, payload, current_user.id if current_user else None)
+    if data.applied:
+        message = f"已保存 {data.applied} 处修改"
+        if data.removed:
+            message += f"，{len(data.removed)} 处校验未通过已还原原文"
+    else:
+        message = "这一批修改都没有通过校验，相关位置已还原原文"
+    return DataResponse[ReportGenEditResultData](data=data, message=message)
+
+
+@router.post(
+    "/jobs/{job_id}/versions/{version_id}/restore",
+    summary="回滚到指定版本",
     response_model=DataResponse[ReportGenRenderData],
 )
-async def activate_report_gen_version(
+async def restore_report_gen_version(
+    job_id: UUID,
     version_id: UUID,
+    payload: ReportGenVersionRestoreRequest,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:report:update")),
     db: AsyncSession = Depends(get_db),
 ) -> DataResponse[ReportGenRenderData]:
-    """改坏了可以退回任意一版；当前版决定交付物附件与预览内容。"""
-    data = await versions.activate_version(db, version_id, current_user.id if current_user else None)
-    return DataResponse[ReportGenRenderData](data=data, message="已切换到该版本")
+    """不改写历史：把旧版文件再落一个新版本并置为当前，回滚本身也可再回滚。"""
+    data = await service.restore_job_version(
+        db,
+        job_id,
+        version_id,
+        base_version_id=payload.base_version_id,
+        user_id=current_user.id if current_user else None,
+    )
+    return DataResponse[ReportGenRenderData](data=data, message="已回滚")
 
 
 @router.post(
@@ -360,74 +368,6 @@ async def get_report_gen_metrics(
     """配置页「Agent 运行情况」：只读聚合，返回成功率/平均轮次/平均耗时/缺口率与提示词指纹。"""
     data = await service.agent_metrics(db, days)
     return DataResponse[ReportGenMetricsData](data=data)
-
-
-@router.get(
-    "/templates/{template_id}/structure-runs",
-    summary="模板结构分析记录（识别到多少、人工又改了多少）",
-    response_model=DataResponse[ReportGenStructureRunListData],
-)
-async def list_report_gen_structure_runs(
-    template_id: UUID,
-    current_user: RequiredUser,
-    limit: int = Query(10, ge=1, le=50, description="看最近 N 次分析记录"),
-    ctx: PermissionContext = Depends(require_permission("research:report:read")),
-    db: AsyncSession = Depends(get_db),
-) -> DataResponse[ReportGenStructureRunListData]:
-    """看每次解析选了多少槽位、以及人工随后后补/否掉了多少（只读）。"""
-    data = await service.list_structure_runs(db, template_id, limit)
-    return DataResponse[ReportGenStructureRunListData](data=data)
-
-
-@router.get(
-    "/templates/{template_id}/examples",
-    summary="这个模板下已存的示例写法",
-    response_model=DataResponse[ReportGenExampleListData],
-)
-async def list_report_gen_examples(
-    template_id: UUID,
-    current_user: RequiredUser,
-    include_inactive: bool = Query(True, description="是否连已停用的示例一起返回"),
-    limit: int = Query(200, ge=1, le=500),
-    ctx: PermissionContext = Depends(require_permission("research:report:read")),
-    db: AsyncSession = Depends(get_db),
-) -> DataResponse[ReportGenExampleListData]:
-    """示例库管理用：这个模板下有哪些示例、各自从哪来、被引用过几次。"""
-    data = await service.list_examples(db, template_id, include_inactive=include_inactive, limit=limit)
-    return DataResponse[ReportGenExampleListData](data=data)
-
-
-@router.patch(
-    "/examples/{example_id}",
-    summary="手动维护示例写法",
-    response_model=DataResponse[ReportGenExampleData],
-)
-async def update_report_gen_example(
-    example_id: UUID,
-    payload: ReportGenExampleUpdateRequest,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:report:update")),
-    db: AsyncSession = Depends(get_db),
-) -> DataResponse[ReportGenExampleData]:
-    """改写法 / 补依据 / 停用错例；停用后不再注入下一次生成。"""
-    data = await service.update_example(db, example_id, payload, current_user.id if current_user else None)
-    return DataResponse[ReportGenExampleData](data=data, message="已更新")
-
-
-@router.delete(
-    "/examples/{example_id}",
-    summary="删除示例写法（可恢复）",
-    response_model=DataResponse[ReportGenExampleData],
-)
-async def delete_report_gen_example(
-    example_id: UUID,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:report:update")),
-    db: AsyncSession = Depends(get_db),
-) -> DataResponse[ReportGenExampleData]:
-    """彻底不再参与注入，但保留记录可追「以前为什么这么写」。"""
-    data = await service.delete_example(db, example_id, current_user.id if current_user else None)
-    return DataResponse[ReportGenExampleData](data=data, message="已删除")
 
 
 def _attachment(data: bytes, filename: str, mime: str) -> Response:

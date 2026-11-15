@@ -1154,6 +1154,16 @@ async def update_deliverable_template(  # type: ignore[no-untyped-def]
     if not template:
         raise NotFoundException("模板")
     update_data = data.model_dump(exclude_unset=True)
+    # 「填写要求」不是独立列：合并进 template_structure.instruction（不建迁移、不动历史键），
+    # 这样既保住老模板里已有的结构快照，也让生成链路只读一处。
+    if "instruction" in update_data:
+        from app.modules.research.report_gen.structure import with_instruction
+
+        instruction = update_data.pop("instruction")
+        base = update_data.get("template_structure")
+        update_data["template_structure"] = with_instruction(
+            base if base is not None else template.template_structure, instruction
+        )
     if update_data.get("is_active") is True:
         _ensure_template_enableable(template, update_data)
     if user_id:

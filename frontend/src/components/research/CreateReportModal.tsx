@@ -47,7 +47,7 @@ interface ReportFormValues {
  * 新建 / 编辑研发报告。
  *
  * 「AI 生成报告」= 先落报告记录，再提交一条异步生成任务，然后立刻关闭弹窗；
- * 执行过程与成品都在列表页的「执行过程」里看，弹窗不承载进度状态机。
+ * 生成状态在列表页看，成品在「生成详情」里预览/下载，弹窗不承载进度状态机。
  */
 export function CreateReportModal({ open, projectId, onCancel, onCreated, editingReport, modelLabel }: Props) {
   const { message: msgApi } = App.useApp()
@@ -399,7 +399,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
               showIcon
               style={{ marginBottom: 16 }}
               message="未检测到项目知识库"
-              description="AI 只能用项目登记信息和下面的补充说明来写，找不到依据的填充项会标成「待补充」。"
+              description="AI 只能用项目登记信息和下面的补充说明来写，找不到依据的位置会标成「待补充」。"
             />
           )}
 

@@ -173,7 +173,7 @@ export function ReportPage({ projectId }: Props) {
     const job = jobMap.get(record.id)
     if (!job) return
     try {
-      await downloadReportGenFile(job.id, 'document', `${record.title || '报告'}.docx`)
+      await downloadReportGenFile(job.id, `${record.title || '报告'}.docx`)
       msgApi.success('下载成功')
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '下载失败')
@@ -253,7 +253,7 @@ export function ReportPage({ projectId }: Props) {
         return (
           <Space size="small" wrap>
             <PermissionGate code={PERM.researchReportRead}>
-              <Tooltip title={job ? '看这次生成每一步做了什么、每个填充项填了什么' : '还没生成过，先点「编辑」用 AI 生成'}>
+              <Tooltip title={job ? '看这次写入了哪些位置、成品预览与下载' : '还没生成过，先点「编辑」用 AI 生成'}>
                 <span>
                   <Button
                     type="link"
@@ -361,7 +361,7 @@ export function ReportPage({ projectId }: Props) {
         onDownload={async () => {
           if (!previewJobId) return
           try {
-            await downloadReportGenFile(previewJobId, 'document', `${previewTitle}.docx`)
+            await downloadReportGenFile(previewJobId, `${previewTitle}.docx`)
             msgApi.success('下载成功')
           } catch (e: unknown) {
             msgApi.error(e instanceof Error ? e.message : '下载失败')

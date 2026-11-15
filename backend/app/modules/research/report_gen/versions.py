@@ -1,8 +1,8 @@
-"""成品文档版本：留档、切换、按当前槽位重渲染、上传改稿。
+"""成品文档版本：AI 初稿留档、人工改稿上传、按版本取字节。
 
 职责边界：``service.py`` 顶层 import ``agent``，而 agent 出稿后要记一条 ``ai_draft``
 版本；版本逻辑若写进 service 会形成 service ↔ agent 双向依赖。本模块只依赖
-models / render / store，交付物同步用函数内延迟导入。
+models / store，交付物同步用函数内延迟导入。
 
 并发：同一任务的版本号由「锁任务行 + max(version_no)+1」保证，
 配合 ``uq_research_rd_report_gen_doc_versions_no`` 唯一约束兜底。
@@ -20,15 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import BadRequestException, NotFoundException
 from app.modules.research.doc_template import store
-from app.modules.research.models import (
-    RdDeliverableTemplate,
-    RdReport,
-    RdReportGenDocumentVersion,
-    RdReportGenJob,
-    RdReportGenSlot,
-)
-from app.modules.research.report_gen.fills import build_fills
-from app.modules.research.report_gen.render import render_document
+from app.modules.research.models import RdReportGenDocumentVersion, RdReportGenJob
 from app.modules.research.report_gen.schemas import (
     ReportGenDocumentVersionData,
     ReportGenDocumentVersionListData,
@@ -38,14 +30,13 @@ from app.modules.research.report_gen.schemas import (
 logger = logging.getLogger(__name__)
 
 DOCX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-_MARKDOWN_CONTENT_TYPE = "text/markdown; charset=utf-8"
 
 # 与交付物上传保持同一量级：研发报告正文远小于此，超过基本是传错文件
 _MAX_UPLOAD_BYTES = 50 * 1024 * 1024
 
 KIND_AI_DRAFT = "ai_draft"
-KIND_MANUAL_RENDER = "manual_render"
 KIND_MANUAL_UPLOAD = "manual_upload"
+KIND_MANUAL_EDIT = "manual_edit"
 
 
 def _to_version_data(row: RdReportGenDocumentVersion) -> ReportGenDocumentVersionData:
@@ -60,6 +51,11 @@ def _to_version_data(row: RdReportGenDocumentVersion) -> ReportGenDocumentVersio
         is_current=bool(row.is_current),
         created_at=row.created_at,
     )
+
+
+def to_version_data(row: RdReportGenDocumentVersion) -> ReportGenDocumentVersionData:
+    """对外暴露的转换：编辑接口要回传新版本，避免调用方再碰私有函数。"""
+    return _to_version_data(row)
 
 
 async def _get_job(session: AsyncSession, job_id: UUID) -> RdReportGenJob:
@@ -94,7 +90,6 @@ async def _append_version(
     *,
     kind: str,
     object_key: str,
-    comparison_object_key: str | None,
     file_name: str | None,
     file_size: int | None,
     note: str | None,
@@ -114,7 +109,6 @@ async def _append_version(
         version_no=await _next_version_no(session, job.id),
         kind=kind,
         object_key=object_key,
-        comparison_object_key=comparison_object_key,
         file_name=file_name,
         file_size=file_size,
         note=note,
@@ -157,36 +151,11 @@ async def record_ai_draft(
         job,
         kind=KIND_AI_DRAFT,
         object_key=job.document_object_key,
-        comparison_object_key=job.comparison_object_key,
         file_name=file_name,
         file_size=file_size,
         note="AI 生成初稿",
         user_id=None,
     )
-
-
-def _safe_stem(text: str | None, fallback: str = "report") -> str:
-    cleaned = (text or "").replace("/", "_").replace("\\", "_").strip()
-    return (cleaned or fallback)[:60]
-
-
-async def _load_template_bytes(session: AsyncSession, job: RdReportGenJob) -> bytes:
-    """取母本：优先任务快照，缺失时回退模板当前文件，两者都没有就明确报错。"""
-    if job.template_file_key:
-        data = store.load_bytes(job.template_file_key)
-        if data:
-            return data
-        logger.warning(
-            "report gen rerender: template snapshot missing, fallback to template file",
-            extra={"job_id": str(job.id)},
-        )
-    if job.deliverable_template_id:
-        template = await session.get(RdDeliverableTemplate, job.deliverable_template_id)
-        if template is not None and template.file_object_key:
-            data = store.load_bytes(str(template.file_object_key))
-            if data:
-                return data
-    raise BadRequestException("找不到这次生成用的 Word 母本，无法重新渲染，请重新生成一次")
 
 
 async def _sync_deliverable(session: AsyncSession, job: RdReportGenJob) -> bool:
@@ -199,88 +168,6 @@ async def _sync_deliverable(session: AsyncSession, job: RdReportGenJob) -> bool:
         logger.exception("report gen rerender: sync deliverable failed", extra={"job_id": str(job.id)})
         return False
     return True
-
-
-async def render_from_slots(session: AsyncSession, job_id: UUID, user_id: UUID | None) -> ReportGenRenderData:
-    """按当前槽位重新渲染 docx：不跑 LLM，纯按母本锚点回填，秒级完成。"""
-    job = await _lock_job(session, job_id)
-    if job.status != "completed":
-        raise BadRequestException("这次生成还没跑完，等出稿后再应用修改")
-
-    template_bytes = await _load_template_bytes(session, job)
-    rows = (
-        (
-            await session.execute(
-                select(RdReportGenSlot)
-                .where(
-                    RdReportGenSlot.job_id == job.id,
-                    RdReportGenSlot.is_deleted.is_(False),
-                )
-                .order_by(RdReportGenSlot.slot_key)
-            )
-        )
-        .scalars()
-        .all()
-    )
-
-    report = await session.get(RdReport, job.report_id)
-    meta = {
-        "title": report.title if report else "",
-        "doc_code": job.doc_code,
-        "drug_name": job.drug_name,
-    }
-    output = render_document(template_bytes, build_fills(rows), meta=meta)
-
-    for key in output.unresolved:
-        row = next((item for item in rows if item.slot_key == key), None)
-        if row is not None:
-            row.state = "anchor_unresolved"
-
-    title = _safe_stem(report.title if report else job.document_file_name)
-    file_name = f"{title}.docx"
-    object_key = store.save_bytes(file_name, output.document, DOCX_CONTENT_TYPE)
-    comparison_key = store.save_bytes(
-        f"{title}-填充项对照表.md",
-        output.comparison_markdown.encode("utf-8"),
-        _MARKDOWN_CONTENT_TYPE,
-    )
-
-    job.document_file_name = file_name
-    job.document_object_key = object_key
-    job.comparison_object_key = comparison_key
-    job.slot_filled = output.filled
-    job.slot_gap = output.gaps
-
-    version = await _append_version(
-        session,
-        job,
-        kind=KIND_MANUAL_RENDER,
-        object_key=object_key,
-        comparison_object_key=comparison_key,
-        file_name=file_name,
-        file_size=len(output.document),
-        note="按当前填充内容重新渲染",
-        user_id=user_id,
-    )
-    synced = await _sync_deliverable(session, job)
-    await session.commit()
-
-    logger.info(
-        "report gen rerendered from slots",
-        extra={
-            "job_id": str(job.id),
-            "version_no": version.version_no,
-            "filled": output.filled,
-            "gaps": output.gaps,
-        },
-    )
-    return ReportGenRenderData(
-        version=_to_version_data(version),
-        filled=output.filled,
-        gaps=output.gaps,
-        unresolved=list(output.unresolved),
-        synced_deliverable=synced,
-    )
 
 
 async def upload_version(
@@ -306,14 +193,12 @@ async def upload_version(
     object_key = store.save_bytes(name, data, DOCX_CONTENT_TYPE)
     job.document_file_name = name
     job.document_object_key = object_key
-    # 对照表描述的是 AI 的填充依据，人工上传的稿子没有新的对照表，沿用上一版
 
     version = await _append_version(
         session,
         job,
         kind=KIND_MANUAL_UPLOAD,
         object_key=object_key,
-        comparison_object_key=job.comparison_object_key,
         file_name=name,
         file_size=len(data),
         note="人工修改后上传",
@@ -334,37 +219,83 @@ async def upload_version(
     )
 
 
-async def activate_version(session: AsyncSession, version_id: UUID, user_id: UUID | None) -> ReportGenRenderData:
-    """把历史版本设为当前：回写任务上的成品键，交付物附件同步跟着换。"""
-    version = await session.get(RdReportGenDocumentVersion, version_id)
-    if version is None or version.is_deleted:
+async def current_version_id(session: AsyncSession, job_id: UUID) -> UUID | None:
+    """当前版 id：编辑请求带 base_version_id 时用它做并发校验。"""
+    result = await session.execute(
+        select(RdReportGenDocumentVersion.id).where(
+            RdReportGenDocumentVersion.job_id == job_id,
+            RdReportGenDocumentVersion.is_current.is_(True),
+            RdReportGenDocumentVersion.is_deleted.is_(False),
+        )
+    )
+    return result.scalar()
+
+
+async def record_manual_edit(
+    session: AsyncSession,
+    job: RdReportGenJob,
+    *,
+    data: bytes,
+    file_name: str,
+    note: str | None,
+    user_id: UUID | None,
+) -> tuple[RdReportGenDocumentVersion, bool]:
+    """站内编辑保存：落新版本、更新任务当前文档、同步交付物。
+
+    不在这里 commit：编辑流水与 slots 要在同一个事务里一起成功，由调用方统一提交。
+    """
+    object_key = store.save_bytes(file_name, data, DOCX_CONTENT_TYPE)
+    job.document_file_name = file_name
+    job.document_object_key = object_key
+    version = await _append_version(
+        session,
+        job,
+        kind=KIND_MANUAL_EDIT,
+        object_key=object_key,
+        file_name=file_name,
+        file_size=len(data),
+        note=note,
+        user_id=user_id,
+    )
+    synced = await _sync_deliverable(session, job)
+    return version, synced
+
+
+async def restore_version(
+    session: AsyncSession,
+    job_id: UUID,
+    version_id: UUID,
+    user_id: UUID | None,
+    *,
+    base_version_id: UUID | None = None,
+) -> ReportGenRenderData:
+    """回滚到指定版本：用旧版的文件键落一个新版本，历史不被改写。"""
+    job = await _lock_job(session, job_id)
+    target = await session.get(RdReportGenDocumentVersion, version_id)
+    if target is None or target.is_deleted or target.job_id != job.id:
         raise NotFoundException("文档版本")
 
-    job = await _lock_job(session, version.job_id)
-    if job.status != "completed":
-        raise BadRequestException("这次生成还没跑完，不能切换版本")
+    current_id = await current_version_id(session, job.id)
+    if base_version_id is not None and current_id != base_version_id:
+        raise BadRequestException("这一版已经被改过，请刷新后再回滚")
 
-    await session.execute(
-        update(RdReportGenDocumentVersion)
-        .where(
-            RdReportGenDocumentVersion.job_id == job.id,
-            RdReportGenDocumentVersion.is_current.is_(True),
-        )
-        .values(is_current=False)
+    job.document_file_name = target.file_name
+    job.document_object_key = target.object_key
+    version = await _append_version(
+        session,
+        job,
+        kind=KIND_MANUAL_EDIT,
+        object_key=str(target.object_key),
+        file_name=target.file_name,
+        file_size=target.file_size,
+        note=f"回滚到第 {target.version_no} 版",
+        user_id=user_id,
     )
-    version.is_current = True
-    version.updated_by = user_id
-
-    job.document_file_name = version.file_name
-    job.document_object_key = version.object_key
-    if version.comparison_object_key:
-        job.comparison_object_key = version.comparison_object_key
-
     synced = await _sync_deliverable(session, job)
     await session.commit()
     logger.info(
-        "report gen version activated",
-        extra={"job_id": str(job.id), "version_id": str(version.id), "version_no": version.version_no},
+        "report gen version restored",
+        extra={"job_id": str(job.id), "version_no": version.version_no, "from_version": target.version_no},
     )
     return ReportGenRenderData(
         version=_to_version_data(version),
@@ -387,10 +318,15 @@ async def version_document_payload(session: AsyncSession, version_id: UUID) -> t
 
 
 __all__ = [
-    "activate_version",
+    "KIND_AI_DRAFT",
+    "KIND_MANUAL_EDIT",
+    "KIND_MANUAL_UPLOAD",
+    "current_version_id",
     "list_versions",
     "record_ai_draft",
-    "render_from_slots",
+    "record_manual_edit",
+    "restore_version",
+    "to_version_data",
     "upload_version",
     "version_document_payload",
 ]

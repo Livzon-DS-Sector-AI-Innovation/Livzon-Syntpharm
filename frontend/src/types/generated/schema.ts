@@ -11750,95 +11750,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/sample": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 生成填充示例稿
-         * @description 按已保存的填充项在母本上就地标注，生成一份可预览/下载的示例稿。
-         *
-         *     示例稿单独留档为一个版本（不成为当前母本），据此可对照每处该填什么、填在哪。
-         */
-        post: operations["generate_template_sample_api_v1_research_doc_gen_deliverable_templates__template_id__sample_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 交付文档模板的填充项设置
-         * @description 返回槽位清单与母本候选位置；只读文件，不触发模型识别。
-         */
-        get: operations["get_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_get"];
-        /**
-         * 保存填充项设置
-         * @description 全量覆盖槽位结构（人工增删改）；锚点必须在当前母本里，换版后须先重新识别。
-         */
-        put: operations["save_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots/reparse": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 重新分析模板结构
-         * @description 强制重解析并按位置合并：人工改过的字段保留，只补 AI 新识别的位置。
-         */
-        post: operations["reparse_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_reparse_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots/reparse/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 重新分析模板结构（流式）
-         * @description 重解析并边分析边推事件：阶段、思考增量、最终合并结果。
-         *
-         *     同步版 ``/slots/reparse`` 保留不动（脚本与老前端仍可用）；两个入口共用
-         *     ``service`` 里的同一套校验与合并逻辑，区别只是等待过程是否可见。
-         */
-        post: operations["reparse_template_slots_stream_api_v1_research_doc_gen_deliverable_templates__template_id__slots_reparse_stream_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/research/knowledge-bases/limits": {
         parameters: {
             query?: never;
@@ -12078,6 +11989,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/research/report-gen/jobs/{job_id}/outline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 可写字段清单（审阅工作台）
+         * @description 母本可写位置与本次写入记录合并后的逐处清单。
+         *
+         *     未写位置在 ``rd_report_gen_slots`` 里没有行，必须与母本位置取并集才列得出来；
+         *     成品段落数一并返回，前端拿它自检预览 DOM 与段落下标是否对得上。
+         */
+        get: operations["get_report_gen_outline_api_v1_research_report_gen_jobs__job_id__outline_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/research/report-gen/jobs/{job_id}/steps": {
         parameters: {
             query?: never;
@@ -12088,43 +12022,6 @@ export interface paths {
         /** 生成过程记录（按序号增量拉取） */
         get: operations["list_report_gen_steps_api_v1_research_report_gen_jobs__job_id__steps_get"];
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/research/report-gen/jobs/{job_id}/slots": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 填充项结果 */
-        get: operations["list_report_gen_slots_api_v1_research_report_gen_jobs__job_id__slots_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/research/report-gen/jobs/{job_id}/slots/{slot_key}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * 手动修改填充内容
-         * @description 只改结果区与对照表口径；成品 docx 不重渲染（按已确认的需求口径）。
-         */
-        put: operations["update_report_gen_slot_api_v1_research_report_gen_jobs__job_id__slots__slot_key__put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -12193,7 +12090,27 @@ export interface paths {
         patch: operations["update_report_gen_feedback_api_v1_research_report_gen_feedback__feedback_id__patch"];
         trace?: never;
     };
-    "/api/v1/research/report-gen/feedback/{feedback_id}/promote": {
+    "/api/v1/research/report-gen/opinion-library": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 意见库：跨报告归并后的历史意见
+         * @description 每条意见都有被提出次数：次数高的要求会被优先收进生成前的写作要求。
+         */
+        get: operations["list_report_gen_opinions_api_v1_research_report_gen_opinion_library_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/report-gen/opinion-library/{opinion_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -12202,11 +12119,31 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
         /**
-         * 把已落实的意见存成示例写法
-         * @description 把这次被采纳的写法收进示例库，下次同模板生成直接当 few-shot 参照。
+         * 停用 / 恢复一条历史意见
+         * @description 停用后不再影响后续生成；同类意见再次被提出也不会自动恢复，需人工确认。
          */
-        post: operations["promote_report_gen_feedback_api_v1_research_report_gen_feedback__feedback_id__promote_post"];
+        patch: operations["update_report_gen_opinion_api_v1_research_report_gen_opinion_library__opinion_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/research/report-gen/opinion-library/digests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 历史意见汇总记录
+         * @description 每次生成前的汇总都留档：可回答「这一版按哪份写作要求写的」。
+         */
+        get: operations["list_report_gen_opinion_digests_api_v1_research_report_gen_opinion_library_digests_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -12230,43 +12167,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/research/report-gen/jobs/{job_id}/comparison": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 下载填充项对照表 */
-        get: operations["download_report_gen_comparison_api_v1_research_report_gen_jobs__job_id__comparison_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/research/report-gen/jobs/{job_id}/render": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 按当前填充内容重新生成 Word（不重跑 AI）
-         * @description 槽位改完后按当前内容重出 docx：纯本地按锚点回填，不调用大模型、秒级返回。
-         */
-        post: operations["rerender_report_gen_document_api_v1_research_report_gen_jobs__job_id__render_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/research/report-gen/jobs/{job_id}/versions": {
         parameters: {
             query?: never;
@@ -12274,30 +12174,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 文档版本列表（AI 初稿 / 人工重渲 / 人工上传） */
+        /** 文档版本列表（AI 初稿 / 重渲 / 人工上传） */
         get: operations["list_report_gen_versions_api_v1_research_report_gen_jobs__job_id__versions_get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/research/report-gen/jobs/{job_id}/versions/upload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 上传人工修改后的 Word（兜底改稿）
-         * @description 下载改完再传回来：落一个新版本并置为当前，AI 初稿仍然保留。
-         */
-        post: operations["upload_report_gen_version_api_v1_research_report_gen_jobs__job_id__versions_upload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12321,7 +12201,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/research/report-gen/versions/{version_id}/activate": {
+    "/api/v1/research/report-gen/jobs/{job_id}/edits": {
         parameters: {
             query?: never;
             header?: never;
@@ -12331,10 +12211,33 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * 把某个历史版本设为当前
-         * @description 改坏了可以退回任意一版；当前版决定交付物附件与预览内容。
+         * 在线编辑文档并保存为新版本
+         * @description 逐条校验后原地改写当前版本 docx，落 ``manual_edit`` 新版本。
+         *
+         *     校验未通过的操作只丢弃那一处并还原为母本原样，其余修改照常保存；返回逐条原因，
+         *     前端按位置展示，不会因为一处写坏就丢掉整批。
          */
-        post: operations["activate_report_gen_version_api_v1_research_report_gen_versions__version_id__activate_post"];
+        post: operations["edit_report_gen_document_api_v1_research_report_gen_jobs__job_id__edits_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/report-gen/jobs/{job_id}/versions/{version_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 回滚到指定版本
+         * @description 不改写历史：把旧版文件再落一个新版本并置为当前，回滚本身也可再回滚。
+         */
+        post: operations["restore_report_gen_version_api_v1_research_report_gen_jobs__job_id__versions__version_id__restore_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12379,70 +12282,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/v1/research/report-gen/templates/{template_id}/structure-runs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 模板结构分析记录（识别到多少、人工又改了多少）
-         * @description 看每次解析选了多少槽位、以及人工随后后补/否掉了多少（只读）。
-         */
-        get: operations["list_report_gen_structure_runs_api_v1_research_report_gen_templates__template_id__structure_runs_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/research/report-gen/templates/{template_id}/examples": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 这个模板下已存的示例写法
-         * @description 示例库管理用：这个模板下有哪些示例、各自从哪来、被引用过几次。
-         */
-        get: operations["list_report_gen_examples_api_v1_research_report_gen_templates__template_id__examples_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/research/report-gen/examples/{example_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * 删除示例写法（可恢复）
-         * @description 彻底不再参与注入，但保留记录可追「以前为什么这么写」。
-         */
-        delete: operations["delete_report_gen_example_api_v1_research_report_gen_examples__example_id__delete"];
-        options?: never;
-        head?: never;
-        /**
-         * 手动维护示例写法
-         * @description 改写法 / 补依据 / 停用错例；停用后不再注入下一次生成。
-         */
-        patch: operations["update_report_gen_example_api_v1_research_report_gen_examples__example_id__patch"];
         trace?: never;
     };
     "/api/v1/registration/": {
@@ -22917,11 +22756,6 @@ export interface components {
             /** File */
             file: string;
         };
-        /** Body_upload_report_gen_version_api_v1_research_report_gen_jobs__job_id__versions_upload_post */
-        Body_upload_report_gen_version_api_v1_research_report_gen_jobs__job_id__versions_upload_post: {
-            /** File */
-            file: string;
-        };
         /** Body_upload_task_photo_api_v1_equipment_inspection_tasks__task_id__photos_post */
         Body_upload_task_photo_api_v1_equipment_inspection_tasks__task_id__photos_post: {
             /**
@@ -27642,8 +27476,8 @@ export interface components {
             data?: components["schemas"]["ReportGenDocumentVersionListData"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
-        /** DataResponse[ReportGenExampleData] */
-        DataResponse_ReportGenExampleData_: {
+        /** DataResponse[ReportGenEditResultData] */
+        DataResponse_ReportGenEditResultData_: {
             /**
              * Code
              * @default 200
@@ -27654,37 +27488,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data?: components["schemas"]["ReportGenExampleData"] | null;
-            meta?: components["schemas"]["PaginationMeta"] | null;
-        };
-        /** DataResponse[ReportGenExampleListData] */
-        DataResponse_ReportGenExampleListData_: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["ReportGenExampleListData"] | null;
-            meta?: components["schemas"]["PaginationMeta"] | null;
-        };
-        /** DataResponse[ReportGenExamplePromoteData] */
-        DataResponse_ReportGenExamplePromoteData_: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["ReportGenExamplePromoteData"] | null;
+            data?: components["schemas"]["ReportGenEditResultData"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[ReportGenFeedbackData] */
@@ -27777,6 +27581,66 @@ export interface components {
             data?: components["schemas"]["ReportGenModelTestData"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[ReportGenOpinionData] */
+        DataResponse_ReportGenOpinionData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenOpinionData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ReportGenOpinionDigestListData] */
+        DataResponse_ReportGenOpinionDigestListData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenOpinionDigestListData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ReportGenOpinionListData] */
+        DataResponse_ReportGenOpinionListData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenOpinionListData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ReportGenOutlineData] */
+        DataResponse_ReportGenOutlineData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReportGenOutlineData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[ReportGenRenderData] */
         DataResponse_ReportGenRenderData_: {
             /**
@@ -27792,36 +27656,6 @@ export interface components {
             data?: components["schemas"]["ReportGenRenderData"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
-        /** DataResponse[ReportGenSlotData] */
-        DataResponse_ReportGenSlotData_: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["ReportGenSlotData"] | null;
-            meta?: components["schemas"]["PaginationMeta"] | null;
-        };
-        /** DataResponse[ReportGenSlotListData] */
-        DataResponse_ReportGenSlotListData_: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["ReportGenSlotListData"] | null;
-            meta?: components["schemas"]["PaginationMeta"] | null;
-        };
         /** DataResponse[ReportGenStepListData] */
         DataResponse_ReportGenStepListData_: {
             /**
@@ -27835,21 +27669,6 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["ReportGenStepListData"] | null;
-            meta?: components["schemas"]["PaginationMeta"] | null;
-        };
-        /** DataResponse[ReportGenStructureRunListData] */
-        DataResponse_ReportGenStructureRunListData_: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["ReportGenStructureRunListData"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[ResearchProjectResponse] */
@@ -30377,131 +30196,6 @@ export interface components {
             message: string;
         };
         /**
-         * DocGenReparseStats
-         * @description 合并重解析的增减统计。
-         */
-        DocGenReparseStats: {
-            /**
-             * Added
-             * @default 0
-             */
-            added: number;
-            /**
-             * Kept
-             * @default 0
-             */
-            kept: number;
-            /**
-             * Removed
-             * @default 0
-             */
-            removed: number;
-        };
-        /**
-         * DocGenSlotAnchorData
-         * @description 母本里的一个具体位置（段落或表格单元格）。
-         */
-        DocGenSlotAnchorData: {
-            /**
-             * Kind
-             * @default
-             */
-            kind: string;
-            /** Index */
-            index?: number | null;
-            /** Table Index */
-            table_index?: number | null;
-            /** Row */
-            row?: number | null;
-            /** Col */
-            col?: number | null;
-            /** Para Index */
-            para_index?: number | null;
-            /**
-             * Text
-             * @default
-             */
-            text: string;
-            /**
-             * Style
-             * @default
-             */
-            style: string;
-            /**
-             * Fingerprint
-             * @default
-             */
-            fingerprint: string;
-        };
-        /**
-         * DocGenSlotCandidateItem
-         * @description 母本里的候选位置；``used`` 表示已被某个槽位占用。
-         */
-        DocGenSlotCandidateItem: {
-            /** Candidate Id */
-            candidate_id: string;
-            /** Kind */
-            kind: string;
-            /** Label */
-            label: string;
-            /**
-             * Text
-             * @default
-             */
-            text: string;
-            /**
-             * Style
-             * @default
-             */
-            style: string;
-            /**
-             * Context
-             * @default
-             */
-            context: string;
-            /**
-             * Used
-             * @default false
-             */
-            used: boolean;
-        };
-        /**
-         * DocGenSlotItem
-         * @description 一个可填槽位；``candidate_id`` 与 ``anchor`` 二选一即可换绑位置。
-         */
-        DocGenSlotItem: {
-            /** Slot Key */
-            slot_key: string;
-            /** Label */
-            label: string;
-            /**
-             * Value Type
-             * @default text
-             */
-            value_type: string;
-            /** Owner Hint */
-            owner_hint?: string | null;
-            /** Hint */
-            hint?: string | null;
-            /** Location */
-            location?: string | null;
-            /** Candidate Id */
-            candidate_id?: string | null;
-            anchor?: components["schemas"]["DocGenSlotAnchorData"] | null;
-            /**
-             * Is Enabled
-             * @default true
-             */
-            is_enabled: boolean;
-            /**
-             * Origin
-             * @default ai
-             */
-            origin: string;
-            /** Edited Fields */
-            edited_fields?: string[];
-        };
-        /**
          * DocGenTemplateFileData
          * @description 挂载 Word 模板原件后的回显信息。
          */
@@ -30529,224 +30223,6 @@ export interface components {
              */
             message: string;
             data: components["schemas"]["DocGenTemplateFileData"];
-        };
-        /**
-         * DocGenTemplateSampleData
-         * @description 填充示例稿生成结果：版本标识 + 覆盖率统计。
-         */
-        DocGenTemplateSampleData: {
-            /** Version Id */
-            version_id: string;
-            /** Version No */
-            version_no: number;
-            /** File Name */
-            file_name?: string | null;
-            /**
-             * Slot Count
-             * @default 0
-             */
-            slot_count: number;
-            /**
-             * Skipped Count
-             * @default 0
-             */
-            skipped_count: number;
-            /**
-             * Unresolved Count
-             * @default 0
-             */
-            unresolved_count: number;
-            /**
-             * Generated At
-             * Format: date-time
-             */
-            generated_at: string;
-        };
-        /**
-         * DocGenTemplateSampleResponse
-         * @description POST /deliverable-templates/{id}/sample 响应。
-         */
-        DocGenTemplateSampleResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data: components["schemas"]["DocGenTemplateSampleData"];
-        };
-        /**
-         * DocGenTemplateSlotsData
-         * @description GET /deliverable-templates/{id}/slots 响应体。
-         */
-        DocGenTemplateSlotsData: {
-            /** Template Id */
-            template_id: string;
-            /** Template Name */
-            template_name: string;
-            /** File Name */
-            file_name?: string | null;
-            /**
-             * Version
-             * @default 2
-             */
-            version: number;
-            /** Source Key */
-            source_key?: string | null;
-            /** Analyzed At */
-            analyzed_at?: string | null;
-            /** Edited At */
-            edited_at?: string | null;
-            /** Token */
-            token?: string | null;
-            /**
-             * Is Stale
-             * @default false
-             */
-            is_stale: boolean;
-            /** Slots */
-            slots?: components["schemas"]["DocGenSlotItem"][];
-            /** Candidates */
-            candidates?: components["schemas"]["DocGenSlotCandidateItem"][];
-            /**
-             * Candidate Total
-             * @default 0
-             */
-            candidate_total: number;
-            /**
-             * Total Count
-             * @default 0
-             */
-            total_count: number;
-            /**
-             * Enabled Count
-             * @default 0
-             */
-            enabled_count: number;
-        };
-        /**
-         * DocGenTemplateSlotsReparseData
-         * @description 重解析结果：AI 本次原始识别 + 合并后结果 + 统计（diff 只在响应里，不落库）。
-         */
-        DocGenTemplateSlotsReparseData: {
-            /** Slots */
-            slots?: components["schemas"]["DocGenSlotItem"][];
-            /** Token */
-            token?: string | null;
-            /** Analyzed At */
-            analyzed_at?: string | null;
-            /** Edited At */
-            edited_at?: string | null;
-            /**
-             * Total Count
-             * @default 0
-             */
-            total_count: number;
-            /**
-             * Enabled Count
-             * @default 0
-             */
-            enabled_count: number;
-            /** Ai Slots */
-            ai_slots?: components["schemas"]["DocGenSlotItem"][];
-            stats?: components["schemas"]["DocGenReparseStats"];
-        };
-        /**
-         * DocGenTemplateSlotsReparseRequest
-         * @description POST /deliverable-templates/{id}/slots/reparse 入参。
-         */
-        DocGenTemplateSlotsReparseRequest: {
-            /** Token */
-            token?: string | null;
-        };
-        /**
-         * DocGenTemplateSlotsReparseResponse
-         * @description POST /deliverable-templates/{id}/slots/reparse 响应。
-         */
-        DocGenTemplateSlotsReparseResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data: components["schemas"]["DocGenTemplateSlotsReparseData"];
-        };
-        /**
-         * DocGenTemplateSlotsResponse
-         * @description GET /deliverable-templates/{id}/slots 响应。
-         */
-        DocGenTemplateSlotsResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data: components["schemas"]["DocGenTemplateSlotsData"];
-        };
-        /**
-         * DocGenTemplateSlotsSaveData
-         * @description 保存/重解析后的回显。
-         */
-        DocGenTemplateSlotsSaveData: {
-            /** Slots */
-            slots?: components["schemas"]["DocGenSlotItem"][];
-            /** Token */
-            token?: string | null;
-            /** Analyzed At */
-            analyzed_at?: string | null;
-            /** Edited At */
-            edited_at?: string | null;
-            /**
-             * Total Count
-             * @default 0
-             */
-            total_count: number;
-            /**
-             * Enabled Count
-             * @default 0
-             */
-            enabled_count: number;
-        };
-        /**
-         * DocGenTemplateSlotsSaveRequest
-         * @description PUT /deliverable-templates/{id}/slots 入参：全量覆盖 + 乐观令牌。
-         */
-        DocGenTemplateSlotsSaveRequest: {
-            /** Slots */
-            slots: components["schemas"]["DocGenSlotItem"][];
-            /** Token */
-            token?: string | null;
-        };
-        /**
-         * DocGenTemplateSlotsSaveResponse
-         * @description PUT /deliverable-templates/{id}/slots 响应。
-         */
-        DocGenTemplateSlotsSaveResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data: components["schemas"]["DocGenTemplateSlotsSaveData"];
         };
         /**
          * DocGenTemplateVersionItem
@@ -47242,6 +46718,11 @@ export interface components {
             template_structure?: {
                 [key: string]: unknown;
             } | null;
+            /**
+             * Instruction
+             * @description 模板级「填写要求」：合并写入 template_structure.instruction，生成时下发给智能体
+             */
+            instruction?: string | null;
             /** Template Code */
             template_code?: string | null;
             /** Is Active */
@@ -48814,7 +48295,7 @@ export interface components {
             slot_filled: number;
             /**
              * Slot Gap
-             * @description 待补充槽位数
+             * @description 未写入的位置数
              * @default 0
              */
             slot_gap: number;
@@ -50366,114 +49847,123 @@ export interface components {
             total: number;
         };
         /**
-         * ReportGenExampleData
-         * @description 槽位示例库的一条记录：下次同模板生成会把它当 few-shot 参照。
+         * ReportGenEditOperationRequest
+         * @description 一条编辑动作。白名单外的操作直接被模型层拒绝，不在这里兜。
+         *
+         *     ``key`` 语义按 op 不同：改值/删段落指向目标位置；插段落指向「插在谁后面」。
          */
-        ReportGenExampleData: {
+        ReportGenEditOperationRequest: {
             /**
-             * Id
-             * Format: uuid
+             * Op
+             * @enum {string}
              */
-            id: string;
-            /** Template Id */
-            template_id?: string | null;
-            /** Slot Key */
-            slot_key: string;
+            op: "update_text" | "update_cell" | "restore_position" | "insert_paragraph" | "delete_paragraph" | "append_table_row" | "delete_table_row";
             /**
-             * Slot Label
-             * @default
+             * Key
+             * @description 目标位置：p12 / t2r3c1 / ap1 / at1
              */
-            slot_label: string;
+            key?: string | null;
             /**
-             * Source
-             * @description manual_edit=人工修正 / agent_filled=模型填充 / feedback_promoted=评审意见沉淀
+             * Text
+             * @description 改后的内容（多行按段落拆分）
              */
-            source: string;
-            /** Value */
-            value: string;
-            /** Evidence Text */
-            evidence_text?: string | null;
+            text?: string | null;
             /**
-             * Usage Count
-             * @default 0
+             * Cells
+             * @description 追加表格行的各列内容
              */
-            usage_count: number;
+            cells?: string[] | null;
             /**
-             * Is Active
-             * @default true
+             * Clone From Row
+             * @description 克隆哪一行的格式；默认最后一行
              */
-            is_active: boolean;
+            clone_from_row?: number | null;
             /**
-             * Updated At
-             * Format: date-time
+             * Table Index
+             * @description 表格下标；key 不是单元格时用它定位
              */
-            updated_at: string;
+            table_index?: number | null;
+            /**
+             * Row
+             * @description 行下标；key 不是单元格时用它定位
+             */
+            row?: number | null;
         };
-        /** ReportGenExampleListData */
-        ReportGenExampleListData: {
-            /** Items */
-            items: components["schemas"]["ReportGenExampleData"][];
-            /**
-             * Total
-             * @default 0
-             */
-            total: number;
-            /**
-             * Active Total
-             * @default 0
-             */
-            active_total: number;
+        /** ReportGenEditRejection */
+        ReportGenEditRejection: {
+            /** Key */
+            key?: string | null;
+            /** Op */
+            op: string;
+            /** Reason */
+            reason: string;
         };
         /**
-         * ReportGenExamplePromoteData
-         * @description 把一条已落实意见沉淀成槽位示例的结果：下次同模板生成会把它当 few-shot 参照。
+         * ReportGenEditRemoval
+         * @description 一条校验未通过、已被丢弃并还原的位置。
+         *
+         *     与 ``rejected`` 的区别：``rejected`` 是旧的「整批失败」语义，保留只为兼容老前端；
+         *     现在批量保存允许多条里只失败几条，失败项由这里逐条说明「为什么没改、有没有还原」。
          */
-        ReportGenExamplePromoteData: {
-            /** Feedback Id */
-            feedback_id: string;
-            /** Slot Key */
-            slot_key: string;
+        ReportGenEditRemoval: {
+            /** Key */
+            key?: string | null;
+            /** Op */
+            op: string;
+            /** Reason */
+            reason: string;
             /**
-             * Slot Label
-             * @default
+             * Restored
+             * @description 该位置是否已还原成母本原始文字与格式
+             * @default false
              */
-            slot_label: string;
-            /**
-             * Value
-             * @description 被采纳的槽位写法（来自落实该意见的那次生成）
-             */
-            value: string;
-            /**
-             * Source
-             * @description 示例来源，沉淀路径固定为 feedback_promoted
-             */
-            source: string;
-            /**
-             * Created
-             * @description true=新建示例 / false=覆盖了该槽位原有示例
-             */
-            created: boolean;
+            restored: boolean;
         };
         /**
-         * ReportGenExampleUpdateRequest
-         * @description 人工维护示例：改写法、补依据、停用错例。
+         * ReportGenEditRequest
+         * @description 一次保存的整批改动：任一条不合法则整批不生效。
          */
-        ReportGenExampleUpdateRequest: {
+        ReportGenEditRequest: {
             /**
-             * Value
-             * @description 新的示例写法；留空表示不修改
+             * Base Version Id
+             * @description 基于哪一版改；与当前版本不一致时返回 409，避免覆盖别人的改动
              */
-            value?: string | null;
+            base_version_id?: string | null;
+            /** Operations */
+            operations: components["schemas"]["ReportGenEditOperationRequest"][];
+        };
+        /** ReportGenEditResultData */
+        ReportGenEditResultData: {
             /**
-             * Evidence Text
-             * @description 示例依据
+             * Applied
+             * @description 实际生效的操作数
+             * @default 0
              */
-            evidence_text?: string | null;
+            applied: number;
             /**
-             * Is Active
-             * @description false=停用，不再注入下次生成
+             * Removed
+             * @description 校验未通过、已丢弃并还原的操作
              */
-            is_active?: boolean | null;
+            removed?: components["schemas"]["ReportGenEditRemoval"][];
+            /**
+             * Restored
+             * @description 其中已还原为母本原样的条数
+             * @default 0
+             */
+            restored: number;
+            /**
+             * Rejected
+             * @description 兼容字段：与 removed 同源，旧前端按整批失败展示
+             */
+            rejected?: components["schemas"]["ReportGenEditRejection"][];
+            /** @description 保存成功后的新版本 */
+            version?: components["schemas"]["ReportGenDocumentVersionData"] | null;
+            /**
+             * Synced Deliverable
+             * @description 是否已同步回写阶段交付物附件
+             * @default false
+             */
+            synced_deliverable: boolean;
         };
         /**
          * ReportGenFeedbackBrief
@@ -50491,7 +49981,7 @@ export interface components {
             id: string;
             /**
              * Slot Key
-             * @description 针对的槽位；空=整篇意见
+             * @description 针对的位置（p12 / t2r3c1）；空=整篇意见
              */
             slot_key?: string | null;
             /** Content */
@@ -50499,12 +49989,12 @@ export interface components {
         };
         /**
          * ReportGenFeedbackCreateRequest
-         * @description 提一条评审意见：要么针对整篇，要么针对某个槽位。
+         * @description 提一条评审意见：要么针对整篇，要么针对某个位置。
          */
         ReportGenFeedbackCreateRequest: {
             /**
              * Slot Key
-             * @description 针对的槽位；留空=整篇意见
+             * @description 针对的位置；留空=整篇意见
              */
             slot_key?: string | null;
             /**
@@ -50521,7 +50011,7 @@ export interface components {
             job_id: string;
             /**
              * Slot Key
-             * @description 针对的槽位；空=整篇意见
+             * @description 针对的位置；空=整篇意见
              */
             slot_key?: string | null;
             /** Content */
@@ -50560,17 +50050,17 @@ export interface components {
         };
         /**
          * ReportGenFeedbackSlotStat
-         * @description 意见集中在哪些槽位：同一槽位反复被提，说明这里需要的不是改一次，而是改提示词或加示例。
+         * @description 意见集中在哪些位置：同一位置反复被提，说明那里需要的不是改一次，而是改模板或写清要求。
          */
         ReportGenFeedbackSlotStat: {
             /**
              * Slot Key
-             * @description 槽位标识
+             * @description 位置标识
              */
             slot_key: string;
             /**
              * Count
-             * @description 窗口内该槽位被提意见的条数
+             * @description 窗口内该位置被提意见的条数
              */
             count: number;
         };
@@ -50585,6 +50075,115 @@ export interface components {
              * @enum {string}
              */
             status: "open" | "ignored";
+        };
+        /**
+         * ReportGenFieldItemData
+         * @description 一处可写位置：母本里的段落/单元格，或生成时追加的段落/表格行。
+         *
+         *     ``key`` 与 ``rd_report_gen_slots.slot_key`` 同一套命名：
+         *     ``p{下标}`` / ``t{表}r{行}c{列}`` / ``ap{n}`` / ``at{n}`` / ``ref``。
+         *     前端用它把预览 DOM 上的标记、右侧清单行与编辑卡串成同一条记录。
+         */
+        ReportGenFieldItemData: {
+            /** Key */
+            key: string;
+            /**
+             * Kind
+             * @description paragraph / table_cell / append_paragraph / append_table_rows / references
+             */
+            kind: string;
+            /**
+             * Section
+             * @description 所属章节标题；空=正文开头或追加内容
+             */
+            section?: string | null;
+            /**
+             * Section Index
+             * @description 所属章节在 sections 里的下标；-1=第一个标题之前
+             * @default -1
+             */
+            section_index: number;
+            /**
+             * Label
+             * @description 可读位置名，如「正文第 12 段」「表 2 第 3 行第 1 列」
+             */
+            label: string;
+            /**
+             * Order
+             * @description 文档内阅读顺序：正文段落为段落下标，表格为其前段落数
+             * @default 0
+             */
+            order: number;
+            /**
+             * Writable
+             * @description 母本判定为 AI 可写；固定内容为 False，但人工仍可改
+             * @default true
+             */
+            writable: boolean;
+            /**
+             * Editable
+             * @description 人工是否可改；固定内容放开后恒为 True
+             * @default true
+             */
+            editable: boolean;
+            /**
+             * Reason
+             * @description 不可写原因，或未写原因
+             */
+            reason?: string | null;
+            /**
+             * Text
+             * @description 母本原文（写入前）
+             */
+            text?: string | null;
+            /**
+             * Value
+             * @description 当前内容（AI 写入或人工修改后的值）
+             */
+            value?: string | null;
+            /**
+             * State
+             * @description written / needs_verify / conflict / anchor_unresolved / blank / locked
+             */
+            state: string;
+            /**
+             * Edit Source
+             * @description ai=生成写入 / manual=人工修改
+             * @default ai
+             */
+            edit_source: string;
+            /**
+             * Human Locked
+             * @description 人工确认过的值：下一次生成沿用，AI 不得覆盖
+             * @default false
+             */
+            human_locked: boolean;
+            /**
+             * Source Name
+             * @description 来源文件或数据表
+             */
+            source_name?: string | null;
+            /**
+             * Evidence
+             * @description 原文证据（引文）
+             */
+            evidence?: string | null;
+            /** Confidence */
+            confidence?: number | null;
+            /**
+             * Context
+             * @description 上一段或表头提示，帮助判断该处写什么
+             */
+            context?: string | null;
+            /**
+             * Index
+             * @description 段落下标；表格位置为 table_index
+             */
+            index?: number | null;
+            /** Row */
+            row?: number | null;
+            /** Col */
+            col?: number | null;
         };
         /**
          * ReportGenJobCreateRequest
@@ -50626,6 +50225,9 @@ export interface components {
         /**
          * ReportGenJobData
          * @description 任务详情：详情页头部与列表进度列都用它。
+         *
+         *     ``slot_total / slot_filled / slot_gap`` 是沿用下来的列名，语义为
+         *     「母本可写位置总数 / 已写位置数 / 未写空位数」，不建迁移也能表达覆盖率。
          */
         ReportGenJobData: {
             /**
@@ -50668,13 +50270,27 @@ export interface components {
              * @description 本次生成带走的评审意见（已拼入补充说明）
              */
             feedback_applied?: components["schemas"]["ReportGenFeedbackBrief"][];
+            /** @description 本次生成套用的历史意见汇总快照；空=当时意见库为空或汇总未生成 */
+            opinion_digest?: components["schemas"]["ReportGenOpinionDigestBrief"] | null;
             /** Document File Name */
             document_file_name?: string | null;
-            /** Slot Total */
+            /**
+             * Slot Total
+             * @description 母本可写位置总数
+             * @default 0
+             */
             slot_total: number;
-            /** Slot Filled */
+            /**
+             * Slot Filled
+             * @description 本次实际写入的位置数
+             * @default 0
+             */
             slot_filled: number;
-            /** Slot Gap */
+            /**
+             * Slot Gap
+             * @description 仍为空的可写位置数
+             * @default 0
+             */
             slot_gap: number;
             /** Rounds */
             rounds: number;
@@ -50684,7 +50300,10 @@ export interface components {
             model_config_name?: string | null;
             /** Model Name */
             model_name?: string | null;
-            /** Structure Model Name */
+            /**
+             * Structure Model Name
+             * @description 结构识别时代的遗留字段，新任务恒为空
+             */
             structure_model_name?: string | null;
             /** Fallback Model Name */
             fallback_model_name?: string | null;
@@ -50776,7 +50395,7 @@ export interface components {
             avg_duration_seconds?: number | null;
             /**
              * Gap Rate
-             * @description Σslot_gap ÷ Σslot_total（仅 completed）
+             * @description Σ未写空位 ÷ Σ可写位置（仅 completed）
              */
             gap_rate?: number | null;
             /**
@@ -50815,7 +50434,7 @@ export interface components {
             feedback_adoption_rate?: number | null;
             /**
              * Feedback Slot Top
-             * @description 被提意见最多的槽位（最多 5 个，整篇意见不计入）
+             * @description 被提意见最多的位置（最多 5 个，整篇意见不计入）
              */
             feedback_slot_top?: components["schemas"]["ReportGenFeedbackSlotStat"][];
             /**
@@ -50823,11 +50442,6 @@ export interface components {
              * @description 正文生成提示词指纹（sha256 前 8 位）
              */
             agent_prompt_version: string;
-            /**
-             * Structure Prompt Version
-             * @description 结构识别提示词指纹（sha256 前 8 位）
-             */
-            structure_prompt_version: string;
             /**
              * Generated At
              * Format: date-time
@@ -50867,11 +50481,314 @@ export interface components {
              * @description 要测试的模型档位
              * @enum {string}
              */
-            slot: "main" | "structure" | "fallback";
+            slot: "main" | "fallback";
+        };
+        /**
+         * ReportGenOpinionData
+         * @description 意见库的一条：跨报告归并后的可复用写作要求。
+         */
+        ReportGenOpinionData: {
+            /** Id */
+            id: string;
+            /** Content */
+            content: string;
+            /**
+             * Hit Count
+             * @description 被提出次数；次数越高越普遍
+             * @default 1
+             */
+            hit_count: number;
+            /**
+             * Status
+             * @description active=参与汇总 / disabled=人工停用
+             */
+            status: string;
+            /** Last Seen At */
+            last_seen_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * ReportGenOpinionDigestBrief
+         * @description 本次生成套用的意见汇总：只带摘要，全文留给意见库页。
+         */
+        ReportGenOpinionDigestBrief: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Item Count
+             * @description 归并了多少条有效意见
+             * @default 0
+             */
+            item_count: number;
+            /**
+             * Status
+             * @description ok=模型归并 / fallback=模型不可用退回原文清单
+             * @default ok
+             */
+            status: string;
+            /**
+             * Digest Preview
+             * @description 汇总全文前 300 字
+             * @default
+             */
+            digest_preview: string;
+            /** Model Name */
+            model_name?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ReportGenOpinionDigestData */
+        ReportGenOpinionDigestData: {
+            /** Id */
+            id: string;
+            /**
+             * Item Count
+             * @default 0
+             */
+            item_count: number;
+            /**
+             * Status
+             * @description ok=模型归并 / fallback=模型不可用退回原文清单
+             */
+            status: string;
+            /** Digest Text */
+            digest_text: string;
+            /** Model Name */
+            model_name?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ReportGenOpinionDigestListData */
+        ReportGenOpinionDigestListData: {
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /** Items */
+            items?: components["schemas"]["ReportGenOpinionDigestData"][];
+        };
+        /** ReportGenOpinionListData */
+        ReportGenOpinionListData: {
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Active Count
+             * @default 0
+             */
+            active_count: number;
+            /** Items */
+            items?: components["schemas"]["ReportGenOpinionData"][];
+        };
+        /**
+         * ReportGenOpinionUpdateRequest
+         * @description 人工停用/启用一条意见：停用后不再进入生成前的汇总。
+         */
+        ReportGenOpinionUpdateRequest: {
+            /**
+             * Status
+             * @description active=恢复参与 / disabled=停用
+             * @enum {string}
+             */
+            status: "active" | "disabled";
+        };
+        /**
+         * ReportGenOutlineData
+         * @description 详情页审阅工作台的一次性数据：清单 + 统计 + 两侧结构自检数字。
+         */
+        ReportGenOutlineData: {
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /** Status */
+            status: string;
+            /**
+             * Has Document
+             * @default false
+             */
+            has_document: boolean;
+            /** Template File Name */
+            template_file_name?: string | null;
+            /**
+             * Template Paragraph Count
+             * @description 母本正文段落数
+             * @default 0
+             */
+            template_paragraph_count: number;
+            /**
+             * Template Table Count
+             * @description 母本表格数
+             * @default 0
+             */
+            template_table_count: number;
+            /**
+             * Document Paragraph Count
+             * @description 成品正文段落数，供预览映射自检
+             */
+            document_paragraph_count?: number | null;
+            /**
+             * Document Table Count
+             * @description 成品表格数，供预览映射自检
+             */
+            document_table_count?: number | null;
+            /**
+             * Document Paragraph Texts
+             * @description 成品正文段落文本（截断），预览按内容对齐用。docx-preview 会把只含分页符的段落拆成两段，段落数与母本对不上时不能按下标硬套
+             */
+            document_paragraph_texts?: string[];
+            stats?: components["schemas"]["ReportGenOutlineStatsData"];
+            /** Sections */
+            sections?: components["schemas"]["ReportGenSectionData"][];
+            /** Items */
+            items?: components["schemas"]["ReportGenFieldItemData"][];
+            /**
+             * Locked Items
+             * @description 不可写位置（只带位置名与原因），用于预览点击时提示锁定
+             */
+            locked_items?: components["schemas"]["ReportGenFieldItemData"][];
+            /**
+             * References
+             * @description 参考资料（引用源）：只展示在页面右侧，不写进 Word 文档
+             */
+            references?: components["schemas"]["ReportGenReferenceData"][];
+        };
+        /**
+         * ReportGenOutlineStatsData
+         * @description 清单统计：口径与生成期 coverage 一致，另加人工修改与锁定数。
+         */
+        ReportGenOutlineStatsData: {
+            /**
+             * Writable Total
+             * @description 母本可写位置总数
+             * @default 0
+             */
+            writable_total: number;
+            /**
+             * Written
+             * @description 有内容的位置数（含需核对/失效）
+             * @default 0
+             */
+            written: number;
+            /**
+             * Blank
+             * @description 仍空着的可写位置数
+             * @default 0
+             */
+            blank: number;
+            /**
+             * Needs Verify
+             * @description 已写但没有可引用来源，需人工核对
+             * @default 0
+             */
+            needs_verify: number;
+            /**
+             * Conflict
+             * @description 信息冲突，需人工判断
+             * @default 0
+             */
+            conflict: number;
+            /**
+             * Anchor Unresolved
+             * @description 成品里找不到位置，写入没落到位
+             * @default 0
+             */
+            anchor_unresolved: number;
+            /**
+             * Manual
+             * @description 人工改过的位置数
+             * @default 0
+             */
+            manual: number;
+            /**
+             * Appended
+             * @description AI 追加的段落/表格行条数（不含参考资料）
+             * @default 0
+             */
+            appended: number;
+            /**
+             * References
+             * @description 参考资料条数（按来源去重）
+             * @default 0
+             */
+            references: number;
+            /**
+             * Locked
+             * @description 母本里不可写的段落与单元格数（标题、固定章节等）
+             * @default 0
+             */
+            locked: number;
+            /**
+             * Coverage Rate
+             * @description written ÷ writable_total
+             */
+            coverage_rate?: number | null;
+        };
+        /**
+         * ReportGenReferenceData
+         * @description 一条参考资料：来源名 + 它在正文里的落点（不写进 Word 文档）。
+         */
+        ReportGenReferenceData: {
+            /**
+             * Index
+             * @description 序号，与页面上的 [n] 一致
+             * @default 0
+             */
+            index: number;
+            /**
+             * Name
+             * @description 来源文件名或数据表名
+             */
+            name: string;
+            /**
+             * Total
+             * @description 该来源在正文里的引用处数（locations 是截断后的展示样本）
+             * @default 0
+             */
+            total: number;
+            /**
+             * Locations
+             * @description 前若干处落点，点一条跳到正文对应位置
+             */
+            locations?: components["schemas"]["ReportGenReferenceLocationData"][];
+        };
+        /**
+         * ReportGenReferenceLocationData
+         * @description 参考资料里的一处引用位置。
+         */
+        ReportGenReferenceLocationData: {
+            /**
+             * Key
+             * @description 可点击定位的位置 key（p12 / t2r3c1）；空=正文里没有锚点
+             */
+            key?: string | null;
+            /**
+             * Label
+             * @description 位置名，如「正文第 12 段」「表 2 第 3 行第 1 列」
+             * @default
+             */
+            label: string;
         };
         /**
          * ReportGenRenderData
-         * @description 按当前槽位重渲染的结果：版本信息 + 本次填充情况。
+         * @description 成品版本落库后的结果：版本信息 + 任务当前写入统计（人工改稿上传用）。
          */
         ReportGenRenderData: {
             version: components["schemas"]["ReportGenDocumentVersionData"];
@@ -50887,7 +50804,7 @@ export interface components {
             gaps: number;
             /**
              * Unresolved
-             * @description 母本里没找到锚点的槽位
+             * @description 母本里没找到锚点的写入记录
              */
             unresolved?: string[];
             /**
@@ -50897,67 +50814,56 @@ export interface components {
              */
             synced_deliverable: boolean;
         };
-        /** ReportGenSlotData */
-        ReportGenSlotData: {
-            /** Slot Key */
-            slot_key: string;
-            /** Slot Label */
-            slot_label: string;
-            /** Location */
-            location?: string | null;
-            /** State */
-            state: string;
-            /** Value */
-            value?: string | null;
-            /** Source Name */
-            source_name?: string | null;
-            /** Evidence */
-            evidence?: string | null;
-            /** Confidence */
-            confidence?: number | null;
-            /** Owner Hint */
-            owner_hint?: string | null;
-        };
-        /** ReportGenSlotListData */
-        ReportGenSlotListData: {
-            /** Items */
-            items: components["schemas"]["ReportGenSlotData"][];
-            /**
-             * Total
-             * @default 0
-             */
-            total: number;
-            /**
-             * Filled
-             * @default 0
-             */
-            filled: number;
-            /**
-             * Gaps
-             * @default 0
-             */
-            gaps: number;
-        };
         /**
-         * ReportGenSlotUpdateRequest
-         * @description 人工修正槽位：只改结果与对照表，不重新渲染成品（按需求确认的口径）。
+         * ReportGenSectionData
+         * @description 章节树的一节：详情页按它分组展示位置清单。
          */
-        ReportGenSlotUpdateRequest: {
+        ReportGenSectionData: {
             /**
-             * Value
-             * @description 新的填充值，留空表示标记缺口
+             * Index
+             * @default 0
              */
-            value?: string | null;
+            index: number;
             /**
-             * Evidence
-             * @description 人工补充的依据
+             * Title
+             * @default
              */
-            evidence?: string | null;
+            title: string;
             /**
-             * Owner Hint
-             * @description 缺口责任方
+             * Label
+             * @description 展示名；没有标题的正文开头用「正文开头」
              */
-            owner_hint?: string | null;
+            label: string;
+            /**
+             * Level
+             * @default 0
+             */
+            level: number;
+            /**
+             * Start
+             * @default 0
+             */
+            start: number;
+            /**
+             * End
+             * @default 0
+             */
+            end: number;
+            /**
+             * Writable
+             * @default 0
+             */
+            writable: number;
+            /**
+             * Written
+             * @default 0
+             */
+            written: number;
+            /**
+             * Blank
+             * @default 0
+             */
+            blank: number;
         };
         /** ReportGenStepData */
         ReportGenStepData: {
@@ -51000,109 +50906,13 @@ export interface components {
              */
             last_seq: number;
         };
-        /**
-         * ReportGenStructureDiff
-         * @description 解析结果与当前结构的差异：漏选=人工后补，多选=人工否掉。
-         */
-        ReportGenStructureDiff: {
+        /** ReportGenVersionRestoreRequest */
+        ReportGenVersionRestoreRequest: {
             /**
-             * Ai Slot Count
-             * @description 解析当时模型选出的槽位数
+             * Base Version Id
+             * @description 并发校验：与当前版本不一致时拒绝
              */
-            ai_slot_count: number;
-            /**
-             * Current Slot Count
-             * @description 当前结构里的槽位总数（含已停用）
-             */
-            current_slot_count: number;
-            /**
-             * Kept Count
-             * @description AI 选中且当前仍启用的槽位数
-             */
-            kept_count: number;
-            /**
-             * Missing Count
-             * @description 漏选数：当前启用但 AI 当时没选（人工后补）
-             */
-            missing_count: number;
-            /**
-             * Extra Count
-             * @description 多选数：AI 当时选了但现在被停用或删除
-             */
-            extra_count: number;
-            /**
-             * Missing Keys
-             * @description 漏选槽位标识（最多 10 个）
-             */
-            missing_keys?: string[];
-            /**
-             * Extra Keys
-             * @description 多选槽位标识（最多 10 个）
-             */
-            extra_keys?: string[];
-        };
-        /**
-         * ReportGenStructureRunData
-         * @description 一次母本结构解析的留痕。
-         */
-        ReportGenStructureRunData: {
-            /** Id */
-            id: string;
-            /**
-             * Source Key
-             * @description 解析时的母本存储键，换版即变
-             */
-            source_key?: string | null;
-            /**
-             * Prompt Version
-             * @description 解析所用提示词指纹
-             */
-            prompt_version: string;
-            /**
-             * Model Name
-             * @description 解析所用模型
-             */
-            model_name?: string | null;
-            /**
-             * Candidate Count
-             * @description 送模型的候选位置数
-             */
-            candidate_count: number;
-            /**
-             * Slot Count
-             * @description 模型判定出的槽位数
-             */
-            slot_count: number;
-            /**
-             * Duration Ms
-             * @description 解析耗时（毫秒）
-             */
-            duration_ms: number;
-            /**
-             * Status
-             * @description ok / failed
-             */
-            status: string;
-            /**
-             * Error
-             * @description 失败原因
-             */
-            error?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             * @description 解析时间
-             */
-            created_at: string;
-            /** @description 与当前结构的差异 */
-            diff: components["schemas"]["ReportGenStructureDiff"];
-        };
-        /** ReportGenStructureRunListData */
-        ReportGenStructureRunListData: {
-            /** Total */
-            total: number;
-            /** Items */
-            items: components["schemas"]["ReportGenStructureRunData"][];
+            base_version_id?: string | null;
         };
         /**
          * ReportItemData
@@ -90551,183 +90361,6 @@ export interface operations {
             };
         };
     };
-    generate_template_sample_api_v1_research_doc_gen_deliverable_templates__template_id__sample_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                template_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocGenTemplateSampleResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                template_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocGenTemplateSlotsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    save_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                template_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocGenTemplateSlotsSaveRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocGenTemplateSlotsSaveResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    reparse_template_slots_api_v1_research_doc_gen_deliverable_templates__template_id__slots_reparse_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                template_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocGenTemplateSlotsReparseRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocGenTemplateSlotsReparseResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    reparse_template_slots_stream_api_v1_research_doc_gen_deliverable_templates__template_id__slots_reparse_stream_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                template_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocGenTemplateSlotsReparseRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     read_limits_api_v1_research_knowledge_bases_limits_get: {
         parameters: {
             query?: never;
@@ -91252,6 +90885,39 @@ export interface operations {
             };
         };
     };
+    get_report_gen_outline_api_v1_research_report_gen_jobs__job_id__outline_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenOutlineData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_report_gen_steps_api_v1_research_report_gen_jobs__job_id__steps_get: {
         parameters: {
             query?: {
@@ -91276,77 +90942,6 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenStepListData_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_report_gen_slots_api_v1_research_report_gen_jobs__job_id__slots_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                job_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenSlotListData_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_report_gen_slot_api_v1_research_report_gen_jobs__job_id__slots__slot_key__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                job_id: string;
-                slot_key: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReportGenSlotUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenSlotData_"];
                 };
             };
             /** @description Validation Error */
@@ -91500,13 +91095,17 @@ export interface operations {
             };
         };
     };
-    promote_report_gen_feedback_api_v1_research_report_gen_feedback__feedback_id__promote_post: {
+    list_report_gen_opinions_api_v1_research_report_gen_opinion_library_get: {
         parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                feedback_id: string;
+            query?: {
+                /** @description 按状态过滤 */
+                status?: string | null;
+                /** @description 按内容搜索 */
+                keyword?: string | null;
+                limit?: number;
             };
+            header?: never;
+            path?: never;
             cookie?: {
                 auth_token?: string | null;
             };
@@ -91519,7 +91118,77 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenExamplePromoteData_"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenOpinionListData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_report_gen_opinion_api_v1_research_report_gen_opinion_library__opinion_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opinion_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportGenOpinionUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenOpinionData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_report_gen_opinion_digests_api_v1_research_report_gen_opinion_library_digests_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenOpinionDigestListData_"];
                 };
             };
             /** @description Validation Error */
@@ -91566,72 +91235,6 @@ export interface operations {
             };
         };
     };
-    download_report_gen_comparison_api_v1_research_report_gen_jobs__job_id__comparison_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                job_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    rerender_report_gen_document_api_v1_research_report_gen_jobs__job_id__render_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                job_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenRenderData_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_report_gen_versions_api_v1_research_report_gen_jobs__job_id__versions_get: {
         parameters: {
             query?: never;
@@ -91652,43 +91255,6 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenDocumentVersionListData_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_report_gen_version_api_v1_research_report_gen_jobs__job_id__versions_upload_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                job_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_report_gen_version_api_v1_research_report_gen_jobs__job_id__versions_upload_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenRenderData_"];
                 };
             };
             /** @description Validation Error */
@@ -91735,18 +91301,60 @@ export interface operations {
             };
         };
     };
-    activate_report_gen_version_api_v1_research_report_gen_versions__version_id__activate_post: {
+    edit_report_gen_document_api_v1_research_report_gen_jobs__job_id__edits_post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportGenEditRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenEditResultData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_report_gen_version_api_v1_research_report_gen_jobs__job_id__versions__version_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
                 version_id: string;
             };
             cookie?: {
                 auth_token?: string | null;
             };
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportGenVersionRestoreRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -91824,149 +91432,6 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenMetricsData_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_report_gen_structure_runs_api_v1_research_report_gen_templates__template_id__structure_runs_get: {
-        parameters: {
-            query?: {
-                /** @description 看最近 N 次分析记录 */
-                limit?: number;
-            };
-            header?: never;
-            path: {
-                template_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenStructureRunListData_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_report_gen_examples_api_v1_research_report_gen_templates__template_id__examples_get: {
-        parameters: {
-            query?: {
-                /** @description 是否连已停用的示例一起返回 */
-                include_inactive?: boolean;
-                limit?: number;
-            };
-            header?: never;
-            path: {
-                template_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenExampleListData_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_report_gen_example_api_v1_research_report_gen_examples__example_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                example_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenExampleData_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_report_gen_example_api_v1_research_report_gen_examples__example_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                example_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReportGenExampleUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ReportGenExampleData_"];
                 };
             };
             /** @description Validation Error */

@@ -1485,7 +1485,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     # ── research 交付物模板文件管理与知识库（knowledge-base）──
     # 说明：这批接口多数只声明了登录态（require_user），绑定登记用于满足
     # 中间件 fail-closed 兜底与 CI 完整性门禁；接口级鉴权码已就绪，待逐个
-    # 补 require_permission 后即生效。槽位结构（slots）三个接口已启用接口级鉴权。
+    # 补 require_permission 后即生效。
     ApiBindingDef(
         "research:deliverable-template:create", "POST", "/api/v1/research/doc-gen/deliverable-templates/batch-upload"
     ),
@@ -1518,34 +1518,6 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "research:deliverable-template:update",
         "POST",
         "/api/v1/research/doc-gen/deliverable-templates/{template_id}/versions/{version_id}/restore",
-    ),
-    # 生成示例稿会新增一条版本记录，属写操作，走 update
-    ApiBindingDef(
-        "research:deliverable-template:update",
-        "POST",
-        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/sample",
-    ),
-    # 槽位结构：查看走 read，保存与重解析都改结构，走 update
-    ApiBindingDef(
-        "research:deliverable-template:read",
-        "GET",
-        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots",
-    ),
-    ApiBindingDef(
-        "research:deliverable-template:update",
-        "PUT",
-        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots",
-    ),
-    ApiBindingDef(
-        "research:deliverable-template:update",
-        "POST",
-        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots/reparse",
-    ),
-    # 流式重解析与同步版同一权限：只是等待过程可见，改动的还是同一份结构
-    ApiBindingDef(
-        "research:deliverable-template:update",
-        "POST",
-        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots/reparse/stream",
     ),
     ApiBindingDef("research:knowledge-base:read", "GET", "/api/v1/research/knowledge-bases"),
     ApiBindingDef("research:knowledge-base:create", "POST", "/api/v1/research/knowledge-bases"),
@@ -1580,33 +1552,14 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs"),
     ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}"),
     ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/steps"),
-    ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/slots"),
-    ApiBindingDef("research:report:update", "PUT", "/api/v1/research/report-gen/jobs/{job_id}/slots/{slot_key}"),
     ApiBindingDef("research:report:update", "POST", "/api/v1/research/report-gen/jobs/{job_id}/cancel"),
     ApiBindingDef("research:report:review", "POST", "/api/v1/research/report-gen/jobs/{job_id}/feedback"),
     ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/feedback"),
     ApiBindingDef("research:report:review", "PATCH", "/api/v1/research/report-gen/feedback/{feedback_id}"),
-    ApiBindingDef("research:report:review", "POST", "/api/v1/research/report-gen/feedback/{feedback_id}/promote"),
     ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/document"),
-    ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/comparison"),
-    ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/templates/{template_id}/structure-runs"),
-    ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/templates/{template_id}/examples"),
-    ApiBindingDef("research:report:update", "PATCH", "/api/v1/research/report-gen/examples/{example_id}"),
-    ApiBindingDef("research:report:update", "DELETE", "/api/v1/research/report-gen/examples/{example_id}"),
-    # ── 报告成品版本：AI 初稿 / 人工重渲 / 人工上传 ──
-    ApiBindingDef("research:report:update", "POST", "/api/v1/research/report-gen/jobs/{job_id}/render"),
+    # ── 报告成品版本：AI 初稿 / 人工上传留档 ──
     ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/versions"),
-    ApiBindingDef(
-        "research:report:update",
-        "POST",
-        "/api/v1/research/report-gen/jobs/{job_id}/versions/upload",
-    ),
     ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/versions/{version_id}/document"),
-    ApiBindingDef(
-        "research:report:update",
-        "POST",
-        "/api/v1/research/report-gen/versions/{version_id}/activate",
-    ),
     # 报告生成配置：单档位连通测试走模块配置写权限，不动全局 LLM 配置库
     ApiBindingDef(
         "platform:module-setting:manage",

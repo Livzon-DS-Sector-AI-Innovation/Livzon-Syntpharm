@@ -21,7 +21,7 @@ const CONTENT_STYLE = {
 } as const
 
 /**
- * Markdown 预览弹层：对照表、交付物正文都用它渲染，
+ * Markdown 预览弹层：交付物正文用它渲染，
  * 避免把 Markdown 原文直接塞进 TextArea / 纯文本区域。
  */
 export function MarkdownPreviewModal({ open, title, markdown, onClose, width = 860 }: Props) {

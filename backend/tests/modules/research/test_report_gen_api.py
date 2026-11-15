@@ -18,10 +18,14 @@ from app.core.database import get_db
 from app.modules.research.report_gen import service as service_module
 from app.modules.research.report_gen.api import router as report_gen_router
 from app.modules.research.report_gen.schemas import (
+    ReportGenEditRemoval,
+    ReportGenEditResultData,
     ReportGenJobData,
     ReportGenJobListData,
-    ReportGenSlotData,
-    ReportGenSlotListData,
+    ReportGenOpinionData,
+    ReportGenOpinionDigestData,
+    ReportGenOpinionDigestListData,
+    ReportGenOpinionListData,
     ReportGenStepData,
     ReportGenStepListData,
 )
@@ -155,32 +159,137 @@ async def test_steps_support_after_seq(client: AsyncClient, monkeypatch: pytest.
     assert response.json()["data"]["items"][0]["tool_name"] == "search_knowledge_base"
 
 
-async def test_list_slots_and_update_slot(client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    async def _list_slots(db, job_id):  # noqa: ANN001, ANN202
-        return ReportGenSlotListData(
-            items=[ReportGenSlotData(slot_key="drug_name", slot_label="品种名称", state="filled", value="化合物A")],
+def _opinion_data(**overrides: object) -> ReportGenOpinionData:
+    payload: dict[str, object] = {
+        "id": str(uuid4()),
+        "content": "结果与讨论要写明工艺参数与收率的对应关系",
+        "hit_count": 4,
+        "status": "active",
+        "last_seen_at": NOW,
+        "created_at": NOW,
+    }
+    payload.update(overrides)
+    return ReportGenOpinionData.model_validate(payload)
+
+
+async def test_opinion_library_passes_filters(client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: dict[str, object] = {}
+
+    async def _list(db, *, status=None, keyword=None, limit=200):  # noqa: ANN001, ANN202
+        seen.update({"status": status, "keyword": keyword, "limit": limit})
+        return ReportGenOpinionListData(total=1, active_count=1, items=[_opinion_data()])
+
+    monkeypatch.setattr(service_module, "list_opinions", _list)
+
+    response = await client.get(
+        "/api/v1/research/report-gen/opinion-library",
+        params={"status": "active", "keyword": "收率", "limit": 50},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["total"] == 1
+    assert body["data"]["items"][0]["hit_count"] == 4
+    assert seen == {"status": "active", "keyword": "收率", "limit": 50}
+
+
+async def test_opinion_library_patch_toggles_status(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    opinion_id = uuid4()
+    seen: dict[str, object] = {}
+
+    async def _update(db, target_id, payload, _user):  # noqa: ANN001, ANN202
+        seen.update({"id": target_id, "status": payload.status})
+        return _opinion_data(id=str(target_id), status=payload.status)
+
+    monkeypatch.setattr(service_module, "update_opinion", _update)
+
+    response = await client.patch(
+        f"/api/v1/research/report-gen/opinion-library/{opinion_id}",
+        json={"status": "disabled"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["data"]["status"] == "disabled"
+    assert seen == {"id": opinion_id, "status": "disabled"}
+
+
+async def test_opinion_digest_history_returns_previews(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def _digests(db, *, limit=20):  # noqa: ANN001, ANN202
+        return ReportGenOpinionDigestListData(
             total=1,
-            filled=1,
-            gaps=0,
+            items=[
+                ReportGenOpinionDigestData(
+                    id=str(uuid4()),
+                    item_count=3,
+                    status="fallback",
+                    digest_text="1. 表格必须有单位",
+                    model_name=None,
+                    created_at=NOW,
+                )
+            ],
         )
 
-    async def _update_slot(db, job_id, slot_key, payload, user_id):  # noqa: ANN001, ANN202
-        return ReportGenSlotData(slot_key=slot_key, slot_label="品种名称", state="filled", value=payload.value)
+    monkeypatch.setattr(service_module, "list_opinion_digests", _digests)
 
-    monkeypatch.setattr(service_module, "list_slots", _list_slots)
-    monkeypatch.setattr(service_module, "update_slot", _update_slot)
+    response = await client.get("/api/v1/research/report-gen/opinion-library/digests")
 
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["items"][0]["status"] == "fallback"
+
+
+async def test_edit_result_reports_removed_and_restored(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """一处校验失败不再整批失败：响应里要能看出保存了几处、哪一处被还原。"""
     job_id = uuid4()
-    slots = await client.get(f"/api/v1/research/report-gen/jobs/{job_id}/slots")
-    assert slots.status_code == 200
-    assert slots.json()["data"]["filled"] == 1
 
-    updated = await client.put(
-        f"/api/v1/research/report-gen/jobs/{job_id}/slots/drug_name",
-        json={"value": "化合物B"},
+    async def _apply(db, _job_id, _payload, _user):  # noqa: ANN001, ANN202
+        return ReportGenEditResultData(
+            applied=1,
+            removed=[
+                ReportGenEditRemoval(
+                    key="p2",
+                    op="update_text",
+                    reason="内容不能为空；要去掉这一段请用删除",
+                    restored=True,
+                )
+            ],
+            restored=1,
+        )
+
+    monkeypatch.setattr(service_module, "apply_job_edits", _apply)
+
+    response = await client.post(
+        f"/api/v1/research/report-gen/jobs/{job_id}/edits",
+        json={"operations": [{"op": "update_text", "key": "p1", "text": "合法"}]},
     )
-    assert updated.status_code == 200
-    assert updated.json()["data"]["value"] == "化合物B"
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["applied"] == 1
+    assert body["data"]["restored"] == 1
+    assert body["data"]["removed"][0]["restored"] is True
+    assert "1 处校验未通过已还原原文" in body["message"]
+
+
+async def test_fill_slot_routes_are_gone(client: AsyncClient) -> None:
+    """填充项清单与人工修正入口随识别一起下线：路由必须真的不存在，而不是隐藏按钮。"""
+    job_id = uuid4()
+    assert (await client.get(f"/api/v1/research/report-gen/jobs/{job_id}/slots")).status_code == 404
+    assert (
+        await client.put(
+            f"/api/v1/research/report-gen/jobs/{job_id}/slots/drug_name",
+            json={"value": "化合物B"},
+        )
+    ).status_code == 404
+    assert (await client.get(f"/api/v1/research/report-gen/jobs/{job_id}/comparison")).status_code == 404
+    assert (await client.get(f"/api/v1/research/report-gen/templates/{uuid4()}/structure-runs")).status_code == 404
+    assert (await client.get(f"/api/v1/research/report-gen/templates/{uuid4()}/examples")).status_code == 404
 
 
 async def test_cancel_job(client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -213,15 +322,3 @@ async def test_document_download_sets_rfc5987_filename(client: AsyncClient, monk
     disposition = response.headers["content-disposition"]
     assert "attachment;" in disposition
     assert "filename*=UTF-8''" in disposition
-
-
-async def test_comparison_download_returns_markdown(client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    async def _payload(db, job_id):  # noqa: ANN001, ANN202
-        return ("对照表.md", b"# \xe6\xa7\xbd\xe4\xbd\x8d\xe5\xaf\xb9\xe7\x85\xa7\xe8\xa1\xa8\n", "text/markdown")
-
-    monkeypatch.setattr(service_module, "comparison_payload", _payload)
-
-    response = await client.get(f"/api/v1/research/report-gen/jobs/{uuid4()}/comparison")
-
-    assert response.status_code == 200
-    assert response.headers["content-type"].startswith("text/markdown")

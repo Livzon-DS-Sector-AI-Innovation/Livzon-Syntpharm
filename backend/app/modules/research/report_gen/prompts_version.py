@@ -7,18 +7,15 @@
 局限：指纹只代表**当前在用版本**，历史任务无法追溯当时用的是哪一版
 （要做追溯就必须在任务表加列，属另一次迁移）。
 
-注意：默认常量用函数内延迟导入，避免 ``structure -> prompts_version -> structure`` 的循环导入。
+结构识别下线后只剩「正文生成」一档指纹；``tools`` 的导入仍在函数外，因为
+``tools`` 不反向依赖本模块，不会形成循环。
 """
 
 from __future__ import annotations
 
 import hashlib
 
-from app.modules.research.report_gen.prompts import (
-    AGENT_JSON_PROTOCOL_PROMPT,
-    AGENT_SYSTEM_PROMPT,
-    STRUCTURE_SYSTEM_PROMPT,
-)
+from app.modules.research.report_gen.prompts import AGENT_JSON_PROTOCOL_PROMPT, AGENT_SYSTEM_PROMPT
 from app.modules.research.report_gen.tools import TOOL_NAMES
 
 _FINGERPRINT_LEN = 8
@@ -39,9 +36,4 @@ def agent_prompt_version(prompt: str | None = None) -> str:
     return _fingerprint(prompt or AGENT_SYSTEM_PROMPT, AGENT_JSON_PROTOCOL_PROMPT, *TOOL_NAMES)
 
 
-def structure_prompt_version(prompt: str | None = None) -> str:
-    """结构识别档：只认母本槽位判定那段 system prompt（同样跟随库里的覆盖值）。"""
-    return _fingerprint(prompt or STRUCTURE_SYSTEM_PROMPT)
-
-
-__all__ = ["agent_prompt_version", "structure_prompt_version"]
+__all__ = ["agent_prompt_version"]

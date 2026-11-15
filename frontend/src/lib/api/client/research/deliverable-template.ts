@@ -7,7 +7,6 @@
  * 2. 下载：文件流必须由浏览器直接接收并触发保存。
  */
 import { apiGet } from '@/lib/api/client'
-import type { DocGenTemplateSlots } from '@/types/research/deliverable-template-slot'
 import type { components } from '@/types/generated/schema'
 
 const DOC_TEMPLATE_BASE = '/api/v1/research/doc-gen/deliverable-templates'
@@ -66,79 +65,6 @@ export async function uploadDeliverableTemplateFile(
   return result.data
 }
 
-/** 重解析流式事件：与后端 ``/slots/reparse/stream`` 的 data.type 一一对应 */
-export type SlotsReparseStreamEvent =
-  | { type: 'phase'; phase: string; message?: string; elapsed_ms?: number }
-  | {
-      type: 'candidates'
-      candidate_count: number
-      prompt_chars: number
-      estimate_seconds: number
-      elapsed_ms?: number
-    }
-  | { type: 'reasoning'; text: string; elapsed_ms?: number }
-  | { type: 'content'; text: string; elapsed_ms?: number }
-  | { type: 'result'; data: components['schemas']['DocGenTemplateSlotsReparseData']; elapsed_ms?: number }
-  | { type: 'error'; message: string; elapsed_ms?: number }
-  | { type: 'done'; elapsed_ms?: number }
-
-/**
- * 流式重新分析模板结构（AGENTS.md 流式例外：SSE 无法走 Server Actions）。
- *
- * 逐帧回调给调用方：阶段、思考增量、最终结果。调用方负责在 ``error`` 时抛错，
- * 这里只做传输与分帧，不解释业务含义。
- */
-export async function streamReparseDeliverableTemplateSlots(
-  templateId: string,
-  token: string | null,
-  onEvent: (event: SlotsReparseStreamEvent) => void,
-  signal?: AbortSignal,
-): Promise<void> {
-  const response = await fetch(`${DOC_TEMPLATE_BASE}/${templateId}/slots/reparse/stream`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token }),
-    credentials: 'include',
-    cache: 'no-store',
-    signal,
-  })
-
-  if (!response.ok || !response.body) {
-    const body = (await response.json().catch(() => null)) as { message?: string; detail?: unknown } | null
-    const detail = typeof body?.detail === 'string' ? body.detail : ''
-    throw new Error(body?.message || detail || `重新分析失败: ${response.status}`)
-  }
-
-  const reader = response.body.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
-
-  const flushFrames = (chunk: string) => {
-    buffer += chunk
-    let boundary = buffer.indexOf('\n\n')
-    while (boundary >= 0) {
-      const frame = buffer.slice(0, boundary)
-      buffer = buffer.slice(boundary + 2)
-      const line = frame.split('\n').find((item) => item.startsWith('data: '))
-      if (line) {
-        try {
-          onEvent(JSON.parse(line.slice(6).trim()) as SlotsReparseStreamEvent)
-        } catch {
-          // 心跳或被截断的半帧：忽略，等下一帧
-        }
-      }
-      boundary = buffer.indexOf('\n\n')
-    }
-  }
-
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) break
-    flushFrames(decoder.decode(value, { stream: true }))
-  }
-  flushFrames(decoder.decode())
-}
-
 /** 下载交付物模板文件 */
 export async function downloadDeliverableTemplate(id: string): Promise<Blob> {
   const response = await fetch(`${DOC_TEMPLATE_BASE}/${id}/download`, { credentials: 'include' })
@@ -178,21 +104,6 @@ export async function fetchDeliverableTemplateVersions(templateId: string): Prom
     `${DOC_TEMPLATE_BASE}/${templateId}/versions`,
   )
   return data ?? []
-}
-
-/**
- * 拉取模板的槽位结构与母本候选位置。
- *
- * 只读母本取候选位、不触发模型识别，所以可以在抽屉打开时直接调用。
- */
-export async function fetchDeliverableTemplateSlots(templateId: string): Promise<DocGenTemplateSlots> {
-  const data = await apiGet<components['schemas']['DocGenTemplateSlotsData'] | null>(
-    `${DOC_TEMPLATE_BASE}/${templateId}/slots`,
-  )
-  if (!data) {
-    throw new Error('没有取到填充项设置，请稍后重试')
-  }
-  return data
 }
 
 /**

@@ -151,11 +151,13 @@ export const RdDeliverableTemplateCreateSchema = z.object({
   stage: NonEmptyStringSchema,
   // 模板的稳定标识（由后端写入，前端编辑不再选择）：Zod 默认 strip 未知键，
   // 不声明会被直接丢弃（后端同名字段为 str | None）
-  template_code: z.string().max(100, '填充项编码过长').nullable().optional(),
+  template_code: z.string().max(100, '模板编码过长').nullable().optional(),
   // 数据库可空字段回填表单时为 null，编辑提交必须放行 null（后端同为 str | None）
   description: z.string().nullable().optional(),
   template_content: z.string().nullable().optional(),
   template_structure: z.record(z.string(), z.unknown()).nullable().optional(),
+  // 模板级「填写要求」：后端合并进 template_structure.instruction，不单独占列
+  instruction: z.string().max(2000, '填写要求请控制在 2000 字以内').nullable().optional(),
   is_active: z.boolean(),
 })
 

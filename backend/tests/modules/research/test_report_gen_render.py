@@ -1,255 +1,398 @@
-"""AI 报告成稿回写与母本结构解析的单元测试。
+"""出稿回放测试：覆盖写入、追加段落/表格行，以及「格式必须来自母本」。
 
-用 python-docx 现造母本，覆盖：段落内多 run、单元格多段落、锚点漂移、
-缺口占位与未定位降级。全流程不碰数据库与外部服务。
+验收第 3 条要求「段落样式集合 ⊆ 母本样式集合、表格边框/行高与母本一致」。这里不靠肉眼
+比对 docx，而是直接断言：样式表条目数不变、新段落的 pPr/rPr 是深拷贝、新行带 tcPr。
 """
 
 from __future__ import annotations
 
 from io import BytesIO
+from typing import Any
 
-import pytest
 from docx import Document
+from docx.document import Document as DocxDocument
+from docx.shared import Pt
 
-from app.modules.research.report_gen.render import SlotFill, render_document
-from app.modules.research.report_gen.structure import (
-    build_candidates,
-    cell_refs,
-    fingerprint,
-    open_document,
-    paragraph_refs,
+from app.modules.research.report_gen.render import (
+    KIND_APPEND_PARAGRAPH,
+    KIND_APPEND_TABLE_ROWS,
+    KIND_PARAGRAPH,
+    KIND_REFERENCES,
+    KIND_TABLE_CELL,
+    SlotFill,
+    render_document,
 )
+from app.modules.research.report_gen.structure import fingerprint
 
 
-def _template_bytes() -> bytes:
-    """造一份带「多 run 段落 + 表格单元格」的假母本。"""
-    document = Document()
-    paragraph = document.add_paragraph()
-    bold_run = paragraph.add_run("品种名称：")
-    bold_run.bold = True
-    paragraph.add_run("____")
-
-    document.add_paragraph("以下为结论：")
-    table = document.add_table(rows=2, cols=2)
-    table.cell(0, 0).text = "项目"
-    table.cell(0, 1).text = "内容"
-    table.cell(1, 0).text = "结论"
-    table.cell(1, 1).text = ""
-
+def _docx(document: DocxDocument) -> bytes:
     buffer = BytesIO()
     document.save(buffer)
     return buffer.getvalue()
 
 
-def _paragraph_anchor(index: int, text: str) -> dict[str, object]:
-    return {"kind": "paragraph", "index": index, "text": text, "fingerprint": fingerprint(text)}
+def _paragraph_anchor(index: int, text: str) -> dict[str, Any]:
+    return {"kind": KIND_PARAGRAPH, "index": index, "text": text, "fingerprint": fingerprint(text)}
 
 
-def _cell_anchor(row: int, col: int) -> dict[str, object]:
-    return {"kind": "table_cell", "table_index": 0, "row": row, "col": col, "para_index": 0}
+def _cell_anchor(text: str, row: int, col: int) -> dict[str, Any]:
+    return {
+        "kind": KIND_TABLE_CELL,
+        "table_index": 0,
+        "row": row,
+        "col": col,
+        "para_index": 0,
+        "text": text,
+        "fingerprint": fingerprint(text),
+    }
 
 
-def test_paragraph_multi_run_keeps_label_and_styles() -> None:
-    """只替换填空位：标签 run 与加粗格式保留，值落在原占位 run 里。"""
+def _template() -> bytes:
+    document = Document()
+    paragraph = document.add_paragraph()
+    bold = paragraph.add_run("品种名称：")
+    bold.bold = True
+    paragraph.add_run("____")
+
+    document.add_paragraph("本段是固定说明")
+    document.add_paragraph("3.1 路线一", style="Heading 2")
+    content = document.add_paragraph("路线一的内容")
+    content.paragraph_format.first_line_indent = Pt(21)
+
+    table = document.add_table(rows=2, cols=2)
+    table.cell(0, 0).text = "项目"
+    table.cell(0, 1).text = "结论"
+    table.cell(1, 0).text = "纯度"
+    table.cell(1, 1).text = ""
+    return _docx(document)
+
+
+def test_placeholder_fill_keeps_label_and_bold() -> None:
     output = render_document(
-        _template_bytes(),
+        _template(),
         [
             SlotFill(
-                slot_key="drug_name",
-                label="品种名称",
+                slot_key="p0",
+                label="正文第1段",
                 anchor=_paragraph_anchor(0, "品种名称：____"),
-                value="化合物A",
+                value="阿莫西林",
                 state="filled",
             )
         ],
     )
-
-    document = open_document(output.document)
+    document = Document(BytesIO(output.document))
     paragraph = document.paragraphs[0]
-    assert paragraph.text == "品种名称：化合物A"
-    assert len(paragraph.runs) == 2
-    assert paragraph.runs[0].text == "品种名称："
+    assert paragraph.text == "品种名称：阿莫西林"
     assert paragraph.runs[0].bold is True
-    assert paragraph.runs[1].text == "化合物A"
     assert output.filled == 1
+
+
+def test_value_repeating_label_is_deduped() -> None:
+    """模型把「品种名称：」一起写进 text 时，不能渲染成「品种名称：品种名称：X」。"""
+    output = render_document(
+        _template(),
+        [
+            SlotFill(
+                slot_key="p0",
+                label="正文第1段",
+                anchor=_paragraph_anchor(0, "品种名称：____"),
+                value="品种名称：阿莫西林",
+                state="filled",
+            )
+        ],
+    )
+    document = Document(BytesIO(output.document))
+    assert document.paragraphs[0].text == "品种名称：阿莫西林"
+
+
+def test_caption_placeholder_replaces_only_xxx() -> None:
+    document = Document()
+    document.add_paragraph("表2 XXX主要物料供应信息")
+
+    output = render_document(
+        _docx(document),
+        [
+            SlotFill(
+                slot_key="p0",
+                label="正文第1段",
+                anchor=_paragraph_anchor(0, "表2 XXX主要物料供应信息"),
+                value="阿莫西林",
+                state="filled",
+            )
+        ],
+    )
+    assert Document(BytesIO(output.document)).paragraphs[0].text == "表2 阿莫西林主要物料供应信息"
+
+
+def test_label_paragraph_appends_without_overwriting_label() -> None:
+    """「制剂/规格：」这类标签段：只接值，标签与格式保留。"""
+    document = Document()
+    label = document.add_paragraph()
+    bold = label.add_run("制剂/规格：")
+    bold.bold = True
+
+    output = render_document(
+        _docx(document),
+        [
+            SlotFill(
+                slot_key="p0",
+                label="正文第1段",
+                anchor={**_paragraph_anchor(0, "制剂/规格："), "append": True},
+                value="片剂 10mg",
+                state="filled",
+            )
+        ],
+    )
+    rendered = Document(BytesIO(output.document)).paragraphs[0]
+    assert rendered.text == "制剂/规格：片剂 10mg"
+    assert rendered.runs[0].bold is True
+    assert output.filled == 1
+
+
+def test_label_append_dedupes_value_that_repeats_label() -> None:
+    document = Document()
+    document.add_paragraph("制剂/规格：")
+
+    output = render_document(
+        _docx(document),
+        [
+            SlotFill(
+                slot_key="p0",
+                label="正文第1段",
+                anchor={**_paragraph_anchor(0, "制剂/规格："), "append": True},
+                value="制剂/规格：片剂 10mg",
+                state="filled",
+            )
+        ],
+    )
+    assert Document(BytesIO(output.document)).paragraphs[0].text == "制剂/规格：片剂 10mg"
+
+
+def test_multiline_value_creates_sibling_paragraphs() -> None:
+    output = render_document(
+        _template(),
+        [
+            SlotFill(
+                slot_key="p1",
+                label="正文第2段",
+                anchor=_paragraph_anchor(1, "本段是固定说明"),
+                value="第一行\n第二行",
+                state="filled",
+            )
+        ],
+    )
+    document = Document(BytesIO(output.document))
+    texts = [item.text for item in document.paragraphs]
+    assert texts[1] == "第一行"
+    assert texts[2] == "第二行"
+
+
+def test_cell_write_and_fingerprint_fallback() -> None:
+    # 行列故意写错（落到「项目/结论」那一行），但文本锚点指向「纯度」
+    wrong_position = {
+        "kind": KIND_TABLE_CELL,
+        "table_index": 0,
+        "row": 0,
+        "col": 1,
+        "para_index": 0,
+        "text": "结论",
+        "fingerprint": fingerprint("结论"),
+    }
+    output = render_document(
+        _template(),
+        [
+            SlotFill(
+                slot_key="t0r1c1",
+                label="表1第2行第2列",
+                anchor=_cell_anchor("", 1, 1),
+                value="99.2%",
+                state="filled",
+            ),
+            SlotFill(slot_key="t0r0c1", label="表1第1行第2列", anchor=wrong_position, value="结论替换", state="filled"),
+        ],
+    )
+    document = Document(BytesIO(output.document))
+    assert document.tables[0].cell(1, 1).text == "99.2%"
+    assert document.tables[0].cell(0, 1).text == "结论替换"
+
+
+def test_append_paragraph_keeps_source_style_and_indent() -> None:
+    template = _template()
+    styles_before = len(Document(BytesIO(template)).styles)
+    output = render_document(
+        template,
+        [
+            SlotFill(
+                slot_key="ap1",
+                label="追加段落1",
+                anchor={
+                    "kind": KIND_APPEND_PARAGRAPH,
+                    "after": "p3",
+                    "clone_from": 2,
+                    "seq": 1,
+                    "location": "文末第1段",
+                },
+                value="3.2 路线二",
+                state="filled",
+            ),
+            SlotFill(
+                slot_key="ap2",
+                label="追加段落2",
+                anchor={
+                    "kind": KIND_APPEND_PARAGRAPH,
+                    "after": "ap1",
+                    "clone_from": 3,
+                    "seq": 2,
+                    "location": "文末第2段",
+                },
+                value="路线二的内容",
+                state="filled",
+            ),
+        ],
+    )
+    document = Document(BytesIO(output.document))
+    texts = [item.text for item in document.paragraphs]
+    heading_index = texts.index("3.2 路线二")
+    body_index = texts.index("路线二的内容")
+    assert heading_index + 1 == body_index
+    # 标题克隆自 p3（Heading 2），正文克隆自 p4（带首行缩进）
+    heading_style = document.paragraphs[heading_index].style
+    assert heading_style is not None and heading_style.name == "Heading 2"
+    assert document.paragraphs[body_index].paragraph_format.first_line_indent == Pt(21)
+    # 没有新增样式
+    assert len(document.styles) == styles_before
     assert output.unresolved == []
 
 
-def test_blank_in_middle_of_multi_run_paragraph_keeps_suffix() -> None:
-    """占位在段中间时，前后文字都保留（回归：整段替换会吃掉标签与后缀）。"""
-    document = Document()
-    line = document.add_paragraph()
-    line.add_run("报告标题：").bold = True
-    line.add_run("____")
-    line.add_run("（此行由多个 run 组成）")
-    buffer = BytesIO()
-    document.save(buffer)
-
+def test_append_table_rows_deep_copies_row_format() -> None:
     output = render_document(
-        buffer.getvalue(),
+        _template(),
         [
             SlotFill(
-                slot_key="report_title",
-                label="报告标题",
-                anchor=_paragraph_anchor(0, "报告标题：____（此行由多个 run 组成）"),
-                value="化合物A技术调研报告",
+                slot_key="at1",
+                label="表1追加行1",
+                anchor={
+                    "kind": KIND_APPEND_TABLE_ROWS,
+                    "table_index": 0,
+                    "clone_from_row": 1,
+                    "seq": 1,
+                    "rows": [{"cells": ["杂质", "0.1%"], "source_ids": ["s1"]}],
+                },
+                value="杂质 | 0.1%",
                 state="filled",
             )
         ],
     )
+    document = Document(BytesIO(output.document))
+    table = document.tables[0]
+    assert len(table.rows) == 3
+    assert table.cell(2, 0).text == "杂质"
+    assert table.cell(2, 1).text == "0.1%"
+    # 深拷贝母本行：tcPr（列宽等）必须还在
+    assert table.rows[2]._tr.tc_lst[0].tcPr is not None
 
-    paragraph = open_document(output.document).paragraphs[0]
-    assert paragraph.text == "报告标题：化合物A技术调研报告（此行由多个 run 组成）"
-    assert len(paragraph.runs) == 3
 
-
-def test_multiline_value_inserts_new_paragraph_with_style() -> None:
-    """多行值按段落拆开，新段落继承占位 run 的样式（这里断言加粗被复制）。"""
-    document = Document()
-    paragraph = document.add_paragraph()
-    paragraph.add_run("结论：")
-    blank = paragraph.add_run("____")
-    blank.bold = True
-    buffer = BytesIO()
-    document.save(buffer)
-
+def test_append_table_rows_without_clone_row_uses_last_row_format() -> None:
+    """clone_from_row 缺省时克隆最后一行；退回 add_row() 会丢 tcPr（边框/列宽）。"""
     output = render_document(
-        buffer.getvalue(),
+        _template(),
         [
             SlotFill(
-                slot_key="conclusion",
-                label="结论",
-                anchor=_paragraph_anchor(0, "结论：____"),
-                value="第一行结论\n第二行结论",
+                slot_key="at1",
+                label="表1追加行1",
+                anchor={
+                    "kind": KIND_APPEND_TABLE_ROWS,
+                    "table_index": 0,
+                    "seq": 1,
+                    "rows": [{"cells": ["杂质", "0.1%"], "source_ids": ["s1"]}],
+                },
+                value="杂质 | 0.1%",
                 state="filled",
             )
         ],
     )
+    document = Document(BytesIO(output.document))
+    table = document.tables[0]
+    assert len(table.rows) == 3
+    assert table.cell(2, 0).text == "杂质"
+    for col in range(2):
+        current = table.rows[2].cells[col]._tc.tcPr
+        above = table.rows[1].cells[col]._tc.tcPr
+        assert current is not None and above is not None
+        assert current.xml == above.xml
 
-    result = open_document(output.document)
-    assert result.paragraphs[0].text == "结论：第一行结论"
-    assert result.paragraphs[1].text == "第二行结论"
-    assert result.paragraphs[1].runs[0].bold is True
 
+def test_references_are_not_written_into_document() -> None:
+    """参考资料只在详情页右栏展示：ref 记录不能往成稿里加标题或条目。"""
+    template = _template()
+    styles_before = len(Document(BytesIO(template)).styles)
+    before = [item.text for item in Document(BytesIO(template)).paragraphs]
 
-def test_table_cell_written_and_gap_uses_placeholder() -> None:
-    """表格单元格可写入；无资料支撑的槽位写「待补充：责任方」。"""
     output = render_document(
-        _template_bytes(),
+        template,
         [
-            SlotFill(slot_key="conclusion", label="结论", anchor=_cell_anchor(1, 1), value="工艺稳定", state="filled"),
             SlotFill(
-                slot_key="stability",
-                label="稳定性",
-                anchor=_paragraph_anchor(1, "以下为结论："),
-                value="",
-                state="gap",
-                owner_hint="分析部",
+                slot_key="p1",
+                label="正文第2段",
+                anchor=_paragraph_anchor(1, ""),
+                value="6 批实验数据汇总",
+                state="filled",
+            ),
+            SlotFill(
+                slot_key="ref",
+                label="参考资料",
+                anchor={
+                    "kind": KIND_REFERENCES,
+                    "entries": ["[1] 小试报告.pdf（用于：正文第2段）", "[2] 工艺规程.docx（用于：表1第2行第2列）"],
+                },
+                value="[1] 小试报告.pdf（用于：正文第2段）\n[2] 工艺规程.docx（用于：表1第2行第2列）",
+                state="filled",
             ),
         ],
     )
 
-    document = open_document(output.document)
-    assert document.tables[0].cell(1, 1).text == "工艺稳定"
-    assert document.paragraphs[1].text == "待补充：分析部"
-    assert output.filled == 1
+    document = Document(BytesIO(output.document))
+    texts = [item.text for item in document.paragraphs]
+    assert "引用源" not in texts and "参考资料" not in texts
+    assert not any(text.startswith("[1] 小试报告.pdf") for text in texts)
+    # 只有正文写入生效，段落数与样式表都不变
+    assert len(texts) == len(before)
+    assert texts[1] == "6 批实验数据汇总"
+    assert len(document.styles) == styles_before
+
+
+def test_unresolved_when_anchor_missing() -> None:
+    output = render_document(
+        _template(),
+        [
+            SlotFill(
+                slot_key="p99",
+                label="正文第100段",
+                anchor={"kind": KIND_PARAGRAPH, "index": 99, "text": "不存在", "fingerprint": fingerprint("不存在")},
+                value="x",
+                state="filled",
+            )
+        ],
+    )
+    assert output.unresolved == ["p99"]
+    assert output.filled == 0
+
+
+def test_legacy_gap_row_still_renders_pending_text() -> None:
+    """老任务里 state=gap 的行重渲时仍写「待补充」，不影响历史成品。"""
+    output = render_document(
+        _template(),
+        [
+            SlotFill(
+                slot_key="p1",
+                label="正文第2段",
+                anchor=_paragraph_anchor(1, "本段是固定说明"),
+                value=None,
+                state="gap",
+                owner_hint="质量部",
+            )
+        ],
+    )
+    document = Document(BytesIO(output.document))
+    assert document.paragraphs[1].text == "待补充：质量部"
     assert output.gaps == 1
-
-
-def test_anchor_drift_falls_back_to_fingerprint() -> None:
-    """索引失效时用原文指纹兜底定位，内容仍写到正确段落。"""
-    output = render_document(
-        _template_bytes(),
-        [
-            SlotFill(
-                slot_key="drug_name",
-                label="品种名称",
-                # 索指引到不存在的第 9 段，只能靠指纹找到第 0 段
-                anchor={
-                    "kind": "paragraph",
-                    "index": 9,
-                    "text": "品种名称：____",
-                    "fingerprint": fingerprint("品种名称：____"),
-                },
-                value="化合物B",
-                state="filled",
-            )
-        ],
-    )
-
-    document = open_document(output.document)
-    assert document.paragraphs[0].text == "品种名称：化合物B"
-    assert output.unresolved == []
-
-
-def test_unresolved_anchor_is_recorded_not_fatal() -> None:
-    """锚点彻底失效：不中断整体生成，记入 unresolved 并在对照表标注。"""
-    output = render_document(
-        _template_bytes(),
-        [
-            SlotFill(
-                slot_key="ghost",
-                label="失效槽位",
-                anchor={
-                    "kind": "paragraph",
-                    "index": 99,
-                    "text": "模板里没有这句",
-                    "fingerprint": fingerprint("模板里没有这句"),
-                },
-                value="随便",
-                state="filled",
-            )
-        ],
-    )
-
-    assert output.unresolved == ["ghost"]
-    assert "锚点未定位" in output.comparison_markdown
-    # 母本仍能正常保存
-    assert len(open_document(output.document).paragraphs) >= 2
-
-
-def test_build_candidates_covers_paragraph_and_table_cell() -> None:
-    """结构解析候选同时收口正文段落与表格单元格，并带稳定指纹。"""
-    document = open_document(_template_bytes())
-    paragraphs = paragraph_refs(document)
-    cells = cell_refs(document)
-    assert paragraphs[0].text == "品种名称：____"
-    assert any(cell.row == 1 and cell.col == 1 for cell in cells)
-
-    candidates = build_candidates(paragraphs, cells)
-    kinds = {candidate["kind"] for candidate in candidates}
-    assert kinds == {"paragraph", "table_cell"}
-    for candidate in candidates:
-        assert candidate["anchor"]["fingerprint"] == fingerprint(
-            (candidate["text"] or "").strip()
-        )
-
-
-def test_cell_refs_keeps_every_distinct_cell_of_merged_table() -> None:
-    """多行多列表里每个单元格都要收；真合并单元格的重复引用只取首现。
-
-    回归点：去重标识曾用 ``id(cell._tc)``，底层节点代理被回收后 id 被复用，
-    正常单元格会被当成「已出现」跳过（2x2 表少一格、空单元格首当其冲）。
-    """
-    document = Document()
-    table = document.add_table(rows=3, cols=3)
-    for row in range(3):
-        for col in range(3):
-            table.cell(row, col).text = f"r{row}c{col}"
-    # 真横向合并：(0,0) 与 (0,1) 变成同一个 w:tc，(0,1) 必须被去重
-    table.cell(0, 0).merge(table.cell(0, 1))
-
-    refs = cell_refs(document)
-    positions = {(ref.row, ref.col) for ref in refs}
-
-    assert positions == {(row, col) for row in range(3) for col in range(3)} - {(0, 1)}
-    # 合并后的单元格两个原段落都保留，引用次数与段落数一致
-    assert sum(1 for ref in refs if (ref.row, ref.col) == (0, 0)) == 2
-    assert any(ref.row == 1 and ref.col == 1 and ref.text == "r1c1" for ref in refs)
-
-
-@pytest.mark.parametrize("text", ["", " ", "品种名称：____", "品种名称：___X"])
-def test_fingerprint_is_stable_and_text_sensitive(text: str) -> None:
-    assert fingerprint(text) == fingerprint(text)
-    if text.strip() and text.strip() != "品种名称：____":
-        assert fingerprint(text) != fingerprint("品种名称：____")

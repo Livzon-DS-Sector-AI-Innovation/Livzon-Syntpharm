@@ -1,4 +1,8 @@
-"""Agent 循环：让模型自主决定「读模板 → 查资料 → 填槽位 → 收尾」。
+"""Agent 循环：让模型自主决定「读母本 → 查资料 → 写位置 → 收尾」。
+
+与旧版（填充项识别）最大的区别：**不再预先识别槽位**。母本只解析成「可写位置清单」，
+写什么、写在哪由模型在生成时决定；每次写入落一条 ``RdReportGenSlot`` 记录，出稿时按
+记录回放（见 ``render.py``）。
 
 两种协议：
 - ``tools``：OpenAI 兼容 tool calling，模型直接产出 tool_calls（首选）；
@@ -6,7 +10,7 @@
 
 无论走哪种，每一步都写进 ``rd_report_gen_steps``：这是详情页「执行过程」的唯一
 数据源，也是事后追溯「这条结论从哪来」的依据。工具失败不抛给上层，只记一条
-failed 步骤，让模型自己决定改用别的资料或标缺口。
+failed 步骤，让模型自己决定换个位置或换资料。
 """
 
 from __future__ import annotations
@@ -36,18 +40,23 @@ from app.modules.research.models import (
     RdReportGenSlot,
     RdReportGenStep,
 )
-from app.modules.research.report_gen import versions
+from app.modules.research.report_gen import opinions, versions
 from app.modules.research.report_gen.config import ReportGenConfig, load_config
-from app.modules.research.report_gen.examples import load_examples
-from app.modules.research.report_gen.fills import slot_fill
-from app.modules.research.report_gen.model_binding import ModelBinding, resolve_bindings
+from app.modules.research.report_gen.fills import build_fills
+from app.modules.research.report_gen.model_binding import ModelBinding, resolve_binding
+from app.modules.research.report_gen.outline import build_outline
 from app.modules.research.report_gen.prompts import (
     AGENT_JSON_PROTOCOL_PROMPT,
     AGENT_SYSTEM_PROMPT,
     render_prompt,
+    with_human_locked_summary,
+    with_instruction,
+    with_opinion_digest,
 )
+from app.modules.research.report_gen.references import build_reference_groups
 from app.modules.research.report_gen.render import render_document
-from app.modules.research.report_gen.structure import enabled_slots, ensure_structure
+from app.modules.research.report_gen.structure import open_document, structure_instruction
+from app.modules.research.report_gen.template_access import load_template_bytes
 from app.modules.research.report_gen.tools import (
     ReportGenRuntime,
     ToolOutcome,
@@ -80,7 +89,7 @@ def _summarize_args(arguments: dict[str, Any]) -> dict[str, Any]:
         elif isinstance(value, (int, float, bool)) or value is None:
             summary[str(key)] = value
         else:
-            summary[str(key)] = _cut(json.dumps(value, ensure_ascii=False), 300)
+            summary[str(key)] = _cut(json.dumps(value, ensure_ascii=False, default=str), 300)
     return summary
 
 
@@ -144,48 +153,19 @@ async def _cancel_requested(session: AsyncSession, job_id: UUID) -> bool:
     return bool(value)
 
 
-def _slot_progress(slot_rows: dict[str, RdReportGenSlot]) -> tuple[int, int, int]:
-    total = len(slot_rows)
-    done = sum(1 for row in slot_rows.values() if row.state in ("filled", "conflict", "gap"))
-    filled = sum(1 for row in slot_rows.values() if row.state in ("filled", "conflict"))
-    return total, done, filled
+def _apply_coverage(job: RdReportGenJob, coverage: dict[str, Any]) -> None:
+    """把覆盖率同步到任务行：''slot_total'' 现在表示「可写位置总数」。"""
+    job.slot_total = int(coverage.get("writable_total") or 0)
+    job.slot_filled = int(coverage.get("written") or 0)
+    job.slot_gap = int(coverage.get("unwritten") or 0)
 
 
-def _apply_slot_progress(job: RdReportGenJob, slot_rows: dict[str, RdReportGenSlot]) -> None:
-    """把槽位填充情况同步到任务行，出稿前后各刷一次，前端轮询据此展示进度。"""
-    total, _done, filled = _slot_progress(slot_rows)
-    job.slot_total = total
-    job.slot_filled = filled
-    job.slot_gap = sum(1 for row in slot_rows.values() if row.state in ("gap", "pending", "anchor_unresolved"))
-
-
-async def _ensure_slot_rows(
-    session: AsyncSession, job: RdReportGenJob, structure: dict[str, Any]
-) -> dict[str, RdReportGenSlot]:
-    """为模板的每个槽位建一行（幂等：重跑任务沿用已有行）。"""
-    existing = await session.execute(
+async def _load_slot_rows(session: AsyncSession, job: RdReportGenJob) -> dict[str, RdReportGenSlot]:
+    """取本次任务已有的写入记录（重跑时沿用，按 slot_key 覆盖）。"""
+    result = await session.execute(
         select(RdReportGenSlot).where(RdReportGenSlot.job_id == job.id, RdReportGenSlot.is_deleted.is_(False))
     )
-    rows = {row.slot_key: row for row in existing.scalars().all()}
-    for slot in structure.get("slots") or []:
-        key = str(slot.get("slot_key") or "")
-        if not key or key in rows:
-            continue
-        anchor = dict(slot.get("anchor") or {})
-        anchor["location"] = slot.get("location")
-        row = RdReportGenSlot(
-            job_id=job.id,
-            slot_key=key,
-            slot_label=str(slot.get("label") or ""),
-            anchor=anchor,
-            state="pending",
-            owner_hint=slot.get("owner_hint"),
-        )
-        session.add(row)
-        rows[key] = row
-    await session.flush()
-    job.slot_total = len(rows)
-    return rows
+    return {row.slot_key: row for row in result.scalars().all()}
 
 
 def _system_prompt_for(
@@ -195,24 +175,26 @@ def _system_prompt_for(
     project: RdProject,
     report: RdReport,
     template_name: str,
-    slot_total: int,
+    writable_total: int,
+    instruction: str,
 ) -> str:
     """渲染本次任务的 system prompt：变量填进去，库里覆盖的整段生效。
 
     变量只做「事实填空」，不给模型额外自由度——漏传的变量会原样留下 ``$name``，
     比静默替换成空串更容易被发现。
     """
-    return render_prompt(
+    rendered = render_prompt(
         config.agent_prompt,
         {
             "doc_code": job.doc_code or "（未填写）",
             "drug_name": job.drug_name or project.name,
             "max_rounds": config.max_rounds,
             "report_title": report.title,
-            "slot_total": slot_total,
             "template_name": template_name or "（未指定）",
+            "writable_total": writable_total,
         },
     )
+    return with_instruction(rendered, instruction)
 
 
 def _json_system_prompt(system_prompt: str, tool_specs: list[dict[str, Any]]) -> str:
@@ -223,10 +205,9 @@ def _build_messages(
     job: RdReportGenJob,
     project: RdProject,
     report: RdReport,
-    structure: dict[str, Any],
+    writable_total: int,
     system_prompt: str,
 ) -> list[dict[str, Any]]:
-    slots = structure.get("slots") or []
     user_prompt = (
         "## 本次报告\n"
         f"- 标题：{report.title}\n"
@@ -237,8 +218,9 @@ def _build_messages(
         f"- 品种名称：{job.drug_name or project.name}\n"
         f"- 补充说明：{job.supplement_text or '（无）'}\n\n"
         f"## 项目\n- 名称：{project.name}\n- API 名称：{project.api_name}\n\n"
-        f"## 模板\n- 槽位数量：{len(slots)}\n"
-        "请开始：先读取槽位清单，再逐个查找资料并填写。"
+        f"## 模板\n- 可写位置：{writable_total} 个\n"
+        "请开始：先读可写位置总览，再按章节检索资料并批量写入；"
+        "全部处理完后整理参考资料并 finalize。"
     )
     return [
         {"role": "system", "content": system_prompt},
@@ -327,7 +309,12 @@ async def _run_tools_round(
 
     if not response.tool_calls:
         messages.append({"role": "assistant", "content": response.content or ""})
-        messages.append({"role": "user", "content": "请继续：要填写槽位就调用工具；全部处理完调用 finalize。"})
+        messages.append(
+            {
+                "role": "user",
+                "content": "请继续：要写内容就调用 write_paragraph / write_cell；全部处理完调用 finalize。",
+            }
+        )
         return runtime.finalized
 
     messages.append(
@@ -462,11 +449,13 @@ def resolve_initial_mode(tool_mode: str) -> str:
     return "json" if tool_mode == "json" else "tools"
 
 
-async def _close_untouched_slots(slot_rows: dict[str, RdReportGenSlot]) -> None:
-    """没被模型处理的槽位统一按缺口收口，保证对照表完整、模板不出现空白。"""
-    for row in slot_rows.values():
-        if row.state == "pending" and not (row.value or "").strip():
-            row.state = "gap"
+async def _load_template_bytes(job: RdReportGenJob, template: RdDeliverableTemplate) -> bytes:
+    """取母本：优先任务快照（任务发起时固定），缺失时回退模板当前文件。
+
+    实现收敛到 ``template_access``：详情页清单也按同一份母本算位置，两处取法必须一致，
+    否则模板换版后「写过的位置」和「列出来的位置」会指向不同段落。
+    """
+    return load_template_bytes(job, template)
 
 
 async def _render_and_store(
@@ -476,21 +465,19 @@ async def _render_and_store(
     template: RdDeliverableTemplate | None,
     slot_rows: dict[str, RdReportGenSlot],
     steps: _StepWriter,
+    coverage: dict[str, Any],
 ) -> None:
-    if not job.template_file_key:
-        raise RuntimeError("这次生成没有记录用哪份 Word 模板文件，没法出稿。请回到报告列表点「编辑」重新选模板再生成。")
-    template_bytes = store.load_bytes(job.template_file_key)
+    template_bytes = await _load_template_bytes(job, template) if template is not None else b""
     if not template_bytes:
-        raise RuntimeError("找不到这次生成要用的 Word 模板文件，可能已经被删除。请重新选一份模板再生成。")
+        raise RuntimeError("这次生成没有记录用哪份 Word 模板文件，没法出稿。请回到报告列表点「编辑」重新选模板再生成。")
 
-    fills = [slot_fill(row) for row in slot_rows.values()]
     meta = {
         "title": report.title,
         "doc_code": job.doc_code,
         "drug_name": job.drug_name,
         "template_name": template.name if template else "",
     }
-    output = render_document(template_bytes, fills, meta=meta)
+    output = render_document(template_bytes, build_fills(slot_rows.values()), meta=meta)
 
     for key in output.unresolved:
         row = slot_rows.get(key)
@@ -504,17 +491,19 @@ async def _render_and_store(
         output.document,
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
-    job.comparison_object_key = store.save_bytes(
-        f"{safe_title}-填充项对照表.md",
-        output.comparison_markdown.encode("utf-8"),
-        "text/markdown; charset=utf-8",
-    )
     await steps.add(
         "status",
-        f"文档已生成：写入 {output.filled} 个填充项，未填 {output.gaps} 个",
-        result=f"没找到对应位置的填充项：{', '.join(output.unresolved) if output.unresolved else '无'}",
+        (
+            f"文档已生成：写入 {coverage['written']}/{coverage['writable_total']} 处，"
+            f"未写空位 {coverage['unwritten']} 处"
+            + (f"，追加 {coverage['appended']} 处" if coverage.get("appended") else "")
+        ),
+        result=(
+            f"参考资料 {len(build_reference_groups(slot_rows.values()))} 条来源；"
+            f"没找到位置写入的记录：{', '.join(output.unresolved) if output.unresolved else '无'}"
+        ),
     )
-    # 留一版 ai_draft：后续人工重渲/上传都会新增版本，初稿始终可回溯
+    # 留一版 ai_draft：后续人工上传/重渲都会新增版本，初稿始终可回溯
     await versions.record_ai_draft(
         session,
         job,
@@ -539,55 +528,56 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
     job.status = "running"
     job.started_at = _utcnow()
     job.progress = 2
-    job.current_step = "分析 Word 模板结构"
+    job.current_step = "读取 Word 模板"
     await session.commit()
 
     steps = _StepWriter(session, job, config.max_steps)
-    await steps.add("status", "任务开始：分析 Word 模板结构")
+    await steps.add("status", "任务开始：读取 Word 模板的可写位置")
 
-    structure = await ensure_structure(session, template, config)
-    await session.commit()
+    template_bytes = await _load_template_bytes(job, template)
+    outline = build_outline(open_document(template_bytes))
+    if outline.writable_total == 0:
+        raise RuntimeError("这份母本里没有可填写的位置（既没有空段，也没有下划线占位），没法生成")
 
-    # 人工停用的槽位在这一步过滤掉：不建槽位行、不下发给模型、也不回写，
-    # 下游 render 只吃 slot_rows，因此单点过滤即可覆盖全部路径。
-    # 只影响本次任务，历史任务已有的槽位行不回改。
-    enabled_structure = {**structure, "slots": enabled_slots(structure)}
-    disabled_count = len(structure.get("slots") or []) - len(enabled_structure["slots"])
+    instruction = structure_instruction(template.template_structure)
     await steps.add(
         "status",
-        f"模板分析完成，识别到 {len(enabled_structure['slots'])} 个填充项"
-        + (f"（已按配置停用 {disabled_count} 个）" if disabled_count else ""),
-        result=json.dumps([slot.get("label") for slot in enabled_structure["slots"]][:40], ensure_ascii=False),
+        (
+            f"母本读取完成：{outline.paragraph_count} 段 + {outline.table_count} 张表，"
+            f"可写位置 {outline.writable_total} 个"
+        ),
+        result=(
+            "；".join(f"{item['section']} {item['writable']} 处" for item in outline.section_brief()[:12])
+            or "未识别到章节"
+        ),
     )
-    if disabled_count:
-        logger.info(
-            "report gen skipped disabled slots",
-            extra={"job_id": str(job.id), "disabled_slots": disabled_count},
+
+    # 生成前先整理意见库：没有意见就不调模型；汇总失败降级为原文清单，不阻断出稿
+    digest_text = ""
+    try:
+        digest_result = await opinions.build_digest(session, job, config)
+    except Exception:  # noqa: BLE001 - 汇总是增益项，失败照常生成
+        logger.exception("report-gen opinion digest failed", extra={"job_id": str(job.id)})
+        digest_result = None
+    if digest_result is not None:
+        digest_text = digest_result.digest.digest_text
+        note = "（复用相同意见集合的上一份汇总）" if digest_result.reused else ""
+        await steps.add(
+            "status",
+            f"整理历史评审意见 {digest_result.digest.item_count} 条为写作要求{note}",
+            result=_cut(digest_text, 300),
         )
 
-    slot_rows = await _ensure_slot_rows(session, job, enabled_structure)
-    await session.commit()
-
-    examples: dict[str, dict[str, Any]] = {}
-    if config.examples_enabled:
-        try:
-            examples = await load_examples(
-                session,
-                getattr(job, "deliverable_template_id", None),
-                limit=config.examples_limit,
-                exclude_keys={key for key, row in slot_rows.items() if row.state == "filled"},
-            )
-        except Exception:  # noqa: BLE001 - 示例是增益项，取不到就当没有
-            logger.exception("report-gen load examples failed", extra={"job_id": str(job.id)})
+    slot_rows = await _load_slot_rows(session, job)
     runtime = ReportGenRuntime(
         session,
         job,
         project,
-        enabled_structure,
+        outline,
         slot_rows,
         config,
         report_title=report.title,
-        examples=examples,
+        instruction=instruction,
     )
     # 工具清单在任务开始时算一次：禁用项既不下发给模型，也不允许被调用
     tool_specs = resolve_tool_specs(config.disabled_tools)
@@ -597,15 +587,36 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
         project=project,
         report=report,
         template_name=template.name,
-        slot_total=len(enabled_structure["slots"]),
+        writable_total=outline.writable_total,
+        instruction=instruction,
     )
-    messages = _build_messages(job, project, report, enabled_structure, system_prompt)
+    locked_labels = [
+        row.slot_label or key
+        for key, row in slot_rows.items()
+        if isinstance(row.anchor, dict)
+        and row.anchor.get("human_locked") is True
+        and (row.value or "").strip()
+    ]
+    if locked_labels:
+        # 执行记录里明确写出来：人工确认是「沿用」而不是「重写」，出稿后好核对
+        await steps.add(
+            "status",
+            f"沿用上一版人工确认内容 {len(locked_labels)} 处，本次不再重写",
+            result="、".join(locked_labels[:20]),
+        )
+    system_prompt = with_opinion_digest(system_prompt, digest_text)
+    system_prompt = with_human_locked_summary(system_prompt, locked_labels)
+    # 可写总数要扣掉人工确认的位置：否则模型会按未扣减的口径去找「还差几处」反复尝试
+    messages = _build_messages(
+        job, project, report, max(outline.writable_total - len(locked_labels), 0), system_prompt
+    )
     switch = _ModelSwitch(config.model, config.fallback_model)
     mode = resolve_initial_mode(config.tool_mode)
     if mode == "json":
         messages[0] = {"role": "system", "content": _json_system_prompt(system_prompt, tool_specs)}
 
     deadline = time.monotonic() + config.job_timeout_seconds
+    target_flagged = False
     for round_index in range(1, config.max_rounds + 1):
         job.rounds = round_index
         if await _cancel_requested(session, job.id):
@@ -615,12 +626,28 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
             await steps.add("status", "任务被终止", status="failed")
             await session.commit()
             return
+        elapsed = time.monotonic() - (deadline - config.job_timeout_seconds)
         if time.monotonic() > deadline:
             raise TimeoutError(f"任务超过 {int(config.job_timeout_seconds)} 秒未完成，已中止")
+        if not target_flagged and elapsed > config.job_target_seconds:
+            target_flagged = True
+            logger.warning(
+                "report-gen job exceeds target duration",
+                extra={"job_id": str(job.id), "elapsed_seconds": int(elapsed)},
+            )
+            await steps.add(
+                "status",
+                f"已用时 {int(elapsed)} 秒，超过目标 {int(config.job_target_seconds)} 秒，剩余位置将按已有内容出稿",
+                status="failed",
+            )
 
-        total, done, filled = _slot_progress(slot_rows)
-        progress = 5 + int(85 * done / total) if total else 5
-        await steps.progress(f"第 {round_index} 轮 · 已填 {filled}/{total}", progress)
+        coverage = runtime.coverage()
+        total = max(coverage["writable_total"], 1)
+        progress = 5 + int(85 * coverage["written"] / total)
+        await steps.progress(
+            f"第 {round_index} 轮 · 已写 {coverage['written']}/{coverage['writable_total']} 处",
+            progress,
+        )
 
         try:
             if mode == "tools":
@@ -642,20 +669,32 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
     else:
         await steps.add("status", f"达到轮次上限 {config.max_rounds}，用已有结果出稿", status="failed")
 
-    await _close_untouched_slots(slot_rows)
-    _apply_slot_progress(job, slot_rows)
+    # 参考资料由写入记录确定性生成：模型忘了调用也不会漏，重复调用则幂等
+    if config.references_enabled:
+        reference = runtime.write_references()
+        await steps.add("status", reference.summary, status="ok" if reference.ok else "failed")
+
+    coverage = runtime.coverage()
+    _apply_coverage(job, coverage)
     job.current_step = "写入 Word 模板文件"
     job.progress = 92
     await session.commit()
 
-    await _render_and_store(session, job, report, template, slot_rows, steps)
+    await _render_and_store(session, job, report, template, slot_rows, steps, coverage)
 
-    _apply_slot_progress(job, slot_rows)
+    _apply_coverage(job, coverage)
     job.status = "completed"
     job.progress = 100
     job.current_step = "已完成"
     job.finished_at = _utcnow()
-    await steps.add("status", "任务完成")
+    await steps.add(
+        "status",
+        f"任务完成：已写 {coverage['written']}/{coverage['writable_total']} 处",
+        result=(
+            f"未写空位 {coverage['unwritten']} 处"
+            + (f"，被拒绝 {coverage['rejected']} 次" if coverage.get("rejected") else "")
+        ),
+    )
 
     # 若这次生成是从「阶段交付文档」发起的，把 docx 落进该交付文档的附件并回写关联。
     # 内部吞异常：附件复制失败不能让已出稿的任务判成失败，用户仍可从报告详情下载。
@@ -666,7 +705,13 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
     await session.commit()
     logger.info(
         "report-gen job completed",
-        extra={"job_id": str(job.id), "slots": total, "filled": filled, "rounds": job.rounds},
+        extra={
+            "job_id": str(job.id),
+            "slots": coverage["writable_total"],
+            "filled": coverage["written"],
+            "rounds": job.rounds,
+            "elapsed_seconds": int(elapsed),
+        },
     )
 
 
@@ -695,17 +740,17 @@ async def _record_failure(session: AsyncSession, job: RdReportGenJob, message: s
 
 
 async def _config_from_snapshot(job: RdReportGenJob, config: ReportGenConfig) -> ReportGenConfig:
-    """按任务快照重建三档绑定。
+    """按任务快照重建两个档位。
 
     快照存的是任务发起时的档位原值，重解析一次即可还原端点与模型；快照全空的是
-    本特性上线前的老任务，退回实时配置，不阻塞重跑。
+    本特性上线前的老任务，退回实时配置，不阻塞重跑。``structure_model_name`` 是结构
+    识别时代的遗留列，这里不读也不用（列本身保留，不建迁移）。
     """
-    if not (job.model_config_name or job.structure_model_name or job.fallback_model_name):
+    if not (job.model_config_name or job.fallback_model_name):
         return config
-    main, structure, fallback = await resolve_bindings(
-        job.model_config_name, job.structure_model_name, job.fallback_model_name
-    )
-    return replace(config, model=main, structure_model=structure, fallback_model=fallback)
+    main = await resolve_binding(job.model_config_name)
+    fallback = await resolve_binding(job.fallback_model_name)
+    return replace(config, model=main, fallback_model=fallback)
 
 
 async def run_report_gen(job_id: UUID) -> dict[str, Any]:

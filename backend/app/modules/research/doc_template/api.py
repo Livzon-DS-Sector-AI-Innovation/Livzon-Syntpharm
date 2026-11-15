@@ -1,26 +1,25 @@
-"""交付物模板 API：Word 母本上传、版本留档、下载、回滚与填充示例稿。
+"""交付物模板 API：Word 母本上传、版本留档、下载与回滚。
 
 路由仍挂在 /api/v1/research/doc-gen/deliverable-templates/* 下：前端调用与
 存量权限绑定都以该前缀为准，改名会同时打断两者，收益不足。
-除「填充示例稿」（按已保存的填充项在母本上写标记）外，本模块不做文档生成。
+
+填充项识别下线后，本模块不再提供「填充项读写 / 预览 / 重解析 / 填充示例稿」接口：
+模板只负责提供母本文件与填写要求，具体写哪里由生成时的智能体自己决定。
 """
 
 from __future__ import annotations
 
-import json
 import logging
-import time
-from collections.abc import AsyncIterator
 from typing import Any
 from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
 from app.core.response import build_response
 from app.modules.research.doc_template import service
@@ -28,12 +27,6 @@ from app.modules.research.doc_template.schemas import (
     DocGenBatchUploadResponse,
     DocGenOperationResponse,
     DocGenTemplateFileResponse,
-    DocGenTemplateSampleResponse,
-    DocGenTemplateSlotsReparseRequest,
-    DocGenTemplateSlotsReparseResponse,
-    DocGenTemplateSlotsResponse,
-    DocGenTemplateSlotsSaveRequest,
-    DocGenTemplateSlotsSaveResponse,
     DocGenTemplateVersionListResponse,
     DocGenTemplateVersionRestoreResponse,
 )
@@ -186,155 +179,6 @@ async def delete_template_version(
     await service.delete_template_version(db, template_id, version_id, current_user.id if current_user else None)
     await db.commit()
     return build_response(message="这条历史记录已删除")
-
-
-@router.post(
-    "/deliverable-templates/{template_id}/sample",
-    summary="生成填充示例稿",
-    response_model=DocGenTemplateSampleResponse,
-)
-async def generate_template_sample(
-    template_id: UUID,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:deliverable-template:update")),
-    db: AsyncSession = Depends(get_db),
-) -> Any:
-    """按已保存的填充项在母本上就地标注，生成一份可预览/下载的示例稿。
-
-    示例稿单独留档为一个版本（不成为当前母本），据此可对照每处该填什么、填在哪。
-    """
-    data = await service.generate_sample_document(db, template_id, current_user.id if current_user else None)
-    await db.commit()
-    message = f"已生成填充示例稿 v{data['version_no']}，共标注 {data['slot_count']} 项"
-    if data["skipped_count"]:
-        message += f"；{data['skipped_count']} 项未启用或未绑定位置，已跳过"
-    if data["unresolved_count"]:
-        message += f"；{data['unresolved_count']} 项在母本里找不到位置，未标注"
-    return build_response(data=data, message=message)
-
-
-@router.get(
-    "/deliverable-templates/{template_id}/slots",
-    summary="交付文档模板的填充项设置",
-    response_model=DocGenTemplateSlotsResponse,
-)
-async def get_template_slots(
-    template_id: UUID,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:deliverable-template:read")),
-    db: AsyncSession = Depends(get_db),
-) -> Any:
-    """返回槽位清单与母本候选位置；只读文件，不触发模型识别。"""
-    return build_response(data=await service.template_slots_payload(db, template_id))
-
-
-@router.put(
-    "/deliverable-templates/{template_id}/slots",
-    summary="保存填充项设置",
-    response_model=DocGenTemplateSlotsSaveResponse,
-)
-async def save_template_slots(
-    template_id: UUID,
-    payload: DocGenTemplateSlotsSaveRequest,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:deliverable-template:update")),
-    db: AsyncSession = Depends(get_db),
-) -> Any:
-    """全量覆盖槽位结构（人工增删改）；锚点必须在当前母本里，换版后须先重新识别。"""
-    data = await service.save_template_slots(
-        db,
-        template_id,
-        [item.model_dump() for item in payload.slots],
-        payload.token,
-        current_user.id if current_user else None,
-    )
-    await db.commit()
-    return build_response(data=data, message="填充项已保存，下次生成文档时生效")
-
-
-@router.post(
-    "/deliverable-templates/{template_id}/slots/reparse",
-    summary="重新分析模板结构",
-    response_model=DocGenTemplateSlotsReparseResponse,
-)
-async def reparse_template_slots(
-    template_id: UUID,
-    payload: DocGenTemplateSlotsReparseRequest,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:deliverable-template:update")),
-    db: AsyncSession = Depends(get_db),
-) -> Any:
-    """强制重解析并按位置合并：人工改过的字段保留，只补 AI 新识别的位置。"""
-    data = await service.reparse_template_slots(
-        db,
-        template_id,
-        payload.token,
-        current_user.id if current_user else None,
-    )
-    await db.commit()
-    stats = data["stats"]
-    return build_response(
-        data=data,
-        message=f"分析完成：新增 {stats['added']} 项、保留 {stats['kept']} 项、去掉 {stats['removed']} 项",
-    )
-
-
-def _sse(payload: dict[str, Any]) -> str:
-    """SSE 帧：统一把事件塞进 data 的 JSON 里，前端只认 ``type`` 字段。"""
-    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
-
-
-@router.post(
-    "/deliverable-templates/{template_id}/slots/reparse/stream",
-    summary="重新分析模板结构（流式）",
-    response_model=None,
-)
-async def reparse_template_slots_stream(
-    template_id: UUID,
-    payload: DocGenTemplateSlotsReparseRequest,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("research:deliverable-template:update")),
-    db: AsyncSession = Depends(get_db),
-) -> StreamingResponse:
-    """重解析并边分析边推事件：阶段、思考增量、最终合并结果。
-
-    同步版 ``/slots/reparse`` 保留不动（脚本与老前端仍可用）；两个入口共用
-    ``service`` 里的同一套校验与合并逻辑，区别只是等待过程是否可见。
-    """
-    user_id = current_user.id if current_user else None
-
-    async def event_stream() -> AsyncIterator[str]:
-        started = time.perf_counter()
-        # 先发一帧：浏览器拿到首字节才会把「正在连接」变成「正在分析」
-        yield _sse({"type": "phase", "phase": "start", "message": "已接收请求，正在准备分析", "elapsed_ms": 0})
-        try:
-            async for event in service.reparse_template_slots_stream(db, template_id, payload.token, user_id):
-                if "elapsed_ms" not in event:
-                    event = {**event, "elapsed_ms": int((time.perf_counter() - started) * 1000)}
-                yield _sse(event)
-        except Exception as exc:  # noqa: BLE001 - 已发响应头，只能用事件告知失败
-            logger.exception("template slots reparse stream failed", extra={"template_id": str(template_id)})
-            detail = getattr(exc, "detail", None) or str(exc) or "分析失败，请稍后重试"
-            yield _sse(
-                {
-                    "type": "error",
-                    "message": str(detail),
-                    "elapsed_ms": int((time.perf_counter() - started) * 1000),
-                }
-            )
-            return
-        yield _sse({"type": "done", "elapsed_ms": int((time.perf_counter() - started) * 1000)})
-
-    return StreamingResponse(
-        event_stream(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache, no-transform",
-            # 让 nginx 不要缓冲：否则思考增量会攒到结束才一次性吐出来
-            "X-Accel-Buffering": "no",
-            "Connection": "keep-alive",
-        },
-    )
 
 
 def _attachment(data: bytes, filename: str, mime: str) -> Response:

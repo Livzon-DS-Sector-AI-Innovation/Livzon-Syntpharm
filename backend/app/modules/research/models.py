@@ -814,6 +814,16 @@ class RdDeliverableTemplateVersion(BaseModel):
 REPORT_GEN_JOB_STATUS_VALUES = ("queued", "running", "completed", "failed", "cancelled")
 REPORT_GEN_STEP_KIND_VALUES = ("think", "tool_call", "tool_result", "error", "status")
 REPORT_GEN_SLOT_STATE_VALUES = ("filled", "conflict", "pending", "gap", "anchor_unresolved")
+# 在线编辑允许的操作：白名单只在这七类，删母本固定段落/固定行不在其中
+REPORT_GEN_EDIT_OPERATION_VALUES = (
+    "update_text",
+    "update_cell",
+    "restore_position",
+    "insert_paragraph",
+    "delete_paragraph",
+    "append_table_row",
+    "delete_table_row",
+)
 
 
 class RdReportGenJob(BaseModel):
@@ -886,6 +896,13 @@ class RdReportGenJob(BaseModel):
     used_fallback: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false", comment="是否已降级到兜底模型"
     )
+    # 生成前意见汇总快照：只在本次任务执行时落指针，历史任务为空表示当时还没有意见库
+    opinion_digest_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_report_gen_opinion_digests.id"),
+        nullable=True,
+        comment="本次生成套用的历史意见汇总快照",
+    )
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="开始执行时间")
     finished_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="结束时间（含失败/终止）"
@@ -947,6 +964,14 @@ class RdReportGenSlot(BaseModel):
     evidence: Mapped[str | None] = mapped_column(Text, nullable=True, comment="原文证据（引文）")
     confidence: Mapped[float | None] = mapped_column(Float, nullable=True, comment="置信度 0~1")
     owner_hint: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="缺口责任方提示")
+    # 人工改过哪些位置：不改 state（CHECK 约束保持原样），用独立列表达来源，
+    # 历史数据靠 server_default 回填成 ai，不需要 UPDATE。
+    edit_source: Mapped[str] = mapped_column(
+        String(16), default="ai", server_default="ai", comment="ai=生成写入 / manual=人工修改"
+    )
+    edited_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="最近一次人工修改时间"
+    )
 
 
 class RdReportGenDocumentVersion(BaseModel):
@@ -969,7 +994,7 @@ class RdReportGenDocumentVersion(BaseModel):
             "ix_research_rd_report_gen_doc_versions_current", "job_id", "is_current"
         ),
         CheckConstraint(
-            "kind IN ('ai_draft', 'manual_render', 'manual_upload')",
+            "kind IN ('ai_draft', 'manual_render', 'manual_upload', 'manual_edit')",
             name="ck_research_rd_report_gen_doc_versions_kind",
         ),
         {"schema": "research"},
@@ -980,7 +1005,8 @@ class RdReportGenDocumentVersion(BaseModel):
     )
     version_no: Mapped[int] = mapped_column(Integer, comment="任务内递增版本号，从 1 起")
     kind: Mapped[str] = mapped_column(
-        String(20), comment="ai_draft=AI 初稿 / manual_render=按槽位重渲 / manual_upload=人工上传"
+        String(20),
+        comment="ai_draft=AI 初稿 / manual_render=按槽位重渲 / manual_upload=人工上传 / manual_edit=站内在线编辑",
     )
     object_key: Mapped[str] = mapped_column(String(500), comment="docx 存储键")
     comparison_object_key: Mapped[str | None] = mapped_column(
@@ -993,6 +1019,46 @@ class RdReportGenDocumentVersion(BaseModel):
     )
     is_current: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false", comment="是否为当前生效版本"
+    )
+
+
+class RdReportGenEdit(BaseModel):
+    """人工在线编辑流水：一条对应「改了一处」。
+
+    为什么要单独记流水而不是只留版本：版本只能回答「哪一版」，回答不了「这一段的
+    原话是什么、被谁在什么时候改成了什么」。研发报告要能追溯改动，逐条改前改后是
+    最小可用粒度；操作人沿用 BaseModel 的 ``created_by``，不另加 operator 列。
+    """
+
+    __tablename__ = "rd_report_gen_edits"
+    __table_args__ = (
+        Index("ix_research_rd_report_gen_edits_job_time", "job_id", "created_at"),
+        CheckConstraint(
+            "operation IN ('update_text', 'update_cell', 'restore_position', 'insert_paragraph',"
+            " 'delete_paragraph', 'append_table_row', 'delete_table_row')",
+            name="ck_research_rd_report_gen_edits_operation",
+        ),
+        {"schema": "research"},
+    )
+
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("research.rd_report_gen_jobs.id"), comment="所属生成任务"
+    )
+    slot_key: Mapped[str] = mapped_column(
+        String(100), comment="位置标识：p12 / t2r3c1 / ap1 / at1 / ref"
+    )
+    operation: Mapped[str] = mapped_column(
+        String(32),
+        comment="update_text/update_cell/insert_paragraph/delete_paragraph/append_table_row/delete_table_row",
+    )
+    anchor: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="定位锚点与操作上下文")
+    before_value: Mapped[str | None] = mapped_column(Text, nullable=True, comment="改前内容")
+    after_value: Mapped[str | None] = mapped_column(Text, nullable=True, comment="改后内容")
+    version_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_report_gen_document_versions.id"),
+        nullable=True,
+        comment="这次编辑落成的新版本",
     )
 
 
@@ -1106,6 +1172,71 @@ class RdReportGenFeedback(BaseModel):
         nullable=True,
         comment="落实该意见的重生成任务",
     )
+
+
+class RdReportGenOpinion(BaseModel):
+    """意见库：把「某一版上提的一次意见」沉淀成可复用的写作要求。
+
+    为什么不直接拿 ``rd_report_gen_feedback`` 当库用：那张表按报告和工作任务散着放，
+    同一类问题（如「缺少工艺参数与收率的因果关系」）会在几十份报告里重复出现，
+    生成前不可能把几百条近似句子全塞进提示词。这里按归一化文本归并并累计次数，
+    次数本身就是「这条要求有多普遍」的权重。
+    """
+
+    __tablename__ = "rd_report_gen_opinions"
+    __table_args__ = (
+        UniqueConstraint("normalized_key", name="uq_research_rd_report_gen_opinions_key"),
+        Index("ix_research_rd_report_gen_opinions_key", "normalized_key"),
+        Index("ix_research_rd_report_gen_opinions_status", "status", "hit_count"),
+        CheckConstraint(
+            "status IN ('active', 'disabled')",
+            name="ck_research_rd_report_gen_opinions_status",
+        ),
+        {"schema": "research"},
+    )
+
+    content: Mapped[str] = mapped_column(Text, comment="规范化后的意见原文")
+    normalized_key: Mapped[str] = mapped_column(String(64), comment="归一化文本的 sha256，用于相同意见归并")
+    hit_count: Mapped[int] = mapped_column(Integer, default=1, server_default="1", comment="被提出次数")
+    status: Mapped[str] = mapped_column(
+        String(12), default="active", server_default="active", comment="active=参与汇总 / disabled=人工停用"
+    )
+    last_feedback_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_report_gen_feedback.id"),
+        nullable=True,
+        comment="最近一次贡献该意见的原始记录",
+    )
+    last_seen_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="最近一次被提出时间"
+    )
+
+
+class RdReportGenOpinionDigest(BaseModel):
+    """生成前的意见汇总快照：一段写作要求 + 当时收进来的意见清单。
+
+    ``source_hash`` 是意见集合的指纹：相同集合再生成时可以复用上一份汇总，
+    集合变了就要重新归并，避免拿旧要求套新意见。
+    """
+
+    __tablename__ = "rd_report_gen_opinion_digests"
+    __table_args__ = (
+        Index("ix_research_rd_report_gen_opinion_digests_created", "created_at"),
+        CheckConstraint(
+            "status IN ('ok', 'fallback')",
+            name="ck_research_rd_report_gen_opinion_digests_status",
+        ),
+        {"schema": "research"},
+    )
+
+    digest_text: Mapped[str] = mapped_column(Text, comment="汇总后的写作要求（送进提示词的那段）")
+    item_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0", comment="本次归并的意见条数")
+    opinion_ids: Mapped[list[str] | None] = mapped_column(JSON, nullable=True, comment="参与汇总的意见 id 列表")
+    model_name: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="汇总所用模型")
+    status: Mapped[str] = mapped_column(
+        String(12), default="ok", server_default="ok", comment="ok=模型归并 / fallback=模型不可用退回原文清单"
+    )
+    source_hash: Mapped[str] = mapped_column(String(64), comment="意见集合指纹，用于判断汇总是否过期")
 
 
 # 子包 ORM 注册：Alembic 只 import app.modules.<code>.models，

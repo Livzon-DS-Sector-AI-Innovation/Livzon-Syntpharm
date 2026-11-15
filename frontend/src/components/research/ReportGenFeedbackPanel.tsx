@@ -1,25 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { App, Button, Card, Empty, Flex, Input, Select, Space, Tag, Typography } from 'antd'
+import { App, Button, Card, Empty, Flex, Input, Space, Tag, Typography } from 'antd'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  createReportGenFeedback,
-  promoteReportGenFeedback,
-  updateReportGenFeedback,
-} from '@/actions/research/report-gen'
+import { createReportGenFeedback, updateReportGenFeedback } from '@/actions/research/report-gen'
 import { fetchReportGenFeedback } from '@/lib/api/client/research/report-gen'
-import type { ReportGenFeedback, ReportGenSlot } from '@/types/research/report-gen'
+import type { ReportGenFeedback } from '@/types/research/report-gen'
+import { ReportGenOpinionLibrary } from './ReportGenOpinionLibrary'
 
 interface Props {
   jobId: string
-  slots: ReportGenSlot[]
   /** 生成中禁写：意见是对已成稿的评审，跑的时候提了也没处落 */
   disabled?: boolean
 }
-
-/** 范围下拉的「整篇」哨兵值：antd Select 不接受 null 作为选中值 */
-const WHOLE = '__whole__'
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
   open: { label: '待落实', color: 'processing' },
@@ -33,14 +26,13 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
  * 为什么值得单独做一块而不是让人把意见抄进补充说明：抄进补充说明的意见是一次性的，
  * 没人记得住哪条改了、哪条没改；这里每条都有状态，未落实的会在下次生成时自动带上。
  */
-export function ReportGenFeedbackPanel({ jobId, slots, disabled }: Props) {
+export function ReportGenFeedbackPanel({ jobId, disabled }: Props) {
   const { message: msgApi } = App.useApp()
   const queryClient = useQueryClient()
   const [content, setContent] = useState('')
-  const [scope, setScope] = useState<string>(WHOLE)
   const [submitting, setSubmitting] = useState(false)
   const [updating, setUpdating] = useState('')
-  const [promoting, setPromoting] = useState('')
+  const [libraryOpen, setLibraryOpen] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['report-gen-feedback', jobId],
@@ -61,10 +53,8 @@ export function ReportGenFeedbackPanel({ jobId, slots, disabled }: Props) {
     }
     setSubmitting(true)
     try {
-      await createReportGenFeedback(jobId, {
-        slot_key: scope === WHOLE ? null : scope,
-        content: text,
-      })
+      // 填充项清单已下线，意见统一按整篇提；slot_key 留空由后端按整篇处理
+      await createReportGenFeedback(jobId, { slot_key: null, content: text })
       setContent('')
       msgApi.success('已记录，下次生成会带上')
       refresh()
@@ -88,45 +78,28 @@ export function ReportGenFeedbackPanel({ jobId, slots, disabled }: Props) {
     }
   }
 
-  const handlePromote = async (item: ReportGenFeedback) => {
-    setPromoting(item.id)
-    try {
-      await promoteReportGenFeedback(item.id)
-      msgApi.success('已存成示例写法，下次用同一个模板生成时会参考它')
-    } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : '存成示例失败，请稍后重试')
-    } finally {
-      setPromoting('')
-    }
-  }
-
   return (
     <Card
       title="修改意见"
       extra={
-        <Tag color={openCount > 0 ? 'processing' : 'default'} style={{ margin: 0 }}>
-          待落实 {openCount} 条
-        </Tag>
+        <Space size={8}>
+          <Tag color={openCount > 0 ? 'processing' : 'default'} style={{ margin: 0 }}>
+            待落实 {openCount} 条
+          </Tag>
+          <Button size="small" onClick={() => setLibraryOpen(true)}>
+            意见库
+          </Button>
+        </Space>
       }
       style={{ borderRadius: 12 }}
     >
       <Flex vertical gap={12}>
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-          意见写成「哪里不对 + 要改成什么」最有用。还没落实的意见，会在下次生成（包括点「重新生成」）时自动交给
-          AI 处理，并在「待补充」说明里逐条回应。已经落实、你也认可的意见，可以点「存成示例写法」，下次用同一个模板生成就照这个写法填。
+          意见写成「哪里不对 + 要改成什么」最有用。每条意见都会归入「意见库」并累计出现次数；
+          下次生成时 AI 会先把意见库汇总成写作要求再动笔，未落实的具体条目也会一并带上。
         </Typography.Text>
 
         <Flex gap={8} wrap>
-          <Select
-            value={scope}
-            onChange={setScope}
-            style={{ width: 200 }}
-            disabled={disabled || submitting}
-            options={[
-              { value: WHOLE, label: '整篇' },
-              ...slots.map((slot) => ({ value: slot.slot_key, label: slot.slot_label || slot.slot_key })),
-            ]}
-          />
           <Input.TextArea
             value={content}
             onChange={(event) => setContent(event.target.value)}
@@ -173,17 +146,6 @@ export function ReportGenFeedbackPanel({ jobId, slots, disabled }: Props) {
                     )}
                   </Space>
                   <Space size={6}>
-                    {item.status === 'applied' && item.slot_key && (
-                      <Button
-                        size="small"
-                        type="link"
-                        style={{ paddingInline: 0 }}
-                        loading={promoting === item.id}
-                        onClick={() => handlePromote(item)}
-                      >
-                        存成示例写法
-                      </Button>
-                    )}
                     {item.status === 'open' ? (
                       <Button
                         size="small"
@@ -211,6 +173,8 @@ export function ReportGenFeedbackPanel({ jobId, slots, disabled }: Props) {
           })}
         </Flex>
       </Flex>
+
+      <ReportGenOpinionLibrary open={libraryOpen} onClose={() => setLibraryOpen(false)} />
     </Card>
   )
 }

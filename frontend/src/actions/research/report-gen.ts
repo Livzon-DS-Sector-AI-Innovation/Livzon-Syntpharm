@@ -6,19 +6,17 @@ import {
   cancelReportGenJob as cancelReportGenJobApi,
   createReportGenFeedback as createReportGenFeedbackApi,
   createReportGenJob as createReportGenJobApi,
-  deleteTemplateExample as deleteTemplateExampleApi,
-  promoteReportGenFeedback as promoteReportGenFeedbackApi,
+  restoreReportGenVersion as restoreReportGenVersionApi,
+  saveReportGenEdits as saveReportGenEditsApi,
   testReportGenModel as testReportGenModelApi,
   updateReportGenFeedback as updateReportGenFeedbackApi,
-  updateReportGenSlot as updateReportGenSlotApi,
-  updateTemplateExample as updateTemplateExampleApi,
+  updateReportGenOpinion as updateReportGenOpinionApi,
 } from '@/lib/api/server/research/report-gen'
 import type {
-  ReportGenExampleUpdate,
+  ReportGenEditRequest,
   ReportGenFeedbackCreate,
   ReportGenJobCreate,
   ReportGenModelSlot,
-  ReportGenSlotUpdate,
 } from '@/types/research/report-gen'
 
 /** 提交生成任务：立即返回任务行，后台 worker 异步跑 Agent。 */
@@ -32,13 +30,6 @@ export async function submitReportGenJob(payload: ReportGenJobCreate) {
 export async function cancelReportGenJob(jobId: string) {
   const result = await cancelReportGenJobApi(jobId)
   revalidatePath('/research')
-  revalidatePath(`/research/reports/generation/${jobId}`)
-  return result
-}
-
-/** 人工修正槽位：只改结果区与对照表口径，不重渲染成品。 */
-export async function saveReportGenSlot(jobId: string, slotKey: string, payload: ReportGenSlotUpdate) {
-  const result = await updateReportGenSlotApi(jobId, slotKey, payload)
   revalidatePath(`/research/reports/generation/${jobId}`)
   return result
 }
@@ -58,12 +49,33 @@ export async function updateReportGenFeedback(feedbackId: string, status: 'open'
   return updateReportGenFeedbackApi(feedbackId, status)
 }
 
+/** 停用 / 恢复一条历史意见：停用后不再进入生成前的写作要求汇总。 */
+export async function updateReportGenOpinion(opinionId: string, status: 'active' | 'disabled') {
+  const result = await updateReportGenOpinionApi(opinionId, status)
+  revalidatePath('/research')
+  return result
+}
+
 /**
- * 把已落实的意见沉淀成槽位示例：值取自那次生成的实际写法，所以只传意见 id。
- * 落库后同模板的下一次生成会把它当 few-shot 参照，等于把「评审一次」变成「永久学会」。
+ * 在线编辑保存：一批操作提交后逐条生效。
+ *
+ * 校验未通过的操作后端会丢弃并把该处还原成母本原样，其余照常保存；前端不做乐观更新，
+ * 免得出现「界面已改、文档没改」的错位。
  */
-export async function promoteReportGenFeedback(feedbackId: string) {
-  return promoteReportGenFeedbackApi(feedbackId)
+export async function saveReportGenEdits(jobId: string, payload: ReportGenEditRequest) {
+  const result = await saveReportGenEditsApi(jobId, payload)
+  if (result.applied > 0) {
+    revalidatePath(`/research/reports/generation/${jobId}`)
+    revalidatePath('/research')
+  }
+  return result
+}
+
+/** 回滚到某一版：产生新版本，不覆盖历史。 */
+export async function restoreReportGenVersion(jobId: string, versionId: string, baseVersionId?: string | null) {
+  const result = await restoreReportGenVersionApi(jobId, versionId, baseVersionId)
+  revalidatePath(`/research/reports/generation/${jobId}`)
+  return result
 }
 
 /**
@@ -72,14 +84,4 @@ export async function promoteReportGenFeedback(feedbackId: string) {
  */
 export async function testReportGenModel(slot: ReportGenModelSlot) {
   return testReportGenModelApi({ slot })
-}
-
-/** 人工维护一条槽位示例：改写法 / 补依据 / 停用。 */
-export async function updateReportGenExample(exampleId: string, payload: ReportGenExampleUpdate) {
-  return updateTemplateExampleApi(exampleId, payload)
-}
-
-/** 删除一条槽位示例（后端软删）：之后不再注入生成。 */
-export async function deleteReportGenExample(exampleId: string) {
-  return deleteTemplateExampleApi(exampleId)
 }

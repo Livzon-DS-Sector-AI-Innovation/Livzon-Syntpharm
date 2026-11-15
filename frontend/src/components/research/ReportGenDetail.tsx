@@ -1,30 +1,32 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Alert, App, Button, Card, Col, Empty, Progress, Row, Space, Spin, Statistic, Tag, Tooltip,
+  Alert, App, Button, Card, Empty, Progress, Space, Spin, Tabs, Tag, Tooltip,
 } from 'antd'
 import {
-  ArrowLeftOutlined, DownloadOutlined, EyeOutlined, FileTextOutlined, ReloadOutlined, StopOutlined,
+  ArrowLeftOutlined, DownloadOutlined, EyeOutlined, HistoryOutlined, ReloadOutlined, StopOutlined,
 } from '@ant-design/icons'
 import { cancelReportGenJob, submitReportGenJob } from '@/actions/research/report-gen'
 import {
-  downloadReportGenFile, fetchReportGenDocumentBlob, fetchReportGenJob, fetchReportGenSlots,
-  fetchReportGenSteps,
+  downloadReportGenFile, fetchReportGenDocumentBlob, fetchReportGenJob, fetchReportGenOutline,
+  fetchReportGenVersions,
 } from '@/lib/api/client/research/report-gen'
 import { fetchDeliverableReportLinks } from '@/lib/api/client/research/rd-project'
 import { RETURN_TO_PARAM, sanitizeReturnTo, withReturnTo } from '@/lib/navigation/returnTo'
-import { ReportGenTimeline } from './ReportGenTimeline'
-import { ReportGenSlotTable } from './ReportGenSlotTable'
 import { ReportGenFeedbackPanel } from './ReportGenFeedbackPanel'
+import { ReportGenFieldPanel } from './ReportGenFieldPanel'
+import { ReportGenPreviewPane } from './ReportGenPreviewPane'
+import { ReportGenReferencePanel } from './ReportGenReferencePanel'
+import { ReportGenSlotEditor } from './ReportGenSlotEditor'
+import { ReportGenVersionList } from './ReportGenVersionList'
 import { DocxPreviewModal } from './DocxPreviewModal'
-import { MarkdownPreviewModal } from './MarkdownPreviewModal'
 import { useSmartBack } from './useSmartBack'
 import {
   formatDuration, isTerminal, jobElapsedMs, jobModelSnapshot, statusMeta,
-  type ReportGenJob, type ReportGenStep,
+  type ReportGenJob,
 } from '@/types/research/report-gen'
 
 interface Props {
@@ -32,7 +34,7 @@ interface Props {
   initialJob: ReportGenJob | null
 }
 
-/** AI 报告执行过程详情：头部状态 + 执行时间线 + 槽位结果。 */
+/** AI 报告生成详情：头部状态 + 修改意见 + 写入覆盖率。 */
 export function ReportGenDetail({ jobId, initialJob }: Props) {
   const { message: msgApi } = App.useApp()
   const router = useRouter()
@@ -41,13 +43,16 @@ export function ReportGenDetail({ jobId, initialJob }: Props) {
 const smartBack = useSmartBack({ fallbackHref: '/research/reports', fallbackLabel: '报告列表' })
 // 重新生成会跳到一个新任务页，把当前来源签名原样转过去
 const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM))
-  const [downloading, setDownloading] = useState<'document' | 'comparison' | ''>('')
+  const [downloading, setDownloading] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
-  const [comparisonOpen, setComparisonOpen] = useState(false)
-  const [comparisonText, setComparisonText] = useState('')
-  const [comparisonLoading, setComparisonLoading] = useState(false)
+  const [versionsOpen, setVersionsOpen] = useState(false)
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  // 右栏页签：写入清单（位置与编辑卡）/ 参考资料（引用源，不进正文）
+  const [rightTab, setRightTab] = useState<'fields' | 'references'>('fields')
+  // 每次保存/回滚都换一版文件，预览需要重新拉取，不能只靠文件名判断
+  const [documentVersion, setDocumentVersion] = useState(0)
 
   const { data: job, error: jobError } = useQuery({
     queryKey: ['report-gen-job', jobId],
@@ -59,29 +64,47 @@ const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM))
 
   const running = !!job && !isTerminal(job.status)
 
-  // 步骤按 after_seq 增量追加：只在有新增时重建数组，避免整页刷新闪烁
-  const seqRef = useRef(0)
-  const accRef = useRef<ReportGenStep[]>([])
-  const { data: steps = [], isLoading: stepsLoading } = useQuery({
-    queryKey: ['report-gen-steps', jobId],
-    queryFn: async () => {
-      const page = await fetchReportGenSteps(jobId, seqRef.current)
-      if (page.items.length > 0) {
-        accRef.current = [...accRef.current, ...page.items]
-        seqRef.current = page.last_seq
-      }
-      return accRef.current
-    },
-    refetchInterval: running ? 2000 : false,
+  // 可写位置清单：生成中也要取（那时只有位置、还没有写入值，正好展示「准备写哪些地方」）
+  const {
+    data: outline,
+    isLoading: outlineLoading,
+    error: outlineError,
+  } = useQuery({
+    queryKey: ['report-gen-outline', jobId],
+    queryFn: () => fetchReportGenOutline(jobId),
+    enabled: !!job,
+    refetchInterval: running ? 5000 : false,
     refetchOnWindowFocus: false,
   })
 
-  const { data: slotData, isLoading: slotsLoading } = useQuery({
-    queryKey: ['report-gen-slots', jobId],
-    queryFn: () => fetchReportGenSlots(jobId),
-    refetchInterval: running ? 4000 : false,
-    refetchOnWindowFocus: false,
+  const selectedItem = useMemo(() => {
+    if (!outline || !selectedKey) return null
+    return (
+      outline.items?.find((item) => item.key === selectedKey) ??
+      outline.locked_items?.find((item) => item.key === selectedKey) ??
+      null
+    )
+  }, [outline, selectedKey])
+
+  // 版本列表：编辑要带 base_version_id 做并发校验，回滚入口也在这里
+  const { data: versionData, refetch: refetchVersions } = useQuery({
+    queryKey: ['report-gen-versions', jobId],
+    queryFn: () => fetchReportGenVersions(jobId),
+    enabled: !!job,
+    staleTime: 10_000,
   })
+  const currentVersionId = useMemo(
+    () => versionData?.items?.find((item) => item.is_current)?.id ?? null,
+    [versionData],
+  )
+
+  const handleContentSaved = () => {
+    setSelectedKey(null)
+    setDocumentVersion((value) => value + 1)
+    void queryClient.invalidateQueries({ queryKey: ['report-gen-outline', jobId] })
+    void queryClient.invalidateQueries({ queryKey: ['report-gen-job', jobId] })
+    void refetchVersions()
+  }
 
   // 从阶段交付文档发起的任务：显示来源，并给一条回项目的路
   const { data: sourceLink } = useQuery({
@@ -91,17 +114,6 @@ const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM))
     staleTime: 60_000,
     select: (items) => items[0] ?? null,
   })
-
-  // 任务进入终态（完成/失败/取消）后补一次刷新：轮询周期内落库的步骤与槽位可能还没取到
-  const statusRef = useRef(job?.status ?? null)
-  useEffect(() => {
-    const status = job?.status ?? null
-    const prev = statusRef.current
-    statusRef.current = status
-    if (!prev || prev === status || !status || !isTerminal(status)) return
-    queryClient.invalidateQueries({ queryKey: ['report-gen-steps', jobId] })
-    queryClient.invalidateQueries({ queryKey: ['report-gen-slots', jobId] })
-  }, [job?.status, jobId, queryClient])
 
   // 执行中每秒刷新耗时显示
   const [, setTick] = useState(0)
@@ -117,38 +129,18 @@ const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM))
 
   const refreshAll = () => {
     queryClient.invalidateQueries({ queryKey: ['report-gen-job', jobId] })
-    queryClient.invalidateQueries({ queryKey: ['report-gen-steps', jobId] })
-    queryClient.invalidateQueries({ queryKey: ['report-gen-slots', jobId] })
   }
 
-  const handleDownload = async (kind: 'document' | 'comparison') => {
+  const handleDownload = async () => {
     if (!job) return
-    setDownloading(kind)
+    setDownloading(true)
     try {
-      const fallback = kind === 'document'
-        ? `${job.report_title || '报告'}.docx`
-        : `${job.report_title || '报告'}-填充项对照表.md`
-      await downloadReportGenFile(jobId, kind, fallback)
+      await downloadReportGenFile(jobId, `${job.report_title || '报告'}.docx`)
       msgApi.success('下载成功')
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '下载失败')
     } finally {
-      setDownloading('')
-    }
-  }
-
-  /** 预览对照表：只在首次打开时拉一次，Markdown 文本很小，不做缓存淘汰 */
-  const handlePreviewComparison = async () => {
-    setComparisonOpen(true)
-    if (comparisonText || comparisonLoading) return
-    setComparisonLoading(true)
-    try {
-      const blob = await fetchReportGenDocumentBlob(jobId, 'comparison')
-      setComparisonText(await blob.text())
-    } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : '对照表加载失败')
-    } finally {
-      setComparisonLoading(false)
+      setDownloading(false)
     }
   }
 
@@ -268,8 +260,6 @@ const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM))
                 <>
                   <span>模型：</span>
                   <Tag style={{ margin: 0 }}>{snapshot.main || '未记录'}</Tag>
-                  <span>分析结构：</span>
-                  <Tag style={{ margin: 0 }}>{snapshot.structure || '与正文同一个模型'}</Tag>
                   <span>自动补齐：</span>
                   <Tag color={snapshot.fallback ? 'orange' : 'default'} style={{ margin: 0 }}>
                     {snapshot.fallback || '未设置'}
@@ -294,6 +284,20 @@ const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM))
                     </Tag>
                   </Tooltip>
                 ))}
+              </div>
+            )}
+            {job.opinion_digest && (
+              <div style={{ marginTop: 6, fontSize: 13, color: '#5A6472' }}>
+                <span>本次按意见库汇总生成：</span>
+                <Tooltip title={job.opinion_digest.digest_preview || '汇总内容为空'}>
+                  <Tag
+                    color={job.opinion_digest.status === 'fallback' ? 'orange' : 'purple'}
+                    style={{ marginInlineEnd: 6 }}
+                  >
+                    {job.opinion_digest.item_count} 条历史意见 ·{' '}
+                    {job.opinion_digest.status === 'fallback' ? '兜底清单' : '模型归并'}
+                  </Tag>
+                </Tooltip>
               </div>
             )}
             {running && (
@@ -324,39 +328,21 @@ const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM))
                 <Button
                   icon={<DownloadOutlined />}
                   disabled={!docReady}
-                  loading={downloading === 'document'}
-                  onClick={() => handleDownload('document')}
+                  loading={downloading}
+                  onClick={() => void handleDownload()}
                 >
                   下载 Word 文档
                 </Button>
               </span>
             </Tooltip>
-            <Tooltip title="看看每项内容分别来自哪份资料">
+            <Tooltip title="查看 AI 初稿、在线编辑与人工上传的历史版本，可回滚">
               <span>
-                <Button
-                  icon={<FileTextOutlined />}
-                  disabled={!job.status || job.status !== 'completed'}
-                  loading={comparisonLoading}
-                  onClick={handlePreviewComparison}
-                >
-                  查看对照表
+                <Button icon={<HistoryOutlined />} disabled={!docReady} onClick={() => setVersionsOpen(true)}>
+                  版本
                 </Button>
               </span>
             </Tooltip>
-            <Tooltip title="下载对照表 Markdown，便于存档或随稿流转">
-              <span>
-                <Button
-                  type="text"
-                  icon={<DownloadOutlined />}
-                  disabled={!job.status || job.status !== 'completed'}
-                  loading={downloading === 'comparison'}
-                  onClick={() => handleDownload('comparison')}
-                >
-                  下载对照表
-                </Button>
-              </span>
-            </Tooltip>
-            <Tooltip title="会重新跑一次生成并覆盖当前文档，人工改过的内容不会自动带过去">
+            <Tooltip title="会重新跑一次生成并生成新文档；人工改过的位置会按人工值保留，AI 不会覆盖">
               <Button icon={<ReloadOutlined />} loading={regenerating} onClick={handleRegenerate}>
                 重新生成
               </Button>
@@ -398,56 +384,122 @@ const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM))
         )}
       </Card>
 
-      <ReportGenFeedbackPanel jobId={jobId} slots={slotData?.items ?? []} disabled={running} />
-
-      <Row gutter={16}>
-        <Col xs={24} xl={14}>
-          <Card title="生成过程" styles={{ body: { maxHeight: 720, overflow: 'auto' } }}>
-            <ReportGenTimeline steps={steps} running={running || stepsLoading} />
-          </Card>
-        </Col>
-        <Col xs={24} xl={10}>
-          <Card
-            title="填充项结果"
-            extra={
-              <Space size={12}>
-                <Tooltip title="已经写进文档的填充项数量">
-                  <Statistic title="已填" value={slotData?.filled ?? job.slot_filled} valueStyle={{ fontSize: 16 }} />
-                </Tooltip>
-                <Tooltip title="找不到依据、需要人工补充的填充项数量">
-                  <Statistic title="待补充" value={slotData?.gaps ?? job.slot_gap} valueStyle={{ fontSize: 16 }} />
-                </Tooltip>
-              </Space>
-            }
-            styles={{ body: { maxHeight: 720, overflow: 'auto' } }}
+      <Card
+        styles={{ body: { padding: 0 } }}
+        style={{ borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 12px rgba(31, 35, 41, 0.06)' }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            height: 'min(760px, 76vh)',
+            minHeight: 520,
+          }}
+        >
+          <div
+            style={{
+              flex: '1 1 620px',
+              minWidth: 0,
+              height: '100%',
+              borderRight: '1px solid #EDEFF2',
+            }}
           >
-            <ReportGenSlotTable
+            <ReportGenPreviewPane
               jobId={jobId}
-              slots={slotData?.items ?? []}
-              loading={slotsLoading}
-              editable={isTerminal(job.status)}
+              data={outline}
+              selectedKey={selectedKey}
+              documentVersion={documentVersion}
+              onSelect={(item) => {
+                // 在预览里点位置时回到「写入清单」，编辑卡才能露出来
+                setRightTab('fields')
+                setSelectedKey(item.key)
+              }}
             />
-            {(slotData?.items ?? []).length === 0 && !slotsLoading && (
-              <div style={{ padding: '32px 0', textAlign: 'center', color: '#8C8C8C', fontSize: 13 }}>
-                {running ? '正在逐项填写内容…' : '还没有填写记录。可以点「重新生成」，让 AI 重新分析模板结构再写一遍。'}
-              </div>
-            )}
-          </Card>
-        </Col>
-      </Row>
+          </div>
+          <div
+            style={{
+              flex: '0 1 430px',
+              minWidth: 340,
+              height: '100%',
+              background: '#FFFFFF',
+            }}
+          >
+            <Tabs
+              size="small"
+              activeKey={rightTab}
+              onChange={(key) => setRightTab(key as 'fields' | 'references')}
+              style={{ height: '100%' }}
+              styles={{
+                root: { height: '100%', display: 'flex', flexDirection: 'column' },
+                header: { margin: 0, paddingLeft: 8 },
+                body: { flex: 1, minHeight: 0 },
+                content: { height: '100%' },
+              }}
+              items={[
+                {
+                  key: 'fields',
+                  label: '写入清单',
+                  children: (
+                    <div style={{ height: '100%', minHeight: 0 }}>
+                      {selectedItem ? (
+                        <ReportGenSlotEditor
+                          key={selectedItem.key}
+                          jobId={jobId}
+                          item={selectedItem}
+                          baseVersionId={currentVersionId}
+                          onBack={() => setSelectedKey(null)}
+                          onSaved={handleContentSaved}
+                        />
+                      ) : (
+                        <ReportGenFieldPanel
+                          data={outline}
+                          loading={outlineLoading}
+                          error={outlineError instanceof Error ? outlineError : null}
+                          selectedKey={selectedKey}
+                          onSelect={(item) => setSelectedKey(item.key)}
+                        />
+                      )}
+                    </div>
+                  ),
+                },
+                {
+                  key: 'references',
+                  label: `参考资料 ${outline?.references?.length ?? 0}`,
+                  children: (
+                    <div style={{ height: '100%', minHeight: 0 }}>
+                      <ReportGenReferencePanel
+                        data={outline}
+                        loading={outlineLoading}
+                        onLocate={(key) => {
+                          setRightTab('fields')
+                          setSelectedKey(key)
+                        }}
+                      />
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          </div>
+        </div>
+      </Card>
+
+      <ReportGenFeedbackPanel jobId={jobId} disabled={running} />
 
       <DocxPreviewModal
         open={previewOpen}
         title={job.report_title || '报告预览'}
-        loadBlob={() => fetchReportGenDocumentBlob(jobId, 'document')}
-        onDownload={() => handleDownload('document')}
+        loadBlob={() => fetchReportGenDocumentBlob(jobId)}
+        onDownload={() => void handleDownload()}
         onClose={() => setPreviewOpen(false)}
       />
-      <MarkdownPreviewModal
-        open={comparisonOpen}
-        title={`${job.report_title || '报告'} · 填充项对照表`}
-        markdown={comparisonLoading ? '正在加载对照表…' : comparisonText}
-        onClose={() => setComparisonOpen(false)}
+
+      <ReportGenVersionList
+        jobId={jobId}
+        open={versionsOpen}
+        currentVersionId={currentVersionId}
+        onClose={() => setVersionsOpen(false)}
+        onRestored={handleContentSaved}
       />
     </div>
   )

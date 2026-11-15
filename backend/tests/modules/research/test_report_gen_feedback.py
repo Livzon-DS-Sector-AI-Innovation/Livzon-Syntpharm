@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 import pytest
@@ -20,7 +20,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.core.database import get_db
 from app.core.exceptions import BadRequestException
-from app.modules.research.models import RdReportGenExample, RdReportGenFeedback, RdReportGenJob
+from app.modules.research.models import RdReportGenFeedback, RdReportGenJob, RdReportGenOpinion
 from app.modules.research.report_gen import service as service_module
 from app.modules.research.report_gen.api import router as report_gen_router
 from app.modules.research.report_gen.feedback import (
@@ -29,7 +29,6 @@ from app.modules.research.report_gen.feedback import (
     merge_supplement,
 )
 from app.modules.research.report_gen.schemas import (
-    ReportGenExamplePromoteData,
     ReportGenFeedbackCreateRequest,
     ReportGenFeedbackData,
     ReportGenFeedbackListData,
@@ -67,12 +66,14 @@ class _Session:
         slot: Any = None,
         feedback: Any = None,
         rows: list[Any] | None = None,
+        opinions: list[Any] | None = None,
     ) -> None:
         self.job = job
         self.slot_keys = slot_keys or []
         self.slot = slot
         self.feedback = feedback
         self.rows = rows or []
+        self.opinions = opinions or []
         self.added: list[Any] = []
         self.commits = 0
         self.flushes = 0
@@ -84,12 +85,24 @@ class _Session:
 
     async def execute(self, stmt: Any) -> _Result:
         text = str(stmt)
+        if "rd_report_gen_opinions" in text:
+            return _Result(self.opinions)
         if "rd_report_gen_slots" in text:
             if self.slot is not None:
                 return _Result([self.slot])
             if self.slot_keys:
                 return _Result([uuid4() for _ in self.slot_keys])
         return _Result(self.rows)
+
+    def begin_nested(self) -> _Session:
+        """意见入库在 savepoint 里做：测试里让它退化成自身即可。"""
+        return self
+
+    async def __aenter__(self) -> _Session:
+        return self
+
+    async def __aexit__(self, *_exc: Any) -> bool:
+        return False
 
     def add(self, obj: Any) -> None:
         self.added.append(obj)
@@ -207,6 +220,72 @@ async def test_create_feedback_normalizes_content() -> None:
     assert isinstance(session.added[0], RdReportGenFeedback)
 
 
+def _opinion_row(**overrides: Any) -> Any:
+    row = SimpleNamespace(
+        id=uuid4(),
+        content="结果要写因果",
+        normalized_key="key",
+        hit_count=1,
+        status="active",
+        last_feedback_id=None,
+        last_seen_at=None,
+        updated_by=None,
+    )
+    for key, value in overrides.items():
+        setattr(row, key, value)
+    return row
+
+
+async def test_create_feedback_records_into_opinion_library() -> None:
+    """每条意见都要归入全局意见库：报告上的记录是原始凭证，库里的条目才是可复用的要求。"""
+    session = _Session(job=_job())
+
+    await service_module.create_feedback(
+        cast(Any, session),
+        session.job.id,
+        ReportGenFeedbackCreateRequest(content="  结果要写  因果  "),
+        None,
+    )
+
+    created = [obj for obj in session.added if isinstance(obj, RdReportGenOpinion)]
+    assert len(created) == 1
+    assert created[0].content == "结果要写 因果"
+    assert created[0].hit_count == 1
+    assert created[0].status == "active"
+    assert created[0].normalized_key
+
+
+async def test_same_opinion_accumulates_hit_count() -> None:
+    opinion = _opinion_row(hit_count=3)
+    session = _Session(job=_job(), opinions=[opinion])
+
+    await service_module.create_feedback(
+        cast(Any, session),
+        session.job.id,
+        ReportGenFeedbackCreateRequest(content="结果要写因果"),
+        None,
+    )
+
+    assert opinion.hit_count == 4
+    assert not [obj for obj in session.added if isinstance(obj, RdReportGenOpinion)]
+
+
+async def test_disabled_opinion_is_not_reenabled_by_new_feedback() -> None:
+    """停用是人工判断「这条不该再影响生成」，后续同类意见不能把它自动打开。"""
+    opinion = _opinion_row(hit_count=5, status="disabled")
+    session = _Session(job=_job(), opinions=[opinion])
+
+    await service_module.create_feedback(
+        cast(Any, session),
+        session.job.id,
+        ReportGenFeedbackCreateRequest(content="结果要写因果"),
+        None,
+    )
+
+    assert opinion.status == "disabled"
+    assert opinion.hit_count == 5
+
+
 async def test_list_feedback_counts_open_items() -> None:
     rows = [_feedback_row(), _feedback_row(status="applied", applied_job_id=uuid4())]
     session = _Session(job=_job(), rows=rows)
@@ -240,55 +319,6 @@ async def test_update_feedback_reopen_clears_applied_job() -> None:
 
 def _applied_feedback(**overrides: Any) -> Any:
     return _feedback_row(status="applied", applied_job_id=uuid4(), slot_key="study_conclusion", **overrides)
-
-
-def _promote_session(row: Any, *, slot_value: str | None = "收率 92%，与工艺验证批一致") -> _Session:
-    slot = SimpleNamespace(slot_key=row.slot_key, slot_label="研究结论", value=slot_value)
-    job = SimpleNamespace(id=row.applied_job_id, deliverable_template_id=uuid4(), is_deleted=False)
-    return _Session(job=job, feedback=row, slot=slot, rows=[])
-
-
-async def test_promote_requires_slot_level_feedback() -> None:
-    row = _feedback_row(status="applied", applied_job_id=uuid4())
-    session = _Session(feedback=row)
-
-    with pytest.raises(BadRequestException):
-        await service_module.promote_feedback(session, row.id, None)
-
-
-async def test_promote_requires_applied_status() -> None:
-    row = _feedback_row(slot_key="study_conclusion")
-    session = _Session(feedback=row)
-
-    with pytest.raises(BadRequestException):
-        await service_module.promote_feedback(session, row.id, None)
-
-
-async def test_promote_rejects_blank_slot_value() -> None:
-    row = _applied_feedback()
-    session = _promote_session(row, slot_value="   ")
-
-    with pytest.raises(BadRequestException):
-        await service_module.promote_feedback(session, row.id, None)
-
-
-async def test_promote_creates_example_from_applied_value() -> None:
-    row = _applied_feedback(content="结论要落到收率与批次")
-    session = _promote_session(row)
-
-    data = await service_module.promote_feedback(session, row.id, uuid4())
-
-    assert data.slot_key == "study_conclusion"
-    assert data.value == "收率 92%，与工艺验证批一致"
-    assert data.source == "feedback_promoted"
-    assert data.created is True
-
-    example = session.added[0]
-    assert isinstance(example, RdReportGenExample)
-    assert example.source == "feedback_promoted"
-    # 意见原文进 evidence_text：示例库要能回答「为什么这里该这么写」
-    assert example.evidence_text == "结论要落到收率与批次"
-    assert session.commits == 1
 
 
 # ---------------------------------------------------------------- 接口契约
@@ -384,26 +414,7 @@ async def test_update_feedback_endpoint_returns_new_status(
     assert response.json()["data"]["status"] == "ignored"
 
 
-async def test_promote_endpoint_returns_promoted_source(
-    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    feedback_id = uuid4()
-
-    async def _promote(_db, _feedback_id, _user):  # noqa: ANN001, ANN202
-        return ReportGenExamplePromoteData(
-            feedback_id=str(_feedback_id),
-            slot_key="study_conclusion",
-            slot_label="研究结论",
-            value="收率 92%",
-            source="feedback_promoted",
-            created=True,
-        )
-
-    monkeypatch.setattr(service_module, "promote_feedback", _promote)
-
-    response = await client.post(f"/api/v1/research/report-gen/feedback/{feedback_id}/promote")
-
-    assert response.status_code == 200
-    body = response.json()
-    assert body["data"]["source"] == "feedback_promoted"
-    assert body["message"] == "已存成示例写法，以后生成会参考"
+async def test_promote_endpoint_is_gone(client: AsyncClient) -> None:
+    """意见沉淀成示例写法的入口随示例库一起下线。"""
+    response = await client.post(f"/api/v1/research/report-gen/feedback/{uuid4()}/promote")
+    assert response.status_code == 404

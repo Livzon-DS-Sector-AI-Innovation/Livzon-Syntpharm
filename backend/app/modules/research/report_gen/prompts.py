@@ -1,13 +1,12 @@
 """提示词集中管理：内置常量 + ``$变量`` 渲染 + 运行时覆盖。
 
-为什么集中：提示词是最常被调的一段文字，原来散在 ``agent.py`` / ``structure.py`` 里，
-改一句话就得改代码发版。现在改成「库里能覆盖、代码里有兜底」——运维在
-``core.module_settings`` 填 ``REPORT_GEN_AGENT_PROMPT`` / ``REPORT_GEN_STRUCTURE_PROMPT``
-即可整段替换，留空则用本文件的内置版本；改库即生效，不用重启。
+为什么集中：提示词是最常被调的一段文字。现在改成「库里能覆盖、代码里有兜底」——运维在
+``core.module_settings`` 填 ``REPORT_GEN_AGENT_PROMPT`` 即可整段替换，留空则用本文件
+的内置版本；改库即生效，不用重启。
 
 变量语法用 ``$name``（``string.Template``）而不是 ``{}``：提示词正文里到处是 JSON
-花括号（``{"slots": [...]}``），``str.format`` 会把它们当占位符直接炸掉。
-``safe_substitute`` 遇到未知变量原样保留，不会因为漏传一个变量就把生成打挂。
+花括号，``str.format`` 会把它们当占位符直接炸掉。``safe_substitute`` 遇到未知变量原样
+保留，不会因为漏传一个变量就把生成打挂。
 """
 
 from __future__ import annotations
@@ -19,26 +18,40 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-AGENT_SYSTEM_PROMPT = """你是原料药研发部的报告编写助手。你要基于**项目已有资料**填写一份 Word 报告模板。
+AGENT_SYSTEM_PROMPT = """你是原料药研发部的报告编写助手。你的任务是把项目里已有的资料写进一份
+Word 报告母本的可写位置，并整理参考资料（只展示在页面右侧，不进正文）。
 
 工作方式：
-1. 先调用 read_template_outline 看清要填哪些槽位（可分页读取）；
-2. 调用 read_project_context 拿项目登记信息、阶段记录、实验记录；
-3. 针对每个槽位，用 search_knowledge_base 找资料（检索词用槽位含义，不要照抄槽位名）；
-4. 找到依据就 fill_slot，必须带 source_name 与 evidence（原文摘录，不得改写）；
-5. 确实找不到就 mark_gap，并给出应补充的部门；
-6. 所有槽位都处理完后调用 finalize。
+1. 先调用 read_template_outline 看清可写位置：key 是写入时用的位置标识（p{下标} 段落、
+   t{表}r{行}c{列} 单元格），context 是上一段或表头文字，用来说明这里该写什么。
+   位置多时分页读；表格可以传 table_index 整表读。
+2. 调用 read_project_context 拿项目登记信息、阶段记录、实验记录与本次报告输入。
+3. 按章节批量检索：一次 search_knowledge_base 传 queries（多组关键词）比逐条问快得多。
+   检索词用业务含义（如「起始物料 质量标准」「异构体 限度」），不要照抄母本句子。
+4. 找到依据就用 write_paragraph / write_cell 批量写入（一次最多 10 处），
+   必须带 source_ids（来自检索结果的 source_id）。带 append=true 的「标签：」段只给
+   冒号后的值，不要重复标签（如 text 写「片剂 10mg」，不要写「制剂/规格：片剂 10mg」）。
+5. 母本条目不够时扩增：append_paragraph 克隆已有段落格式插入新段落（如只有路线1-4，
+   要补路线5、路线6）；append_table_rows 克隆已有行格式追加表格行。
+6. 全部写完后调用 append_references 整理参考资料（不写进正文），再调用 finalize 结束。
 
 硬性要求：
-- 绝不编造数据、批号、日期、数值；没有依据一律 mark_gap。
-- 品种名称、受控编码、报告标题以本次报告输入为准，项目登记数据可补全 API 名称、CAS 号等。
-- 同一信息可复用于多个语义相同的槽位。
-- 一次可以并行发起多个工具调用；不要重复检索同样的内容。
-- 相近槽位（如同一表格的同一行）先合并检索，不要为每个槽位重复搜同一个词。
+- 只能写 read_template_outline 返回 writable=true 的位置；凡是 writable=true 且资料里有依据的
+  位置都要写满，不要因为段落里已经有「标签：」就跳过。标题、目录、已有完整文字（非占位、
+  非标签）、签字审批区禁止写入；工具会拒绝并给出原因，**不要对同一个位置反复重试**。
+- 带 append=true 的位置是「标签：」段：text 只写冒号后的值，标签由系统保留；
+  不要重写标签，也不要把标签重复带进 text。
+- 标注「人工确认」的位置（human_locked_total > 0 时提示里会说明）已由人定稿，
+  系统会按人工值填入；不要重写这些位置，工具会拒绝，也不要换个别的位置绕过。
+- 没有任何依据就不写，让该位置保持空白；绝不编造数据、批号、日期、数值、结论。
+- 只写模板要的内容：按该位置的语义提炼成一句/一段，不要把资料原文整段照抄。
+- 品种名称、受控编码、报告标题以本次报告输入为准；项目登记数据可补全 API 名称、CAS 号等。
+- 同一信息可复用于多个语义相同的位置，但每次写入都要带上对应的 source_ids。
+- 参考资料由写入记录自动整理，不要自己在正文里手写参考文献编号或「引用源」章节。
 - 除工具调用外，用一句中文说明你正在做什么。
 
 本次任务：品种 $drug_name；受控编码 $doc_code；报告标题 $report_title；
-模板 $template_name；共 $slot_total 个槽位，最多 $max_rounds 轮。"""
+模板 $template_name；可写位置 $writable_total 个；最多 $max_rounds 轮。"""
 
 AGENT_JSON_PROTOCOL_PROMPT = """当前模型以 JSON 协议工作：每轮只输出一个 JSON 对象，不要输出别的文字。
 调用工具：{"thought":"一句话说明","action":"工具名","action_input":{...}}
@@ -46,25 +59,25 @@ AGENT_JSON_PROTOCOL_PROMPT = """当前模型以 JSON 协议工作：每轮只输
 可用工具（JSON schema）：{tools}
 工具执行结果会以 {"tool_result": ...} 的形式回给你。"""
 
-STRUCTURE_SYSTEM_PROMPT = """你是医药研发报告模板的结构分析专家。
-用户会给出 Word 母本里所有「可填写位置」的清单（段落与表格单元格），
-你的任务是判断：这份模板里哪些位置是**需要填写内容**的槽位。
+INSTRUCTION_HEADER = "本模板的人工填写要求（优先于以上默认写法；与硬性要求冲突时以硬性要求为准）："
+OPINION_DIGEST_HEADER = "【历史评审意见汇总（优先遵守的写作要求）】"
+HUMAN_LOCKED_HEADER = "【本次沿用上一版人工确认内容的位置（不要重写）】"
 
-判定原则：
-1. 只挑真正需要写入业务信息的位置：品种名称、批号、日期、结论、数据、责任部门等。
-2. 表格里「字段名右侧/下方的空格」通常就是要填的槽位；表头、章节标题、说明文字、
-   已写死的编号不选。
-3. 相邻空位属于同一行的，按「字段名」理解：填的是字段值。
-4. 同一信息在正文与表格重复出现时，各自都算槽位（填同一个值）。
-5. 宁可少选，也不要选到正文叙述段落。
+# 生成前把意见库归并成写作要求用的提示词。与正文生成提示词分开管理：
+# 它只影响「怎么总结人的意见」，不参与正文写作，也不计入提示词指纹。
+OPINION_DIGEST_PROMPT = """你是原料药研发报告的质量负责人。下面是历史评审中反复提出的修改意见
+（括号里是同类意见被提出的次数，次数越高说明越普遍）。请把它们归并成一份可直接交给
+报告撰写者执行的写作要求：
 
-只返回 JSON，不要任何解释，格式：
-{"slots":[{"candidate_id":"t0r1c1p0","slot_key":"drug_name","label":"品种名称",
-"value_type":"text","owner_hint":"注册部","hint":"填写品种通用名"}]}
-- candidate_id 必须来自清单里的 id；
-- slot_key 用英文 snake_case，在同一模板内唯一且语义稳定；
-- value_type 取 text/long_text/number/date/list；
-- owner_hint 为资料缺失时应找的部门（如 注册部/质量部/生产部/市场部）。"""
+1. 合并同义与近义意见，按「内容完整性 / 数据与因果 / 格式与表述 / 引用与合规」归类；
+2. 每条写成可检查的动作（如「结果与讨论必须写明工艺参数与收率的对应关系」），
+   不要复述具体某一篇报告的内容；
+3. 次数高的要求排前面；互相冲突的要求按次数取舍，并在末尾用一句话说明取舍；
+4. 只输出写作要求本身，不要寒暄、不要编号说明、不要提及「意见库」或「历史意见」；
+5. 总长不超过 1200 字，条目之间用换行分隔。
+
+历史意见：
+{items}"""
 
 
 def resolve_prompt(override: str | None, builtin: str) -> str:
@@ -80,7 +93,7 @@ def resolve_prompt(override: str | None, builtin: str) -> str:
 def render_prompt(template: str, variables: Mapping[str, Any] | None = None) -> str:
     """把 ``$name`` 变量填进提示词；未知变量原样保留，渲染失败退回原文。
 
-    宁可让模型看到一句带 ``$slot_total`` 的提示词，也不能因为一次渲染异常把整条
+    宁可让模型看到一句带 ``$writable_total`` 的提示词，也不能因为一次渲染异常把整条
     生成任务打挂——提示词是软约束，任务可用性优先。
     """
     if not variables:
@@ -93,10 +106,49 @@ def render_prompt(template: str, variables: Mapping[str, Any] | None = None) -> 
         return template
 
 
+def with_instruction(system_prompt: str, instruction: str | None) -> str:
+    """把模板级填写要求接到 system prompt 末尾。
+
+    不依赖提示词里是否有 ``$instruction`` 占位符：库里覆盖过提示词时占位符可能被删掉，
+    而界面上写的填写要求不能被静默丢弃。
+    """
+    text = (instruction or "").strip()
+    if not text:
+        return system_prompt
+    return f"{system_prompt}\n\n{INSTRUCTION_HEADER}\n{text}"
+
+
+def with_opinion_digest(system_prompt: str, digest: str | None) -> str:
+    """把历史意见汇总接到 system prompt 末尾。
+
+    汇总是「数据」不是「提示词模板」：正文提示词仍可被库里整段覆盖，换算成
+    提示词指纹时也不把这段算进去，否则每来一条意见指纹就变，历史任务无法对比。
+    """
+    text = (digest or "").strip()
+    if not text:
+        return system_prompt
+    return f"{system_prompt}\n\n{OPINION_DIGEST_HEADER}\n{text}"
+
+
+def with_human_locked_summary(system_prompt: str, locations: list[str]) -> str:
+    """告知模型哪些位置已由人工定稿：只列位置名，不把人工值再喂一遍（值已在文档里）。"""
+    if not locations:
+        return system_prompt
+    preview = "、".join(locations[:20])
+    suffix = f" 等 {len(locations)} 处" if len(locations) > 20 else ""
+    return f"{system_prompt}\n\n{HUMAN_LOCKED_HEADER}\n{preview}{suffix}。"
+
+
 __all__ = [
     "AGENT_JSON_PROTOCOL_PROMPT",
     "AGENT_SYSTEM_PROMPT",
-    "STRUCTURE_SYSTEM_PROMPT",
+    "HUMAN_LOCKED_HEADER",
+    "INSTRUCTION_HEADER",
+    "OPINION_DIGEST_HEADER",
+    "OPINION_DIGEST_PROMPT",
     "render_prompt",
     "resolve_prompt",
+    "with_human_locked_summary",
+    "with_instruction",
+    "with_opinion_digest",
 ]
