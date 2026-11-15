@@ -4,11 +4,11 @@ Revision ID: 0116_hr_org_records
 Revises: 0115_add_deviation_investigation_drafts
 Create Date: 2026-11-13
 
-Squashed HR migration for main. Unlike the UAT-only history, this migration
-never adds or drops anything on `identity.departments`; the HR org mirror lives
-entirely in `hr.departments`.
+Squashed HR migration for main. It does not read or write `identity.departments`;
+the HR org mirror lives entirely in `hr.departments`.
 
-Only the `hr` schema is changed.
+Only `hr` tables are created here. The `created_by`/`updated_by` FKs to
+`identity.users` are inherited from `shared.base_model.BaseModel`.
 """
 
 from collections.abc import Sequence
@@ -403,55 +403,6 @@ def upgrade() -> None:
     op.drop_table(_DEPARTURE, schema=_SCHEMA)
     _create_departure()
     op.drop_table("offboarding_records", schema=_SCHEMA)
-
-    op.execute(
-        sa.text(
-            """
-            UPDATE hr.departments AS h
-            SET feishu_department_id = i.feishu_department_id,
-                parent_feishu_department_id = i.parent_feishu_department_id,
-                level = CASE
-                    WHEN i.parent_feishu_department_id IS NULL THEN 1
-                    WHEN i.parent_feishu_department_id IN (
-                        SELECT feishu_department_id FROM identity.departments
-                    ) THEN 2
-                    ELSE 1
-                END,
-                "order" = i."order",
-                status_is_deleted = COALESCE(i.status_is_deleted, false)
-            FROM identity.departments AS i
-            WHERE h.feishu_department_id IS NULL
-              AND i.is_deleted = false
-              AND h.name = i.name
-            """
-        )
-    )
-    op.execute(
-        sa.text(
-            """
-            INSERT INTO hr.departments (
-                id, name, code, description, feishu_department_id, parent_feishu_department_id,
-                level, "order", status_is_deleted, created_at, updated_at, is_deleted
-            )
-            SELECT
-                gen_random_uuid(), i.name, NULL, NULL, i.feishu_department_id, i.parent_feishu_department_id,
-                CASE
-                    WHEN i.parent_feishu_department_id IS NULL THEN 1
-                    WHEN i.parent_feishu_department_id IN (
-                        SELECT feishu_department_id FROM identity.departments
-                    ) THEN 2
-                    ELSE 1
-                END,
-                i."order", COALESCE(i.status_is_deleted, false), now(), now(), false
-            FROM identity.departments AS i
-            WHERE i.is_deleted = false
-              AND NOT EXISTS (
-                  SELECT 1 FROM hr.departments AS h WHERE h.feishu_department_id = i.feishu_department_id
-              )
-            """
-        )
-    )
-    op.execute(sa.text("UPDATE hr.departments SET status_is_deleted = true WHERE feishu_department_id IS NULL"))
 
 
 def downgrade() -> None:

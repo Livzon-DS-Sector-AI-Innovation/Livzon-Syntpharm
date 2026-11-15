@@ -160,6 +160,17 @@ class TestPeopleList:
 
         assert response.status_code == 401
 
+    async def test_invalid_status_is_rejected(
+        self,
+        auth_client: AsyncClient,
+        db_session: AsyncSession,
+    ) -> None:
+        await _seed(db_session)
+
+        response = await auth_client.get(LIST_URL, params={"status": "bogus"})
+
+        assert response.status_code == 400
+
     async def test_lists_all_in_scope_people_with_total_and_last_sync(
         self,
         auth_client: AsyncClient,

@@ -36518,6 +36518,16 @@ export interface components {
              */
             FEISHU__PLATFORM__APP_SECRET: string;
             /**
+             * Feishu  Hr  Credentials  App Id
+             * @default
+             */
+            FEISHU__HR__CREDENTIALS__APP_ID: string;
+            /**
+             * Feishu  Hr  Credentials  App Secret
+             * @default
+             */
+            FEISHU__HR__CREDENTIALS__APP_SECRET: string;
+            /**
              * Feishu  Vehicle  Credentials  App Id
              * @default
              */
@@ -36588,6 +36598,10 @@ export interface components {
             FEISHU__PLATFORM__APP_ID?: string | null;
             /** Feishu  Platform  App Secret */
             FEISHU__PLATFORM__APP_SECRET?: string | null;
+            /** Feishu  Hr  Credentials  App Id */
+            FEISHU__HR__CREDENTIALS__APP_ID?: string | null;
+            /** Feishu  Hr  Credentials  App Secret */
+            FEISHU__HR__CREDENTIALS__APP_SECRET?: string | null;
             /** Feishu  Vehicle  Credentials  App Id */
             FEISHU__VEHICLE__CREDENTIALS__APP_ID?: string | null;
             /** Feishu  Vehicle  Credentials  App Secret */

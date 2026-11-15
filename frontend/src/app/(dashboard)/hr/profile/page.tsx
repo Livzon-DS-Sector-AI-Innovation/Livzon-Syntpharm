@@ -2,15 +2,14 @@ import { fetchEmployeeDepartmentsAction, fetchEmployeeProfilesAction, fetchOrgSy
 import { EmployeeDirectoryClient } from '@/components/hr'
 import { unwrapResponse } from '@/lib/api/server/base'
 import { unavailableOrgSyncStatus } from '@/lib/hr/orgSyncStatus'
+import type { EmployeeProfileListData, OrgDepartmentTreeResponse } from '@/types/hr'
 
 export const dynamic = 'force-dynamic'
 
-function safeUnwrap<T>(
-  result: PromiseSettledResult<{ code: number; data?: T | null; message?: string; meta?: unknown }>,
-): T | null {
+function unwrapOrNull<T>(result: PromiseSettledResult<Parameters<typeof unwrapResponse>[0]>): T | null {
   if (result.status !== 'fulfilled') return null
   try {
-    return unwrapResponse(result.value)
+    return unwrapResponse(result.value) as T
   } catch {
     return null
   }
@@ -23,9 +22,9 @@ export default async function EmployeeProfilePage() {
     fetchOrgSyncStatus(),
   ])
 
-  const treeData = safeUnwrap(treeResult)
-  const people = safeUnwrap(peopleResult)
-  const status = safeUnwrap(statusResult) ?? unavailableOrgSyncStatus()
+  const treeData = unwrapOrNull<OrgDepartmentTreeResponse['data']>(treeResult)
+  const people = unwrapOrNull<EmployeeProfileListData>(peopleResult)
+  const status = statusResult.status === 'fulfilled' ? statusResult.value : unavailableOrgSyncStatus()
 
   return (
     <EmployeeDirectoryClient

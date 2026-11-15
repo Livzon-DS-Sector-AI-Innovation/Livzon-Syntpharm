@@ -4,7 +4,13 @@ import { useEffect, useState } from 'react'
 import { Button, Card, Form, Input, Modal, Popconfirm, Select, Space, Table, Tabs, message } from 'antd'
 import { PlusOutlined, DeleteOutlined, EditOutlined, SyncOutlined } from '@ant-design/icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { TrainingTeam, TrainingTeamCreateInput, TrainingTeamUpdateInput, TrainingSpecialist } from '@/types/hr'
+import type {
+  TrainingTeam,
+  TrainingTeamCreateInput,
+  TrainingTeamUpdateInput,
+  TrainingSpecialist,
+  TrainingOpenIdsSyncResult,
+} from '@/types/hr'
 import { fetchTrainingSpecialists, fetchTrainingTeams, fetchDepartments, fetchHrJob } from '@/lib/api/client/hr'
 import { usePollingJob } from '@/hooks/usePollingJob'
 import {
@@ -17,10 +23,7 @@ import {
 } from '@/actions/hr'
 import { RemoteEmployeeSelect, type RemoteEmployeeOption } from '@/components/hr/RemoteEmployeeSelect'
 
-interface SyncOpenIdsResult {
-  synced: number
-  failed: number
-}
+
 
 export default function TrainingSpecialistsClient() {
   const queryClient = useQueryClient()
@@ -43,13 +46,13 @@ export default function TrainingSpecialistsClient() {
   // ── Feishu open_id sync (background job) ──
   const [syncJobId, setSyncJobId] = useState<string | null>(null)
   const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
-  const syncJob = usePollingJob<SyncOpenIdsResult>({
+  const syncJob = usePollingJob<TrainingOpenIdsSyncResult>({
     jobId: syncJobId,
     startedAt: syncStartedAt,
     queryKey: ['hr-job', syncJobId],
     fetchJob: async (id) => {
       const state = await fetchHrJob(id)
-      return { job_id: id, status: state.status, result: state.result as SyncOpenIdsResult | null, error: state.error }
+      return { job_id: id, status: state.status, result: state.result as TrainingOpenIdsSyncResult | null, error: state.error }
     },
   })
 
@@ -97,7 +100,7 @@ export default function TrainingSpecialistsClient() {
   const handleSyncOpenIds = async () => {
     try {
       const json = await syncTrainingSpecialistsFeishuOpenIds()
-      setSyncJobId(json.data.job_id)
+      setSyncJobId(json.job_id)
       setSyncStartedAt(Date.now())
       message.info('同步任务已提交，正在后台处理…')
     } catch (err: unknown) {

@@ -61,6 +61,12 @@ class FeishuPlatformConfig(BaseModel):
         return f"{frontend_url.rstrip('/')}/api/v1/identity/auth/callback"
 
 
+class FeishuHRConfig(BaseModel):
+    """HR module bot — independent credentials, not the platform app."""
+
+    credentials: FeishuAppCredentials = Field(default_factory=FeishuAppCredentials)
+
+
 class FeishuHRBitableConfig(BaseModel):
     """HR module Bitable tables (uses platform app credentials)."""
 
@@ -142,6 +148,7 @@ class FeishuSettings(BaseModel):
     """Top-level Feishu configuration — all modules grouped."""
 
     platform: FeishuPlatformConfig = Field(default_factory=FeishuPlatformConfig)
+    hr: FeishuHRConfig = Field(default_factory=FeishuHRConfig)
     hr_bitable: FeishuHRBitableConfig = Field(default_factory=FeishuHRBitableConfig)
     safety: FeishuSafetyConfig = Field(default_factory=FeishuSafetyConfig)
     equipment: FeishuEquipmentConfig = Field(default_factory=FeishuEquipmentConfig)

@@ -1,9 +1,12 @@
+import { apiGet, apiGetWithMeta } from '../client'
+
 import {
+  Employee,
   EmployeeListResponse,
   EmployeeResponse,
   DepartmentListResponse,
-  OnboardingRecordListResponse,
-  DepartureRecordListResponse,
+  OnboardingRecord,
+  DepartureRecord,
   SyncStatusResponse,
   TrainingPlanListResponse,
   TrainingPlanResponse,
@@ -27,7 +30,7 @@ import {
   CandidateListResponse,
   EmployeeProfileDetail,
   EmployeeProfileListData,
-  EmployeeProfileListItem,
+  EmployeeProfilesPage,
   OrgDepartmentTreeResponse,
 } from '@/types/hr'
 
@@ -64,12 +67,25 @@ export async function fetchEmployeeById(id: string): Promise<EmployeeResponse> {
   return res.json()
 }
 
-export async function fetchEmployeeByNumber(employeeNumber: string): Promise<EmployeeResponse> {
-  const res = await fetch(`${API_BASE}/hr/employees/by-number/${employeeNumber}`, {
+export async function fetchEmployeeByNumber(employeeNumber: string): Promise<Employee> {
+  return apiGet<Employee>(`${API_BASE}/hr/employees/by-number/${employeeNumber}`, {
     cache: 'no-store',
   })
-  if (!res.ok) throw new Error('获取员工详情失败')
-  return res.json()
+}
+
+export async function searchEmployees(params?: {
+  keyword?: string
+  page?: number
+  page_size?: number
+}): Promise<Employee[]> {
+  const searchParams = new URLSearchParams()
+  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  searchParams.set('page', String(params?.page || 1))
+  searchParams.set('page_size', String(params?.page_size || 20))
+  const { data } = await apiGetWithMeta<Employee[]>(`${API_BASE}/hr/employees?${searchParams.toString()}`, {
+    cache: 'no-store',
+  })
+  return data ?? []
 }
 
 export async function fetchDepartments(
@@ -98,18 +114,18 @@ export async function fetchOnboardingRecords(
     page?: number
     page_size?: number
   }
-): Promise<OnboardingRecordListResponse> {
+): Promise<{ items: OnboardingRecord[]; total: number }> {
   const searchParams = new URLSearchParams()
   if (params?.department) searchParams.set('department', params.department)
   if (params?.keyword) searchParams.set('keyword', params.keyword)
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
 
-  const res = await fetch(`${API_BASE}/hr/onboarding-records?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取入职记录失败')
-  return res.json()
+  const { data, meta } = await apiGetWithMeta<OnboardingRecord[]>(
+    `${API_BASE}/hr/onboarding-records?${searchParams.toString()}`,
+    { cache: 'no-store' },
+  )
+  return { items: data ?? [], total: meta.total ?? 0 }
 }
 
 export async function fetchDepartureRecords(
@@ -119,18 +135,18 @@ export async function fetchDepartureRecords(
     page?: number
     page_size?: number
   }
-): Promise<DepartureRecordListResponse> {
+): Promise<{ items: DepartureRecord[]; total: number }> {
   const searchParams = new URLSearchParams()
   if (params?.department) searchParams.set('department', params.department)
   if (params?.keyword) searchParams.set('keyword', params.keyword)
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
 
-  const res = await fetch(`${API_BASE}/hr/departure-records?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取离职台账记录失败')
-  return res.json()
+  const { data, meta } = await apiGetWithMeta<DepartureRecord[]>(
+    `${API_BASE}/hr/departure-records?${searchParams.toString()}`,
+    { cache: 'no-store' },
+  )
+  return { items: data ?? [], total: meta.total ?? 0 }
 }
 
 // ─── Feishu Sync APIs ───
@@ -586,13 +602,7 @@ export async function fetchEmployeeProfiles(params?: {
   keyword?: string
   page?: number
   page_size?: number
-}): Promise<{
-  items: EmployeeProfileListItem[]
-  total: number
-  page: number
-  page_size: number
-  last_synced_at: string | null
-}> {
+}): Promise<EmployeeProfilesPage> {
   const searchParams = new URLSearchParams()
   if (params?.department_id) searchParams.set('department_id', params.department_id)
   if (params?.status) searchParams.set('status', params.status)
@@ -600,31 +610,27 @@ export async function fetchEmployeeProfiles(params?: {
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
 
-  const res = await fetch(`${API_BASE}/hr/people?${searchParams.toString()}`, { cache: 'no-store' })
-  if (!res.ok) throw new Error('获取员工列表失败')
-  const json = (await res.json()) as {
-    data: EmployeeProfileListData
-    meta?: { page?: number; page_size?: number; total?: number }
-  }
+  const { data, meta } = await apiGetWithMeta<EmployeeProfileListData>(
+    `${API_BASE}/hr/people?${searchParams.toString()}`,
+    { cache: 'no-store' },
+  )
   return {
-    items: json.data.items ?? [],
-    last_synced_at: json.data.last_synced_at ?? null,
-    total: json.meta?.total ?? 0,
-    page: json.meta?.page ?? 1,
-    page_size: json.meta?.page_size ?? 20,
+    items: data.items ?? [],
+    last_synced_at: data.last_synced_at ?? null,
+    total: meta.total ?? 0,
+    page: meta.page ?? 1,
+    page_size: meta.page_size ?? 20,
   }
 }
 
 export async function fetchEmployeeProfileDetail(identifier: string): Promise<EmployeeProfileDetail> {
-  const res = await fetch(`${API_BASE}/hr/people/${encodeURIComponent(identifier)}`, { cache: 'no-store' })
-  if (!res.ok) throw new Error('获取员工详情失败')
-  const json = (await res.json()) as { data: EmployeeProfileDetail }
-  return json.data
+  return apiGet<EmployeeProfileDetail>(`${API_BASE}/hr/people/${encodeURIComponent(identifier)}`, {
+    cache: 'no-store',
+  })
 }
 
 export async function fetchEmployeeDepartments(): Promise<OrgDepartmentTreeResponse['data']> {
-  const res = await fetch(`${API_BASE}/hr/people/departments`, { cache: 'no-store' })
-  if (!res.ok) throw new Error('获取部门树失败')
-  const json = (await res.json()) as OrgDepartmentTreeResponse
-  return json.data
+  return apiGet<OrgDepartmentTreeResponse['data']>(`${API_BASE}/hr/people/departments`, {
+    cache: 'no-store',
+  })
 }

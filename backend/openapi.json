@@ -131478,6 +131478,16 @@
             "title": "Feishu  Platform  App Secret",
             "default": ""
           },
+          "FEISHU__HR__CREDENTIALS__APP_ID": {
+            "type": "string",
+            "title": "Feishu  Hr  Credentials  App Id",
+            "default": ""
+          },
+          "FEISHU__HR__CREDENTIALS__APP_SECRET": {
+            "type": "string",
+            "title": "Feishu  Hr  Credentials  App Secret",
+            "default": ""
+          },
           "FEISHU__VEHICLE__CREDENTIALS__APP_ID": {
             "type": "string",
             "title": "Feishu  Vehicle  Credentials  App Id",
@@ -131590,6 +131600,28 @@
               }
             ],
             "title": "Feishu  Platform  App Secret"
+          },
+          "FEISHU__HR__CREDENTIALS__APP_ID": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu  Hr  Credentials  App Id"
+          },
+          "FEISHU__HR__CREDENTIALS__APP_SECRET": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu  Hr  Credentials  App Secret"
           },
           "FEISHU__VEHICLE__CREDENTIALS__APP_ID": {
             "anyOf": [

@@ -72,6 +72,12 @@ class HrOrgSyncRun(BaseModel):
     __tablename__ = "org_sync_runs"
     __table_args__ = (
         Index("ix_hr_org_sync_runs_started_at", "started_at"),
+        Index(
+            "uq_hr_org_sync_runs_running",
+            "status",
+            unique=True,
+            postgresql_where=text("status = 'running'"),
+        ),
         {"schema": "hr"},
     )
 

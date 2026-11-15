@@ -58,6 +58,12 @@ export type OrgSyncTriggerResponse = components['schemas']['OrgSyncTriggerApiRes
 export type EmployeeProfileListItem = components['schemas']['EmployeeProfileListItem']
 export type EmployeeProfileDetail = components['schemas']['EmployeeProfileDetail']
 export type EmployeeProfileListData = components['schemas']['EmployeeProfileListData']
+
+export type EmployeeProfilesPage = EmployeeProfileListData & {
+  total: number
+  page: number
+  page_size: number
+}
 export type EmployeeProfileListResponse = components['schemas']['EmployeeProfileListApiResponse']
 export type EmployeeProfileDetailResponse = components['schemas']['EmployeeProfileDetailApiResponse']
 
@@ -385,6 +391,11 @@ export type TrainingApprovalListResponse = AnnualTrainingPlanListResponse
 export type TrainingApprovalResponse = { code: number; message: string; data: AnnualTrainingPlan }
 
 // ─── Training Session Types ───
+
+export interface TrainingOpenIdsSyncResult {
+  synced: number
+  failed: number
+}
 
 export interface TrainingSession {
   id: string
