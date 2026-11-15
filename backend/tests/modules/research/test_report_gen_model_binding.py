@@ -65,6 +65,9 @@ class _Steps:
     async def add(self, kind: str, title: str, *, status: str = "ok", **_: object) -> None:
         self.records.append((kind, title, status))
 
+    async def commit_pending(self) -> None:
+        """换模型时写库由真实写入器负责；替身无库可落，只需可调用。"""
+
 
 # ─── 绑定解析 ──────────────────────────────────────────────────────────────
 

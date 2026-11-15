@@ -42,11 +42,7 @@ def lru_put[T](cache: OrderedDict[str, T], key: str, value: T, *, max_size: int 
         cache.popitem(last=False)
 
 
-def get_bytes(key: str) -> bytes | None:
-    return lru_get(_BYTES_CACHE, key)
-
-
-def put_bytes(key: str, data: bytes) -> None:
+def _put_bytes(key: str, data: bytes) -> None:
     """超大文件不缓存：缓存命中省下的下载时间不值得用内存换。"""
     if len(data) > MAX_CACHED_BYTES:
         logger.debug(
@@ -62,12 +58,12 @@ def load_bytes_cached(key: str, loader: Callable[[], bytes | None]) -> bytes | N
 
     ``loader`` 返回 ``None``（文件不存在）时不缓存，避免把「暂时读不到」固化下来。
     """
-    cached = get_bytes(key)
+    cached = lru_get(_BYTES_CACHE, key)
     if cached is not None:
         return cached
     data = loader()
     if data:
-        put_bytes(key, data)
+        _put_bytes(key, data)
     return data
 
 
@@ -80,9 +76,7 @@ __all__ = [
     "DEFAULT_CACHE_SIZE",
     "MAX_CACHED_BYTES",
     "clear_bytes",
-    "get_bytes",
     "load_bytes_cached",
     "lru_get",
     "lru_put",
-    "put_bytes",
 ]

@@ -57,14 +57,16 @@ _APPEND_ORDER = 10**6
 MAX_TEXT_CHARS = 200
 MAX_VALUE_CHARS = 4000
 MAX_EVIDENCE_CHARS = 300
-MAX_REASON_CHARS = 200
 
 _OUTLINE_CACHE: OrderedDict[str, tuple[TemplateOutline, list[int]]] = OrderedDict()
 _DOC_STATS_CACHE: OrderedDict[str, tuple[int, int, list[str]]] = OrderedDict()
 
 
 def clear_cache() -> None:
-    """测试与模板换版后的兜底入口：清空解析缓存与字节缓存。"""
+    """清空解析缓存与字节缓存：供测试隔离用。
+
+    生产链路不需要它——缓存键取自不可变的存储键，模板换版会写新键，不会命中旧字节。
+    """
     _OUTLINE_CACHE.clear()
     _DOC_STATS_CACHE.clear()
     clear_bytes()
@@ -134,10 +136,10 @@ def _state_of(row: RdReportGenSlot | None) -> tuple[str, str | None]:
 
 
 def _edit_source(row: RdReportGenSlot | None) -> str:
-    """人工标记列在二期迁移里才加；一期没有列时一律按 AI 写入展示。"""
+    """人工标记为空时一律按 AI 写入展示。"""
     if row is None:
         return "ai"
-    return str(getattr(row, "edit_source", None) or "ai")
+    return str(row.edit_source or "ai")
 
 
 def _human_locked(row: RdReportGenSlot | None) -> bool:

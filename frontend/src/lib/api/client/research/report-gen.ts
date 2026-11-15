@@ -127,17 +127,6 @@ export async function fetchReportGenDocumentBlob(jobId: string): Promise<Blob> {
   return response.blob()
 }
 
-/** 取某一版 docx 的 Blob：版本对照时用来渲染旧版。 */
-export async function fetchReportGenVersionBlob(versionId: string): Promise<Blob> {
-  const response = await fetch(`${API_BASE}/versions/${versionId}/document`, {
-    method: 'GET',
-    headers: authHeaders(),
-    credentials: 'include',
-  })
-  if (!response.ok) throw new Error(response.status === 404 ? '这一版文件已不存在' : `加载失败（${response.status}）`)
-  return response.blob()
-}
-
 /** 下载成品 docx；失败直接抛错，由调用方提示。 */
 export async function downloadReportGenFile(jobId: string, fallbackName: string): Promise<string> {
   return downloadBlob(`${API_BASE}/jobs/${jobId}/document`, fallbackName)
