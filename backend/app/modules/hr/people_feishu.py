@@ -61,6 +61,12 @@ class FeishuEmployeeProfileFetcher(FeishuOrgDepartmentFetcher):
     """Directory employee filter call for the whole in-scope org."""
 
     async def fetch_employees_by_filter(self, department_ids: list[str]) -> list[dict[str, Any]]:
+        """Return every status Feishu exposes for the visible departments.
+
+        The directory returned by this filter is the mirror snapshot; 员工档案
+        applies the 在职 default locally. If Feishu omits a resigned person's
+        department, that person is outside this department-filtered snapshot.
+        """
         if not department_ids:
             return []
         # Fetch every status; Feishu cannot filter 2–5, so filtering is done in

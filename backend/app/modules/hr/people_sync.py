@@ -10,6 +10,10 @@ tests wire fakes. In-scope department ids come from ``hr.departments`` and are
 passed to the Feishu employee filter in one paginated query. The sync never
 deletes or disables anyone: people the directory no longer returns keep their
 previous mirror row.
+
+The mirror is a snapshot of every status Feishu returns for the visible
+departments, including 离职 when present. 员工档案 defaults to ``status=1``
+(在职); 离职/全部 are user-selected filters.
 """
 
 from __future__ import annotations
@@ -61,6 +65,9 @@ async def sync_employee_profiles(
     synced_at: datetime | None = None,
 ) -> PeopleSyncStats:
     """Fetch everyone in the in-scope departments and upsert the mirror.
+
+    Every status returned by Feishu is stored (including 离职 when the directory
+    still returns the person); the UI applies the default 在职 filter.
 
     Empty/omitted Feishu fields are written as empty values. Failures propagate
     so the owning org sync can record a failed run while keeping previous data.
