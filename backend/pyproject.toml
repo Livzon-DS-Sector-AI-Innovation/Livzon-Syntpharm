@@ -124,6 +124,7 @@ module = [
     "kokoro.*",
     "melo.*",
     "misaki.*",
+    "xlrd.*",
 ]
 ignore_missing_imports = true
 

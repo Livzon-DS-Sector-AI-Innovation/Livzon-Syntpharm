@@ -6,6 +6,7 @@ import { Form, Input, InputNumber, Select, Button, Card, Space, App } from 'antd
 import { createPilotWorkflow } from '@/actions/research'
 import { PermissionGate } from '@/components/auth/PermissionGate'
 import { PERM } from '@/lib/permissions/codes'
+import { withReturnTo } from '@/lib/navigation/returnTo'
 
 const EQUIPMENT_TYPES = [
   { value: '反应釜', label: '反应釜' },
@@ -29,7 +30,7 @@ export function CreatePilotWorkflowForm() {
     try {
       const workflow = await createPilotWorkflow(values) as { id: string }
       message.success('工作流创建成功')
-      router.push(`/research/pilot-workflow/${workflow.id}`)
+      router.push(withReturnTo(`/research/pilot-workflow/${workflow.id}`, '/research/pilot-workflow'))
     } catch (err) {
       message.error('创建失败: ' + (err instanceof Error ? err.message : '未知错误'))
     } finally {

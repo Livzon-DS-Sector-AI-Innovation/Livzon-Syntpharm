@@ -15,6 +15,7 @@ import { fetchPilotWorkflows } from '@/lib/api/client/pilot-workflow'
 import { deletePilotWorkflow } from '@/actions/research'
 import { PermissionGate } from '@/components/auth/PermissionGate'
 import { PERM } from '@/lib/permissions/codes'
+import { withReturnTo } from '@/lib/navigation/returnTo'
 
 const statusColors: Record<PilotWorkflowStatus, string> = {
   pending: 'default',
@@ -79,7 +80,11 @@ export function PilotWorkflowList({ initialData }: Props) {
       dataIndex: 'product_name',
       key: 'product_name',
       render: (text: string, record: PilotWorkflowListItem) => (
-        <a onClick={() => router.push(`/research/pilot-workflow/${record.id}`)}>
+        <a
+          onClick={() =>
+            router.push(withReturnTo(`/research/pilot-workflow/${record.id}`, '/research/pilot-workflow'))
+          }
+        >
           {text}
         </a>
       ),

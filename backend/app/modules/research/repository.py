@@ -813,6 +813,31 @@ async def get_reports_by_project(db: AsyncSession, project_id: uuid.UUID) -> lis
     return list(result.scalars().all())
 
 
+async def list_reports_with_project(
+    db: AsyncSession, project_id: uuid.UUID | None = None, limit: int = 200
+) -> list[Any]:
+    """获取研发报告列表（可跨项目），并一并带出所属项目名称。
+
+    project_id 为空时返回全部项目的报告，供「全部项目」视图使用；
+    项目名随 join 取回，避免前端逐行补查。
+    """
+    from app.modules.research.models import RdProject, RdReport
+
+    conditions = [~RdReport.is_deleted, ~RdProject.is_deleted]
+    if project_id is not None:
+        conditions.append(RdReport.project_id == project_id)
+
+    stmt = (
+        select(RdReport, RdProject.name)
+        .join(RdProject, RdProject.id == RdReport.project_id)
+        .where(*conditions)
+        .order_by(RdReport.created_at.desc())
+        .limit(limit)
+    )
+    result = await db.execute(stmt)
+    return list(result.all())
+
+
 async def get_report_by_id(db: AsyncSession, report_id: uuid.UUID) -> Any:
     """根据 ID 获取研发报告"""
     from app.modules.research.models import RdReport
