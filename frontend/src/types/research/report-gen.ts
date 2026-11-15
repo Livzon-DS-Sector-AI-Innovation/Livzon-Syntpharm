@@ -367,3 +367,105 @@ export function jobModelSnapshot(job: ReportGenJob): ReportGenJobModelSnapshot |
     usedFallback: !!job.used_fallback,
   }
 }
+
+/** 生成期四个阶段；顺序即界面上阶段条的顺序，最后一个完成时 `stageOfJob` 返回 4。 */
+export const REPORT_GEN_STAGES = ['读取模板', '汇总历史意见', '逐章写入资料', '生成 Word 文档'] as const
+
+/**
+ * 任务当前走到第几个阶段。
+ *
+ * 判定顺序：先看后端 current_step 的业务措辞（四阶段文案在 agent.py 里固定），
+ * 措辞对不上（历史任务、被终止、文案改过）时退回按 progress 分段，
+ * 保证任何情况下阶段条都不会卡在第一步。
+ */
+export function stageOfJob(job: ReportGenJob): number {
+  if (job.status === 'completed') return REPORT_GEN_STAGES.length
+  const step = job.current_step ?? ''
+  if (step.includes('已完成')) return REPORT_GEN_STAGES.length
+  if (step.includes('Word 文档') || step.includes('出稿')) return 3
+  if (step.includes('写入') || /第 \d+ 轮/.test(step)) return 2
+  if (step.includes('意见')) return 1
+  if (step.includes('模板')) return 0
+  const progress = job.progress ?? 0
+  if (progress >= 92) return 3
+  if (progress > 5) return 2
+  if (progress >= 4) return 1
+  return 0
+}
+
+export interface ReportGenFailureAdvice {
+  /** 一句结论：说明「为什么没出来」，不是错误码 */
+  title: string
+  /** 2~3 条可执行建议，按最可能的原因排序 */
+  suggestions: string[]
+}
+
+const FAILURE_ADVICE_RULES: { test: RegExp; advice: ReportGenFailureAdvice }[] = [
+  {
+    test: /模板|template|docx|document|损坏|打不开/i,
+    advice: {
+      title: 'Word 模板文件打不开',
+      suggestions: [
+        '回到「交付文档模板」页，确认这份模板的 Word 文件能正常打开',
+        '重新上传一份模板（支持 .docx），再回到报告里重新生成',
+        '如果模板刚换过版本，重新生成会按新版重算可填写位置',
+      ],
+    },
+  },
+  {
+    test: /超时|timeout|timed out|超过 \d+ 秒/i,
+    advice: {
+      title: '生成时间超出上限，已中止',
+      suggestions: [
+        '点「重新生成」再跑一次，已填写的内容会保留、只补没写的部分',
+        '资料很多时可以先补充项目知识库的关键文档，减少反复检索',
+        '持续超时请让管理员检查生成设置里的模型与超时时间',
+      ],
+    },
+  },
+  {
+    test: /知识库|检索|切片|RAG|embedding|向量/i,
+    advice: {
+      title: '资料检索没跑通',
+      suggestions: [
+        '到项目知识库里确认资料已「已入库」，处理中的文件要等它跑完',
+        '确认知识库里有与报告主题相关的资料，没有依据的位置会留空',
+        '点「重新生成」重试；仍失败请让管理员检查检索服务',
+      ],
+    },
+  },
+  {
+    test: /模型|LLM|model|api[_ ]?key|401|403|429|5\d\d/i,
+    advice: {
+      title: '生成用的模型没有正常返回',
+      suggestions: [
+        '到报告列表页的「生成设置」里点「测试」确认模型可用',
+        '确认备用模型也配好了：主模型报错时会自动换用一次',
+        '稍后再点「重新生成」；反复失败请把下面的原始错误发给管理员',
+      ],
+    },
+  },
+]
+
+/** 把后端错误翻成「结论 + 建议」：原始错误留给折叠区，便于报障。 */
+export function describeJobFailure(message: string | null | undefined): ReportGenFailureAdvice {
+  const text = (message ?? '').trim()
+  for (const rule of FAILURE_ADVICE_RULES) {
+    if (rule.test.test(text)) return rule.advice
+  }
+  return {
+    title: '这次没有生成成功',
+    suggestions: [
+      '点「重新生成」再试一次；已经填写的内容会保留，不会被清空',
+      '确认这份报告的 Word 模板能正常打开、项目知识库里的资料已入库',
+      '如果一直失败，把下面的原始错误发给管理员定位',
+    ],
+  }
+}
+
+/** 预览定位结果 → 业务语言；不暴露对齐方式、段落数这类实现细节。 */
+export function positionLocateText(marks: { hits: number; total: number } | null): string {
+  if (!marks) return '正在定位可修改位置…'
+  if (marks.total === 0) return '这份文档里没有可修改的位置'
+  return `已定位 ${marks.hits}/${marks.total} 处可修改位置`
+}

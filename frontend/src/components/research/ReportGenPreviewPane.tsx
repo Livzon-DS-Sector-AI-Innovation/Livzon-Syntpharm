@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, Button, Empty, Flex, Spin, Tag } from 'antd'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { Alert, Button, Empty, Flex, Spin, Tooltip } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
 import { fetchReportGenDocumentBlob } from '@/lib/api/client/research/report-gen'
 import {
   APPENDED_ITEM_KINDS,
   fieldStateMeta,
+  positionLocateText,
   type ReportGenFieldItem,
   type ReportGenOutline,
 } from '@/types/research/report-gen'
@@ -217,7 +218,13 @@ function setSelected(container: HTMLElement, key: string | null): void {
  * 仍用 docx-preview 渲染（不转 PDF）：PDF 里没有可点击的元素，段落与表格也就无法
  * 与清单里的位置一一对应。标记是叠加层，不改动文档本身的排版。
  */
-export function ReportGenPreviewPane({ jobId, data, selectedKey, onSelect, documentVersion = 0 }: Props) {
+export const ReportGenPreviewPane = memo(function ReportGenPreviewPane({
+  jobId,
+  data,
+  selectedKey,
+  onSelect,
+  documentVersion = 0,
+}: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const renderedBlobRef = useRef<Blob | null>(null)
   const { renderDocx, loading, error } = useDocxPreview()
@@ -295,17 +302,8 @@ export function ReportGenPreviewPane({ jobId, data, selectedKey, onSelect, docum
         style={{ padding: '8px 12px', borderBottom: '1px solid #EDEFF2', background: '#FFFFFF' }}
       >
         <Flex gap={8} align="center" wrap style={{ fontSize: 12, color: '#5A6472' }}>
-          <Tag color="processing" style={{ margin: 0 }}>
-            可填写位置高亮
-          </Tag>
-          {marks && (
-            <span>
-              已标记 {marks.hits}/{marks.total} 处位置
-              {marks.aligned ? ' · 已按正文内容对齐' : ''}
-              {marks.domParagraphs > 0 ? ` · 正文 ${marks.domParagraphs} 段` : ''}
-            </span>
-          )}
-          {appendedCount > 0 && <span>· 文末另有 {appendedCount} 处新增内容</span>}
+          <span>{positionLocateText(marks)}</span>
+          {appendedCount > 0 && <span>· 文末另有 {appendedCount} 处补充内容</span>}
         </Flex>
         <Button
           size="small"
@@ -323,10 +321,24 @@ export function ReportGenPreviewPane({ jobId, data, selectedKey, onSelect, docum
           type="warning"
           showIcon
           banner
-          message={`预览里没能标出 ${missCount} 处位置（合并单元格或复杂版式），请在右侧填写清单里点选`}
+          message={`有 ${missCount} 处版式较复杂，预览里没能高亮，请在右侧清单里点选`}
         />
       )}
-      {error && <Alert type="error" showIcon banner message={error} />}
+      {error && (
+        <Alert
+          type="error"
+          showIcon
+          banner
+          message="文档预览没能打开"
+          description={
+            <Tooltip title={error}>
+              <span style={{ fontSize: 12 }}>
+                可以先点右上角「重新加载」重试，或直接下载 Word 文档查看；改动不受影响。
+              </span>
+            </Tooltip>
+          }
+        />
+      )}
 
       <div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'auto', padding: '16px 8px 40px' }}>
         {(loading || (isFetching && !blob)) && (
@@ -349,4 +361,4 @@ export function ReportGenPreviewPane({ jobId, data, selectedKey, onSelect, docum
       </div>
     </Flex>
   )
-}
+})

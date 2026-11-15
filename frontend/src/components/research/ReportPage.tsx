@@ -350,6 +350,7 @@ export function ReportPage({ projectId }: Props) {
         onCreated={() => { invalidateReports(); setEditingRecord(null) }}
         editingReport={editingRecord}
         modelLabel={modelLabel(models.main)}
+        returnTo={currentUrl}
       />
 
       {/* 报告文档预览弹窗 */}

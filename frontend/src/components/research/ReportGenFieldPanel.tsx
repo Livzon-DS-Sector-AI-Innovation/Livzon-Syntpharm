@@ -1,19 +1,18 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { Empty, Flex, Input, Segmented, Skeleton, Tag, Tooltip, Typography } from 'antd'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { Empty, Flex, Input, Segmented, Skeleton, Tooltip, Typography } from 'antd'
 import { DownOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons'
 import {
   APPENDED_ITEM_KINDS,
   REPORT_GEN_FIELD_FILTERS,
-  fieldKeyLabel,
-  fieldStateMeta,
   matchFieldFilter,
   type ReportGenFieldFilter,
   type ReportGenFieldItem,
   type ReportGenOutline,
   type ReportGenOutlineSection,
 } from '@/types/research/report-gen'
+import { ReportGenFieldRow } from './ReportGenFieldRow'
 
 interface Props {
   data?: ReportGenOutline
@@ -37,14 +36,6 @@ function isAppended(item: ReportGenFieldItem): boolean {
   return APPENDED_KINDS.includes(item.kind)
 }
 
-function summaryOf(item: ReportGenFieldItem): string {
-  const value = (item.value ?? '').trim()
-  if (value) return value.replace(/\s+/g, ' ')
-  const text = (item.text ?? '').trim()
-  if (text) return text
-  return item.reason ?? '（空）'
-}
-
 function matchKeyword(item: ReportGenFieldItem, keyword: string): boolean {
   if (!keyword) return true
   const haystack = [item.label, item.section, item.value, item.text, item.source_name, item.key]
@@ -60,11 +51,25 @@ function matchKeyword(item: ReportGenFieldItem, keyword: string): boolean {
  * 为什么必须由后端合并：`rd_report_gen_slots` 只记「写过的地方」，没写的位置没有行，
  * 只查写入记录会得到一份「全都写完了」的假象。这里展示的是母本全量位置 + 写入状态。
  */
-export function ReportGenFieldPanel({ data, loading, error, selectedKey, onSelect }: Props) {
+export const ReportGenFieldPanel = memo(function ReportGenFieldPanel({
+  data,
+  loading,
+  error,
+  selectedKey,
+  onSelect,
+}: Props) {
   const [filter, setFilter] = useState<ReportGenFieldFilter>('all')
   const [keyword, setKeyword] = useState('')
   const [collapsed, setCollapsed] = useState<string[]>([])
-  const [hovered, setHovered] = useState<string | null>(null)
+  const listRef = useRef<HTMLDivElement | null>(null)
+
+  // 在预览里点某处位置时，清单要跟着滚到那一行：编辑抽屉在右侧，看不见就等于没定位
+  useEffect(() => {
+    if (!selectedKey) return
+    listRef.current?.querySelector<HTMLElement>(`[data-field-key="${selectedKey}"]`)?.scrollIntoView({
+      block: 'nearest',
+    })
+  }, [selectedKey])
 
   const groups = useMemo<FieldGroup[]>(() => {
     const items = (data?.items ?? []).filter(
@@ -153,7 +158,7 @@ export function ReportGenFieldPanel({ data, loading, error, selectedKey, onSelec
         </Flex>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '4px 0 16px' }}>
+      <div ref={listRef} style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '4px 0 16px' }}>
         {groups.length === 0 && (
           <div style={{ padding: 32 }}>
             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有符合条件的位置" />
@@ -191,85 +196,14 @@ export function ReportGenFieldPanel({ data, loading, error, selectedKey, onSelec
                 </span>
               </button>
               {!folded &&
-                group.items.map((item) => {
-                  const meta = fieldStateMeta(item.state, item.edit_source)
-                  const selected = selectedKey === item.key
-                  return (
-                    <button
-                      type="button"
-                      key={item.key}
-                      onClick={() => onSelect(item)}
-                      onMouseEnter={() => setHovered(item.key)}
-                      onMouseLeave={() => setHovered(null)}
-                      style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'stretch',
-                        gap: 10,
-                        padding: '8px 12px',
-                        border: 'none',
-                        borderLeft: `3px solid ${meta.text}`,
-                        background: selected ? '#E6F4FF' : hovered === item.key ? '#F5F7FA' : 'transparent',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                      }}
-                    >
-                      <span style={{ flex: 1, minWidth: 0 }}>
-                        <Flex gap={6} align="center" wrap>
-                          <span style={{ fontSize: 13, fontWeight: 500, color: '#1F2329' }}>{item.label}</span>
-                          <Tag
-                            color={meta.color}
-                            style={{ margin: 0, fontSize: 11, lineHeight: '18px', borderStyle: meta.dashed ? 'dashed' : undefined }}
-                          >
-                            {meta.label}
-                          </Tag>
-                          {item.kind === 'table_cell' && (
-                            <Tag style={{ margin: 0, fontSize: 11, lineHeight: '18px' }}>表格</Tag>
-                          )}
-                          {item.writable === false && (
-                            <Tag style={{ margin: 0, fontSize: 11, lineHeight: '18px' }}>模板固定</Tag>
-                          )}
-                          {item.human_locked && (
-                            <Tag color="green" style={{ margin: 0, fontSize: 11, lineHeight: '18px' }}>
-                              人工确认
-                            </Tag>
-                          )}
-                        </Flex>
-                        <div
-                          style={{
-                            marginTop: 3,
-                            fontSize: 12,
-                            color: item.state === 'blank' ? '#8C8C8C' : '#5A6472',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {summaryOf(item)}
-                        </div>
-                        {item.source_name && (
-                          <div style={{ marginTop: 2, fontSize: 11, color: '#8C8C8C' }}>
-                            来源：{item.source_name}
-                            {item.confidence !== null && item.confidence !== undefined
-                              ? ` · 置信度 ${Math.round(item.confidence * 100)}%`
-                              : ''}
-                          </div>
-                        )}
-                      </span>
-                      <span
-                        style={{
-                          alignSelf: 'center',
-                          fontSize: 11,
-                          color: '#8C8C8C',
-                          whiteSpace: 'nowrap',
-                          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-                        }}
-                      >
-                        {fieldKeyLabel(item.key)}
-                      </span>
-                    </button>
-                  )
-                })}
+                group.items.map((item) => (
+                  <ReportGenFieldRow
+                    key={item.key}
+                    item={item}
+                    selected={selectedKey === item.key}
+                    onSelect={onSelect}
+                  />
+                ))}
             </div>
           )
         })}
@@ -287,4 +221,4 @@ export function ReportGenFieldPanel({ data, loading, error, selectedKey, onSelec
       )}
     </Flex>
   )
-}
+})

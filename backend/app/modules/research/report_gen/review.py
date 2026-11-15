@@ -7,7 +7,8 @@
 未写位置根本没有行，所以清单必须是 outline 全量位置与 slots 的并集——这也是详情页
 唯一能说清「哪里空着、为什么空着」的办法。
 
-缓存：母本快照键不可变、成品每保存一版换新键，两者都按存储键做进程内 LRU。
+缓存：母本快照键不可变、成品每保存一版换新键，两者都按存储键做进程内 LRU——
+解析结果与字节都缓存，所以清单接口不会每 5 秒重下一遍同样的 docx。
 多 worker 各自一份没有一致性问题（内容只由键决定），容量按「同时打开几个任务」定。
 """
 
@@ -23,6 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import BadRequestException, NotFoundException
 from app.modules.research.doc_template import store
 from app.modules.research.models import RdDeliverableTemplate, RdReportGenJob, RdReportGenSlot
+from app.modules.research.report_gen.cache import clear_bytes, load_bytes_cached, lru_get, lru_put
 from app.modules.research.report_gen.outline import (
     TemplateOutline,
     WritablePosition,
@@ -57,40 +59,24 @@ MAX_VALUE_CHARS = 4000
 MAX_EVIDENCE_CHARS = 300
 MAX_REASON_CHARS = 200
 
-_CACHE_SIZE = 16
-
 _OUTLINE_CACHE: OrderedDict[str, tuple[TemplateOutline, list[int]]] = OrderedDict()
 _DOC_STATS_CACHE: OrderedDict[str, tuple[int, int, list[str]]] = OrderedDict()
 
 
-def _cache_get[T](cache: OrderedDict[str, T], key: str) -> T | None:
-    value = cache.get(key)
-    if value is None:
-        return None
-    cache.move_to_end(key)
-    return value
-
-
-def _cache_put[T](cache: OrderedDict[str, T], key: str, value: T) -> None:
-    cache[key] = value
-    cache.move_to_end(key)
-    while len(cache) > _CACHE_SIZE:
-        cache.popitem(last=False)
-
-
 def clear_cache() -> None:
-    """测试与模板换版后的兜底入口：清空解析缓存。"""
+    """测试与模板换版后的兜底入口：清空解析缓存与字节缓存。"""
     _OUTLINE_CACHE.clear()
     _DOC_STATS_CACHE.clear()
+    clear_bytes()
 
 
 def _outline_of(cache_key: str, data: bytes) -> tuple[TemplateOutline, list[int]]:
-    cached = _cache_get(_OUTLINE_CACHE, cache_key)
+    cached = lru_get(_OUTLINE_CACHE, cache_key)
     if cached is not None:
         return cached
     document = open_document(data)
     computed = (build_outline(document), body_table_starts(document))
-    _cache_put(_OUTLINE_CACHE, cache_key, computed)
+    lru_put(_OUTLINE_CACHE, cache_key, computed)
     return computed
 
 
@@ -100,7 +86,7 @@ def _document_stats(cache_key: str, data: bytes) -> tuple[int, int, list[str]]:
     段落文本是给前端做「按内容对齐」用的：docx-preview 会把只含分页符的段落拆成两段，
     DOM 段数比这里多一段，按下标硬套就会把后面所有位置标错。
     """
-    cached = _cache_get(_DOC_STATS_CACHE, cache_key)
+    cached = lru_get(_DOC_STATS_CACHE, cache_key)
     if cached is not None:
         return cached
     document = open_document(data)
@@ -109,7 +95,7 @@ def _document_stats(cache_key: str, data: bytes) -> tuple[int, int, list[str]]:
         len(document.tables),
         [_clip(paragraph.text, MAX_TEXT_CHARS) or "" for paragraph in document.paragraphs],
     )
-    _cache_put(_DOC_STATS_CACHE, cache_key, stats)
+    lru_put(_DOC_STATS_CACHE, cache_key, stats)
     return stats
 
 
@@ -319,7 +305,11 @@ async def build_review(session: AsyncSession, job_id: UUID) -> ReportGenOutlineD
     document_table_count: int | None = None
     document_paragraph_texts: list[str] = []
     if job.document_object_key:
-        document_bytes = store.load_bytes(str(job.document_object_key))
+        # 成品对象键每保存一版就换新键，缓存不会读到旧内容；命中即省一次全量下载
+        document_bytes = load_bytes_cached(
+            str(job.document_object_key),
+            lambda: store.load_bytes(str(job.document_object_key)),
+        )
         if document_bytes:
             try:
                 document_paragraph_count, document_table_count, document_paragraph_texts = _document_stats(

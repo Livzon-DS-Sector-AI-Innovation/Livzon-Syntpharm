@@ -8,12 +8,13 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 from typing import Any, cast
+from uuid import uuid4
 
 import pytest
 
 from app.core.llm.client import LLMToolCall, _load_arguments, _looks_like_tools_unsupported, _parse_tool_response
 from app.core.llm.exceptions import LLMOutputError
-from app.modules.research.report_gen.agent import resolve_initial_mode
+from app.modules.research.report_gen.agent import _coverage_percent, _StepWriter, resolve_initial_mode
 from app.modules.research.report_gen.prompts import with_human_locked_summary, with_opinion_digest
 from app.modules.research.report_gen.tools import (
     TOOL_NAMES,
@@ -272,3 +273,60 @@ async def test_search_budget_falls_back_to_local_chunks_when_both_empty(monkeypa
 
     assert calls == [("facts", 3), ("remote", 6), ("local", 6)]
     assert len(items) == 6
+
+
+class _FakeSession:
+    """只记录写入与事务次数：轨迹批量化后，commit 次数就是回归口径。"""
+
+    def __init__(self) -> None:
+        self.added: list[object] = []
+        self.flushes = 0
+        self.commits = 0
+
+    def add(self, obj: object) -> None:
+        self.added.append(obj)
+
+    async def flush(self) -> None:
+        self.flushes += 1
+
+    async def commit(self) -> None:
+        self.commits += 1
+
+
+def _writer() -> tuple[_StepWriter, _FakeSession, SimpleNamespace]:
+    session = _FakeSession()
+    job = SimpleNamespace(id=uuid4(), current_step="", progress=0)
+    return _StepWriter(cast(Any, session), cast(Any, job), max_steps=400), session, job
+
+
+async def test_step_writer_no_longer_commits_per_trace() -> None:
+    """一条轨迹只 flush，不单独开事务：否则一轮 10 次写入就是 20+ 次事务往返。"""
+    writer, session, _job = _writer()
+
+    await writer.add("status", "任务开始")
+    await writer.add("tool_call", "调用 write_paragraph", tool_name="write_paragraph")
+
+    assert session.flushes == 2
+    assert session.commits == 0
+
+    await writer.commit_pending()
+    assert session.commits == 1
+
+
+async def test_progress_throttled_skips_small_delta_within_interval() -> None:
+    """写工具批内连写多处：增幅与间隔都不够时不落库，够大才落库。"""
+    writer, session, job = _writer()
+
+    assert await writer.progress_throttled("写入资料到文档 · 已写 1/10 处", 15) is True
+    assert await writer.progress_throttled("写入资料到文档 · 已写 1/10 处", 16) is False
+    assert await writer.progress_throttled("写入资料到文档 · 已写 5/10 处", 50) is True
+
+    assert session.commits == 2
+    assert job.progress == 50
+
+
+def test_coverage_percent_leaves_headroom_for_rendering() -> None:
+    """覆盖率映射到 5%~90%：最后 10% 留给出稿归档，进度条不会在出稿前打满。"""
+    assert _coverage_percent({"writable_total": 0, "written": 0}) == 5
+    assert _coverage_percent({"writable_total": 10, "written": 0}) == 5
+    assert _coverage_percent({"writable_total": 10, "written": 10}) == 90

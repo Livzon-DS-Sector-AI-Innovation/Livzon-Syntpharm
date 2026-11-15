@@ -98,13 +98,23 @@ def _utcnow() -> datetime:
 
 
 class _StepWriter:
-    """执行轨迹写入器：只追加，seq 连续，超上限后只保留状态行。"""
+    """执行轨迹写入器：只追加，seq 连续，超上限后只保留状态行。
+
+    轨迹按批落库：``add`` 只 flush，由 ``commit_pending`` 与两个 ``progress`` 在进度上报点
+    提交。逐条 commit 会让「一轮 10 次写入」变成 20+ 次事务往返，详情页接上轨迹轮询后
+    这个写放大还会被进一步放大；flush 已能保证 seq 连续与行可见（同会话内）。
+    """
 
     def __init__(self, session: AsyncSession, job: RdReportGenJob, max_steps: int) -> None:
         self.session = session
         self.job = job
         self.max_steps = max_steps
         self.seq = 0
+        # 节流上报的基线：上次落库的进度值与时刻
+        self._last_progress = -1
+        self._last_progress_at = 0.0
+        # 上次上报时的已写入处数：只有真的写进去了才推进覆盖率与进度条
+        self.last_written = 0
 
     async def add(
         self,
@@ -133,12 +143,42 @@ class _StepWriter:
                 duration_ms=duration_ms,
             )
         )
+        await self.session.flush()
+
+    async def commit_pending(self) -> None:
+        """把已 flush 的轨迹与业务改动一起提交。"""
         await self.session.commit()
 
     async def progress(self, current_step: str, progress: int) -> None:
         self.job.current_step = _cut(current_step, 300)
         self.job.progress = max(0, min(progress, 100))
+        self._last_progress = self.job.progress
+        self._last_progress_at = time.monotonic()
         await self.session.commit()
+
+    async def progress_throttled(
+        self,
+        current_step: str,
+        progress: int,
+        *,
+        min_delta: int = 2,
+        min_interval_seconds: float = 3.0,
+    ) -> bool:
+        """写工具批内推进进度：增幅够大或间隔够久才落库，返回是否真的上报。
+
+        阈值存在的意义：一次模型回复可能连写 10 处位置，逐处上报既打库又让进度条抖动；
+        完全不报则一轮内进度静止（单轮最长可到模型超时的 180 秒）。
+        """
+        value = max(0, min(progress, 100))
+        now = time.monotonic()
+        if value - self._last_progress < min_delta and now - self._last_progress_at < min_interval_seconds:
+            return False
+        self.job.current_step = _cut(current_step, 300)
+        self.job.progress = value
+        self._last_progress = value
+        self._last_progress_at = now
+        await self.session.commit()
+        return True
 
 
 async def _load_job(session: AsyncSession, job_id: UUID) -> RdReportGenJob | None:
@@ -158,6 +198,26 @@ def _apply_coverage(job: RdReportGenJob, coverage: dict[str, Any]) -> None:
     job.slot_total = int(coverage.get("writable_total") or 0)
     job.slot_filled = int(coverage.get("written") or 0)
     job.slot_gap = int(coverage.get("unwritten") or 0)
+
+
+# 生成期的四个阶段都以「写入资料到文档」这类措辞出现在 current_step 里，
+# 前端 types/research/report-gen.ts 的 stageOfJob 按关键词点亮阶段条，改文案要同步那边。
+STEP_TEXT_WRITING = "写入资料到文档"
+STEP_TEXT_TEMPLATE = "读取 Word 模板"
+STEP_TEXT_OPINIONS = "汇总历史评审意见"
+STEP_TEXT_RENDERING = "生成 Word 文档"
+
+
+def _coverage_percent(coverage: dict[str, Any]) -> int:
+    """覆盖率 → 进度百分数：5% 起步、90% 封顶，留给「出稿归档」最后一段。"""
+    total = max(int(coverage.get("writable_total") or 0), 1)
+    return 5 + int(85 * int(coverage.get("written") or 0) / total)
+
+
+def _writing_step_text(coverage: dict[str, Any]) -> str:
+    return (
+        f"{STEP_TEXT_WRITING} · 已写 {coverage.get('written', 0)}/{coverage.get('writable_total', 0)} 处"
+    )
 
 
 async def _load_slot_rows(session: AsyncSession, job: RdReportGenJob) -> dict[str, RdReportGenSlot]:
@@ -277,6 +337,9 @@ async def _call_llm[T](
             f"主模型 {switch.main.display or '默认'} 调用失败，已换用自动补齐模型 {switch.fallback.display}",
             status="failed",
         )
+        # 轨迹默认只 flush，「换过模型」这条事实必须立刻落库：兜底再次失败时上层会 rollback，
+        # 那时 used_fallback 与这条记录都会丢，事后就无法解释为什么实际用的是备用模型
+        await steps.commit_pending()
         return await call(switch.current)
 
 
@@ -346,6 +409,11 @@ async def _run_tools_round(
         )
         elapsed_ms = int((time.monotonic() - started) * 1000)
         await _record_outcome(steps, call.name, call.arguments, outcome, elapsed_ms)
+        if outcome.ok:
+            await _report_write_progress(steps, runtime)
+        # 一次工具调用（动作 + 结果两条轨迹）合成一次提交：详情页的生成过程基本实时，
+        # 写入次数比原来「每条轨迹一次 commit」少一半
+        await steps.commit_pending()
         messages.append(
             {
                 "role": "tool",
@@ -358,8 +426,28 @@ async def _run_tools_round(
         )
         if runtime.finalized:
             break
-    await session.commit()
+    await steps.commit_pending()
     return runtime.finalized
+
+
+async def _report_write_progress(steps: _StepWriter, runtime: ReportGenRuntime) -> None:
+    """真正写进内容之后才推进覆盖率与进度条。
+
+    只在 ``written`` 增加时动作：一轮里可能夹着检索、读模板这类工具，若照抄它们的成功结果
+    更新进度，详情页会在「写入资料」阶段显示「已写 0/N 处」，看起来像卡住了。
+    覆盖率字段每次写入都刷新（便宜），进度条本身按 ``progress_throttled`` 的阈值节流。
+    """
+    try:
+        coverage = runtime.coverage()
+    except Exception:  # noqa: BLE001 - 覆盖率算不出来只影响展示，不影响生成
+        logger.warning("report-gen coverage failed", exc_info=True)
+        return
+    written = int(coverage.get("written") or 0)
+    if written <= steps.last_written:
+        return
+    steps.last_written = written
+    _apply_coverage(steps.job, coverage)
+    await steps.progress_throttled(_writing_step_text(coverage), _coverage_percent(coverage))
 
 
 async def _record_outcome(
@@ -428,6 +516,10 @@ async def _run_json_round(
     )
     elapsed_ms = int((time.monotonic() - started) * 1000)
     await _record_outcome(steps, action, arguments, outcome, elapsed_ms)
+    if outcome.ok:
+        await _report_write_progress(steps, runtime)
+    # 与 tools 协议一致：动作 + 结果一次提交，轨迹在详情页里基本实时可见
+    await steps.commit_pending()
     messages.append(
         {
             "role": "user",
@@ -528,7 +620,7 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
     job.status = "running"
     job.started_at = _utcnow()
     job.progress = 2
-    job.current_step = "读取 Word 模板"
+    job.current_step = STEP_TEXT_TEMPLATE
     await session.commit()
 
     steps = _StepWriter(session, job, config.max_steps)
@@ -552,7 +644,11 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
         ),
     )
 
-    # 生成前先整理意见库：没有意见就不调模型；汇总失败降级为原文清单，不阻断出稿
+    # 生成前先整理意见库：没有意见就不调模型；汇总失败降级为原文清单，不阻断出稿。
+    # 汇总本身是一次独立的模型调用（可能有几十秒），先把阶段推进上去，避免页面停在 2%。
+    job.current_step = STEP_TEXT_OPINIONS
+    job.progress = 4
+    await steps.commit_pending()
     digest_text = ""
     try:
         digest_result = await opinions.build_digest(session, job, config)
@@ -579,6 +675,13 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
         report_title=report.title,
         instruction=instruction,
     )
+    # 先落一次覆盖率：「可填写 N 处」在第一个字符写进去之前就应可知，
+    # 否则进度舞台上这几个数字会一直显示 0，看起来像没在干活
+    initial_coverage = runtime.coverage()
+    _apply_coverage(job, initial_coverage)
+    # 从已有覆盖数起算：重跑时带着上一版已写内容，别让第一次检索就误报「已写 N 处」
+    steps.last_written = int(initial_coverage.get("written") or 0)
+    await steps.commit_pending()
     # 工具清单在任务开始时算一次：禁用项既不下发给模型，也不允许被调用
     tool_specs = resolve_tool_specs(config.disabled_tools)
     system_prompt = _system_prompt_for(
@@ -642,11 +745,9 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
             )
 
         coverage = runtime.coverage()
-        total = max(coverage["writable_total"], 1)
-        progress = 5 + int(85 * coverage["written"] / total)
         await steps.progress(
-            f"第 {round_index} 轮 · 已写 {coverage['written']}/{coverage['writable_total']} 处",
-            progress,
+            f"{_writing_step_text(coverage)}（第 {round_index} 轮）",
+            _coverage_percent(coverage),
         )
 
         try:
@@ -676,7 +777,7 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
 
     coverage = runtime.coverage()
     _apply_coverage(job, coverage)
-    job.current_step = "生成 Word 文档"
+    job.current_step = STEP_TEXT_RENDERING
     job.progress = 92
     await session.commit()
 

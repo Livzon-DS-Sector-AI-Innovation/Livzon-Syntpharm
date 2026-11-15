@@ -1,11 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Alert, App, Button, Form, Input, Modal, Select, Spin, Tag, Tooltip,
 } from 'antd'
 import { CloudUploadOutlined, EyeOutlined, ThunderboltOutlined } from '@ant-design/icons'
+import { withReturnTo } from '@/lib/navigation/returnTo'
 import { createReport as createReportAction, updateReport } from '@/actions/research/rd-project'
 import { submitReportGenJob } from '@/actions/research/report-gen'
 import { fetchDeliverableTemplates } from '@/lib/api/client/research/rd-project'
@@ -29,6 +31,8 @@ interface Props {
   editingReport?: RdReport | null
   /** 当前生效的正文生成模型，由列表页统一读取后传入，避免重复请求 */
   modelLabel?: string
+  /** 提交生成后跳转详情页要带回去的列表地址（含项目筛选），回来不丢上下文 */
+  returnTo?: string
 }
 
 interface ReportFormValues {
@@ -49,8 +53,17 @@ interface ReportFormValues {
  * 「AI 生成报告」= 先落报告记录，再提交一条异步生成任务，然后立刻关闭弹窗；
  * 生成状态在列表页看，成品在「生成详情」里预览/下载，弹窗不承载进度状态机。
  */
-export function CreateReportModal({ open, projectId, onCancel, onCreated, editingReport, modelLabel }: Props) {
+export function CreateReportModal({
+  open,
+  projectId,
+  onCancel,
+  onCreated,
+  editingReport,
+  modelLabel,
+  returnTo,
+}: Props) {
   const { message: msgApi } = App.useApp()
+  const router = useRouter()
   const [form] = Form.useForm<ReportFormValues>()
   const isEditMode = !!editingReport
   const queryClient = useQueryClient()
@@ -230,7 +243,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
       }
 
       // 2) 异步生成任务：后台 Agent 读母本 + 检索知识库 + 回写 docx
-      await submitReportGenJob({
+      const created = await submitReportGenJob({
         report_id: reportId,
         project_id: projectId,
         deliverable_template_id: selectedTpl.id,
@@ -239,9 +252,14 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
         supplement_text: values.supplement?.trim() || null,
       })
 
-      msgApi.success('已开始生成，可以到那份报告的「生成详情」里看进度')
+      // 3) 直接进详情页：任务最长可跑十几分钟，让用户自己回表格找那一行等于把进度藏起来
+      const jobId = (created as { data?: { id?: string } } | null)?.data?.id
+      msgApi.success('已开始生成，正在打开生成详情')
       onCreated?.()
       onCancel()
+      if (jobId) {
+        router.push(withReturnTo(`/research/reports/generation/${jobId}`, returnTo))
+      }
     } catch (e: unknown) {
       console.error('[CreateReportModal] 提交生成任务失败:', e)
       msgApi.error(e instanceof Error ? e.message : '提交生成任务失败')

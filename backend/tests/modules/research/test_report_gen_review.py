@@ -18,6 +18,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.core.database import get_db
 from app.modules.research import models as research_models
+from app.modules.research.doc_template import store as doc_template_store
 from app.modules.research.report_gen import review as review_module
 from app.modules.research.report_gen.api import router as report_gen_router
 from app.modules.research.report_gen.outline import TemplateOutline, build_outline
@@ -286,6 +287,26 @@ async def test_outline_is_parsed_once_per_template(monkeypatch: pytest.MonkeyPat
     await _review(_job(job_id), [])
 
     assert calls["count"] == 1
+
+
+async def test_document_bytes_are_downloaded_once_per_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    """清单每 5 秒被轮询一次：字节必须按存储键缓存，否则每次都要全量下载母本与成品。"""
+    _patch_store(monkeypatch, document_bytes=_template())
+    downloads: list[str] = []
+    real_load = doc_template_store.load_bytes
+
+    def _counting_load(key: str) -> bytes | None:
+        downloads.append(key)
+        return real_load(key)
+
+    monkeypatch.setattr(doc_template_store, "load_bytes", _counting_load)
+    job = _job(uuid4(), document_key="local:doc-gen/job/report.docx")
+
+    await _review(job, [])
+    await _review(job, [])
+
+    # 母本 + 成品：两份各只下一次，第二次全靠缓存
+    assert downloads == ["local:doc-gen/job/template.docx", "local:doc-gen/job/report.docx"]
 
 
 @pytest.fixture

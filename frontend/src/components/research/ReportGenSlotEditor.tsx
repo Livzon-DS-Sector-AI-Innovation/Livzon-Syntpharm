@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Alert, App, Button, Flex, Input, Popconfirm, Tag, Tooltip } from 'antd'
 import {
-  ArrowLeftOutlined,
+  CloseOutlined,
   DeleteOutlined,
   PlusOutlined,
   SaveOutlined,
@@ -142,8 +142,8 @@ export function ReportGenSlotEditor({ jobId, item, baseVersionId, onBack, onSave
   return (
     <Flex vertical style={{ height: '100%', minHeight: 0 }}>
       <div style={{ padding: '10px 16px', borderBottom: '1px solid #EDEFF2' }}>
-        <Button size="small" type="link" icon={<ArrowLeftOutlined />} onClick={onBack} style={{ paddingLeft: 0 }}>
-          返回清单
+        <Button size="small" type="link" icon={<CloseOutlined />} onClick={onBack} style={{ paddingLeft: 0 }}>
+          关闭编辑
         </Button>
         <Flex gap={8} align="center" wrap style={{ marginTop: 2 }}>
           <span style={{ fontSize: 15, fontWeight: 600, color: '#1F2329' }}>{item.label}</span>
