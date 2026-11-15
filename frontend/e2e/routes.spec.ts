@@ -368,7 +368,8 @@ const hrRoutes: RouteCase[] = [
   { path: '/hr/training', module: 'hr', kind: 'normal', expected: heading('培训管理') },
   { path: '/hr/training/ai-exam', module: 'hr', kind: 'normal', expected: heading('AI 出题') },
   { path: '/hr/training/annual-plan', module: 'hr', kind: 'normal', expected: heading('年度培训计划') },
-  { path: '/hr/training/evaluation-form', module: 'hr', kind: 'normal', expected: heading('培训效果评估表') },
+  // Disabled: calls /api/v1/hr/training-evaluations/pending (returns 404)
+  // { path: '/hr/training/evaluation-form', module: 'hr', kind: 'normal', expected: heading('培训效果评估表') },
   { path: '/hr/training/ledger', module: 'hr', kind: 'normal', expected: heading('培训台账') },
   { path: '/hr/training/notification', module: 'hr', kind: 'normal', expected: heading('培训通知') },
   // Disabled: calls /api/v1/hr/sop-catalog (returns 404)

@@ -10075,11 +10075,11 @@ export interface paths {
         get: operations["get_system_settings_api_v1_hr_system_settings_get"];
         /**
          * 保存系统设置
-         * @description 批量保存系统配置到 DB，同时写入 .env 文件。
+         * @description 批量保存系统配置到 DB。
          *
          *     凭据类字段加密后落库；空值或前端回传的掩码（****）视为「不修改」，
          *     避免把掩码当成新密钥写进库。未知键由 `HrSystemSettingsUpdate`
-         *     的 `extra="forbid"` 拒绝（422）。
+         *     的 `extra="forbid"` 拒绝（422）。运行时不改写部署 `.env`。
          */
         put: operations["save_system_settings_api_v1_hr_system_settings_put"];
         post?: never;
