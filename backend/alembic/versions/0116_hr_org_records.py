@@ -8,7 +8,7 @@ Squashed HR migration for main. Unlike the UAT-only history, this migration
 never adds or drops anything on `identity.departments`; the HR org mirror lives
 entirely in `hr.departments`.
 
-Only `hr` (and the settings migration that follows) is changed.
+Only the `hr` schema is changed.
 """
 
 from collections.abc import Sequence
