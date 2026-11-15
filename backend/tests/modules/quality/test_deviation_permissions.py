@@ -61,8 +61,38 @@ def test_actor_in_allowed_passes() -> None:
     ensure_actor_allowed("dept_head_review", {actor}, actor, actor_is_superuser=False)
 
 
-def test_superuser_bypasses_allowed() -> None:
-    ensure_actor_allowed("dept_head_review", set(), uuid.uuid4(), actor_is_superuser=True)
+def test_superuser_override_requires_reason() -> None:
+    with pytest.raises(BadRequestException) as excinfo:
+        ensure_actor_allowed("dept_head_review", set(), uuid.uuid4(), actor_is_superuser=True)
+    assert "代审原因" in str(excinfo.value)
+
+
+def test_superuser_override_returns_reason() -> None:
+    reason = ensure_actor_allowed(
+        "dept_head_review",
+        {uuid.uuid4()},
+        uuid.uuid4(),
+        actor_is_superuser=True,
+        override_reason="  质量负责人休假，管理者代审  ",
+    )
+    assert reason == "质量负责人休假，管理者代审"
+
+
+def test_superuser_override_reason_too_short() -> None:
+    with pytest.raises(BadRequestException):
+        ensure_actor_allowed("dept_head_review", set(), uuid.uuid4(), actor_is_superuser=True, override_reason="ok")
+
+
+def test_superuser_override_reason_too_long() -> None:
+    with pytest.raises(BadRequestException):
+        ensure_actor_allowed(
+            "dept_head_review", set(), uuid.uuid4(), actor_is_superuser=True, override_reason="代" * 201
+        )
+
+
+def test_superuser_as_handler_needs_no_reason() -> None:
+    actor = uuid.uuid4()
+    assert ensure_actor_allowed("dept_head_review", {actor}, actor, actor_is_superuser=True) is None
 
 
 def test_actor_not_in_allowed_is_forbidden() -> None:
@@ -126,12 +156,12 @@ def test_ai_analysis_actions_allow_investigation_for_investigator() -> None:
     flow = _flow({"investigation": [investigator]})
 
     assert _allowed_actions(row, "ai_analysis", flow, viewer_id=reporter, viewer_is_superuser=False) == [
-        "analyze",
         "investigate",
+        "analyze",
     ]
     assert _allowed_actions(row, "ai_analysis", flow, viewer_id=investigator, viewer_is_superuser=False) == [
-        "analyze",
         "investigate",
+        "analyze",
     ]
     # 与分析结论的编辑范围一致：无关用户既不能分析也不能调查
     assert _allowed_actions(row, "ai_analysis", flow, viewer_id=uuid.uuid4(), viewer_is_superuser=False) == []
@@ -174,3 +204,25 @@ def test_attachments_locked_before_investigation() -> None:
     row = _row(status="pending_final_code", reporter_id=reporter)
     with pytest.raises(BadRequestException):
         _service()._assert_can_edit_investigation(row, reporter)
+
+
+# ── AI 分析全节点可用 ───────────────────────────────────────────────────
+
+
+def test_analyze_action_available_at_review_and_final_code() -> None:
+    """除已关闭 / 已取消外任意节点都保留 AI 分析入口（人员仍限上报人 / 调查人 / 超管）。"""
+    investigator = uuid.uuid4()
+    flow = _flow()
+    for status, step in (("pending_qa_review", "qa_review"), ("pending_final_code", "final_code")):
+        row = _row(status=status, handler_ids=[investigator])
+        assert "analyze" in _allowed_actions(row, step, flow, viewer_id=investigator, viewer_is_superuser=False)
+    stranger_row = _row(status="pending_qa_review", handler_ids=[investigator])
+    assert _allowed_actions(stranger_row, "qa_review", flow, viewer_id=uuid.uuid4(), viewer_is_superuser=False) == []
+
+
+def test_analyze_action_absent_for_closed_and_cancelled() -> None:
+    reporter = uuid.uuid4()
+    flow = _flow()
+    for status in ("closed", "cancelled"):
+        row = _row(status=status, reporter_id=reporter)
+        assert "analyze" not in _allowed_actions(row, None, flow, viewer_id=reporter, viewer_is_superuser=False)

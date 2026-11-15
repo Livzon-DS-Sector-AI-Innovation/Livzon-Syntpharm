@@ -1,18 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Alert, App, Breadcrumb, Button, Popconfirm } from 'antd'
-import { ArrowLeftOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons'
+import { Alert, App, Breadcrumb, Button, FloatButton, Popconfirm } from 'antd'
+import { ArrowLeftOutlined, DeleteOutlined, ReloadOutlined, VerticalAlignTopOutlined } from '@ant-design/icons'
 import { deleteDeviationLedger } from '@/actions/quality'
-import type { DeviationLedgerDetail, DeviationLedgerOption } from '@/types/quality'
+import type {
+  DeviationInvestigationPrefill,
+  DeviationLedgerDetail,
+  DeviationLedgerOption,
+} from '@/types/quality'
 import { DEVIATION_LEDGER_PATH } from '../constants'
 import { DetailSummaryBar } from './DetailSummaryBar'
+import { DetailSectionNav } from './DetailSectionNav'
+import { getScrollElement, useActiveSection } from './detailScroll'
+import { SCROLLSPY_SECTION_KEYS } from './detailSections'
 import { FlowPanel } from './FlowPanel'
 import { BasicInfoCard } from './BasicInfoCard'
 import { AiAnalysisCard } from './AiAnalysisCard'
-import { InvestigationCard } from './InvestigationCard'
+import { InvestigationCard, type InvestigationCardHandle } from './InvestigationCard'
 import { CrossDeptReviewCard } from './CrossDeptReviewCard'
 import { ReviewCard } from './ReviewCard'
 import { FinalCodeCard } from './FinalCodeCard'
@@ -26,8 +33,8 @@ interface DeviationDetailPageProps {
 }
 
 /**
- * 偏差详情整页：左栏（16/24）承载各环节操作卡，右栏（8/24）粘性流程区。
- * 窄屏自动退化为单列，流程区跟在主体之后。
+ * 偏差详情整页：摘要条 → 分区导航 → 左栏（2/3）环节板块 + 右栏（1/3）审核流程。
+ * 窄屏自动退化为单列，流程区跟在主体之后；右下角提供回到顶部。
  */
 export function DeviationDetailPage({
   initialLedger,
@@ -36,8 +43,34 @@ export function DeviationDetailPage({
 }: DeviationDetailPageProps) {
   const router = useRouter()
   const { message } = App.useApp()
+  // 页面根节点：用于定位真正的滚动容器（AppShell 的 <main>）
+  const pageRef = useRef<HTMLDivElement>(null)
   const [ledger, setLedger] = useState(initialLedger)
   const [deleting, setDeleting] = useState(false)
+  // AI 分析 → 调查表单的一次性填充载荷：由 AI 卡片写入、调查卡片消费后清空
+  const [investigationPrefill, setInvestigationPrefill] = useState<DeviationInvestigationPrefill | null>(null)
+  // 调查卡片的命令式入口：AI 卡片发出「一键填写」时展开表单（依赖稳定化，避免子组件重复渲染）
+  const investigationCardRef = useRef<InvestigationCardHandle>(null)
+
+  const handleFillInvestigation = useCallback((prefill: DeviationInvestigationPrefill) => {
+    // 先下发载荷再展开表单：同一批渲染里表单挂载即可按 nonce 消费
+    setInvestigationPrefill(prefill)
+    investigationCardRef.current?.openSubmitForm()
+  }, [])
+
+  const handlePrefillApplied = useCallback(
+    (filled: number) => {
+      setInvestigationPrefill(null)
+      if (filled > 0) {
+        message.success(`已把 AI 分析带入 ${filled} 项空白内容，请核对后提交`)
+      } else {
+        message.info('调查表单已有内容，AI 分析未覆盖任何字段')
+      }
+    },
+    [message],
+  )
+  // 当前滚动到的板块：驱动分区导航高亮
+  const activeSection = useActiveSection(pageRef, SCROLLSPY_SECTION_KEYS)
 
   const handleDelete = async () => {
     setDeleting(true)
@@ -53,7 +86,7 @@ export function DeviationDetailPage({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div ref={pageRef} className="flex flex-col gap-4">
       <Breadcrumb
         items={[
           { title: <Link href="/quality">质量管理</Link> },
@@ -88,6 +121,8 @@ export function DeviationDetailPage({
 
       <DetailSummaryBar ledger={ledger} />
 
+      <DetailSectionNav ledger={ledger} activeId={activeSection} />
+
       {optionsError && (
         <Alert
           type="warning"
@@ -100,8 +135,18 @@ export function DeviationDetailPage({
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
         <div className="flex min-w-0 flex-col gap-4 lg:col-span-2">
           <BasicInfoCard ledger={ledger} departmentOptions={departmentOptions} onUpdated={setLedger} />
-          <AiAnalysisCard ledger={ledger} onUpdated={setLedger} />
-          <InvestigationCard ledger={ledger} onUpdated={setLedger} />
+          <AiAnalysisCard
+            ledger={ledger}
+            onUpdated={setLedger}
+            onFillInvestigation={handleFillInvestigation}
+          />
+          <InvestigationCard
+            ref={investigationCardRef}
+            ledger={ledger}
+            onUpdated={setLedger}
+            prefill={investigationPrefill}
+            onPrefillApplied={handlePrefillApplied}
+          />
           <CrossDeptReviewCard ledger={ledger} onUpdated={setLedger} />
           <ReviewCard ledger={ledger} onUpdated={setLedger} />
           <FinalCodeCard ledger={ledger} onUpdated={setLedger} />
@@ -114,6 +159,17 @@ export function DeviationDetailPage({
           </div>
         </aside>
       </div>
+
+      <FloatButton.BackTop
+        type="primary"
+        icon={<VerticalAlignTopOutlined />}
+        tooltip="回到顶部"
+        aria-label="回到顶部"
+        visibilityHeight={280}
+        duration={420}
+        target={() => getScrollElement(pageRef.current)}
+        style={{ right: 24, bottom: 24 }}
+      />
     </div>
   )
 }

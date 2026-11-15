@@ -533,7 +533,18 @@ export type DeviationLedgerUpdateInput = components['schemas']['LedgerUpdateRequ
 export type DeviationLedgerBatchStatusInput = components['schemas']['BatchStatusRequest']
 export type DeviationAiAnalysisInput = components['schemas']['CompleteAiAnalysisRequest']
 export type DeviationAiAnalysisData = components['schemas']['AiAnalysisData']
+
+/** AI 结果带入调查表单的载荷（本地应用类型，非契约生成；nonce 用于去重与一次性消费） */
+export interface DeviationInvestigationPrefill {
+  nonce: string
+  nonconformity_description: string
+  root_cause_analysis: string
+  risk_assessment: string
+  capa_proposals: { summary: string }[]
+}
 export type DeviationInvestigationInput = components['schemas']['InvestigationRequest']
+export type DeviationInvestigationDraftInput = components['schemas']['InvestigationDraftRequest']
+export type DeviationInvestigationDraft = components['schemas']['InvestigationDraftItem']
 export type DeviationInvestigationRecord = components['schemas']['InvestigationRecordItem']
 export type DeviationReviewInput = components['schemas']['ReviewRequest']
 export type DeviationReviewOpinion = components['schemas']['ReviewOpinionItem']
@@ -549,6 +560,9 @@ export type DeviationAttachmentCommentUpdateInput = components['schemas']['Attac
 export type DeviationLedgerStep = components['schemas']['LedgerStep']
 export type DeviationCrossDeptReviewer = components['schemas']['CrossDeptReviewerItem']
 export type DeviationCrossDeptApproveInput = components['schemas']['CrossDeptApproveRequest']
+export type DeviationCrossDeptRejectInput = components['schemas']['CrossDeptRejectRequest']
+export type DeviationCrossDeptInvestigationInput = components['schemas']['CrossDeptInvestigationRequest']
+export type DeviationInvestigationSubmitInput = components['schemas']['InvestigationSubmitRequest']
 export type DeviationCrossDeptStepSubItem = components['schemas']['CrossDeptStepSubItem']
 export type DeviationCapaProposalInput = components['schemas']['CapaProposalItem']
 export type DeviationLedgerOptionResult = components['schemas']['OptionListData']
