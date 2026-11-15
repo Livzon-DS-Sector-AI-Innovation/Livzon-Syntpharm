@@ -32,8 +32,8 @@ type Mode = 'edit' | 'insert'
 const KIND_LABEL: Record<string, string> = {
   paragraph: '正文段落',
   table_cell: '表格单元格',
-  append_paragraph: 'AI 追加段落',
-  append_table_rows: 'AI 追加表格行',
+  append_paragraph: 'AI 新增段落',
+  append_table_rows: 'AI 新增表格行',
   references: '参考资料',
 }
 
@@ -43,13 +43,13 @@ function RemovalList({ items, applied }: { items: ReportGenEditRemoval[]; applie
     <Alert
       type={applied > 0 ? 'warning' : 'error'}
       showIcon
-      message={applied > 0 ? `有 ${items.length} 处校验未通过，已还原原文` : '这一批修改都没有通过校验'}
+      message={applied > 0 ? `有 ${items.length} 处没有保存成功，已恢复原文` : '这一批修改都没有保存成功'}
       description={
         <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
           {items.map((item, index) => (
             <li key={`${item.key ?? 'op'}-${index}`} style={{ fontSize: 12 }}>
               {item.reason}
-              {item.restored ? '（这一处已还原为母本原样）' : ''}
+              {item.restored ? '（这一处已恢复为模板原文）' : ''}
             </li>
           ))}
         </ul>
@@ -95,7 +95,7 @@ export function ReportGenSlotEditor({ jobId, item, baseVersionId, onBack, onSave
       setApplied(result.applied)
       if (!result.applied) {
         setRemovals(result.removed ?? [])
-        message.warning('这一批修改都没有通过校验，相关位置已还原原文')
+        message.warning('这一批修改都没有保存成功，相关位置已恢复原文')
         return
       }
       if ((result.removed ?? []).length > 0) {
@@ -117,7 +117,7 @@ export function ReportGenSlotEditor({ jobId, item, baseVersionId, onBack, onSave
   const submitText = () => {
     const value = text.trim()
     if (!value) {
-      message.warning('内容不能为空；要去掉这一段请用删除')
+      message.warning('内容不能为空；需要整段删除时，只有 AI 新增的段落支持删除')
       return
     }
     if (mode === 'insert') {
@@ -166,10 +166,10 @@ export function ReportGenSlotEditor({ jobId, item, baseVersionId, onBack, onSave
             <Alert
               type="info"
               showIcon
-              message="母本固定内容"
+              message="模板固定内容"
               description={
                 item.reason ||
-                '这里是母本固定文字（标题、说明文字或签字审批区），需要时可以直接修改。'
+                '这是模板里固定的文字（标题、说明或签字审批区），需要时可以直接修改。'
               }
             />
           )}
@@ -187,8 +187,8 @@ export function ReportGenSlotEditor({ jobId, item, baseVersionId, onBack, onSave
             <Alert
               type="warning"
               showIcon
-              message="这一处这次没有写入"
-              description={item.reason || '资料里没有可用依据，可以直接补写；补写后会在版本里留痕。'}
+              message="这一处这次没有填写"
+              description={item.reason || '资料里没有可用依据，可以直接补写；补写后会保存在新版本里。'}
             />
           )}
 
@@ -196,14 +196,14 @@ export function ReportGenSlotEditor({ jobId, item, baseVersionId, onBack, onSave
             <Alert
               type="error"
               showIcon
-              message="这一处写入没有落到位"
-              description={item.reason || '成品里找不到这个位置，母本可能换过版，建议重新生成。'}
+              message="这一处内容没有写进文档"
+              description={item.reason || '生成好的文档里找不到这一处，模板可能换过版本，建议重新生成。'}
             />
           )}
 
           {item.text && (
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#5A6472', marginBottom: 6 }}>母本原文</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#5A6472', marginBottom: 6 }}>模板原文</div>
               <div style={{ background: '#FAFBFC', border: '1px solid #EDEFF2', borderRadius: 8, padding: '10px 12px', fontSize: 13, color: '#5A6472', whiteSpace: 'pre-wrap' }}>
                 {item.text}
               </div>
@@ -214,7 +214,7 @@ export function ReportGenSlotEditor({ jobId, item, baseVersionId, onBack, onSave
             <div>
               <Flex align="center" justify="space-between" style={{ marginBottom: 6 }}>
                 <span style={{ fontSize: 12, fontWeight: 600, color: '#5A6472' }}>
-                  {mode === 'insert' ? '在当前位置之后插入段落' : '修改内容'}
+                  {mode === 'insert' ? '在当前位置之后新增段落' : '修改内容'}
                 </span>
                 {canInsert && (
                   <Button
@@ -226,7 +226,7 @@ export function ReportGenSlotEditor({ jobId, item, baseVersionId, onBack, onSave
                       setText(mode === 'insert' ? item.value ?? '' : '')
                     }}
                   >
-                    {mode === 'insert' ? '取消插入' : '插一段'}
+                    {mode === 'insert' ? '取消新增' : '新增一段'}
                   </Button>
                 )}
               </Flex>
@@ -239,12 +239,12 @@ export function ReportGenSlotEditor({ jobId, item, baseVersionId, onBack, onSave
               />
               <Flex gap={8} style={{ marginTop: 10 }}>
                 <Button type="primary" icon={<SaveOutlined />} loading={saving} onClick={submitText}>
-                  {mode === 'insert' ? '插入并保存' : '保存'}
+                  {mode === 'insert' ? '新增并保存' : '保存'}
                 </Button>
                 {isAppendedParagraph && (
                   <Popconfirm
                     title="删除这一段？"
-                    description="只删除生成或编辑时追加的段落，母本原文不受影响。"
+                    description="只删除生成或编辑时新增的段落，模板原文不受影响。"
                     okText="删除"
                     cancelText="取消"
                     okButtonProps={{ danger: true }}
@@ -257,7 +257,7 @@ export function ReportGenSlotEditor({ jobId, item, baseVersionId, onBack, onSave
                 )}
                 {canRestore && mode !== 'insert' && (
                   <Popconfirm
-                    title="还原为母本原样？"
+                    title="还原为模板原文？"
                     description="内容会被清掉，段落/单元格本身保留，版面不变；保存后生成新版本，可回滚。"
                     okText="还原"
                     cancelText="取消"
@@ -265,7 +265,7 @@ export function ReportGenSlotEditor({ jobId, item, baseVersionId, onBack, onSave
                     onConfirm={() => void submit([{ op: 'restore_position', key: item.key }])}
                   >
                     <Button icon={<UndoOutlined />} disabled={saving}>
-                      还原为母本原样
+                      还原为模板原文
                     </Button>
                   </Popconfirm>
                 )}
@@ -284,14 +284,14 @@ export function ReportGenSlotEditor({ jobId, item, baseVersionId, onBack, onSave
                     placeholder="新增行内容，列之间用竖线分隔，如：收率 | 92.1%"
                   />
                   <Button size="small" icon={<PlusOutlined />} loading={saving} onClick={submitRow}>
-                    在表末追加一行
+                    在表格末尾新增一行
                   </Button>
                 </Flex>
               )}
               {canDeleteRow && (
                 <Popconfirm
                   title="删除这一行？"
-                  description="只能删空行或这次追加的行；母本里有内容的行后端会拒绝。"
+                  description="只能删除空行或这次新增的行；模板里有内容的行不能删除。"
                   okText="删除"
                   cancelText="取消"
                   okButtonProps={{ danger: true }}
@@ -308,8 +308,8 @@ export function ReportGenSlotEditor({ jobId, item, baseVersionId, onBack, onSave
       </div>
 
       <div style={{ padding: '8px 16px', borderTop: '1px solid #EDEFF2', fontSize: 11, color: '#8C8C8C' }}>
-        <Tooltip title="每次保存都会落一个新版本，可在「版本」里回滚；改过的位置会作为下次生成的依据保留">
-          <span>保存后生成新版本；人工改过的位置下次重新生成会保留</span>
+        <Tooltip title="每次保存都会生成一个新版本，可在「版本」里回滚；人工修改过的位置会保留到下次生成">
+          <span>保存后生成新版本；人工修改的位置下次重新生成会保留</span>
         </Tooltip>
       </div>
     </Flex>

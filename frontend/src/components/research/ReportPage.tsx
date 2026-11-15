@@ -202,7 +202,7 @@ export function ReportPage({ projectId }: Props) {
               <Tag color={meta.color} style={{ margin: 0 }}>{meta.label}</Tag>
               {job.slot_total > 0 && (
                 <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-                  已填 {job.slot_filled}/{job.slot_total} 项
+                  已填写 {job.slot_filled}/{job.slot_total} 项
                 </span>
               )}
             </div>
@@ -253,7 +253,7 @@ export function ReportPage({ projectId }: Props) {
         return (
           <Space size="small" wrap>
             <PermissionGate code={PERM.researchReportRead}>
-              <Tooltip title={job ? '看这次写入了哪些位置、成品预览与下载' : '还没生成过，先点「编辑」用 AI 生成'}>
+              <Tooltip title={job ? '看这次填写了哪些位置、预览和下载文档' : '还没生成过，先点「编辑」用 AI 生成'}>
                 <span>
                   <Button
                     type="link"

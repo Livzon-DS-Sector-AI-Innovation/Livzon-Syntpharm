@@ -494,8 +494,8 @@ async def _render_and_store(
     await steps.add(
         "status",
         (
-            f"文档已生成：写入 {coverage['written']}/{coverage['writable_total']} 处，"
-            f"未写空位 {coverage['unwritten']} 处"
+            f"文档已生成：已填写 {coverage['written']}/{coverage['writable_total']} 处，"
+            f"待填写 {coverage['unwritten']} 处"
             + (f"，追加 {coverage['appended']} 处" if coverage.get("appended") else "")
         ),
         result=(
@@ -537,13 +537,13 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
     template_bytes = await _load_template_bytes(job, template)
     outline = build_outline(open_document(template_bytes))
     if outline.writable_total == 0:
-        raise RuntimeError("这份母本里没有可填写的位置（既没有空段，也没有下划线占位），没法生成")
+        raise RuntimeError("这份模板里没有可填写的位置（既没有空段，也没有占位符），没法生成")
 
     instruction = structure_instruction(template.template_structure)
     await steps.add(
         "status",
         (
-            f"母本读取完成：{outline.paragraph_count} 段 + {outline.table_count} 张表，"
+            f"模板读取完成：{outline.paragraph_count} 段 + {outline.table_count} 张表，"
             f"可写位置 {outline.writable_total} 个"
         ),
         result=(
@@ -676,7 +676,7 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
 
     coverage = runtime.coverage()
     _apply_coverage(job, coverage)
-    job.current_step = "写入 Word 模板文件"
+    job.current_step = "生成 Word 文档"
     job.progress = 92
     await session.commit()
 
@@ -691,7 +691,7 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
         "status",
         f"任务完成：已写 {coverage['written']}/{coverage['writable_total']} 处",
         result=(
-            f"未写空位 {coverage['unwritten']} 处"
+            f"待填写 {coverage['unwritten']} 处"
             + (f"，被拒绝 {coverage['rejected']} 次" if coverage.get("rejected") else "")
         ),
     )

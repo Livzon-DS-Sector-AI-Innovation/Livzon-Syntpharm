@@ -981,7 +981,7 @@ async def apply_job_edits(
 
     document_bytes = store.load_bytes(str(job.document_object_key))
     if not document_bytes:
-        raise BadRequestException("成品文件找不到了，请重新生成一次")
+        raise BadRequestException("生成好的文档找不到了，请重新生成一次")
 
     run = report_editor.apply_operations(document_bytes, outline, rows, payload.operations)
     removed = [

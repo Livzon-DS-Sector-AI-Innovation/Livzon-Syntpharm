@@ -245,7 +245,7 @@ export function DeliverableGenerateWizard({
                           <Tag color="blue">自动匹配</Tag>
                         </Flex>
                         <Text type="secondary" style={{ fontSize: 12 }}>
-                          {recommended.file_name ?? '模板母本'}
+                          {recommended.file_name ?? '模板文件'}
                         </Text>
                       </div>
                       {templates.length > 1 ? (
@@ -256,7 +256,7 @@ export function DeliverableGenerateWizard({
                           onChange={(value) => setTemplateId(value)}
                           options={templates.map((item) => ({
                             value: item.id,
-                            label: `${item.name}${item.has_file ? '' : '（缺母本文件）'}`,
+                            label: `${item.name}${item.has_file ? '' : '（缺模板文件）'}`,
                             disabled: !item.has_file,
                           }))}
                           placeholder="换一个模板"
@@ -272,7 +272,7 @@ export function DeliverableGenerateWizard({
                     description={
                       <Flex vertical gap={8} align="flex-start">
                         <span>
-                          系统不会自动替你新建模板。请先上传母本并启用，再回来生成。
+                          系统不会自动替你新建模板。请先上传模板文件并启用，再回来生成。
                           {templates.length > 0
                             ? `当前阶段有 ${templates.length} 个其它类型的模板，但不能拿来出这份文档。`
                             : ''}
@@ -363,7 +363,7 @@ export function DeliverableGenerateWizard({
                                 onChange={(value) => setTemplateId(value)}
                                 options={templates.map((item) => ({
                                   value: item.id,
-                                  label: `${item.name}${item.has_file ? '' : '（缺母本文件）'}`,
+                                  label: `${item.name}${item.has_file ? '' : '（缺模板文件）'}`,
                                   disabled: !item.has_file,
                                 }))}
                               />
@@ -393,8 +393,8 @@ export function DeliverableGenerateWizard({
                     message="已生成并归档到这条交付文档"
                     description={
                       <span>
-                        已写入 {status.slot_filled} 处内容
-                        {status.slot_gap > 0 ? `，还有 ${status.slot_gap} 处空位没有资料支撑` : ''}
+                        已填写 {status.slot_filled} 处内容
+                        {status.slot_gap > 0 ? `，还有 ${status.slot_gap} 处待填写位置没有资料支撑` : ''}
                         。引用源只在详情页右侧「参考资料」展示、不写进文档，下载后核对一遍，再把交付状态改为「已完成」。
                       </span>
                     }
@@ -413,9 +413,9 @@ export function DeliverableGenerateWizard({
 
                 {(status?.slot_total ?? 0) > 0 && (
                   <Space size={16}>
-                    <Text>可写 {status?.slot_total} 处</Text>
-                    <Text type="success">已写 {status?.slot_filled}</Text>
-                    <Text type="warning">未写 {status?.slot_gap}</Text>
+                    <Text>可填写 {status?.slot_total} 处</Text>
+                    <Text type="success">已填写 {status?.slot_filled}</Text>
+                    <Text type="warning">待填写 {status?.slot_gap}</Text>
                   </Space>
                 )}
 

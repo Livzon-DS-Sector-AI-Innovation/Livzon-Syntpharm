@@ -182,10 +182,10 @@ async def test_written_and_unwritten_positions_are_merged(monkeypatch: pytest.Mo
     assert items["p1"].source_name == "实验记录.xlsx"
     # 未写位置也必须出现，并说明原因
     assert items["p4"].state == "blank"
-    assert "没有写入" in (items["p4"].reason or "")
+    assert "没有填写" in (items["p4"].reason or "")
     assert items["p2"].writable is False
     assert items["p2"].state == "blank"
-    assert "母本固定内容" in (items["p2"].reason or "")
+    assert "模板里固定的内容" in (items["p2"].reason or "")
     assert data.stats.writable_total == 3
     assert data.stats.written == 1
     assert data.stats.blank == 2

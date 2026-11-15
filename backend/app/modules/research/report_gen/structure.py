@@ -51,7 +51,7 @@ def open_document(data: bytes) -> Any:
     try:
         return Document(BytesIO(data))
     except Exception as exc:  # noqa: BLE001 - python-docx 抛的异常类型不稳定
-        raise BadRequestException("Word 母本无法解析，请确认上传的是有效的 docx 文件") from exc
+        raise BadRequestException("Word 模板无法解析，请确认上传的是有效的 docx 文件") from exc
 
 
 def paragraph_refs(document: Any) -> list[ParagraphRef]:

@@ -46,7 +46,7 @@ export function ReportGenReferencePanel({ data, loading, onLocate }: Props) {
           <div style={{ padding: 32 }}>
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={data ? '本次生成没有带来源的写入' : '正在读取参考资料'}
+              description={data ? '本次生成没有带来源的填写内容' : '正在读取参考资料'}
             />
           </div>
         )}

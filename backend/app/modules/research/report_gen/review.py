@@ -135,15 +135,15 @@ def _state_of(row: RdReportGenSlot | None) -> tuple[str, str | None]:
     否则详情页会把无依据内容当成已完成。
     """
     if row is None:
-        return "blank", "这次没有写入：资料里没有可用依据，也可能是没检索到"
+        return "blank", "这次没有填写：资料里没有可用依据，也可能是没有检索到"
     if not (row.value or "").strip():
-        return "blank", "这次没有写入：位置仍然空着"
+        return "blank", "这次没有填写：位置仍然空着"
     if row.state == "anchor_unresolved":
-        return "anchor_unresolved", "成品里找不到这个位置（母本可能换过版），写入没有落到位"
+        return "anchor_unresolved", "生成好的文档里找不到这一处（模板可能换过版本），内容没有写进去"
     if row.state == "conflict":
         return "conflict", "这一处资料互相矛盾，需要人工判断后再定稿"
     if row.state == "pending":
-        return "needs_verify", "已写入，但没有可引用的来源，需要人工核对"
+        return "needs_verify", "已填写，但没有可引用的来源，需要人工确认"
     return "written", None
 
 
@@ -212,7 +212,7 @@ def _item_of_position(
 ) -> ReportGenFieldItemData:
     state, reason = _state_of(row)
     if not position.writable and row is None:
-        reason = "母本固定内容：需要时可以直接补写"
+        reason = "这是模板里固定的内容，需要时可以直接补写"
     return ReportGenFieldItemData(
         key=position.key,
         kind=position.kind,

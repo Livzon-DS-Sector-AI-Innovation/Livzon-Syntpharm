@@ -455,8 +455,8 @@ export function DeliverableTemplatePage() {
           type="info"
           showIcon
           style={{ marginBottom: 12 }}
-          title="上传母本即可，不需要提前标注位置"
-          description="生成时由智能体自己读这份 Word 的章节与空位，检索项目知识库后把内容写进去；引用源只展示在详情页右侧，不写进文档。模板里可另填一句「填写要求」来约束写法。"
+          title="上传模板即可，不需要提前标注位置"
+          description="生成时由 AI 自己读这份 Word 的章节和待填写位置，检索项目知识库后把内容写进去；参考资料只展示在详情页右侧，不写进文档。模板里还可以填一句「填写要求」来约束写法。"
         />
         <Upload.Dragger
           multiple
@@ -570,7 +570,7 @@ export function DeliverableTemplatePage() {
             <Form.Item
               name="instruction"
               label="填写要求（可选）"
-              extra="会作为本次生成的写法要求下发给智能体，例如「数值保留两位小数，未查到资料的段落留空」；留空表示不加额外要求。"
+              extra="会作为本次生成的写作要求交给 AI，例如「数值保留两位小数，未查到资料的段落留空」；留空表示不加额外要求。"
             >
               <TextArea rows={4} maxLength={2000} showCount placeholder="可留空" />
             </Form.Item>

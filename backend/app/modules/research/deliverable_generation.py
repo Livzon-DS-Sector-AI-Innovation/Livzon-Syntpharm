@@ -352,7 +352,7 @@ async def _resolve_template(
         if recommended_id is None:
             raise BadRequestException(
                 f"「{stage_label(stage)} · {deliverable_type_label(deliverable_type)}」还没有可用的 Word 模板。"
-                "请先到「研发管理 → 交付文档模板」上传母本并启用"
+                "请先到「研发管理 → 交付文档模板」上传模板文件并启用"
             )
         template = await session.get(RdDeliverableTemplate, recommended_id)
         if template is None:
@@ -360,7 +360,7 @@ async def _resolve_template(
 
     if not template.file_object_key:
         raise BadRequestException(
-            f"模板「{template.name}」还没有上传 Word 文件，没法生成。请先到「交付文档模板」页给它上传母本"
+            f"模板「{template.name}」还没有上传 Word 文件，没法生成。请先到「交付文档模板」页给它上传模板文件"
         )
     return template
 

@@ -309,9 +309,9 @@ async def edit_report_gen_document(
     if data.applied:
         message = f"已保存 {data.applied} 处修改"
         if data.removed:
-            message += f"，{len(data.removed)} 处校验未通过已还原原文"
+            message += f"，{len(data.removed)} 处没有保存成功，已恢复原文"
     else:
-        message = "这一批修改都没有通过校验，相关位置已还原原文"
+        message = "这一批修改都没有保存成功，相关位置已恢复原文"
     return DataResponse[ReportGenEditResultData](data=data, message=message)
 
 

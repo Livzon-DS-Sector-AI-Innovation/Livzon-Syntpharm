@@ -273,7 +273,7 @@ def test_delete_template_paragraph_is_still_rejected() -> None:
     run = _run([_op("delete_paragraph", key="p2")])
 
     assert run.applied == 0
-    assert run.removals[0].reason.startswith("只能删除生成或编辑时追加的段落")
+    assert run.removals[0].reason.startswith("只能删除生成或编辑时新增的段落")
     assert _paragraphs(run.document or b"")[2] == "本段为固定说明文字"
 
 
@@ -299,7 +299,7 @@ def test_non_empty_template_row_cannot_be_deleted() -> None:
     rejected = _run([_op("delete_table_row", key="t0r1c0")], document=data)
 
     assert rejected.applied == 0
-    assert "只能删空行" in rejected.removals[0].reason
+    assert "只能删除空行" in rejected.removals[0].reason
 
 
 def _placeholder_template() -> bytes:
@@ -412,7 +412,7 @@ def test_restore_without_write_record_is_rejected() -> None:
     run = _run([_op("restore_position", key="p1")])
 
     assert run.applied == 0
-    assert "没有写入记录" in run.removals[0].reason
+    assert "没有填写记录" in run.removals[0].reason
     assert run.removals[0].restored is False
 
 
@@ -438,7 +438,7 @@ def test_anchor_unresolved_is_rejected() -> None:
     run = apply_operations(_short_template(), outline, {}, [_op("update_text", key="p4", text="写错位置")])
 
     assert run.applied == 0
-    assert "找不到这个位置" in run.removals[0].reason
+    assert "找不到这一处" in run.removals[0].reason
 
 
 def test_partial_success_keeps_valid_edits_and_restores_invalid_one() -> None:
@@ -483,7 +483,7 @@ def test_failed_update_restores_previous_value_to_template() -> None:
     ("key", "op", "reason"),
     [
         ("p99", "update_text", "定位不到这个位置"),
-        ("t9r1c1", "update_cell", "定位不到这个单元格"),
+        ("t9r1c1", "update_cell", "定位不到这个表格单元格"),
         ("ap9", "delete_paragraph", "只能删除"),
         ("p1", "insert_paragraph", "要插入的内容不能为空"),
     ],

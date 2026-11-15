@@ -57,7 +57,7 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
           hint: '已完成 ÷ 已结束的生成任务',
         },
         {
-          label: '平均轮次',
+          label: '平均来回轮数',
           value: metrics.avg_rounds === null || metrics.avg_rounds === undefined ? '—' : String(metrics.avg_rounds),
           hint: 'AI 平均来回几轮把内容填完，只看已完成的任务',
         },
@@ -66,11 +66,11 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
           value: formatSeconds(metrics.avg_duration_seconds),
           hint: '从开始到结束的平均时间，只看已完成的任务',
         },
-        { label: '未写比例', value: formatRate(metrics.gap_rate), hint: '没有写入的位置数 ÷ 全部可写位置数' },
+        { label: '待填写比例', value: formatRate(metrics.gap_rate), hint: '没有填写的位置数 ÷ 全部可填写位置数' },
         {
-          label: '自动补齐比例',
+          label: '备用模型比例',
           value: formatRate(metrics.fallback_rate),
-          hint: '已完成的任务里，主模型失败、改用自动补齐的比例',
+          hint: '已完成的任务里，主模型失败、改用备用模型的比例',
         },
         {
           label: '意见采纳率',
@@ -127,7 +127,7 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
           type="info"
           showIcon
           message={`近 ${metrics.window_days} 天还没有跑完过生成任务`}
-          description="生成过一次之后，这里会显示成功率、平均轮次、平均用时、未填比例和意见采纳情况。"
+          description="生成过一次之后，这里会显示成功率、平均来回轮数、平均用时、待填写比例和意见采纳情况。"
         />
       )}
 
@@ -169,7 +169,7 @@ export function ReportGenAgentPanel({ initialMetrics }: Props) {
       )}
 
       <Typography.Paragraph type="secondary" style={{ fontSize: 12, margin: '12px 0 0' }}>
-        时间范围按任务结束时间算（老任务没有结束时间就按创建时间）。成功率、轮次、用时、未写比例、自动补齐比例都只统计已完成的任务，避免失败任务把平均值拉偏。
+        时间范围按任务结束时间算（老任务没有结束时间就按创建时间）。成功率、来回轮数、用时、待填写比例、备用模型比例都只统计已完成的任务，避免失败任务把平均值拉偏。
         老任务没法追溯当时用的规则版本，这里只显示当前正在用的版本。
       </Typography.Paragraph>
     </>

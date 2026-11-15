@@ -286,12 +286,12 @@ def judge_text(
     表格单元格的「标签：」仍按固定文字处理，避免单元格里再拼一段。
     """
     if fixed_section:
-        return False, f"这一段属于「{fixed_section}」章节，是版面/流程信息，不能写业务内容", False
+        return False, f"这属于「{fixed_section}」章节的版面或流程内容，不需要填写业务内容", False
     level = heading_level(style)
     if level is not None:
-        return False, f"这是标题段（{style}），标题不允许改写", False
+        return False, "这是标题，不能改写", False
     if is_toc_style(style):
-        return False, "这是目录段，不允许改写", False
+        return False, "这是目录内容，不能改写", False
     raw = (text or "").strip()
     if not raw:
         return True, None, False
@@ -299,7 +299,7 @@ def judge_text(
         return True, None, False
     if appendable and is_label_text(raw):
         return True, None, True
-    return False, "这一段已经有完整文字，只允许写空段/占位段，或在「标签：」后补值", False
+    return False, "这里已经有完整内容，不需要 AI 填写；需要时可以直接编辑补写", False
 
 
 def _context_before(texts: list[str], index: int) -> str:

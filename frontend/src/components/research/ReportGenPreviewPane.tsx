@@ -279,7 +279,7 @@ export function ReportGenPreviewPane({ jobId, data, selectedKey, onSelect, docum
       <Flex align="center" justify="center" style={{ height: '100%', minHeight: 320, background: '#FAFBFC' }}>
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description={data ? '生成完成后这里显示可对照的文档' : '正在读取文档结构'}
+          description={data ? '生成完成后，这里会显示可以对照的文档' : '正在读取文档结构'}
         />
       </Flex>
     )
@@ -296,16 +296,16 @@ export function ReportGenPreviewPane({ jobId, data, selectedKey, onSelect, docum
       >
         <Flex gap={8} align="center" wrap style={{ fontSize: 12, color: '#5A6472' }}>
           <Tag color="processing" style={{ margin: 0 }}>
-            可写位置高亮
+            可填写位置高亮
           </Tag>
           {marks && (
             <span>
-              已标记 {marks.hits}/{marks.total} 处
+              已标记 {marks.hits}/{marks.total} 处位置
               {marks.aligned ? ' · 已按正文内容对齐' : ''}
               {marks.domParagraphs > 0 ? ` · 正文 ${marks.domParagraphs} 段` : ''}
             </span>
           )}
-          {appendedCount > 0 && <span>· 文末另有 {appendedCount} 处追加内容</span>}
+          {appendedCount > 0 && <span>· 文末另有 {appendedCount} 处新增内容</span>}
         </Flex>
         <Button
           size="small"
@@ -323,7 +323,7 @@ export function ReportGenPreviewPane({ jobId, data, selectedKey, onSelect, docum
           type="warning"
           showIcon
           banner
-          message={`有 ${missCount} 处位置没能在预览里精准定位（合并单元格或复杂版式），请在右侧清单中点选`}
+          message={`预览里没能标出 ${missCount} 处位置（合并单元格或复杂版式），请在右侧填写清单里点选`}
         />
       )}
       {error && <Alert type="error" showIcon banner message={error} />}
@@ -331,7 +331,7 @@ export function ReportGenPreviewPane({ jobId, data, selectedKey, onSelect, docum
       <div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'auto', padding: '16px 8px 40px' }}>
         {(loading || (isFetching && !blob)) && (
           <Flex align="center" justify="center" style={{ position: 'absolute', inset: 0, zIndex: 2 }}>
-            <Spin tip="正在渲染文档" />
+            <Spin tip="正在加载文档预览" />
           </Flex>
         )}
         <div

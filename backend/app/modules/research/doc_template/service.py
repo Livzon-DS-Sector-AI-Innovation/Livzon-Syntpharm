@@ -414,7 +414,7 @@ async def restore_template_version(
     template, version = await _get_template_version(session, template_id, version_id)
     if version.kind == VERSION_KIND_SAMPLE:
         raise BadRequestException(
-            "这是填充示例稿，不是母本文件，不能恢复成当前版本。它只用于对照填写位置，用完可以删掉"
+            "这是填充示例稿，不是模板文件，不能恢复成当前版本。它只用于对照填写位置，用完可以删掉"
         )
     if version.is_current:
         raise BadRequestException(f"v{version.version_no} 就是正在使用的版本，不用再恢复")

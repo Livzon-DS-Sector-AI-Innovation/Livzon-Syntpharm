@@ -160,7 +160,7 @@ const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM))
   const handleRegenerate = async () => {
     if (!job) return
     if (!job.deliverable_template_id) {
-      msgApi.warning('这次生成没有记录用的哪个 Word 模板文件，没法原样重跑。请回到列表点「编辑」重新选模板再生成。')
+      msgApi.warning('这次生成没有记录用的哪个 Word 模板文件，没法按原样重新生成。请回到列表点「编辑」，重新选择模板再生成。')
       return
     }
     setRegenerating(true)
@@ -260,13 +260,13 @@ const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM))
                 <>
                   <span>模型：</span>
                   <Tag style={{ margin: 0 }}>{snapshot.main || '未记录'}</Tag>
-                  <span>自动补齐：</span>
+                  <span>备用模型：</span>
                   <Tag color={snapshot.fallback ? 'orange' : 'default'} style={{ margin: 0 }}>
                     {snapshot.fallback || '未设置'}
                   </Tag>
                   {snapshot.usedFallback && (
                     <Tag color="orange" style={{ margin: 0 }}>
-                      主模型失败，已换用自动补齐
+                      主模型失败，已换用备用模型
                     </Tag>
                   )}
                 </>
@@ -295,7 +295,7 @@ const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM))
                     style={{ marginInlineEnd: 6 }}
                   >
                     {job.opinion_digest.item_count} 条历史意见 ·{' '}
-                    {job.opinion_digest.status === 'fallback' ? '兜底清单' : '模型归并'}
+                    {job.opinion_digest.status === 'fallback' ? '原始意见汇总' : 'AI 已归纳'}
                   </Tag>
                 </Tooltip>
               </div>
@@ -342,7 +342,7 @@ const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM))
                 </Button>
               </span>
             </Tooltip>
-            <Tooltip title="会重新跑一次生成并生成新文档；人工改过的位置会按人工值保留，AI 不会覆盖">
+            <Tooltip title="会重新跑一次生成并生成新文档；人工修改过的位置会保留人工写法，AI 不会覆盖">
               <Button icon={<ReloadOutlined />} loading={regenerating} onClick={handleRegenerate}>
                 重新生成
               </Button>
@@ -438,7 +438,7 @@ const returnTo = sanitizeReturnTo(searchParams.get(RETURN_TO_PARAM))
               items={[
                 {
                   key: 'fields',
-                  label: '写入清单',
+                  label: '填写清单',
                   children: (
                     <div style={{ height: '100%', minHeight: 0 }}>
                       {selectedItem ? (

@@ -161,7 +161,7 @@ def test_merge_supplement_numbers_items_and_marks_scope() -> None:
     assert merged.startswith("品种名统一用通用名")
     assert "【上一版评审意见" in merged
     assert "1. [整篇] 结果与讨论写细一点" in merged
-    assert "2. [槽位 study_conclusion] 结论要落到工艺参数" in merged
+    assert "2. [位置 study_conclusion] 结论要落到工艺参数" in merged
 
 
 def test_merge_supplement_clips_long_content_and_flattens_newlines() -> None:

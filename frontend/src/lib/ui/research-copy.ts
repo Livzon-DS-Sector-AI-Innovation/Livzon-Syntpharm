@@ -83,11 +83,11 @@ export const TEMPLATE_COPY = {
     },
     {
       title: '上传后直接生成',
-      description: '不需要提前标注位置：生成时智能体会读这份 Word 的章节与空位，自己决定写哪、写什么。',
+      description: '不需要提前标注位置：生成时 AI 会读这份 Word 的章节和待填写位置，自己决定写哪、写什么。',
     },
     {
       title: '需要时补一句填写要求',
-      description: '对写法有要求时，在模板的编辑抽屉里填「填写要求」，生成时会作为约束下发给智能体。',
+      description: '对写法有要求时，在模板的编辑页里填「填写要求」，生成时会作为写作要求交给 AI。',
     },
   ] satisfies GuideStep[],
   uploadTitle: `上传 ${TERMS.templateFile.name}`,
@@ -152,5 +152,5 @@ export const REPORT_COPY = {
   deleteDescription: '会同时删除它的生成记录、已填写的内容和下载文件。已下载到本地的 Word 不受影响。删除后不可恢复。',
   regenerateTitle: '重新生成这份报告？',
   regenerateDescription:
-    '会新建一次生成任务并覆盖当前文档，之前人工修正过的填写内容不会自动带过去。需要保留的话先下载当前版本。',
+    '会新建一次生成任务并生成新文档；之前人工确认或修改过的内容会沿用，AI 不会覆盖。当前文档仍保留在原来的生成记录里，可随时查看。',
 } as const

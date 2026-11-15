@@ -52,7 +52,7 @@ def test_writable_and_rejected_positions() -> None:
     assert positions["p1"].writable is True
     # 固定文字段拒绝
     assert positions["p2"].writable is False
-    assert "完整文字" in (positions["p2"].reason or "")
+    assert "完整内容" in (positions["p2"].reason or "")
     # 下划线占位段可写
     assert positions["p3"].writable is True
     # 标题段拒绝

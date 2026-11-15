@@ -134,7 +134,7 @@ def test_write_paragraph_rejects_heading_and_fixed_text() -> None:
     assert outcome.payload["written"] == 0
     errors = " ".join(str(item) for item in outcome.payload["errors"])
     assert "标题" in errors
-    assert "完整文字" in errors
+    assert "完整内容" in errors
     assert runtime.rejected == 2
     assert runtime.slot_rows == {}
 

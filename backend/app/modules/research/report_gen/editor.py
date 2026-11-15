@@ -236,7 +236,7 @@ class _Editor:
     def _update_text(self, operation: ReportGenEditOperationRequest) -> None:
         position = self.positions.get(operation.key or "")
         if position is None:
-            self._reject(operation.key, operation.op, "定位不到这个位置（母本可能换过版），请重新生成")
+            self._reject(operation.key, operation.op, "定位不到这个位置（模板可能换过版本），请重新生成")
             return
         row = self.rows.get(position.key)
         text = (operation.text or "").strip()
@@ -263,7 +263,7 @@ class _Editor:
             self._reject(
                 operation.key,
                 operation.op,
-                "成品里找不到这个位置（母本可能换过版），请重新生成",
+                "生成好的文档里找不到这一处（模板可能换过版本），请重新生成",
                 position=position,
                 row=row,
             )
@@ -307,7 +307,7 @@ class _Editor:
         position = self.positions.get(operation.key or "")
         row = self.rows.get(position.key) if position is not None else None
         if position is None or position.kind != KIND_TABLE_CELL:
-            self._reject(operation.key, operation.op, "定位不到这个单元格（母本可能换过版），请重新生成")
+            self._reject(operation.key, operation.op, "定位不到这个表格单元格（模板可能换过版本），请重新生成")
             return
         text = (operation.text or "").strip()
         if len(text) > _MAX_TEXT_CHARS:
@@ -324,7 +324,7 @@ class _Editor:
             self._reject(
                 operation.key,
                 operation.op,
-                "成品里找不到这一格（母本可能换过版），请重新生成",
+                "生成好的文档里找不到这个单元格（模板可能换过版本），请重新生成",
                 position=position,
                 row=row,
             )
@@ -355,10 +355,10 @@ class _Editor:
             anchor_paragraph = self._find_unique_paragraph(self.rows[key].value)
             location = f"「{self.rows[key].slot_label or key}」之后"
         else:
-            self._reject(key, operation.op, "只能插在母本位置或已追加的内容之后")
+            self._reject(key, operation.op, "只能插在模板原有位置或已新增的内容之后")
             return
         if anchor_paragraph is None:
-            self._reject(key, operation.op, "成品里找不到插入点，请刷新后重试")
+            self._reject(key, operation.op, "文档里找不到插入位置，请刷新后重试")
             return
 
         cursor = anchor_paragraph
@@ -388,11 +388,11 @@ class _Editor:
         key = operation.key or ""
         row = self.rows.get(key)
         if not key.startswith("ap") or row is None:
-            self._reject(key, operation.op, "只能删除生成或编辑时追加的段落，母本原有段落不允许删")
+            self._reject(key, operation.op, "只能删除生成或编辑时新增的段落，模板原有段落不能删除")
             return
         paragraph = self._find_unique_paragraph(row.value)
         if paragraph is None:
-            self._reject(key, operation.op, "成品里找不到这段文字（可能已被改过），请先改回原文再删")
+            self._reject(key, operation.op, "文档里找不到这段文字（可能已被改过），请先改回原文再删")
             return
         paragraph._p.getparent().remove(paragraph._p)  # noqa: SLF001 - python-docx 只暴露底层元素
         self.changes.append(
@@ -417,10 +417,10 @@ class _Editor:
         position = self.positions.get(key)
         row = self.rows.get(key)
         if position is None or position.kind not in (KIND_PARAGRAPH, KIND_TABLE_CELL):
-            self._reject(key, operation.op, "只有母本里的正文段落和表格单元格可以还原")
+            self._reject(key, operation.op, "只有模板里的正文段落和表格单元格可以还原")
             return
         if row is None or not (row.value or "").strip():
-            self._reject(key, operation.op, "这一处没有写入记录，不需要还原")
+            self._reject(key, operation.op, "这一处没有填写记录，不需要还原")
             return
 
         # 改前内容取正文当前文字：人工可能已经改过，不能拿 row.value 当改前
@@ -433,7 +433,7 @@ class _Editor:
             before = paragraph.text if paragraph is not None else None
 
         if not self._restore_to_template(position, row):
-            self._reject(key, operation.op, "成品里找不到这个位置（母本可能换过版），请重新生成")
+            self._reject(key, operation.op, "生成好的文档里找不到这一处（模板可能换过版本），请重新生成")
             return
         self.touched.add(key)
         if self.changes:
@@ -536,7 +536,7 @@ class _Editor:
         appended = self._appended_row_count(table_index)
         is_appended = appended > 0 and row_index >= len(table.rows) - appended
         if not _row_is_empty(row) and not is_appended:
-            self._reject(operation.key, operation.op, "只能删空行或这次追加的行，母本里有内容的行不允许删")
+            self._reject(operation.key, operation.op, "只能删除空行或这次新增的行，模板里有内容的行不能删除")
             return
 
         table._tbl.remove(row._tr)

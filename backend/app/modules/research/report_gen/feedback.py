@@ -61,7 +61,7 @@ def merge_supplement(base: str | None, items: list[RdReportGenFeedback]) -> str:
         return base_text
     lines = [_HEADER]
     for index, item in enumerate(items, start=1):
-        scope = f"槽位 {item.slot_key}" if item.slot_key else "整篇"
+        scope = f"位置 {item.slot_key}" if item.slot_key else "整篇"
         content = " ".join((item.content or "").split())
         if len(content) > MAX_FEEDBACK_CHARS:
             content = content[:MAX_FEEDBACK_CHARS] + "…"

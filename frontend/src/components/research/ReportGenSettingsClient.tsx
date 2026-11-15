@@ -54,7 +54,7 @@ const PROMPT_FIELDS = [
     key: AGENT_PROMPT_KEY,
     label: '正文生成规则',
     variables: '$drug_name / $doc_code / $report_title / $template_name / $writable_total / $max_rounds',
-    hint: '写给 AI 的规则：怎么读母本、怎么找资料、怎么写进模板与整理参考资料。留空使用系统内置版本。',
+    hint: '写给 AI 的规则：怎么读模板、怎么找资料、怎么写进模板与整理参考资料。留空使用系统内置版本。',
   },
 ] as const
 
@@ -68,7 +68,7 @@ interface NumericField {
 }
 
 const NUMERIC_FIELDS: NumericField[] = [
-  { key: 'REPORT_GEN_MAX_ROUNDS', label: '最多来回几轮', unit: '轮', min: 2, max: 60, hint: 'AI 反复查资料、填内容的上限，超过就收尾成稿。' },
+  { key: 'REPORT_GEN_MAX_ROUNDS', label: '最多来回几轮', unit: '轮', min: 2, max: 60, hint: 'AI 反复查资料、填内容的上限，超过就结束并生成文档。' },
   {
     key: 'REPORT_GEN_JOB_TIMEOUT_SECONDS',
     label: '整次生成超时',

@@ -124,8 +124,8 @@ export const REPORT_GEN_OPINION_STATUS_META: Record<ReportGenOpinionStatus, { la
 
 /** 汇总状态：fallback 要明确说出来，否则会被误以为「模型认真总结过」。 */
 export const REPORT_GEN_DIGEST_STATUS_META: Record<string, { label: string; color: string }> = {
-  ok: { label: '模型归并', color: 'success' },
-  fallback: { label: '兜底清单', color: 'warning' },
+  ok: { label: 'AI 已归纳', color: 'success' },
+  fallback: { label: '原始意见汇总', color: 'warning' },
 }
 
 /** 版本来源标签：在线编辑与人工上传必须区分开，否则回溯时分不清是站内改的还是外面改的。 */
@@ -133,7 +133,7 @@ export const REPORT_GEN_VERSION_KIND_LABEL: Record<string, string> = {
   ai_draft: 'AI 初稿',
   manual_upload: '人工上传',
   manual_edit: '在线编辑',
-  manual_render: '重新渲染',
+  manual_render: '重新生成',
 }
 
 export function versionKindLabel(kind: string): string {
@@ -161,16 +161,16 @@ interface FieldStateMeta {
 }
 
 export const REPORT_GEN_FIELD_STATE_META: Record<ReportGenFieldState, FieldStateMeta> = {
-  written: { label: '已写', color: 'processing', text: '#1677FF', bg: '#E6F4FF', border: '#91CAFF' },
-  needs_verify: { label: '需核对', color: 'warning', text: '#D97706', bg: '#FFF7E6', border: '#FFD591' },
-  conflict: { label: '有冲突', color: 'error', text: '#DC2626', bg: '#FEF2F2', border: '#FCA5A5' },
-  anchor_unresolved: { label: '位置失效', color: 'error', text: '#DC2626', bg: '#FEF2F2', border: '#FCA5A5' },
-  blank: { label: '空位', color: 'default', text: '#8C8C8C', bg: '#FAFBFC', border: '#D9D9D9', dashed: true },
-  locked: { label: '母本固定', color: 'default', text: '#595959', bg: '#F5F5F5', border: '#E5E5E5' },
+  written: { label: '已填写', color: 'processing', text: '#1677FF', bg: '#E6F4FF', border: '#91CAFF' },
+  needs_verify: { label: '待确认', color: 'warning', text: '#D97706', bg: '#FFF7E6', border: '#FFD591' },
+  conflict: { label: '内容冲突', color: 'error', text: '#DC2626', bg: '#FEF2F2', border: '#FCA5A5' },
+  anchor_unresolved: { label: '位置已失效', color: 'error', text: '#DC2626', bg: '#FEF2F2', border: '#FCA5A5' },
+  blank: { label: '待填写', color: 'default', text: '#8C8C8C', bg: '#FAFBFC', border: '#D9D9D9', dashed: true },
+  locked: { label: '模板固定', color: 'default', text: '#595959', bg: '#F5F5F5', border: '#E5E5E5' },
 }
 
 const MANUAL_META: FieldStateMeta = {
-  label: '人工改过',
+  label: '人工修改',
   color: 'success',
   text: '#16A34A',
   bg: '#F0FDF4',
@@ -189,11 +189,11 @@ export function fieldStateMeta(state: string, editSource?: string | null): Field
 
 export const REPORT_GEN_FIELD_FILTERS = [
   { value: 'all', label: '全部' },
-  { value: 'written', label: '已写' },
-  { value: 'blank', label: '空位' },
-  { value: 'fixed', label: '母本固定' },
-  { value: 'needs_verify', label: '需核对' },
-  { value: 'manual', label: '人工改过' },
+  { value: 'written', label: '已填写' },
+  { value: 'blank', label: '待填写' },
+  { value: 'fixed', label: '模板固定' },
+  { value: 'needs_verify', label: '待确认' },
+  { value: 'manual', label: '人工修改' },
 ] as const
 
 export type ReportGenFieldFilter = (typeof REPORT_GEN_FIELD_FILTERS)[number]['value']
@@ -215,8 +215,8 @@ export function fieldKeyLabel(key: string): string {
   const table = key.match(/^t(\d+)r(\d+)c(\d+)$/)
   if (table) return `表${Number(table[1]) + 1} · ${Number(table[2]) + 1} 行 ${Number(table[3]) + 1} 列`
   if (key === 'ref') return '参考资料'
-  if (key.startsWith('ap')) return `追加段 ${key.slice(2)}`
-  if (key.startsWith('at')) return `追加行 ${key.slice(2)}`
+  if (key.startsWith('ap')) return `新增段 ${key.slice(2)}`
+  if (key.startsWith('at')) return `新增行 ${key.slice(2)}`
   return key
 }
 
@@ -249,8 +249,8 @@ export function formatSeconds(seconds: number | null | undefined): string {
 
 /** 两个模型档位；顺序即配置页卡片顺序。 */
 export const REPORT_GEN_MODEL_SLOTS = [
-  { slot: 'main', title: '正文生成', description: '写正文用的模型：读母本、查资料、写内容的调用都走这一档。' },
-  { slot: 'fallback', title: '自动补齐', description: '主模型报错或超时后自动换用，只切换一次。' },
+  { slot: 'main', title: '正文生成', description: '写正文用的模型：读模板、查资料、写内容都走这一档。' },
+  { slot: 'fallback', title: '备用模型', description: '主模型报错或超时后自动换用，只切换一次。' },
 ] as const
 
 export type ReportGenModelSlot = (typeof REPORT_GEN_MODEL_SLOTS)[number]['slot']
@@ -268,7 +268,7 @@ export const REPORT_GEN_TOOLS: ReportGenToolMeta[] = [
   {
     name: 'read_template_outline',
     label: '读取模板位置',
-    description: '读取 Word 母本的可写段落与表格单元格，判断哪里能写。',
+    description: '读取 Word 模板里可填写的段落与表格单元格，判断哪里能写。',
   },
   {
     name: 'read_project_context',
@@ -283,7 +283,7 @@ export const REPORT_GEN_TOOLS: ReportGenToolMeta[] = [
   {
     name: 'write_paragraph',
     label: '写正文段落',
-    description: '把有依据的内容批量写进空段落或下划线占位段。',
+    description: '把有依据的内容批量写进空段落或占位段。',
   },
   {
     name: 'write_cell',
@@ -292,18 +292,18 @@ export const REPORT_GEN_TOOLS: ReportGenToolMeta[] = [
   },
   {
     name: 'append_paragraph',
-    label: '追加段落',
-    description: '母本条目不够时，按已有段落格式插入新段落。',
+    label: '新增段落',
+    description: '模板里的条目不够时，按已有段落格式新增段落。',
   },
   {
     name: 'append_table_rows',
-    label: '追加表格行',
-    description: '按模板行格式往表格末尾追加行。',
+    label: '新增表格行',
+    description: '按模板行格式往表格末尾新增行。',
   },
   {
     name: 'append_references',
     label: '整理参考资料',
-    description: '按写入记录整理参考资料，只展示在页面右侧，不写进 Word 正文。',
+    description: '按填写记录整理参考资料，只展示在页面右侧，不写进 Word 正文。',
   },
   {
     name: 'finalize',

@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Empty, Flex, Input, Segmented, Skeleton, Tag, Typography } from 'antd'
+import { Empty, Flex, Input, Segmented, Skeleton, Tag, Tooltip, Typography } from 'antd'
 import { DownOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons'
 import {
   APPENDED_ITEM_KINDS,
@@ -113,7 +113,7 @@ export function ReportGenFieldPanel({ data, loading, error, selectedKey, onSelec
       <div style={{ padding: 24 }}>
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description={`可写字段清单取不到：${error.message}`}
+          description={`填写位置清单加载失败：${error.message}`}
         />
       </div>
     )
@@ -123,12 +123,16 @@ export function ReportGenFieldPanel({ data, loading, error, selectedKey, onSelec
     <Flex vertical style={{ height: '100%', minHeight: 0 }}>
       <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid #EDEFF2' }}>
         <Flex gap={12} wrap style={{ fontSize: 12, color: '#5A6472' }}>
-          <span>AI 可写 {stats?.writable_total ?? 0}</span>
-          <span style={{ color: '#1677FF' }}>已写 {stats?.written ?? 0}</span>
-          <span style={{ color: '#8C8C8C' }}>空位 {stats?.blank ?? 0}</span>
-          {needsReview > 0 && <span style={{ color: '#D97706' }}>需核对 {needsReview}</span>}
-          {(stats?.manual ?? 0) > 0 && <span style={{ color: '#16A34A' }}>人工改过 {stats?.manual}</span>}
-          <span>母本固定 {stats?.locked ?? 0}</span>
+          <Tooltip title="模板里留给 AI 填写的位置总数">
+            <span style={{ cursor: 'help' }}>可填写 {stats?.writable_total ?? 0}</span>
+          </Tooltip>
+          <span style={{ color: '#1677FF' }}>已填写 {stats?.written ?? 0}</span>
+          <span style={{ color: '#8C8C8C' }}>待填写 {stats?.blank ?? 0}</span>
+          {needsReview > 0 && <span style={{ color: '#D97706' }}>待确认 {needsReview}</span>}
+          {(stats?.manual ?? 0) > 0 && <span style={{ color: '#16A34A' }}>人工修改 {stats?.manual}</span>}
+          <Tooltip title="标题、目录、签字审批等模板原有内容，不需要 AI 填写，需要时可以直接修改">
+            <span style={{ cursor: 'help', borderBottom: '1px dashed #D9D9D9' }}>模板固定 {stats?.locked ?? 0}</span>
+          </Tooltip>
         </Flex>
         <Flex gap={8} align="center" style={{ marginTop: 10 }} wrap>
           <Segmented
@@ -157,7 +161,7 @@ export function ReportGenFieldPanel({ data, loading, error, selectedKey, onSelec
         )}
         {groups.map((group) => {
           const folded = collapsed.includes(group.key)
-          const label = group.section?.label ?? 'AI 追加内容'
+          const label = group.section?.label ?? 'AI 新增内容'
           const written = group.items.filter((item) => item.state !== 'blank').length
           return (
             <div key={group.key}>
@@ -223,7 +227,7 @@ export function ReportGenFieldPanel({ data, loading, error, selectedKey, onSelec
                             <Tag style={{ margin: 0, fontSize: 11, lineHeight: '18px' }}>表格</Tag>
                           )}
                           {item.writable === false && (
-                            <Tag style={{ margin: 0, fontSize: 11, lineHeight: '18px' }}>母本固定</Tag>
+                            <Tag style={{ margin: 0, fontSize: 11, lineHeight: '18px' }}>模板固定</Tag>
                           )}
                           {item.human_locked && (
                             <Tag color="green" style={{ margin: 0, fontSize: 11, lineHeight: '18px' }}>
@@ -274,9 +278,9 @@ export function ReportGenFieldPanel({ data, loading, error, selectedKey, onSelec
       {data && (
         <div style={{ padding: '8px 16px', borderTop: '1px solid #EDEFF2', fontSize: 11, color: '#8C8C8C' }}>
           <Typography.Text type="secondary" style={{ fontSize: 11 }}>
-            母本 {data.template_paragraph_count} 段 + {data.template_table_count} 张表
+            模板共 {data.template_paragraph_count} 段、{data.template_table_count} 张表
             {data.document_paragraph_count !== null && data.document_paragraph_count !== undefined
-              ? ` · 成品 ${data.document_paragraph_count} 段`
+              ? ` · 生成文档 ${data.document_paragraph_count} 段`
               : ''}
           </Typography.Text>
         </div>

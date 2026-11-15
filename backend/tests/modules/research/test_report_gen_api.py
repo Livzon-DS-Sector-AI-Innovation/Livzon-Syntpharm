@@ -274,7 +274,7 @@ async def test_edit_result_reports_removed_and_restored(
     assert body["data"]["applied"] == 1
     assert body["data"]["restored"] == 1
     assert body["data"]["removed"][0]["restored"] is True
-    assert "1 处校验未通过已还原原文" in body["message"]
+    assert "1 处没有保存成功，已恢复原文" in body["message"]
 
 
 async def test_fill_slot_routes_are_gone(client: AsyncClient) -> None:
