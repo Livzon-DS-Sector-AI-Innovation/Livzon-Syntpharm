@@ -107,9 +107,9 @@ async def seed_departments_and_locations(db_session: AsyncSession):
 
     uid = uuid.uuid4().hex[:6]
     depts = [
-        HrDepartment(name="201车间", code=f"DEPT-201-{uid}", is_production=True),
-        HrDepartment(name="质量控制部", code=f"DEPT-QC-{uid}", is_production=False),
-        HrDepartment(name="溶剂回收车间", code=f"DEPT-SOLVENT-{uid}", is_production=True),
+        HrDepartment(name="201车间", code=f"DEPT-201-{uid}"),
+        HrDepartment(name="质量控制部", code=f"DEPT-QC-{uid}"),
+        HrDepartment(name="溶剂回收车间", code=f"DEPT-SOLVENT-{uid}"),
     ]
     for dept in depts:
         db_session.add(dept)
@@ -141,9 +141,9 @@ async def seed_basic_data(db_session: AsyncSession):
 
     uid = uuid.uuid4().hex[:6]
     depts = [
-        HrDepartment(name="201车间", code=f"DEPT-201-{uid}", is_production=True),
-        HrDepartment(name="质量控制部", code=f"DEPT-QC-{uid}", is_production=False),
-        HrDepartment(name="溶剂回收车间", code=f"DEPT-SOLVENT-{uid}", is_production=True),
+        HrDepartment(name="201车间", code=f"DEPT-201-{uid}"),
+        HrDepartment(name="质量控制部", code=f"DEPT-QC-{uid}"),
+        HrDepartment(name="溶剂回收车间", code=f"DEPT-SOLVENT-{uid}"),
     ]
     for dept in depts:
         db_session.add(dept)

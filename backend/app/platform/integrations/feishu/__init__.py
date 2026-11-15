@@ -2,13 +2,8 @@
 
 from typing import Any
 
-from app.platform.integrations.feishu.bitable import FeishuBitableSync
 from app.platform.integrations.feishu.client import FeishuClient
 from app.platform.integrations.feishu.datasource import BitableDataSource
-from app.platform.integrations.feishu.employee_datasource import (
-    EmployeeBitableDataSource,
-    EmployeeRecord,
-)
 from app.platform.integrations.feishu.im import (
     FeishuMessageSendResult,
     build_callback_card_content,
@@ -40,10 +35,7 @@ from app.shared.lifecycle import register_background_worker
 
 __all__ = [
     "FeishuClient",
-    "FeishuBitableSync",
     "BitableDataSource",
-    "EmployeeBitableDataSource",
-    "EmployeeRecord",
     "FeishuMessageSendResult",
     "build_callback_card_content",
     "build_callback_status_card_content",

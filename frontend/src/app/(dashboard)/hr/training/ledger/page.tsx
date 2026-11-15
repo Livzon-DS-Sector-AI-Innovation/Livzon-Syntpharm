@@ -18,10 +18,10 @@ export async function generateMetadata({ searchParams }: PageProps) {
 
   if (employeeNumber) {
     try {
-      const res = await fetchEmployeeByNumber(employeeNumber)
-      if (res.data?.name) {
+      const emp = await fetchEmployeeByNumber(employeeNumber)
+      if (emp?.name) {
         return {
-          title: `${res.data.name}培训台账`,
+          title: `${emp.name}培训台账`,
         }
       }
     } catch {
@@ -41,8 +41,8 @@ export default async function TrainingLedgerPage({ searchParams }: PageProps) {
   let employeeName: string | null = null
   if (employeeNumber) {
     try {
-      const res = await fetchEmployeeByNumber(employeeNumber)
-      employeeName = res.data?.name || null
+      const emp = await fetchEmployeeByNumber(employeeNumber)
+      employeeName = emp?.name || null
     } catch {
       employeeName = null
     }

@@ -72,7 +72,7 @@ export default function TrainingLedgerClient({
     queryFn: async () => {
       if (!employeeNumber) return null
       const empRes = await fetchEmployeeByNumber(employeeNumber)
-      return empRes.data
+      return empRes ?? null
     },
     enabled: !!employeeNumber,
   })

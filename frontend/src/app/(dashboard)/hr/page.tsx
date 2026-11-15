@@ -8,9 +8,7 @@ import {
   TeamOutlined,
   BookOutlined,
   BankOutlined,
-  SolutionOutlined,
   LoginOutlined,
-  LogoutOutlined,
   UserDeleteOutlined,
   FileSearchOutlined,
 } from '@ant-design/icons'
@@ -19,16 +17,9 @@ const modules = [
   {
     key: 'profile',
     title: '员工档案',
-    desc: '管理员工基本信息、入职离职、岗位变动等',
+    desc: '飞书通讯录镜像，只读浏览员工档案',
     icon: <TeamOutlined className="text-2xl text-[var(--color-primary)]" />,
     path: '/hr/profile',
-  },
-  {
-    key: 'roster',
-    title: '员工花名册',
-    desc: '查看全体员工花名册信息',
-    icon: <SolutionOutlined className="text-2xl text-[var(--color-primary)]" />,
-    path: '/hr/roster',
   },
   {
     key: 'departments',
@@ -50,13 +41,6 @@ const modules = [
     desc: '员工入职记录管理',
     icon: <LoginOutlined className="text-2xl text-[var(--color-primary)]" />,
     path: '/hr/onboarding',
-  },
-  {
-    key: 'departure',
-    title: '离职台账',
-    desc: '员工离职记录管理',
-    icon: <LogoutOutlined className="text-2xl text-[var(--color-primary)]" />,
-    path: '/hr/departure',
   },
   {
     key: 'offboarding',

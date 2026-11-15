@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
     poppler-utils \
     libreoffice \
+    fonts-wqy-zenhei \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv package manager (use Alibaba PyPI mirror for speed)

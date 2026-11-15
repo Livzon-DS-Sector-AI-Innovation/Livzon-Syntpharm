@@ -1,5 +1,6 @@
 """HR database queries live here."""
 
+import logging
 from datetime import date
 from typing import Any
 from uuid import UUID
@@ -8,22 +9,21 @@ from sqlalchemy import asc, delete, desc, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.exceptions import NotFoundException
 from app.modules.hr.models import (
     AnnualTrainingPlan,
     AnnualTrainingPlanItem,
     Candidate,
-    DepartureRecord,
     Employee,
     HrDepartment,
-    OffboardingRecord,
-    OnboardingRecord,
     PrejobTrainingPlanTemplate,
-    Team,
     TrainingLedger,
     TrainingLedgerPage,
     TrainingSession,
     TrainingTeam,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class EmployeeRepository:
@@ -311,7 +311,7 @@ class DepartmentRepository:
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[HrDepartment], int]:
-        stmt = select(HrDepartment).where(HrDepartment.is_deleted.is_(False))
+        stmt = select(HrDepartment).where(HrDepartment.is_deleted.is_(False), HrDepartment.status_is_deleted.is_(False))
 
         if keyword:
             stmt = stmt.where(HrDepartment.name.ilike(f"%{keyword}%") | HrDepartment.code.ilike(f"%{keyword}%"))
@@ -345,334 +345,6 @@ class DepartmentRepository:
 
     async def soft_delete(self, department: HrDepartment) -> None:
         department.is_deleted = True
-        await self.session.flush()
-
-
-class TeamRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-
-    async def get_by_id(self, team_id: UUID) -> Team | None:
-        result = await self.session.execute(
-            select(Team).where(Team.id == team_id, Team.is_deleted.is_(False)).options(selectinload(Team.department))
-        )
-        return result.scalar_one_or_none()
-
-    async def list_teams(
-        self,
-        *,
-        department_id: UUID | None = None,
-        keyword: str | None = None,
-        page: int = 1,
-        page_size: int = 20,
-    ) -> tuple[list[Team], int]:
-        stmt = select(Team).where(Team.is_deleted.is_(False)).options(selectinload(Team.department))
-
-        if department_id:
-            stmt = stmt.where(Team.department_id == department_id)
-        if keyword:
-            stmt = stmt.where(Team.name.ilike(f"%{keyword}%") | Team.code.ilike(f"%{keyword}%"))
-
-        count_stmt = select(func.count()).select_from(stmt.subquery())
-        total_result = await self.session.execute(count_stmt)
-        total = total_result.scalar() or 0
-
-        stmt = stmt.order_by(asc(Team.created_at))
-        stmt = stmt.offset((page - 1) * page_size).limit(page_size)
-
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all()), total
-
-    async def create(self, team: Team) -> Team:
-        self.session.add(team)
-        await self.session.flush()
-        await self.session.refresh(team)
-        return team
-
-    async def update(self, team: Team) -> Team:
-        await self.session.flush()
-        await self.session.refresh(team)
-        return team
-
-    async def soft_delete(self, team: Team) -> None:
-        team.is_deleted = True
-        await self.session.flush()
-
-
-class OffboardingRecordRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-
-    async def get_by_id(self, record_id: UUID) -> OffboardingRecord | None:
-        result = await self.session.execute(
-            select(OffboardingRecord)
-            .where(
-                OffboardingRecord.id == record_id,
-                OffboardingRecord.is_deleted.is_(False),
-            )
-            .options(selectinload(OffboardingRecord.employee))
-        )
-        return result.scalar_one_or_none()
-
-    async def list_records(
-        self,
-        *,
-        employee_id: UUID | None = None,
-        keyword: str | None = None,
-        page: int = 1,
-        page_size: int = 20,
-    ) -> tuple[list[OffboardingRecord], int]:
-        stmt = (
-            select(OffboardingRecord)
-            .where(OffboardingRecord.is_deleted.is_(False))
-            .options(selectinload(OffboardingRecord.employee))
-        )
-
-        if employee_id:
-            stmt = stmt.where(OffboardingRecord.employee_id == employee_id)
-        if keyword:
-            stmt = stmt.join(Employee).where(
-                Employee.name.ilike(f"%{keyword}%") | Employee.employee_number.ilike(f"%{keyword}%")
-            )
-
-        count_stmt = select(func.count()).select_from(stmt.subquery())
-        total_result = await self.session.execute(count_stmt)
-        total = total_result.scalar() or 0
-
-        stmt = stmt.order_by(desc(OffboardingRecord.created_at))
-        stmt = stmt.offset((page - 1) * page_size).limit(page_size)
-
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all()), total
-
-    async def create(self, record: OffboardingRecord) -> OffboardingRecord:
-        self.session.add(record)
-        await self.session.flush()
-        await self.session.refresh(record)
-        return record
-
-    async def update(self, record: OffboardingRecord) -> OffboardingRecord:
-        await self.session.flush()
-        await self.session.refresh(record)
-        return record
-
-    async def soft_delete(self, record: OffboardingRecord) -> None:
-        record.is_deleted = True
-        await self.session.flush()
-
-
-class OnboardingRecordRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-
-    async def get_by_id(self, record_id: UUID) -> OnboardingRecord | None:
-        result = await self.session.execute(
-            select(OnboardingRecord).where(
-                OnboardingRecord.id == record_id,
-                OnboardingRecord.is_deleted.is_(False),
-            )
-        )
-        return result.scalar_one_or_none()
-
-    async def get_by_feishu_record_id(self, feishu_record_id: str) -> OnboardingRecord | None:
-        result = await self.session.execute(
-            select(OnboardingRecord).where(
-                OnboardingRecord.feishu_record_id == feishu_record_id,
-                OnboardingRecord.is_deleted.is_(False),
-            )
-        )
-        return result.scalar_one_or_none()
-
-    async def list_records(
-        self,
-        *,
-        department: str | None = None,
-        position: str | None = None,
-        is_employed: str | None = None,
-        keyword: str | None = None,
-        page: int = 1,
-        page_size: int = 20,
-        sort_by: str = "created_at",
-        sort_order: str = "desc",
-    ) -> tuple[list[OnboardingRecord], int]:
-        stmt = select(OnboardingRecord).where(OnboardingRecord.is_deleted.is_(False))
-
-        if department:
-            stmt = stmt.where(OnboardingRecord.department == department)
-        if position:
-            stmt = stmt.where(OnboardingRecord.position.ilike(f"%{position}%"))
-        if is_employed:
-            stmt = stmt.where(OnboardingRecord.is_employed == is_employed)
-        if keyword:
-            stmt = stmt.where(
-                OnboardingRecord.name.ilike(f"%{keyword}%") | OnboardingRecord.employee_number.ilike(f"%{keyword}%")
-            )
-
-        count_stmt = select(func.count()).select_from(stmt.subquery())
-        sort_column = getattr(OnboardingRecord, sort_by, OnboardingRecord.created_at)
-        order_func = desc if sort_order == "desc" else asc
-        data_stmt = stmt.order_by(order_func(sort_column)).offset((page - 1) * page_size).limit(page_size)
-
-        total_result = await self.session.execute(count_stmt)
-        total = total_result.scalar() or 0
-
-        data_result = await self.session.execute(data_stmt)
-        return list(data_result.scalars().all()), total
-
-    async def create(self, record: OnboardingRecord) -> OnboardingRecord:
-        self.session.add(record)
-        await self.session.flush()
-        await self.session.refresh(record)
-        return record
-
-    async def update(self, record: OnboardingRecord) -> OnboardingRecord:
-        await self.session.flush()
-        await self.session.refresh(record)
-        return record
-
-    async def upsert_by_feishu_record_id(self, data: dict[str, Any]) -> OnboardingRecord:
-        """Create or update onboarding record by feishu_record_id (used for Feishu sync)."""
-        rid = data.get("feishu_record_id")
-        if not rid:
-            raise ValueError("feishu_record_id is required for upsert")
-
-        record = await self.get_by_feishu_record_id(rid)
-        if record:
-            for key, value in data.items():
-                if key != "id" and value is not None:
-                    setattr(record, key, value)
-            await self.session.flush()
-            await self.session.refresh(record)
-            return record
-        else:
-            new_record = OnboardingRecord(**{k: v for k, v in data.items() if v is not None})
-            self.session.add(new_record)
-            await self.session.flush()
-            await self.session.refresh(new_record)
-            return new_record
-
-    async def count_total(self) -> int:
-        result = await self.session.execute(select(func.count()).where(OnboardingRecord.is_deleted.is_(False)))
-        return result.scalar() or 0
-
-    async def count_synced(self) -> int:
-        result = await self.session.execute(
-            select(func.count()).where(
-                OnboardingRecord.is_deleted.is_(False),
-                OnboardingRecord.feishu_record_id.isnot(None),
-            )
-        )
-        return result.scalar() or 0
-
-    async def soft_delete(self, record: OnboardingRecord) -> None:
-        record.is_deleted = True
-        await self.session.flush()
-
-
-class DepartureRecordRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-
-    async def get_by_id(self, record_id: UUID) -> DepartureRecord | None:
-        result = await self.session.execute(
-            select(DepartureRecord).where(
-                DepartureRecord.id == record_id,
-                DepartureRecord.is_deleted.is_(False),
-            )
-        )
-        return result.scalar_one_or_none()
-
-    async def get_by_feishu_record_id(self, feishu_record_id: str) -> DepartureRecord | None:
-        result = await self.session.execute(
-            select(DepartureRecord).where(
-                DepartureRecord.feishu_record_id == feishu_record_id,
-                DepartureRecord.is_deleted.is_(False),
-            )
-        )
-        return result.scalar_one_or_none()
-
-    async def list_records(
-        self,
-        *,
-        department: str | None = None,
-        offboarding_type: str | None = None,
-        keyword: str | None = None,
-        page: int = 1,
-        page_size: int = 20,
-        sort_by: str = "offboarding_date",
-        sort_order: str = "desc",
-    ) -> tuple[list[DepartureRecord], int]:
-        stmt = select(DepartureRecord).where(DepartureRecord.is_deleted.is_(False))
-
-        if department:
-            stmt = stmt.where(DepartureRecord.department == department)
-        if offboarding_type:
-            stmt = stmt.where(DepartureRecord.offboarding_type == offboarding_type)
-        if keyword:
-            stmt = stmt.where(
-                DepartureRecord.name.ilike(f"%{keyword}%")
-                | DepartureRecord.department.ilike(f"%{keyword}%")
-                | DepartureRecord.position.ilike(f"%{keyword}%")
-            )
-
-        count_stmt = select(func.count()).select_from(stmt.subquery())
-        sort_column = getattr(DepartureRecord, sort_by, DepartureRecord.offboarding_date)
-        order_func = desc if sort_order == "desc" else asc
-        data_stmt = stmt.order_by(order_func(sort_column)).offset((page - 1) * page_size).limit(page_size)
-
-        total_result = await self.session.execute(count_stmt)
-        total = total_result.scalar() or 0
-
-        data_result = await self.session.execute(data_stmt)
-        return list(data_result.scalars().all()), total
-
-    async def create(self, record: DepartureRecord) -> DepartureRecord:
-        self.session.add(record)
-        await self.session.flush()
-        await self.session.refresh(record)
-        return record
-
-    async def update(self, record: DepartureRecord) -> DepartureRecord:
-        await self.session.flush()
-        await self.session.refresh(record)
-        return record
-
-    async def upsert_by_feishu_record_id(self, data: dict[str, Any]) -> DepartureRecord:
-        """Create or update departure record by feishu_record_id (used for Feishu sync)."""
-        rid = data.get("feishu_record_id")
-        if not rid:
-            raise ValueError("feishu_record_id is required for upsert")
-
-        record = await self.get_by_feishu_record_id(rid)
-        if record:
-            for key, value in data.items():
-                if key != "id" and value is not None:
-                    setattr(record, key, value)
-            await self.session.flush()
-            await self.session.refresh(record)
-            return record
-        else:
-            new_record = DepartureRecord(**{k: v for k, v in data.items() if v is not None})
-            self.session.add(new_record)
-            await self.session.flush()
-            await self.session.refresh(new_record)
-            return new_record
-
-    async def count_total(self) -> int:
-        result = await self.session.execute(select(func.count()).where(DepartureRecord.is_deleted.is_(False)))
-        return result.scalar() or 0
-
-    async def count_synced(self) -> int:
-        result = await self.session.execute(
-            select(func.count()).where(
-                DepartureRecord.is_deleted.is_(False),
-                DepartureRecord.feishu_record_id.isnot(None),
-            )
-        )
-        return result.scalar() or 0
-
-    async def soft_delete(self, record: DepartureRecord) -> None:
-        record.is_deleted = True
         await self.session.flush()
 
 
@@ -1121,7 +793,7 @@ class TrainingTeamRepository:
     async def update(self, team_id: UUID, data) -> Any:  # type: ignore[no-untyped-def]
         obj = await self.get_by_id(team_id)
         if not obj:
-            raise ValueError(f"TrainingTeam {team_id} not found")
+            raise NotFoundException("培训班组", str(team_id))
         update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(obj, key, value)
@@ -1167,9 +839,6 @@ class CandidateRepository:
         sort_by: str = "created_at",
         sort_order: str = "desc",
     ) -> tuple[list[Candidate], int]:
-        import logging
-
-        _logger = logging.getLogger(__name__)
         stmt = select(Candidate).where(Candidate.is_deleted.is_(False))
 
         if position:
@@ -1180,7 +849,7 @@ class CandidateRepository:
             stmt = stmt.where(Candidate.name.ilike(f"%{keyword}%") | Candidate.position.ilike(f"%{keyword}%"))
         if recommendation_level:
             levels = [level.strip() for level in recommendation_level.split(",") if level.strip()]
-            _logger.debug("REPO levels=%s", levels)
+            logger.debug("REPO levels=%s", levels, extra={"biz_module": "hr"})
             if levels:
                 stmt = stmt.where(Candidate.recommendation_level.in_(levels))
         if sync_status:

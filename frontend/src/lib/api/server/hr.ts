@@ -1,37 +1,42 @@
-import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
-import type { CandidateListParams } from '@/types/hr'
+import { apiFetch, apiFetchData, apiFetchRaw, getApiBaseUrl } from '@/lib/api/server/base'
+import type { components, operations } from '@/types/generated/schema'
+import type {
+  CandidateListParams,
+  EmployeeProfileDetailResponse,
+  EmployeeProfileListResponse,
+  OrgDepartmentTreeResponse,
+  OrgSyncStatusResponse,
+  OrgSyncTriggerResponse,
+} from '@/types/hr'
+
+type Schemas = components['schemas']
+type OnboardingRecordListQuery = NonNullable<
+  operations['list_onboarding_records_api_v1_hr_onboarding_records_get']['parameters']['query']
+>
+type DepartureRecordListQuery = NonNullable<
+  operations['list_departure_records_api_v1_hr_departure_records_get']['parameters']['query']
+>
+type EmployeeListQuery = NonNullable<
+  NonNullable<operations['list_employees_api_v1_hr_employees_get']['parameters']>['query']
+>
+type DepartmentListQuery = NonNullable<
+  NonNullable<operations['list_departments_api_v1_hr_departments_get']['parameters']>['query']
+>
+type EmployeeProfilesQuery = NonNullable<
+  NonNullable<operations['list_employee_profiles_api_v1_hr_people_get']['parameters']>['query']
+>
 
 async function apiFetchFormData(url: string, body: FormData): Promise<unknown> {
-  const res = await fetch(url, {
-    method: 'POST',
-    body,
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.message || '上传失败')
-  }
-  return res.json()
+  return apiFetch(url, { method: 'POST', body })
 }
 
 async function apiFetchBlob(url: string, options?: RequestInit): Promise<Blob> {
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  })
-  if (!res.ok) throw new Error(`请求失败: ${res.status}`)
+  // apiFetchRaw 会带上 Authorization 头；裸 fetch 会绕过服务端鉴权。
+  const res = await apiFetchRaw(url, options)
   return res.blob()
 }
 
-export async function fetchEmployeesApi(params?: {
-  department?: string
-  status?: string
-  keyword?: string
-  page?: number
-  page_size?: number
-}) {
+export async function fetchEmployeesApi(params?: EmployeeListQuery) {
   const searchParams = new URLSearchParams()
   if (params?.department) searchParams.set('department', String(params.department))
   if (params?.status) searchParams.set('status', String(params.status))
@@ -41,21 +46,26 @@ export async function fetchEmployeesApi(params?: {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/employees?${searchParams.toString()}`)
 }
 
-export async function createEmployeeApi(data: unknown) {
+export async function createEmployeeApi(
+  data: Schemas['EmployeeCreate'],
+): Promise<Schemas['DataResponse_EmployeeResponse_']> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/employees`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateEmployeeApi(id: string, data: unknown) {
+export async function updateEmployeeApi(
+  id: string,
+  data: Schemas['EmployeeUpdate'],
+): Promise<Schemas['DataResponse_EmployeeResponse_']> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/employees/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
-export async function deleteEmployeeApi(id: string) {
+export async function deleteEmployeeApi(id: string): Promise<Schemas['app__shared__schemas__MessageApiResponse']> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/employees/${id}`, {
     method: 'DELETE',
   })
@@ -65,23 +75,33 @@ export async function uploadEmployeesApi(formData: FormData) {
   return apiFetchFormData(`${getApiBaseUrl()}/api/v1/hr/employees/upload`, formData)
 }
 
-export async function syncFromFeishuApi() {
+export async function syncFromFeishuApi(): Promise<Schemas['AsyncJobAcceptedResponse']> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/employees/sync-from-feishu`, {
     method: 'POST',
   })
 }
 
-export async function syncToFeishuApi(id: string) {
+export async function syncToFeishuApi(id: string): Promise<Schemas['DataResponse_EmployeeFeishuSyncResult_']> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/employees/${id}/sync-to-feishu`, {
     method: 'POST',
   })
 }
 
-export async function fetchDepartmentsApi(params?: {
-  keyword?: string
-  page?: number
-  page_size?: number
-}) {
+export async function fetchOrgDepartmentsApi(): Promise<OrgDepartmentTreeResponse['data']> {
+  return apiFetchData<OrgDepartmentTreeResponse['data']>(`${getApiBaseUrl()}/api/v1/hr/org/departments`)
+}
+
+export async function fetchOrgSyncStatusApi(): Promise<OrgSyncStatusResponse['data']> {
+  return apiFetchData<OrgSyncStatusResponse['data']>(`${getApiBaseUrl()}/api/v1/hr/org/sync-status`)
+}
+
+export async function triggerOrgSyncApi(): Promise<OrgSyncTriggerResponse['data']> {
+  return apiFetchData<OrgSyncTriggerResponse['data']>(`${getApiBaseUrl()}/api/v1/hr/org/sync`, {
+    method: 'POST',
+  })
+}
+
+export async function fetchDepartmentsApi(params?: DepartmentListQuery) {
   const searchParams = new URLSearchParams()
   if (params?.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params?.page || 1))
@@ -89,95 +109,14 @@ export async function fetchDepartmentsApi(params?: {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departments?${searchParams.toString()}`)
 }
 
-export async function createDepartmentApi(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departments`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
 
-export async function updateDepartmentApi(id: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departments/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  })
-}
 
-export async function deleteDepartmentApi(id: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departments/${id}`, {
-    method: 'DELETE',
-  })
-}
 
-export async function fetchTeamsApi(params?: {
-  department_id?: string
-  keyword?: string
-  page?: number
-  page_size?: number
-}) {
-  const searchParams = new URLSearchParams()
-  if (params?.department_id) searchParams.set('department_id', String(params.department_id))
-  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 100))
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/teams?${searchParams.toString()}`)
-}
 
-export async function createTeamApi(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/teams`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
 
-export async function updateTeamApi(id: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/teams/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  })
-}
 
-export async function deleteTeamApi(id: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/teams/${id}`, {
-    method: 'DELETE',
-  })
-}
 
-export async function fetchOffboardingRecordsApi(params?: {
-  employee_id?: string
-  keyword?: string
-  page?: number
-  page_size?: number
-}) {
-  const searchParams = new URLSearchParams()
-  if (params?.employee_id) searchParams.set('employee_id', String(params.employee_id))
-  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 20))
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/offboarding-records?${searchParams.toString()}`)
-}
-
-export async function createOffboardingRecordApi(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/offboarding-records`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function updateOffboardingRecordApi(id: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/offboarding-records/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function deleteOffboardingRecordApi(id: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/offboarding-records/${id}`, {
-    method: 'DELETE',
-  })
-}
-
-export async function createAnnualTrainingPlanApi(data: unknown) {
+export async function createAnnualTrainingPlanApi(data: Schemas['AnnualTrainingPlanCreate']) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/annual-training-plans`, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -196,33 +135,83 @@ export async function deleteAnnualPlanItemApi(planId: string, itemId: string) {
   })
 }
 
-export async function batchUpdatePlanItemsApi(planId: string, data: unknown) {
+export async function batchUpdatePlanItemsApi(planId: string, data: Schemas['AnnualTrainingPlanItemBatchUpdate']) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/annual-training-plans/${planId}/items`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
-export async function fetchOnboardingRecordsApi(params?: Record<string, unknown>) {
+export async function fetchOnboardingRecordsApi(
+  params?: OnboardingRecordListQuery,
+): Promise<Schemas['OnboardingRecordListApiResponse']> {
   const searchParams = new URLSearchParams()
-  if (params?.employee_id) searchParams.set('employee_id', String(params.employee_id))
   if (params?.department) searchParams.set('department', String(params.department))
-  if (params?.position) searchParams.set('position', String(params.position))
-  if (params?.is_employed) searchParams.set('is_employed', String(params.is_employed))
   if (params?.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/onboarding-records?${searchParams.toString()}`)
 }
 
-export async function fetchDepartureRecordsApi(params?: Record<string, unknown>) {
+export async function createOnboardingRecordApi(
+  data: Schemas['OnboardingRecordCreate'],
+): Promise<Schemas['OnboardingRecordApiResponse']> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/onboarding-records`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateOnboardingRecordApi(
+  id: string,
+  data: Schemas['OnboardingRecordUpdate'],
+): Promise<Schemas['OnboardingRecordApiResponse']> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/onboarding-records/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteOnboardingRecordApi(id: string) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/onboarding-records/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function fetchDepartureRecordsApi(
+  params?: DepartureRecordListQuery,
+): Promise<Schemas['DepartureRecordListApiResponse']> {
   const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', String(params.department))
-  if (params?.offboarding_type) searchParams.set('offboarding_type', String(params.offboarding_type))
-  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
+  if (params?.department) searchParams.set('department', params.department)
+  if (params?.keyword) searchParams.set('keyword', params.keyword)
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departure-records?${searchParams.toString()}`)
+}
+
+export async function createDepartureRecordApi(
+  data: Schemas['DepartureRecordCreate'],
+): Promise<Schemas['DepartureRecordApiResponse']> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departure-records`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateDepartureRecordApi(
+  id: string,
+  data: Schemas['DepartureRecordUpdate'],
+): Promise<Schemas['DepartureRecordApiResponse']> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departure-records/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteDepartureRecordApi(id: string) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departure-records/${id}`, {
+    method: 'DELETE',
+  })
 }
 
 export async function fetchEmployeeByIdApi(id: string) {
@@ -245,54 +234,6 @@ export async function fetchCandidatesApi(params?: CandidateListParams) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/candidates?${searchParams.toString()}`)
 }
 
-export async function fetchNewEmployeesApi(params?: Record<string, unknown>) {
-  const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', String(params.department))
-  if (params?.status) searchParams.set('status', String(params.status))
-  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 20))
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/new/employees?${searchParams.toString()}`)
-}
-
-export async function fetchNewDepartmentsApi(params?: Record<string, unknown>) {
-  const searchParams = new URLSearchParams()
-  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 100))
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/new/departments?${searchParams.toString()}`)
-}
-
-export async function fetchNewOnboardingRecordsApi(params?: Record<string, unknown>) {
-  const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', String(params.department))
-  if (params?.position) searchParams.set('position', String(params.position))
-  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 20))
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/new/onboarding-records?${searchParams.toString()}`)
-}
-
-export async function fetchNewDepartureRecordsApi(params?: Record<string, unknown>) {
-  const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', String(params.department))
-  if (params?.offboarding_type) searchParams.set('offboarding_type', String(params.offboarding_type))
-  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 20))
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/new/departure-records?${searchParams.toString()}`)
-}
-
-export async function fetchNewOffboardingRecordsApi(params?: Record<string, unknown>) {
-  const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', String(params.department))
-  if (params?.offboarding_type) searchParams.set('offboarding_type', String(params.offboarding_type))
-  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 20))
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/new/offboarding-records?${searchParams.toString()}`)
-}
-
 export async function fetchAnnualTrainingPlanByIdApi(id: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/annual-training-plans/${id}`)
 }
@@ -301,55 +242,32 @@ export async function fetchPlanItemsApi(id: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/annual-training-plans/${id}/items`)
 }
 
-export async function fetchTrainingRecordsApi(params?: Record<string, unknown>) {
-  const searchParams = new URLSearchParams()
-  if (params?.employee_id) searchParams.set('employee_id', String(params.employee_id))
-  if (params?.training_type) searchParams.set('training_type', String(params.training_type))
-  if (params?.keyword) searchParams.set('keyword', String(params.keyword))
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 20))
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-records?${searchParams.toString()}`)
+export async function fetchEmployeeByNumberApi(employeeNumber: string): Promise<Schemas['EmployeeResponse']> {
+  return apiFetchData<Schemas['EmployeeResponse']>(
+    `${getApiBaseUrl()}/api/v1/hr/employees/by-number/${employeeNumber}`,
+  )
 }
 
-export async function fetchTrainingPlansApi(params?: Record<string, unknown>) {
-  const searchParams = new URLSearchParams()
-  if (params?.year) searchParams.set('year', String(params.year))
-  if (params?.department) searchParams.set('department', String(params.department))
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 20))
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-plans?${searchParams.toString()}`)
+export async function syncTrainingSpecialistsFeishuOpenIdsApi(): Promise<Schemas['AsyncJobAcceptedResponse']['data']> {
+  return apiFetchData<Schemas['AsyncJobAcceptedResponse']['data']>(
+    `${getApiBaseUrl()}/api/v1/hr/training-specialists/sync-feishu-openids`,
+    { method: 'POST' },
+  )
 }
 
-export async function fetchEmployeeByNumberApi(employeeNumber: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/employees/by-number/${employeeNumber}`)
-}
-
-export async function syncTrainingSpecialistsFeishuOpenIdsApi() {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-specialists/sync-feishu-openids`, {
-    method: 'POST',
-  })
-}
-
-export async function syncOnboardingFromFeishuApi() {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/onboarding-records/sync-from-feishu`, {
-    method: 'POST',
-  })
-}
-
-export async function syncDepartureFromFeishuApi() {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departure-records/sync-from-feishu`, {
-    method: 'POST',
-  })
-}
-
-export async function createTrainingLedgerApi(data: unknown) {
+export async function createTrainingLedgerApi(
+  data: Schemas['TrainingLedgerCreate'],
+): Promise<Schemas['DataResponse_TrainingLedgerResponse_']> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-ledgers`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateTrainingLedgerApi(id: string, data: unknown) {
+export async function updateTrainingLedgerApi(
+  id: string,
+  data: Schemas['TrainingLedgerUpdate'],
+): Promise<Schemas['DataResponse_TrainingLedgerResponse_']> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-ledgers/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -362,43 +280,57 @@ export async function deleteTrainingLedgerApi(id: string) {
   })
 }
 
-export async function createTrainingLedgerPageApi(data: unknown) {
+export async function createTrainingLedgerPageApi(
+  data: Schemas['TrainingLedgerPageCreate'],
+): Promise<Schemas['DataResponse_TrainingLedgerPageResponse_']> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-ledgers/pages`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function sendTrainingNotificationApi(data: unknown) {
+export async function sendTrainingNotificationApi(data: Schemas['TrainingNotifyInput']) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-notifications/send`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function generateTrainingSignInSheetApi(data: unknown) {
-  return apiFetchBlob(`${getApiBaseUrl()}/api/v1/hr/training/sign-in-sheet/generate`, {
+export async function generateTrainingSignInSheetApi(
+  data: Schemas['TrainingSignInSheetInput'],
+  factory: 'old' | 'new' = 'old',
+): Promise<Blob> {
+  return apiFetchBlob(`${getApiBaseUrl()}/api/v1/hr/training-sign-in-sheet?factory=${factory}`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function generateTrainingNotificationApi(data: unknown) {
-  return apiFetchBlob(`${getApiBaseUrl()}/api/v1/hr/training/notification/generate`, {
+export async function generateTrainingNotificationApi(
+  data: Schemas['TrainingNotificationInput'],
+  factory: 'old' | 'new' = 'old',
+): Promise<Blob> {
+  return apiFetchBlob(`${getApiBaseUrl()}/api/v1/hr/training-notification?factory=${factory}`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function generateTrainingEvaluationApi(data: unknown) {
-  return apiFetchBlob(`${getApiBaseUrl()}/api/v1/hr/training/evaluation/generate`, {
+export async function generateTrainingEvaluationApi(
+  data: Schemas['TrainingEvaluationInput'],
+  factory: 'old' | 'new' = 'old',
+): Promise<Blob> {
+  return apiFetchBlob(`${getApiBaseUrl()}/api/v1/hr/training-evaluation?factory=${factory}`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function generateOnboardingEvaluationApi(data: unknown) {
-  return apiFetchBlob(`${getApiBaseUrl()}/api/v1/hr/onboarding/evaluation/generate`, {
+export async function generateOnboardingEvaluationApi(
+  data: Schemas['OnboardingEvaluationInput'],
+  factory: 'old' | 'new' = 'old',
+): Promise<Blob> {
+  return apiFetchBlob(`${getApiBaseUrl()}/api/v1/hr/onboarding-evaluation?factory=${factory}`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -406,13 +338,6 @@ export async function generateOnboardingEvaluationApi(data: unknown) {
 
 export async function createOnboardingTrainingRecordApi(employeeNumber: string, data: unknown) {
   return apiFetchBlob(`${getApiBaseUrl()}/api/v1/hr/employees/${employeeNumber}/onboarding-training-record`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function createDepartureRecordApi(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/departure-records`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -450,14 +375,19 @@ export async function fetchTrainingSessionsApi(params?: {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-sessions?${searchParams.toString()}`)
 }
 
-export async function createTrainingSessionApi(data: unknown) {
+export async function createTrainingSessionApi(
+  data: Schemas['TrainingSessionCreate'],
+): Promise<Schemas['DataResponse_TrainingSessionResponse_']> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-sessions`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateTrainingSessionApi(id: string, data: unknown) {
+export async function updateTrainingSessionApi(
+  id: string,
+  data: Schemas['TrainingSessionUpdate'],
+): Promise<Schemas['DataResponse_TrainingSessionResponse_']> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-sessions/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -481,7 +411,7 @@ export async function fetchTrainingSessionByIdApi(id: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-sessions/${id}`)
 }
 
-export async function sendTrainingSessionSelectTasksApi(id: string) {
+export async function sendTrainingSessionSelectTasksApi(id: string): Promise<Schemas['AsyncJobAcceptedResponse']> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-sessions/${id}/send-select-tasks`, {
     method: 'POST',
   })
@@ -513,21 +443,25 @@ export async function fetchSopCatalog(params?: Record<string, unknown>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/sop-catalog${qs ? `?${qs}` : ''}`)
 }
 
-export async function sendTrainingSelectTaskApi(data: unknown) {
+export async function sendTrainingSelectTaskApi(data: Schemas['TrainingSelectTaskCreate']) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-select-tasks/send`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function savePrejobTemplateApi(data: unknown) {
+export async function savePrejobTemplateApi(data: Schemas['PrejobTemplateCreate']) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/prejob-training-templates`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
 }
 
-export async function generatePrejobTrainingPlanApi(employeeId: string, params: Record<string, unknown>, factory: string, body: unknown) {
+export async function generatePrejobTrainingPlanApi(
+  employeeId: string,
+  factory: string,
+  body: Schemas['PrejobTemplateItem'][] | null,
+): Promise<Blob> {
   return apiFetchBlob(
     `${getApiBaseUrl()}/api/v1/hr/employees/${employeeId}/prejob-training-plan?factory=${factory}`,
     {
@@ -537,21 +471,24 @@ export async function generatePrejobTrainingPlanApi(employeeId: string, params: 
   )
 }
 
-export async function submitTrainingSelectTaskApi(token: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-select-tasks/${token}/submit`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
+export async function submitTrainingSelectTaskApi(
+  token: string,
+  data: Schemas['TrainingSelectTaskSubmit'],
+): Promise<Schemas['TrainingSelectTask']> {
+  return apiFetchData<Schemas['TrainingSelectTask']>(
+    `${getApiBaseUrl()}/api/v1/hr/training-select-tasks/${token}/submit`,
+    { method: 'POST', body: JSON.stringify(data) },
+  )
 }
 
-export async function createTrainingTeamApi(data: unknown) {
+export async function createTrainingTeamApi(data: Schemas['TrainingTeamCreate']) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-teams`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateTrainingTeamApi(id: string, data: unknown) {
+export async function updateTrainingTeamApi(id: string, data: Schemas['TrainingTeamUpdate']) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-teams/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -564,7 +501,7 @@ export async function deleteTrainingTeamApi(id: string) {
   })
 }
 
-export async function upsertTrainingSpecialistApi(data: unknown) {
+export async function upsertTrainingSpecialistApi(data: Schemas['TrainingSpecialistCreate']) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-specialists`, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -575,4 +512,32 @@ export async function deleteTrainingSpecialistApi(id: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/hr/training-specialists/${id}`, {
     method: 'DELETE',
   })
+}
+
+// ── 人员流动分析（后台任务）──
+
+export async function submitTurnoverAnalysisJobApi(): Promise<Schemas['AsyncJobAcceptedResponse']> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/turnover-analysis`, {
+    method: 'POST',
+  })
+}
+
+// ── 员工档案（飞书通讯录只读镜像，ticket #198）──
+
+export async function fetchEmployeeProfilesApi(params?: EmployeeProfilesQuery): Promise<EmployeeProfileListResponse> {
+  const searchParams = new URLSearchParams()
+  if (params?.department_id) searchParams.set('department_id', params.department_id)
+  if (params?.status) searchParams.set('status', params.status)
+  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  searchParams.set('page', String(params?.page || 1))
+  searchParams.set('page_size', String(params?.page_size || 20))
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/people?${searchParams.toString()}`)
+}
+
+export async function fetchEmployeeProfileDetailApi(identifier: string): Promise<EmployeeProfileDetailResponse> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/people/${encodeURIComponent(identifier)}`)
+}
+
+export async function fetchEmployeeDepartmentsApi(): Promise<OrgDepartmentTreeResponse> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/hr/people/departments`)
 }

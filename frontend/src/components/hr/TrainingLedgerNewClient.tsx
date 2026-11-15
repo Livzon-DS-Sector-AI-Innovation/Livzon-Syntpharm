@@ -51,7 +51,8 @@ export default function TrainingLedgerNewClient() {
     try {
       await createTrainingLedgerPage({
         employee_number: emp.employee_number,
-        employee_name: emp.name
+        employee_name: emp.name,
+        ledger_type: 'event',
       })
       message.success('培训台账创建成功')
       router.push(`/hr/training/ledger?employee_number=${emp.employee_number}`)

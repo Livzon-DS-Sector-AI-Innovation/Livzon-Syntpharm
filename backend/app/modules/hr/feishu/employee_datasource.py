@@ -90,10 +90,9 @@ class EmployeeBitableDataSource:
     """
 
     def __init__(self) -> None:
-        self.client = BitableClient()
-        # New employee base: https://j0eukrlohu.feishu.cn/base/KHLsboPBGaah6Vs3EpgcpvzsnuH
-        self.client.app_token = _settings.HR_BITABLE_APP_TOKEN or "KHLsboPBGaah6Vs3EpgcpvzsnuH"
-        self.table_id = _settings.HR_BITABLE_EMPLOYEE_TABLE_ID or "tblrcSHfS5ivun7e"  # type: ignore[attr-defined]
+        # HR 员工多维表格：app_token / table_id 均来自运行时配置，不再内置默认值。
+        self.client = BitableClient(app_token=_settings.feishu.hr_bitable.app_token)
+        self.table_id = _settings.feishu.hr_bitable.employee_table_id
 
     def _is_enabled(self) -> bool:
         return bool(self.client.app_token)
