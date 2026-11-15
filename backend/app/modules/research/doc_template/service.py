@@ -262,9 +262,7 @@ def _template_mime(ext: str) -> str:
     return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 
-async def _load_template_or_404(
-    session: AsyncSession, template_id: uuid.UUID, *, for_update: bool = False
-) -> Any:
+async def _load_template_or_404(session: AsyncSession, template_id: uuid.UUID, *, for_update: bool = False) -> Any:
     """取模板记录，不存在（或已软删）即 404。
 
     ``for_update=True`` 时对行加锁：槽位结构是「读-改-写」，不加锁时两个并发保存

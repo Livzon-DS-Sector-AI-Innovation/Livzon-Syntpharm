@@ -217,9 +217,7 @@ class _Editor:
             count += len(anchor.get("rows") or [])
         return count
 
-    def _upsert_position(
-        self, position: WritablePosition, value: str, *, before: str | None, operation: str
-    ) -> None:
+    def _upsert_position(self, position: WritablePosition, value: str, *, before: str | None, operation: str) -> None:
         self.changes.append(
             SlotChange(
                 key=position.key,
@@ -347,9 +345,7 @@ class _Editor:
         position = self.positions.get(key)
         if position is not None:
             row = self.rows.get(key)
-            anchor_paragraph = _locate(
-                self.document, position.anchor(), written=row.value if row is not None else None
-            )
+            anchor_paragraph = _locate(self.document, position.anchor(), written=row.value if row is not None else None)
             location = f"「{position.label}」之后"
         elif key.startswith("ap") and key in self.rows:
             anchor_paragraph = self._find_unique_paragraph(self.rows[key].value)

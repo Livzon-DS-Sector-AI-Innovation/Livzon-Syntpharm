@@ -375,8 +375,7 @@ async def build_review(session: AsyncSession, job_id: UUID) -> ReportGenOutlineD
             name=group.name,
             total=group.total,
             locations=[
-                ReportGenReferenceLocationData(key=location.key, label=location.label)
-                for location in group.locations
+                ReportGenReferenceLocationData(key=location.key, label=location.label) for location in group.locations
             ],
         )
         for group in build_reference_groups(rows.values())
@@ -385,9 +384,7 @@ async def build_review(session: AsyncSession, job_id: UUID) -> ReportGenOutlineD
     written = sum(
         1
         for item in items
-        if item.writable
-        and item.kind in (KIND_PARAGRAPH, KIND_TABLE_CELL)
-        and item.state not in ("blank", "locked")
+        if item.writable and item.kind in (KIND_PARAGRAPH, KIND_TABLE_CELL) and item.state not in ("blank", "locked")
     )
     writable_total = outline.writable_total
     stats = ReportGenOutlineStatsData(
@@ -398,9 +395,7 @@ async def build_review(session: AsyncSession, job_id: UUID) -> ReportGenOutlineD
         conflict=sum(1 for item in items if item.state == "conflict"),
         anchor_unresolved=sum(1 for item in items if item.state == "anchor_unresolved"),
         manual=sum(1 for item in items if item.edit_source == "manual"),
-        appended=sum(
-            1 for item in items if item.kind in (KIND_APPEND_PARAGRAPH, KIND_APPEND_TABLE_ROWS)
-        ),
+        appended=sum(1 for item in items if item.kind in (KIND_APPEND_PARAGRAPH, KIND_APPEND_TABLE_ROWS)),
         references=len(references),
         locked=fixed_total,
         coverage_rate=round(written / writable_total, 4) if writable_total else None,
@@ -433,9 +428,7 @@ def _build_sections(
     """章节列表：第一个标题之前的内容补一个「正文开头」伪节，前端不用另写分支。"""
     sections: list[ReportGenSectionData] = []
     first_start = outline.sections[0].start if outline.sections else None
-    has_leading = any(
-        item.section_index == -1 and item.kind in (KIND_PARAGRAPH, KIND_TABLE_CELL) for item in items
-    )
+    has_leading = any(item.section_index == -1 and item.kind in (KIND_PARAGRAPH, KIND_TABLE_CELL) for item in items)
     if has_leading or not outline.sections:
         bucket = section_stats.get(-1, {"writable": 0, "written": 0, "blank": 0})
         sections.append(

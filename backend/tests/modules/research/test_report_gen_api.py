@@ -193,9 +193,7 @@ async def test_opinion_library_passes_filters(client: AsyncClient, monkeypatch: 
     assert seen == {"status": "active", "keyword": "收率", "limit": 50}
 
 
-async def test_opinion_library_patch_toggles_status(
-    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_opinion_library_patch_toggles_status(client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     opinion_id = uuid4()
     seen: dict[str, object] = {}
 
@@ -215,9 +213,7 @@ async def test_opinion_library_patch_toggles_status(
     assert seen == {"id": opinion_id, "status": "disabled"}
 
 
-async def test_opinion_digest_history_returns_previews(
-    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_opinion_digest_history_returns_previews(client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     async def _digests(db, *, limit=20):  # noqa: ANN001, ANN202
         return ReportGenOpinionDigestListData(
             total=1,
@@ -242,9 +238,7 @@ async def test_opinion_digest_history_returns_previews(
     assert body["data"]["items"][0]["status"] == "fallback"
 
 
-async def test_edit_result_reports_removed_and_restored(
-    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_edit_result_reports_removed_and_restored(client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """一处校验失败不再整批失败：响应里要能看出保存了几处、哪一处被还原。"""
     job_id = uuid4()
 

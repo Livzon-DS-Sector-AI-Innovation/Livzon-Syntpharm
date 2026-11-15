@@ -104,9 +104,7 @@ def build_reference_groups(rows: Iterable[Any], *, limit: int = MAX_LOCATIONS) -
 
     groups: list[ReferenceGroup] = []
     for index, (name, locations) in enumerate(grouped.items(), start=1):
-        groups.append(
-            ReferenceGroup(index=index, name=name, total=len(locations), locations=locations[:limit])
-        )
+        groups.append(ReferenceGroup(index=index, name=name, total=len(locations), locations=locations[:limit]))
     return groups
 
 

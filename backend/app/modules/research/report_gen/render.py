@@ -328,9 +328,7 @@ def _locate(document: Any, anchor: dict[str, Any] | None, *, written: str | None
     expected_fp = anchor.get("fingerprint")
     if paragraph is not None:
         text = (paragraph.text or "").strip()
-        if _text_matches(
-            text, expected_text=expected_text, expected_fp=expected_fp, written=written, append=append
-        ):
+        if _text_matches(text, expected_text=expected_text, expected_fp=expected_fp, written=written, append=append):
             return paragraph
 
     paragraphs = document.paragraphs

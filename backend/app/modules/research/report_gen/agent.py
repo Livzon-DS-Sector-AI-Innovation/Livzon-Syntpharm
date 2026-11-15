@@ -215,9 +215,7 @@ def _coverage_percent(coverage: dict[str, Any]) -> int:
 
 
 def _writing_step_text(coverage: dict[str, Any]) -> str:
-    return (
-        f"{STEP_TEXT_WRITING} · 已写 {coverage.get('written', 0)}/{coverage.get('writable_total', 0)} 处"
-    )
+    return f"{STEP_TEXT_WRITING} · 已写 {coverage.get('written', 0)}/{coverage.get('writable_total', 0)} 处"
 
 
 async def _load_slot_rows(session: AsyncSession, job: RdReportGenJob) -> dict[str, RdReportGenSlot]:
@@ -696,9 +694,7 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
     locked_labels = [
         row.slot_label or key
         for key, row in slot_rows.items()
-        if isinstance(row.anchor, dict)
-        and row.anchor.get("human_locked") is True
-        and (row.value or "").strip()
+        if isinstance(row.anchor, dict) and row.anchor.get("human_locked") is True and (row.value or "").strip()
     ]
     if locked_labels:
         # 执行记录里明确写出来：人工确认是「沿用」而不是「重写」，出稿后好核对
@@ -710,9 +706,7 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
     system_prompt = with_opinion_digest(system_prompt, digest_text)
     system_prompt = with_human_locked_summary(system_prompt, locked_labels)
     # 可写总数要扣掉人工确认的位置：否则模型会按未扣减的口径去找「还差几处」反复尝试
-    messages = _build_messages(
-        job, project, report, max(outline.writable_total - len(locked_labels), 0), system_prompt
-    )
+    messages = _build_messages(job, project, report, max(outline.writable_total - len(locked_labels), 0), system_prompt)
     switch = _ModelSwitch(config.model, config.fallback_model)
     mode = resolve_initial_mode(config.tool_mode)
     if mode == "json":

@@ -834,6 +834,8 @@ class RdReportGenJob(BaseModel):
         Index("ix_research_rd_report_gen_jobs_report", "report_id"),
         Index("ix_research_rd_report_gen_jobs_project", "project_id"),
         Index("ix_research_rd_report_gen_jobs_status", "status"),
+        # 库里有、模型侧漏声明的索引（0152 建），补声明避免 alembic check 报漂移
+        Index("ix_research_rd_report_gen_jobs_digest", "opinion_digest_id"),
         CheckConstraint(
             "status IN ('queued', 'running', 'completed', 'failed', 'cancelled')",
             name="ck_research_rd_report_gen_jobs_status",
@@ -889,9 +891,7 @@ class RdReportGenJob(BaseModel):
         String(128), nullable=True, comment="正文生成档位原值（LLM 配置名或模型名）"
     )
     model_name: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="正文生成实际模型名")
-    structure_model_name: Mapped[str | None] = mapped_column(
-        String(128), nullable=True, comment="结构识别档位原值"
-    )
+    structure_model_name: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="结构识别档位原值")
     fallback_model_name: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="兜底档位原值")
     used_fallback: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false", comment="是否已降级到兜底模型"
@@ -984,20 +984,14 @@ class RdReportGenDocumentVersion(BaseModel):
 
     __tablename__ = "rd_report_gen_document_versions"
     __table_args__ = (
-        UniqueConstraint(
-            "job_id", "version_no", name="uq_research_rd_report_gen_doc_versions_no"
-        ),
-        Index(
-            "ix_research_rd_report_gen_doc_versions_job", "job_id", "version_no"
-        ),
-        Index(
-            "ix_research_rd_report_gen_doc_versions_current", "job_id", "is_current"
-        ),
+        UniqueConstraint("job_id", "version_no", name="uq_research_rd_report_gen_doc_versions_no"),
+        Index("ix_research_rd_report_gen_doc_versions_job", "job_id", "version_no"),
+        Index("ix_research_rd_report_gen_doc_versions_current", "job_id", "is_current"),
         CheckConstraint(
             "kind IN ('ai_draft', 'manual_render', 'manual_upload', 'manual_edit')",
             name="ck_research_rd_report_gen_doc_versions_kind",
         ),
-        {"schema": "research"},
+        {"schema": "research", "comment": "AI 报告成品文档版本（初稿/人工重渲/人工上传）"},
     )
 
     job_id: Mapped[uuid.UUID] = mapped_column(
@@ -1014,9 +1008,7 @@ class RdReportGenDocumentVersion(BaseModel):
     )
     file_name: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="文件名")
     file_size: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="文件字节数")
-    note: Mapped[str | None] = mapped_column(
-        String(300), nullable=True, comment="版本说明，如「按当前槽位重渲染」"
-    )
+    note: Mapped[str | None] = mapped_column(String(300), nullable=True, comment="版本说明，如「按当前槽位重渲染」")
     is_current: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false", comment="是否为当前生效版本"
     )
@@ -1038,15 +1030,13 @@ class RdReportGenEdit(BaseModel):
             " 'delete_paragraph', 'append_table_row', 'delete_table_row')",
             name="ck_research_rd_report_gen_edits_operation",
         ),
-        {"schema": "research"},
+        {"schema": "research", "comment": "AI 报告人工在线编辑流水（逐条改前改后）"},
     )
 
     job_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("research.rd_report_gen_jobs.id"), comment="所属生成任务"
     )
-    slot_key: Mapped[str] = mapped_column(
-        String(100), comment="位置标识：p12 / t2r3c1 / ap1 / at1 / ref"
-    )
+    slot_key: Mapped[str] = mapped_column(String(100), comment="位置标识：p12 / t2r3c1 / ap1 / at1 / ref")
     operation: Mapped[str] = mapped_column(
         String(32),
         comment="update_text/update_cell/insert_paragraph/delete_paragraph/append_table_row/delete_table_row",
@@ -1159,9 +1149,7 @@ class RdReportGenFeedback(BaseModel):
         ForeignKey("research.rd_reports.id"),
         comment="所属研发报告（跨任务汇总用）",
     )
-    slot_key: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, comment="针对的槽位；空=整篇意见"
-    )
+    slot_key: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="针对的槽位；空=整篇意见")
     content: Mapped[str] = mapped_column(Text, comment="意见内容")
     status: Mapped[str] = mapped_column(
         String(12), default="open", comment="open=待落实 / applied=已被重生成带走 / ignored=不采纳"
@@ -1192,7 +1180,7 @@ class RdReportGenOpinion(BaseModel):
             "status IN ('active', 'disabled')",
             name="ck_research_rd_report_gen_opinions_status",
         ),
-        {"schema": "research"},
+        {"schema": "research", "comment": "AI 报告生成意见库（全局，跨报告归并）"},
     )
 
     content: Mapped[str] = mapped_column(Text, comment="规范化后的意见原文")
@@ -1226,7 +1214,7 @@ class RdReportGenOpinionDigest(BaseModel):
             "status IN ('ok', 'fallback')",
             name="ck_research_rd_report_gen_opinion_digests_status",
         ),
-        {"schema": "research"},
+        {"schema": "research", "comment": "AI 报告生成前的历史意见汇总快照"},
     )
 
     digest_text: Mapped[str] = mapped_column(Text, comment="汇总后的写作要求（送进提示词的那段）")

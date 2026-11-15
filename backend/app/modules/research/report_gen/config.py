@@ -104,13 +104,11 @@ async def load_config() -> ReportGenConfig:
         ),
         references_enabled=(await get_module_setting(MODULE, "REPORT_GEN_REFERENCES_ENABLED", "true")).strip().lower()
         not in ("false", "0", "off", "no"),
-        opinion_digest_enabled=(
-            await get_module_setting(MODULE, "REPORT_GEN_OPINION_DIGEST_ENABLED", "true")
-        ).strip().lower()
+        opinion_digest_enabled=(await get_module_setting(MODULE, "REPORT_GEN_OPINION_DIGEST_ENABLED", "true"))
+        .strip()
+        .lower()
         not in ("false", "0", "off", "no"),
-        opinion_max_items=max(
-            1, await get_module_setting_int(MODULE, "REPORT_GEN_OPINION_MAX_ITEMS", 40)
-        ),
+        opinion_max_items=max(1, await get_module_setting_int(MODULE, "REPORT_GEN_OPINION_MAX_ITEMS", 40)),
         agent_prompt=resolve_prompt(
             await get_module_setting(MODULE, "REPORT_GEN_AGENT_PROMPT", ""),
             AGENT_SYSTEM_PROMPT,

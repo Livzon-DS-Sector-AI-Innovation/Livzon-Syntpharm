@@ -79,9 +79,7 @@ async def test_list_reports_without_project_id_spans_projects(
     assert [item["project_name"] for item in body["data"]] == ["项目甲", "项目乙"]
 
 
-async def test_list_reports_with_project_id_passes_filter(
-    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_list_reports_with_project_id_passes_filter(client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     seen: dict[str, object] = {}
 
     async def _get_reports(db, project_id=None, limit=200):  # noqa: ANN001, ANN202

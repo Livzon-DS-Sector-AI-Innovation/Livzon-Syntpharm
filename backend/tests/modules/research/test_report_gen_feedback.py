@@ -17,6 +17,7 @@ from uuid import uuid4
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.exceptions import BadRequestException
@@ -118,6 +119,11 @@ class _Session:
             obj.created_at = NOW
 
 
+def _as_async_session(session: _Session) -> AsyncSession:
+    """替身只实现被测代码真正用到的方法，类型上按 AsyncSession 交给被测函数。"""
+    return cast(AsyncSession, session)
+
+
 def _feedback_row(**overrides: Any) -> Any:
     row = SimpleNamespace(
         id=uuid4(),
@@ -180,7 +186,7 @@ async def test_mark_applied_sets_status_and_job() -> None:
     job_id = uuid4()
     session = _Session()
 
-    count = await mark_applied(session, items, job_id)
+    count = await mark_applied(_as_async_session(session), items, job_id)
 
     assert count == 2
     assert all(item.status == "applied" for item in items)
@@ -196,7 +202,7 @@ async def test_create_feedback_rejects_unknown_slot() -> None:
 
     with pytest.raises(BadRequestException):
         await service_module.create_feedback(
-            session,
+            _as_async_session(session),
             session.job.id,
             ReportGenFeedbackCreateRequest(slot_key="not_exist", content="改一下"),
             None,
@@ -207,7 +213,7 @@ async def test_create_feedback_normalizes_content() -> None:
     session = _Session(job=_job(), slot_keys=["study_conclusion"])
 
     data = await service_module.create_feedback(
-        session,
+        _as_async_session(session),
         session.job.id,
         ReportGenFeedbackCreateRequest(slot_key="study_conclusion", content="  结论\n\n要重写  "),
         None,
@@ -241,7 +247,7 @@ async def test_create_feedback_records_into_opinion_library() -> None:
     session = _Session(job=_job())
 
     await service_module.create_feedback(
-        cast(Any, session),
+        _as_async_session(session),
         session.job.id,
         ReportGenFeedbackCreateRequest(content="  结果要写  因果  "),
         None,
@@ -260,7 +266,7 @@ async def test_same_opinion_accumulates_hit_count() -> None:
     session = _Session(job=_job(), opinions=[opinion])
 
     await service_module.create_feedback(
-        cast(Any, session),
+        _as_async_session(session),
         session.job.id,
         ReportGenFeedbackCreateRequest(content="结果要写因果"),
         None,
@@ -276,7 +282,7 @@ async def test_disabled_opinion_is_not_reenabled_by_new_feedback() -> None:
     session = _Session(job=_job(), opinions=[opinion])
 
     await service_module.create_feedback(
-        cast(Any, session),
+        _as_async_session(session),
         session.job.id,
         ReportGenFeedbackCreateRequest(content="结果要写因果"),
         None,
@@ -290,7 +296,7 @@ async def test_list_feedback_counts_open_items() -> None:
     rows = [_feedback_row(), _feedback_row(status="applied", applied_job_id=uuid4())]
     session = _Session(job=_job(), rows=rows)
 
-    data = await service_module.list_feedback(session, session.job.id)
+    data = await service_module.list_feedback(_as_async_session(session), session.job.id)
 
     assert data.total == 2
     assert data.open_count == 1
@@ -303,7 +309,7 @@ async def test_update_feedback_reopen_clears_applied_job() -> None:
     session = _Session(feedback=row)
 
     data = await service_module.update_feedback(
-        session,
+        _as_async_session(session),
         row.id,
         ReportGenFeedbackUpdateRequest(status="open"),
         uuid4(),
@@ -358,9 +364,7 @@ def _feedback_data(**overrides: Any) -> ReportGenFeedbackData:
     return ReportGenFeedbackData(**payload)
 
 
-async def test_create_feedback_endpoint_returns_201(
-    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_create_feedback_endpoint_returns_201(client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     job_id = uuid4()
 
     async def _create(_db, _job_id, _payload, _user):  # noqa: ANN001, ANN202
@@ -379,9 +383,7 @@ async def test_create_feedback_endpoint_returns_201(
     assert body["message"] == "意见已记录，下次生成会参考"
 
 
-async def test_list_feedback_endpoint_returns_open_count(
-    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_list_feedback_endpoint_returns_open_count(client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
     job_id = uuid4()
 
     async def _list(_db, _job_id):  # noqa: ANN001, ANN202

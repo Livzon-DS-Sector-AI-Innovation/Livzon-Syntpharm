@@ -83,10 +83,10 @@ async def record_feedback(
     try:
         async with session.begin_nested():
             opinion = (
-                await session.execute(
-                    select(RdReportGenOpinion).where(RdReportGenOpinion.normalized_key == key)
-                )
-            ).scalars().first()
+                (await session.execute(select(RdReportGenOpinion).where(RdReportGenOpinion.normalized_key == key)))
+                .scalars()
+                .first()
+            )
             if opinion is None:
                 opinion = RdReportGenOpinion(
                     content=content,
@@ -133,9 +133,9 @@ async def list_library(
     text = normalize(keyword)
     if text:
         statement = statement.where(RdReportGenOpinion.content.ilike(f"%{text}%"))
-    statement = statement.order_by(
-        RdReportGenOpinion.hit_count.desc(), RdReportGenOpinion.updated_at.desc()
-    ).limit(limit)
+    statement = statement.order_by(RdReportGenOpinion.hit_count.desc(), RdReportGenOpinion.updated_at.desc()).limit(
+        limit
+    )
     return list((await session.execute(statement)).scalars().all())
 
 
@@ -179,8 +179,7 @@ def _items_text(opinions: list[RdReportGenOpinion]) -> str:
 
 def _fallback_text(opinions: list[RdReportGenOpinion]) -> str:
     return "\n".join(
-        f"{index}. {normalize(item.content)}"
-        for index, item in enumerate(opinions[:FALLBACK_ITEMS], start=1)
+        f"{index}. {normalize(item.content)}" for index, item in enumerate(opinions[:FALLBACK_ITEMS], start=1)
     )
 
 
@@ -220,16 +219,20 @@ async def build_digest(
 
     source_hash = _source_hash([item.id for item in opinions])
     existing = (
-        await session.execute(
-            select(RdReportGenOpinionDigest)
-            .where(
-                RdReportGenOpinionDigest.source_hash == source_hash,
-                RdReportGenOpinionDigest.is_deleted.is_(False),
+        (
+            await session.execute(
+                select(RdReportGenOpinionDigest)
+                .where(
+                    RdReportGenOpinionDigest.source_hash == source_hash,
+                    RdReportGenOpinionDigest.is_deleted.is_(False),
+                )
+                .order_by(RdReportGenOpinionDigest.created_at.desc())
+                .limit(1)
             )
-            .order_by(RdReportGenOpinionDigest.created_at.desc())
-            .limit(1)
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if existing is not None:
         job.opinion_digest_id = existing.id
         await session.flush()

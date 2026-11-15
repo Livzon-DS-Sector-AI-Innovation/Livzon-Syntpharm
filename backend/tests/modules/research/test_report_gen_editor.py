@@ -347,9 +347,7 @@ def test_restore_removes_multiline_tail_paragraphs() -> None:
     document.add_paragraph("结束说明")
     template = _docx_bytes(document)
     position = _outline(template).by_key()["p1"]
-    filled = apply_operations(
-        template, _outline(template), {}, [_op("update_text", key="p1", text="第一行\n第二行")]
-    )
+    filled = apply_operations(template, _outline(template), {}, [_op("update_text", key="p1", text="第一行\n第二行")])
     assert filled.ok is True and filled.document is not None
     assert _paragraphs(filled.document) == ["1 数据", "第一行", "第二行", "结束说明"]
     rows = {"p1": _slot("p1", value="第一行\n第二行", anchor=position.anchor())}

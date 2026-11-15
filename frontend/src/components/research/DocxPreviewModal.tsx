@@ -39,12 +39,13 @@ export function DocxPreviewModal({
 
   // loadBlob 多半是内联箭头函数，存进 ref 避免它变化导致 effect 反复重跑、反复拉文档
   const loadBlobRef = useRef(loadBlob)
-  loadBlobRef.current = loadBlob
+  useEffect(() => {
+    loadBlobRef.current = loadBlob
+  }, [loadBlob])
 
   useEffect(() => {
     if (!open) return
     let cancelled = false
-    setFetchError(null)
     reset()
     // 等弹层真正挂载后再渲染：docx-preview 需要容器有尺寸，setTimeout(0) 是既有的防竞态写法
     const timer = window.setTimeout(() => {
@@ -61,6 +62,8 @@ export function DocxPreviewModal({
     return () => {
       cancelled = true
       window.clearTimeout(timer)
+      // 错误态在关闭时清：打开时再清等于在 effect 体内 setState，会触发级联渲染
+      setFetchError(null)
       reset()
     }
   }, [open, renderDocx, reset])

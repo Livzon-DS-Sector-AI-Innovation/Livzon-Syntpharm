@@ -472,9 +472,7 @@ class ReportGenRuntime:
                 )
                 continue
             if self._human_locked(key):
-                results.append(
-                    {"key": key, "ok": False, "error": "这个位置已由人工确认，保持原文，不要重写"}
-                )
+                results.append({"key": key, "ok": False, "error": "这个位置已由人工确认，保持原文，不要重写"})
                 continue
             if not position.writable:
                 self.rejected += 1
@@ -516,9 +514,7 @@ class ReportGenRuntime:
                 )
                 continue
             if self._human_locked(key):
-                results.append(
-                    {"key": key, "ok": False, "error": "这个单元格已由人工确认，保持原文，不要重写"}
-                )
+                results.append({"key": key, "ok": False, "error": "这个单元格已由人工确认，保持原文，不要重写"})
                 continue
             if not position.writable:
                 self.rejected += 1

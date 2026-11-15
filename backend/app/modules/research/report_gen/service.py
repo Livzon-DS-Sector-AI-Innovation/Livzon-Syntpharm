@@ -112,9 +112,7 @@ async def _digest_briefs(
     unique = [item for item in dict.fromkeys(digest_ids) if item is not None]
     if not unique:
         return {}
-    rows = await session.execute(
-        select(RdReportGenOpinionDigest).where(RdReportGenOpinionDigest.id.in_(unique))
-    )
+    rows = await session.execute(select(RdReportGenOpinionDigest).where(RdReportGenOpinionDigest.id.in_(unique)))
     return {row.id: _digest_brief(row) for row in rows.scalars().all()}
 
 
@@ -189,33 +187,41 @@ async def _carry_over_manual_slots(
     母本换版后按指纹校验，定位不到的一律跳过（写错位置比少写更糟）。
     """
     previous = (
-        await session.execute(
-            select(RdReportGenJob)
-            .where(
-                RdReportGenJob.report_id == job.report_id,
-                RdReportGenJob.deliverable_template_id == job.deliverable_template_id,
-                RdReportGenJob.status == "completed",
-                RdReportGenJob.id != job.id,
-                RdReportGenJob.is_deleted.is_(False),
+        (
+            await session.execute(
+                select(RdReportGenJob)
+                .where(
+                    RdReportGenJob.report_id == job.report_id,
+                    RdReportGenJob.deliverable_template_id == job.deliverable_template_id,
+                    RdReportGenJob.status == "completed",
+                    RdReportGenJob.id != job.id,
+                    RdReportGenJob.is_deleted.is_(False),
+                )
+                .order_by(RdReportGenJob.created_at.desc())
+                .limit(1)
             )
-            .order_by(RdReportGenJob.created_at.desc())
-            .limit(1)
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if previous is None:
         return 0
 
     rows = (
-        await session.execute(
-            select(RdReportGenSlot)
-            .where(
-                RdReportGenSlot.job_id == previous.id,
-                RdReportGenSlot.edit_source == "manual",
-                RdReportGenSlot.is_deleted.is_(False),
+        (
+            await session.execute(
+                select(RdReportGenSlot)
+                .where(
+                    RdReportGenSlot.job_id == previous.id,
+                    RdReportGenSlot.edit_source == "manual",
+                    RdReportGenSlot.is_deleted.is_(False),
+                )
+                .order_by(RdReportGenSlot.created_at.asc())
             )
-            .order_by(RdReportGenSlot.created_at.asc())
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     manual_rows = [row for row in rows if _carried_value(row)]
     if not manual_rows:
         return 0
@@ -1042,9 +1048,7 @@ async def restore_job_version(
     user_id: UUID | None,
 ) -> ReportGenRenderData:
     """回滚到指定版本：不改写历史版本，而是把旧文件再落一个新版本。"""
-    return await versions.restore_version(
-        session, job_id, version_id, user_id, base_version_id=base_version_id
-    )
+    return await versions.restore_version(session, job_id, version_id, user_id, base_version_id=base_version_id)
 
 
 __all__ = [

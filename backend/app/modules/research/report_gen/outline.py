@@ -382,9 +382,7 @@ def _cell_header(table: Any, row: int, col: int) -> str:
         return ""
 
 
-def _cell_positions(
-    table: Any, table_index: int, section: str, fixed_section: str | None
-) -> list[WritablePosition]:
+def _cell_positions(table: Any, table_index: int, section: str, fixed_section: str | None) -> list[WritablePosition]:
     """展开一张表的单元格；合并单元格按底层 w:tc 去重，只收第一次出现。"""
     items: list[WritablePosition] = []
     seen: set[str] = set()
@@ -407,9 +405,7 @@ def _cell_positions(
             paragraph = cell.paragraphs[0] if cell.paragraphs else None
             style = _style_name(paragraph) if paragraph is not None else ""
             text = (cell.text or "").strip()
-            writable, reason, _append = judge_text(
-                text, style=style, fixed_section=fixed_section, appendable=False
-            )
+            writable, reason, _append = judge_text(text, style=style, fixed_section=fixed_section, appendable=False)
             items.append(
                 WritablePosition(
                     key=f"t{table_index}r{row_index}c{col_index}",

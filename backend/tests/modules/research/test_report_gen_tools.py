@@ -115,21 +115,17 @@ def test_write_paragraph_allows_label_append() -> None:
     document.add_paragraph("制剂/规格：")
     runtime = _runtime(document=document)
 
-    outcome = runtime.write_paragraph(
-        {"items": [{"index": 5, "text": "片剂 10mg", "source_ids": ["s1"]}]}
-    )
+    outcome = runtime.write_paragraph({"items": [{"index": 5, "text": "片剂 10mg", "source_ids": ["s1"]}]})
 
     assert outcome.ok is True
     row = runtime.slot_rows["p5"]
     assert row.value == "片剂 10mg"
-    assert row.anchor.get("append") is True
+    assert (row.anchor or {}).get("append") is True
 
 
 def test_write_paragraph_rejects_heading_and_fixed_text() -> None:
     runtime = _runtime()
-    outcome = runtime.write_paragraph(
-        {"items": [{"index": 0, "text": "改标题"}, {"index": 2, "text": "覆盖固定文字"}]}
-    )
+    outcome = runtime.write_paragraph({"items": [{"index": 0, "text": "改标题"}, {"index": 2, "text": "覆盖固定文字"}]})
     assert outcome.ok is False
     assert outcome.payload["written"] == 0
     errors = " ".join(str(item) for item in outcome.payload["errors"])

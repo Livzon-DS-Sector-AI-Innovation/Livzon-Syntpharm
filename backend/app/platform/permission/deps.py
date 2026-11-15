@@ -14,7 +14,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.exceptions import ForbiddenException
-from app.platform.identity.deps import require_current_user
+
+# 显式 re-export：本模块对外也提供 require_current_user，测试里按此路径覆盖依赖
+from app.platform.identity.deps import require_current_user as require_current_user
 from app.platform.identity.models import User
 from app.platform.permission.service.authorization import (
     PermissionContext,
@@ -86,6 +88,7 @@ def require_route_permission(
 __all__ = [
     "PermissionContext",
     "require_any_permission",
+    "require_current_user",
     "require_permission",
     "require_route_permission",
 ]

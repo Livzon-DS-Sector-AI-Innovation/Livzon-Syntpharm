@@ -171,9 +171,7 @@ class ReportGenFieldItemData(BaseModel):
     value: str | None = Field(None, description="当前内容（AI 写入或人工修改后的值）")
     state: str = Field(..., description="written / needs_verify / conflict / anchor_unresolved / blank / locked")
     edit_source: str = Field("ai", description="ai=生成写入 / manual=人工修改")
-    human_locked: bool = Field(
-        False, description="人工确认过的值：下一次生成沿用，AI 不得覆盖"
-    )
+    human_locked: bool = Field(False, description="人工确认过的值：下一次生成沿用，AI 不得覆盖")
     source_name: str | None = Field(None, description="来源文件或数据表")
     evidence: str | None = Field(None, description="原文证据（引文）")
     confidence: float | None = None
@@ -314,9 +312,7 @@ class ReportGenEditRemoval(BaseModel):
 
 class ReportGenEditResultData(BaseModel):
     applied: int = Field(0, description="实际生效的操作数")
-    removed: list[ReportGenEditRemoval] = Field(
-        default_factory=list, description="校验未通过、已丢弃并还原的操作"
-    )
+    removed: list[ReportGenEditRemoval] = Field(default_factory=list, description="校验未通过、已丢弃并还原的操作")
     restored: int = Field(0, description="其中已还原为母本原样的条数")
     rejected: list[ReportGenEditRejection] = Field(
         default_factory=list, description="兼容字段：与 removed 同源，旧前端按整批失败展示"

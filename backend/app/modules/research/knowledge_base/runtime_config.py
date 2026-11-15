@@ -81,9 +81,7 @@ async def load_runtime_config() -> RuntimeConfig:
         kb_background_enrich_enabled=await get_module_setting_bool(
             MODULE, "DOC_GEN_KB_BACKGROUND_ENRICH_ENABLED", True
         ),
-        kb_background_enrich_interval_seconds=await get(
-            MODULE, "DOC_GEN_KB_BACKGROUND_ENRICH_INTERVAL_SECONDS", 30
-        ),
+        kb_background_enrich_interval_seconds=await get(MODULE, "DOC_GEN_KB_BACKGROUND_ENRICH_INTERVAL_SECONDS", 30),
         kb_background_enrich_max_chunks=await get(MODULE, "DOC_GEN_KB_BACKGROUND_ENRICH_MAX_CHUNKS", 200),
         fact_extract_batch_size=await get(MODULE, "DOC_GEN_FACT_EXTRACT_BATCH_SIZE", 4),
         fact_extract_concurrency=await get(MODULE, "DOC_GEN_FACT_EXTRACT_CONCURRENCY", 4),

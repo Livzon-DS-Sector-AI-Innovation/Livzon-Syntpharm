@@ -67,11 +67,13 @@ _STAGE_CODES: dict[str, str] = {
 # 任务还在跑：向导打开时若命中，直接跳到第 3 步看进度，不重复提交
 ACTIVE_JOB_STATUSES: tuple[str, ...] = ("queued", "running")
 
+
 # 「有附件」才算已经出过稿：这种记录再生成时另起一条版本行，历史仍可查。
 # 注意不能用 status 判断——提交任务就会把状态置 in_progress，用状态会把「点了但没出稿」
 # 的记录误判成已生成，每点一次就多一条空版本行。
 def _has_output(deliverable: RdStageDeliverable | None) -> bool:
     return bool(deliverable is not None and deliverable.file_name)
+
 
 _VERSION_RE = re.compile(r"^[vV]?(\d+)\.(\d+)$")
 
@@ -565,9 +567,7 @@ async def get_status(session: AsyncSession, deliverable_id: uuid.UUID) -> RdStag
     )
 
 
-async def list_report_links(
-    session: AsyncSession, report_ids: list[uuid.UUID]
-) -> list[RdStageDeliverableReportLink]:
+async def list_report_links(session: AsyncSession, report_ids: list[uuid.UUID]) -> list[RdStageDeliverableReportLink]:
     """报告 → 来源交付文档：同一报告有多条交付文档时取最新一条。"""
     if not report_ids:
         return []

@@ -14,7 +14,8 @@ from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException, BadRequestException, NotFoundException
 from app.core.response import DataResponse
-from app.modules.research import deliverable_files, deliverable_generation, service
+from app.modules.research import deliverable_files, deliverable_generation
+from app.modules.research import service as service
 from app.modules.research.report_gen import versions as report_gen_versions
 from app.modules.research.schemas import (
     ConclusionPublishResult,

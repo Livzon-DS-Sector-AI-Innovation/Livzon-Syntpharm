@@ -1560,6 +1560,20 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     # ── 报告成品版本：AI 初稿 / 人工上传留档 ──
     ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/versions"),
     ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/versions/{version_id}/document"),
+    # ── 报告大纲 / 人工编辑 / 版本回滚 ──
+    # 大纲是只读结构视图，跟任务详情同权限；编辑与回滚改的是报告正文，跟更新权限
+    # （与交付物模板回滚走 :update 的口径一致）
+    ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/jobs/{job_id}/outline"),
+    ApiBindingDef("research:report:update", "POST", "/api/v1/research/report-gen/jobs/{job_id}/edits"),
+    ApiBindingDef(
+        "research:report:update",
+        "POST",
+        "/api/v1/research/report-gen/jobs/{job_id}/versions/{version_id}/restore",
+    ),
+    # ── 评审意见库：读随查看，停用/恢复属评审动作（与接口内 require_permission 一致）──
+    ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/opinion-library"),
+    ApiBindingDef("research:report:read", "GET", "/api/v1/research/report-gen/opinion-library/digests"),
+    ApiBindingDef("research:report:review", "PATCH", "/api/v1/research/report-gen/opinion-library/{opinion_id}"),
     # 报告生成配置：单档位连通测试走模块配置写权限，不动全局 LLM 配置库
     ApiBindingDef(
         "platform:module-setting:manage",
