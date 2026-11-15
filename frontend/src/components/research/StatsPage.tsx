@@ -185,7 +185,7 @@ export function StatsPage() {
           <Link href="/research/deliverable-templates" style={{ display: 'block' }}>
             <Card hoverable>
               <Statistic
-                title="交付物"
+                title="交付文档"
                 value={stats.deliverables.total}
                 prefix={<CheckCircleOutlined />}
                 styles={{ content: { color: '#52c41a' } }}

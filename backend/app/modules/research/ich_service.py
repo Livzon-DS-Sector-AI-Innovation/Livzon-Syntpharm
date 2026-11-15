@@ -1,4 +1,4 @@
-"""ICH Q3C/Q3D 杂质识别服务 - 完整版"""
+"""ICH Q3D 元素杂质识别服务（Q3C 溶剂残留链路已下线）"""
 
 import json
 import re
@@ -25,27 +25,8 @@ def load_q3d_elements() -> dict[str, Any]:
     return {}
 
 
-def load_q3c_solvents() -> dict[str, Any]:
-    """加载 Q3C 溶剂数据库"""
-    q3c_path = DATA_DIR / "ich-q3c-full.json"
-    if q3c_path.exists():
-        with open(q3c_path, encoding="utf-8") as f:
-            return json.load(f)  # type: ignore[no-any-return]
-    return {}
-
-
-def load_solvent_synonyms() -> dict[str, Any]:
-    """加载溶剂同义词数据库"""
-    syn_path = DATA_DIR / "solvent-synonyms.json"
-    if syn_path.exists():
-        with open(syn_path, encoding="utf-8") as f:
-            return json.load(f)  # type: ignore[no-any-return]
-    return {}
-
-
 # 加载数据
 Q3D_DATA = load_q3d_elements()
-Q3C_DATA = load_q3c_solvents()
 
 
 def extract_text_from_docx(file_content: bytes) -> str:
@@ -105,26 +86,6 @@ def parse_process_steps(text: str) -> list[dict[str, Any]]:
         )
 
     return steps
-
-
-def remove_concentration_prefix(solvent_name: str) -> str:
-    """去除浓度前缀
-
-    例如：
-    - 95%乙醇 → 乙醇
-    - 无水乙醇 → 乙醇
-    - Absolute ethanol → ethanol
-    """
-    # 去除百分比前缀
-    solvent_name = re.sub(r"^\d+%?\s*", "", solvent_name)
-
-    # 去除浓度描述
-    prefixes = ["无水", "绝对", "Absolute", "Anhydrous", "干燥"]
-    for prefix in prefixes:
-        if solvent_name.startswith(prefix):
-            solvent_name = solvent_name[len(prefix) :].strip()
-
-    return solvent_name.strip()
 
 
 def get_element_data(symbol: str) -> dict[str, Any]:
@@ -608,131 +569,4 @@ async def analyze_ich_q3d_with_llm(file_content: bytes) -> dict[str, Any]:
         "report": report,
         "llm_used": True,
         "llm_elements_count": len(llm_elements),
-    }
-
-
-async def analyze_ich_q3c_with_llm(file_content: bytes) -> dict[str, Any]:
-    """Analyze ICH Q3C solvent residues using LLM (skill's pipeline).
-
-    LLM extracts AND classifies solvents using the full ICH Q3C database.
-    Script enriches with PDE/limit values from database and generates report.
-    """
-    from app.modules.research.llm_service import extract_solvents_with_llm
-    from app.modules.research.q3c_report_gen import generate_q3c_report
-    from app.modules.research.q3c_solvent_match import (
-        build_solvent_index,
-        classify_solvents,
-        load_synonyms,
-    )
-
-    # 1. Extract text and parse steps
-    text = extract_text_from_docx(file_content)
-    steps = parse_process_steps(text)
-
-    # 2. LLM extracts and classifies solvents (step-based structure)
-    llm_result = await extract_solvents_with_llm(steps)
-
-    # 3. Build solvent index for enrichment
-    synonyms = load_synonyms()
-    ich_data = Q3C_DATA
-    solvent_index = build_solvent_index(ich_data, synonyms)
-
-    # 4. Process each step's solvents
-    step_analysis = []
-    all_solvents = {}
-
-    for step_data in llm_result.get("steps", []):
-        step_number = step_data.get("step_number", "")
-        step_title = step_data.get("step_title", "")
-
-        # Collect solvents for this step
-        raw_solvents = []
-        for solvent_info in step_data.get("solvents", []):
-            matched_name = solvent_info.get("matched_name") or solvent_info.get("original_name", "")
-            original_name = solvent_info.get("original_name", matched_name)
-            ich_class = solvent_info.get("ich_class", "Unlisted")
-
-            if not matched_name:
-                continue
-
-            raw_solvents.append(
-                {
-                    "solvent": matched_name,
-                    "original_name": original_name,
-                    "ich_class": ich_class,
-                    "purpose": solvent_info.get("purpose", ""),
-                    "amount": solvent_info.get("amount"),
-                }
-            )
-
-        # Classify and enrich with PDE/limit
-        classified = classify_solvents(raw_solvents, solvent_index)
-
-        step_analysis.append(
-            {
-                "step_number": step_number,
-                "step_title": step_title,
-                "solvents": classified,
-                "solvent_count": len(classified),
-            }
-        )
-
-        # Aggregate all solvents
-        for solvent_entry in classified:
-            solvent_name = solvent_entry["solvent"]
-            if solvent_name not in all_solvents:
-                all_solvents[solvent_name] = {**solvent_entry, "steps_used": []}
-            all_solvents[solvent_name]["steps_used"].append(step_number)
-
-    # 5. Build analysis structure for report generation
-    analysis = {
-        "step_analysis": step_analysis,
-        "all_solvents": all_solvents,
-        "total_unique_solvents": len(all_solvents),
-        "extraction_method": "llm",
-    }
-
-    # 6. Generate markdown report
-    report = generate_q3c_report(analysis, flag_class1=True, ich_data_source="ICH Q3C(R9) 数据库")
-
-    # 7. Convert to frontend format (flat list)
-    solvents_list = []
-    for solvent_name, data in all_solvents.items():
-        solvents_list.append(
-            {
-                "name_en": data.get("solvent", solvent_name),
-                "name_cn": data.get("original_name", solvent_name),
-                "class": data.get("class", "Unknown"),
-                "limit_ppm": data.get("limit"),
-                "pde_mg_day": data.get("pde"),
-                "purpose": data.get("purpose", ""),
-                "found_in_text": True,
-                "steps_used": data.get("steps_used", []),
-            }
-        )
-
-    # 8. Compute summary
-    summary = {"class_1": 0, "class_2": 0, "class_3": 0, "unknown": 0}
-    for solv in solvents_list:
-        cls = solv.get("class", "")
-        if "1" in str(cls):
-            summary["class_1"] += 1
-        elif "2" in str(cls):
-            summary["class_2"] += 1
-        elif "3" in str(cls):
-            summary["class_3"] += 1
-        else:
-            summary["unknown"] += 1
-
-    return {
-        "type": "Q3C",
-        "text_length": len(text),
-        "steps_count": len(steps),
-        "solvents_found": solvents_list,
-        "total_solvents": len(solvents_list),
-        "summary": summary,
-        "report": report,
-        "step_analysis": step_analysis,
-        "llm_used": True,
-        "llm_solvents_count": len(solvents_list),
     }
