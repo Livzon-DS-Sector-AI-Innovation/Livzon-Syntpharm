@@ -1,11 +1,12 @@
+import { apiGet, apiGetWithMeta } from '../client'
+
 import {
+  Employee,
   EmployeeListResponse,
   EmployeeResponse,
   DepartmentListResponse,
-  TeamListResponse,
-  OffboardingRecordListResponse,
-  OnboardingRecordListResponse,
-  DepartureRecordListResponse,
+  OnboardingRecord,
+  DepartureRecord,
   SyncStatusResponse,
   TrainingPlanListResponse,
   TrainingPlanResponse,
@@ -27,8 +28,11 @@ import {
   PrejobTemplateResponse,
   CandidateListParams,
   CandidateListResponse,
+  EmployeeProfileDetail,
+  EmployeeProfileListData,
+  EmployeeProfilesPage,
+  OrgDepartmentTreeResponse,
 } from '@/types/hr'
-import type { components } from '@/types/generated/schema'
 
 const API_BASE = '/api/v1'
 
@@ -63,12 +67,25 @@ export async function fetchEmployeeById(id: string): Promise<EmployeeResponse> {
   return res.json()
 }
 
-export async function fetchEmployeeByNumber(employeeNumber: string): Promise<EmployeeResponse> {
-  const res = await fetch(`${API_BASE}/hr/employees/by-number/${employeeNumber}`, {
+export async function fetchEmployeeByNumber(employeeNumber: string): Promise<Employee> {
+  return apiGet<Employee>(`${API_BASE}/hr/employees/by-number/${employeeNumber}`, {
     cache: 'no-store',
   })
-  if (!res.ok) throw new Error('获取员工详情失败')
-  return res.json()
+}
+
+export async function searchEmployees(params?: {
+  keyword?: string
+  page?: number
+  page_size?: number
+}): Promise<Employee[]> {
+  const searchParams = new URLSearchParams()
+  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  searchParams.set('page', String(params?.page || 1))
+  searchParams.set('page_size', String(params?.page_size || 20))
+  const { data } = await apiGetWithMeta<Employee[]>(`${API_BASE}/hr/employees?${searchParams.toString()}`, {
+    cache: 'no-store',
+  })
+  return data ?? []
 }
 
 export async function fetchDepartments(
@@ -90,100 +107,46 @@ export async function fetchDepartments(
   return res.json()
 }
 
-export async function fetchTeams(
-  params?: {
-    department_id?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<TeamListResponse> {
-  const searchParams = new URLSearchParams()
-  if (params?.department_id) searchParams.set('department_id', params.department_id)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 100))
-
-  const res = await fetch(`${API_BASE}/hr/teams?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取班组列表失败')
-  return res.json()
-}
-
-export async function fetchOffboardingRecords(
-  params?: {
-    employee_id?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<OffboardingRecordListResponse> {
-  const searchParams = new URLSearchParams()
-  if (params?.employee_id) searchParams.set('employee_id', params.employee_id)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 20))
-
-  const res = await fetch(`${API_BASE}/hr/offboarding-records?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取离职记录失败')
-  return res.json()
-}
-
 export async function fetchOnboardingRecords(
   params?: {
-    employee_id?: string
     department?: string
-    position?: string
-    is_employed?: string
     keyword?: string
     page?: number
     page_size?: number
   }
-): Promise<OnboardingRecordListResponse> {
+): Promise<{ items: OnboardingRecord[]; total: number }> {
   const searchParams = new URLSearchParams()
-  if (params?.employee_id) searchParams.set('employee_id', params.employee_id)
   if (params?.department) searchParams.set('department', params.department)
-  if (params?.position) searchParams.set('position', params.position)
-  if (params?.is_employed) searchParams.set('is_employed', params.is_employed)
   if (params?.keyword) searchParams.set('keyword', params.keyword)
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
 
-  const res = await fetch(`${API_BASE}/hr/onboarding-records?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取入职记录失败')
-  return res.json()
+  const { data, meta } = await apiGetWithMeta<OnboardingRecord[]>(
+    `${API_BASE}/hr/onboarding-records?${searchParams.toString()}`,
+    { cache: 'no-store' },
+  )
+  return { items: data ?? [], total: meta.total ?? 0 }
 }
 
 export async function fetchDepartureRecords(
   params?: {
     department?: string
-    offboarding_type?: string
     keyword?: string
-    sort_by?: string
-    sort_order?: string
     page?: number
     page_size?: number
   }
-): Promise<DepartureRecordListResponse> {
+): Promise<{ items: DepartureRecord[]; total: number }> {
   const searchParams = new URLSearchParams()
   if (params?.department) searchParams.set('department', params.department)
-  if (params?.offboarding_type) searchParams.set('offboarding_type', params.offboarding_type)
   if (params?.keyword) searchParams.set('keyword', params.keyword)
-  if (params?.sort_by) searchParams.set('sort_by', params.sort_by)
-  if (params?.sort_order) searchParams.set('sort_order', params.sort_order)
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
 
-  const res = await fetch(`${API_BASE}/hr/departure-records?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取离职台账记录失败')
-  return res.json()
+  const { data, meta } = await apiGetWithMeta<DepartureRecord[]>(
+    `${API_BASE}/hr/departure-records?${searchParams.toString()}`,
+    { cache: 'no-store' },
+  )
+  return { items: data ?? [], total: meta.total ?? 0 }
 }
 
 // ─── Feishu Sync APIs ───
@@ -352,18 +315,6 @@ export async function fetchTrainingApprovalById(id: string): Promise<TrainingApp
 
 export { fetchTrainingPlanSops as fetchTrainingSops }
 
-/** 提交人员流动分析后台任务，返回 job_id（结果轮询 fetchHrJob）。 */
-export async function submitTurnoverAnalysisJob(): Promise<string> {
-  const res = await fetch(`${API_BASE}/hr/turnover-analysis`, {
-    method: 'POST',
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('提交人员流动分析任务失败')
-  const json = (await res.json()) as { data?: { job_id?: string } }
-  if (!json.data?.job_id) throw new Error('任务提交失败：响应缺少 job_id')
-  return json.data.job_id
-}
-
 export interface HrJobState {
   status: 'running' | 'done' | 'failed'
   result: Record<string, unknown> | null
@@ -518,119 +469,6 @@ export async function fetchAnnualTrainingPlans(
   return res.json()
 }
 
-// ─── New Factory APIs ───
-
-export async function fetchNewEmployees(
-  params?: {
-    department?: string
-    status?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<EmployeeListResponse> {
-  const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', params.department)
-  if (params?.status) searchParams.set('status', params.status)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 20))
-
-  const res = await fetch(`${API_BASE}/hr/new/employees?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取新厂员工列表失败')
-  return res.json()
-}
-
-export async function fetchNewDepartments(
-  params?: {
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<DepartmentListResponse> {
-  const searchParams = new URLSearchParams()
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 100))
-
-  const res = await fetch(`${API_BASE}/hr/new/departments?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取新厂部门列表失败')
-  return res.json()
-}
-
-export async function fetchNewOnboardingRecords(
-  params?: {
-    department?: string
-    position?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<OnboardingRecordListResponse> {
-  const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', params.department)
-  if (params?.position) searchParams.set('position', params.position)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 20))
-
-  const res = await fetch(`${API_BASE}/hr/new/onboarding-records?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取新厂入职台账列表失败')
-  return res.json()
-}
-
-export async function fetchNewDepartureRecords(
-  params?: {
-    department?: string
-    offboarding_type?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<DepartureRecordListResponse> {
-  const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', params.department)
-  if (params?.offboarding_type) searchParams.set('offboarding_type', params.offboarding_type)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 20))
-
-  const res = await fetch(`${API_BASE}/hr/new/departure-records?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取新厂离职台账列表失败')
-  return res.json()
-}
-
-export async function fetchNewOffboardingRecords(
-  params?: {
-    department?: string
-    offboarding_type?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<DepartureRecordListResponse> {
-  const searchParams = new URLSearchParams()
-  if (params?.department) searchParams.set('department', params.department)
-  if (params?.offboarding_type) searchParams.set('offboarding_type', params.offboarding_type)
-  if (params?.keyword) searchParams.set('keyword', params.keyword)
-  searchParams.set('page', String(params?.page || 1))
-  searchParams.set('page_size', String(params?.page_size || 20))
-
-  const res = await fetch(`${API_BASE}/hr/new/offboarding-records?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取新厂离职管理列表失败')
-  return res.json()
-}
-
 export async function fetchAnnualTrainingPlanById(id: string): Promise<TrainingPlanResponse> {
   const res = await fetch(`${API_BASE}/hr/annual-training-plans/${id}`, {
     cache: 'no-store',
@@ -756,16 +594,43 @@ export async function fetchTrainingSpecialists(_factory?: string): Promise<Gener
   return res.json()
 }
 
-/** 生成培训效果评估表（返回 docx 二进制流，Server Action 无法回传 Blob） */
-export async function generateEvaluationForm(
-  payload: components['schemas']['TrainingEvaluationInput'],
-  factory: 'old' | 'new' = 'old',
-): Promise<Blob> {
-  const res = await fetch(`/api/v1/hr/training-evaluation?factory=${factory}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+// ── 员工档案（飞书通讯录只读镜像，ticket #198）──
+
+export async function fetchEmployeeProfiles(params?: {
+  department_id?: string
+  status?: string
+  keyword?: string
+  page?: number
+  page_size?: number
+}): Promise<EmployeeProfilesPage> {
+  const searchParams = new URLSearchParams()
+  if (params?.department_id) searchParams.set('department_id', params.department_id)
+  if (params?.status) searchParams.set('status', params.status)
+  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  searchParams.set('page', String(params?.page || 1))
+  searchParams.set('page_size', String(params?.page_size || 20))
+
+  const { data, meta } = await apiGetWithMeta<EmployeeProfileListData>(
+    `${API_BASE}/hr/people?${searchParams.toString()}`,
+    { cache: 'no-store' },
+  )
+  return {
+    items: data.items ?? [],
+    last_synced_at: data.last_synced_at ?? null,
+    total: meta.total ?? 0,
+    page: meta.page ?? 1,
+    page_size: meta.page_size ?? 20,
+  }
+}
+
+export async function fetchEmployeeProfileDetail(identifier: string): Promise<EmployeeProfileDetail> {
+  return apiGet<EmployeeProfileDetail>(`${API_BASE}/hr/people/${encodeURIComponent(identifier)}`, {
+    cache: 'no-store',
   })
-  if (!res.ok) throw new Error('生成失败')
-  return res.blob()
+}
+
+export async function fetchEmployeeDepartments(): Promise<OrgDepartmentTreeResponse['data']> {
+  return apiGet<OrgDepartmentTreeResponse['data']>(`${API_BASE}/hr/people/departments`, {
+    cache: 'no-store',
+  })
 }

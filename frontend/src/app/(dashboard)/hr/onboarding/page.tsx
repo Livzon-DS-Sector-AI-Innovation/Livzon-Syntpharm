@@ -1,3 +1,4 @@
+import { unwrapResponse } from '@/lib/api/server/base'
 import { fetchOnboardingRecords } from '@/actions/hr'
 import { OnboardingClient } from '@/components/hr'
 
@@ -8,8 +9,8 @@ export default async function OnboardingPage() {
 
   return (
     <OnboardingClient
-      initialRecords={res.data}
-      initialTotal={res.meta?.total || 0}
+      initialRecords={unwrapResponse(res)}
+      initialTotal={Number(res.meta?.total ?? 0)}
     />
   )
 }

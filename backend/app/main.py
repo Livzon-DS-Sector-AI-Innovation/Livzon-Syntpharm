@@ -151,6 +151,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception:
         logger.exception("审计日志过期清理任务注册失败")
 
+    # HR 组织架构每日 00:00（Asia/Shanghai）飞书同步
+    try:
+        from app.modules.hr.org_scheduler import register as register_hr_org_sync
+
+        register_hr_org_sync()
+    except Exception:
+        logger.exception("HR 组织架构同步任务注册失败")
+
     # Start reagent reminder scheduler
     try:
         from app.modules.quality.qms.reagent_reminder_scheduler import register
