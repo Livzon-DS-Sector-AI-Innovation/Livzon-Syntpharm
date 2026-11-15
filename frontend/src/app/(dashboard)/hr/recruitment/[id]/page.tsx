@@ -12,5 +12,10 @@ export default async function CandidateDetailPage({ params }: CandidateDetailPag
   const { id } = await params
   const res = await fetchCandidateById(id)
 
-  return <CandidateDetailClient candidate={unwrapResponse(res)} />
+  return (
+    <div className="space-y-4">
+      <h1 className="m-0 text-[22px] font-semibold text-[var(--color-charcoal)]">简历详情</h1>
+      <CandidateDetailClient candidate={unwrapResponse(res)} />
+    </div>
+  )
 }

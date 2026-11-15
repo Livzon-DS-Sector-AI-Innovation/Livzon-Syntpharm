@@ -16,6 +16,12 @@ type OnboardingRecordListQuery = NonNullable<
 type DepartureRecordListQuery = NonNullable<
   operations['list_departure_records_api_v1_hr_departure_records_get']['parameters']['query']
 >
+type EmployeeListQuery = NonNullable<
+  NonNullable<operations['list_employees_api_v1_hr_employees_get']['parameters']>['query']
+>
+type DepartmentListQuery = NonNullable<
+  NonNullable<operations['list_departments_api_v1_hr_departments_get']['parameters']>['query']
+>
 
 async function apiFetchFormData(url: string, body: FormData): Promise<unknown> {
   return apiFetch(url, { method: 'POST', body })
@@ -27,13 +33,7 @@ async function apiFetchBlob(url: string, options?: RequestInit): Promise<Blob> {
   return res.blob()
 }
 
-export async function fetchEmployeesApi(params?: {
-  department?: string
-  status?: string
-  keyword?: string
-  page?: number
-  page_size?: number
-}) {
+export async function fetchEmployeesApi(params?: EmployeeListQuery) {
   const searchParams = new URLSearchParams()
   if (params?.department) searchParams.set('department', String(params.department))
   if (params?.status) searchParams.set('status', String(params.status))
@@ -98,11 +98,7 @@ export async function triggerOrgSyncApi(): Promise<OrgSyncTriggerResponse> {
   })
 }
 
-export async function fetchDepartmentsApi(params?: {
-  keyword?: string
-  page?: number
-  page_size?: number
-}) {
+export async function fetchDepartmentsApi(params?: DepartmentListQuery) {
   const searchParams = new URLSearchParams()
   if (params?.keyword) searchParams.set('keyword', String(params.keyword))
   searchParams.set('page', String(params?.page || 1))

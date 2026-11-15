@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 from docx import Document as DocxDocument
 
-from app.core.config import get_settings
+from app.modules.hr.ai_exam.settings import AiSettings
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +112,12 @@ def _build_prompt(full_text: str, bold_texts: list[str], config: dict[str, Any] 
 {full_text[:8000]}{bold_hint}"""
 
 
-async def generate_exam(file_bytes: bytes, filename: str, config: dict[str, Any] | None = None) -> dict[str, Any]:
+async def generate_exam(
+    file_bytes: bytes,
+    filename: str,
+    config: dict[str, Any] | None,
+    ai: AiSettings,
+) -> dict[str, Any]:
     """Generate exam questions from uploaded file."""
     content = _parse_file(file_bytes, filename)
     if not content["full_text"].strip():
@@ -127,22 +132,20 @@ async def generate_exam(file_bytes: bytes, filename: str, config: dict[str, Any]
         config,
     )
 
-    settings = get_settings()
-    api_key = settings.HR_AI_API_KEY  # type: ignore[attr-defined]
-    if not api_key:
-        raise ValueError("HR_AI_API_KEY 未配置，无法调用 AI")
+    if not ai.api_key:
+        raise ValueError("AI_API_KEY 未配置，无法调用 AI")
 
     prompt = _build_prompt(content["full_text"], bold_texts, config)
 
     async with httpx.AsyncClient(timeout=120) as client:
         resp = await client.post(
-            "https://api.deepseek.com/v1/chat/completions",
+            f"{ai.base_url.rstrip('/')}/chat/completions",
             headers={
-                "Authorization": f"Bearer {api_key}",
+                "Authorization": f"Bearer {ai.api_key}",
                 "Content-Type": "application/json",
             },
             json={
-                "model": settings.HR_AI_MODEL,  # type: ignore[attr-defined]
+                "model": ai.model,
                 "messages": [
                     {
                         "role": "system",

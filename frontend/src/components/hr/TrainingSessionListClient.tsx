@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {Button, Card, DatePicker, Dropdown, Form, Input, Modal, Select, Space, Table, Tag, message} from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, DownOutlined, FileWordOutlined, FileExcelOutlined, BookOutlined, CheckCircleOutlined, ReloadOutlined, CopyOutlined, SendOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
@@ -111,22 +111,7 @@ export default function TrainingSessionListClient({
     return { names: Array.from(namesSet), numberMap }
   }
 
-  useEffect(() => {
-    if (!selectJobId) return
-    if (selectJob.phase === 'done') {
-      message.success('已发送选人任务给培训专员')
-      void handleRefresh()
-    } else if (selectJob.phase === 'failed') {
-      message.error(selectJob.errorMessage || '发送失败')
-    } else if (selectJob.phase === 'timeout') {
-      message.error('发送超时，请稍后刷新列表确认')
-    } else if (selectJob.phase === 'unavailable') {
-      message.warning('任务状态不可用（服务可能已重启），请刷新列表确认')
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectJob.phase, selectJobId])
-
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     setLoading(true)
     try {
       const { fetchTrainingSessionsAction } = await import('@/actions/hr')
@@ -146,7 +131,28 @@ export default function TrainingSessionListClient({
     } finally {
       setLoading(false)
     }
-  }
+  }, [filters, page, pageSize])
+
+  // Keep the job-phase effect dependent only on the job state while still
+  // calling the latest refresh handler (no exhaustive-deps suppression).
+  const refreshRef = useRef<() => Promise<void>>(async () => {})
+  useEffect(() => {
+    refreshRef.current = handleRefresh
+  }, [handleRefresh])
+
+  useEffect(() => {
+    if (!selectJobId) return
+    if (selectJob.phase === 'done') {
+      message.success('已发送选人任务给培训专员')
+      void refreshRef.current()
+    } else if (selectJob.phase === 'failed') {
+      message.error(selectJob.errorMessage || '发送失败')
+    } else if (selectJob.phase === 'timeout') {
+      message.error('发送超时，请稍后刷新列表确认')
+    } else if (selectJob.phase === 'unavailable') {
+      message.warning('任务状态不可用（服务可能已重启），请刷新列表确认')
+    }
+  }, [selectJob.phase, selectJob.errorMessage, selectJobId])
 
   const handleCreate = () => {
     setDetailRecord(null)
