@@ -1,7 +1,7 @@
 'use client'
 
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
-import { Avatar, Drawer, Empty, Input, Select, Spin, Table, Tag, Tree, message } from 'antd'
+import { Avatar, Drawer, Empty, Input, Spin, Table, Tag, Tree, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { DataNode } from 'antd/es/tree'
 import { SearchOutlined } from '@ant-design/icons'
@@ -176,6 +176,8 @@ function toTreeNode(node: OrgDepartmentNode): DataNode {
   }
 }
 
+const ACTIVE_STATUS = '1'
+
 export default function EmployeeDirectoryClient({
   initialTree,
   initialPeople,
@@ -188,7 +190,6 @@ export default function EmployeeDirectoryClient({
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null)
   const [keyword, setKeyword] = useState('')
   const deferredKeyword = useDeferredValue(keyword)
-  const [status, setStatus] = useState<string>('1')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null)
@@ -228,14 +229,14 @@ export default function EmployeeDirectoryClient({
   const treeData: DataNode[] = useMemo(() => initialTree.map(toTreeNode), [initialTree])
 
   const isInitialQuery =
-    selectedDepartment === null && status === '1' && deferredKeyword === '' && page === 1 && pageSize === 20
+    selectedDepartment === null && deferredKeyword === '' && page === 1 && pageSize === 20
 
   const { data, isFetching } = useQuery({
-    queryKey: ['hr-people', selectedDepartment, status, deferredKeyword, page, pageSize],
+    queryKey: ['hr-people', selectedDepartment, deferredKeyword, page, pageSize],
     queryFn: () =>
       fetchEmployeeProfiles({
         department_id: selectedDepartment ?? undefined,
-        status: status || undefined,
+        status: ACTIVE_STATUS,
         keyword: deferredKeyword || undefined,
         page,
         page_size: pageSize,
@@ -333,20 +334,6 @@ export default function EmployeeDirectoryClient({
               setPage(1)
             }}
             className="w-72"
-          />
-          <Select
-            allowClear
-            placeholder="人事状态"
-            className="w-36"
-            value={status || undefined}
-            options={[
-              { value: '1', label: '在职' },
-              { value: '2', label: '离职' },
-            ]}
-            onChange={(value) => {
-              setStatus(value ?? '')
-              setPage(1)
-            }}
           />
         </div>
 
