@@ -122,13 +122,27 @@ function buildKeyPathMap(items: SubMenuItem[]): Map<string, string> {
   return map
 }
 
-function buildMenuItems(items: SubMenuItem[]): MenuItem[] {
-  return items.map((item) => {
+function buildMenuItems(
+  items: SubMenuItem[],
+  onNavigateToPath: (path: string) => void,
+): MenuItem[] {
+  return items.map((item): MenuItem => {
     if (item.children && item.children.length > 0) {
+      const children = buildMenuItems(item.children, onNavigateToPath)
+      const parentPath = item.path
+      // 有 children 又有 path 的父节点：点标题直接进看盘页，箭头仍可展开/收起
+      if (parentPath) {
+        return {
+          key: item.key,
+          label: item.label,
+          children,
+          onTitleClick: () => onNavigateToPath(parentPath),
+        }
+      }
       return {
         key: item.key,
         label: item.label,
-        children: buildMenuItems(item.children),
+        children,
       }
     }
     const leaf: MenuItem = { key: item.key, label: item.label }
@@ -151,6 +165,17 @@ function collectLeaves(items: SubMenuItem[]): SubMenuItem[] {
 
 /** 子菜单的过滤 + 排序 + 自定义项合并，统一由 `resolveMenus` 完成（见 lib/menu/resolve.ts）。 */
 
+/** 自身带 path 的父节点（如「偏差管理」）：父节点也可能是落地页 */
+function collectParentsWithPath(items: SubMenuItem[]): SubMenuItem[] {
+  return items.flatMap((item) => {
+    if (item.children && item.children.length > 0) {
+      const self = item.path && !item.disabled ? [item] : []
+      return [...self, ...collectParentsWithPath(item.children)]
+    }
+    return []
+  })
+}
+
 function findSelectedKey(
   items: SubMenuItem[],
   pathname: string,
@@ -159,7 +184,12 @@ function findSelectedKey(
   const leaves = collectLeaves(items)
   const sorted = leaves.sort((a, b) => b.path.length - a.path.length)
   const match = sorted.find((item) => matchesMenuPath(item.path, pathname, query))
-  return match?.key
+  if (match) return match.key
+  // 父节点只做精确匹配，避免父路径前缀抢走子页面的选中态
+  const parent = collectParentsWithPath(items).find(
+    (item) => parseMenuPath(item.path).pathname === pathname,
+  )
+  return parent?.key
 }
 
 function collectAncestorKeys(
@@ -171,6 +201,10 @@ function collectAncestorKeys(
     if (item.children && item.children.length > 0) {
       if (containsPath(item.children, pathname, query)) {
         return [item.key, ...collectAncestorKeys(item.children, pathname, query)]
+      }
+      // 命中父节点自身的落地页：展开该父节点，让同级入口可见
+      if (item.path && parseMenuPath(item.path).pathname === pathname) {
+        return [item.key]
       }
     }
   }
@@ -233,7 +267,12 @@ export function Sidebar({ onNavigate, forceExpanded = false, permissionView }: S
       : currentModule.children
   }, [currentModule, moduleKey, warehouseTables])
 
-  const menuItems = buildMenuItems(moduleChildren)
+  const navigateToPath = (path: string) => {
+    router.push(path)
+    onNavigate?.()
+  }
+
+  const menuItems = buildMenuItems(moduleChildren, navigateToPath)
   const keyPathMap = buildKeyPathMap(moduleChildren)
   const selectedKey = currentModule
     ? findSelectedKey(moduleChildren, pathname, query)
@@ -261,8 +300,7 @@ export function Sidebar({ onNavigate, forceExpanded = false, permissionView }: S
   const handleClick: MenuProps['onClick'] = ({ key }) => {
     const path = keyPathMap.get(key)
     if (path) {
-      router.push(path)
-      onNavigate?.()
+      navigateToPath(path)
     }
   }
 

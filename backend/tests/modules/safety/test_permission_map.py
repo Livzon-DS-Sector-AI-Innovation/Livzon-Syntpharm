@@ -22,10 +22,16 @@ def test_each_resource_resolves_to_its_own_codes() -> None:
             assert resolve_code("DELETE", f"{_SAFETY_PREFIX}{resource}/abc") == write_code
 
 
-def test_hazard_categories_shares_hazard_codes() -> None:
-    """隐患类别字典与隐患共用权限码（与 registry 绑定一致）。"""
+def test_hazard_categories_write_uses_dedicated_code() -> None:
+    """隐患类别：读沿用隐患只读码，写收归类别专用码（模块管理员）。
+
+    背景：能登记隐患的人必然持有 safety:hazard:manage。若写接口也复用该码，
+    所有普通登记人就能改全公司共享的类别字典，违背「普通用户只能选不能改」。
+    """
     assert resolve_code("GET", f"{_SAFETY_PREFIX}hazard-categories") == "safety:hazard:read"
-    assert resolve_code("POST", f"{_SAFETY_PREFIX}hazard-categories") == "safety:hazard:manage"
+    assert resolve_code("POST", f"{_SAFETY_PREFIX}hazard-categories") == "safety:hazard-category:manage"
+    assert resolve_code("PUT", f"{_SAFETY_PREFIX}hazard-categories/abc") == "safety:hazard-category:manage"
+    assert resolve_code("DELETE", f"{_SAFETY_PREFIX}hazard-categories/abc") == "safety:hazard-category:manage"
 
 
 def test_registry_bindings_agree_with_resolved_codes() -> None:

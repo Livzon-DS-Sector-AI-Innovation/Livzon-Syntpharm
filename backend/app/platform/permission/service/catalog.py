@@ -11,10 +11,11 @@ from typing import Any
 from app.platform.permission.registry import (
     ALL_PERMISSIONS,
     API_BINDINGS,
+    PERMISSIONS_BY_CODE,
     PLATFORM_DOMAIN_LABEL,
-    RESOURCE_LABELS,
     PermissionDef,
 )
+from app.platform.permission.service.description import build_permission_summary, build_resource_label
 from app.shared.module_registry import BUSINESS_MODULES
 
 _PLATFORM_MODULE = "platform"
@@ -28,11 +29,33 @@ def _permission_node(definition: PermissionDef, binding_counts: Counter[str]) ->
         "code": definition.code,
         "kind": None,
         "status": "active",
-        "description": definition.description or None,
+        # 手写说明优先；未手写时用模板生成的中文说明兜底（保证每个叶子都有中文解释）
+        "description": definition.description or build_permission_summary(definition),
         "binding_count": binding_counts.get(definition.code, 0),
         "disabled": False,
         "children": [],
     }
+
+
+def build_api_binding_items(code: str) -> list[dict[str, Any]]:
+    """单个权限码绑定的接口清单（方法 + 路由模板），供权限树按需展开。
+
+    纯注册表数据、不查库：角色管理员通常没有 `platform:api-binding:read`，
+    因此不能复用 `/api-bindings`（那条走 DB 镜像表且口径更严）。
+    同一路由的不同方法相邻排列，便于阅读。
+    """
+    if code not in PERMISSIONS_BY_CODE:
+        return []
+    bindings = [binding for binding in API_BINDINGS if binding.permission_code == code]
+    bindings.sort(key=lambda binding: (binding.route_template, binding.method))
+    return [
+        {
+            "method": binding.method,
+            "route_template": binding.route_template,
+            "scope_required": binding.scope_required,
+        }
+        for binding in bindings
+    ]
 
 
 def _module_node(
@@ -47,7 +70,8 @@ def _module_node(
         resource_nodes.append(
             {
                 "key": f"resource:{module_code}:{resource_code}",
-                "title": RESOURCE_LABELS.get(resource_code, resource_code),
+                # 手写中文名优先，未登记时按子权限中文名反推，避免节点标题显示英文资源码
+                "title": build_resource_label(module_code, resource_code, tuple(definitions)),
                 "type": "resource",
                 "code": resource_code,
                 "kind": None,

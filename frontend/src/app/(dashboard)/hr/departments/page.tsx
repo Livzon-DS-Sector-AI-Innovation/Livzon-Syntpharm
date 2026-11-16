@@ -1,15 +1,14 @@
-import { fetchDepartments } from '@/actions/hr'
-import { DepartmentClient } from '@/components/hr'
+import { fetchOrgDepartments, fetchOrgSyncStatus } from '@/actions/hr'
+import { DepartmentOrgClient } from '@/components/hr'
+import { unavailableOrgSyncStatus } from '@/lib/hr/orgSyncStatus'
 
 export const dynamic = 'force-dynamic'
 
 export default async function DepartmentsPage() {
-  const res = await fetchDepartments({ page: 1, page_size: 20 })
+  const [treeResult, statusResult] = await Promise.allSettled([fetchOrgDepartments(), fetchOrgSyncStatus()])
 
-  return (
-    <DepartmentClient
-      initialDepartments={res.data}
-      initialTotal={res.meta?.total || 0}
-    />
-  )
+  const tree = treeResult.status === 'fulfilled' ? treeResult.value.items ?? [] : []
+  const status = statusResult.status === 'fulfilled' ? statusResult.value : unavailableOrgSyncStatus()
+
+  return <DepartmentOrgClient initialTree={tree} initialStatus={status} />
 }

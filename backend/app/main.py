@@ -151,6 +151,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception:
         logger.exception("审计日志过期清理任务注册失败")
 
+    # HR 组织架构每日 00:00（Asia/Shanghai）飞书同步
+    try:
+        from app.modules.hr.org_scheduler import register as register_hr_org_sync
+
+        register_hr_org_sync()
+    except Exception:
+        logger.exception("HR 组织架构同步任务注册失败")
+
     # Start reagent reminder scheduler
     try:
         from app.modules.quality.qms.reagent_reminder_scheduler import register
@@ -160,6 +168,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception:
         logger.exception("Failed to register reagent reminder scheduler")
 
+    # 偏差台账定时扫描：超期提醒 / 周确认提醒 / 生产车间未提交通报
+    try:
+        from app.modules.quality.qms.deviation_scheduler import register as register_deviation_scheduler
+
+        register_deviation_scheduler()
+    except Exception:
+        logger.exception("偏差台账定时任务注册失败")
+
     # SOP AI 定时巡检任务（此前 register() 从未被调用，动态任务永远不触发）
     try:
         from app.modules.quality.sop_ai.scheduler import register as register_sop_ai_scheduler
@@ -167,17 +183,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         register_sop_ai_scheduler()
     except Exception:
         logger.exception("SOP AI 定时任务注册失败")
-
-    # Start deviation reporter reminder scheduler
-    try:
-        from app.modules.quality.qms.deviation_reporter_reminder_scheduler import (
-            register as register_deviation_reminder,
-        )
-
-        register_deviation_reminder()
-        logger.info("Deviation reporter reminder scheduler registered")
-    except Exception:
-        logger.exception("Failed to start deviation reporter reminder scheduler")
 
     # ── 平台级飞书 WebSocket 长连接 ──
     if settings.feishu.platform.ws_enabled:

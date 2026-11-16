@@ -6,6 +6,9 @@ import { SaveOutlined } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
 import { updateSystemSettings } from '@/actions/admin'
 import { apiGet } from '@/lib/api/client'
+import type { components } from '@/types/generated/schema'
+
+type HrSystemSettingsValues = components['schemas']['HrSystemSettingsApiResponse']['data']
 
 export default function SystemSettingsClient() {
   const [form] = Form.useForm()
@@ -14,13 +17,18 @@ export default function SystemSettingsClient() {
   const { isLoading: loading } = useQuery({
     queryKey: ['hr-system-settings'],
     queryFn: async () => {
-      const data = await apiGet<Record<string, unknown>>('/api/v1/hr/system-settings')
+      const data = await apiGet<HrSystemSettingsValues>('/api/v1/hr/system-settings')
       form.setFieldsValue(data)
       return data
     },
   })
 
   const handleSave = async () => {
+    try {
+      await form.validateFields()
+    } catch {
+      return
+    }
     const values = form.getFieldsValue()
     setSaving(true)
     try {
@@ -40,7 +48,7 @@ export default function SystemSettingsClient() {
   const feishuLabel = (name: string) => (
     <span>
       {name}
-      <span style={{ color: '#999', fontSize: 12, marginLeft: 8 }}>
+      <span style={{ color: 'var(--color-stone)', fontSize: 12, marginLeft: 8 }}>
         （保存后需重启服务生效）
       </span>
     </span>
@@ -48,47 +56,35 @@ export default function SystemSettingsClient() {
 
   return (
     <Card loading={loading}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>系统设置</h2>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 24 }}>
         <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={saving}>
           保存设置
         </Button>
       </div>
 
       <Form form={form} layout="vertical">
-        <Divider>飞书 - 主 Bot（招聘 / 人事）</Divider>
-        <Form.Item label={feishuLabel('FEISHU_APP_ID')} name="FEISHU_APP_ID">
+        <Divider>飞书 - HR Bot（招聘 / 人事）</Divider>
+        <Form.Item label={feishuLabel('HR Bot App ID')} name="FEISHU__HR__CREDENTIALS__APP_ID">
           <Input placeholder="cli_xxxx..." />
         </Form.Item>
-        <Form.Item label={feishuLabel('FEISHU_APP_SECRET')} name="FEISHU_APP_SECRET">
-          <Input.Password placeholder="飞书 App Secret" />
+        <Form.Item label={feishuLabel('HR Bot App Secret')} name="FEISHU__HR__CREDENTIALS__APP_SECRET">
+          <Input.Password placeholder="飞书 HR App Secret" />
         </Form.Item>
 
         <Divider>飞书 - 车辆 Bot</Divider>
-        <Form.Item label={feishuLabel('FEISHU_VEHICLE_APP_ID')} name="FEISHU_VEHICLE_APP_ID">
+        <Form.Item label={feishuLabel('车辆 Bot App ID')} name="FEISHU__VEHICLE__CREDENTIALS__APP_ID">
           <Input placeholder="cli_xxxx..." />
         </Form.Item>
-        <Form.Item label={feishuLabel('FEISHU_VEHICLE_APP_SECRET')} name="FEISHU_VEHICLE_APP_SECRET">
+        <Form.Item label={feishuLabel('车辆 Bot App Secret')} name="FEISHU__VEHICLE__CREDENTIALS__APP_SECRET">
           <Input.Password placeholder="飞书 Vehicle App Secret" />
         </Form.Item>
 
         <Divider>飞书 - 培训 Bot</Divider>
-        <Form.Item label={feishuLabel('FEISHU_TRAINING_APP_ID')} name="FEISHU_TRAINING_APP_ID">
+        <Form.Item label={feishuLabel('培训 Bot App ID')} name="FEISHU__TRAINING__CREDENTIALS__APP_ID">
           <Input placeholder="cli_xxxx..." />
         </Form.Item>
-        <Form.Item label={feishuLabel('FEISHU_TRAINING_APP_SECRET')} name="FEISHU_TRAINING_APP_SECRET">
+        <Form.Item label={feishuLabel('培训 Bot App Secret')} name="FEISHU__TRAINING__CREDENTIALS__APP_SECRET">
           <Input.Password placeholder="飞书 Training App Secret" />
-        </Form.Item>
-
-        <Divider>AI 模型</Divider>
-        <Form.Item label="AI_BASE_URL" name="AI_BASE_URL">
-          <Input placeholder="https://api.moonshot.cn/v1" />
-        </Form.Item>
-        <Form.Item label="AI_API_KEY" name="AI_API_KEY">
-          <Input.Password placeholder="sk-..." />
-        </Form.Item>
-        <Form.Item label="AI_MODEL" name="AI_MODEL">
-          <Input placeholder="deepseek-v4-pro" />
         </Form.Item>
       </Form>
     </Card>

@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { App, Button, Card, Table, Input, Select, Space, Tag, Upload } from 'antd'
 import { SearchOutlined, UploadOutlined } from '@ant-design/icons'
-import { apiGet, fetchApi } from '@/lib/api/client'
+import { apiFetchPaginated, apiGet } from '@/lib/api/client'
 
 interface Trainer {
   id: string
@@ -39,12 +39,11 @@ export default function TrainersPage() {
       const params = new URLSearchParams({ page: String(page), page_size: '50' })
       if (keyword) params.set('keyword', keyword)
       if (dept) params.set('department', dept)
-      const d = await fetchApi<{ data: Trainer[]; meta?: { total?: number; page?: number; page_size?: number } }>(`/api/v1/hr/trainers?${params.toString()}`)
-      return { data: d.data || [], total: d.meta?.total || 0 }
+      return apiFetchPaginated<Trainer>(`/api/v1/hr/trainers?${params.toString()}`)
     },
   })
 
-  const data = trainersData?.data || []
+  const data = trainersData?.items || []
   const total = trainersData?.total || 0
 
   const load = (p = 1) => {

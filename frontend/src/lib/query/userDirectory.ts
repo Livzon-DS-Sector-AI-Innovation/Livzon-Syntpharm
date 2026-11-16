@@ -7,7 +7,8 @@ import type { QueryClient } from '@tanstack/react-query'
  * - `['users', ...]`              用户管理表格
  * - `['all-users']`               设备工单/维修负责人
  * - `['identity-users-search', ...]` 设备/安全人员选择
- * - `['permission-user-options']` 授权管理选人
+ * - `['permission-user-options']` 授权管理选人（已废弃：授权选人改用 RemoteUserSelect，
+ *   每次展开重新拉首页，不再产生该键；保留在集合里只为兼容历史缓存）
  *
  * 全局 `staleTime` 是 5 分钟且 `refetchOnWindowFocus: false`（见 Providers.tsx），
  * 所以新建 / 删除账号后必须显式失效这些查询，否则其他页面在不刷新浏览器的情况下

@@ -149,7 +149,10 @@ async def list_employees(...):
     return build_response(data=employees)
 ```
 
-`build_response()` 返回 `ApiResponse` 是可以的，因为 FastAPI 会优先使用路由声明的 `response_model` 进行 OpenAPI 生成和响应校验。文件下载、流式响应、重定向等需要直接控制 HTTP Response 的场景除外。
+`build_response()` 返回 `ApiResponse` 是可以的，因为 FastAPI 会优先使用路由声明的 `response_model` 进行 OpenAPI 生成和响应校验。
+
+结构化 JSON 成功响应**禁止**通过 `success_response()` 返回 `JSONResponse` 绕过 `response_model` 校验和 OpenAPI 生成。文件下载、流式响应、重定向等需要直接控制 HTTP Response 的场景除外。
+
 **前端访问方式**：
 - 开发环境：浏览器 → Next.js (3000) → `src/proxy.ts` → 后端 (8000)
 - 生产环境：浏览器 → nginx → Next.js (3000) 或后端 (8000)
@@ -157,15 +160,26 @@ async def list_employees(...):
 
 ## 认证与权限
 
-通过 `app.core.deps.CurrentUser` 获取当前用户（FastAPI 依赖注入）。认证来源：`Authorization: Bearer <jwt>` header 或 `auth_token` cookie（飞书 SSO）。
+认证来源：`Authorization: Bearer <jwt>` header 或 `auth_token` cookie（飞书 SSO）。依赖从 `app.core.deps` 导入。
 
-**注意**：当前为 Phase 1（预留接口），`current_user` 可能为 `None`。
+新增业务接口必须显式选择以下三者之一：
 
-**默认规则**：
-- 所有业务 API 默认需要登录
-- 只有明确标记为 public 的接口可以允许 `current_user` 为 `None`
-- 新增业务接口时必须显式选择 `require_user` / `optional_user` / `public`
-- 未声明的业务接口按 `require_user` 处理
+| 依赖 | 声明 | 未登录 | 使用场景 |
+|---|---|---|---|
+| `RequiredUser` | `current_user: RequiredUser` | 401 | **默认**，所有业务 API |
+| `OptionalUser` | `current_user: OptionalUser` | `None`（端点可判断） | AI 工具、公开参考数据等允许未登录的接口 |
+| public（不注入） | 不声明 `current_user` | 不解析用户 | SSO 流程、飞书 webhook、E2E |
+
+`OptionalUser` 与 public 的区别：前者仍解析 JWT/cookie，端点可拿到用户做条件逻辑；后者完全不解析。
+
+**默认规则**：业务 API 一律 `RequiredUser`；未声明的业务接口按 `RequiredUser` 处理。
+
+**公开接口**：
+- `GET /api/v1/identity/auth/login`、`/callback`、`/logout`
+- `POST /api/v1/identity/auth/test-login`（`APP_ENV` 环境变量守卫）
+- `POST /api/v1/hr/webhook/feishu-approval`（飞书 token + 签名校验）
+
+**Feishu webhook**：禁止 `RequiredUser` / `get_current_user`；必须校验 payload `token` 与 Verification Token 一致，配置 encrypt_key 时校验 `SHA256(timestamp + nonce + encrypt_key + raw_body)`（`hmac.compare_digest`），复用 `app/platform/identity/service.py` 的 `_verify_feishu_callback_signature()`；缺字段不得放行。
 
 ## 数据库规范
 
@@ -333,7 +347,8 @@ CI 会自动检查（`scripts/ci/check_migration_scope.py` 与 `scripts/ci/check
 
 - 每个模块使用 `logger = logging.getLogger(__name__)`
 - 级别：`ERROR`（失败）、`WARNING`（降级/重试）、`INFO`（业务事件）、`DEBUG`（开发调试）
-- 始终包含上下文：`logger.info("batch created", extra={"batch_id": id, "module": "production"})`
+- 始终包含上下文：`logger.info("batch created", extra={"batch_id": id, "biz_module": "production"})`
+- `extra` 的键**不得**与 `LogRecord` 自带属性重名（`module`、`name`、`message`、`levelname`、`args`、`filename`、`lineno` 等）；重名会在记录真正输出时抛 `KeyError: Attempt to overwrite 'xxx' in LogRecord`。业务字段用 `hazard_no`、`record_id`、`biz_module` 这类非保留名。
 - 异常处理用 `logger.exception()`（自动附带 traceback）
 - **禁止**记录 API key、token、密码等敏感信息
 
@@ -427,6 +442,7 @@ frontend/src/
 **规则**：
 - 使用了 React Hooks、浏览器 API、事件处理器、Zustand store 或直接使用 antd 组件 → 必须加 `'use client'`
 - 页面只是导入并渲染 Client Component → 不需要 `'use client'`
+- 导出 `generateMetadata`，或 `async function` 只获取数据后传给 Client 组件 → 不需要 `'use client'`
 - Client 组件放在 `components/<模块>/` 里，`page.tsx` 只负责获取数据然后传给 Client 组件
 
 详见 [examples/server-component-pattern.md](examples/server-component-pattern.md)。
@@ -451,6 +467,8 @@ export const dynamic = 'force-dynamic'
 
 原因：Server Actions 自动处理 CSRF、revalidation 和错误边界，客户端 fetch 写操作会绕过这些安全机制。
 
+**`'use server'` 类型定义**：不要定义并导出类型（`export type` / `export interface`），类型集中到 `types/<模块>.ts`；禁止 `export type { ... }` 再导出。例外：仅在本 action 文件内使用、且未在 `types/` 重复定义的 interface 可以保留。
+
 详见 [examples/server-actions.md](examples/server-actions.md)。
 
 ## 模块边界
@@ -460,6 +478,31 @@ export const dynamic = 'force-dynamic'
 ```typescript
 ✗ import { BatchForm } from '@/components/production/BatchForm'
 ✓ import { BatchTable } from '@/components/production'
+```
+
+## 人员选择（人员下拉）
+
+**凡是需要选择系统人员的地方，统一使用 `components/common/RemoteUserSelect.tsx`**（`@/components/common/RemoteUserSelect`，默认导出同名组件）。
+
+它提供与隐患台账一致的能力：展开即取首批系统用户（50 条/页）、300ms 防抖的服务端姓名搜索、请求序号防竞态、底部「加载更多」、选项「头像 + 姓名 + 部门」、已选标签小头像。
+
+**禁止**：
+
+- 再写页面级 `options={userOptions}` 的全量人员 `Select`（页码一次性拉全量用户既慢又会随人数增长线性变差）
+- 在 Client 组件里自己 `fetch` 人员接口（人员检索走 `lib/api/client/identity.ts` 的 `searchPersonnel` 只读封装）
+
+**必须**：
+
+- 值只存 UUID（单选 `string`，多选 `string[]`），姓名/头像通过 `fallbackOptions` 快照回显，保证未展开下拉时不显示 UUID
+- 多选场景传 `mode="multiple"`
+
+```tsx
+import { RemoteUserSelect } from '@/components/common/RemoteUserSelect'
+
+// 单选
+<RemoteUserSelect placeholder="搜索姓名选择人员" fallbackOptions={personFallback} />
+// 多选
+<RemoteUserSelect mode="multiple" placeholder="搜索姓名选择人员，可多选" fallbackOptions={personFallback} />
 ```
 
 ## 命名规范
@@ -473,6 +516,7 @@ export const dynamic = 'force-dynamic'
 ## 新增页面的步骤
 
 1. 在 `app/(dashboard)/<模块>/` 下新建目录和 `page.tsx`
+   - 每个 `page.tsx` 必须有独立语义化标题：`<h1>标题</h1>` 或 `<Title level={1}>标题</Title>`，不得用 `<Card title="...">` 替代；标题文本与 E2E heading 断言一致
 2. `page.tsx` 里 fetch 数据，传给 `components/<模块>/` 里的组件
 3. 组件写在 `components/<模块>/` 里，需要交互的加 `'use client'`
 4. 如果有写操作，写在 `actions/<模块>.ts` 里
@@ -514,7 +558,7 @@ export const dynamic = 'force-dynamic'
 ### 新增 API 调用
 
 1. **客户端调用**：在 `lib/api/client/<模块>.ts` 中使用相对路径 `/api/v1/...`
-2. **服务器端调用**：在 `lib/api/server/<模块>.ts` 中使用 `API_BASE_URL` 环境变量
+2. **服务器端调用**：在 `lib/api/server/<模块>.ts` 中通过 `base.ts` 的 `apiFetch` / `apiFetchRaw` 访问后端（内部使用 `API_BASE_URL`）
 3. **写操作**：在 `actions/<模块>.ts` 中调用 `lib/api/server/` 的函数，不要直接 fetch
 
 ## 类型系统
@@ -533,7 +577,7 @@ export const dynamic = 'force-dynamic'
 ```
 frontend/src/types/generated/     ← 自动生成，禁止编辑
 frontend/src/lib/api/client/*.ts     ← 浏览器 GET/list/search/detail，使用 /api/v1/...
-frontend/src/lib/api/server/*.ts     ← Server Component / Server Action 使用，使用 API_BASE_URL
+frontend/src/lib/api/server/*.ts     ← Server Component / Server Action 使用，经 base.ts 的 apiFetch（内部 API_BASE_URL）
 frontend/src/actions/*.ts         ← Server Actions，调用 lib/api
 ```
 
@@ -542,10 +586,21 @@ frontend/src/actions/*.ts         ← Server Actions，调用 lib/api
 - **GET / list / search / detail**：浏览器调用放在 `src/lib/api/client/`，服务器调用放在 `src/lib/api/server/`
 - **create / update / delete / upload**：必须通过 Server Actions
 
+### 服务器端 apiFetch 一致性
+
+- 服务器端 API 调用必须通过 `lib/api/server/base.ts` 的 `apiFetch` / `apiFetchRaw`。`apiFetch` 返回完整信封 `{code, data, message, meta}`；取 `data` 用 `unwrapResponse()` 或 `apiFetchData()`，禁止在调用点临时访问 `.data`。
+- `getApiBaseUrl()` 只在 `base.ts` 定义，禁止在其他文件重复实现；禁止在其他文件自定义名为 `apiFetch` 的实现。
+- `safeApiFetch`（不抛异常，错误作为返回值）和 `apiFetchPaginated`（分页）是 `base.ts` 的正式导出。
+- 例外：文件上传可用 `uploadFetch`（`apiFetch` 已识别 `FormData` 并跳过 `Content-Type`，需要自定义超时/进度时仍可用）；流式响应用 `apiFetchRaw` 或原始 fetch；`loginApi` 可用原始 fetch（登录前无 token，需区分 HTTP 状态与业务错误）。
+
 ### 类型检查
 
 后端 API 变化后，前端必须重新生成类型：`cd ../backend && uv run python scripts/ci/export_openapi.py` 然后 `cd ../frontend && pnpm generate:api`。CI 会检查类型同步。
 
+### 跨项目 CI
+
+- `bash scripts/ci.sh openapi` — 后端导出 OpenAPI → 前端生成类型 → 检查漂移
+- `bash scripts/ci.sh e2e` — 启动 PostgreSQL + 后端 + 前端 → 运行 Playwright → 清理
 
 ## React Hooks 与 React Compiler
 
@@ -627,4 +682,4 @@ Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-
 
 ### Domain docs
 
-Single-context layout. `CONTEXT.md` and `docs/adr/` are created lazily by `/domain-modeling`. See `docs/agents/domain.md`.
+Single-context layout. `GLOSSARY.md` and `docs/adr/` are created lazily by `/domain-modeling`. See `docs/agents/domain.md`.

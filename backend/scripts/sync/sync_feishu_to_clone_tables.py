@@ -5,7 +5,8 @@ Usage:
     cd dazah-backend
     uv run python scripts/sync_feishu_to_clone_tables.py
 
-Requires FEISHU__PLATFORM__APP_ID and FEISHU__PLATFORM__APP_SECRET in environment.
+Requires FEISHU__PLATFORM__APP_ID / FEISHU__PLATFORM__APP_SECRET plus
+FEISHU__HR_BITABLE__APP_TOKEN and the four FEISHU__HR_BITABLE__*_TABLE_ID values.
 """
 
 import asyncio
@@ -26,12 +27,23 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from sqlalchemy import delete, insert, table
 
 from app.core.database import engine
+from app.core.config import get_settings
 from app.platform.integrations.feishu.client import FeishuClient
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
-APP_TOKEN = "RfEmb1WyzasCg4sn6tsc4LbWnjf"
+settings = get_settings()
+_hr_bitable = settings.feishu.hr_bitable
+
+
+def _required(value: str, env_name: str) -> str:
+    if not value:
+        raise RuntimeError(f"缺少环境变量 {env_name}")
+    return value
+
+
+APP_TOKEN = _required(_hr_bitable.app_token, "FEISHU__HR_BITABLE__APP_TOKEN")
 
 # SQL 标识符（表名/列名）只允许常规小写命名，且表名可选带 schema 前缀；
 # PostgreSQL 不支持把标识符作为绑定参数，因此拼接前必须先过这道校验。
@@ -48,30 +60,26 @@ def _checked_identifier(name: str, kind: str) -> str:
 # ─── Table configs ───
 TABLE_CONFIGS = {
     "employees_old": {
-        "feishu_table_id": "tbllxa1JInvTuEoD",
+        "feishu_table_id": _required(_hr_bitable.employees_old_table_id, "FEISHU__HR_BITABLE__EMPLOYEES_OLD_TABLE_ID"),
         "db_table": "hr.employees_old",
         "status_default": "在职",
     },
     "employees_new": {
-        "feishu_table_id": "tblc0PEd0V1lhIq5",
+        "feishu_table_id": _required(_hr_bitable.employees_new_table_id, "FEISHU__HR_BITABLE__EMPLOYEES_NEW_TABLE_ID"),
         "db_table": "hr.employees_new",
         "status_default": "在职",
     },
     "onboarding_old": {
-        "feishu_table_id": "tblbyftLfLVlIXKd",
+        "feishu_table_id": _required(
+            _hr_bitable.onboarding_old_table_id, "FEISHU__HR_BITABLE__ONBOARDING_OLD_TABLE_ID"
+        ),
         "db_table": "hr.onboarding_records_old",
     },
     "onboarding_new": {
-        "feishu_table_id": "tblFum6xtGF98sti",
+        "feishu_table_id": _required(
+            _hr_bitable.onboarding_new_table_id, "FEISHU__HR_BITABLE__ONBOARDING_NEW_TABLE_ID"
+        ),
         "db_table": "hr.onboarding_records_new",
-    },
-    "departure_old": {
-        "feishu_table_id": "tblGMlpdy6ygPTFG",
-        "db_table": "hr.departure_records_old",
-    },
-    "departure_new": {
-        "feishu_table_id": "tbll7T21lbSb0M16",
-        "db_table": "hr.departure_records_new",
     },
 }
 
@@ -324,76 +332,6 @@ ONBOARDING_FIELD_MAP = {
     "feishu_record_id": ("record_id", lambda v: v),
 }
 
-DEPARTURE_FIELD_MAP = {
-    "name": ("姓名", _extract_text),
-    "department": ("部门", _extract_text),
-    "team": ("班组", _extract_text),
-    "position": ("职位", _extract_text),
-    "job_category": ("职类", _extract_text),
-    "gender": ("性别", _extract_single_select),
-    "status_category": ("统计类别", _extract_text),
-    "livo_entry_date": ("入丽珠时间", _extract_date),
-    "factory_entry_date": ("进厂时间", _extract_date),
-    "work_start_date": ("参加工作时间", _extract_date),
-    "offboarding_date": ("离职日期", _extract_date),
-    "company_tenure_at_leave": ("司龄", _extract_text),
-    "education": ("学历", _extract_text),
-    "school": ("毕业学校", _extract_text),
-    "major": ("专业", _extract_text),
-    "classification": ("分类", _extract_single_select),
-    "id_card": ("身份证号", _extract_text),
-    "native_place": ("籍贯", _extract_text),
-    "household_type": ("户籍类型", _extract_single_select),
-    "marital_status": ("婚姻状况", _extract_single_select),
-    "political_status": ("政治面貌", _extract_single_select),
-    "phone": ("手机", _extract_text),
-    "emergency_contact_phone": ("紧急联系人电话", _extract_text),
-    "emergency_contact_relation": ("紧急联系人|关系", _extract_text),
-    "bank_account": ("银行卡号", _extract_text),
-    "contract_type": ("合同期限", _extract_single_select),
-    "transfer_history": ("异动(含曾经工作部门、岗位)", _extract_text),
-    "offboarding_type": ("离职类型", _extract_single_select),
-    "offboarding_reason": ("离职原因", _extract_single_select_as_list),
-    "remarks": ("备注", _extract_text),
-    "feishu_record_id": ("record_id", lambda v: v),
-}
-
-
-# New factory departure table has different field types (text dates, multi-select team, etc.)
-DEPARTURE_NEW_FIELD_MAP = {
-    "name": ("姓名", _extract_text),
-    "department": ("部门", _extract_text),
-    "team": ("班组", _extract_multi_select_first),
-    "position": ("职位", _extract_text),
-    "job_category": ("职类", _extract_single_select),
-    "gender": ("性别", _extract_single_select),
-    "status_category": ("统计类别", _extract_single_select),
-    "livo_entry_date": ("入丽珠时间", _extract_date),
-    "factory_entry_date": ("进厂时间", _extract_date),
-    "work_start_date": ("参加工作时间", _extract_date),
-    "offboarding_date": ("离职日期", _extract_date),
-    "company_tenure_at_leave": ("司龄", _extract_text),
-    "education": ("学历", _extract_single_select),
-    "school": ("毕业学校", _extract_text),
-    "major": ("专业", _extract_text),
-    "classification": ("分类", _extract_single_select),
-    "id_card": ("身份证号", _extract_text),
-    "native_place": ("籍贯", _extract_text),
-    "household_type": ("户籍类型", _extract_single_select),
-    "marital_status": ("婚姻状况", _extract_single_select),
-    "political_status": ("政治面貌", _extract_single_select),
-    "phone": ("手机", _extract_text),
-    "emergency_contact_phone": ("紧急联系人电话", _extract_text),
-    "emergency_contact_relation": ("紧急联系人|关系", _extract_text),
-    "bank_account": ("银行卡号", _extract_text),
-    "contract_type": ("合同期限", _extract_single_select),
-    "transfer_history": ("异动(含曾经工作部门、岗位)", _extract_text),
-    "offboarding_type": ("离职类型", _extract_single_select),
-    "offboarding_reason": ("离职原因", _extract_single_select_as_list),
-    "remarks": ("备注", _extract_text),
-    "feishu_record_id": ("record_id", lambda v: v),
-}
-
 
 def _build_record(fields: dict, mapping: dict, defaults: dict | None = None) -> dict:
     """Map Feishu fields to DB record using a field mapping."""
@@ -498,11 +436,6 @@ async def sync_table(
                 errors += 1
                 logger.warning("  Skipping record %s: missing hire_date", record_id)
                 continue
-        if db_table in ("hr.departure_records_old", "hr.departure_records_new"):
-            if not record.get("name"):
-                errors += 1
-                logger.warning("  Skipping record %s: missing name", record_id)
-                continue
 
         try:
             await conn.execute(_build_insert_stmt(db_table, record))
@@ -559,19 +492,6 @@ async def main():
     # ─── 入职 ───
     await _sync_one_table(client, "onboarding_old", ONBOARDING_FIELD_MAP)
     await _sync_one_table(client, "onboarding_new", ONBOARDING_FIELD_MAP)
-
-    # ─── 离职 ───
-    await _sync_one_table(
-        client,
-        "departure_old",
-        DEPARTURE_FIELD_MAP,
-        defaults={"offboarding_type": "辞职"},
-    )
-    await _sync_one_table(
-        client,
-        "departure_new",
-        DEPARTURE_NEW_FIELD_MAP,
-    )
 
     logger.info("Sync completed.")
 
