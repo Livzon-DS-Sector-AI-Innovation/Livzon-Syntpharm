@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, Suspense } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Select, Card, Table, Button, Space, Upload, Modal, Form, Input, DatePicker, InputNumber, App } from 'antd'
-import { UploadOutlined, DownloadOutlined, PlusOutlined } from '@ant-design/icons'
+import { Select, Table, Upload, Modal, Form, Input, DatePicker, InputNumber, App } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import { RegistrationPageHeader } from '@/components/registration'
+import ui from '@/components/registration/registration-ui.module.css'
+import { IconBook, IconUpload, IconDownload, IconPlus } from '@/components/registration/registration-icons'
 import {
   fetchDomesticApprovals, exportDomesticApprovals,
   fetchOverseasApprovals, exportOverseasApprovals,
@@ -54,18 +56,13 @@ function LedgerContent() {
   const { message } = App.useApp()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const urlType = searchParams.get('type') as LedgerType | null
+  const queryClient = useQueryClient()
+  // 当前子表类型以 URL ?type= 为唯一数据源，直接从参数派生，不做本地 state 同步
+  const urlType = searchParams.get('type')
+  const type: LedgerType = LEDGER_TYPES.some(t => t.value === urlType) ? (urlType as LedgerType) : 'domestic'
 
-  const [type, setType] = useState<LedgerType>(urlType || 'domestic')
   const [modalOpen, setModalOpen] = useState(false)
   const [form] = Form.useForm()
-
-  // Sync type from URL param (adjusting state during render)
-  const [prevUrlType, setPrevUrlType] = useState<string | null>(null)
-  if (urlType !== prevUrlType && urlType && LEDGER_TYPES.some(t => t.value === urlType)) {
-    setPrevUrlType(urlType)
-    setType(urlType)
-  }
 
   // 打开即加载：类型切换 → queryKey 变化 → 自动取对应台账数据
   const ledgerQuery = useQuery({
@@ -95,6 +92,8 @@ function LedgerContent() {
         // 成功导入
         message.success(data?.message || `成功导入 ${successCount} 条记录`)
         void ledgerQuery.refetch()  // 只在有数据时刷新
+        // 台账记录变化会影响概览页 KPI 计数与证书预警，同步失效
+        void queryClient.invalidateQueries({ queryKey: ['registration-ledger-summary'] })
       }
       
       // 如果有错误，显示错误详情
@@ -135,13 +134,14 @@ function LedgerContent() {
       setModalOpen(false)
       form.resetFields()
       void ledgerQuery.refetch()
+      // 台账记录变化会影响概览页 KPI 计数与证书预警，同步失效
+      void queryClient.invalidateQueries({ queryKey: ['registration-ledger-summary'] })
     } catch {
       message.error('添加失败')
     }
   }
 
   const handleTypeChange = (val: LedgerType) => {
-    setType(val)
     router.push(`/registration/ledger?type=${val}`)
   }
 
@@ -239,14 +239,15 @@ function LedgerContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)] mb-2">注册台账</h1>
-        <p className="text-[14px] text-[var(--color-steel)]">管理公司注册证书和审评信息</p>
-      </div>
+    <div className={ui.regUi}>
+      <RegistrationPageHeader
+        icon={IconBook}
+        title="注册台账"
+        sub="6 类注册台账维护，支持 Excel 导入导出"
+      />
 
-      <Card>
-        <div className="flex items-center justify-between mb-4">
+      <div className={ui.panel}>
+        <div className={ui.toolbar}>
           <Select
             value={type}
             onChange={handleTypeChange}
@@ -254,36 +255,38 @@ function LedgerContent() {
             style={{ width: 200 }}
             size="large"
           />
-          <Space>
+          <div className={ui.toolbarGroup}>
             {type !== 'reviewing' && (
               <>
                 <Upload beforeUpload={handleImport} accept=".xlsx,.xls" showUploadList={false}>
-                  <Button icon={<UploadOutlined />}>导入 Excel</Button>
+                  <button type="button" className={ui.btn}>{IconUpload}导入 Excel</button>
                 </Upload>
-                <Button icon={<DownloadOutlined />} onClick={handleExport}>导出 Excel</Button>
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
-                  手动添加
-                </Button>
+                <button type="button" className={ui.btn} onClick={handleExport}>{IconDownload}导出 Excel</button>
+                <button type="button" className={ui.btnPrimary} onClick={() => setModalOpen(true)}>
+                  {IconPlus}手动添加
+                </button>
               </>
             )}
-          </Space>
+          </div>
         </div>
 
-        <Table
-          columns={getColumns()}
-          dataSource={data}
-          rowKey="id"
-          loading={ledgerQuery.isPending}
-          pagination={{ pageSize: 20 }}
-          scroll={{ x: 'max-content' }}
-          size="small"
-          locale={{
-            emptyText: ledgerQuery.isError ? (
-              <DataUnavailable compact onRetry={() => void ledgerQuery.refetch()} />
-            ) : undefined,
-          }}
-        />
-      </Card>
+        <div className={ui.tableWrap}>
+          <Table
+            columns={getColumns()}
+            dataSource={data}
+            rowKey="id"
+            loading={ledgerQuery.isPending}
+            pagination={{ pageSize: 20 }}
+            scroll={{ x: 'max-content' }}
+            size="small"
+            locale={{
+              emptyText: ledgerQuery.isError ? (
+                <DataUnavailable compact onRetry={() => void ledgerQuery.refetch()} />
+              ) : undefined,
+            }}
+          />
+        </div>
+      </div>
 
       {type !== 'reviewing' && (
         <Modal

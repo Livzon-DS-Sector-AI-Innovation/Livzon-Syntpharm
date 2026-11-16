@@ -28,6 +28,10 @@ _TABLE = "employee_profiles"
 
 
 def upgrade() -> None:
+    # 双轨合并守卫：main 链 0116_hr_org_records 已建超集表时跳过；若本迁移先建子集表，
+    # 0116 会补齐差量列，两种顺序收敛到同一结构
+    if sa.inspect(op.get_bind()).has_table(_TABLE, schema=_SCHEMA):
+        return
     op.create_table(
         _TABLE,
         sa.Column("open_id", sa.String(length=128), nullable=False, comment="飞书 open_id（唯一键）"),

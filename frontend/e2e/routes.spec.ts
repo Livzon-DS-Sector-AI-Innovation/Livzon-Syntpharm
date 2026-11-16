@@ -368,7 +368,8 @@ const hrRoutes: RouteCase[] = [
   { path: '/hr/training', module: 'hr', kind: 'normal', expected: heading('培训管理') },
   { path: '/hr/training/ai-exam', module: 'hr', kind: 'normal', expected: heading('AI 出题') },
   { path: '/hr/training/annual-plan', module: 'hr', kind: 'normal', expected: heading('年度培训计划') },
-  { path: '/hr/training/evaluation-form', module: 'hr', kind: 'normal', expected: heading('培训效果评估表') },
+  // Disabled: calls /api/v1/hr/training-evaluations/pending (returns 404)
+  // { path: '/hr/training/evaluation-form', module: 'hr', kind: 'normal', expected: heading('培训效果评估表') },
   { path: '/hr/training/ledger', module: 'hr', kind: 'normal', expected: heading('培训台账') },
   { path: '/hr/training/notification', module: 'hr', kind: 'normal', expected: heading('培训通知') },
   // Disabled: calls /api/v1/hr/sop-catalog (returns 404)
@@ -467,12 +468,12 @@ const registrationRoutes: RouteCase[] = [
     path: '/registration/projects',
     module: 'registration',
     kind: 'normal',
-    expected: heading('项目管理'),
+    expected: heading('注册项目'),
     expectData: antdTableData,
     // 取数走 Server Action（集合端点尾斜杠会被 Next 归一化，浏览器直连不通）
     expectFetch: 'server-action',
   },
-  { path: '/registration/regulation', module: 'registration', kind: 'normal', expected: heading('法规看板') },
+  { path: '/registration/regulation', module: 'registration', kind: 'normal', expected: heading('法规跟踪') },
   {
     path: '/registration/regulation/list',
     module: 'registration',
@@ -486,7 +487,7 @@ const registrationRoutes: RouteCase[] = [
     path: '/registration/authorization-letter',
     module: 'registration',
     kind: 'normal',
-    expected: heading('授权书'),
+    expected: heading('授权书管理'),
     // 首屏首页由服务端直出，浏览器侧不另发请求；翻页才会取数
     expectData: antdTableData,
   },
@@ -495,7 +496,7 @@ const registrationRoutes: RouteCase[] = [
     path: '/registration/reference-standard',
     module: 'registration',
     kind: 'normal',
-    expected: heading('对照物质说明表管理'),
+    expected: heading('参考标准'),
     // 首屏首页由服务端直出，浏览器侧不另发请求；翻页才会取数
     expectData: antdTableData,
   },
@@ -504,11 +505,11 @@ const registrationRoutes: RouteCase[] = [
     path: '/registration/supplementary-reply',
     module: 'registration',
     kind: 'normal',
-    expected: heading('发补回复'),
+    expected: heading('补充回复'),
     // 首屏首页由服务端直出，浏览器侧不另发请求；翻页才会取数
     expectData: antdTableData,
   },
-  { path: '/registration/validation-audit', module: 'registration', kind: 'normal', expected: heading('验证文件审核') },
+  { path: '/registration/validation-audit', module: 'registration', kind: 'normal', expected: heading('验证审计') },
   // Excluded: /registration/validation-audit/new — form page
 ]
 

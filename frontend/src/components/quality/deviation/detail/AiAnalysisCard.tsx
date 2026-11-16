@@ -119,13 +119,13 @@ export function AiAnalysisCard({ ledger, onUpdated, onFillInvestigation }: AiAna
         fail(job.error ?? 'AI 分析失败')
         return
       }
-      const payload = job.result as { ai_analysis?: DeviationAiAnalysisData } | null
+      const aiAnalysis = pickAiAnalysis(job.result)
       // 先定格 100% 再切结果：避免进度条刚满、区域就整块消失
       setRun((prev) => (prev ? { ...prev, phase: 'finishing' } : prev))
       finishTimer.current = setTimeout(() => {
         finishTimer.current = null
         // 只更新本地草稿：AI 结果需人工校对后保存，刷新页面仍显示上一次保存的结果
-        updateDraft(toDraft(payload?.ai_analysis))
+        updateDraft(toDraft(aiAnalysis))
         message.success('AI 分析已生成，请校对后保存')
         setRun(null)
       }, ANALYSIS_FINISH_HOLD_MS)
@@ -274,6 +274,14 @@ function useTick(intervalMs: number | null): number {
   }, [intervalMs])
 
   return now
+}
+
+/** 任务返回值是通用字典（生成类型 `result?: {[key: string]: unknown} | null`），此处收窄为 AI 分析 DTO */
+function pickAiAnalysis(result: DeviationJobState['result']): DeviationAiAnalysisData | null {
+  if (!result || typeof result !== 'object') return null
+  const analysis = (result as Record<string, unknown>).ai_analysis
+  if (!analysis || typeof analysis !== 'object') return null
+  return analysis as DeviationAiAnalysisData
 }
 
 function toDraft(analysis: DeviationAiAnalysisData | null | undefined): Draft {

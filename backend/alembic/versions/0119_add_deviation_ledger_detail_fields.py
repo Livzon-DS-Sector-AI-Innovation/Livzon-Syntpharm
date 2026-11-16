@@ -35,6 +35,10 @@ _JSON_COLUMNS: tuple[tuple[str, str], ...] = (
 
 
 def upgrade() -> None:
+    # 双轨合并守卫：main 链同构迁移（现 0171 no-op 占位）在 prod 已应用过本变更，跳过
+    existing = {c["name"] for c in sa.inspect(op.get_bind()).get_columns(_TABLE, schema=_SCHEMA)}
+    if "report_content" in existing:
+        return
     for name, comment in _JSON_COLUMNS:
         op.add_column(
             _TABLE,

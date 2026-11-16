@@ -28,6 +28,9 @@ _COLUMN = "investigation_drafts"
 
 
 def upgrade() -> None:
+    # 双轨合并守卫：main 链同构迁移 0115 已应用过本变更时跳过
+    if _COLUMN in {c["name"] for c in sa.inspect(op.get_bind()).get_columns(_TABLE, schema=_SCHEMA)}:
+        return
     op.add_column(
         _TABLE,
         sa.Column(
@@ -37,7 +40,7 @@ def upgrade() -> None:
             nullable=False,
             comment="调查记录草稿 [{author_id, author_name, department, nonconformity_description,"
             " root_cause_analysis, risk_assessment, capa_proposals[], urgent_measures,"
-            " attachment_file_ids[], updated_at}]，按 (author_id, department) 唯一",
+            " attachment_file_ids[], updated_at}]，按 (author_id, department) 唯一，提交后清除",
         ),
         schema=_SCHEMA,
     )

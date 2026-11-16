@@ -39,6 +39,9 @@ def _base_columns() -> list[sa.Column]:
 
 
 def upgrade() -> None:
+    # 双轨合并守卫：main 链同构迁移（现 0172 no-op 占位）在 prod 已应用过本变更，跳过
+    if sa.inspect(op.get_bind()).has_table("department_contacts", schema=_SCHEMA):
+        return
     op.create_table(
         "department_contacts",
         *_base_columns(),

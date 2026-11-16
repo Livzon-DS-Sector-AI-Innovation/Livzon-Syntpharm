@@ -1,6 +1,6 @@
 """add highlight_override_enabled to ppt_video_project / ppt_video_slide
 
-Revision ID: 0114_agent_ppt_video_highlight_override_enabled
+Revision ID: 0178_agent_ppt_video_highlight_override_enabled
 Revises: 0113_agent_ppt_video_project_highlight_override
 Create Date: 2026-11-05
 
@@ -18,7 +18,7 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0114_agent_ppt_video_highlight_override_enabled"
+revision: str = "0178_agent_ppt_video_highlight_override_enabled"
 down_revision: str = "0113_agent_ppt_video_project_highlight_override"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

@@ -197,10 +197,10 @@ export default function EmployeeDirectoryClient({
   const statusQuery = useQuery({
     queryKey: ['hr-org-sync-status'],
     queryFn: fetchOrgSyncStatus,
-    initialData: { code: 200, message: 'success', data: initialStatus, meta: null },
-    refetchInterval: (query) => (query.state.data?.data.status === 'running' ? 2000 : false),
+    initialData: initialStatus,
+    refetchInterval: (query) => (query.state.data?.status === 'running' ? 2000 : false),
   })
-  const syncStatus = statusQuery.data.data
+  const syncStatus = statusQuery.data
   const running = syncStatus.status === 'running'
   const syncing = submitting || running
   const wasRunning = useRef(running)
@@ -216,7 +216,7 @@ export default function EmployeeDirectoryClient({
     try {
       const result = await triggerOrgSync()
       queryClient.setQueryData(['hr-org-sync-status'], result)
-      message.success(result.data.status === 'running' ? '组织架构同步已开始' : '组织架构同步完成')
+      message.success(result.status === 'running' ? '组织架构同步已开始' : '组织架构同步完成')
     } catch (error: unknown) {
       message.error(error instanceof Error ? error.message : '组织架构同步失败')
       await queryClient.invalidateQueries({ queryKey: ['hr-org-sync-status'] })

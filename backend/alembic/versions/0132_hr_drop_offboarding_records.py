@@ -24,7 +24,9 @@ _SCHEMA = "hr"
 
 
 def upgrade() -> None:
-    op.drop_table(_TABLE, schema=_SCHEMA)
+    # 双轨合并守卫：main 链 0116 已删除该表时跳过
+    if sa.inspect(op.get_bind()).has_table(_TABLE, schema=_SCHEMA):
+        op.drop_table(_TABLE, schema=_SCHEMA)
 
 
 def downgrade() -> None:

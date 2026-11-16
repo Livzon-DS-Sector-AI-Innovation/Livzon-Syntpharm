@@ -6,11 +6,13 @@ from typing import Any
 from fastapi import APIRouter, Depends, Form, UploadFile
 from fastapi.responses import StreamingResponse
 
+from app.core.database import async_session_factory
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException, BadRequestException
 from app.core.job_store import start_job
 from app.modules.hr.ai_exam.schemas import ExamExportRequest
 from app.modules.hr.ai_exam.service import export_exam, generate_exam
+from app.modules.hr.ai_exam.settings import load_ai_settings
 from app.modules.hr.job_store import hr_job_store
 from app.shared.schemas import AsyncJobAccepted, AsyncJobAcceptedResponse
 
@@ -51,7 +53,9 @@ async def post(
 
     async def _run(_job: str) -> dict[str, Any]:
         try:
-            result = await generate_exam(content, file.filename or "", config)
+            async with async_session_factory() as db:
+                ai = await load_ai_settings(db)
+            result = await generate_exam(content, file.filename or "", config, ai)
         except ValueError as e:
             raise RuntimeError(str(e)) from e
         except Exception as e:

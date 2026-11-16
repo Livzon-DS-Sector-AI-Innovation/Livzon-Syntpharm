@@ -3,6 +3,7 @@
 
 from app.modules.registration.models.authorization import (
     AuthorizationLetter,
+    AuthorizationLetterTrail,
     SupplementaryReply,
 )
 from app.modules.registration.models.certificate import RegistrationCertificate
@@ -11,7 +12,7 @@ from app.modules.registration.models.domestic_approval import DomesticApproval
 from app.modules.registration.models.drug import Drug, DrugNode, Holiday
 from app.modules.registration.models.international_review import InternationalReview
 from app.modules.registration.models.overseas_approval import OverseasApproval
-from app.modules.registration.models.project import RegistrationProject
+from app.modules.registration.models.project import ProjectProgressLog, RegistrationProject
 from app.modules.registration.models.reference_standard import ReferenceStandard
 from app.modules.registration.models.reference_substance import ReferenceSubstance
 from app.modules.registration.models.review import ReviewNode
@@ -26,6 +27,7 @@ from app.modules.registration.models.wc_certificate import WcCertificate
 
 __all__ = [
     "AuthorizationLetter",
+    "AuthorizationLetterTrail",
     "CoppCertificate",
     "DomesticApproval",
     "Drug",
@@ -33,6 +35,7 @@ __all__ = [
     "Holiday",
     "InternationalReview",
     "OverseasApproval",
+    "ProjectProgressLog",
     "ReferenceStandard",
     "ReferenceSubstance",
     "RegistrationCertificate",

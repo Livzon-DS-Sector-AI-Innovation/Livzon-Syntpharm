@@ -25,8 +25,8 @@ from app.platform.integrations.feishu.utils import OPEN_API_BASE_URL, get_tenant
 
 logger = logging.getLogger(__name__)
 
-APP_ID_SETTING = "FEISHU__PLATFORM__APP_ID"
-APP_SECRET_SETTING = "FEISHU__PLATFORM__APP_SECRET"
+APP_ID_SETTING = "FEISHU__HR__CREDENTIALS__APP_ID"
+APP_SECRET_SETTING = "FEISHU__HR__CREDENTIALS__APP_SECRET"
 
 _PAGE_SIZE = 50
 _DETAIL_BATCH_SIZE = 50
@@ -51,8 +51,8 @@ REQUIRED_DETAIL_FIELDS = (
 )
 
 
-async def load_hr_platform_credentials(session: AsyncSession) -> tuple[str, str]:
-    """Resolve the 主 Bot credentials from HR system settings only; fail when unset."""
+async def load_hr_bot_credentials(session: AsyncSession) -> tuple[str, str]:
+    """Resolve the HR bot credentials from HR system settings; fail closed when unset."""
     app_id = ""
     app_secret = ""
     result = await session.execute(
@@ -72,10 +72,10 @@ async def load_hr_platform_credentials(session: AsyncSession) -> tuple[str, str]
         try:
             app_secret = decrypt_secret(str(raw_secret)).strip()
         except RuntimeError:
-            raise RuntimeError("HR 组织同步：飞书 App Secret 解密失败，请在系统设置中重新保存") from None
+            raise RuntimeError("HR Bot：飞书 App Secret 解密失败，请在系统设置中重新保存") from None
 
     if not app_id or not app_secret:
-        raise RuntimeError("HR 组织同步未配置飞书平台应用凭证（主 Bot App ID / App Secret）")
+        raise RuntimeError("HR Bot 未配置：请在 HR 系统设置中填写 App ID / App Secret")
     return app_id, app_secret
 
 
@@ -347,5 +347,5 @@ class FeishuOrgDepartmentFetcher:
 
 
 async def build_default_fetcher(session: AsyncSession) -> FeishuOrgDepartmentFetcher:
-    app_id, app_secret = await load_hr_platform_credentials(session)
+    app_id, app_secret = await load_hr_bot_credentials(session)
     return FeishuOrgDepartmentFetcher(app_id=app_id, app_secret=app_secret)

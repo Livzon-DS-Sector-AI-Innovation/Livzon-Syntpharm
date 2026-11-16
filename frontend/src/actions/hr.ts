@@ -2,7 +2,7 @@
 
 import { z } from 'zod'
 import {parse} from '@/lib/validation/schemas'
-import type { components } from '@/types/generated/schema'
+import type { components, operations } from '@/types/generated/schema'
 import { unwrapResponse } from '@/lib/api/server/base'
 
 import { revalidatePath } from 'next/cache'
@@ -294,15 +294,15 @@ export async function fetchEmployees(
   return fetchEmployeesAction(params)
 }
 
-export async function fetchOrgDepartments(): Promise<OrgDepartmentTreeResponse> {
+export async function fetchOrgDepartments(): Promise<OrgDepartmentTreeResponse['data']> {
   return fetchOrgDepartmentsApi()
 }
 
-export async function fetchOrgSyncStatus(): Promise<OrgSyncStatusResponse> {
+export async function fetchOrgSyncStatus(): Promise<OrgSyncStatusResponse['data']> {
   return fetchOrgSyncStatusApi()
 }
 
-export async function triggerOrgSync(): Promise<OrgSyncTriggerResponse> {
+export async function triggerOrgSync(): Promise<OrgSyncTriggerResponse['data']> {
   const result = await triggerOrgSyncApi()
   revalidatePath('/hr/departments')
   return result
@@ -398,11 +398,15 @@ export async function fetchPlanItems(id: string): Promise<ApiResponse<AnnualTrai
   return fetchPlanItemsApi(id) as Promise<ApiResponse<AnnualTrainingPlanItem[]>>
 }
 
-export async function fetchEmployeeByNumber(employeeNumber: string): Promise<EmployeeResponse> {
-  return fetchEmployeeByNumberApi(employeeNumber) as Promise<EmployeeResponse>
+export async function fetchEmployeeByNumber(
+  employeeNumber: string
+): Promise<components['schemas']['EmployeeResponse']> {
+  return fetchEmployeeByNumberApi(employeeNumber)
 }
 
-export async function syncTrainingSpecialistsFeishuOpenIds(): Promise<components['schemas']['AsyncJobAcceptedResponse']> {
+export async function syncTrainingSpecialistsFeishuOpenIds(): Promise<
+  components['schemas']['AsyncJobAcceptedResponse']['data']
+> {
   const res = await syncTrainingSpecialistsFeishuOpenIdsApi()
   revalidatePath('/hr/training/specialists')
   return res
@@ -615,11 +619,11 @@ export async function generatePrejobTrainingPlanAction(
 
 export async function submitTrainingSelectTaskAction(
   token: string,
-  data: components['schemas']['TrainingSelectTaskSubmit']
-) {
+  data: components['schemas']['TrainingSelectTaskSubmit'],
+): Promise<components['schemas']['TrainingSelectTask']> {
   const res = await submitTrainingSelectTaskApi(token, data)
   revalidatePath('/hr/training')
-  return res as ApiResponse<Record<string, unknown>>
+  return res
 }
 
 export async function createTrainingTeamAction(data: components['schemas']['TrainingTeamCreate']) {
@@ -656,18 +660,18 @@ export async function deleteTrainingSpecialistAction(id: string) {
 
 export async function submitTurnoverAnalysisJob(): Promise<string> {
   const res = await submitTurnoverAnalysisJobApi()
-  return res.data.job_id
+  return unwrapResponse(res).job_id
 }
 
 // ── 员工档案（飞书通讯录只读镜像，ticket #198）──
 
-export async function fetchEmployeeProfilesAction(params?: {
-  department_id?: string
-  status?: string
-  keyword?: string
-  page?: number
-  page_size?: number
-}): Promise<EmployeeProfileListResponse> {
+type EmployeeProfilesQuery = NonNullable<
+  NonNullable<operations['list_employee_profiles_api_v1_hr_people_get']['parameters']>['query']
+>
+
+export async function fetchEmployeeProfilesAction(
+  params?: EmployeeProfilesQuery
+): Promise<EmployeeProfileListResponse> {
   return fetchEmployeeProfilesApi(params)
 }
 

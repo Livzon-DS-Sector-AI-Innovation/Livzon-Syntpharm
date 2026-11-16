@@ -3,11 +3,11 @@
 
 import { useState, useCallback, useEffect, useRef, type JSX } from 'react'
 import { UploadFile, 
-  Button, Space, Tag, App, Card, Descriptions, Upload, Select, Empty, Typography,
+  Space, App, Card, Descriptions, Upload, Select, Empty, Typography,
 } from 'antd'
 import {
   ArrowLeftOutlined, UploadOutlined, PlayCircleOutlined, FileTextOutlined,
-  ReloadOutlined, CheckCircleOutlined, LoadingOutlined,
+  CheckCircleOutlined,
   FilePdfOutlined, FileWordOutlined, DownloadOutlined,
 } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
@@ -30,6 +30,10 @@ import {
   fetchValidationAuditIssues,
   fetchValidationAuditReport,
 } from '@/lib/api/client/validation-audit'
+import { RegistrationPageHeader } from '../RegistrationPageHeader'
+import { tagClassOf } from '../registration-ui'
+import ui from '../registration-ui.module.css'
+import { IconCheckSquare, IconRefresh } from '../registration-icons'
 
 const { Text } = Typography
 
@@ -219,46 +223,46 @@ export default function ValidationAuditDetailClient({
   }
 
   return (
-    <div className="w-full">
+    <div className={ui.regUi}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Button
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => router.push('/registration/validation-audit')}
-            style={{ borderRadius: 8 }}
-          />
-          <div>
-            <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)] mb-1">
-              {task.task_name}
-            </h1>
-            <Space>
-              {statusCfg && <Tag color={statusCfg.color}>{statusCfg.label}</Tag>}
-              {conclusionCfg && <Tag color={conclusionCfg.color}>{conclusionCfg.label}</Tag>}
-              <Tag>{AUDIT_MODE_LABELS[task.audit_mode]}</Tag>
-              {loading && <Tag icon={<LoadingOutlined />} color="processing">同步中</Tag>}
-            </Space>
-          </div>
-        </div>
-        <Button
-          icon={<ReloadOutlined spin={loading} />}
-          onClick={refreshData}
-          style={{ borderRadius: 8 }}
-        >
-          刷新
-        </Button>
-      </div>
+      <RegistrationPageHeader
+        icon={IconCheckSquare}
+        title={task.task_name}
+        sub={
+          <Space size={6}>
+            {statusCfg && <span className={tagClassOf(statusCfg.color)}>{statusCfg.label}</span>}
+            {conclusionCfg && <span className={tagClassOf(conclusionCfg.color)}>{conclusionCfg.label}</span>}
+            <span className={ui.tagPlain}>{AUDIT_MODE_LABELS[task.audit_mode]}</span>
+            {loading && <span className={ui.tagInfo}>同步中…</span>}
+          </Space>
+        }
+        actions={
+          <>
+            <button
+              type="button"
+              className={ui.btn}
+              onClick={() => router.push('/registration/validation-audit')}
+            >
+              <ArrowLeftOutlined />
+              返回列表
+            </button>
+            <button type="button" className={ui.btn} onClick={refreshData} disabled={loading}>
+              {IconRefresh}
+              刷新
+            </button>
+          </>
+        }
+      />
 
       {/* Workflow Progress */}
       <Card
-        style={{ borderRadius: 12, marginBottom: 16, border: '1px solid var(--color-hairline)' }}
+        style={{ borderRadius: 12, marginBottom: 16, border: '1px solid var(--line)' }}
         styles={{ body: { padding: '20px 24px' } }}
       >
         <div className="flex items-center gap-2 mb-4">
-          <span className="text-[14px] font-medium text-[var(--color-charcoal)]">审核流程</span>
-          {parsing && <Tag color="processing" icon={<LoadingOutlined />}>正在解析文件...</Tag>}
-          {auditing && <Tag color="processing" icon={<LoadingOutlined />}>正在执行AI审核...</Tag>}
+          <span className="text-[14px] font-medium text-[var(--ink-1)]">审核流程</span>
+          {parsing && <span className={ui.tagInfo}>正在解析文件…</span>}
+          {auditing && <span className={ui.tagInfo}>正在执行AI审核…</span>}
         </div>
         <div className="flex items-center">
           {[
@@ -275,14 +279,14 @@ export default function ValidationAuditDetailClient({
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center text-[15px] mb-2 transition-all"
                     style={{
-                      backgroundColor: isDone ? '#1aae39' : isActive ? 'var(--color-primary)' : 'var(--color-surface)',
-                      color: isDone || isActive ? '#fff' : 'var(--color-stone)',
-                      boxShadow: isActive ? '0 0 0 3px rgba(86,69,212,0.15)' : 'none',
+                      backgroundColor: isDone ? 'var(--ok-600)' : isActive ? 'var(--brand-600)' : 'var(--bg)',
+                      color: isDone || isActive ? '#fff' : 'var(--ink-3)',
+                      boxShadow: isActive ? '0 0 0 3px rgba(79,70,201,0.15)' : 'none',
                     }}
                   >
                     {isDone ? <CheckCircleOutlined /> : step.icon}
                   </div>
-                  <span className={`text-[12px] ${isActive ? 'font-semibold text-[var(--color-primary)]' : isDone ? 'text-[var(--color-charcoal)]' : 'text-[var(--color-stone)]'}`}>
+                  <span className={`text-[12px] ${isActive ? 'font-semibold text-[var(--brand-600)]' : isDone ? 'text-[var(--ink-1)]' : 'text-[var(--ink-3)]'}`}>
                     {step.label}
                   </span>
                 </div>
@@ -291,7 +295,7 @@ export default function ValidationAuditDetailClient({
                     className="h-0.5 flex-shrink-0 -mt-5"
                     style={{
                       width: '60px',
-                      backgroundColor: isDone ? '#1aae39' : 'var(--color-hairline)',
+                      backgroundColor: isDone ? 'var(--ok-600)' : 'var(--line)',
                     }}
                   />
                 )}
@@ -303,7 +307,7 @@ export default function ValidationAuditDetailClient({
 
       {/* Task Info */}
       <Card
-        style={{ borderRadius: 12, marginBottom: 16, border: '1px solid var(--color-hairline)' }}
+        style={{ borderRadius: 12, marginBottom: 16, border: '1px solid var(--line)' }}
         styles={{ body: { padding: '16px 24px' } }}
       >
         <Descriptions size="small" column={4}>
@@ -324,7 +328,7 @@ export default function ValidationAuditDetailClient({
 
       {/* Action Bar */}
       <Card
-        style={{ borderRadius: 12, marginBottom: 16, border: '1px solid var(--color-hairline)' }}
+        style={{ borderRadius: 12, marginBottom: 16, border: '1px solid var(--line)' }}
         styles={{ body: { padding: '16px 24px' } }}
       >
         <div className="flex items-center justify-between">
@@ -338,44 +342,45 @@ export default function ValidationAuditDetailClient({
                   beforeUpload={() => false}
                   onChange={({ fileList }) => setUploadFileList(fileList)}
                 >
-                  <Button icon={<UploadOutlined />} style={{ borderRadius: 8 }}>
+                  <button type="button" className={ui.btn}>
+                    <UploadOutlined />
                     选择文件
-                  </Button>
+                  </button>
                 </Upload>
                 {uploadFileList.length > 0 && (
-                  <Button
-                    type="primary"
-                    icon={<UploadOutlined />}
-                    loading={uploading}
+                  <button
+                    type="button"
+                    className={ui.btnPrimary}
+                    disabled={uploading}
                     onClick={handleUpload}
-                    style={{ borderRadius: 8 }}
                   >
-                    上传 ({uploadFileList.length})
-                  </Button>
+                    <UploadOutlined />
+                    {uploading ? '上传中…' : `上传 (${uploadFileList.length})`}
+                  </button>
                 )}
               </>
             )}
             {canParse && (
-              <Button
-                type="primary"
-                icon={<PlayCircleOutlined />}
-                loading={parsing}
+              <button
+                type="button"
+                className={ui.btnPrimary}
+                disabled={parsing}
                 onClick={handleParse}
-                style={{ borderRadius: 8, backgroundColor: '#dd5b00' }}
               >
-                开始解析
-              </Button>
+                <PlayCircleOutlined />
+                {parsing ? '解析中…' : '开始解析'}
+              </button>
             )}
             {canAudit && (
-              <Button
-                type="primary"
-                icon={<PlayCircleOutlined />}
-                loading={auditing}
+              <button
+                type="button"
+                className={ui.btnPrimary}
+                disabled={auditing}
                 onClick={handleAudit}
-                style={{ borderRadius: 8 }}
               >
-                开始审核
-              </Button>
+                <PlayCircleOutlined />
+                {auditing ? '审核中…' : '开始审核'}
+              </button>
             )}
             {!canUpload && !canParse && !canAudit && task.status !== 'completed' && (
               <Text type="secondary" className="text-[13px]">
@@ -383,20 +388,19 @@ export default function ValidationAuditDetailClient({
               </Text>
             )}
             {task.status === 'completed' && (
-              <Tag color="success" icon={<CheckCircleOutlined />} style={{ fontSize: 13, padding: '2px 12px' }}>
-                审核已完成
-              </Tag>
+              <span className={ui.tagOk}>审核已完成</span>
             )}
           </Space>
           <Space>
             {report && (
-              <Button
-                icon={<DownloadOutlined />}
-                style={{ borderRadius: 8 }}
+              <button
+                type="button"
+                className={ui.btn}
                 onClick={() => window.open(`/api/v1/registration/validation-audit/tasks/${task.id}/export`, '_blank')}
               >
+                <DownloadOutlined />
                 导出报告
-              </Button>
+              </button>
             )}
           </Space>
         </div>
@@ -411,7 +415,7 @@ export default function ValidationAuditDetailClient({
           </span>
         }
         size="small"
-        style={{ borderRadius: 12, marginBottom: 16, border: '1px solid var(--color-hairline)' }}
+        style={{ borderRadius: 12, marginBottom: 16, border: '1px solid var(--line)' }}
         styles={{ body: { padding: files.length === 0 ? '24px' : '8px 16px' } }}
       >
         {files.length === 0 ? (
@@ -423,23 +427,23 @@ export default function ValidationAuditDetailClient({
               return (
                 <div
                   key={file.id}
-                  className="flex items-center justify-between py-3 px-2 border-b border-[var(--color-hairline-soft)] last:border-b-0"
+                  className="flex items-center justify-between py-3 px-2 border-b border-[var(--line)] last:border-b-0"
                 >
                   <div className="flex items-center gap-3">
                     {getFileIcon(file.original_filename)}
                     <div>
-                      <div className="text-[13px] text-[var(--color-charcoal)] font-medium">
+                      <div className="text-[13px] text-[var(--ink-1)] font-medium">
                         {file.original_filename}
                       </div>
-                      <div className="text-[11px] text-[var(--color-stone)]">
+                      <div className="text-[11px] text-[var(--ink-3)]">
                         {formatFileSize(file.file_size)} · {file.file_type}
                       </div>
                     </div>
                   </div>
                   {parseCfg && (
-                    <Tag color={parseCfg.color} style={{ marginRight: 0 }}>
+                    <span className={tagClassOf(parseCfg.color)}>
                       {parseCfg.label}
-                    </Tag>
+                    </span>
                   )}
                 </div>
               )
@@ -459,7 +463,7 @@ export default function ValidationAuditDetailClient({
               </span>
             }
             size="small"
-            style={{ borderRadius: 12, border: '1px solid var(--color-hairline)' }}
+            style={{ borderRadius: 12, border: '1px solid var(--line)' }}
             styles={{ body: { padding: issues.length === 0 ? '24px' : '8px 12px' } }}
             extra={
               issues.length > 0 ? (
@@ -487,39 +491,39 @@ export default function ValidationAuditDetailClient({
                   return (
                     <div
                       key={issue.id}
-                      className="border border-[var(--color-hairline)] p-3"
+                      className="border border-[var(--line)] p-3"
                       style={{ borderRadius: 8 }}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <Space size={4}>
-                          <span className="text-[12px] font-semibold text-[var(--color-charcoal)]">
+                          <span className="text-[12px] font-semibold text-[var(--ink-1)]">
                             {issue.issue_no}
                           </span>
                           {typeCfg && (
-                            <Tag color={typeCfg.color} style={{ fontSize: 11, marginRight: 0 }}>
+                            <span className={tagClassOf(typeCfg.color)}>
                               {typeCfg.label}
-                            </Tag>
+                            </span>
                           )}
                         </Space>
                         {issue.page_no && (
-                          <span className="text-[11px] text-[var(--color-stone)]">
+                          <span className="text-[11px] text-[var(--ink-3)]">
                             P.{issue.page_no}
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-[var(--color-steel)] mb-1">
+                      <div className="text-[11px] text-[var(--ink-2)] mb-1">
                         {issue.dimension} · {issue.check_item}
                       </div>
-                      <div className="text-[13px] text-[var(--color-charcoal)] mb-2 leading-relaxed">
+                      <div className="text-[13px] text-[var(--ink-1)] mb-2 leading-relaxed">
                         {issue.description}
                       </div>
                       {issue.suggestion && (
-                        <div className="text-[12px] text-[var(--color-primary)] bg-[var(--color-surface)] p-2" style={{ borderRadius: 6 }}>
+                        <div className="text-[12px] text-[var(--brand-600)] bg-[var(--brand-50)] p-2" style={{ borderRadius: 6 }}>
                           💡 {issue.suggestion}
                         </div>
                       )}
                       {issue.evidence_text && (
-                        <div className="text-[11px] text-[var(--color-stone)] mt-2 italic border-l-2 border-[var(--color-hairline)] pl-2">
+                        <div className="text-[11px] text-[var(--ink-3)] mt-2 italic border-l-2 border-[var(--line)] pl-2">
                           &ldquo;{issue.evidence_text}&rdquo;
                         </div>
                       )}
@@ -538,12 +542,12 @@ export default function ValidationAuditDetailClient({
               </span>
             }
             size="small"
-            style={{ borderRadius: 12, border: '1px solid var(--color-hairline)' }}
+            style={{ borderRadius: 12, border: '1px solid var(--line)' }}
             styles={{ body: { padding: report ? '16px 20px' : '24px' } }}
           >
             {report ? (
               <div className="max-h-[600px] overflow-y-auto">
-                <h2 className="text-[16px] font-semibold text-[var(--color-charcoal)] mb-4">
+                <h2 className="text-[16px] font-semibold text-[var(--ink-1)] mb-4">
                   {report.report_title}
                 </h2>
                 {report.report_markdown && (
@@ -571,7 +575,7 @@ function MarkdownContent({ content }: { content: string }) {
     if (line.startsWith('```')) {
       if (inCodeBlock) {
         elements.push(
-          <pre key={idx} className="bg-[var(--color-surface)] p-3 overflow-x-auto text-[12px]" style={{ borderRadius: 6 }}>
+          <pre key={idx} className="bg-[var(--brand-50)] p-3 overflow-x-auto text-[12px]" style={{ borderRadius: 6 }}>
             <code>{codeLines.join('\n')}</code>
           </pre>
         )
@@ -589,19 +593,19 @@ function MarkdownContent({ content }: { content: string }) {
     }
 
     if (line.startsWith('### ')) {
-      elements.push(<h3 key={idx} className="text-[16px] font-semibold text-[var(--color-charcoal)] mt-4 mb-2">{line.slice(4)}</h3>)
+      elements.push(<h3 key={idx} className="text-[16px] font-semibold text-[var(--ink-1)] mt-4 mb-2">{line.slice(4)}</h3>)
     } else if (line.startsWith('## ')) {
-      elements.push(<h2 key={idx} className="text-[18px] font-semibold text-[var(--color-charcoal)] mt-5 mb-2">{line.slice(3)}</h2>)
+      elements.push(<h2 key={idx} className="text-[18px] font-semibold text-[var(--ink-1)] mt-5 mb-2">{line.slice(3)}</h2>)
     } else if (line.startsWith('# ')) {
-      elements.push(<h1 key={idx} className="text-[22px] font-semibold text-[var(--color-charcoal)] mt-6 mb-3">{line.slice(2)}</h1>)
+      elements.push(<h1 key={idx} className="text-[22px] font-semibold text-[var(--ink-1)] mt-6 mb-3">{line.slice(2)}</h1>)
     } else if (line.startsWith('- ') || line.startsWith('* ')) {
-      elements.push(<li key={idx} className="text-[13px] text-[var(--color-charcoal)] ml-4 list-disc">{line.slice(2)}</li>)
+      elements.push(<li key={idx} className="text-[13px] text-[var(--ink-1)] ml-4 list-disc">{line.slice(2)}</li>)
     } else if (line.startsWith('---')) {
-      elements.push(<hr key={idx} className="border-[var(--color-hairline)] my-4" />)
+      elements.push(<hr key={idx} className="border-[var(--line)] my-4" />)
     } else if (line.trim() === '') {
       elements.push(<div key={idx} className="h-2" />)
     } else {
-      elements.push(<p key={idx} className="text-[13px] text-[var(--color-charcoal)] leading-relaxed mb-1">{line}</p>)
+      elements.push(<p key={idx} className="text-[13px] text-[var(--ink-1)] leading-relaxed mb-1">{line}</p>)
     }
   })
 

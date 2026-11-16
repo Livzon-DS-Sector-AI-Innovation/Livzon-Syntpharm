@@ -30,6 +30,10 @@ _RUNS = "org_sync_runs"
 
 
 def upgrade() -> None:
+    # 双轨合并守卫：main 链 0116_hr_org_records 已执行同构变更（列/约束/org_sync_runs 表）时跳过
+    existing = {c["name"] for c in sa.inspect(op.get_bind()).get_columns(_TABLE, schema=_SCHEMA)}
+    if "feishu_department_id" in existing:
+        return
     op.alter_column(
         _TABLE,
         "name",

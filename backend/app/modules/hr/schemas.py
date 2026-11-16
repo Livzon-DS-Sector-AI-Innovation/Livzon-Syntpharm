@@ -738,6 +738,8 @@ class HrSystemSettingsData(BaseModel):
 
     FEISHU__PLATFORM__APP_ID: str = ""
     FEISHU__PLATFORM__APP_SECRET: str = ""
+    FEISHU__HR__CREDENTIALS__APP_ID: str = ""
+    FEISHU__HR__CREDENTIALS__APP_SECRET: str = ""
     FEISHU__VEHICLE__CREDENTIALS__APP_ID: str = ""
     FEISHU__VEHICLE__CREDENTIALS__APP_SECRET: str = ""
     FEISHU__TRAINING__CREDENTIALS__APP_ID: str = ""
@@ -767,6 +769,8 @@ class HrSystemSettingsUpdate(BaseModel):
 
     FEISHU__PLATFORM__APP_ID: str | None = None
     FEISHU__PLATFORM__APP_SECRET: str | None = None
+    FEISHU__HR__CREDENTIALS__APP_ID: str | None = None
+    FEISHU__HR__CREDENTIALS__APP_SECRET: str | None = None
     FEISHU__VEHICLE__CREDENTIALS__APP_ID: str | None = None
     FEISHU__VEHICLE__CREDENTIALS__APP_SECRET: str | None = None
     FEISHU__TRAINING__CREDENTIALS__APP_ID: str | None = None

@@ -18,6 +18,7 @@ export function FinalCodeCard({ ledger, onUpdated }: FinalCodeCardProps) {
   const { message } = App.useApp()
   const [finalCode, setFinalCode] = useState('')
   const [content, setContent] = useState('')
+  const [overrideReason, setOverrideReason] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   const canSubmit = (ledger.allowed_actions ?? []).includes('final_code')
@@ -37,6 +38,7 @@ export function FinalCodeCard({ ledger, onUpdated }: FinalCodeCardProps) {
     const response = await submitDeviationFinalCode(ledger.id, {
       final_code: finalCode.trim(),
       content: content.trim(),
+      override_reason: overrideReason.trim() || undefined,
     })
     setSubmitting(false)
     if (response.code === 200 && response.data) {
@@ -95,6 +97,20 @@ export function FinalCodeCard({ ledger, onUpdated }: FinalCodeCardProps) {
                 onChange={(event) => setContent(event.target.value)}
               />
             </div>
+            {ledger.viewer_is_superuser && (
+              <div>
+                <p className="mb-1 text-[12px] text-[var(--color-slate)]">
+                  管理员代审原因（非所属 QA 操作时必填）
+                </p>
+                <Input
+                  value={overrideReason}
+                  maxLength={200}
+                  allowClear
+                  placeholder="如：所属 QA 休假，管理员代录编号；将写入审计日志"
+                  onChange={(event) => setOverrideReason(event.target.value)}
+                />
+              </div>
+            )}
             <div className="flex flex-wrap justify-end gap-2 border-t border-[var(--color-hairline)] pt-3">
               <Button type="primary" loading={submitting} onClick={handleSubmit}>
                 提交并关闭

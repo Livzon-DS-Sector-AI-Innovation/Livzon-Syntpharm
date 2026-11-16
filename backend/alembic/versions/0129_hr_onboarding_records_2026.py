@@ -29,6 +29,9 @@ _TABLE = "onboarding_records"
 
 
 def upgrade() -> None:
+    # 双轨合并守卫：表已存在（基线或 main 链 0116）时跳过重建，最终结构以 0116 为准
+    if sa.inspect(op.get_bind()).has_table(_TABLE, schema=_SCHEMA):
+        return
     op.drop_table(_TABLE, schema=_SCHEMA)
 
     op.create_table(

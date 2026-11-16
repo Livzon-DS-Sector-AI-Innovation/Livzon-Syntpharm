@@ -25,13 +25,15 @@ _SCHEMA = "hr"
 
 
 def upgrade() -> None:
-    op.drop_index("ix_teams_name", table_name="teams", schema=_SCHEMA)
-    op.drop_index("ix_teams_department_id", table_name="teams", schema=_SCHEMA)
-    op.drop_table("teams", schema=_SCHEMA)
+    # 双轨合并守卫：main 链 0116_hr_org_records 已执行过同构清理时跳过
+    inspector = sa.inspect(op.get_bind())
+    if inspector.has_table("teams", schema=_SCHEMA):
+        op.execute(sa.text("DROP TABLE hr.teams CASCADE"))
 
-    op.drop_column("departments", "production_end_time", schema=_SCHEMA)
-    op.drop_column("departments", "production_start_time", schema=_SCHEMA)
-    op.drop_column("departments", "is_production", schema=_SCHEMA)
+    existing = {c["name"] for c in inspector.get_columns("departments", schema=_SCHEMA)}
+    for legacy_column in ("production_end_time", "production_start_time", "is_production"):
+        if legacy_column in existing:
+            op.drop_column("departments", legacy_column, schema=_SCHEMA)
 
 
 def downgrade() -> None:
