@@ -19,9 +19,12 @@ export async function createBatch(data: CreateBatchInput) {
 }
 ```
 
-## `'use server'` 文件禁止 `export type` 和 `export interface`
+## `'use server'` 文件中的类型定义
 
-Turbopack 的 Server Actions loader 无法正确剥离 `export type`、`export type { ... }` 和 `export interface` 语句，会导致运行时 `ReferenceError: X is not defined`。类型定义必须放在 `types/<模块>.ts` 中。
+类型集中放在 `types/<模块>.ts`，不要从 `'use server'` 文件导出类型。
+
+- **禁止** `export type { ... }` 再导出：历史上曾触发 Turbopack Server Actions loader 的运行时错误。
+- **不建议**定义并导出 `export type` / `export interface`：容易与 `types/` 重复并造成类型漂移。例外：仅在本 action 文件内使用、且未在 `types/` 重复定义的 interface 可以保留（interface 编译后被擦除，不会造成运行时错误）。
 
 ### ✗ 错误
 
@@ -29,19 +32,19 @@ Turbopack 的 Server Actions loader 无法正确剥离 `export type`、`export t
 // src/actions/users.ts
 'use server'
 import type { UserManagementItem } from '@/types/users'
-export type { UserManagementItem }    // 运行时崩溃
+export type { UserManagementItem }    // 禁止：再导出类型
 ```
 
 ```ts
 // src/actions/users.ts
 'use server'
-export type UserManagementItem = any // 运行时崩溃
+export type UserManagementItem = any // 不建议：应放到 types/
 ```
 
 ```ts
 // src/actions/users.ts
 'use server'
-export interface AgentSkill { ... }  // 运行时崩溃
+export interface AgentSkill { ... }  // 不建议：除非仅本文件使用且 types/ 未重复定义
 ```
 
 ### ✓ 正确

@@ -20,6 +20,9 @@ export default async function Page() {
 - 用了 useState / useEffect / 事件处理器
 - 用了浏览器 API
 - 用了 Zustand store
+- 直接在页面中用了 antd 组件（Card、Row、Col、Button 等）
+
+不需要 `'use client'`：页面只是导入并渲染 Client 组件；导出 `generateMetadata`；`async function` 只获取数据后传给 Client 组件。
 
 Client 组件放在 `components/<模块>/` 里，`page.tsx` 只负责拿数据然后传给 Client 组件。
 

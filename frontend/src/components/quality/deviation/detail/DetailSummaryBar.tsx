@@ -1,9 +1,11 @@
 'use client'
 
+import type { MouseEvent } from 'react'
 import { Button, Space, Tag } from 'antd'
 import type { DeviationLedgerDetail } from '@/types/quality'
 import { DEVIATION_LEVEL_COLORS, DEVIATION_STATUS_COLORS } from '../constants'
 import { PeopleInline, PersonInline } from '../PersonInline'
+import { scrollToSection } from './detailScroll'
 
 interface DetailSummaryBarProps {
   ledger: DeviationLedgerDetail
@@ -36,6 +38,12 @@ export function DetailSummaryBar({ ledger, busy = false }: DetailSummaryBarProps
 
   // 摘要条不吸顶（2026-11 改造）：吸顶会遮挡卡片内容、移动端吃掉近三成视口；锚点偏移已相应缩小
   const crossDeptPending = (ledger.cross_dept_reviewers ?? []).some((row) => row.can_approve)
+
+  // 保留 href 以支持中键/右键「新标签打开」，普通左键改为平滑滚动
+  const handleAnchorClick = (event: MouseEvent<HTMLElement>, href: string) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    if (scrollToSection(href.replace('#', ''))) event.preventDefault()
+  }
   return (
     <section className="flex flex-col gap-3 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
@@ -73,7 +81,13 @@ export function DetailSummaryBar({ ledger, busy = false }: DetailSummaryBarProps
         <Space wrap size={8} className="shrink-0">
           {(crossDeptPending ? [...actions, { href: '#cross-dept-review', label: '跨部门审批', type: 'primary' as const }] : actions).map(
             (action) => (
-              <Button key={action.href + action.label} type={action.type} href={action.href} disabled={busy}>
+              <Button
+                key={action.href + action.label}
+                type={action.type}
+                href={action.href}
+                disabled={busy}
+                onClick={(event) => handleAnchorClick(event, action.href)}
+              >
                 {action.label}
               </Button>
             ),
@@ -95,7 +109,7 @@ export function DetailSummaryBar({ ledger, busy = false }: DetailSummaryBarProps
           )}
         </span>
         {ledger.returned_step_label && (
-          <span className="text-[var(--color-error)]">已退回至：{ledger.returned_step_label}</span>
+          <span className="text-[var(--color-error)]">最后退回至：{ledger.returned_step_label}</span>
         )}
         {!ledger.can_operate && (
           <span className="text-[var(--color-stone)]">当前登录人不是本环节处理人，仅可查看</span>

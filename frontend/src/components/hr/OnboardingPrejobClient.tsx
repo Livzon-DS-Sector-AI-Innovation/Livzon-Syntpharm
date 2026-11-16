@@ -6,19 +6,16 @@ const VALUE = { border: "1px solid #000", padding: "4px" }
 const LABEL = { border: "1px solid #000", padding: "4px", backgroundColor: "#f0f0f0" }
 
 import { useState } from 'react'
-import { App, Radio, Button, Card, Select, Space, } from 'antd'
+import { App, Button, Card, Select, Space, } from 'antd'
 import {
   PrinterOutlined,
   DownloadOutlined
 } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
-import { Employee, SopCatalogItem } from '@/types/hr'
-import {
-  fetchEmployees,
-  fetchNewEmployees,
-  fetchOnboardingEvaluationByEmployeeId,
-} from '@/lib/api/client/hr'
+import { SopCatalogItem } from '@/types/hr'
+import { fetchOnboardingEvaluationByEmployeeId } from '@/lib/api/client/hr'
 import { apiGet } from '@/lib/api/client'
+import { RemoteEmployeeSelect, type RemoteEmployeeOption } from '@/components/hr/RemoteEmployeeSelect'
 
 const _DEPT_CONTENT_MAP: Record<string, string[]> = {
   '人事行政部': [
@@ -53,20 +50,10 @@ export default function OnboardingPrejobClient() {
   const [sopCat, setSopCat] = useState('')
   const [selectedSops, setSelectedSops] = useState<SopCatalogItem[]>([])
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
+  const [selectedEmployee, setSelectedEmployee] = useState<RemoteEmployeeOption | null>(null)
   const [downloadingWord, setDownloadingWord] = useState(false)
   const [downloadingExcel, setDownloadingExcel] = useState(false)
   const [downloadingEval, setDownloadingEval] = useState(false)
-  const [factory, setFactory] = useState<'old' | 'new'>('old')
-
-  const fetcher = factory === 'old' ? fetchEmployees : fetchNewEmployees
-
-  const { data: employees = [] } = useQuery<Employee[]>({
-    queryKey: ['hr-employees-list', { factory, page_size: 200 }],
-    queryFn: async () => {
-      const res = await fetcher({ page_size: 200 })
-      return (res.data || []) as Employee[]
-    },
-  })
 
   const { data: sopDepts = [] } = useQuery<{value:string,label:string}[]>({
     queryKey: ['hr-sop-departments'],
@@ -108,8 +95,6 @@ export default function OnboardingPrejobClient() {
     if (!keyword || keyword.length < 1) return
     // Search is handled by the query key change
   }
-
-  const selectedEmployee = employees.find((e: Employee) => e.id === selectedEmployeeId)
 
   const [sopMethods, setSopMethods] = useState<Record<string, string>>({})
   const [sopTrainers, setSopTrainers] = useState<Record<string, string>>({})
@@ -194,27 +179,24 @@ export default function OnboardingPrejobClient() {
 
   return (
     <div className="space-y-6">
-      {/* 顶部选择器和厂区切换 */}
+      {/* 顶部选择器 */}
       <Card>
         <Space wrap size="middle" align="center">
-          <Radio.Group value={factory} onChange={(e) => { setFactory(e.target.value); setSelectedEmployeeId(null) }} optionType="button">
-            <Radio.Button value="old">旧厂</Radio.Button>
-            <Radio.Button value="new">新厂</Radio.Button>
-          </Radio.Group>
-          <Select
-            showSearch
-            placeholder="选择员工"
-            value={selectedEmployeeId || undefined}
-            onChange={(value) => setSelectedEmployeeId(value)}
-            options={employees.map((e) => ({
-              value: e.id,
-              label: `${e.employee_number} - ${e.name} (${e.department})`
-            }))}
-            filterOption={(input, option) =>
-              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-            }
-            style={{ minWidth: 320 }}
-          />
+          <div style={{ minWidth: 320 }}>
+            <RemoteEmployeeSelect
+              source="employees"
+              valueKey="id"
+              allowClear
+              placeholder="搜索姓名工号选择员工"
+              value={selectedEmployeeId}
+              fallbackOptions={selectedEmployee ? [selectedEmployee] : undefined}
+              onChange={(value) => {
+                setSelectedEmployeeId(typeof value === 'string' ? value : null)
+                if (!value) setSelectedEmployee(null)
+              }}
+              onSelect={(employee) => setSelectedEmployee(employee)}
+            />
+          </div>
           <Button
             type="primary"
             icon={<DownloadOutlined />}

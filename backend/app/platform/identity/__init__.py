@@ -1,9 +1,10 @@
 from typing import Any
 
 from app.platform.identity.models import Department, FeishuConfig, User
+from app.platform.identity.public_api import verify_feishu_callback_signature
 from app.shared.lifecycle import register_background_worker
 
-__all__ = ["Department", "FeishuConfig", "User"]
+__all__ = ["Department", "FeishuConfig", "User", "verify_feishu_callback_signature"]
 
 
 # ── Background worker registration ────────────────────────────

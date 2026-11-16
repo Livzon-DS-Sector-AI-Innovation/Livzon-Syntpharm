@@ -15,7 +15,7 @@ from app.modules.hr.analysis_schemas import (
     TurnoverMetrics,
     TurnoverRawData,
 )
-from app.modules.hr.models import DepartureRecord, OnboardingRecord
+from app.modules.hr.models import DepartureRecord, EmployeeProfile, OnboardingRecord
 
 logger = logging.getLogger(__name__)
 
@@ -118,25 +118,25 @@ class TurnoverAnalysisService:
         total = total_result.scalar() or 0
 
         dept_stmt = (
-            select(OnboardingRecord.department, func.count())
+            select(OnboardingRecord.department_level1, func.count())
             .where(
                 OnboardingRecord.hire_date >= start_date,
                 OnboardingRecord.hire_date <= end_date,
                 OnboardingRecord.is_deleted.is_(False),
             )
-            .group_by(OnboardingRecord.department)
+            .group_by(OnboardingRecord.department_level1)
         )
         dept_result = await self.session.execute(dept_stmt)
         by_department = {row[0]: row[1] for row in dept_result.all() if row[0]}
 
         jc_stmt = (
-            select(OnboardingRecord.job_category, func.count())
+            select(OnboardingRecord.join_category, func.count())
             .where(
                 OnboardingRecord.hire_date >= start_date,
                 OnboardingRecord.hire_date <= end_date,
                 OnboardingRecord.is_deleted.is_(False),
             )
-            .group_by(OnboardingRecord.job_category)
+            .group_by(OnboardingRecord.join_category)
         )
         jc_result = await self.session.execute(jc_stmt)
         by_job_category = {row[0]: row[1] for row in jc_result.all() if row[0]}
@@ -166,8 +166,8 @@ class TurnoverAnalysisService:
             select(func.count())
             .select_from(DepartureRecord)
             .where(
-                DepartureRecord.offboarding_date >= start_date,
-                DepartureRecord.offboarding_date <= end_date,
+                DepartureRecord.leave_date >= start_date,
+                DepartureRecord.leave_date <= end_date,
                 DepartureRecord.is_deleted.is_(False),
             )
         )
@@ -175,44 +175,36 @@ class TurnoverAnalysisService:
         total = total_result.scalar() or 0
 
         dept_stmt = (
-            select(DepartureRecord.department, func.count())
+            select(DepartureRecord.department_level1, func.count())
             .where(
-                DepartureRecord.offboarding_date >= start_date,
-                DepartureRecord.offboarding_date <= end_date,
+                DepartureRecord.leave_date >= start_date,
+                DepartureRecord.leave_date <= end_date,
                 DepartureRecord.is_deleted.is_(False),
             )
-            .group_by(DepartureRecord.department)
+            .group_by(DepartureRecord.department_level1)
         )
         dept_result = await self.session.execute(dept_stmt)
         by_department = {row[0]: row[1] for row in dept_result.all() if row[0]}
 
         jc_stmt = (
-            select(DepartureRecord.job_category, func.count())
+            select(DepartureRecord.group_classification, func.count())
             .where(
-                DepartureRecord.offboarding_date >= start_date,
-                DepartureRecord.offboarding_date <= end_date,
+                DepartureRecord.leave_date >= start_date,
+                DepartureRecord.leave_date <= end_date,
                 DepartureRecord.is_deleted.is_(False),
             )
-            .group_by(DepartureRecord.job_category)
+            .group_by(DepartureRecord.group_classification)
         )
         jc_result = await self.session.execute(jc_stmt)
         by_job_category = {row[0]: row[1] for row in jc_result.all() if row[0]}
 
-        reason_stmt = select(
-            DepartureRecord.offboarding_reason,
-            DepartureRecord.offboarding_reason_2,
-        ).where(
-            DepartureRecord.offboarding_date >= start_date,
-            DepartureRecord.offboarding_date <= end_date,
+        reason_stmt = select(DepartureRecord.leave_reason).where(
+            DepartureRecord.leave_date >= start_date,
+            DepartureRecord.leave_date <= end_date,
             DepartureRecord.is_deleted.is_(False),
         )
         reason_result = await self.session.execute(reason_stmt)
-        reason_counter: Counter[str] = Counter()
-        for row in reason_result.all():
-            if row[0]:
-                reason_counter.update(row[0])
-            if row[1]:
-                reason_counter.update(row[1])
+        reason_counter: Counter[str] = Counter(reason for reason in reason_result.scalars().all() if reason)
 
         return {
             "departure_count": total,
@@ -222,13 +214,14 @@ class TurnoverAnalysisService:
         }
 
     async def _fetch_current_headcount(self) -> int:
-        """Count current employed staff from onboarding records."""
+        """Count current employed staff from the personnel mirror."""
         stmt = (
             select(func.count())
-            .select_from(OnboardingRecord)
+            .select_from(EmployeeProfile)
             .where(
-                OnboardingRecord.is_employed == "是",
-                OnboardingRecord.is_deleted.is_(False),
+                EmployeeProfile.staff_status == 1,
+                EmployeeProfile.is_resigned.is_(False),
+                EmployeeProfile.is_deleted.is_(False),
             )
         )
         result = await self.session.execute(stmt)

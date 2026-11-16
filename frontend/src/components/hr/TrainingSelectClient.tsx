@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {Button, Card, Checkbox, message, Select, Tag} from 'antd'
+import { Button, Card, message, Select, Tag } from 'antd'
 import {
   CalendarOutlined,
   EnvironmentOutlined,
@@ -10,73 +10,36 @@ import {
   TeamOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons'
-import {
-  fetchDepartments,
-  fetchNewDepartments,
-  fetchEmployees,
-  fetchNewEmployees,
-} from '@/lib/api/client/hr'
+import { fetchDepartments } from '@/lib/api/client/hr'
 import { submitTrainingSelectTaskAction } from '@/actions/hr'
-import type { Employee } from '@/types/hr'
+import type { components } from '@/types/generated/schema'
+import { RemoteEmployeeSelect, type RemoteEmployeeOption } from '@/components/hr/RemoteEmployeeSelect'
 
 interface TrainingSelectClientProps {
   token: string
-  initialData: Record<string, unknown>
+  initialData: components['schemas']['TrainingSelectTask']
 }
 
 export default function TrainingSelectClient({
   token,
   initialData,
 }: TrainingSelectClientProps) {
-  const taskDept = (initialData?.department as string) || ''
+  const taskDept = initialData?.department || ''
   const [selectedDepts, setSelectedDepts] = useState<string[]>(taskDept ? [taskDept] : [])
-  const [selectedNumbers, setSelectedNumbers] = useState<string[]>([])
+  const [selectedEmployees, setSelectedEmployees] = useState<RemoteEmployeeOption[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [resultData, setResultData] = useState<Record<string, unknown> | null>(null)
+  const [resultData, setResultData] = useState<components['schemas']['TrainingSelectTask'] | null>(null)
 
-  const factory = (initialData?.factory as string) || 'old'
-  const isNew = factory === 'new'
-
-const { data: departments = [] } = useQuery({
-    queryKey: ['departments', isNew],
+  const { data: departments = [], isLoading: loading } = useQuery({
+    queryKey: ['departments'],
     queryFn: async () => {
-      const fetchFn = isNew ? fetchNewDepartments : fetchDepartments
-      const res = await fetchFn({ page_size: 100 })
+      const res = await fetchDepartments({ page_size: 100 })
       return (res.data || []).map((d: { name: string }) => ({ value: d.name, label: d.name }))
     },
   })
 
-  const { data: employees = [] } = useQuery({
-    queryKey: ['employees', selectedDepts, isNew],
-    queryFn: async () => {
-      if (!selectedDepts || selectedDepts.length === 0) {
-        return []
-      }
-      const fetchFn = isNew ? fetchNewEmployees : fetchEmployees
-      const all: { value: string; label: string; number: string }[] = []
-      for (const dept of selectedDepts) {
-        try {
-          const res = await fetchFn({ department: dept, page_size: 100 })
-          const list = (res.data || []).map((e: Employee) => ({
-            value: e.employee_number,
-            label: `${e.name} (${e.employee_number || ''})`,
-            number: e.employee_number,
-          }))
-          all.push(...list)
-        } catch {
-          // ignore
-        }
-      }
-      const map = new Map(all.map((e) => [e.value, e]))
-      return Array.from(map.values())
-    },
-    enabled: departments.length > 0 && selectedDepts.length > 0,
-  })
-
-  const loading = false
-
-
+  const selectedNumbers = selectedEmployees.map((e) => e.employee_number).filter(Boolean)
 
   const handleSubmit = async () => {
     if (selectedNumbers.length === 0) {
@@ -85,11 +48,11 @@ const { data: departments = [] } = useQuery({
     }
     setSubmitting(true)
     try {
-      const selectedNames = employees
-        .filter((e) => selectedNumbers.includes(e.value))
-        .map((e) => e.label.split(' ')[0])
-      const res = await submitTrainingSelectTaskAction(token, { selectedNumbers, selectedNames })
-      setResultData(res.data)
+      const res = await submitTrainingSelectTaskAction(token, {
+        employee_numbers: selectedNumbers,
+        employee_names: selectedEmployees.map((e) => e.name),
+      })
+      setResultData(res)
       setSubmitted(true)
       message.success('选择结果已提交')
     } catch (err: unknown) {
@@ -106,32 +69,30 @@ const { data: departments = [] } = useQuery({
           <CheckCircleOutlined className="text-5xl text-green-500 mb-4" />
           <h2 className="text-xl font-semibold mb-2">选择结果已提交</h2>
           <p className="text-gray-500 mb-6">
-            已为 {(initialData?.department as string) || ''} 的 {(initialData?.training_date as string) || ''} {(initialData?.subject as string) || ''} 培训
+            已为 {initialData?.department || ''} 的 {initialData?.training_date || ''} {initialData?.subject || ''} 培训
             选择 {selectedNumbers.length} 位受训人员
           </p>
 
           <div className="text-left bg-gray-50 rounded-lg p-4 mb-6">
             <h3 className="font-semibold mb-2">培训信息</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div><span className="text-gray-500">主办部门：</span> {(initialData?.department as string) || ''}</div>
-              <div><span className="text-gray-500">培训日期：</span> {(initialData?.training_date as string) || ''}</div>
-              <div><span className="text-gray-500">培训主题：</span> {(initialData?.subject as string) || ''}</div>
-              <div><span className="text-gray-500">培训地点：</span> {(initialData?.location as string) || '待定'}</div>
-              <div><span className="text-gray-500">培训师：</span> {(initialData?.trainer as string) || '待定'}</div>
-              <div><span className="text-gray-500">培训方式：</span> {(initialData?.training_method as string) || '待定'}</div>
+              <div><span className="text-gray-500">主办部门：</span> {initialData?.department || ''}</div>
+              <div><span className="text-gray-500">培训日期：</span> {initialData?.training_date || ''}</div>
+              <div><span className="text-gray-500">培训主题：</span> {initialData?.subject || ''}</div>
+              <div><span className="text-gray-500">培训地点：</span> {initialData?.location || '待定'}</div>
+              <div><span className="text-gray-500">培训师：</span> {initialData?.trainer || '待定'}</div>
+              <div><span className="text-gray-500">培训方式：</span> {initialData?.training_method || '待定'}</div>
             </div>
           </div>
 
           <div className="text-left">
-            <h3 className="font-semibold mb-2">已选择的受训人员（{selectedNumbers.length}人）</h3>
+            <h3 className="font-semibold mb-2">已选择的受训人员（{selectedEmployees.length}人）</h3>
             <div className="flex flex-wrap gap-2">
-              {employees
-                .filter((e) => selectedNumbers.includes(e.value))
-                .map((e) => (
-                  <Tag key={e.value} color="blue">
-                    {e.label}
-                  </Tag>
-                ))}
+              {selectedEmployees.map((e) => (
+                <Tag key={e.employee_number} color="blue">
+                  {e.name} ({e.employee_number})
+                </Tag>
+              ))}
             </div>
           </div>
         </div>
@@ -148,37 +109,37 @@ const { data: departments = [] } = useQuery({
           <div className="flex items-center gap-2">
             <CalendarOutlined className="text-gray-400" />
             <span>
-              <span className="text-gray-500">培训日期：</span> {(initialData?.training_date as string) || ''}
+              <span className="text-gray-500">培训日期：</span> {initialData?.training_date || ''}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <TeamOutlined className="text-gray-400" />
             <span>
-              <span className="text-gray-500">主办部门：</span> {(initialData?.department as string) || ''}
+              <span className="text-gray-500">主办部门：</span> {initialData?.department || ''}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <UserOutlined className="text-gray-400" />
             <span>
-              <span className="text-gray-500">培训主题：</span> {(initialData?.subject as string) || ''}
+              <span className="text-gray-500">培训主题：</span> {initialData?.subject || ''}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <EnvironmentOutlined className="text-gray-400" />
             <span>
-              <span className="text-gray-500">培训地点：</span> {(initialData?.location as string) || '待定'}
+              <span className="text-gray-500">培训地点：</span> {initialData?.location || '待定'}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <UserOutlined className="text-gray-400" />
             <span>
-              <span className="text-gray-500">培训师：</span> {(initialData?.trainer as string) || '待定'}
+              <span className="text-gray-500">培训师：</span> {initialData?.trainer || '待定'}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <UserOutlined className="text-gray-400" />
             <span>
-              <span className="text-gray-500">培训方式：</span> {(initialData?.training_method as string) || '待定'}
+              <span className="text-gray-500">培训方式：</span> {initialData?.training_method || '待定'}
             </span>
           </div>
         </div>
@@ -192,32 +153,24 @@ const { data: departments = [] } = useQuery({
           options={departments}
           value={selectedDepts}
           className="w-full"
-          onChange={(value: string[]) => {
-            setSelectedDepts(value)
-          }}
+          onChange={(value: string[]) => setSelectedDepts(value)}
           loading={loading}
         />
       </Card>
 
       <Card className="shadow-sm">
         <h2 className="font-semibold mb-3">选择受训人员（{selectedNumbers.length}人）</h2>
-        {employees.length > 0 ? (
-          <Checkbox.Group
-            className="w-full"
-            value={selectedNumbers}
-            onChange={(value) => setSelectedNumbers(value as string[])}
-          >
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {employees.map((emp) => (
-                <Checkbox key={emp.value} value={emp.value}>
-                  {emp.label}
-                </Checkbox>
-              ))}
-            </div>
-          </Checkbox.Group>
-        ) : (
-          <p className="text-gray-400">请先选择受训部门加载人员</p>
-        )}
+        <RemoteEmployeeSelect
+          mode="multiple"
+          source="employees"
+          valueKey="employee_number"
+          departments={selectedDepts}
+          allowClear
+          placeholder="搜索姓名或工号选择受训人员（可多选）"
+          value={selectedNumbers}
+          fallbackOptions={selectedEmployees}
+          onSelectionChange={setSelectedEmployees}
+        />
       </Card>
 
       <div className="flex justify-center">

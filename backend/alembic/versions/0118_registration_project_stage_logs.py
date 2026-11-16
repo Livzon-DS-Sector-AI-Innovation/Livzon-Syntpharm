@@ -1,7 +1,7 @@
 """registration project stages & progress logs
 
 Revision ID: 0118_registration_project_stage_logs
-Revises: 0117_registration_project_drug_link
+Revises: 0124_registration_project_drug_link
 Create Date: 2026-11-12
 
 注册项目页改版：
@@ -21,7 +21,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from alembic import op
 
 revision: str = "0118_registration_project_stage_logs"
-down_revision: str = "0117_registration_project_drug_link"
+down_revision: str = "0124_registration_project_drug_link"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

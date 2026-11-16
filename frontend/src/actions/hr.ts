@@ -2,52 +2,51 @@
 
 import { z } from 'zod'
 import {parse} from '@/lib/validation/schemas'
+import type { components, operations } from '@/types/generated/schema'
+import { unwrapResponse } from '@/lib/api/server/base'
 
 import { revalidatePath } from 'next/cache'
 import {
   EmployeeCreateInput,
   EmployeeUpdateInput,
   EmployeeListResponse,
-  DepartmentCreateInput,
-  DepartmentUpdateInput,
   DepartmentListResponse,
-  TeamCreateInput,
-  TeamUpdateInput,
-  TeamListResponse,
-  OffboardingRecordCreateInput,
-  OffboardingRecordUpdateInput,
-  OffboardingRecordListResponse,
   TrainingSessionCreateInput,
   TrainingSessionUpdateInput,
   TrainingSessionListResponse,
   TrainingSessionResponse,
   SelectTask,
-  Employee,
-  Department,
-  Team,
-  OffboardingRecord,
   OnboardingRecordListResponse,
+  OnboardingRecordApiResponse,
+  OnboardingRecordCreateInput,
+  OnboardingRecordUpdateInput,
   DepartureRecordListResponse,
-  DepartureRecord,
+  DepartureRecordApiResponse,
+  DepartureRecordCreateInput,
+  DepartureRecordUpdateInput,
+  DepartureRecordDeleteResponse,
   CandidateListParams,
   CandidateListResponse,
   Candidate,
   CandidateResponse,
   AnnualTrainingPlan,
-  AnnualTrainingPlanListResponse,
   AnnualTrainingPlanItem,
-  TrainingLedgerListResponse,
+  AnnualTrainingPlanCreateInput,
+  AnnualTrainingPlanItemBatchUpdateInput,
   TrainingSession,
   TrainingTeam,
   TrainingSpecialist,
-  SyncFromFeishuResponse,
   SyncToFeishuResponse,
   DeleteResponse,
   PrejobTemplate,
   EmployeeResponse,
   TrainingPlanResponse,
   ImportCounts,
-  SyncOpenIdsResult,
+  OrgDepartmentTreeResponse,
+  OrgSyncStatusResponse,
+  OrgSyncTriggerResponse,
+  EmployeeProfileListResponse,
+  EmployeeProfileDetailResponse,
 } from '@/types/hr'
 
 import type { ApiResponse, MessageResponse } from '@/types/common'
@@ -61,17 +60,9 @@ import {
   syncFromFeishuApi,
   syncToFeishuApi,
   fetchDepartmentsApi,
-  createDepartmentApi,
-  updateDepartmentApi,
-  deleteDepartmentApi,
-  fetchTeamsApi,
-  createTeamApi,
-  updateTeamApi,
-  deleteTeamApi,
-  fetchOffboardingRecordsApi,
-  createOffboardingRecordApi,
-  updateOffboardingRecordApi,
-  deleteOffboardingRecordApi,
+  fetchOrgDepartmentsApi,
+  fetchOrgSyncStatusApi,
+  triggerOrgSyncApi,
   createAnnualTrainingPlanApi,
   deleteAnnualTrainingPlanApi,
   deleteAnnualPlanItemApi,
@@ -81,19 +72,13 @@ import {
   fetchEmployeeByIdApi,
   fetchCandidateByIdApi,
   fetchCandidatesApi,
-  fetchNewEmployeesApi,
-  fetchNewDepartmentsApi,
-  fetchNewOnboardingRecordsApi,
-  fetchNewDepartureRecordsApi,
-  fetchNewOffboardingRecordsApi,
   fetchAnnualTrainingPlanByIdApi,
   fetchPlanItemsApi,
-  fetchTrainingRecordsApi,
-  fetchTrainingPlansApi,
   fetchEmployeeByNumberApi,
   syncTrainingSpecialistsFeishuOpenIdsApi,
-  syncOnboardingFromFeishuApi,
-  syncDepartureFromFeishuApi,
+  createOnboardingRecordApi,
+  updateOnboardingRecordApi,
+  deleteOnboardingRecordApi,
   createTrainingLedgerApi,
   updateTrainingLedgerApi,
   deleteTrainingLedgerApi,
@@ -105,6 +90,8 @@ import {
   generateOnboardingEvaluationApi,
   createOnboardingTrainingRecordApi,
   createDepartureRecordApi,
+  updateDepartureRecordApi,
+  deleteDepartureRecordApi,
   uploadAnnualTrainingPlanApi,
   uploadTrainersApi,
   uploadSopCatalogApi,
@@ -125,6 +112,10 @@ import {
   deleteTrainingTeamApi,
   upsertTrainingSpecialistApi,
   deleteTrainingSpecialistApi,
+  fetchEmployeeProfilesApi,
+  fetchEmployeeProfileDetailApi,
+  fetchEmployeeDepartmentsApi,
+  submitTurnoverAnalysisJobApi,
 } from '@/lib/api/server/hr'
 
 
@@ -158,13 +149,6 @@ const OnboardingTrainingRecordSchema = z.object({
   duration_hours: z.number().optional(),
 })
 
-const DepartureRecordSchema = z.object({
-  employee_id: z.string().uuid(),
-  departure_date: z.string(),
-  departure_reason: z.string().optional(),
-  handover_notes: z.string().optional(),
-})
-
 export async function fetchEmployeesAction(
   params?: {
     department?: string
@@ -177,16 +161,19 @@ export async function fetchEmployeesAction(
   return fetchEmployeesApi(params) as Promise<EmployeeListResponse>
 }
 
-export async function createEmployee(data: EmployeeCreateInput) {
+export async function createEmployee(data: EmployeeCreateInput): Promise<components['schemas']['EmployeeResponse']> {
   const res = await createEmployeeApi(data)
   revalidatePath('/hr/profile')
-  return res as Employee
+  return unwrapResponse(res)
 }
 
-export async function updateEmployee(id: string, data: EmployeeUpdateInput) {
+export async function updateEmployee(
+  id: string,
+  data: EmployeeUpdateInput
+): Promise<components['schemas']['EmployeeResponse']> {
   const res = await updateEmployeeApi(id, data)
   revalidatePath('/hr/profile')
-  return res as Employee
+  return unwrapResponse(res)
 }
 
 export async function deleteEmployee(id: string) {
@@ -203,10 +190,10 @@ export async function uploadEmployeesAction(formData: FormData) {
 
 // ─── Feishu Sync Actions ───
 
-export async function syncFromFeishuAction() {
+export async function syncFromFeishuAction(): Promise<components['schemas']['AsyncJobAcceptedResponse']> {
   const res = await syncFromFeishuApi()
   revalidatePath('/hr/profile')
-  return res as SyncFromFeishuResponse
+  return res
 }
 
 export async function syncToFeishuAction(id: string) {
@@ -227,90 +214,12 @@ export async function fetchDepartmentsAction(
   return fetchDepartmentsApi(params) as Promise<DepartmentListResponse>
 }
 
-export async function createDepartment(data: DepartmentCreateInput) {
-  const res = await createDepartmentApi(data)
-  revalidatePath('/hr/departments')
-  return res as Department
-}
 
-export async function updateDepartment(id: string, data: DepartmentUpdateInput) {
-  const res = await updateDepartmentApi(id, data)
-  revalidatePath('/hr/departments')
-  return res as Department
-}
 
-export async function deleteDepartment(id: string) {
-  const res = await deleteDepartmentApi(id)
-  revalidatePath('/hr/departments')
-  return res as DeleteResponse
-}
-
-// ─── Team Actions ───
-
-export async function fetchTeamsAction(
-  params?: {
-    department_id?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<TeamListResponse> {
-  return fetchTeamsApi(params) as Promise<TeamListResponse>
-}
-
-export async function createTeam(data: TeamCreateInput) {
-  const res = await createTeamApi(data)
-  revalidatePath('/hr/departments')
-  return res as Team
-}
-
-export async function updateTeam(id: string, data: TeamUpdateInput) {
-  const res = await updateTeamApi(id, data)
-  revalidatePath('/hr/departments')
-  return res as Team
-}
-
-export async function deleteTeam(id: string) {
-  const res = await deleteTeamApi(id)
-  revalidatePath('/hr/departments')
-  return res as DeleteResponse
-}
-
-// ─── OffboardingRecord Actions ───
-
-export async function fetchOffboardingRecordsAction(
-  params?: {
-    employee_id?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<OffboardingRecordListResponse> {
-  return fetchOffboardingRecordsApi(params) as Promise<OffboardingRecordListResponse>
-}
-
-export async function createOffboardingRecord(data: OffboardingRecordCreateInput) {
-  const res = await createOffboardingRecordApi(data)
-  revalidatePath('/hr/offboarding')
-  revalidatePath('/hr/profile')
-  return res as OffboardingRecord
-}
-
-export async function updateOffboardingRecord(id: string, data: OffboardingRecordUpdateInput) {
-  const res = await updateOffboardingRecordApi(id, data)
-  revalidatePath('/hr/offboarding')
-  return res as OffboardingRecord
-}
-
-export async function deleteOffboardingRecord(id: string) {
-  const res = await deleteOffboardingRecordApi(id)
-  revalidatePath('/hr/offboarding')
-  return res as DeleteResponse
-}
 
 // ─── Annual Training Plan Actions ───
 
-export async function createAnnualTrainingPlan(data: { year: number; department: string; status: string }) {
+export async function createAnnualTrainingPlan(data: AnnualTrainingPlanCreateInput) {
   const res = await createAnnualTrainingPlanApi(data)
   revalidatePath('/hr/training/annual-plan')
   return res as ApiResponse<AnnualTrainingPlan>
@@ -328,7 +237,7 @@ export async function deleteAnnualPlanItem(planId: string, itemId: string) {
   return res as DeleteResponse
 }
 
-export async function batchUpdatePlanItems(planId: string, data: { items: unknown[] }) {
+export async function batchUpdatePlanItems(planId: string, data: AnnualTrainingPlanItemBatchUpdateInput) {
   const res = await batchUpdatePlanItemsApi(planId, data)
   revalidatePath('/hr/training/annual-plan')
   return res as AnnualTrainingPlanItem[]
@@ -385,6 +294,20 @@ export async function fetchEmployees(
   return fetchEmployeesAction(params)
 }
 
+export async function fetchOrgDepartments(): Promise<OrgDepartmentTreeResponse['data']> {
+  return fetchOrgDepartmentsApi()
+}
+
+export async function fetchOrgSyncStatus(): Promise<OrgSyncStatusResponse['data']> {
+  return fetchOrgSyncStatusApi()
+}
+
+export async function triggerOrgSync(): Promise<OrgSyncTriggerResponse['data']> {
+  const result = await triggerOrgSyncApi()
+  revalidatePath('/hr/departments')
+  return result
+}
+
 export async function fetchDepartments(
   params?: {
     keyword?: string
@@ -395,52 +318,64 @@ export async function fetchDepartments(
   return fetchDepartmentsAction(params)
 }
 
-export async function fetchOffboardingRecords(
-  params?: {
-    employee_id?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<OffboardingRecordListResponse> {
-  return fetchOffboardingRecordsAction(params)
-}
-
-export async function fetchTeams(
-  params?: {
-    department_id?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<TeamListResponse> {
-  return fetchTeamsApi(params) as Promise<TeamListResponse>
-}
-
-export async function fetchOnboardingRecords(
-  params?: {
-    employee_id?: string
-    department?: string
-    position?: string
-    is_employed?: string
-    keyword?: string
-    page?: number
-    page_size?: number
-  }
-): Promise<OnboardingRecordListResponse> {
+export async function fetchOnboardingRecords(params?: {
+  department?: string
+  keyword?: string
+  page?: number
+  page_size?: number
+}): Promise<OnboardingRecordListResponse> {
   return fetchOnboardingRecordsApi(params) as Promise<OnboardingRecordListResponse>
+}
+
+// ─── 入职台账 Actions（2026 手工台账，ticket #199）──
+
+export async function createOnboardingRecord(data: OnboardingRecordCreateInput) {
+  const res = await createOnboardingRecordApi(data)
+  revalidatePath('/hr/onboarding')
+  return res as OnboardingRecordApiResponse
+}
+
+export async function updateOnboardingRecord(id: string, data: OnboardingRecordUpdateInput) {
+  const res = await updateOnboardingRecordApi(id, data)
+  revalidatePath('/hr/onboarding')
+  return res as OnboardingRecordApiResponse
+}
+
+export async function deleteOnboardingRecord(id: string) {
+  const res = await deleteOnboardingRecordApi(id)
+  revalidatePath('/hr/onboarding')
+  return res as DeleteResponse
 }
 
 export async function fetchDepartureRecords(
   params?: {
     department?: string
-    offboarding_type?: string
     keyword?: string
     page?: number
     page_size?: number
   }
 ): Promise<DepartureRecordListResponse> {
   return fetchDepartureRecordsApi(params) as Promise<DepartureRecordListResponse>
+}
+
+// ─── 离职台账 Actions（2026 手工台账，ticket #200）──
+
+export async function createDepartureRecord(data: DepartureRecordCreateInput) {
+  const res = await createDepartureRecordApi(data)
+  revalidatePath('/hr/offboarding')
+  return res as DepartureRecordApiResponse
+}
+
+export async function updateDepartureRecord(id: string, data: DepartureRecordUpdateInput) {
+  const res = await updateDepartureRecordApi(id, data)
+  revalidatePath('/hr/offboarding')
+  return res as DepartureRecordApiResponse
+}
+
+export async function deleteDepartureRecord(id: string) {
+  const res = await deleteDepartureRecordApi(id)
+  revalidatePath('/hr/offboarding')
+  return res as DepartureRecordDeleteResponse
 }
 
 export async function fetchEmployeeById(id: string): Promise<EmployeeResponse> {
@@ -455,26 +390,6 @@ export async function fetchCandidates(params: CandidateListParams = {}): Promise
   return fetchCandidatesApi(params).catch(() => ({ code: 0, message: '', data: [] as Candidate[], meta: { page: 1, page_size: 20, total: 0 } }) as CandidateListResponse)
 }
 
-export async function fetchNewEmployees(params: Record<string, unknown> = {}): Promise<EmployeeListResponse> {
-  return fetchNewEmployeesApi(params) as Promise<EmployeeListResponse>
-}
-
-export async function fetchNewDepartments(params: Record<string, unknown> = {}): Promise<DepartmentListResponse> {
-  return fetchNewDepartmentsApi(params) as Promise<DepartmentListResponse>
-}
-
-export async function fetchNewOnboardingRecords(params: Record<string, unknown> = {}): Promise<OnboardingRecordListResponse> {
-  return fetchNewOnboardingRecordsApi(params) as Promise<OnboardingRecordListResponse>
-}
-
-export async function fetchNewDepartureRecords(params: Record<string, unknown> = {}): Promise<DepartureRecordListResponse> {
-  return fetchNewDepartureRecordsApi(params) as Promise<DepartureRecordListResponse>
-}
-
-export async function fetchNewOffboardingRecords(params: Record<string, unknown> = {}): Promise<OffboardingRecordListResponse> {
-  return fetchNewOffboardingRecordsApi(params) as Promise<OffboardingRecordListResponse>
-}
-
 export async function fetchAnnualTrainingPlanById(id: string): Promise<TrainingPlanResponse> {
   return fetchAnnualTrainingPlanByIdApi(id) as Promise<TrainingPlanResponse>
 }
@@ -483,36 +398,18 @@ export async function fetchPlanItems(id: string): Promise<ApiResponse<AnnualTrai
   return fetchPlanItemsApi(id) as Promise<ApiResponse<AnnualTrainingPlanItem[]>>
 }
 
-export async function fetchTrainingRecords(params: Record<string, unknown> = {}): Promise<TrainingLedgerListResponse> {
-  return fetchTrainingRecordsApi(params) as Promise<TrainingLedgerListResponse>
+export async function fetchEmployeeByNumber(
+  employeeNumber: string
+): Promise<components['schemas']['EmployeeResponse']> {
+  return fetchEmployeeByNumberApi(employeeNumber)
 }
 
-export async function fetchTrainingPlans(params: Record<string, unknown> = {}): Promise<AnnualTrainingPlanListResponse> {
-  return fetchTrainingPlansApi(params) as Promise<AnnualTrainingPlanListResponse>
-}
-
-export async function fetchEmployeeByNumber(employeeNumber: string): Promise<EmployeeResponse> {
-  return fetchEmployeeByNumberApi(employeeNumber) as Promise<EmployeeResponse>
-}
-
-export async function syncTrainingSpecialistsFeishuOpenIds() {
+export async function syncTrainingSpecialistsFeishuOpenIds(): Promise<
+  components['schemas']['AsyncJobAcceptedResponse']['data']
+> {
   const res = await syncTrainingSpecialistsFeishuOpenIdsApi()
   revalidatePath('/hr/training/specialists')
-  return res as ApiResponse<SyncOpenIdsResult>
-}
-
-// ─── 飞书同步 Actions (from lib/api/hr.ts) ───
-
-export async function syncOnboardingFromFeishu() {
-  const json = await syncOnboardingFromFeishuApi()
-  revalidatePath('/hr/onboarding')
-  return json
-}
-
-export async function syncDepartureFromFeishu() {
-  const json = await syncDepartureFromFeishuApi()
-  revalidatePath('/hr/departure')
-  return json
+  return res
 }
 
 // ─── 培训台账 Actions ───
@@ -540,7 +437,7 @@ export async function deleteTrainingLedger(id: string) {
   return json
 }
 
-export async function createTrainingLedgerPage(data: { employee_number: string; employee_name: string; ledger_type?: string }) {
+export async function createTrainingLedgerPage(data: components['schemas']['TrainingLedgerPageCreate']) {
   const json = await createTrainingLedgerPageApi(data)
   revalidatePath('/hr/training-ledger')
   return json
@@ -556,26 +453,50 @@ export async function sendTrainingNotification(data: TrainingNotifyData) {
 
 // ─── Document Generation Actions (moved from client API) ───
 
-export async function generateTrainingSignInSheet(data: unknown): Promise<Blob> {
-  const blob = await generateTrainingSignInSheetApi(data)
+type GeneratedBlobPayload<T> = T & { factory?: 'old' | 'new' }
+
+export async function generateTrainingSignInSheet(
+  data: GeneratedBlobPayload<components['schemas']['TrainingSignInSheetInput']>
+): Promise<Blob> {
+  const { factory = 'old', ...payload } = data
+  const blob = await generateTrainingSignInSheetApi(payload, factory)
   revalidatePath('/hr')
   return blob
 }
 
-export async function generateTrainingNotification(data: unknown): Promise<Blob> {
-  const blob = await generateTrainingNotificationApi(data)
+export async function generateTrainingNotification(
+  data: GeneratedBlobPayload<components['schemas']['TrainingNotificationInput']>
+): Promise<Blob> {
+  const { factory = 'old', ...payload } = data
+  const blob = await generateTrainingNotificationApi(payload, factory)
   revalidatePath('/hr')
   return blob
 }
 
-export async function generateTrainingEvaluation(data: unknown): Promise<Blob> {
-  const blob = await generateTrainingEvaluationApi(data)
+/**
+ * 生成培训效果评估表。
+ *
+ * Server Action 不能直接回传 `Blob`（不可序列化），因此转成 base64 由客户端
+ * 还原为 Blob 下载。docx 体积下 +33% 可接受。
+ */
+export async function generateTrainingEvaluation(
+  data: GeneratedBlobPayload<components['schemas']['TrainingEvaluationInput']>
+): Promise<{ base64: string; filename: string }> {
+  const { factory = 'old', ...payload } = data
+  const blob = await generateTrainingEvaluationApi(payload, factory)
   revalidatePath('/hr')
-  return blob
+  const safeDate = payload.training_date ? String(payload.training_date).replace(/-/g, '') : 'nodate'
+  return {
+    base64: Buffer.from(await blob.arrayBuffer()).toString('base64'),
+    filename: `training_evaluation_${safeDate}.docx`,
+  }
 }
 
-export async function generateOnboardingEvaluation(data: unknown): Promise<Blob> {
-  const blob = await generateOnboardingEvaluationApi(data)
+export async function generateOnboardingEvaluation(
+  data: GeneratedBlobPayload<components['schemas']['OnboardingEvaluationInput']>
+): Promise<Blob> {
+  const { factory = 'old', ...payload } = data
+  const blob = await generateOnboardingEvaluationApi(payload, factory)
   revalidatePath('/hr')
   return blob
 }
@@ -587,13 +508,6 @@ export async function createOnboardingTrainingRecord(employeeNumber: string, dat
   const blob = await createOnboardingTrainingRecordApi(employeeNumber, data)
   revalidatePath('/hr')
   return blob
-}
-
-export async function createDepartureRecord(data: unknown) {
-  const _validated = parse(DepartureRecordSchema, data)
-  const res = await createDepartureRecordApi(data)
-  revalidatePath('/hr')
-  return res as DepartureRecord
 }
 
 export async function uploadAnnualTrainingPlan(file: File) {
@@ -664,23 +578,29 @@ export async function fetchTrainingSessionByIdAction(id: string): Promise<Traini
   return fetchTrainingSessionByIdApi(id) as Promise<TrainingSessionResponse>
 }
 
-export async function sendTrainingSessionSelectTasksAction(id: string): Promise<ApiResponse<SelectTask[]>> {
+export async function sendTrainingSessionSelectTasksAction(
+  id: string
+): Promise<components['schemas']['AsyncJobAcceptedResponse']> {
   const res = await sendTrainingSessionSelectTasksApi(id)
   revalidatePath('/hr/training/records')
-  return res as ApiResponse<SelectTask[]>
+  return res
 }
 
 export async function fetchTrainingSessionSelectTasksAction(id: string): Promise<ApiResponse<SelectTask[]>> {
   return fetchTrainingSessionSelectTasksApi(id) as Promise<ApiResponse<SelectTask[]>>
 }
 
-export async function sendTrainingSelectTaskAction(data: unknown) {
+export async function sendTrainingSelectTaskAction(data: components['schemas']['TrainingSelectTaskCreate']) {
   const res = await sendTrainingSelectTaskApi(data)
   revalidatePath('/hr/training')
   return res as Record<string, unknown>
 }
 
-export async function savePrejobTemplateAction(department: string, factory: 'old' | 'new', items: unknown[]) {
+export async function savePrejobTemplateAction(
+  department: string,
+  factory: 'old' | 'new',
+  items: components['schemas']['PrejobTemplateItem'][]
+) {
   const res = await savePrejobTemplateApi({ department, factory, items })
   revalidatePath('/hr/training/prejob')
   return res as PrejobTemplate
@@ -690,29 +610,29 @@ export async function generatePrejobTrainingPlanAction(
   employeeId: string,
   employeeName: string,
   factory: 'old' | 'new' = 'old',
-  items?: unknown[]
+  items?: components['schemas']['PrejobTemplateItem'][]
 ): Promise<Blob> {
-  const blob = await generatePrejobTrainingPlanApi(employeeId, {}, factory, items || [])
+  const blob = await generatePrejobTrainingPlanApi(employeeId, factory, items || null)
   revalidatePath('/hr')
   return blob
 }
 
 export async function submitTrainingSelectTaskAction(
   token: string,
-  data: { selectedNumbers: string[]; selectedNames: string[] }
-) {
+  data: components['schemas']['TrainingSelectTaskSubmit'],
+): Promise<components['schemas']['TrainingSelectTask']> {
   const res = await submitTrainingSelectTaskApi(token, data)
   revalidatePath('/hr/training')
-  return res as ApiResponse<Record<string, unknown>>
+  return res
 }
 
-export async function createTrainingTeamAction(data: unknown) {
+export async function createTrainingTeamAction(data: components['schemas']['TrainingTeamCreate']) {
   const res = await createTrainingTeamApi(data)
   revalidatePath('/hr/training/team')
   return res as TrainingTeam
 }
 
-export async function updateTrainingTeamAction(id: string, data: unknown) {
+export async function updateTrainingTeamAction(id: string, data: components['schemas']['TrainingTeamUpdate']) {
   const res = await updateTrainingTeamApi(id, data)
   revalidatePath('/hr/training/team')
   return res as TrainingTeam
@@ -724,7 +644,7 @@ export async function deleteTrainingTeamAction(id: string) {
   return res as DeleteResponse
 }
 
-export async function upsertTrainingSpecialistAction(data: unknown) {
+export async function upsertTrainingSpecialistAction(data: components['schemas']['TrainingSpecialistCreate']) {
   const res = await upsertTrainingSpecialistApi(data)
   revalidatePath('/hr/training/specialists')
   return res as TrainingSpecialist
@@ -734,4 +654,33 @@ export async function deleteTrainingSpecialistAction(id: string) {
   const res = await deleteTrainingSpecialistApi(id)
   revalidatePath('/hr/training/specialists')
   return res as DeleteResponse
+}
+
+// ── 人员流动分析（后台任务；POST 走 Server Action）──
+
+export async function submitTurnoverAnalysisJob(): Promise<string> {
+  const res = await submitTurnoverAnalysisJobApi()
+  return unwrapResponse(res).job_id
+}
+
+// ── 员工档案（飞书通讯录只读镜像，ticket #198）──
+
+type EmployeeProfilesQuery = NonNullable<
+  NonNullable<operations['list_employee_profiles_api_v1_hr_people_get']['parameters']>['query']
+>
+
+export async function fetchEmployeeProfilesAction(
+  params?: EmployeeProfilesQuery
+): Promise<EmployeeProfileListResponse> {
+  return fetchEmployeeProfilesApi(params)
+}
+
+export async function fetchEmployeeProfileDetailAction(
+  identifier: string
+): Promise<EmployeeProfileDetailResponse> {
+  return fetchEmployeeProfileDetailApi(identifier)
+}
+
+export async function fetchEmployeeDepartmentsAction(): Promise<OrgDepartmentTreeResponse> {
+  return fetchEmployeeDepartmentsApi()
 }

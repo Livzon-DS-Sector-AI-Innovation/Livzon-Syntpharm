@@ -1,274 +1,172 @@
 'use client'
 
-import { useState, useCallback, useEffect, useMemo } from 'react'
-import { Button, message, Table, Space, Input, Tag } from 'antd'
+import { useMemo, useState } from 'react'
+import { Button } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import {
-  SearchOutlined,
-  EyeOutlined,
-  PlusOutlined,
-} from '@ant-design/icons'
-import { OnboardingRecord } from '@/types/hr'
-import { fetchOnboardingRecords,
-  fetchNewOnboardingRecords,
- } from '@/lib/api/client/hr'
-import OnboardingDetailModal from './OnboardingDetailModal'
-import EmployeeForm from './EmployeeForm'
+import { EyeOutlined } from '@ant-design/icons'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+
+import { fetchOnboardingRecords } from '@/lib/api/client/hr'
+import type { OnboardingRecord } from '@/types/hr'
+import OnboardingRecordDetailDrawer from './OnboardingRecordDetailDrawer'
+import OnboardingRecordFormDrawer from './OnboardingRecordFormDrawer'
+import LedgerTableShell from './LedgerTableShell'
 
 interface OnboardingClientProps {
   initialRecords: OnboardingRecord[]
   initialTotal: number
-  factory?: 'new'
 }
 
-export default function OnboardingClient({
-  initialRecords,
-  initialTotal,
-  factory,
-}: OnboardingClientProps) {
-  const [records, setRecords] = useState<OnboardingRecord[]>(initialRecords)
-  const [total, setTotal] = useState(initialTotal)
+const QUERY_KEY = 'hr-onboarding-records'
+
+export default function OnboardingClient({ initialRecords, initialTotal }: OnboardingClientProps) {
+  const queryClient = useQueryClient()
+  const [keyword, setKeyword] = useState('')
+  const [department, setDepartment] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const [loading, setLoading] = useState(false)
-  const [searchKeyword, setSearchKeyword] = useState('')
-  const [filterDepartment, setFilterDepartment] = useState('')
-  const [filterPosition, setFilterPosition] = useState('')
-  const [filterIsEmployed, setFilterIsEmployed] = useState(false)
-  const [detailOpen, setDetailOpen] = useState(false)
   const [detailRecord, setDetailRecord] = useState<OnboardingRecord | null>(null)
-  const [createOpen, setCreateOpen] = useState(false)
+  const [formOpen, setFormOpen] = useState(false)
+  const [editingRecord, setEditingRecord] = useState<OnboardingRecord | null>(null)
 
-  const handleFormSuccess = () => {
-    setCreateOpen(false)
-    loadData()
-  }
+  const initialData = useMemo<{ items: OnboardingRecord[]; total: number } | undefined>(() => {
+    if (keyword || department || page !== 1 || pageSize !== 20) return undefined
+    return {
+      items: initialRecords,
+      total: initialTotal,
+    }
+  }, [keyword, department, page, pageSize, initialRecords, initialTotal])
 
-  const doFetch = factory === 'new' ? fetchNewOnboardingRecords : fetchOnboardingRecords
-
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const params: Record<string, unknown> = {
-        department: filterDepartment || undefined,
-        position: filterPosition || undefined,
-        keyword: searchKeyword || undefined,
+  const { data, isFetching } = useQuery({
+    queryKey: [QUERY_KEY, { keyword, department, page, pageSize }],
+    queryFn: () =>
+      fetchOnboardingRecords({
+        keyword: keyword || undefined,
+        department: department || undefined,
         page,
         page_size: pageSize,
-      }
-      if (factory !== 'new') {
-        params.is_employed = filterIsEmployed || undefined
-      }
-      const res = await doFetch(params)
-      setRecords(res.data)
-      setTotal(res.meta?.total || 0)
-    } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [filterDepartment, filterPosition, filterIsEmployed, searchKeyword, page, pageSize, doFetch, factory])
+      }),
+    initialData,
+    staleTime: 0,
+  })
 
-  const handlePageChange = (newPage: number, newPageSize: number) => {
-    setPage(newPage)
-    setPageSize(newPageSize)
+  const records = data?.items ?? []
+  const total = data?.total ?? 0
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: [QUERY_KEY] })
+
+  const openCreate = () => {
+    setEditingRecord(null)
+    setFormOpen(true)
   }
 
-  const handleViewDetail = (record: OnboardingRecord) => {
-    setDetailRecord(record)
-    setDetailOpen(true)
+  const openEdit = (record: OnboardingRecord) => {
+    setEditingRecord(record)
+    setFormOpen(true)
   }
 
-  useEffect(() => {
-    loadData()
-  }, [filterDepartment, filterPosition, filterIsEmployed, searchKeyword, page, pageSize, factory, loadData])
-
-  const employedColorMap = useMemo<Record<string, string>>(() => ({
-    '是': 'success',
-    '否': 'default',
-  }), [])
-
-  const columns: ColumnsType<OnboardingRecord> = useMemo(() => {
-    const baseColumns: ColumnsType<OnboardingRecord> = [
-      {
-        title: '姓名',
-        dataIndex: 'name',
-        key: 'name',
-        width: 100,
-      },
-      {
-        title: '部门',
-        dataIndex: 'department',
-        key: 'department',
-        width: 120,
-        filters: [
-          { text: '生产制造部', value: '生产制造部' },
-          { text: '质量管理部', value: '质量管理部' },
-          { text: '设备动力部', value: '设备动力部' },
-          { text: '发酵工程部', value: '发酵工程部' },
-          { text: '提炼一部', value: '提炼一部' },
-          { text: '提炼二部', value: '提炼二部' },
-          { text: '提炼三部', value: '提炼三部' },
-          { text: '安全环保部', value: '安全环保部' },
-          { text: '采购部', value: '采购部' },
-          { text: '人事行政部', value: '人事行政部' },
-          { text: '肠激酶车间', value: '肠激酶车间' },
-          { text: '财务部', value: '财务部' },
-        ],
-        onFilter: (value, record: OnboardingRecord) => record.department === String(value),
-      },
-      {
-        title: '班组',
-        dataIndex: 'team',
-        key: 'team',
-        width: 100,
-      },
-      {
-        title: '岗位',
-        dataIndex: 'position',
-        key: 'position',
-        width: 140,
-      },
-      {
-        title: '入职时间',
-        dataIndex: 'hire_date',
-        key: 'hire_date',
-        width: 120,
-        defaultSortOrder: 'descend',
-        sorter: (a: OnboardingRecord, b: OnboardingRecord) =>
-          new Date(b.hire_date || '').getTime() - new Date(a.hire_date || '').getTime(),
-      },
-      {
-        title: '学历',
-        dataIndex: 'education',
-        key: 'education',
-        width: 80,
-      },
-      {
-        title: '毕业学校',
-        dataIndex: 'school',
-        key: 'school',
-        width: 160,
-        ellipsis: true,
-      },
-    ]
-
-    if (factory !== 'new') {
-      baseColumns.push({
-        title: '是否在职',
-        dataIndex: 'is_employed',
-        key: 'is_employed',
-        width: 90,
-        render: (val: string) => (
-          <Tag color={employedColorMap[val] || 'default'}>{val || '-'}</Tag>
-        ),
-        filters: [
-          { text: '是', value: '是' },
-          { text: '否', value: '否' },
-        ],
-        onFilter: (value, record: OnboardingRecord) => record.is_employed === String(value),
-      })
-    }
-
-    baseColumns.push(
-      {
-        title: '手机',
-        dataIndex: 'phone',
-        key: 'phone',
-        width: 120,
-      },
-      {
-        title: '操作',
-        key: 'action',
-        width: 120,
-        fixed: 'right',
-        render: (_: unknown, record: OnboardingRecord) => (
-          <Space size="small">
-            <Button
-              type="text"
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={() => handleViewDetail(record)}
-            >
-              详情
-            </Button>
-          </Space>
-        ),
-      }
-    )
-
-    return baseColumns
-  }, [factory, employedColorMap])
+  const columns: ColumnsType<OnboardingRecord> = [
+    {
+      title: '流水号',
+      dataIndex: 'serial_no',
+      key: 'serial_no',
+      width: 110,
+    },
+    {
+      title: '姓名',
+      dataIndex: 'name',
+      key: 'name',
+      width: 140,
+      render: (name: string) => <span className="font-medium">{name}</span>,
+    },
+    {
+      title: '一级部门',
+      dataIndex: 'department_level1',
+      key: 'department_level1',
+      width: 170,
+    },
+    {
+      title: '二级部门',
+      dataIndex: 'department_level2',
+      key: 'department_level2',
+      width: 150,
+    },
+    {
+      title: '岗位',
+      dataIndex: 'position',
+      key: 'position',
+      width: 140,
+    },
+    {
+      title: '入职日期',
+      dataIndex: 'hire_date',
+      key: 'hire_date',
+      width: 120,
+    },
+    {
+      title: '入职类别',
+      dataIndex: 'join_category',
+      key: 'join_category',
+      width: 130,
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 130,
+      fixed: 'right',
+      render: (_: unknown, record: OnboardingRecord) => (
+        <div className="flex gap-1">
+          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => setDetailRecord(record)}>
+            查看
+          </Button>
+          <Button type="link" size="small" onClick={() => openEdit(record)}>
+            编辑
+          </Button>
+        </div>
+      ),
+    },
+  ]
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)]">
-          {factory === 'new' ? '新厂入职台账' : '老厂入职台账'}
-        </h1>
-      </div>
-
-      <div className="flex flex-wrap gap-3 items-center">
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>新建入职</Button>
-        <Input
-          placeholder="搜索姓名或工号"
-          value={searchKeyword}
-          onChange={(e) => setSearchKeyword(e.target.value)}
-          prefix={<SearchOutlined />}
-          className="w-64"
-          allowClear
-        />
-        <Input
-          placeholder="部门筛选"
-          value={filterDepartment}
-          onChange={(e) => setFilterDepartment(e.target.value)}
-          className="w-40"
-          allowClear
-        />
-        <Input
-          placeholder="岗位筛选"
-          value={filterPosition}
-          onChange={(e) => setFilterPosition(e.target.value)}
-          className="w-40"
-          allowClear
-        />
-        {factory !== 'new' && (
-          <Input
-            placeholder="是否在职"
-            value={filterIsEmployed ? "是" : "否"}
-            onChange={(e) => setFilterIsEmployed(e.target.value === "是")}
-            className="w-32"
-            allowClear
-          />
-        )}
-      </div>
-
-      <Table
-        columns={columns}
-        dataSource={records}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          current: page,
-          pageSize,
-          total,
-          showSizeChanger: true,
-          showTotal: (t) => `共 ${t} 条`,
-          onChange: handlePageChange,
-        }}
-        scroll={{ x: 1200 }}
-        size="small"
-      />
-
-      <OnboardingDetailModal
-        open={detailOpen}
+    <LedgerTableShell<OnboardingRecord>
+      title="入职台账"
+      total={total}
+      department={department}
+      keywordPlaceholder="搜索流水号、姓名、部门、岗位"
+      departmentPlaceholder="一级或二级部门筛选"
+      onKeywordChange={(value) => {
+        setKeyword(value.trim())
+        setPage(1)
+      }}
+      onDepartmentChange={(value) => {
+        setDepartment(value)
+        setPage(1)
+      }}
+      columns={columns}
+      records={records}
+      loading={isFetching}
+      page={page}
+      pageSize={pageSize}
+      onPageChange={(nextPage, nextPageSize) => {
+        setPage(nextPage)
+        setPageSize(nextPageSize)
+      }}
+      onCreate={openCreate}
+    >
+      <OnboardingRecordDetailDrawer
+        open={Boolean(detailRecord)}
         record={detailRecord}
-        onClose={() => setDetailOpen(false)}
+        onClose={() => setDetailRecord(null)}
+        onEdit={openEdit}
+        onDeleted={refresh}
       />
 
-      <EmployeeForm open={createOpen} employee={null} onClose={() => setCreateOpen(false)}
-        onSuccess={handleFormSuccess} />
-
-    </div>
+      <OnboardingRecordFormDrawer
+        open={formOpen}
+        record={editingRecord}
+        onClose={() => setFormOpen(false)}
+        onSaved={refresh}
+      />
+    </LedgerTableShell>
   )
 }

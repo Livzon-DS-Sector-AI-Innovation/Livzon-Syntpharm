@@ -224,13 +224,11 @@ async def bitable_monthly_sync_loop() -> None:
     在 ENERGY_BITABLE_SYNC_HOUR 指定的小时执行同步（默认17点）。
     每天只执行一次，通过 last_sync_date 防止重复。
     """
-    settings = get_settings()
-
-    # 运行时配置优先（core.module_settings），未配置时回落到部署配置（.env → core/config.py）
+    # 运行时配置优先（core.module_settings），未配置时使用种子默认值（关闭）
     auto_sync_enabled = await get_module_setting_bool(
         "energy",
         "ENERGY_BITABLE_AUTO_SYNC_ENABLED",
-        default=settings.ENERGY_BITABLE_AUTO_SYNC_ENABLED,
+        default=False,
     )
 
     if not auto_sync_enabled:
@@ -240,7 +238,7 @@ async def bitable_monthly_sync_loop() -> None:
     sync_hour = await get_module_setting_int(
         "energy",
         "ENERGY_BITABLE_SYNC_HOUR",
-        default=settings.ENERGY_BITABLE_SYNC_HOUR,
+        default=17,
     )
     logger.info("飞书多维表格月度同步任务已启动", extra={"sync_hour": sync_hour})
 

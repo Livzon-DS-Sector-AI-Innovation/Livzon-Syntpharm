@@ -23,8 +23,12 @@ import type {
   DeviationAttachmentCommentUpdateInput,
   DeviationBatchResult,
   DeviationCrossDeptApproveInput,
+  DeviationCrossDeptInvestigationInput,
+  DeviationCrossDeptRejectInput,
   DeviationFinalCodeInput,
+  DeviationInvestigationDraftInput,
   DeviationInvestigationInput,
+  DeviationInvestigationSubmitInput,
   DeviationJobState,
   DeviationLedgerBatchStatusInput,
   DeviationLedgerCreateInput,
@@ -801,6 +805,26 @@ export async function submitDeviationInvestigation(
   )
 }
 
+/** 暂存调查记录草稿（按本人 + 部门覆盖，不推进流程） */
+export async function saveDeviationInvestigationDraft(
+  id: string,
+  input: DeviationInvestigationDraftInput,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(id, () => QualityServer.fetchSaveDeviationInvestigationDraft(id, input), '草稿暂存失败')
+}
+
+/** 清除本人的调查记录草稿（department 为空即主流程调查草稿） */
+export async function deleteDeviationInvestigationDraft(
+  id: string,
+  department?: string | null,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(
+    id,
+    () => QualityServer.fetchDeleteDeviationInvestigationDraft(id, department),
+    '草稿清除失败',
+  )
+}
+
 /** 审核阶段追加调查记录：只追加记录，不推进流程状态 */
 export async function appendDeviationInvestigationRecord(
   id: string,
@@ -813,11 +837,43 @@ export async function appendDeviationInvestigationRecord(
   )
 }
 
+/** 跨部门调查人提交本部门调查记录：只完成该行「调查」节点，不推进台账状态 */
+export async function submitDeviationCrossDeptInvestigation(
+  id: string,
+  input: DeviationCrossDeptInvestigationInput,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(
+    id,
+    () => QualityServer.fetchSubmitDeviationCrossDeptInvestigation(id, input),
+    '本部门调查提交失败',
+  )
+}
+
 export async function approveDeviationCrossDeptRow(
   id: string,
   input: DeviationCrossDeptApproveInput,
 ): Promise<DeviationLedgerActionResult> {
   return runDeviationAction(id, () => QualityServer.fetchApproveDeviationCrossDeptRow(id, input), '跨部门逐行审批失败')
+}
+
+/** 跨部门逐行退回：只重置该部门的调查与审核节点 */
+export async function rejectDeviationCrossDeptRow(
+  id: string,
+  input: DeviationCrossDeptRejectInput,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(id, () => QualityServer.fetchRejectDeviationCrossDeptRow(id, input), '跨部门逐行退回失败')
+}
+
+/** 调查记录已填写：直接提交审核（不新建记录） */
+export async function submitDeviationInvestigationForReview(
+  id: string,
+  input: DeviationInvestigationSubmitInput,
+): Promise<DeviationLedgerActionResult> {
+  return runDeviationAction(
+    id,
+    () => QualityServer.fetchSubmitDeviationInvestigationForReview(id, input),
+    '提交审核失败',
+  )
 }
 
 export async function reviewDeviation(
