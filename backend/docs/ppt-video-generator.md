@@ -399,7 +399,7 @@ uv run alembic upgrade head   # 至少到 0096（agent schema + AI 初稿字段�
 | `AGENT_PPT_VIDEO_DEFAULT_VOICE_EN` | `af_bella` | 英文默认音色 |
 | `AGENT_PPT_VIDEO_DEFAULT_SPEED` | `1.0` | 默认语速（0.5~2.0，越界被夹回） |
 | `AGENT_PPT_VIDEO_HEAD_PADDING_MS` | `300` | 页首静音（留白） |
-| `AGENT_PPT_VIDEO_TAIL_PADDING_MS` | `500` | 页尾静音（读完再切页） |
+| `AGENT_PPT_VIDEO_TAIL_PADDING_MS` | `300` | 页尾静音（读完再切页）；与页内分级停顿量级协调 |
 | `AGENT_PPT_VIDEO_MAX_SLIDES` | `60` | 最大页数 |
 | `AGENT_PPT_VIDEO_JOB_TIMEOUT_SECONDS` | `1800` | 单任务超时 |
 | `AGENT_PPT_VIDEO_TTS_ENGINE` | `kokoro` | `kokoro` / `melo` |
@@ -407,9 +407,17 @@ uv run alembic upgrade head   # 至少到 0096（agent schema + AI 初稿字段�
 | `AGENT_PPT_VIDEO_RENDER_DPI` | `150` | PDF 转图 DPI |
 | `AGENT_PPT_VIDEO_MAX_ATTEMPTS` | `3` | 失败重试上限 |
 | `AGENT_PPT_VIDEO_SCRIPT_AI_ENABLED` | `true` | 上传后是否自动生成逐页讲稿初稿 |
-| `AGENT_PPT_VIDEO_SCRIPT_AI_BATCH_SIZE` | `6` | 每批页数（一次 LLM 调用），夹在 1~20 |
+| `AGENT_PPT_VIDEO_SCRIPT_AI_BATCH_SIZE` | `1` | 每批页数（一次 LLM 调用），夹在 1~20；调大会把长页压成摘要 |
 | `AGENT_PPT_VIDEO_SCRIPT_AI_TIMEOUT_SECONDS` | `90` | 单批硬超时（`asyncio.wait_for`），最小 10 |
-| `AGENT_PPT_VIDEO_SCRIPT_AI_MAX_PAGE_TEXT_CHARS` | `2000` | 喂给模型的单页文字截断长度，最小 200 |
+| `AGENT_PPT_VIDEO_SCRIPT_AI_MAX_PAGE_TEXT_CHARS` | `4000` | 喂给模型的单页文字截断长度，最小 200 |
+| `AGENT_PPT_VIDEO_HIGHLIGHT_MAX_STEPS` | `6` | 单页最多画面段数（只管画面，不再限制音频段数） |
+| `AGENT_PPT_VIDEO_AUDIO_MAX_SEGMENTS` | `12` | 单页最多旁白段数（1~20）；与画面段数解耦，避免合并后两句连读变快 |
+| `AGENT_PPT_VIDEO_SEGMENT_PAUSE_COMMA_MS` | `120` | 逗号/顿号/冒号后的停顿 |
+| `AGENT_PPT_VIDEO_SEGMENT_PAUSE_PERIOD_MS` | `300` | 句号/问号/叹号/分号后的停顿 |
+| `AGENT_PPT_VIDEO_SILENCE_TRIM_MS` | `60` | 每段合成音频首尾保留的静音；其余裁掉，段间停顿改由标点决定 |
+| `AGENT_PPT_VIDEO_COVERAGE_ELEMENT_THRESHOLD` | `0.6` | 覆盖度自检：单个元素判为「已讲到」的字面重合率门槛 |
+| `AGENT_PPT_VIDEO_COVERAGE_MIN_SCORE` | `0.75` | 覆盖度自检：页级达标阈值，低于它标「可能漏讲」 |
+| `AGENT_PPT_VIDEO_PRONUNCIATION_DICT` | 空 | 模块级发音词典 JSON `{"原文": "合成替代"}`；项目级词条优先 |
 | `AGENT_PPT_VIDEO_PAGE_CONCURRENCY` | `2` | 渲染时同时处理的页数，夹在 1~3（共用服务器，别超过 3） |
 | `AGENT_PPT_VIDEO_TTS_CONCURRENCY` | `2` | 同页内并发合成的段数，夹在 1~4；任一段失败仍回退整页合成 |
 | `AGENT_PPT_VIDEO_PDF_SPLIT_BATCH` | `8` | 页图拆图每批页数，夹在 1~32；越大进程越少、内存越高 |
@@ -523,6 +531,30 @@ docker logs -f erp-ppt-video-worker 2>&1 | grep -E "页渲染完成|高亮兜底
    「重新生成剩余页」会带 `force=true` 重新投递——只填空页，已写入的内容不会被覆盖。
 10. **AI 只依据页内文字与备注**：纯图片/扫描页没有文字，不会生成（时间轴标「本页无文字」）；
     若需要这类页也有初稿，得先加 OCR，属于后续需求。
+11. **页文本顺序 ≠ layout 顺序**：`parse_pptx` 只把 `page_text` 按「上→下、左→右」排序，
+    `layout.shapes` 保持原始 z-order（元素 id、页指纹、换源对齐都依赖它）。
+    改这条时不要顺手改 layout 顺序，否则存量项目换源会被判「全部变更」。
+12. **讲稿补标点会让旧音频失效**：AI 讲稿每段末尾现在必带句末标点，`script_key` 变化后
+    旧 wav 不再命中，首次出片会重新合成一遍（属于一次性成本）。
+    存量数据可先预览再执行：
+    `uv run python scripts/migration/backfill_agent_script_punctuation.py`（加 `--apply` 才写库）。
+13. **段数与帧数已解耦**：`AGENT_PPT_VIDEO_HIGHLIGHT_MAX_STEPS` 只管画面帧数；
+    音频段数看 `AGENT_PPT_VIDEO_AUDIO_MAX_SEGMENTS`。把前者当成音频上限会导致「两句并一段、连读变快」，
+    这条以前踩过，改配置时注意区分。
+14. **发音词典只替换送 TTS 的文本**：讲稿、`script_segments`、高亮匹配全部保持原文。
+    模块级与项目级合并（项目级优先），单层最多 500 条；词条指纹进 `voice_key`，
+    改词条后对应页面试听/出片会自动重新合成。词典不处理数字与英文缩写（`μg` 这类请写进讲稿）。
+15. **覆盖度是字面近似**：按页面元素文本的 2-gram 重合率估算，同义改写可能被误判为「漏讲」，
+    所以只做提示 + 一键补全（走 `fill_missing` 改写模式，带 revision 快照可回滚），不阻塞渲染。
+
+### 6.1 四个常见问题的定位入口
+
+| 现象 | 先看什么 |
+|---|---|
+| 多音字读错 | 是否在发音词典里；单页试听确认；英文缩写是否被跳过（worker 缺 `en_core_web_sm`） |
+| 语速忽快忽慢 | 关掉 `AGENT_PPT_VIDEO_SEGMENT_TTS_ENABLED` 对照；检查 `HIGHLIGHT_MAX_STEPS` / `AUDIO_MAX_SEGMENTS` 是否被改小；看段间停顿配置 |
+| 讲稿顺序不对 | 选一页查 `page_text` 顺序；确认元素清单已按阅读顺序（`element_catalog`）；纯图片页只能手写 |
+| 没讲完就翻页 | 看该页 `coverage_score` / `coverage_missing`；检查送模文本上限与批大小；点「补全本页」 |
 
 ---
 

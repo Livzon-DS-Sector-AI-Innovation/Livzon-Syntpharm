@@ -65,10 +65,22 @@ def script_key(text: str, language: str) -> str:
     return sha256_bytes(payload)
 
 
-def voice_key(language: str, voice_id: str, speed: float, engine: str, engine_version: str) -> str:
-    """语音参数指纹：任一项变化都必须重新合成。"""
-    payload = f"{engine}@{engine_version}|{language}|{voice_id}|{speed:.2f}".encode()
-    return sha256_bytes(payload)
+def voice_key(
+    language: str,
+    voice_id: str,
+    speed: float,
+    engine: str,
+    engine_version: str,
+    dict_fingerprint: str = "",
+) -> str:
+    """语音参数指纹：任一项变化都必须重新合成。
+
+    `dict_fingerprint` 是发音词典指纹：词条改了要重新合成，否则改了词条听起来没变化。
+    """
+    payload = f"{engine}@{engine_version}|{language}|{voice_id}|{speed:.2f}"
+    if dict_fingerprint:
+        payload = f"{payload}|dict@{dict_fingerprint}"
+    return sha256_bytes(payload.encode())
 
 
 def audio_key(script_sha256: str, voice_fingerprint: str, variant: str = "") -> str:
@@ -83,10 +95,16 @@ def audio_key(script_sha256: str, voice_fingerprint: str, variant: str = "") -> 
     return sha256_bytes(payload.encode())
 
 
-def segment_audio_key(text: str, language: str, voice_fingerprint: str) -> str:
-    """段级音频指纹：只改一句话时，其余句子的音频仍能命中缓存。"""
-    payload = f"audio-seg\n{language}\n{normalize_script(text)}\n{voice_fingerprint}".encode()
-    return sha256_bytes(payload)
+def segment_audio_key(text: str, language: str, voice_fingerprint: str, variant: str = "") -> str:
+    """段级音频指纹：只改一句话时，其余句子的音频仍能命中缓存。
+
+    `variant` 记录合成后处理参数（目前是静音裁剪余量）：裁剪值一变，
+    旧片段里的首尾静音长度就不再适用，必须重新合成。
+    """
+    payload = f"audio-seg\n{language}\n{normalize_script(text)}\n{voice_fingerprint}"
+    if variant:
+        payload = f"{payload}\n{variant}"
+    return sha256_bytes(payload.encode())
 
 
 def segment_key(

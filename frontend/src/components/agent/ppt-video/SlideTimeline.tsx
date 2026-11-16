@@ -105,6 +105,9 @@ export default function SlideTimeline({ slides, activeSlideUid, onSelect }: Prop
                 {slide.script_source === 'ai' && (
                   <Tag color="purple" className="!m-0 !px-1 !text-[11px]">AI 初稿</Tag>
                 )}
+                {slide.coverage_ok === false && (
+                  <Tag color="red" className="!m-0 !px-1 !text-[11px]">可能漏讲</Tag>
+                )}
                 {slide.has_audio ? (
                   <Tag color="green" className="!m-0 !px-1 !text-[11px]">已配音</Tag>
                 ) : (

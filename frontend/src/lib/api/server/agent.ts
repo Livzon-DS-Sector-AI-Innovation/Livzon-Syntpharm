@@ -22,6 +22,7 @@ import type {
   ScriptRewritePayload,
   ScriptRewriteResult,
   SlideEditResult,
+  SlideItem,
   SourceApplyResult,
   SourceDiffSummary,
   VersionItem,
@@ -242,6 +243,14 @@ export async function rewriteScriptsRequest(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
+}
+
+/** 手工重算单页讲稿覆盖度（页文本/讲稿在别处被改过时用） */
+export async function recheckCoverageRequest(projectId: string, slideUid: string): Promise<Envelope<SlideItem>> {
+  return apiFetch<Envelope<SlideItem>>(
+    `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/slides/${slideUid}/recheck-coverage`,
+    { method: 'POST' },
+  )
 }
 
 export async function fetchScriptRevisions(projectId: string, limit = 30): Promise<RevisionItem[]> {

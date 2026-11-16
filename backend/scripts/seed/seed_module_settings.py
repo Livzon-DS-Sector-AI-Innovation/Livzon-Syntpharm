@@ -168,9 +168,9 @@ DEFAULT_SETTINGS = [
     (
         "agent",
         "AGENT_PPT_VIDEO_TAIL_PADDING_MS",
-        "500",
+        "300",
         "int",
-        "每页旁白后留白毫秒（呼吸间隙）",
+        "每页旁白后留白毫秒（呼吸间隙）；与页内分级停顿量级协调，避免翻页突然停一下",
     ),
     (
         "agent",
@@ -224,9 +224,9 @@ DEFAULT_SETTINGS = [
     (
         "agent",
         "AGENT_PPT_VIDEO_SCRIPT_AI_BATCH_SIZE",
-        "6",
+        "1",
         "int",
-        "AI 讲稿生成每批页数（一次 LLM 调用）",
+        "AI 讲稿生成每批页数（一次 LLM 调用）；1 页/批覆盖最全，调大会压缩长页",
     ),
     (
         "agent",
@@ -238,9 +238,9 @@ DEFAULT_SETTINGS = [
     (
         "agent",
         "AGENT_PPT_VIDEO_SCRIPT_AI_MAX_PAGE_TEXT_CHARS",
-        "2000",
+        "4000",
         "int",
-        "喂给模型的单页文字截断长度",
+        "喂给模型的单页文字截断长度；太短会让长页后半部分完全没进 prompt",
     ),
     (
         "agent",
@@ -300,6 +300,13 @@ DEFAULT_SETTINGS = [
     ),
     (
         "agent",
+        "AGENT_PPT_VIDEO_AUDIO_MAX_SEGMENTS",
+        "12",
+        "int",
+        "单页最多旁白段数（1~20）：比画面帧数多，避免合并后两句连读变快",
+    ),
+    (
+        "agent",
         "AGENT_PPT_VIDEO_SEGMENT_TTS_ENABLED",
         "true",
         "bool",
@@ -310,7 +317,28 @@ DEFAULT_SETTINGS = [
         "AGENT_PPT_VIDEO_SEGMENT_PAUSE_MS",
         "180",
         "int",
-        "逐段旁白之间的停顿毫秒（0~1000）",
+        "逐段旁白之间的默认停顿毫秒（未识别标点时用，0~1000）",
+    ),
+    (
+        "agent",
+        "AGENT_PPT_VIDEO_SEGMENT_PAUSE_COMMA_MS",
+        "120",
+        "int",
+        "逗号/顿号/冒号后的停顿毫秒（0~1000）",
+    ),
+    (
+        "agent",
+        "AGENT_PPT_VIDEO_SEGMENT_PAUSE_PERIOD_MS",
+        "300",
+        "int",
+        "句号/问号/叹号/分号后的停顿毫秒（0~2000）",
+    ),
+    (
+        "agent",
+        "AGENT_PPT_VIDEO_SILENCE_TRIM_MS",
+        "60",
+        "int",
+        "每段合成音频首尾保留的静音毫秒（0~500）；其余静音裁掉，段间停顿改由标点决定",
     ),
     (
         "agent",
@@ -325,6 +353,27 @@ DEFAULT_SETTINGS = [
         "0.6",
         "string",
         "讲稿未绑定元素时，文字重合度达到多少才高亮（0.2~1.0）",
+    ),
+    (
+        "agent",
+        "AGENT_PPT_VIDEO_COVERAGE_ELEMENT_THRESHOLD",
+        "0.6",
+        "string",
+        "覆盖度自检：单个页面元素判为「已讲到」的字面重合率门槛（0.2~1.0）",
+    ),
+    (
+        "agent",
+        "AGENT_PPT_VIDEO_COVERAGE_MIN_SCORE",
+        "0.75",
+        "string",
+        "覆盖度自检：页级达标阈值，低于它标记「可能漏讲」（0.1~1.0）",
+    ),
+    (
+        "agent",
+        "AGENT_PPT_VIDEO_PRONUNCIATION_DICT",
+        "",
+        "string",
+        '模块级发音词典 JSON（{"原文": "合成替代文本"}），项目级词条优先；只影响语音合成',
     ),
     (
         "agent",

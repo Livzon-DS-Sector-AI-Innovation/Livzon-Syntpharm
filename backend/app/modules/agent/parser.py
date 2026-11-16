@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from app.modules.agent.alignment import build_fingerprint
+from app.modules.agent.alignment import build_fingerprint, reading_order
 
 logger = logging.getLogger(__name__)
 
@@ -342,7 +342,8 @@ def parse_pptx(pptx_path: str | Path) -> list[ParsedSlide]:
 
     slides: list[ParsedSlide] = []
     for index, slide in enumerate(presentation.slides, start=1):
-        texts: list[str] = []
+        # (文本, 坐标)：页文本按视觉阅读顺序拼；layout.shapes 仍保持 z-order
+        texts: list[tuple[str, tuple[int, int, int, int] | None]] = []
         shapes: list[dict[str, Any]] = []
         for shape in slide.shapes:
             shape_text = ""
@@ -354,10 +355,10 @@ def parse_pptx(pptx_path: str | Path) -> list[ParsedSlide]:
                 shape_text, cells = _table_payload(shape)
             elif hasattr(shape, "shapes"):
                 shape_text = _group_text(shape)
-            if shape_text:
-                texts.append(shape_text)
 
             box = _shape_box(shape)
+            if shape_text:
+                texts.append((shape_text, box))
             if box is None:
                 # 个别占位符没有有效几何信息，跳过即可，不影响文字抽取
                 logger.debug("跳过无坐标形状: %s", shape.name)
@@ -382,7 +383,9 @@ def parse_pptx(pptx_path: str | Path) -> list[ParsedSlide]:
             notes = slide.notes_slide.notes_text_frame.text.strip()
 
         layout = {"width": slide_width, "height": slide_height, "shapes": shapes}
-        page_text = "\n".join(texts)
+        # 只排文本顺序：layout 保持原始顺序，元素 id / 页指纹 / 换源对齐语义都不变
+        ordered = reading_order(texts, lambda row: row[1])
+        page_text = "\n".join(text for text, _box in ordered)
         slides.append(
             ParsedSlide(
                 slide_no=index,

@@ -143,6 +143,8 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
         raise JobFailedError("项目没有页面，无法渲染")
 
     engine_name, engine_version = service.current_engine(settings)
+    # 发音词典指纹要进音频/正文指纹：词条改了，旧音频不能复用
+    dict_fingerprint = service.build_lexicon(settings, project).fingerprint
     work_dir = Path(tempfile.mkdtemp(prefix=f"pptvideo-job-{job.id.hex[:8]}-"))
     try:
         await queue.heartbeat(session, job.id, "parse", PROGRESS_START)
@@ -166,7 +168,9 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
             """本页的语音 + 分镜 + 指纹：纯计算与网络 IO，不碰 session，可以并发。"""
             started = time.perf_counter()
             image_sha = sha256_file(image_path)
-            effective = service.resolve_effective(slide, project, engine_name, engine_version)
+            effective = service.resolve_effective(
+                slide, project, engine_name, engine_version, dict_fingerprint
+            )
             if not effective.script:
                 raise JobFailedError(f"第 {slide.slide_no} 页讲稿为空")
             page_audio = await service.prepare_page_audio(
@@ -183,6 +187,7 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
                     bool(getattr(slide, "highlight_override_enabled", False)),
                 ),
                 getattr(slide, "highlight_regions", None),
+                language=effective.language,
             )
             _log_fallback_usage(project.id, slide.slide_no, plan)
             # 有高亮时画面是多段静帧序列，页图 sha256 无法代表画面，必须叠加视觉指纹
@@ -358,6 +363,7 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
             build_body_key(body_keys),
             engine_name,
             engine_version,
+            dict_fingerprint,
         )
         await queue.mark_succeeded(session, job.id, version.id)
         await session.commit()
@@ -390,6 +396,7 @@ def _build_highlight_plan(
     settings: PptVideoSettings,
     active: bool,
     regions: Any = None,
+    language: str = "zh",
 ) -> highlight.HighlightPlan:
     """按旁白音频与页面布局生成页内引导计划；未开启或失败时返回空计划。
 
@@ -405,7 +412,7 @@ def _build_highlight_plan(
     try:
         config = highlight.parse_region_config(regions, layout)
         if page_audio.segmented:
-            return highlight.build_plan_for_segments(
+            plan = highlight.build_plan_for_segments(
                 highlight.apply_sentence_rules(page_audio.segments, config),
                 layout,
                 page_audio.segment_slots_ms,
@@ -414,6 +421,14 @@ def _build_highlight_plan(
                 coverage_threshold=settings.highlight_text_match_coverage,
                 config=config,
             )
+            # 音频段数（audio_max_segments）可比画面帧数多：这里只收敛画面，
+            # 合并时保持时间轴首尾相接、总时长不变。
+            if len(plan.steps) > settings.highlight_max_steps:
+                plan = highlight.HighlightPlan(
+                    steps=highlight.cap_steps(plan.steps, settings.highlight_max_steps, language),
+                    total_ms=plan.total_ms,
+                )
+            return plan
         return highlight.build_plan(script, layout, total_ms, settings.highlight_max_steps, config)
     except Exception:  # noqa: BLE001 - 引导失败不能让整条视频渲不出来
         logger.exception("页内视觉引导计划生成失败，退化为整页常亮")
@@ -616,6 +631,7 @@ async def _save_version(
     body_key_value: str,
     engine_name: str,
     engine_version: str,
+    dict_fingerprint: str = "",
 ) -> PptVideoVersion:
     next_no = (
         await session.scalar(
@@ -654,7 +670,7 @@ async def _save_version(
     session.add(version)
 
     slides = await _load_slides(session, project.id)
-    body_input = service.compute_body_input_key(slides, project, engine_name, engine_version)
+    body_input = service.compute_body_input_key(slides, project, engine_name, engine_version, dict_fingerprint)
     project.head_key = head_key
     project.body_key = body_key_value
     project.body_input_key = body_input

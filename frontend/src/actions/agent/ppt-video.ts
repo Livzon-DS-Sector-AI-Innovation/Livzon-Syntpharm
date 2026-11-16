@@ -26,6 +26,7 @@ import {
   previewSourceRequest,
   regeneratePageImagesRequest,
   regenerateScriptAiRequest,
+  recheckCoverageRequest,
   requestRenderRequest,
   rewriteScriptsRequest,
   rollbackRevisionRequest,
@@ -287,6 +288,49 @@ export async function rewriteScripts(
     return { success: true, message, data: raw.data }
   } catch (error) {
     return { success: false, message: toMessage(error, '改写讲稿失败') }
+  }
+}
+
+/**
+ * 补全本页漏讲内容：走 fill_missing 改写模式（保留原讲稿，按漏讲要点补写）。
+ * 补全后回拉详情，覆盖率与修订记录一起更新。
+ */
+export async function completeMissing(
+  projectId: string,
+  slideUid: string,
+  missing: string[],
+): Promise<ActionResult<ProjectDetail>> {
+  const points = missing.map((item) => item.trim()).filter(Boolean)
+  if (!points.length) {
+    return { success: false, message: '本页没有可补全的漏讲要点' }
+  }
+  try {
+    const raw = await rewriteScriptsRequest(projectId, {
+      mode: 'fill_missing',
+      slide_uids: [slideUid],
+      instruction: `本页漏讲要点（按页面阅读顺序补讲）：${points.join('；')}`,
+      background: false,
+    })
+    if (raw.data.status === 'failed') {
+      return { success: false, message: raw.data.errors?.[0] || '补全失败，请检查模型配置' }
+    }
+    const detail = await fetchPptVideoProject(projectId)
+    revalidatePath(`${LIST_PATH}/${projectId}`)
+    return { success: true, message: '已补全本页讲稿，记得试听确认', data: detail }
+  } catch (error) {
+    return { success: false, message: toMessage(error, '补全本页失败') }
+  }
+}
+
+/** 手工重算单页覆盖度：页文本或讲稿在别处被改过时用 */
+export async function recheckCoverage(projectId: string, slideUid: string): Promise<ActionResult<ProjectDetail>> {
+  try {
+    await recheckCoverageRequest(projectId, slideUid)
+    const detail = await fetchPptVideoProject(projectId)
+    revalidatePath(`${LIST_PATH}/${projectId}`)
+    return { success: true, message: '覆盖度已重算', data: detail }
+  } catch (error) {
+    return { success: false, message: toMessage(error, '重算覆盖度失败') }
   }
 }
 

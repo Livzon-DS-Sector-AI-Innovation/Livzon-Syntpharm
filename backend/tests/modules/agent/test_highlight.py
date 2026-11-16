@@ -17,6 +17,7 @@ from app.modules.agent.highlight import (
     boxes_for_segment,
     build_plan,
     build_plan_for_segments,
+    cap_steps,
     element_catalog,
     element_index,
     iter_elements,
@@ -300,7 +301,7 @@ def test_element_catalog_skips_decorative_and_truncates_text() -> None:
             "width": 900000,
             "height": 900000,
         },
-        _shape("字" * 80),
+        _shape("字" * 200),
         _picture(),
     )
 
@@ -310,7 +311,7 @@ def test_element_catalog_skips_decorative_and_truncates_text() -> None:
     assert "s0" not in kinds  # 无文字的装饰形状不该占用 prompt 预算
     assert "s1" in kinds
     assert kinds["s1"].endswith("…")
-    assert len(kinds["s1"]) <= 41
+    assert len(kinds["s1"]) <= 121
     assert kinds["s2"] == "（无文字）"
 
 
@@ -358,11 +359,68 @@ def test_resolve_segments_returns_empty_for_blank_script() -> None:
     assert resolve_segments("   ", _layout(_shape("甲")), [{"text": "旧的", "targets": []}]) == []
 
 
+def test_element_catalog_follows_reading_order() -> None:
+    """元素清单按阅读顺序给模型：按面积倒序会把「面积大的先讲」灌进讲稿。"""
+    layout = _layout(
+        _shape("右栏内容", left=6000000, top=1500000),
+        _shape("页面标题", left=800000, top=400000, width=6000000, height=700000),
+        _shape("左栏内容", left=800000, top=1500000),
+    )
+
+    catalog = element_catalog(layout)
+
+    assert [item["text"] for item in catalog] == ["页面标题", "左栏内容", "右栏内容"]
+
+
+def test_element_catalog_limit_is_50() -> None:
+    layout = _layout(*[_shape(f"要点{i}", left=800000, top=400000 + i * 500000) for i in range(60)])
+
+    assert len(element_catalog(layout)) == 50
+
+
 def test_resolve_segments_caps_step_count() -> None:
     script = "".join(f"第{i}句话内容。" for i in range(1, 10))
     segments = resolve_segments(script, _layout(), max_steps=3)
     assert len(segments) <= 3
     assert "".join(segment.text for segment in segments) == script
+
+
+def test_resolve_segments_merge_adds_punctuation_for_bare_segments() -> None:
+    """合并无标点的落库段时必须补句末标点：否则 TTS 会把两句连读、听起来突然变快。"""
+    script = "第一句讲收率第二句讲产线第三句讲能耗"
+    layout = _layout()
+    stored = [
+        {"text": "第一句讲收率", "targets": []},
+        {"text": "第二句讲产线", "targets": []},
+        {"text": "第三句讲能耗", "targets": []},
+    ]
+
+    merged = resolve_segments(script, layout, stored, max_steps=2)
+
+    assert len(merged) == 2
+    assert merged[0].text == "第一句讲收率。第二句讲产线"
+
+
+def test_cap_steps_merges_shortest_dwell_and_keeps_timeline() -> None:
+    """画面段超上限时合并最短停留的相邻段：时间轴首尾相接，总时长不变。"""
+    steps = [
+        HighlightStep("第一句话。", 0, 1000),
+        HighlightStep("第二句话。", 1000, 1500),
+        HighlightStep("第三句话。", 1500, 3000),
+    ]
+
+    capped = cap_steps(steps, 2)
+
+    assert len(capped) == 2
+    assert [(step.start_ms, step.end_ms) for step in capped] == [(0, 1500), (1500, 3000)]
+    assert sum(step.duration_ms for step in capped) == 3000
+    assert capped[0].text == "第一句话。第二句话。"
+
+
+def test_cap_steps_keeps_steps_when_under_limit() -> None:
+    steps = [HighlightStep("只有一句。", 0, 800)]
+
+    assert cap_steps(steps, 6) == steps
 
 
 # ── 真实时长的时间轴 ──────────────────────────────────────────────────────
