@@ -48893,7 +48893,7 @@
           "\u4eba\u4e8b\u7ba1\u7406"
         ],
         "summary": "\u4fdd\u5b58\u7cfb\u7edf\u8bbe\u7f6e",
-        "description": "\u6279\u91cf\u4fdd\u5b58\u7cfb\u7edf\u914d\u7f6e\u5230 DB\uff0c\u540c\u65f6\u5199\u5165 .env \u6587\u4ef6\u3002\n\n\u51ed\u636e\u7c7b\u5b57\u6bb5\u52a0\u5bc6\u540e\u843d\u5e93\uff1b\u7a7a\u503c\u6216\u524d\u7aef\u56de\u4f20\u7684\u63a9\u7801\uff08****\uff09\u89c6\u4e3a\u300c\u4e0d\u4fee\u6539\u300d\uff0c\n\u907f\u514d\u628a\u63a9\u7801\u5f53\u6210\u65b0\u5bc6\u94a5\u5199\u8fdb\u5e93\u3002\u672a\u77e5\u952e\u7531 `HrSystemSettingsUpdate`\n\u7684 `extra=\"forbid\"` \u62d2\u7edd\uff08422\uff09\u3002",
+        "description": "\u6279\u91cf\u4fdd\u5b58\u7cfb\u7edf\u914d\u7f6e\u5230 DB\u3002\n\n\u51ed\u636e\u7c7b\u5b57\u6bb5\u52a0\u5bc6\u540e\u843d\u5e93\uff1b\u7a7a\u503c\u6216\u524d\u7aef\u56de\u4f20\u7684\u63a9\u7801\uff08****\uff09\u89c6\u4e3a\u300c\u4e0d\u4fee\u6539\u300d\uff0c\n\u907f\u514d\u628a\u63a9\u7801\u5f53\u6210\u65b0\u5bc6\u94a5\u5199\u8fdb\u5e93\u3002\u672a\u77e5\u952e\u7531 `HrSystemSettingsUpdate`\n\u7684 `extra=\"forbid\"` \u62d2\u7edd\uff08422\uff09\u3002\u8fd0\u884c\u65f6\u4e0d\u6539\u5199\u90e8\u7f72 `.env`\u3002",
         "operationId": "save_system_settings_api_v1_hr_system_settings_put",
         "parameters": [
           {
@@ -92828,6 +92828,74 @@
         }
       }
     },
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/recheck-coverage": {
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u91cd\u7b97\u5355\u9875\u8bb2\u7a3f\u8986\u76d6\u5ea6\uff08\u624b\u5de5\u89e6\u53d1\uff09",
+        "operationId": "recheck_slide_coverage_api_v1_agent_ppt_videos__project_id__slides__slide_uid__recheck_coverage_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "slide_uid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slide Uid"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_SlideItem_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/regions": {
       "get": {
         "tags": [
@@ -111110,6 +111178,19 @@
             "title": "Opinion",
             "description": "\u5ba1\u6838\u610f\u89c1\uff08\u53ef\u9009\uff09",
             "default": ""
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\uff1a\u8d85\u7ea7\u7ba1\u7406\u5458\u66ff\u4ee3\u672c\u884c\u5ba1\u6838\u4eba\u64cd\u4f5c\u65f6\u5fc5\u586b\uff08\u4e0d\u5c11\u4e8e 4 \u4e2a\u5b57\uff09\uff0c\u5c06\u8bb0\u5165\u5ba1\u6838\u610f\u89c1\u4e0e\u5ba1\u8ba1\u65e5\u5fd7"
           }
         },
         "type": "object",
@@ -111185,6 +111266,19 @@
             "title": "Submit Content",
             "description": "\u63d0\u4ea4\u5ba1\u6838\u8bf4\u660e\uff08\u9009\u586b\uff0c\u5199\u5165\u672c\u6b21\u6d41\u8f6c\u8bb0\u5f55\uff1b\u4e3a\u7a7a\u65f6\u7528\u9ed8\u8ba4\u6587\u6848\uff09"
           },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\uff1a\u8d85\u7ea7\u7ba1\u7406\u5458\u66ff\u4ee3\u8c03\u67e5\u4eba\u63d0\u4ea4\u65f6\u5fc5\u586b\uff08\u4e0d\u5c11\u4e8e 4 \u4e2a\u5b57\uff09\uff0c\u5c06\u8bb0\u5165\u5ba1\u8ba1\u65e5\u5fd7"
+          },
           "department": {
             "type": "string",
             "maxLength": 255,
@@ -111215,6 +111309,19 @@
             "minLength": 1,
             "title": "Opinion",
             "description": "\u9000\u56de\u7406\u7531\uff08\u5fc5\u586b\uff09"
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\uff1a\u8d85\u7ea7\u7ba1\u7406\u5458\u66ff\u4ee3\u672c\u884c\u5ba1\u6838\u4eba\u64cd\u4f5c\u65f6\u5fc5\u586b\uff08\u4e0d\u5c11\u4e8e 4 \u4e2a\u5b57\uff09\uff0c\u5c06\u8bb0\u5165\u5ba1\u6838\u610f\u89c1\u4e0e\u5ba1\u8ba1\u65e5\u5fd7"
           }
         },
         "type": "object",
@@ -133987,6 +134094,19 @@
             "title": "Content",
             "description": "\u5907\u6ce8",
             "default": ""
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\uff1a\u8d85\u7ea7\u7ba1\u7406\u5458\u66ff\u4ee3\u6240\u5c5e QA \u5f55\u5165\u7f16\u53f7\u65f6\u5fc5\u586b\uff08\u4e0d\u5c11\u4e8e 4 \u4e2a\u5b57\uff09\uff0c\u5c06\u8bb0\u5165\u5ba1\u8ba1\u65e5\u5fd7"
           }
         },
         "type": "object",
@@ -139383,6 +139503,16 @@
             "title": "Feishu  Platform  App Secret",
             "default": ""
           },
+          "FEISHU__HR__CREDENTIALS__APP_ID": {
+            "type": "string",
+            "title": "Feishu  Hr  Credentials  App Id",
+            "default": ""
+          },
+          "FEISHU__HR__CREDENTIALS__APP_SECRET": {
+            "type": "string",
+            "title": "Feishu  Hr  Credentials  App Secret",
+            "default": ""
+          },
           "FEISHU__VEHICLE__CREDENTIALS__APP_ID": {
             "type": "string",
             "title": "Feishu  Vehicle  Credentials  App Id",
@@ -139495,6 +139625,28 @@
               }
             ],
             "title": "Feishu  Platform  App Secret"
+          },
+          "FEISHU__HR__CREDENTIALS__APP_ID": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu  Hr  Credentials  App Id"
+          },
+          "FEISHU__HR__CREDENTIALS__APP_SECRET": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu  Hr  Credentials  App Secret"
           },
           "FEISHU__VEHICLE__CREDENTIALS__APP_ID": {
             "anyOf": [
@@ -146130,6 +146282,19 @@
             ],
             "title": "Submit Content",
             "description": "\u63d0\u4ea4\u5ba1\u6838\u8bf4\u660e\uff08\u9009\u586b\uff0c\u5199\u5165\u672c\u6b21\u6d41\u8f6c\u8bb0\u5f55\uff1b\u4e3a\u7a7a\u65f6\u7528\u9ed8\u8ba4\u6587\u6848\uff09"
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\uff1a\u8d85\u7ea7\u7ba1\u7406\u5458\u66ff\u4ee3\u8c03\u67e5\u4eba\u63d0\u4ea4\u65f6\u5fc5\u586b\uff08\u4e0d\u5c11\u4e8e 4 \u4e2a\u5b57\uff09\uff0c\u5c06\u8bb0\u5165\u5ba1\u8ba1\u65e5\u5fd7"
           }
         },
         "type": "object",
@@ -146150,6 +146315,19 @@
             ],
             "title": "Content",
             "description": "\u63d0\u4ea4\u5ba1\u6838\u8bf4\u660e\uff08\u9009\u586b\uff0c\u5199\u5165\u672c\u6b21\u6d41\u8f6c\u8bb0\u5f55\uff09"
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\uff1a\u8d85\u7ea7\u7ba1\u7406\u5458\u66ff\u4ee3\u8c03\u67e5\u4eba\u63d0\u4ea4\u65f6\u5fc5\u586b\uff08\u4e0d\u5c11\u4e8e 4 \u4e2a\u5b57\uff09\uff0c\u5c06\u8bb0\u5165\u5ba1\u8ba1\u65e5\u5fd7"
           }
         },
         "type": "object",
@@ -148534,6 +148712,12 @@
             "type": "array",
             "title": "Allowed Actions",
             "description": "\u5f53\u524d\u767b\u5f55\u4eba\u53ef\u6267\u884c\u7684\u52a8\u4f5c"
+          },
+          "viewer_is_superuser": {
+            "type": "boolean",
+            "title": "Viewer Is Superuser",
+            "description": "\u5f53\u524d\u767b\u5f55\u4eba\u662f\u5426\u8d85\u7ea7\u7ba1\u7406\u5458\uff1a\u4e3a true \u65f6\u975e\u672c\u73af\u8282\u5904\u7406\u4eba\u64cd\u4f5c\u9700\u586b\u300c\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\u300d",
+            "default": false
           },
           "editable": {
             "type": "boolean",
@@ -161618,6 +161802,18 @@
             "title": "Module Highlight Color",
             "default": ""
           },
+          "pronunciation_dict": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Pronunciation Dict"
+          },
+          "coverage_min_score": {
+            "type": "number",
+            "title": "Coverage Min Score",
+            "default": 0.75
+          },
           "updated_at": {
             "anyOf": [
               {
@@ -162219,6 +162415,25 @@
           "clear_highlight_color": {
             "type": "boolean",
             "title": "Clear Highlight Color",
+            "default": false
+          },
+          "pronunciation_dict": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pronunciation Dict"
+          },
+          "clear_pronunciation_dict": {
+            "type": "boolean",
+            "title": "Clear Pronunciation Dict",
             "default": false
           }
         },
@@ -174913,6 +175128,19 @@
             "title": "Content",
             "description": "\u91cd\u65b0\u63d0\u4ea4\u8bf4\u660e",
             "default": ""
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\uff1a\u8d85\u7ea7\u7ba1\u7406\u5458\u66ff\u4ee3\u4e0a\u62a5\u4eba/\u8c03\u67e5\u4eba\u91cd\u65b0\u63d0\u4ea4\u65f6\u5fc5\u586b\uff08\u4e0d\u5c11\u4e8e 4 \u4e2a\u5b57\uff09"
           }
         },
         "type": "object",
@@ -175084,6 +175312,24 @@
             "title": "Content",
             "default": ""
           },
+          "is_override": {
+            "type": "boolean",
+            "title": "Is Override",
+            "description": "\u662f\u5426\u7ba1\u7406\u5458\u4ee3\u5ba1",
+            "default": false
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0"
+          },
           "create_time": {
             "anyOf": [
               {
@@ -175165,6 +175411,19 @@
             ],
             "title": "Deviation Level",
             "description": "\u504f\u5dee\u5206\u7ea7\uff08QA \u8d1f\u8d23\u4eba\u901a\u8fc7\u524d\u5fc5\u586b\uff09"
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "\u7ba1\u7406\u5458\u4ee3\u5ba1\u539f\u56e0\uff1a\u8d85\u7ea7\u7ba1\u7406\u5458\u66ff\u4ee3\u672c\u73af\u8282\u5904\u7406\u4eba\u64cd\u4f5c\u65f6\u5fc5\u586b\uff08\u4e0d\u5c11\u4e8e 4 \u4e2a\u5b57\uff09\uff0c\u5c06\u8bb0\u5165\u5ba1\u6838\u610f\u89c1\u4e0e\u5ba1\u8ba1\u65e5\u5fd7"
           }
         },
         "type": "object",
@@ -175263,7 +175522,8 @@
               "rewrite_all",
               "rewrite_selected",
               "rewrite_one",
-              "source_replace"
+              "source_replace",
+              "fill_missing"
             ],
             "title": "Mode"
           },
@@ -180550,7 +180810,8 @@
               "fill_blank",
               "rewrite_all",
               "rewrite_selected",
-              "rewrite_one"
+              "rewrite_one",
+              "fill_missing"
             ],
             "title": "Mode",
             "default": "rewrite_selected"
@@ -181306,6 +181567,36 @@
             "type": "boolean",
             "title": "Has Audio",
             "default": false
+          },
+          "coverage_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Score"
+          },
+          "coverage_missing": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Missing"
+          },
+          "coverage_ok": {
+            "type": "boolean",
+            "title": "Coverage Ok",
+            "default": true
           }
         },
         "type": "object",
@@ -181455,7 +181746,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 2000
+                "maxLength": 4000
               },
               {
                 "type": "null"

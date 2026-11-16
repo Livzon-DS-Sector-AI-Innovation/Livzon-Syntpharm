@@ -12,7 +12,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.hr.org_feishu import FeishuOrgDepartmentFetcher, load_hr_platform_credentials
+from app.modules.hr.org_feishu import FeishuOrgDepartmentFetcher, load_hr_bot_credentials
 
 EMPLOYEE_REQUIRED_FIELDS = (
     "base_info.employee_id",
@@ -61,14 +61,15 @@ class FeishuEmployeeProfileFetcher(FeishuOrgDepartmentFetcher):
     """Directory employee filter call for the whole in-scope org."""
 
     async def fetch_employees_by_filter(self, department_ids: list[str]) -> list[dict[str, Any]]:
+        """Return active staff in the visible departments.
+
+        Feishu requires ``base_info.departments.department_id`` and
+        ``work_info.staff_status`` together, and only supports
+        ``staff_status eq 1`` (在职). Statuses 2–5 and the ``in`` operator are
+        not supported by this endpoint, so the mirror is active-only.
+        """
         if not department_ids:
             return []
-        # 飞书只支持 staff_status eq 单个整数；in 会返回 2220014，且状态 2–5 不可过滤。
-        status_condition = {
-            "field": "work_info.staff_status",
-            "operator": "eq",
-            "value": json.dumps(1),
-        }
         # A whole-org scope can contain hundreds of departments; chunk the `in`
         # condition so the request body stays within Feishu's limits.
         deduped_ids = list(dict.fromkeys(department_ids))
@@ -83,7 +84,11 @@ class FeishuEmployeeProfileFetcher(FeishuOrgDepartmentFetcher):
                         "operator": "in",
                         "value": json.dumps(chunk, separators=(",", ":")),
                     },
-                    status_condition,
+                    {
+                        "field": "work_info.staff_status",
+                        "operator": "eq",
+                        "value": json.dumps(1),
+                    },
                 ]
             )
             for employee in batch:
@@ -126,5 +131,5 @@ class FeishuEmployeeProfileFetcher(FeishuOrgDepartmentFetcher):
 
 
 async def build_default_employee_fetcher(session: AsyncSession) -> FeishuEmployeeProfileFetcher:
-    app_id, app_secret = await load_hr_platform_credentials(session)
+    app_id, app_secret = await load_hr_bot_credentials(session)
     return FeishuEmployeeProfileFetcher(app_id=app_id, app_secret=app_secret)

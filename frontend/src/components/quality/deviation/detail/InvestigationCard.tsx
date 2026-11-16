@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useImperativeHandle, useState, type Ref } from 'react'
 import { App, Button, Empty, Input, Modal, Space } from 'antd'
 import { DownloadOutlined, FileTextOutlined, SendOutlined, WarningOutlined } from '@ant-design/icons'
 import { submitDeviationInvestigationForReview } from '@/actions/quality'
@@ -16,6 +16,11 @@ import { InvestigationRecordForm } from './InvestigationRecordForm'
 import { SectionCard } from './SectionCard'
 import { scrollToSection } from './detailScroll'
 
+/** 调查卡片的命令式入口：父级收到「一键填写调查报告」后用它展开提交表单 */
+export interface InvestigationCardHandle {
+  openSubmitForm: () => void
+}
+
 interface InvestigationCardProps {
   ledger: DeviationLedgerDetail
   onUpdated: (ledger: DeviationLedgerDetail) => void
@@ -23,6 +28,7 @@ interface InvestigationCardProps {
   prefill?: DeviationInvestigationPrefill | null
   /** 表单应用完 prefill 后回调实际写入项数，父级据此清空载荷并提示 */
   onPrefillApplied?: (filled: number) => void
+  ref?: Ref<InvestigationCardHandle>
 }
 
 function attachmentUrl(ledgerId: string, fileId: string): string {
@@ -166,13 +172,14 @@ function RecordBody({
  * 调查记录：时间线改为卡片流（作者/部门/时间 + 分区正文 + 附件预览下载）。
  * 附件只在调查记录内维护：未提交时在表单中上传/删除，提交后只能预览与下载。
  */
-export function InvestigationCard({ ledger, onUpdated, prefill, onPrefillApplied }: InvestigationCardProps) {
+export function InvestigationCard({ ledger, onUpdated, prefill, onPrefillApplied, ref }: InvestigationCardProps) {
   const { message } = App.useApp()
   // 结构化调查表单：submit=提交调查（流转），append=追加记录（不流转），null=收起
   const [formMode, setFormMode] = useState<'submit' | 'append' | null>(null)
   // 卡片快捷提交：调查记录已填写后可直接提交审核（不新建记录）
   const [submitOpen, setSubmitOpen] = useState(false)
   const [submitInfo, setSubmitInfo] = useState('')
+  const [overrideReason, setOverrideReason] = useState('')
   const [submitting, setSubmitting] = useState(false)
   // 当前正在预览的附件：非空即打开预览抽屉（左文档 + 右批注）
   const [previewAttachment, setPreviewAttachment] = useState<DeviationAttachment | null>(null)
@@ -215,6 +222,7 @@ export function InvestigationCard({ ledger, onUpdated, prefill, onPrefillApplied
     setSubmitting(true)
     const result = await submitDeviationInvestigationForReview(ledger.id, {
       content: submitInfo.trim() || null,
+      override_reason: overrideReason.trim() || undefined,
     })
     setSubmitting(false)
     if (result.code === 200 && result.data) {
@@ -227,21 +235,19 @@ export function InvestigationCard({ ledger, onUpdated, prefill, onPrefillApplied
     }
   }
 
-  // AI 一键填写：展开提交表单并滚动到本卡片；表单内部按 nonce 去重并只补空白
-  useEffect(() => {
-    if (!prefill) return
-    if (!canInvestigate) {
-      //: 调查表单不可打开的节点（如审核、已关闭）直接消费掉，避免悬挂
-      onPrefillApplied?.(0)
-      return
-    }
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- AI 卡片发出的一次性跨组件指令；改为派生会在填充完成、父级清空 prefill 时误关表单
-    setFormMode('submit')
-    const timer = window.setTimeout(() => {
-      scrollToSection('investigation')
-    }, 60)
-    return () => window.clearTimeout(timer)
-  }, [prefill, canInvestigate, onPrefillApplied])
+  // AI 一键填写：父级收到指令后调此入口展开提交表单并滚到本卡片；载荷交给表单按 nonce 去重填充
+  useImperativeHandle(
+    ref,
+    () => ({
+      openSubmitForm() {
+        if (!canInvestigate) return
+        setFormMode('submit')
+        // 等表单展开后的下一拍再滚动；板块不存在时 scrollToSection 静默返回
+        window.setTimeout(() => scrollToSection('investigation'), 60)
+      },
+    }),
+    [canInvestigate],
+  )
 
   return (
     <SectionCard
@@ -374,6 +380,20 @@ export function InvestigationCard({ ledger, onUpdated, prefill, onPrefillApplied
             placeholder="提交信息（选填），如：已按退回意见补充根本原因分析"
             onChange={(event) => setSubmitInfo(event.target.value)}
           />
+          {ledger.viewer_is_superuser && (
+            <div>
+              <p className="mb-1 text-[12px] text-[var(--color-slate)]">
+                管理员代审原因（非调查人操作时必填）
+              </p>
+              <Input
+                value={overrideReason}
+                maxLength={200}
+                allowClear
+                placeholder="如：调查人休假，管理员代提交；将写入审计日志"
+                onChange={(event) => setOverrideReason(event.target.value)}
+              />
+            </div>
+          )}
         </div>
       </Modal>
 

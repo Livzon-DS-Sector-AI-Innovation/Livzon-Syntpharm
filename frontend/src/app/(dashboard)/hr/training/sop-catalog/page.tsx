@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Table, Input, Select, Card, Space, Upload, Button, App } from 'antd'
 import { SearchOutlined, UploadOutlined } from '@ant-design/icons'
 import { apiFetchPaginated, apiGet } from '@/lib/api/client'
+import type { SopCatalogItem } from '@/types/hr'
 
 export default function SopCatalogPage() {
   const { message } = App.useApp()
@@ -45,7 +46,7 @@ export default function SopCatalogPage() {
       if (keyword) params.set('keyword', keyword)
       if (dept) params.set('department', dept)
       if (cat) params.set('category', cat)
-      return apiFetchPaginated<Record<string, unknown>>(`/api/v1/hr/sop-catalog?${params.toString()}`)
+      return apiFetchPaginated<SopCatalogItem>(`/api/v1/hr/sop-catalog?${params.toString()}`)
     },
   })
 

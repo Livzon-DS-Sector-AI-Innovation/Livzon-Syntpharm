@@ -10075,11 +10075,11 @@ export interface paths {
         get: operations["get_system_settings_api_v1_hr_system_settings_get"];
         /**
          * 保存系统设置
-         * @description 批量保存系统配置到 DB，同时写入 .env 文件。
+         * @description 批量保存系统配置到 DB。
          *
          *     凭据类字段加密后落库；空值或前端回传的掩码（****）视为「不修改」，
          *     避免把掩码当成新密钥写进库。未知键由 `HrSystemSettingsUpdate`
-         *     的 `extra="forbid"` 拒绝（422）。
+         *     的 `extra="forbid"` 拒绝（422）。运行时不改写部署 `.env`。
          */
         put: operations["save_system_settings_api_v1_hr_system_settings_put"];
         post?: never;
@@ -19115,6 +19115,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/recheck-coverage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 重算单页讲稿覆盖度（手工触发） */
+        post: operations["recheck_slide_coverage_api_v1_agent_ppt_videos__project_id__slides__slide_uid__recheck_coverage_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/regions": {
         parameters: {
             query?: never;
@@ -26925,6 +26942,11 @@ export interface components {
              * @default
              */
             opinion: string;
+            /**
+             * Override Reason
+             * @description 管理员代审原因：超级管理员替代本行审核人操作时必填（不少于 4 个字），将记入审核意见与审计日志
+             */
+            override_reason?: string | null;
         };
         /**
          * CrossDeptInvestigationRequest
@@ -26970,6 +26992,11 @@ export interface components {
              */
             submit_content?: string | null;
             /**
+             * Override Reason
+             * @description 管理员代审原因：超级管理员替代调查人提交时必填（不少于 4 个字），将记入审计日志
+             */
+            override_reason?: string | null;
+            /**
              * Department
              * @description 跨部门部门名（行标识）
              */
@@ -26990,6 +27017,11 @@ export interface components {
              * @description 退回理由（必填）
              */
             opinion: string;
+            /**
+             * Override Reason
+             * @description 管理员代审原因：超级管理员替代本行审核人操作时必填（不少于 4 个字），将记入审核意见与审计日志
+             */
+            override_reason?: string | null;
         };
         /**
          * CrossDeptReviewerItem
@@ -36787,6 +36819,11 @@ export interface components {
              * @default
              */
             content: string;
+            /**
+             * Override Reason
+             * @description 管理员代审原因：超级管理员替代所属 QA 录入编号时必填（不少于 4 个字），将记入审计日志
+             */
+            override_reason?: string | null;
         };
         /**
          * GlobalAiSettingsRequest
@@ -38914,6 +38951,16 @@ export interface components {
              */
             FEISHU__PLATFORM__APP_SECRET: string;
             /**
+             * Feishu  Hr  Credentials  App Id
+             * @default
+             */
+            FEISHU__HR__CREDENTIALS__APP_ID: string;
+            /**
+             * Feishu  Hr  Credentials  App Secret
+             * @default
+             */
+            FEISHU__HR__CREDENTIALS__APP_SECRET: string;
+            /**
              * Feishu  Vehicle  Credentials  App Id
              * @default
              */
@@ -38984,6 +39031,10 @@ export interface components {
             FEISHU__PLATFORM__APP_ID?: string | null;
             /** Feishu  Platform  App Secret */
             FEISHU__PLATFORM__APP_SECRET?: string | null;
+            /** Feishu  Hr  Credentials  App Id */
+            FEISHU__HR__CREDENTIALS__APP_ID?: string | null;
+            /** Feishu  Hr  Credentials  App Secret */
+            FEISHU__HR__CREDENTIALS__APP_SECRET?: string | null;
             /** Feishu  Vehicle  Credentials  App Id */
             FEISHU__VEHICLE__CREDENTIALS__APP_ID?: string | null;
             /** Feishu  Vehicle  Credentials  App Secret */
@@ -41811,6 +41862,11 @@ export interface components {
              * @description 提交审核说明（选填，写入本次流转记录；为空时用默认文案）
              */
             submit_content?: string | null;
+            /**
+             * Override Reason
+             * @description 管理员代审原因：超级管理员替代调查人提交时必填（不少于 4 个字），将记入审计日志
+             */
+            override_reason?: string | null;
         };
         /**
          * InvestigationSubmitRequest
@@ -41822,6 +41878,11 @@ export interface components {
              * @description 提交审核说明（选填，写入本次流转记录）
              */
             content?: string | null;
+            /**
+             * Override Reason
+             * @description 管理员代审原因：超级管理员替代调查人提交时必填（不少于 4 个字），将记入审计日志
+             */
+            override_reason?: string | null;
         };
         /** InvoiceLineItem */
         InvoiceLineItem: {
@@ -43067,6 +43128,12 @@ export interface components {
              * @description 当前登录人可执行的动作
              */
             allowed_actions?: string[];
+            /**
+             * Viewer Is Superuser
+             * @description 当前登录人是否超级管理员：为 true 时非本环节处理人操作需填「管理员代审原因」
+             * @default false
+             */
+            viewer_is_superuser: boolean;
             /**
              * Editable
              * @description 基础信息是否可编辑
@@ -49132,6 +49199,15 @@ export interface components {
              * @default
              */
             module_highlight_color: string;
+            /** Pronunciation Dict */
+            pronunciation_dict?: {
+                [key: string]: string;
+            };
+            /**
+             * Coverage Min Score
+             * @default 0.75
+             */
+            coverage_min_score: number;
             /** Updated At */
             updated_at?: string | null;
         };
@@ -49315,6 +49391,15 @@ export interface components {
              * @default false
              */
             clear_highlight_color: boolean;
+            /** Pronunciation Dict */
+            pronunciation_dict?: {
+                [key: string]: string;
+            } | null;
+            /**
+             * Clear Pronunciation Dict
+             * @default false
+             */
+            clear_pronunciation_dict: boolean;
         };
         /** PurchaseApprovalRecordResponse */
         PurchaseApprovalRecordResponse: {
@@ -54633,6 +54718,11 @@ export interface components {
              * @default
              */
             content: string;
+            /**
+             * Override Reason
+             * @description 管理员代审原因：超级管理员替代上报人/调查人重新提交时必填（不少于 4 个字）
+             */
+            override_reason?: string | null;
         };
         /**
          * RetentionStatus
@@ -54733,6 +54823,17 @@ export interface components {
              * @default
              */
             content: string;
+            /**
+             * Is Override
+             * @description 是否管理员代审
+             * @default false
+             */
+            is_override: boolean;
+            /**
+             * Override Reason
+             * @description 管理员代审原因
+             */
+            override_reason?: string | null;
             /** Create Time */
             create_time?: string | null;
         };
@@ -54772,6 +54873,11 @@ export interface components {
              * @description 偏差分级（QA 负责人通过前必填）
              */
             deviation_level?: string | null;
+            /**
+             * Override Reason
+             * @description 管理员代审原因：超级管理员替代本环节处理人操作时必填（不少于 4 个字），将记入审核意见与审计日志
+             */
+            override_reason?: string | null;
         };
         /**
          * ReviewingDrugItem
@@ -54809,7 +54915,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "fill_blank" | "rewrite_all" | "rewrite_selected" | "rewrite_one" | "source_replace";
+            mode: "fill_blank" | "rewrite_all" | "rewrite_selected" | "rewrite_one" | "source_replace" | "fill_missing";
             /** Instruction */
             instruction?: string | null;
             /** Model Name */
@@ -57256,7 +57362,7 @@ export interface components {
              * @default rewrite_selected
              * @enum {string}
              */
-            mode: "fill_blank" | "rewrite_all" | "rewrite_selected" | "rewrite_one";
+            mode: "fill_blank" | "rewrite_all" | "rewrite_selected" | "rewrite_one" | "fill_missing";
             /** Slide Uids */
             slide_uids?: string[];
             /** Instruction */
@@ -57613,6 +57719,15 @@ export interface components {
              * @default false
              */
             has_audio: boolean;
+            /** Coverage Score */
+            coverage_score?: number | null;
+            /** Coverage Missing */
+            coverage_missing?: string[] | null;
+            /**
+             * Coverage Ok
+             * @default true
+             */
+            coverage_ok: boolean;
         };
         /**
          * SlideRegionItem
@@ -111824,6 +111939,40 @@ export interface operations {
                 "application/json": components["schemas"]["SlideUpdateRequest"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_SlideItem_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recheck_slide_coverage_api_v1_agent_ppt_videos__project_id__slides__slide_uid__recheck_coverage_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                slide_uid: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

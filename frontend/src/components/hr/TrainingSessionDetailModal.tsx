@@ -16,7 +16,7 @@ import {
 } from 'antd'
 import dayjs from 'dayjs'
 import { useQuery } from '@tanstack/react-query'
-import { fetchDepartments } from '@/lib/api/client/hr'
+import { fetchDepartments, searchEmployees } from '@/lib/api/client/hr'
 import { createTrainingSession, updateTrainingSession, sendTrainingSessionSelectTasksAction } from '@/actions/hr'
 import type { TrainingSessionExtended as TrainingSession, TrainingSessionCreateInput, TrainingSessionUpdateInput } from '@/types/hr'
 
@@ -57,7 +57,40 @@ export default function TrainingSessionDetailModal({
   // Create mode or explicit startEditing: begin in edit mode; View mode: start read-only
   const [editing, setEditing] = useState(isCreate || startEditing)
   const [saving, setSaving] = useState(false)
-  const nameToNumberMap: Record<string, string> = {}
+  const nameToNumberMap = useMemo(() => {
+    const map: Record<string, string> = {}
+    const names = record?.employee_names ?? []
+    const numbers = record?.employee_numbers ?? []
+    names.forEach((name, index) => {
+      const number = numbers[index]
+      if (number) map[name] = number
+    })
+    return map
+  }, [record?.employee_names, record?.employee_numbers])
+
+  const missingNames = useMemo(
+    () => (record?.employee_names ?? []).filter((name) => !nameToNumberMap[name]),
+    [record?.employee_names, nameToNumberMap]
+  )
+
+  const { data: fetchedNumberMap = {}, isLoading: numbersLoading } = useQuery<Record<string, string>>({
+    queryKey: ['hr-employee-numbers', missingNames],
+    enabled: missingNames.length > 0,
+    queryFn: async () => {
+      const map: Record<string, string> = {}
+      for (const name of missingNames) {
+        const res = await searchEmployees({ keyword: name, page_size: 20 })
+        const hit = res.find((item) => item.name === name && item.employee_number)
+        if (hit?.employee_number) map[name] = hit.employee_number
+      }
+      return map
+    },
+  })
+
+  const resolvedNumberMap = useMemo(
+    () => ({ ...nameToNumberMap, ...fetchedNumberMap }),
+    [nameToNumberMap, fetchedNumberMap]
+  )
   const factory = (record?.factory as 'old' | 'new') || 'old'
 
   const { data: departments = [] } = useQuery<{ value: string; label: string }[]>({
@@ -102,7 +135,13 @@ export default function TrainingSessionDetailModal({
     try {
       const values = await form.validateFields()
       setSaving(true)
-      const employeeNumbers = (values.employee_names || []).map((name: string) => nameToNumberMap[name] || '')
+      const employeeNames: string[] = values.employee_names || []
+      const employeeNumbers = employeeNames.map((name: string) => resolvedNumberMap[name] || '')
+      const missingNumbers = employeeNames.filter((_, index) => !employeeNumbers[index])
+      if (missingNumbers.length > 0) {
+        message.error(`无法匹配工号：${missingNumbers.join('、')}`)
+        return
+      }
       const payload: TrainingSessionCreateInput | TrainingSessionUpdateInput = {
         factory,
         department: values.department,
@@ -164,7 +203,7 @@ export default function TrainingSessionDetailModal({
         editing ? (
           <Space>
             <Button onClick={onClose}>取消</Button>
-            <Button type="primary" onClick={handleSave} loading={saving}>
+            <Button type="primary" onClick={handleSave} loading={saving || numbersLoading}>
               保存
             </Button>
           </Space>

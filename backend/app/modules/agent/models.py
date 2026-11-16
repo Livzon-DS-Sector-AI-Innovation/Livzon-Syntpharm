@@ -83,6 +83,8 @@ REWRITE_MODE_REWRITE_ALL = "rewrite_all"
 REWRITE_MODE_REWRITE_SELECTED = "rewrite_selected"
 REWRITE_MODE_REWRITE_ONE = "rewrite_one"
 REWRITE_MODE_SOURCE_REPLACE = "source_replace"
+#: 覆盖度补全：按「漏讲要点」重写指定页，保留原有内容、补上没讲到的部分
+REWRITE_MODE_FILL_MISSING = "fill_missing"
 
 REWRITE_MODES = (
     REWRITE_MODE_FILL_BLANK,
@@ -90,6 +92,7 @@ REWRITE_MODES = (
     REWRITE_MODE_REWRITE_SELECTED,
     REWRITE_MODE_REWRITE_ONE,
     REWRITE_MODE_SOURCE_REPLACE,
+    REWRITE_MODE_FILL_MISSING,
 )
 
 # 修订记录状态（复用任务状态语义，独立常量避免跨表耦合）
@@ -204,6 +207,11 @@ class PptVideoProject(BaseModel):
         nullable=False,
         comment="产出当前页图的渲染管线指纹；与 render.RENDERER_KEY 不一致即视为过期",
     )
+    pronunciation_dict: Mapped[dict[str, str] | None] = mapped_column(
+        JSON(none_as_null=True),
+        nullable=True,
+        comment="项目级发音词典 {原文: 合成替代文本}；空=只用模块级词表",
+    )
 
     def body_is_stale(self, current_body_key: str) -> bool:
         """已渲染过、且当前正文指纹与上次渲染不一致 → 提示「需重新生成」。"""
@@ -292,6 +300,15 @@ class PptVideoSlide(BaseModel):
     )
     script_stale: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="false", nullable=False, comment="画面已变、讲稿尚未按新画面重写"
+    )
+    coverage_score: Mapped[float | None] = mapped_column(
+        Float, nullable=True, comment="讲稿要点覆盖率 0~1；空=尚未检查"
+    )
+    coverage_missing: Mapped[list[str] | None] = mapped_column(
+        JSON(none_as_null=True), nullable=True, comment="漏讲要点摘要（阅读顺序，最多 10 条）"
+    )
+    coverage_checked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="最近一次覆盖度检查时间"
     )
 
 

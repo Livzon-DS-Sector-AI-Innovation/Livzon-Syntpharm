@@ -1,7 +1,21 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Alert, App, Button, Checkbox, ColorPicker, Input, Modal, Select, Slider, Space, Tag, Typography } from 'antd'
+import {
+  Alert,
+  App,
+  Button,
+  Checkbox,
+  ColorPicker,
+  Input,
+  Modal,
+  Progress,
+  Select,
+  Slider,
+  Space,
+  Tag,
+  Typography,
+} from 'antd'
 import {
   DownloadOutlined,
   EditOutlined,
@@ -12,8 +26,15 @@ import {
 } from '@ant-design/icons'
 
 import HighlightRegionsDrawer from './HighlightRegionsDrawer'
+import PronunciationDictModal from './PronunciationDictModal'
 import SlideContentEditor from './SlideContentEditor'
-import { previewSlide, rewriteScripts, saveSlideScript } from '@/actions/agent/ppt-video'
+import {
+  completeMissing,
+  previewSlide,
+  recheckCoverage,
+  rewriteScripts,
+  saveSlideScript,
+} from '@/actions/agent/ppt-video'
 import { PermissionGate } from '@/components/auth/PermissionGate'
 import { fetchPptVideoDetail } from '@/lib/api/client/agent'
 import { PERM } from '@/lib/permissions/codes'
@@ -72,6 +93,9 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
   const [saving, setSaving] = useState(false)
   const [previewing, setPreviewing] = useState(false)
   const [rewriting, setRewriting] = useState(false)
+  const [completing, setCompleting] = useState(false)
+  const [rechecking, setRechecking] = useState(false)
+  const [dictOpen, setDictOpen] = useState(false)
   // 库里的配音地址优先；试听后就地覆盖，不必等整页重新拉取
   const [audioOverride, setAudioOverride] = useState<string | null | undefined>(undefined)
   const audioUrl = audioOverride !== undefined ? audioOverride : (slide.audio_url ?? null)
@@ -131,6 +155,34 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
   }
 
   /** 单页改写走同步（background=false），拿到结果后直接回填编辑框 */
+  const handleRecheckCoverage = async () => {
+    setRechecking(true)
+    const result = await recheckCoverage(detail.id, slide.slide_uid)
+    setRechecking(false)
+    if (!result.success || !result.data) {
+      message.error(result.message)
+      return
+    }
+    onDetailChange(result.data)
+    message.success(result.message)
+  }
+
+  const handleCompleteMissing = async () => {
+    setCompleting(true)
+    const result = await completeMissing(detail.id, slide.slide_uid, slide.coverage_missing ?? [])
+    setCompleting(false)
+    if (!result.success) {
+      message.error(result.message)
+      return
+    }
+    if (result.data) {
+      onDetailChange(result.data)
+      const next = (result.data.slides ?? []).find((item) => item.slide_uid === slide.slide_uid)
+      if (next) setScriptText(next.script_text ?? '')
+    }
+    message.success(result.message)
+  }
+
   const handleRewriteOne = async () => {
     setRewriting(true)
     const result = await rewriteScripts(detail.id, {
@@ -250,6 +302,14 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
         onChange={setHighlightRegions}
       />
 
+      <PronunciationDictModal
+        key={dictOpen ? 'dict-open' : 'dict-closed'}
+        open={dictOpen}
+        detail={detail}
+        onClose={() => setDictOpen(false)}
+        onSaved={onDetailChange}
+      />
+
       <Modal
         open={rewritePromptOpen}
         title="画面已更新"
@@ -289,6 +349,9 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
                 已配音
               </Tag>
             )}
+            <Button size="small" icon={<SoundOutlined />} onClick={() => setDictOpen(true)}>
+              发音词典
+            </Button>
           </Space>
         </div>
         {slide.script_stale && (
@@ -305,6 +368,39 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
             }
           />
         )}
+        {slide.coverage_score !== null && (
+          <div className="mb-2 rounded-lg border border-[#E5E3DF] p-2">
+            <div className="flex items-center justify-between gap-2">
+              <Typography.Text type="secondary" className="text-[12px]">
+                要点覆盖 {Math.round((slide.coverage_score ?? 0) * 100)}%（达标线{' '}
+                {Math.round(detail.coverage_min_score * 100)}%）
+              </Typography.Text>
+              <Space size={6}>
+                <Button size="small" loading={rechecking} onClick={handleRecheckCoverage}>
+                  重算
+                </Button>
+                {slide.coverage_ok === false && (
+                  <Button size="small" type="primary" loading={completing} onClick={handleCompleteMissing}>
+                    补全本页
+                  </Button>
+                )}
+              </Space>
+            </div>
+            <Progress
+              percent={Math.round((slide.coverage_score ?? 0) * 100)}
+              size="small"
+              showInfo={false}
+              status={slide.coverage_ok === false ? 'exception' : 'success'}
+            />
+            {slide.coverage_ok === false && (
+              <Typography.Paragraph type="secondary" className="!mb-0 !text-[11px]">
+                {slide.coverage_missing?.length
+                  ? `未讲到：${slide.coverage_missing.join('；')}`
+                  : '页面文字未全部讲完，建议补全后再出片。'}
+              </Typography.Paragraph>
+            )}
+          </div>
+        )}
         <TextArea
           value={scriptText}
           onChange={(event) => setScriptText(event.target.value)}
@@ -317,7 +413,7 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
                 : `按页填写旁白，例如：本页介绍 ${detail.name} 的工艺流程与关键控制点。`
           }
           showCount
-          maxLength={2000}
+          maxLength={4000}
         />
         {noSourceText && (
           <Typography.Paragraph type="secondary" className="!mb-0 !mt-2 !text-[12px]">

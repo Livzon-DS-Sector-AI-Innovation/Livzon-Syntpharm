@@ -19,6 +19,7 @@ from typing import Any, cast
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import storage as core_storage
 from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
 from app.modules.quality.qms import deviation_flow
 from app.modules.quality.qms import deviation_ledger_service as service_module
@@ -762,6 +763,31 @@ def test_merge_states_keeps_identical_and_resets_changed() -> None:
     assert "review_state" not in merged[2]
 
 
+def test_merge_states_keeps_investigation_progress_for_pending_row() -> None:
+    """未通过的行改了基础信息后，部门调查进度不应被重置回待调查。"""
+    person = uuid.uuid4()
+    head = uuid.uuid4()
+    investigated = {
+        "department": "设备部",
+        "investigator_ids": [str(person)],
+        "dept_head_id": str(head),
+        "investigate_state": CROSS_DEPT_INVESTIGATION_SUBMITTED,
+        "investigate_submitted_by": str(person),
+        "investigate_submitted_name": "李四",
+        "investigate_submitted_at": "2026-11-12T09:00:00+00:00",
+        "review_state": CROSS_DEPT_ROW_PENDING,
+    }
+    merged = _merge_cross_dept_states(
+        [investigated],
+        [{"department": "设备部", "investigator_ids": [str(person)], "dept_head_id": str(head)}],
+    )
+    assert merged[0]["investigate_state"] == CROSS_DEPT_INVESTIGATION_SUBMITTED
+    assert merged[0]["investigate_submitted_by"] == str(person)
+    assert merged[0]["investigate_submitted_name"] == "李四"
+    # 保留的是调查进度，审核状态仍为待审
+    assert "review_state" not in merged[0]
+
+
 def test_build_record_renumbers_capa_and_snapshots_attachments() -> None:
     row = _record_row()
     file_id = uuid.UUID(str(row.attachments[0]["file_id"]))
@@ -1079,9 +1105,10 @@ async def test_submit_investigation_attachment_only_uses_fallback_content(monkey
     assert record["attachments"][0]["file_id"] == str(file_id)
 
 
-async def test_remove_attachment_blocked_when_referenced_by_record() -> None:
+async def test_remove_attachment_blocked_when_referenced_by_record(monkeypatch: pytest.MonkeyPatch) -> None:
     investigator = uuid.uuid4()
     file_id = uuid.uuid4()
+    monkeypatch.setattr(core_storage, "is_enabled", lambda: False)
     #: 删除窗口只在调查节点开放（提交后只能预览/下载），这里用待调查状态验证「已被记录引用」单独拦截
     row = _record_row(file_id=file_id, status=LedgerStatus.PENDING_INVESTIGATION.value, handler_ids=[investigator])
     row.investigation_records = [{"nonconformity_description": "x", "attachments": [{"file_id": str(file_id)}]}]

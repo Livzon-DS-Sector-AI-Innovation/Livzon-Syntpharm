@@ -9,6 +9,22 @@ from app.modules.hr.schemas import DepartmentCreate
 from app.modules.hr.service import DepartmentService
 
 
+class _FakeFeishu:
+    async def sync_department_created(self, *args, **kwargs) -> None:
+        return None
+
+    async def sync_department_updated(self, *args, **kwargs) -> None:
+        return None
+
+    async def sync_department_deleted(self, *args, **kwargs) -> None:
+        return None
+
+
+@pytest.fixture(autouse=True)
+def _fake_feishu(monkeypatch):
+    monkeypatch.setattr("app.modules.hr.service.FeishuBitableSync", _FakeFeishu)
+
+
 @pytest.fixture
 def dept_data():
     return DepartmentCreate(

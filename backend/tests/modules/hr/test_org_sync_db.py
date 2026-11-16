@@ -6,15 +6,18 @@ and persists the run log, not just into the in-memory fake used by the unit seam
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import AppException
 from app.modules.hr.models import HrDepartment as Department
 from app.modules.hr.models import HrOrgSyncRun as OrgSyncRun
 from app.modules.hr.org_repository import SqlAlchemyOrgDepartmentStore
+from app.modules.hr.org_service import SYNC_LOCK_TIMEOUT_SECONDS, enqueue_manual_org_sync
 from app.modules.hr.org_sync import sync_org_departments
 from tests.fixtures.org_scope import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
 
@@ -142,3 +145,61 @@ async def test_failed_sync_rolls_back_department_writes_and_records_failure(db_s
     assert run is not None
     assert run.status == "failed"
     assert "database write failed" in (run.error_message or "")
+
+
+async def test_enqueue_rejects_second_running_run(
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    db_session.add(
+        OrgSyncRun(
+            status="running",
+            department_count=0,
+            people_count=0,
+            error_message=None,
+            started_at=datetime.now(UTC),
+            finished_at=None,
+        )
+    )
+    await db_session.commit()
+
+    async def _no_latest(_session: AsyncSession) -> None:
+        return None
+
+    monkeypatch.setattr("app.modules.hr.org_service.get_latest_sync_run", _no_latest)
+
+    with pytest.raises(AppException) as exc_info:
+        await enqueue_manual_org_sync(db_session)
+
+    assert exc_info.value.status_code == 409
+    runs = (await db_session.execute(select(OrgSyncRun))).scalars().all()
+    assert len(runs) == 1
+    assert runs[0].status == "running"
+
+
+async def test_enqueue_expires_stale_running_run(
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    stale_started = datetime.now(UTC) - timedelta(seconds=SYNC_LOCK_TIMEOUT_SECONDS + 1)
+    db_session.add(
+        OrgSyncRun(
+            status="running",
+            department_count=0,
+            people_count=0,
+            error_message=None,
+            started_at=stale_started,
+            finished_at=None,
+        )
+    )
+    await db_session.commit()
+
+    async def _noop_submit(*_args: object, **_kwargs: object) -> str:
+        return "job-id"
+
+    monkeypatch.setattr("app.modules.hr.org_service.submit_job", _noop_submit)
+
+    await enqueue_manual_org_sync(db_session)
+
+    runs = (await db_session.execute(select(OrgSyncRun).order_by(OrgSyncRun.started_at))).scalars().all()
+    assert [run.status for run in runs] == ["failed", "running"]

@@ -169,6 +169,17 @@ export async function apiGet<T>(url: string, options?: RequestInit): Promise<T> 
   return json.data
 }
 
+export async function apiGetWithMeta<
+  T,
+  M = { page?: number; page_size?: number; total?: number },
+>(url: string, options?: RequestInit): Promise<{ data: T; meta: M }> {
+  const json = await fetchApi<{ code: number; data: T; message?: string; meta?: M }>(url, {
+    ...options,
+    method: 'GET',
+  })
+  return { data: json.data, meta: (json.meta ?? {}) as M }
+}
+
 export async function apiFetchPaginated<T>(
   url: string,
   options?: RequestInit,

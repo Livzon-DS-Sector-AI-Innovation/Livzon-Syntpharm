@@ -19,7 +19,7 @@ MODULE_CODE = "agent"
 SUPPORTED_LANGUAGES: tuple[str, ...] = ("zh", "en")
 
 #: 单页讲稿长度上限（字符），防止误贴整篇文档把 TTS 拖死
-MAX_SCRIPT_CHARS = 2000
+MAX_SCRIPT_CHARS = 4000
 
 #: 上传 PPT 大小上限（字节），默认 100MB
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
@@ -38,10 +38,15 @@ ENCODER_KEY = "v2-h264-1920x1080-30-yuv420p-aac48000-128k"
 #: 而且缓存命中日志看起来完全正常，排查毫无线索（2026-11-04 踩过：文字染色重写了，worker 复用旧片段）。
 #: 它参与 `cache.segment_key()`，版本一变全库页片段自动失效、下次出片必重渲；音频 key 不含它，TTS 不必重跑。
 #: 1 = 从「无版本记录」起算的第一版；此前渲染出的片段等同于版本 0，因此升级后旧片段一律失效。
-RENDER_VERSION = 1
+RENDER_VERSION = 2
 
 #: 讲稿风格指南正文上限（字符），超长会挤占单批 90 秒预算
 SCRIPT_GUIDE_MAX_CHARS = 2000
+
+
+#: 逐段合成时的标点分级停顿：逗号/顿号/冒号短停，句末长停，未识别回落 segment_pause_ms
+PAUSE_SHORT_CHARS = "，,、：:"
+PAUSE_LONG_CHARS = "。！？!?；;…."
 
 #: 页内视觉引导样式
 HIGHLIGHT_STYLE_TEXT_RECOLOR = "text_recolor"  # 讲到的文字变主色，背景不动；不画框（图片/图表只加淡色底）
@@ -121,11 +126,27 @@ class PptVideoSettings:
     #: 文字染色强度（0 不染色，100 完全换成主色）
     highlight_recolor_strength: int
     highlight_max_steps: int
+    #: 单页音频最大段数（1~20）：与 highlight_max_steps 解耦。
+    #: 段数越多，段间停顿越多、听感越碎；但不能少于画面帧数，否则合并时会把两句连读。
+    audio_max_segments: int
     #: 逐段合成旁白：高亮时间轴 = 各段音频实测时长；关掉则退回整页单段与估算
     segment_tts_enabled: bool
+    #: 段间停顿（未识别标点时的默认值）
     segment_pause_ms: int
+    #: 逗号/顿号/冒号后的停顿
+    segment_pause_comma_ms: int
+    #: 句号/问号/叹号/分号后的停顿
+    segment_pause_period_ms: int
+    #: 每段合成音频首尾保留的静音毫秒：太短会有硬切感，太长会让节奏发飘
+    silence_trim_ms: int
     highlight_min_dwell_ms: int
     highlight_text_match_coverage: float
+    #: 覆盖度自检：单个元素被判「讲到」的字面重合率门槛
+    coverage_element_threshold: float
+    #: 覆盖度自检：页级达标阈值（低于它前端标「可能漏讲」）
+    coverage_min_score: float
+    #: 模块级发音词典（JSON 字符串 {"原文": "合成替代"}），全模块生效
+    pronunciation_dict: str
 
     def default_voice(self, language: str) -> str:
         return self.default_voice_zh if language == "zh" else self.default_voice_en
@@ -136,8 +157,9 @@ DEFAULTS = PptVideoSettings(
     default_voice_zh="zf_001",
     default_voice_en="af_bella",
     default_speed=1.0,
+    # 页间 300/300：与页内分级停顿（120/300）量级协调，避免「页内赶、翻页停」
     head_padding_ms=300,
-    tail_padding_ms=500,
+    tail_padding_ms=300,
     max_slides=60,
     job_timeout_seconds=1800,
     tts_engine="kokoro",
@@ -148,10 +170,11 @@ DEFAULTS = PptVideoSettings(
     pdf_split_batch=8,
     max_attempts=3,
     script_ai_enabled=True,
-    # 单批 6 页 + 风格指南容易撞 90 秒硬超时，默认降到 3 页，失败面也更小
-    script_ai_batch_size=3,
+    # 单页一批：多页共享一次注意力时，长页会被压成摘要（「没讲完就翻页」的直接原因）
+    script_ai_batch_size=1,
     script_ai_timeout_seconds=90,
-    script_ai_max_page_text_chars=2000,
+    # 长表格/多栏页在 2000 字处被截断后，模型根本看不到后半页
+    script_ai_max_page_text_chars=4000,
     script_ai_config_id="",
     script_ai_global_guide="",
     script_guide_max_chars=SCRIPT_GUIDE_MAX_CHARS,
@@ -164,12 +187,20 @@ DEFAULTS = PptVideoSettings(
     highlight_fill_alpha=28,
     highlight_recolor_strength=100,
     highlight_max_steps=6,
+    # 画面 6 帧只影响观感；音频段数放宽到 12，避免「两句并一段」被连读成倍速
+    audio_max_segments=12,
     segment_tts_enabled=True,
     # 180ms 是「句间自然换气」的下限；再大就会显得旁白在卡顿
     segment_pause_ms=180,
+    segment_pause_comma_ms=120,
+    segment_pause_period_ms=300,
+    silence_trim_ms=60,
     # 一段不足 0.7 秒观众来不及看清，直接并入相邻段，避免画面高频闪烁
     highlight_min_dwell_ms=700,
     highlight_text_match_coverage=0.6,
+    coverage_element_threshold=0.6,
+    coverage_min_score=0.75,
+    pronunciation_dict="",
 )
 
 
@@ -198,6 +229,18 @@ async def load_settings() -> PptVideoSettings:
         coverage = float(coverage_raw) if coverage_raw else DEFAULTS.highlight_text_match_coverage
     except ValueError:
         coverage = DEFAULTS.highlight_text_match_coverage
+
+    coverage_element_raw = await _text("AGENT_PPT_VIDEO_COVERAGE_ELEMENT_THRESHOLD", "")
+    try:
+        coverage_element = float(coverage_element_raw) if coverage_element_raw else DEFAULTS.coverage_element_threshold
+    except ValueError:
+        coverage_element = DEFAULTS.coverage_element_threshold
+
+    coverage_min_raw = await _text("AGENT_PPT_VIDEO_COVERAGE_MIN_SCORE", "")
+    try:
+        coverage_min = float(coverage_min_raw) if coverage_min_raw else DEFAULTS.coverage_min_score
+    except ValueError:
+        coverage_min = DEFAULTS.coverage_min_score
 
     return PptVideoSettings(
         default_language=await _text("AGENT_PPT_VIDEO_DEFAULT_LANGUAGE", DEFAULTS.default_language),
@@ -259,10 +302,28 @@ async def load_settings() -> PptVideoSettings:
         highlight_max_steps=max(
             1, min(await _number("AGENT_PPT_VIDEO_HIGHLIGHT_MAX_STEPS", DEFAULTS.highlight_max_steps), 12)
         ),
+        audio_max_segments=max(
+            1, min(await _number("AGENT_PPT_VIDEO_AUDIO_MAX_SEGMENTS", DEFAULTS.audio_max_segments), 20)
+        ),
         segment_tts_enabled=await _flag("AGENT_PPT_VIDEO_SEGMENT_TTS_ENABLED", DEFAULTS.segment_tts_enabled),
         segment_pause_ms=max(
             0, min(await _number("AGENT_PPT_VIDEO_SEGMENT_PAUSE_MS", DEFAULTS.segment_pause_ms), 1000)
         ),
+        segment_pause_comma_ms=max(
+            0,
+            min(
+                await _number("AGENT_PPT_VIDEO_SEGMENT_PAUSE_COMMA_MS", DEFAULTS.segment_pause_comma_ms),
+                1000,
+            ),
+        ),
+        segment_pause_period_ms=max(
+            0,
+            min(
+                await _number("AGENT_PPT_VIDEO_SEGMENT_PAUSE_PERIOD_MS", DEFAULTS.segment_pause_period_ms),
+                2000,
+            ),
+        ),
+        silence_trim_ms=max(0, min(await _number("AGENT_PPT_VIDEO_SILENCE_TRIM_MS", DEFAULTS.silence_trim_ms), 500)),
         highlight_min_dwell_ms=max(
             0,
             min(
@@ -271,4 +332,7 @@ async def load_settings() -> PptVideoSettings:
             ),
         ),
         highlight_text_match_coverage=min(max(coverage, 0.2), 1.0),
+        coverage_element_threshold=min(max(coverage_element, 0.2), 1.0),
+        coverage_min_score=min(max(coverage_min, 0.1), 1.0),
+        pronunciation_dict=await _text("AGENT_PPT_VIDEO_PRONUNCIATION_DICT", DEFAULTS.pronunciation_dict),
     )
