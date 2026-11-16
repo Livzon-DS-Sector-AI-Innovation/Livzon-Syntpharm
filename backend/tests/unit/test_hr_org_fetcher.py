@@ -192,11 +192,16 @@ class _EmployeeFetcher(FeishuEmployeeProfileFetcher):
         return []
 
 
-async def test_employee_filter_does_not_restrict_staff_status() -> None:
+async def test_employee_filter_pairs_department_and_active_status() -> None:
     fetcher = _EmployeeFetcher()
 
     await fetcher.fetch_employees_by_filter([f"od-{i}" for i in range(60)])
 
     assert len(fetcher.conditions) == 2
-    fields = [condition["field"] for batch in fetcher.conditions for condition in batch]
-    assert fields == ["base_info.departments.department_id", "base_info.departments.department_id"]
+    for batch in fetcher.conditions:
+        assert [condition["field"] for condition in batch] == [
+            "base_info.departments.department_id",
+            "work_info.staff_status",
+        ]
+        assert batch[1]["operator"] == "eq"
+        assert batch[1]["value"] == "1"

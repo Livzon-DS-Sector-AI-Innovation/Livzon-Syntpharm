@@ -61,16 +61,15 @@ class FeishuEmployeeProfileFetcher(FeishuOrgDepartmentFetcher):
     """Directory employee filter call for the whole in-scope org."""
 
     async def fetch_employees_by_filter(self, department_ids: list[str]) -> list[dict[str, Any]]:
-        """Return every status Feishu exposes for the visible departments.
+        """Return active staff in the visible departments.
 
-        The directory returned by this filter is the mirror snapshot; 员工档案
-        applies the 在职 default locally. If Feishu omits a resigned person's
-        department, that person is outside this department-filtered snapshot.
+        Feishu requires ``base_info.departments.department_id`` and
+        ``work_info.staff_status`` together, and only supports
+        ``staff_status eq 1`` (在职). Statuses 2–5 and the ``in`` operator are
+        not supported by this endpoint, so the mirror is active-only.
         """
         if not department_ids:
             return []
-        # Fetch every status; Feishu cannot filter 2–5, so filtering is done in
-        # the application (员工档案 defaults to 在职).
         # A whole-org scope can contain hundreds of departments; chunk the `in`
         # condition so the request body stays within Feishu's limits.
         deduped_ids = list(dict.fromkeys(department_ids))
@@ -84,6 +83,11 @@ class FeishuEmployeeProfileFetcher(FeishuOrgDepartmentFetcher):
                         "field": "base_info.departments.department_id",
                         "operator": "in",
                         "value": json.dumps(chunk, separators=(",", ":")),
+                    },
+                    {
+                        "field": "work_info.staff_status",
+                        "operator": "eq",
+                        "value": json.dumps(1),
                     },
                 ]
             )
