@@ -14,8 +14,9 @@ TTS 依赖也能正常启动（试听接口会返回明确提示），需要用 
 """
 
 import logging
+import sys
 import wave
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -227,8 +228,68 @@ def synthesize_to_wav(
     return get_engine(engine_name).synthesize(text.strip(), language, voice_id, speed, out_path)
 
 
-def concat_wavs(parts: list[Path], out_path: Path, pause_ms: int = 0) -> tuple[Path, int]:
+#: 判定为静音的采样绝对值阈值（16bit）：低于它的样本视为底噪
+SILENCE_THRESHOLD = 200
+
+
+def trim_silence(path: str | Path, keep_ms: int = 60, threshold: int = SILENCE_THRESHOLD) -> int:
+    """裁掉一段 WAV 的首尾静音，两端各保留 `keep_ms`，返回裁剪后时长(ms)。
+
+    引擎每段输出的首尾静音长度不一，直接拼会让段间停顿忽长忽短；
+    先裁到统一余量，再由 `concat_wavs` 按标点补停顿，节奏才可控。
+    """
+    import array
+
+    with wave.open(str(path), "rb") as handle:
+        channels = handle.getnchannels()
+        sampwidth = handle.getsampwidth()
+        rate = handle.getframerate()
+        frames = handle.readframes(handle.getnframes())
+    if sampwidth != 2 or not frames:
+        return int(len(frames) / (rate * max(1, sampwidth) * max(1, channels)) * 1000)
+
+    samples = array.array("h")
+    samples.frombytes(frames[: len(frames) - (len(frames) % 2)])
+    if sys.byteorder == "big":
+        samples.byteswap()
+
+    total = len(samples)
+    first = 0
+    while first < total and abs(samples[first]) <= threshold:
+        first += 1
+    if first >= total:
+        # 全静音：保留一帧，避免产出 0 长度 WAV
+        first, last = 0, 1
+    else:
+        last = total
+        while last > first and abs(samples[last - 1]) <= threshold:
+            last -= 1
+
+    keep = int(rate * max(0, keep_ms) / 1000)
+    start = max(0, first - keep)
+    end = min(total, last + keep)
+    trimmed = samples[start:end]
+
+    if sys.byteorder == "big":
+        trimmed.byteswap()
+    with wave.open(str(path), "wb") as out:
+        out.setnchannels(channels)
+        out.setsampwidth(sampwidth)
+        out.setframerate(rate)
+        out.writeframes(trimmed.tobytes())
+    return int(len(trimmed) / rate * 1000)
+
+
+def concat_wavs(
+    parts: list[Path],
+    out_path: Path,
+    pause_ms: int = 0,
+    pauses: Sequence[int] | None = None,
+) -> tuple[Path, int]:
     """按序拼接 16bit 单声道 PCM WAV，段间插入静音，返回 (路径, 总时长ms)。
+
+    `pauses` 给出每条边界的静音长度（按上一段尾标点分级），优先于统一的 `pause_ms`；
+    缺省或长度不足的位置回落到 `pause_ms`。
 
     格式不一致（换过引擎/采样率不同）直接抛 `TtsError`，由上层退回整页合成；
     宁可多合成一次，也不能拼出一段采样率错乱的音频把整条视频带坏。
@@ -242,7 +303,15 @@ def concat_wavs(parts: list[Path], out_path: Path, pause_ms: int = 0) -> tuple[P
     if channels != 1 or sampwidth != 2:
         raise TtsError(f"不支持的音频格式：{channels} 声道 / {sampwidth * 8} bit")
 
-    silence = b"\x00\x00" * int(sample_rate * max(0, pause_ms) / 1000)
+    boundaries = len(parts) - 1
+    if pauses is None:
+        gaps = [max(0, int(pause_ms))] * boundaries
+    else:
+        gaps = [
+            max(0, int(pauses[index])) if index < len(pauses) else max(0, int(pause_ms))
+            for index in range(boundaries)
+        ]
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     total_frames = 0
     with wave.open(str(out_path), "wb") as target:
@@ -254,7 +323,8 @@ def concat_wavs(parts: list[Path], out_path: Path, pause_ms: int = 0) -> tuple[P
                 if source.getnchannels() != 1 or source.getsampwidth() != 2 or source.getframerate() != sample_rate:
                     raise TtsError("音频片段格式不一致，无法拼接")
                 data = source.readframes(source.getnframes())
-            if index and silence:
+            if index and gaps[index - 1]:
+                silence = b"\x00\x00" * int(sample_rate * gaps[index - 1] / 1000)
                 target.writeframes(silence)
                 total_frames += len(silence) // 2
             target.writeframes(data)

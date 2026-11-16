@@ -31,6 +31,7 @@ export function CrossDeptReviewCard({ ledger, onUpdated }: CrossDeptReviewCardPr
   const { message } = App.useApp()
   const rows = (ledger.cross_dept_reviewers ?? []) as DeviationCrossDeptReviewer[]
   const [opinions, setOpinions] = useState<Record<string, string>>({})
+  const [overrideReason, setOverrideReason] = useState('')
   const [approving, setApproving] = useState<string | null>(null)
   const [rejectingDept, setRejectingDept] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
@@ -53,6 +54,7 @@ export function CrossDeptReviewCard({ ledger, onUpdated }: CrossDeptReviewCardPr
     const result = await approveDeviationCrossDeptRow(ledger.id, {
       department,
       opinion: opinions[department]?.trim() ?? '',
+      override_reason: overrideReason.trim() || undefined,
     })
     setApproving(null)
     if (result.code === 200 && result.data) {
@@ -74,6 +76,7 @@ export function CrossDeptReviewCard({ ledger, onUpdated }: CrossDeptReviewCardPr
     const result = await rejectDeviationCrossDeptRow(ledger.id, {
       department: rejectingDept,
       opinion,
+      override_reason: overrideReason.trim() || undefined,
     })
     if (result.code === 200 && result.data) {
       message.success(`「${rejectingDept}」已退回，等待该部门重新调查与审核`)
@@ -97,6 +100,20 @@ export function CrossDeptReviewCard({ ledger, onUpdated }: CrossDeptReviewCardPr
       }
     >
       <div className="flex flex-col gap-3">
+        {isCrossStep && ledger.viewer_is_superuser && (
+          <div>
+            <p className="mb-1 text-[12px] text-[var(--color-slate)]">
+              管理员代审原因（非本行审核人操作时必填）
+            </p>
+            <Input
+              value={overrideReason}
+              maxLength={200}
+              allowClear
+              placeholder="如：该行审核人休假，管理员代处理；将写入审核意见与审计日志"
+              onChange={(event) => setOverrideReason(event.target.value)}
+            />
+          </div>
+        )}
         {rows.map((row) => {
           const approved = row.review_state === 'approved'
           const investigated = row.investigate_state === 'submitted'

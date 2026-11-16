@@ -51,6 +51,29 @@ def test_parse_pptx_reads_page_order_text_and_notes(tmp_path: Path) -> None:
     assert slides[1].notes == "正文备注"
 
 
+def test_parse_pptx_joins_page_text_in_reading_order(tmp_path: Path) -> None:
+    """页文本按「上→下、左→右」拼，但 layout.shapes 必须保持原始 z-order。
+
+    layout 顺序决定元素 id（s0/s1…）与页指纹，动了会让存量项目换源时被判全量变更。
+    """
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[6])  # 空白版式
+    right = slide.shapes.add_textbox(Emu(6000000), Emu(1500000), Emu(3000000), Emu(600000))
+    right.text_frame.text = "右栏内容"
+    title = slide.shapes.add_textbox(Emu(800000), Emu(400000), Emu(6000000), Emu(700000))
+    title.text_frame.text = "页面标题"
+    left = slide.shapes.add_textbox(Emu(800000), Emu(1500000), Emu(3000000), Emu(600000))
+    left.text_frame.text = "左栏内容"
+    path = tmp_path / "reading-order.pptx"
+    presentation.save(str(path))
+
+    slides = parse_pptx(path)
+
+    assert slides[0].text == "页面标题\n左栏内容\n右栏内容"
+    # layout 顺序不动：仍是添加顺序（右栏 → 标题 → 左栏）
+    assert [shape["text"] for shape in slides[0].layout["shapes"]] == ["右栏内容", "页面标题", "左栏内容"]
+
+
 def test_parse_pptx_rejects_corrupted_file(tmp_path: Path) -> None:
     broken = tmp_path / "broken.pptx"
     broken.write_bytes(b"not a zip at all")

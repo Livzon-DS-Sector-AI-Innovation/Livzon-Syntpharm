@@ -130,6 +130,7 @@ export function InvestigationRecordForm({
   //: 提交审核二次确认：确认弹窗内可填写提交信息（选填，写入流转记录）
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false)
   const [submitInfo, setSubmitInfo] = useState('')
+  const [overrideReason, setOverrideReason] = useState('')
   const pendingSubmitRef = useRef<DeviationInvestigationInput | null>(null)
   const hasUrgent = Form.useWatch('has_urgent', form)
   const attachmentIds = Form.useWatch('attachment_file_ids', form)
@@ -377,6 +378,7 @@ export function InvestigationRecordForm({
     const payload: DeviationInvestigationInput = {
       ...body,
       submit_content: submitInfo.trim() || null,
+      override_reason: overrideReason.trim() || undefined,
     }
     setSubmitConfirmOpen(false)
     await runSubmit(payload)
@@ -656,6 +658,20 @@ export function InvestigationRecordForm({
             placeholder="提交信息（选填），如：已完成根本原因分析与 CAPA 制定"
             onChange={(event) => setSubmitInfo(event.target.value)}
           />
+          {ledger.viewer_is_superuser && (
+            <div>
+              <p className="mb-1 text-[12px] text-[var(--color-slate)]">
+                管理员代审原因（非本部门调查人操作时必填）
+              </p>
+              <Input
+                value={overrideReason}
+                maxLength={200}
+                allowClear
+                placeholder="如：本部门调查人休假，管理员代提交；将写入审计日志"
+                onChange={(event) => setOverrideReason(event.target.value)}
+              />
+            </div>
+          )}
         </div>
       </Modal>
     </Form>

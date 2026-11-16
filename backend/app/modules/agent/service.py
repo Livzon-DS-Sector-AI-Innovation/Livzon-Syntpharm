@@ -23,10 +23,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core import storage
 from app.modules.agent import (
     ai_config,
+    coverage,
     editor,
     highlight,
     page_images,
     parser,
+    pronunciation,
     queue,
     render,
     rewrite,
@@ -53,6 +55,8 @@ from app.modules.agent.config import (
     HIGHLIGHT_STYLES,
     MAX_SCRIPT_CHARS,
     MODULE_CODE,
+    PAUSE_LONG_CHARS,
+    PAUSE_SHORT_CHARS,
     SCRIPT_GUIDE_MAX_CHARS,
     PptVideoSettings,
     load_settings,
@@ -225,6 +229,7 @@ def resolve_effective(
     project: PptVideoProject,
     engine_name: str,
     engine_version: str,
+    dict_fingerprint: str = "",
 ) -> EffectiveVoice:
     """页级覆盖 > 项目默认。音色与语言不匹配时回落到该语言默认音色。"""
     language = slide.language or project.default_language or DEFAULTS.default_language
@@ -236,7 +241,7 @@ def resolve_effective(
         voice_id = fallback
     script = normalize_script(slide.script_text or "")
     script_sha256 = script_key(script, language)
-    fingerprint = voice_key(language, voice_id, speed, engine_name, engine_version)
+    fingerprint = voice_key(language, voice_id, speed, engine_name, engine_version, dict_fingerprint)
     return EffectiveVoice(
         language=language,
         voice_id=voice_id,
@@ -248,15 +253,24 @@ def resolve_effective(
     )
 
 
+def build_lexicon(settings: PptVideoSettings, project: PptVideoProject | None = None) -> pronunciation.Lexicon:
+    """合并模块级与项目级发音词典（项目级优先）。"""
+    return pronunciation.build(
+        settings.pronunciation_dict,
+        getattr(project, "pronunciation_dict", None) if project is not None else None,
+    )
+
+
 def compute_body_input_key(
     slides: list[PptVideoSlide],
     project: PptVideoProject,
     engine_name: str,
     engine_version: str,
+    dict_fingerprint: str = "",
 ) -> str:
     """正文输入签名（第 2 页起）。空讲稿的页不参与，避免未填页阻塞判断。"""
     keys = [
-        resolve_effective(slide, project, engine_name, engine_version).input_key
+        resolve_effective(slide, project, engine_name, engine_version, dict_fingerprint).input_key
         for slide in sorted(slides, key=lambda item: item.slide_no)
         if slide.slide_no > 1
     ]
@@ -292,6 +306,8 @@ class PageAudio:
     #: 分段结果；为空表示退回「整页单段合成」，出帧走旧的字数估算
     segments: list[highlight.ScriptSegment] = field(default_factory=list)
     segment_durations_ms: list[int] = field(default_factory=list)
+    #: 各段之间的停顿（长度 = 段数-1）；按上一段尾标点分级
+    segment_pauses_ms: list[int] = field(default_factory=list)
     pause_ms: int = 0
 
     @property
@@ -302,9 +318,31 @@ class PageAudio:
     def segment_slots_ms(self) -> list[int]:
         """出帧用：每段占用时长 = 该段音频 + 段后停顿（末段不含停顿）。"""
         slots = [max(0, int(value)) for value in self.segment_durations_ms]
-        if len(slots) > 1 and self.pause_ms > 0:
-            slots = [value + self.pause_ms for value in slots[:-1]] + [slots[-1]]
-        return slots
+        if len(slots) <= 1:
+            return slots
+        if self.segment_pauses_ms:
+            gaps = [max(0, int(value)) for value in self.segment_pauses_ms[: len(slots) - 1]]
+            gaps += [max(0, int(self.pause_ms))] * (len(slots) - 1 - len(gaps))
+        else:
+            gaps = [max(0, int(self.pause_ms))] * (len(slots) - 1)
+        return [value + gap for value, gap in zip(slots[:-1], gaps, strict=True)] + [slots[-1]]
+
+
+def pause_after_segment(text: str, settings: PptVideoSettings) -> int:
+    """按上一段的尾标点决定停顿：逗号短停、句末长停、未识别回落默认值。
+
+    统一 180ms 会让「逗号」和「句号」听感一样，断句显得机械；
+    分级后节奏更接近真人播报。
+    """
+    stripped = (text or "").rstrip()
+    if not stripped:
+        return settings.segment_pause_ms
+    last = stripped[-1]
+    if last in PAUSE_LONG_CHARS:
+        return settings.segment_pause_period_ms
+    if last in PAUSE_SHORT_CHARS:
+        return settings.segment_pause_comma_ms
+    return settings.segment_pause_ms
 
 
 def page_audio_plan(
@@ -315,29 +353,33 @@ def page_audio_plan(
 ) -> tuple[list[highlight.ScriptSegment], int, str]:
     """决定本页走逐段合成还是整页合成，并给出页音频指纹。
 
-    只有「本页真的出高亮 + 逐段合成开启 + 段数 > 1」才分段：高亮只看模块总闸、
-    项目级与本页级三个开关（`highlight.highlight_active`），项目没勾选且本页也没勾选时
-    不分段，指纹与改造前完全一致，老项目的音频缓存继续命中。
+    音频是否分段只看**模块总闸 + 项目开关**：单页开关只影响画面，不再影响音频。
+    否则同一项目会出现「部分页分段合成、部分页整页合成」，页与页之间音色与节奏跳变。
+    段数上限用 `audio_max_segments`，与画面帧数（`highlight_max_steps`）解耦。
     """
     segments: list[highlight.ScriptSegment] = []
-    active = highlight.highlight_active(
-        settings.highlight_enabled,
-        bool(getattr(project, "highlight_override_enabled", False)),
-        bool(getattr(slide, "highlight_override_enabled", False)),
-    )
+    # 音频只看「模块总闸 + 项目开关」：本页开关是"画面要不要亮"，不参与音频决策。
+    # 注意不能用 highlight_active（它是 项目 OR 本页 的语义），否则单页开关会让音频分段。
+    active = bool(settings.highlight_enabled) and bool(getattr(project, "highlight_override_enabled", False))
     if active and settings.segment_tts_enabled:
         segments = highlight.resolve_segments(
             effective.script,
             slide.layout or {},
             slide.script_segments,
-            settings.highlight_max_steps,
+            settings.audio_max_segments,
+            language=effective.language,
         )
     if len(segments) <= 1:
         return [], 0, build_audio_key(effective.script_sha256, effective.voice_fingerprint)
 
     pause_ms = settings.segment_pause_ms
+    pauses = [pause_after_segment(segment.text, settings) for segment in segments[:-1]]
     texts = "\n".join(segment.text for segment in segments)
-    boundaries = sha256_bytes(f"segments\n{pause_ms}\n{texts}".encode())[:16]
+    # 分级停顿与裁剪余量都会改变波形，必须进指纹，否则改了参数还复用旧音频
+    profile = ",".join(str(value) for value in pauses)
+    boundaries = sha256_bytes(
+        f"segments\ndefault{pause_ms}\n{profile}\ntrim{settings.silence_trim_ms}\n{texts}".encode()
+    )[:16]
     return (
         segments,
         pause_ms,
@@ -383,6 +425,7 @@ async def _ensure_whole_page_audio(
     audio_path: Path,
     engine_name: str,
     sha_hint: str,
+    lexicon: pronunciation.Lexicon | None = None,
 ) -> PageAudio:
     """整页单段合成（改造前的路径，也是分段失败时的兜底）。"""
     if _download_object(audio_object_key(audio_fingerprint), audio_path):
@@ -390,10 +433,11 @@ async def _ensure_whole_page_audio(
         duration = await asyncio.to_thread(tts.wav_duration_ms, audio_path)
         return PageAudio(audio_path, duration, sha, audio_fingerprint)
 
+    speech_text, _hits = (lexicon or pronunciation.Lexicon()).apply(effective.script)
     try:
         result = await asyncio.to_thread(
             tts.synthesize_to_wav,
-            effective.script,
+            speech_text,
             effective.language,
             effective.voice_id,
             effective.speed,
@@ -424,6 +468,7 @@ async def _synthesize_by_segments(
     pause_ms: int,
     audio_path: Path,
     work_dir: Path,
+    lexicon: pronunciation.Lexicon | None = None,
 ) -> PageAudio:
     """逐段合成（段级缓存）→ 拼接页面音频 → 落库 + 写段时长元数据。
 
@@ -434,32 +479,36 @@ async def _synthesize_by_segments(
     part_paths: list[Path] = [
         work_dir / "audio-seg" / f"{audio_fingerprint}-{index:02d}.wav" for index, _ in enumerate(segments)
     ]
+    # 裁剪余量进段级缓存 key：改了余量就不能复用旧片段（首尾静音长度不同）
+    trim_variant = f"trim{settings.silence_trim_ms}"
 
     async def _synthesize_one(index: int, segment: highlight.ScriptSegment) -> int:
         part_path = part_paths[index]
-        key = segment_audio_key(segment.text, effective.language, effective.voice_fingerprint)
+        # 词典只作用于送 TTS 的文本：讲稿与高亮匹配保持原文
+        speech_text, _hits = (lexicon or pronunciation.Lexicon()).apply(segment.text)
+        key = segment_audio_key(speech_text, effective.language, effective.voice_fingerprint, trim_variant)
         async with semaphore:
-            if _download_object(segment_audio_object_key(key), part_path):
-                return await asyncio.to_thread(tts.wav_duration_ms, part_path)
-            result = await asyncio.to_thread(
-                tts.synthesize_to_wav,
-                segment.text,
-                effective.language,
-                effective.voice_id,
-                effective.speed,
-                part_path,
-                engine_name,
-            )
-            part_bytes = await asyncio.to_thread(part_path.read_bytes)
-            await asyncio.to_thread(
-                storage.upload_object,
-                BUCKET_MODULE,
-                segment_audio_object_key(key),
-                part_bytes,
-                len(part_bytes),
-                "audio/wav",
-            )
-            return result.duration_ms
+            if not _download_object(segment_audio_object_key(key), part_path):
+                await asyncio.to_thread(
+                    tts.synthesize_to_wav,
+                    speech_text,
+                    effective.language,
+                    effective.voice_id,
+                    effective.speed,
+                    part_path,
+                    engine_name,
+                )
+                part_bytes = await asyncio.to_thread(part_path.read_bytes)
+                await asyncio.to_thread(
+                    storage.upload_object,
+                    BUCKET_MODULE,
+                    segment_audio_object_key(key),
+                    part_bytes,
+                    len(part_bytes),
+                    "audio/wav",
+                )
+            # 统一裁掉首尾静音（幂等）：段间停顿只由标点分级决定，不再叠加引擎自带静音
+            return await asyncio.to_thread(tts.trim_silence, part_path, settings.silence_trim_ms)
 
     gathered = await asyncio.gather(
         *(_synthesize_one(index, segment) for index, segment in enumerate(segments)),
@@ -471,7 +520,10 @@ async def _synthesize_by_segments(
             raise item
         durations.append(int(item))
 
-    merged_path, _joined_ms = await asyncio.to_thread(tts.concat_wavs, part_paths, audio_path, pause_ms)
+    pauses = [pause_after_segment(segment.text, settings) for segment in segments[:-1]]
+    merged_path, _joined_ms = await asyncio.to_thread(
+        tts.concat_wavs, part_paths, audio_path, pause_ms, pauses
+    )
     duration = await asyncio.to_thread(tts.wav_duration_ms, merged_path)
     wav_bytes = await asyncio.to_thread(merged_path.read_bytes)
     await asyncio.to_thread(
@@ -483,7 +535,14 @@ async def _synthesize_by_segments(
         "audio/wav",
     )
     meta = json.dumps(
-        {"durations": durations, "segments": len(segments), "pause_ms": pause_ms}, ensure_ascii=False
+        {
+            "durations": durations,
+            "segments": len(segments),
+            "pause_ms": pause_ms,
+            "pauses": pauses,
+            "trim_ms": settings.silence_trim_ms,
+        },
+        ensure_ascii=False,
     ).encode()
     await asyncio.to_thread(
         storage.upload_object,
@@ -498,9 +557,10 @@ async def _synthesize_by_segments(
         duration,
         sha256_bytes(wav_bytes),
         audio_fingerprint,
-        segments,
-        durations,
-        pause_ms,
+        segments=segments,
+        segment_durations_ms=durations,
+        segment_pauses_ms=pauses,
+        pause_ms=pause_ms,
     )
 
 
@@ -516,7 +576,17 @@ async def prepare_page_audio(
 
     分段合成出任何问题都退回整页单段合成：单页旁白不该把整条视频带崩。
     """
-    effective = resolve_effective(slide, project, engine_name, engine_version)
+    lexicon = build_lexicon(settings, project)
+    if lexicon.entries:
+        logger.info(
+            "发音词典生效",
+            extra={
+                "project_id": str(project.id),
+                "slide_no": slide.slide_no,
+                "dict_entries": len(lexicon.entries),
+            },
+        )
+    effective = resolve_effective(slide, project, engine_name, engine_version, lexicon.fingerprint)
     if not effective.script:
         raise ServiceError("本页讲稿为空，请先填写后再试听")
 
@@ -525,17 +595,36 @@ async def prepare_page_audio(
     sha_hint = (slide.audio_sha256 or "") if slide.audio_key == audio_fingerprint else ""
 
     if not segments:
-        return await _ensure_whole_page_audio(effective, audio_fingerprint, audio_path, engine_name, sha_hint)
+        return await _ensure_whole_page_audio(
+            effective, audio_fingerprint, audio_path, engine_name, sha_hint, lexicon
+        )
 
     durations = _load_segment_durations(audio_fingerprint)
     if _download_object(audio_object_key(audio_fingerprint), audio_path) and len(durations) == len(segments):
         sha = sha_hint or await asyncio.to_thread(sha256_file, audio_path)
         duration = await asyncio.to_thread(tts.wav_duration_ms, audio_path)
-        return PageAudio(audio_path, duration, sha, audio_fingerprint, segments, durations, pause_ms)
+        return PageAudio(
+            audio_path,
+            duration,
+            sha,
+            audio_fingerprint,
+            segments=segments,
+            segment_durations_ms=durations,
+            segment_pauses_ms=[pause_after_segment(seg.text, settings) for seg in segments[:-1]],
+            pause_ms=pause_ms,
+        )
 
     try:
         return await _synthesize_by_segments(
-            segments, effective, settings, engine_name, audio_fingerprint, pause_ms, audio_path, work_dir
+            segments,
+            effective,
+            settings,
+            engine_name,
+            audio_fingerprint,
+            pause_ms,
+            audio_path,
+            work_dir,
+            lexicon,
         )
     except Exception:  # noqa: BLE001 - 分段合成任何失败都退回整页，保证出片
         logger.exception(
@@ -547,7 +636,9 @@ async def prepare_page_audio(
         whole_fingerprint = build_audio_key(effective.script_sha256, effective.voice_fingerprint)
         whole_path = work_dir / "audio" / f"{whole_fingerprint}.wav"
         whole_sha = (slide.audio_sha256 or "") if slide.audio_key == whole_fingerprint else ""
-        return await _ensure_whole_page_audio(effective, whole_fingerprint, whole_path, engine_name, whole_sha)
+        return await _ensure_whole_page_audio(
+            effective, whole_fingerprint, whole_path, engine_name, whole_sha, lexicon
+        )
 
 
 # ── 项目 ────────────────────────────────────────────────────────────────────
@@ -638,8 +729,8 @@ async def create_project(
                     source_index=item.slide_no,
                     script_text=script,
                     script_source=SCRIPT_SOURCE_UPLOAD if not script_ai.is_blank_script(script) else "",
-                    page_text=(item.text or "")[:5000] or None,
-                    page_notes=(item.notes or "")[:5000] or None,
+                    page_text=(item.text or "")[:8000] or None,
+                    page_notes=(item.notes or "")[:8000] or None,
                     layout=item.layout,
                     page_fingerprint=item.fingerprint,
                     created_by=created_by,
@@ -812,7 +903,19 @@ def _highlight_regions_payload(slide: PptVideoSlide) -> HighlightRegionsPayload 
     return HighlightRegionsPayload.model_validate(dumped) if dumped else None
 
 
-def slide_item(slide: PptVideoSlide, project_id: uuid.UUID) -> SlideItem:
+def apply_coverage(slide: PptVideoSlide, element_threshold: float) -> None:
+    """按当前讲稿重算覆盖度并写回本页字段。
+
+    未检查（纯图片页 / 空讲稿）时清空而不是保留旧值：页文本或讲稿变了以后，
+    旧覆盖率会误导用户以为已经达标。
+    """
+    values = coverage.values_for(slide.script_text, slide.layout, element_threshold=element_threshold)
+    slide.coverage_score = values["coverage_score"]
+    slide.coverage_missing = values["coverage_missing"]
+    slide.coverage_checked_at = values["coverage_checked_at"]
+
+
+def slide_item(slide: PptVideoSlide, project_id: uuid.UUID, *, min_score: float = 0.0) -> SlideItem:
     return SlideItem(
         slide_no=slide.slide_no,
         slide_uid=slide.slide_uid,
@@ -835,6 +938,10 @@ def slide_item(slide: PptVideoSlide, project_id: uuid.UUID) -> SlideItem:
         audio_sha256=slide.audio_sha256,
         duration_ms=slide.duration_ms or 0,
         has_audio=bool(slide.audio_object_key),
+        coverage_score=slide.coverage_score,
+        coverage_missing=slide.coverage_missing,
+        # 未检查（None）按达标处理：纯图片页没有可核对的内容，不该标「可能漏讲」
+        coverage_ok=slide.coverage_score is None or slide.coverage_score >= min_score,
     )
 
 
@@ -996,7 +1103,9 @@ async def get_detail(
     versions = await list_versions(session, project_id)
     job = await queue.get_latest(session, project_id)
     engine_name, engine_version = current_engine(settings)
-    current_body = compute_body_input_key(slides, project, engine_name, engine_version)
+    current_body = compute_body_input_key(
+        slides, project, engine_name, engine_version, build_lexicon(settings, project).fingerprint
+    )
     return ProjectDetail(
         id=project.id,
         name=project.name,
@@ -1010,7 +1119,7 @@ async def get_detail(
         body_key=project.body_key,
         current_body_key=current_body,
         body_stale=bool(project.body_input_key) and project.body_input_key != current_body,
-        slides=[slide_item(slide, project_id) for slide in slides],
+        slides=[slide_item(slide, project_id, min_score=settings.coverage_min_score) for slide in slides],
         versions=[version_item(version) for version in versions],
         latest_job=job_state(job),
         script_ai=script_ai_state(project, slides),
@@ -1027,6 +1136,8 @@ async def get_detail(
         # 模块默认值只用于「跟随默认」时的回显与色板预览，前端不据此落库
         module_highlight_style=settings.highlight_style,
         module_highlight_color=settings.highlight_color,
+        pronunciation_dict=project.pronunciation_dict or {},
+        coverage_min_score=settings.coverage_min_score,
         updated_at=project.updated_at,
     )
 
@@ -1110,6 +1221,8 @@ async def update_project(
     highlight_override_enabled: bool | None = None,
     clear_highlight_style: bool = False,
     clear_highlight_color: bool = False,
+    pronunciation_dict: dict[str, str] | None = None,
+    clear_pronunciation_dict: bool = False,
     updated_by: uuid.UUID | None,
 ) -> PptVideoProject:
     project = await get_project(session, project_id)
@@ -1158,6 +1271,17 @@ async def update_project(
             if not normalized:
                 raise ServiceError("高亮颜色需为 #RRGGBB 格式")
             project.highlight_color = normalized
+    if clear_pronunciation_dict:
+        project.pronunciation_dict = None
+    elif pronunciation_dict is not None:
+        cleaned = {
+            key.strip(): value.strip()
+            for key, value in pronunciation_dict.items()
+            if key.strip() and value.strip()
+        }
+        if len(cleaned) > pronunciation.MAX_ENTRIES:
+            raise ServiceError(f"发音词典最多 {pronunciation.MAX_ENTRIES} 条，请精简后再保存")
+        project.pronunciation_dict = cleaned or None
     project.updated_by = updated_by
     if (project.highlight_style, project.highlight_color, bool(project.highlight_override_enabled)) != prev_highlight:
         # 「保存即生效」：画面配置变了就作废全部页片段（含未单独覆盖的页），
@@ -1269,6 +1393,7 @@ async def update_slide(
     clear_highlight_color: bool = False,
     clear_highlight_regions: bool = False,
     updated_by: uuid.UUID | None,
+    settings: PptVideoSettings | None = None,
 ) -> PptVideoSlide:
     project = await get_project(session, project_id)
     slide = await get_slide_by_uid(session, project_id, slide_uid)
@@ -1351,6 +1476,21 @@ async def update_slide(
         # 不能只依赖缓存 key 变化——key 里的视觉指纹一旦漏项（或渲染器换了实现），
         # 同样的 key 会把旧画面端回来，用户改完配置看着像没保存成功。
         await invalidate_slide_segments(session, slide)
+    # 手改讲稿后覆盖率立即刷新：不能让用户看着旧的「已达标」去出片
+    apply_coverage(slide, (settings or DEFAULTS).coverage_element_threshold)
+    await session.flush()
+    return slide
+
+
+async def recheck_coverage(
+    session: AsyncSession,
+    project_id: uuid.UUID,
+    slide_uid: str,
+    settings: PptVideoSettings,
+) -> PptVideoSlide:
+    """手工重算一页的覆盖度（页文本/讲稿在别处被改过时用）。"""
+    slide = await get_slide_by_uid(session, project_id, slide_uid)
+    apply_coverage(slide, settings.coverage_element_threshold)
     await session.flush()
     return slide
 
@@ -1436,7 +1576,9 @@ async def preview_slide(
     slide = await get_slide_by_uid(session, project_id, slide_uid)
 
     engine_name, engine_version = current_engine(settings)
-    effective = resolve_effective(slide, project, engine_name, engine_version)
+    effective = resolve_effective(
+        slide, project, engine_name, engine_version, build_lexicon(settings, project).fingerprint
+    )
     if not effective.script:
         raise ServiceError("本页讲稿为空，请先填写后再试听")
 

@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y \
     fonts-liberation \
     fonts-crosextra-carlito \
     fonts-crosextra-caladea \
+    fonts-wqy-zenhei \
     && rm -rf /var/lib/apt/lists/*
 
 # 字体必须与 Dockerfile.worker 保持一致：上传后的页图由 backend 进程生成

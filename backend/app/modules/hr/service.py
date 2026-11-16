@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import DuplicateException, NotFoundException
 from app.modules.hr.feishu.bitable import FeishuBitableSync
+from app.modules.hr.feishu.employee_datasource import EmployeeBitableDataSource
 from app.modules.hr.models import (
     AnnualTrainingPlan,
     AnnualTrainingPlanItem,
@@ -47,9 +48,6 @@ from app.modules.hr.schemas import (
 )
 from app.platform.integrations.feishu.candidate_datasource import (
     CandidateBitableDataSource,
-)
-from app.platform.integrations.feishu.employee_datasource import (
-    EmployeeBitableDataSource,
 )
 
 logger = logging.getLogger(__name__)

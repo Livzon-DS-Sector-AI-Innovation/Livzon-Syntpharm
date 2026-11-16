@@ -7,7 +7,7 @@ import { EyeOutlined } from '@ant-design/icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { fetchDepartureRecords } from '@/lib/api/client/hr'
-import type { DepartureRecord, DepartureRecordListResponse } from '@/types/hr'
+import type { DepartureRecord } from '@/types/hr'
 import DepartureRecordDetailDrawer from './DepartureRecordDetailDrawer'
 import DepartureRecordFormDrawer from './DepartureRecordFormDrawer'
 import LedgerTableShell from './LedgerTableShell'
@@ -29,13 +29,11 @@ export default function DepartureClient({ initialRecords, initialTotal }: Depart
   const [formOpen, setFormOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<DepartureRecord | null>(null)
 
-  const initialData = useMemo<DepartureRecordListResponse | undefined>(() => {
+  const initialData = useMemo<{ items: DepartureRecord[]; total: number } | undefined>(() => {
     if (keyword || department || page !== 1 || pageSize !== 20) return undefined
     return {
-      code: 200,
-      message: 'success',
-      data: initialRecords,
-      meta: { page: 1, page_size: 20, total: initialTotal },
+      items: initialRecords,
+      total: initialTotal,
     }
   }, [keyword, department, page, pageSize, initialRecords, initialTotal])
 
@@ -52,8 +50,8 @@ export default function DepartureClient({ initialRecords, initialTotal }: Depart
     staleTime: 0,
   })
 
-  const records = data?.data ?? []
-  const total = typeof data?.meta?.total === 'number' ? data.meta.total : 0
+  const records = data?.items ?? []
+  const total = data?.total ?? 0
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: [QUERY_KEY] })
 

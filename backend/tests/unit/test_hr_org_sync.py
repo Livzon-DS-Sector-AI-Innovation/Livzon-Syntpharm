@@ -18,6 +18,7 @@ from uuid import UUID
 
 import pytest
 
+from app.modules.hr.models import HrOrgSyncRun
 from app.modules.hr.org_domain import OrgDepartmentRecord
 from app.modules.hr.org_sync import OrgSyncStats, SyncRunRecord, sync_org_departments
 from tests.fixtures.org_scope import (
@@ -372,3 +373,10 @@ async def test_sync_stores_company_root_and_requests_its_detail() -> None:
     assert company.hidden is False
     assert company.recursive_members_count == 42
     assert fetcher.detail_requests == [[IN_SCOPE_COMPANY_ID, "od-101"]]
+
+
+def test_org_sync_run_has_single_running_index() -> None:
+    indexes = {index.name: index for index in HrOrgSyncRun.__table__.indexes}  # type: ignore[attr-defined]
+
+    running = indexes["uq_hr_org_sync_runs_running"]
+    assert running.unique is True

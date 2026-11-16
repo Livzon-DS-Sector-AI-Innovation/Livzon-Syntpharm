@@ -27,12 +27,14 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
 from typing import Any
 
-from app.modules.agent.alignment import normalize_text
+from app.modules.agent.alignment import SENTENCE_END_CHARS, normalize_text, reading_order
 
 #: 句末标点：优先按这些切分
 _SENTENCE_END_RE = re.compile(r"(?<=[。！？!?；;\n])")
 #: 次级标点：句子过长时再按逗号切
 _CLAUSE_RE = re.compile(r"(?<=[，,、：:])")
+#: 句末标点集合与补标点规则统一放在 alignment（讲稿生成、合并、回填共用一份）
+_SENTENCE_END_CHARS = SENTENCE_END_CHARS
 
 #: 单句超过这个字数就尝试按逗号二次切分
 LONG_SENTENCE_CHARS = 28
@@ -47,9 +49,10 @@ MUTE_WHOLE_SENTENCE = "*"
 #: 高亮框外扩上限（EMU）：避免描边压到文字，同时不让小元素被撑得离谱
 PAD_X_EMU = 60000
 PAD_Y_EMU = 40000
-#: 讲稿 prompt 里的元素清单上限与单个元素摘要长度
-ELEMENT_CATALOG_MAX = 30
-ELEMENT_TEXT_CHARS = 40
+#: 讲稿 prompt 里的元素清单上限与单个元素摘要长度。
+#: 上限放宽到 50、摘要 120 字：表格/多栏页被截断成「…」后，模型看不到要点就会漏讲。
+ELEMENT_CATALOG_MAX = 50
+ELEMENT_TEXT_CHARS = 120
 #: 区域三态：不参与高亮 / 只给文字变色 / 给整块区域铺底色
 REGION_MODE_OFF = "off"
 REGION_MODE_TEXT = "text"
@@ -333,8 +336,10 @@ def element_index(layout: Any) -> dict[str, ElementRef]:
 
 
 def element_catalog(layout: Any, max_items: int = ELEMENT_CATALOG_MAX) -> list[dict[str, str]]:
-    """给讲稿 prompt 的元素清单：按面积倒序、限量、摘要截断。
+    """给讲稿 prompt 的元素清单：按视觉阅读顺序、限量、摘要截断。
 
+    顺序很重要：prompt 要求 targets 只能取自这份清单，模型会顺着清单讲故事；
+    按面积倒序会让「面积大的先讲」，讲稿顺序与页面阅读顺序不一致。
     无文字的装饰形状不进清单（模型引用它也没意义），图片/表格/图表/组合除外。
     """
     candidates = [
@@ -342,7 +347,7 @@ def element_catalog(layout: Any, max_items: int = ELEMENT_CATALOG_MAX) -> list[d
         for ref in iter_elements(layout)
         if ref.text.strip() or _kind_prefix(ref.kind) in _VISUAL_KINDS or ref.kind == "CELL"
     ]
-    candidates.sort(key=lambda ref: -ref.area)
+    candidates = reading_order(candidates, lambda ref: (ref.box.left, ref.box.top, ref.box.width, ref.box.height))
     catalog: list[dict[str, str]] = []
     for ref in candidates[: max(0, max_items)]:
         text = re.sub(r"\s+", " ", ref.text).strip()
@@ -823,29 +828,62 @@ def build_plan(
     return HighlightPlan(steps=steps, total_ms=duration_ms)
 
 
-def _join_text(left: str, right: str) -> str:
-    """拼接相邻段：中英混排时该有空格的地方补一个。"""
+def _join_text(left: str, right: str, language: str = "zh") -> str:
+    """拼接相邻段：该补句末标点就补，该补空格就补。
+
+    合并两段却不补标点时，TTS 会把它们当成一个长句连读，听感明显变快 ——
+    这是「同一项目里有的页正常、有的页飞快」的直接原因之一，所以这里必须补。
+    """
     if not left:
         return right
     if not right:
         return left
-    if left[-1].isascii() and left[-1].isalnum() and right[0].isascii() and right[0].isalnum():
-        return f"{left} {right}"
-    return left + right
+    if left[-1] in _SENTENCE_END_CHARS:
+        return f"{left}{' ' if language == 'en' else ''}{right}"
+    if left[-1].isspace():
+        return f"{left}{right}"
+    if left[-1].isascii() and left[-1].isalnum():
+        return f"{left}{'. ' if language == 'en' else '。'}{right}"
+    # 中文/其他语种收尾：补句号，避免两句被当成一句连读
+    return f"{left}{' ' if language == 'en' else '。'}{right}"
 
 
-def _cap_segments(segments: list[ScriptSegment], max_steps: int) -> list[ScriptSegment]:
+def _cap_segments(segments: list[ScriptSegment], max_steps: int, language: str = "zh") -> list[ScriptSegment]:
     """段数超上限时，反复合并最短的相邻两段（保留顺序与 targets/mute 并集）。"""
     capped = [segment for segment in segments if segment.text.strip()]
     limit = max(1, max_steps)
     while len(capped) > limit:
         index = min(range(len(capped) - 1), key=lambda i: len(capped[i].text) + len(capped[i + 1].text))
         merged = ScriptSegment(
-            text=_join_text(capped[index].text, capped[index + 1].text),
+            text=_join_text(capped[index].text, capped[index + 1].text, language),
             targets=tuple(dict.fromkeys(capped[index].targets + capped[index + 1].targets)),
             mute=tuple(dict.fromkeys(capped[index].mute + capped[index + 1].mute)),
         )
         capped[index : index + 2] = [merged]
+    return capped
+
+
+def cap_steps(steps: Sequence[HighlightStep], max_steps: int, language: str = "zh") -> list[HighlightStep]:
+    """画面段数超上限时，合并「停留时间之和最短」的相邻两段。
+
+    音频段数由独立配置决定（可多于画面帧数），这里只收敛画面：
+    合并后时间轴仍首尾相接、总时长不变，不影响音画对齐。
+    """
+    limit = max(1, max_steps)
+    capped = list(steps)
+    while len(capped) > limit:
+        index = min(range(len(capped) - 1), key=lambda i: capped[i].duration_ms + capped[i + 1].duration_ms)
+        left, right = capped[index], capped[index + 1]
+        capped[index : index + 2] = [
+            HighlightStep(
+                text=_join_text(left.text, right.text, language),
+                start_ms=left.start_ms,
+                end_ms=right.end_ms,
+                boxes=_dedupe_boxes([*left.boxes, *right.boxes]),
+                targets=tuple(dict.fromkeys(left.targets + right.targets)),
+                fallback=left.fallback or right.fallback,
+            )
+        ]
     return capped
 
 
@@ -924,21 +962,25 @@ def resolve_segments(
     stored: Any = None,
     max_steps: int = 6,
     config: RegionConfig | None = None,
+    language: str = "zh",
 ) -> list[ScriptSegment]:
     """讲稿 → 段序列。
 
     落库段与当前讲稿一致时直接采用（带上元素绑定）；否则按标点重新切句，
     重新切出的段没有绑定，出帧时会退回字面匹配 —— 手改讲稿后不会亮错。
     传了区域配置就把句级微调叠上去（音频分段不受影响，只有画面变化）。
+
+    `max_steps` 是**调用方口径的段数上限**：音频侧传 `audio_max_segments`（可比画面多），
+    画面侧传 `highlight_max_steps`。两者解耦，避免帧数上限反过来把音频切得更碎/更快。
     """
     if not (script_text or "").strip():
         return []
     known = set(element_index(layout))
     segments = _stored_segments(stored, known)
     if segments and _flatten("".join(segment.text for segment in segments)) == _flatten(script_text):
-        return _cap_segments(apply_sentence_rules(segments, config), max_steps)
+        return _cap_segments(apply_sentence_rules(segments, config), max_steps, language)
     sentences = split_sentences(script_text, max_steps)
-    return _cap_segments(apply_sentence_rules([ScriptSegment(text=s) for s in sentences], config), max_steps)
+    return _cap_segments(apply_sentence_rules([ScriptSegment(text=s) for s in sentences], config), max_steps, language)
 
 
 def merge_short_steps(steps: list[HighlightStep], min_dwell_ms: int) -> list[HighlightStep]:

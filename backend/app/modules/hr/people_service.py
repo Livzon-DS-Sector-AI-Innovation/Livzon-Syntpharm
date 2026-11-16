@@ -6,7 +6,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import AppException
+from app.core.exceptions import AppException, BadRequestException
 from app.modules.hr.models import EmployeeProfile
 from app.modules.hr.people_domain import (
     active_status_label,
@@ -122,9 +122,12 @@ async def list_people(
 ) -> tuple[list[dict[str, Any]], int, Any]:
     store = SqlAlchemyEmployeeProfileStore(session)
     department_ids = await resolve_filter_department_ids(session, department_id)
+    parsed_status = parse_staff_status(status)
+    if status and status.strip() and parsed_status is None:
+        raise BadRequestException("无效的人事状态")
     profiles, total = await store.list_profiles(
         department_ids=department_ids,
-        status=parse_staff_status(status),
+        status=parsed_status,
         keyword=keyword,
         page=page,
         page_size=page_size,

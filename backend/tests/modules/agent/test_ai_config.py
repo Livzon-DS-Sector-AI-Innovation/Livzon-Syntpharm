@@ -5,8 +5,9 @@
 """
 
 import uuid
+from collections.abc import Awaitable, Callable
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any
 
 import httpx
 import pytest
@@ -438,7 +439,9 @@ async def test_update_personal_replaces_model_list(db_session: AsyncSession, use
     assert updated.model_name == "new-1"
 
 
-async def test_update_personal_legacy_model_name_keeps_other_models(db_session: AsyncSession, users) -> None:
+async def test_update_personal_legacy_model_name_keeps_other_models(
+    db_session: AsyncSession, users
+) -> None:
     owner, _ = users
     config = await _add_config(
         db_session, "legacy", owner_id=owner.id, model_name="old", available_models=["old", "keep"]
@@ -460,7 +463,7 @@ async def test_update_personal_legacy_model_name_keeps_other_models(db_session: 
     )
 
     assert updated.model_name == "fresh"
-    assert set(updated.available_models or ()) == {"fresh", "old", "keep"}
+    assert set(updated.available_models or []) == {"fresh", "old", "keep"}
 
 
 async def test_delete_personal_clears_global_model(db_session: AsyncSession, users) -> None:
@@ -491,7 +494,10 @@ class _ModelsResponse:
         return self._payload
 
 
-def _patch_discover_http(monkeypatch: pytest.MonkeyPatch, handler) -> None:
+def _patch_discover_http(
+    monkeypatch: pytest.MonkeyPatch,
+    handler: Callable[[str, dict[str, str] | None], Awaitable[_ModelsResponse]],
+) -> None:
     class _FakeClient:
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             pass
@@ -502,8 +508,8 @@ def _patch_discover_http(monkeypatch: pytest.MonkeyPatch, handler) -> None:
         async def __aexit__(self, *args: Any) -> bool:
             return False
 
-        async def get(self, url: str, headers: dict[str, str] | None = None) -> _FakeResponse:
-            return cast(_FakeResponse, await handler(url, headers))
+        async def get(self, url: str, headers: dict[str, str] | None = None) -> _ModelsResponse:
+            return await handler(url, headers)
 
     monkeypatch.setattr(httpx, "AsyncClient", _FakeClient)
 

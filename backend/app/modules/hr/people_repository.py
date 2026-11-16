@@ -24,6 +24,7 @@ _STAFF_STATUS_BY_LABEL: dict[str, int] = {
     "离职": 2,
     "待入职": 3,
     "取消入职": 4,
+    "待离职": 5,
 }
 
 

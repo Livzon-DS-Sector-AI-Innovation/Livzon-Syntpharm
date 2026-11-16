@@ -131,7 +131,7 @@ export function RemoteEmployeeSelect({
         page_size: PAGE_SIZE,
       })
       return {
-        items: result.items.map(profileToOption),
+        items: (result.items ?? []).map(profileToOption),
         total: result.total,
       }
     },

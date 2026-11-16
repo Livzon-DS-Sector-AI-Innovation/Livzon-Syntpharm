@@ -54,7 +54,9 @@ from .deviation_flow import (
     is_cross_dept_row_approved,
     is_cross_dept_row_investigated,
     load_contacts,
+    record_override_audit,
     reject_cross_dept_row,
+    resolve_override_reason,
     resolve_step_handlers,
     returnable_steps,
     step_note,
@@ -217,33 +219,41 @@ def _merge_cross_dept_states(
     old_rows: Sequence[dict[str, Any]],
     new_rows: Sequence[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """名单更新后保留已通过行的审核状态（部门、调查人集合、部门负责人完全一致才保留）。"""
-    approved_index: dict[tuple[str, frozenset[str], str | None], dict[str, Any]] = {}
+    """名单更新后保留行内进度：身份键一致的行保留部门调查进度，已通过行连同审核状态一起保留。
+
+    部门、调查人集合、部门负责人完全一致才视为同一行；改动任一项即视为新行，进度重置。
+    """
+    previous_index: dict[tuple[str, frozenset[str], str | None], dict[str, Any]] = {}
     for entry in old_rows:
-        if not isinstance(entry, dict) or not is_cross_dept_row_approved(entry):
-            continue
-        key = _cross_dept_row_identity(entry)
-        approved_index[key] = entry
+        if isinstance(entry, dict):
+            previous_index[_cross_dept_row_identity(entry)] = entry
     merged: list[dict[str, Any]] = []
     for entry in new_rows:
-        previous = approved_index.get(_cross_dept_row_identity(entry))
+        previous = previous_index.get(_cross_dept_row_identity(entry))
         if previous is None:
             merged.append(dict(entry))
-        else:
-            merged.append(
-                {
-                    **entry,
-                    "review_state": CROSS_DEPT_ROW_APPROVED,
-                    "approved_by": previous.get("approved_by"),
-                    "approved_name": previous.get("approved_name"),
-                    "approved_at": previous.get("approved_at"),
-                    "opinion": previous.get("opinion"),
-                    "investigate_state": previous.get("investigate_state") or CROSS_DEPT_INVESTIGATION_PENDING,
-                    "investigate_submitted_by": previous.get("investigate_submitted_by"),
-                    "investigate_submitted_name": previous.get("investigate_submitted_name"),
-                    "investigate_submitted_at": previous.get("investigate_submitted_at"),
-                }
-            )
+            continue
+        # 调查进度与审核进度同属行内状态：未通过的行也要保留，否则基础信息一改就要重新调查
+        restored = {
+            "investigate_state": previous.get("investigate_state") or CROSS_DEPT_INVESTIGATION_PENDING,
+            "investigate_submitted_by": previous.get("investigate_submitted_by"),
+            "investigate_submitted_name": previous.get("investigate_submitted_name"),
+            "investigate_submitted_at": previous.get("investigate_submitted_at"),
+        }
+        if not is_cross_dept_row_approved(previous):
+            merged.append({**entry, **restored})
+            continue
+        merged.append(
+            {
+                **entry,
+                **restored,
+                "review_state": CROSS_DEPT_ROW_APPROVED,
+                "approved_by": previous.get("approved_by"),
+                "approved_name": previous.get("approved_name"),
+                "approved_at": previous.get("approved_at"),
+                "opinion": previous.get("opinion"),
+            }
+        )
     return merged
 
 
@@ -489,6 +499,7 @@ class DeviationLedgerService:
                 actor_id=actor_id,
                 actor_name=actor_name,
                 actor_is_superuser=actor_is_superuser,
+                override_reason=payload.override_reason,
             )
         row.investigation_records = [*(row.investigation_records or []), record]
         #: 提交成功后清掉本人主调查草稿（与记录写入同一次 commit）
@@ -502,6 +513,7 @@ class DeviationLedgerService:
             actor_id=actor_id,
             actor_name=actor_name,
             actor_is_superuser=actor_is_superuser,
+            override_reason=payload.override_reason,
         )
         self._schedule_transition_notice(outcome)
         return await self._build_detail(outcome.ledger, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
@@ -539,6 +551,7 @@ class DeviationLedgerService:
                 actor_id=actor_id,
                 actor_name=actor_name,
                 actor_is_superuser=actor_is_superuser,
+                override_reason=payload.override_reason,
             )
         outcome = await transition(
             self.db,
@@ -549,6 +562,7 @@ class DeviationLedgerService:
             actor_id=actor_id,
             actor_name=actor_name,
             actor_is_superuser=actor_is_superuser,
+            override_reason=payload.override_reason,
         )
         self._schedule_transition_notice(outcome)
         return await self._build_detail(outcome.ledger, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
@@ -764,6 +778,7 @@ class DeviationLedgerService:
             actor_id=actor_id,
             actor_name=actor_name,
             actor_is_superuser=actor_is_superuser,
+            override_reason=payload.override_reason,
         )
         if outcome.next_status != outcome.previous_status:
             self._schedule_transition_notice(outcome)
@@ -800,6 +815,7 @@ class DeviationLedgerService:
             actor_id=actor_id,
             actor_name=actor_name,
             actor_is_superuser=actor_is_superuser,
+            override_reason=payload.override_reason,
         )
         self._schedule_cross_dept_row_reject_notice(outcome, department=payload.department)
         logger.info(
@@ -846,6 +862,18 @@ class DeviationLedgerService:
         investigator_ids = [str(token) for token in (entry.get("investigator_ids") or [])]
         if not investigator_ids:
             raise BadRequestException("该跨部门行未配置调查人，无需提交调查，请直接由部门负责人审核")
+        allowed_investigators: set[uuid.UUID] = set()
+        for token in investigator_ids:
+            try:
+                allowed_investigators.add(uuid.UUID(token))
+            except ValueError:
+                continue
+        override = resolve_override_reason(
+            actor_id,
+            allowed_investigators,
+            actor_is_superuser=actor_is_superuser,
+            override_reason=payload.override_reason,
+        )
         if not actor_is_superuser and str(actor_id) not in investigator_ids:
             raise ForbiddenException("只有该部门的调查人可以提交调查记录")
 
@@ -876,6 +904,16 @@ class DeviationLedgerService:
             row.cross_dept_reviewers = updated_rows
         row.investigation_drafts = _drop_investigation_draft(row.investigation_drafts, actor_id, target_department)
         row.updated_by = actor_id
+        if override:
+            await record_override_audit(
+                self.db,
+                ledger=row,
+                step=CROSS_DEPT_STEP,
+                result=CROSS_DEPT_INVESTIGATION_SUBMITTED,
+                actor_id=actor_id,
+                reason=override,
+                department=target_department,
+            )
         await self.db.commit()
         await self.db.refresh(row)
         logger.info(
@@ -916,6 +954,7 @@ class DeviationLedgerService:
             target_step=payload.target_step,
             reason_category=payload.reason_category,
             deviation_level=payload.deviation_level,
+            override_reason=payload.override_reason,
         )
         self._schedule_transition_notice(outcome)
         return await self._build_detail(
@@ -948,6 +987,7 @@ class DeviationLedgerService:
             actor_id=actor_id,
             actor_name=actor_name,
             actor_is_superuser=actor_is_superuser,
+            override_reason=payload.override_reason,
         )
         self._schedule_transition_notice(outcome)
         return await self._build_detail(
@@ -973,6 +1013,7 @@ class DeviationLedgerService:
             actor_id=actor_id,
             actor_name=actor_name,
             actor_is_superuser=actor_is_superuser,
+            override_reason=payload.override_reason,
         )
         notice = notify.to_notice(outcome.ledger, reporter_name=self._name_of(outcome, outcome.ledger.reporter_id))
         targets = outcome.directory.refs(list(outcome.ledger.handler_ids or []))
@@ -980,7 +1021,7 @@ class DeviationLedgerService:
         if reporter is not None and all(ref.id != reporter.id for ref in targets):
             targets.append(reporter)
         notify.spawn(notify.notify_closed(notice, actor_name=actor_name, recipients=targets))
-        return await self._build_detail(outcome.ledger, viewer_id=actor_id)
+        return await self._build_detail(outcome.ledger, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
 
     # ── AI 分析 ──────────────────────────────────────────────────────
 
@@ -1055,7 +1096,7 @@ class DeviationLedgerService:
         row.updated_by = actor_id
         await self.db.commit()
         await self.db.refresh(row)
-        return await self._build_detail(row, viewer_id=actor_id)
+        return await self._build_detail(row, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
 
     # ── 附件 ──────────────────────────────────────────────────────────
 
@@ -1088,7 +1129,14 @@ class DeviationLedgerService:
         object_key = f"deviation-ledger/{ledger_id}/{file_id}-{filename}"
         if not storage.is_enabled():
             raise BadRequestException("文件存储未配置，无法上传附件")
-        storage.upload_object(_STORAGE_MODULE, object_key, content, len(content), content_type)
+        await asyncio.to_thread(
+            storage.upload_object,
+            _STORAGE_MODULE,
+            object_key,
+            content,
+            len(content),
+            content_type,
+        )
         row.attachments = [
             *(row.attachments or []),
             {
@@ -1105,7 +1153,7 @@ class DeviationLedgerService:
         row.updated_by = actor_id
         await self.db.commit()
         await self.db.refresh(row)
-        return await self._build_detail(row, viewer_id=actor_id)
+        return await self._build_detail(row, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
 
     async def remove_attachment(
         self,
@@ -1154,7 +1202,7 @@ class DeviationLedgerService:
                         exc_info=True,
                         extra={"app_module": "quality", "ledger_id": str(ledger_id), "object_key": key},
                     )
-        return await self._build_detail(row, viewer_id=actor_id)
+        return await self._build_detail(row, viewer_id=actor_id, viewer_is_superuser=actor_is_superuser)
 
     async def get_attachment_file(
         self,
@@ -1173,7 +1221,7 @@ class DeviationLedgerService:
             raise NotFoundException("附件不存在")
         if not storage.is_enabled():
             raise BadRequestException("文件存储未配置")
-        found = storage.get_object(_STORAGE_MODULE, str(target.get("object_key")))
+        found = await asyncio.to_thread(storage.get_object, _STORAGE_MODULE, str(target.get("object_key")))
         if found is None:
             raise NotFoundException("附件文件已丢失")
         content, content_type = found
@@ -1701,6 +1749,8 @@ class DeviationLedgerService:
                     author_name=entry.get("author_name"),
                     author_avatar=_avatar_of(profiles, entry.get("author_id")),
                     content=str(entry.get("content") or ""),
+                    is_override=bool(entry.get("is_override")),
+                    override_reason=entry.get("override_reason"),
                     create_time=_as_datetime(entry.get("create_time")),
                 )
                 for entry in (row.review_opinions or [])
@@ -1723,6 +1773,7 @@ class DeviationLedgerService:
             status_updated_at=row.status_updated_at,
             can_operate=bool(actions),
             allowed_actions=actions,
+            viewer_is_superuser=viewer_is_superuser,
             editable=editable,
             can_edit_investigation=can_edit_investigation,
             can_edit_cross_dept=can_edit_cross_dept,

@@ -2,7 +2,6 @@
 import hmac
 import logging
 import os
-import re
 from datetime import date, datetime
 from io import BytesIO
 from typing import Any
@@ -2040,8 +2039,6 @@ async def preview_candidate_resume(  # type: ignore[no-untyped-def]
     service: CandidateService = Depends(get_candidate_service),
 ):
     """获取候选人简历 PDF。优先读取本地存储，若不存在则从飞书下载。"""
-    import os
-
     from app.core.exceptions import NotFoundException
 
     candidate = await service.get_candidate(candidate_id)
@@ -2721,11 +2718,12 @@ async def save_prejob_template(  # type: ignore[no-untyped-def]
 
 # ─── System Settings ───
 
-ENV_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env")
 # 所有模块凭证使用嵌套键名（FEISHU__{MODULE}__{FIELD}），与 .env / core/config.py 一致。
 SETTING_KEYS = [
     "FEISHU__PLATFORM__APP_ID",
     "FEISHU__PLATFORM__APP_SECRET",
+    "FEISHU__HR__CREDENTIALS__APP_ID",
+    "FEISHU__HR__CREDENTIALS__APP_SECRET",
     "FEISHU__VEHICLE__CREDENTIALS__APP_ID",
     "FEISHU__VEHICLE__CREDENTIALS__APP_SECRET",
     "FEISHU__TRAINING__CREDENTIALS__APP_ID",
@@ -2813,16 +2811,15 @@ async def save_system_settings(  # type: ignore[no-untyped-def]
     payload: HrSystemSettingsUpdate = Body(...),
     session: AsyncSession = Depends(get_db),
 ):
-    """批量保存系统配置到 DB，同时写入 .env 文件。
+    """批量保存系统配置到 DB。
 
     凭据类字段加密后落库；空值或前端回传的掩码（****）视为「不修改」，
     避免把掩码当成新密钥写进库。未知键由 `HrSystemSettingsUpdate`
-    的 `extra="forbid"` 拒绝（422）。
+    的 `extra="forbid"` 拒绝（422）。运行时不改写部署 `.env`。
     """
     from sqlalchemy import text as sql_text
 
     updated: list[str] = []
-    env_updates: dict[str, str] = {}
     payload_data = payload.model_dump(exclude_unset=True)
     # Deprecated org-scope keys are accepted for one release but ignored: the
     # sync roots now come from the Feishu app's contact scope.
@@ -2852,35 +2849,6 @@ async def save_system_settings(  # type: ignore[no-untyped-def]
             {"k": canonical_key, "v": stored_value},
         )
         updated.append(key)
-        env_updates[canonical_key] = value_text
     await session.commit()
-
-    # Write to .env file
-    try:
-        if os.path.exists(ENV_PATH):
-            with open(ENV_PATH, encoding="utf-8") as f:
-                lines = f.readlines()
-        else:
-            lines = []
-        existing_keys = {}
-        for i, line in enumerate(lines):
-            m = re.match(r"^(\w+)=.*", line.strip())
-            if m:
-                existing_keys[m.group(1)] = i
-
-        for key, value in env_updates.items():
-            new_line = f"{key}={value}\n"
-            if key in existing_keys:
-                lines[existing_keys[key]] = new_line
-            else:
-                lines.append(new_line)
-
-        with open(ENV_PATH, "w", encoding="utf-8") as f:
-            f.writelines(lines)
-    except Exception:
-        logger.exception(
-            "写入 .env 失败（设置已保存到数据库，但需手工补环境变量）",
-            extra={"biz_module": "hr", "setting_count": len(env_updates)},
-        )
 
     return build_response(data={"updated": updated}, message=f"已保存 {len(updated)} 项设置")

@@ -19,7 +19,7 @@ from app.core import storage
 from app.modules.agent import cache, service, tts
 from app.modules.agent.config import DEFAULTS
 from app.modules.agent.highlight import ScriptSegment
-from app.modules.agent.models import PptVideoProject, PptVideoSlide
+from app.modules.agent.models import PptVideoSlide
 
 SAMPLE_RATE = 24000
 
@@ -58,6 +58,37 @@ def test_concat_wavs_without_pause_keeps_length(tmp_path: Path) -> None:
     _, duration_ms = tts.concat_wavs([first, second], tmp_path / "out.wav", pause_ms=0)
 
     assert duration_ms == pytest.approx(500, abs=2)
+
+
+def test_concat_wavs_accepts_per_boundary_pauses(tmp_path: Path) -> None:
+    """标点分级停顿：每条边界可以用各自的静音长度。"""
+    first = _write_wav(tmp_path / "a.wav", 400)
+    second = _write_wav(tmp_path / "b.wav", 300)
+    third = _write_wav(tmp_path / "c.wav", 200)
+
+    out, duration_ms = tts.concat_wavs([first, second, third], tmp_path / "out.wav", pauses=[120, 300])
+
+    assert duration_ms == pytest.approx(400 + 120 + 300 + 300 + 200, abs=2)
+    assert tts.wav_duration_ms(out) == pytest.approx(1320, abs=2)
+
+
+def test_trim_silence_removes_edges_and_keeps_tone(tmp_path: Path) -> None:
+    """各段合成音频自带首尾静音，长度不一；裁剪后段间停顿才可控。"""
+    path = tmp_path / "tone.wav"
+    sample_rate = SAMPLE_RATE
+    with wave.open(str(path), "wb") as handle:
+        handle.setnchannels(1)
+        handle.setsampwidth(2)
+        handle.setframerate(sample_rate)
+        silence = b"\x00\x00" * int(sample_rate * 0.2)
+        tone = (1000).to_bytes(2, "little", signed=True) * int(sample_rate * 0.3)
+        handle.writeframes(silence + tone + silence)
+
+    duration_ms = tts.trim_silence(path, keep_ms=20)
+
+    # 300ms 有效音频 + 两端各保留 20ms
+    assert duration_ms == pytest.approx(340, abs=15)
+    assert tts.wav_duration_ms(path) == pytest.approx(duration_ms, abs=2)
 
 
 def test_concat_wavs_rejects_format_mismatch(tmp_path: Path) -> None:
@@ -110,6 +141,52 @@ def test_segment_slots_add_pause_except_last() -> None:
     assert page_audio.segmented is True
 
 
+def test_page_audio_plan_uses_per_punctuation_pauses() -> None:
+    """句末标点决定停顿：逗号短、句号长，未识别标点回落默认值。"""
+    settings = replace(DEFAULTS, segment_pause_ms=180, segment_pause_comma_ms=120, segment_pause_period_ms=300)
+
+    assert service.pause_after_segment("第一句，", settings) == 120
+    assert service.pause_after_segment("第一句、", settings) == 120
+    assert service.pause_after_segment("第一句。", settings) == 300
+    assert service.pause_after_segment("第一句？", settings) == 300
+    assert service.pause_after_segment("第一句", settings) == 180
+
+
+def test_page_audio_plan_changes_with_graded_pause() -> None:
+    script = "第一句讲收率。第二句讲产线。"
+    slide = PptVideoSlide(
+        project_id=uuid.uuid4(),
+        slide_no=1,
+        layout={"width": 12192000, "height": 6858000, "shapes": []},
+        script_text=script,
+    )
+    effective = _effective(script)
+    project_on: Any = SimpleNamespace(highlight_override_enabled=True)
+    fast = replace(DEFAULTS, segment_pause_period_ms=200)
+    slow = replace(DEFAULTS, segment_pause_period_ms=400)
+
+    _, _, fast_key = service.page_audio_plan(slide, effective, fast, project_on)
+    _, _, slow_key = service.page_audio_plan(slide, effective, slow, project_on)
+
+    assert fast_key != slow_key
+
+
+def test_segment_slots_use_graded_pauses() -> None:
+    """画面时间轴必须用分级停顿：否则高亮会和实际旁白错位。"""
+    page_audio = service.PageAudio(
+        path=Path("ignored.wav"),
+        duration_ms=2200,
+        sha256="sha",
+        audio_key="key",
+        segments=[ScriptSegment("一，"), ScriptSegment("二。"), ScriptSegment("三")],
+        segment_durations_ms=[700, 800, 700],
+        segment_pauses_ms=[120, 300],
+        pause_ms=180,
+    )
+
+    assert page_audio.segment_slots_ms == [820, 1100, 700]
+
+
 def test_page_audio_plan_uses_segments_when_bound() -> None:
     script = "第一句讲收率。第二句讲产线。"
     slide = PptVideoSlide(
@@ -130,7 +207,9 @@ def test_page_audio_plan_uses_segments_when_bound() -> None:
     )
     effective = _effective(script)
 
-    segments, pause_ms, audio_key = service.page_audio_plan(slide, effective, DEFAULTS)
+    # 音频分段只看项目开关（本页开关只管画面）
+    project_on: Any = SimpleNamespace(highlight_override_enabled=True)
+    segments, pause_ms, audio_key = service.page_audio_plan(slide, effective, DEFAULTS, project_on)
 
     assert len(segments) == 2
     assert segments[0].targets == ("s0",)
@@ -166,15 +245,20 @@ def test_page_audio_plan_changes_with_pause() -> None:
     )
     effective = _effective(script)
     slower = replace(DEFAULTS, segment_pause_ms=400)
+    project_on: Any = SimpleNamespace(highlight_override_enabled=True)
 
-    _, _, fast_key = service.page_audio_plan(slide, effective, DEFAULTS)
-    _, _, slow_key = service.page_audio_plan(slide, effective, slower)
+    _, _, fast_key = service.page_audio_plan(slide, effective, DEFAULTS, project_on)
+    _, _, slow_key = service.page_audio_plan(slide, effective, slower, project_on)
 
     assert fast_key != slow_key
 
 
 def test_page_audio_plan_requires_some_level_enabled() -> None:
-    """高亮改为「项目级为准」：两层都没勾选不分段，模块总闸关掉同样不分段。"""
+    """音频是否分段只看模块总闸与项目开关。
+
+    单页开关只影响画面，不再影响音频：否则同一项目会出现「部分页分段、部分页整页」
+    两种合成方式，听感在页与页之间跳变。
+    """
     script = "第一句讲收率。第二句讲产线。"
     layout = {"width": 12192000, "height": 6858000, "shapes": []}
     stored_segments = [
@@ -190,15 +274,6 @@ def test_page_audio_plan_requires_some_level_enabled() -> None:
         script_text=script,
         script_segments=stored_segments,
     )
-
-    project_on = PptVideoProject(highlight_override_enabled=True)
-    project_off = PptVideoProject(highlight_override_enabled=False)
-
-    # 项目开、本页不开 → 分段
-    assert len(service.page_audio_plan(slide_off, effective, DEFAULTS, project_on)[0]) == 2
-    # 两层都关 → 不分段，指纹与整页口径一致（老缓存继续命中）
-    assert service.page_audio_plan(slide_off, effective, DEFAULTS, project_off) == ([], 0, base_key)
-    # 项目关但本页单独开 → 该页仍分段
     slide_on = PptVideoSlide(
         project_id=uuid.uuid4(),
         slide_no=1,
@@ -207,10 +282,44 @@ def test_page_audio_plan_requires_some_level_enabled() -> None:
         script_segments=stored_segments,
         highlight_override_enabled=True,
     )
-    assert len(service.page_audio_plan(slide_on, effective, DEFAULTS, project_off)[0]) == 2
-    # 模块总闸关 → 即使项目与本页都开也不分段
+
+    project_on: Any = SimpleNamespace(highlight_override_enabled=True)
+    project_off: Any = SimpleNamespace(highlight_override_enabled=False)
+
+    # 项目开：本页开关不影响音频，两页都分段
+    assert len(service.page_audio_plan(slide_off, effective, DEFAULTS, project_on)[0]) == 2
+    assert len(service.page_audio_plan(slide_on, effective, DEFAULTS, project_on)[0]) == 2
+    # 项目关：本页单独开也不再分段，指纹与整页口径一致（老缓存继续命中）
+    assert service.page_audio_plan(slide_off, effective, DEFAULTS, project_off) == ([], 0, base_key)
+    assert service.page_audio_plan(slide_on, effective, DEFAULTS, project_off) == ([], 0, base_key)
+    # 模块总闸关 → 即使项目开也不分段
     module_off = replace(DEFAULTS, highlight_enabled=False)
-    assert service.page_audio_plan(slide_on, effective, module_off, project_on) == ([], 0, base_key)
+    assert service.page_audio_plan(slide_off, effective, module_off, project_on) == ([], 0, base_key)
+
+
+def test_page_audio_plan_caps_audio_segments_independently_of_frames() -> None:
+    """音频段上限与画面帧上限解耦：帧数保持 6，音频仍按 3 段合成。"""
+    script = "".join(f"第{i}句话讲一个要点。" for i in range(1, 9))
+    layout = {"width": 12192000, "height": 6858000, "shapes": []}
+    stored = [{"text": f"第{i}句话讲一个要点。", "targets": []} for i in range(1, 9)]
+    slide = PptVideoSlide(
+        project_id=uuid.uuid4(),
+        slide_no=1,
+        layout=layout,
+        script_text=script,
+        script_segments=stored,
+    )
+    effective = _effective(script)
+    project_on: Any = SimpleNamespace(highlight_override_enabled=True)
+    tight = replace(DEFAULTS, audio_max_segments=3, highlight_max_steps=6)
+    loose = replace(DEFAULTS, audio_max_segments=12, highlight_max_steps=3)
+
+    tight_segments, _, _ = service.page_audio_plan(slide, effective, tight, project_on)
+    loose_segments, _, _ = service.page_audio_plan(slide, effective, loose, project_on)
+
+    assert len(tight_segments) == 3
+    # 放宽音频段数不受 highlight_max_steps=3 影响
+    assert len(loose_segments) == 8
 
 
 def _effective(script: str) -> service.EffectiveVoice:
@@ -250,6 +359,7 @@ def _page_project() -> Any:
         default_voice_id=DEFAULTS.default_voice_zh,
         speed=1.0,
         tts_engine="kokoro",
+        highlight_override_enabled=True,
     )
 
 

@@ -63,6 +63,11 @@ class CrossDeptApproveRequest(BaseModel):
 
     department: str = Field(..., min_length=1, max_length=255, description="跨部门部门名（行标识）")
     opinion: str = Field("", max_length=2000, description="审核意见（可选）")
+    override_reason: str | None = Field(
+        None,
+        max_length=200,
+        description="管理员代审原因：超级管理员替代本行审核人操作时必填（不少于 4 个字），将记入审核意见与审计日志",
+    )
 
     @field_validator("department")
     @classmethod
@@ -78,6 +83,11 @@ class CrossDeptRejectRequest(BaseModel):
 
     department: str = Field(..., min_length=1, max_length=255, description="跨部门部门名（行标识）")
     opinion: str = Field(..., min_length=1, max_length=2000, description="退回理由（必填）")
+    override_reason: str | None = Field(
+        None,
+        max_length=200,
+        description="管理员代审原因：超级管理员替代本行审核人操作时必填（不少于 4 个字），将记入审核意见与审计日志",
+    )
 
     @field_validator("department")
     @classmethod
@@ -303,6 +313,8 @@ class ReviewOpinionItem(BaseModel):
     author_name: str | None = None
     author_avatar: str | None = Field(None, description="作者头像地址")
     content: str = ""
+    is_override: bool = Field(False, description="是否管理员代审")
+    override_reason: str | None = Field(None, description="管理员代审原因")
     create_time: datetime | None = None
 
 
@@ -360,6 +372,10 @@ class LedgerDetail(LedgerItem):
     status_updated_at: datetime | None = None
     can_operate: bool = Field(False, description="当前登录人是否可操作当前环节")
     allowed_actions: list[str] = Field(default_factory=list, description="当前登录人可执行的动作")
+    viewer_is_superuser: bool = Field(
+        False,
+        description="当前登录人是否超级管理员：为 true 时非本环节处理人操作需填「管理员代审原因」",
+    )
     editable: bool = Field(False, description="基础信息是否可编辑")
     can_edit_investigation: bool = Field(
         False,
@@ -499,6 +515,11 @@ class InvestigationRequest(BaseModel):
     submit_content: str | None = Field(
         None, max_length=500, description="提交审核说明（选填，写入本次流转记录；为空时用默认文案）"
     )
+    override_reason: str | None = Field(
+        None,
+        max_length=200,
+        description="管理员代审原因：超级管理员替代调查人提交时必填（不少于 4 个字），将记入审计日志",
+    )
 
     @field_validator("nonconformity_description", "root_cause_analysis", "risk_assessment")
     @classmethod
@@ -555,6 +576,11 @@ class InvestigationSubmitRequest(BaseModel):
     """已填写调查记录后，直接提交审核（不新建调查记录）。"""
 
     content: str | None = Field(None, max_length=500, description="提交审核说明（选填，写入本次流转记录）")
+    override_reason: str | None = Field(
+        None,
+        max_length=200,
+        description="管理员代审原因：超级管理员替代调查人提交时必填（不少于 4 个字），将记入审计日志",
+    )
 
     @field_validator("content")
     @classmethod
@@ -662,6 +688,11 @@ class ReviewRequest(BaseModel):
     )
     reason_category: str | None = Field(None, description="原因分类（QA 审核通过必填）")
     deviation_level: str | None = Field(None, description="偏差分级（QA 负责人通过前必填）")
+    override_reason: str | None = Field(
+        None,
+        max_length=200,
+        description="管理员代审原因：超级管理员替代本环节处理人操作时必填（不少于 4 个字），将记入审核意见与审计日志",
+    )
 
     @field_validator("result")
     @classmethod
@@ -680,6 +711,11 @@ class ResubmitRequest(BaseModel):
     """退回后重新提交。"""
 
     content: str = Field("", description="重新提交说明")
+    override_reason: str | None = Field(
+        None,
+        max_length=200,
+        description="管理员代审原因：超级管理员替代上报人/调查人重新提交时必填（不少于 4 个字）",
+    )
 
 
 class FinalCodeRequest(BaseModel):
@@ -687,6 +723,11 @@ class FinalCodeRequest(BaseModel):
 
     final_code: str = Field(..., min_length=1, max_length=32, description="最终编号")
     content: str = Field("", description="备注")
+    override_reason: str | None = Field(
+        None,
+        max_length=200,
+        description="管理员代审原因：超级管理员替代所属 QA 录入编号时必填（不少于 4 个字），将记入审计日志",
+    )
 
     @field_validator("final_code")
     @classmethod

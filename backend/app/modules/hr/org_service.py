@@ -8,6 +8,8 @@ from typing import Any
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
+from sqlalchemy import update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import async_session_factory
@@ -145,8 +147,23 @@ async def _execute_org_sync_job(run_id: UUID) -> None:
     logger.info("hr org background sync finished", extra={"biz_module": "hr"})
 
 
+async def _mark_stale_running(session: AsyncSession) -> None:
+    """Expire stale `running` rows so a crashed sync cannot block forever."""
+    stale_before = datetime.now(UTC) - timedelta(seconds=SYNC_LOCK_TIMEOUT_SECONDS)
+    await session.execute(
+        update(HrOrgSyncRun)
+        .where(HrOrgSyncRun.status == "running", HrOrgSyncRun.started_at < stale_before)
+        .values(
+            status="failed",
+            finished_at=datetime.now(UTC),
+            error_message="stale running sync",
+        )
+    )
+
+
 async def enqueue_manual_org_sync(session: AsyncSession) -> dict[str, Any]:
     """Create a ``running`` run row and hand the work to the jobs infrastructure."""
+    await _mark_stale_running(session)
     latest = await get_latest_sync_run(session)
     if latest is not None and latest.status == "running":
         started = latest.started_at if latest.started_at.tzinfo else latest.started_at.replace(tzinfo=UTC)
@@ -161,8 +178,12 @@ async def enqueue_manual_org_sync(session: AsyncSession) -> dict[str, Any]:
         started_at=datetime.now(UTC),
         finished_at=None,
     )
-    session.add(run)
-    await session.commit()
+    try:
+        session.add(run)
+        await session.commit()
+    except IntegrityError as exc:
+        await session.rollback()
+        raise AppException(status_code=409, message="组织架构同步正在进行中，请稍后再试") from exc
     await session.refresh(run)
 
     try:
@@ -193,6 +214,7 @@ async def run_scheduled_org_sync() -> None:
     personnel mirror rows enriched by the second phase.
     """
     async with async_session_factory() as session:
+        await _mark_stale_running(session)
         if _already_synced_today(await get_latest_sync_run(session)):
             logger.info("hr org scheduled sync skipped: already succeeded today", extra={"biz_module": "hr"})
             return
@@ -204,8 +226,16 @@ async def run_scheduled_org_sync() -> None:
             started_at=datetime.now(UTC),
             finished_at=None,
         )
-        session.add(run)
-        await session.commit()
+        try:
+            session.add(run)
+            await session.commit()
+        except IntegrityError:
+            await session.rollback()
+            logger.warning(
+                "hr org scheduled sync skipped: another run is active",
+                extra={"biz_module": "hr"},
+            )
+            return
         await session.refresh(run)
         run_id = run.id
 

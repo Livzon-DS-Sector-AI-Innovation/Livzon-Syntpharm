@@ -151,6 +151,12 @@ class SlideItem(BaseModel):
     audio_sha256: str | None = None
     duration_ms: int = 0
     has_audio: bool = False
+    #: 讲稿要点覆盖率 0~1；None=尚未检查（纯图片页或空讲稿）
+    coverage_score: float | None = None
+    #: 漏讲要点摘要（阅读顺序，最多 10 条）
+    coverage_missing: list[str] | None = None
+    #: 是否达标（覆盖率 ≥ 阈值）；未检查的页固定为 True，前端不误标
+    coverage_ok: bool = True
 
 
 class ReuseSummary(BaseModel):
@@ -297,6 +303,10 @@ class ProjectDetail(BaseModel):
     #: 模块设置当前生效值：前端用它展示样式/颜色兜底值与色板预览
     module_highlight_style: str = ""
     module_highlight_color: str = ""
+    #: 项目级发音词典（原文 → 合成替代文本）；空表示只用模块级词表
+    pronunciation_dict: dict[str, str] = Field(default_factory=dict)
+    #: 覆盖度达标阈值（模块设置），前端用它展示「xx% / 阈值」
+    coverage_min_score: float = 0.75
     updated_at: datetime | None = None
 
 
@@ -322,10 +332,14 @@ class ProjectUpdateRequest(BaseModel):
     #: 清除项目级覆盖，回到跟随模块设置
     clear_highlight_style: bool = False
     clear_highlight_color: bool = False
+    #: 项目级发音词典（整份替换）；None=不修改
+    pronunciation_dict: dict[str, str] | None = None
+    #: 清空项目级发音词典
+    clear_pronunciation_dict: bool = False
 
 
 class SlideUpdateRequest(BaseModel):
-    script_text: str | None = Field(default=None, max_length=2000)
+    script_text: str | None = Field(default=None, max_length=4000)
     language: LanguageCode | None = None
     voice_id: str | None = None
     speed: float | None = Field(default=None, ge=0.5, le=2.0)
@@ -383,7 +397,7 @@ class MessageResult(BaseModel):
 
 # ── AI 配置 ────────────────────────────────────────────────────────────────
 
-RewriteMode = Literal["fill_blank", "rewrite_all", "rewrite_selected", "rewrite_one"]
+RewriteMode = Literal["fill_blank", "rewrite_all", "rewrite_selected", "rewrite_one", "fill_missing"]
 
 
 class AiConfigItem(BaseModel):
@@ -524,6 +538,7 @@ class RevisionItem(BaseModel):
         "rewrite_selected",
         "rewrite_one",
         "source_replace",
+        "fill_missing",
     ]
     instruction: str | None = None
     model_name: str | None = None

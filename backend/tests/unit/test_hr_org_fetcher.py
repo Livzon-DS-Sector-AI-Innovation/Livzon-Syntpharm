@@ -8,6 +8,7 @@ import pytest
 
 from app.modules.hr import org_feishu
 from app.modules.hr.org_feishu import FeishuOrgDepartmentFetcher
+from app.modules.hr.people_feishu import FeishuEmployeeProfileFetcher
 
 
 class _FakeClient:
@@ -179,3 +180,28 @@ async def test_visible_root_ids_falls_back_to_tenant_root_children() -> None:
     roots = await fetcher._visible_root_ids()
 
     assert roots == ["od-a", "od-b"]
+
+
+class _EmployeeFetcher(FeishuEmployeeProfileFetcher):
+    def __init__(self) -> None:
+        super().__init__(app_id="cli_x", app_secret="secret", client=_FakeClient())  # type: ignore[arg-type]
+        self.conditions: list[list[dict[str, Any]]] = []
+
+    async def _fetch_by_conditions(self, conditions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        self.conditions.append(conditions)
+        return []
+
+
+async def test_employee_filter_pairs_department_and_active_status() -> None:
+    fetcher = _EmployeeFetcher()
+
+    await fetcher.fetch_employees_by_filter([f"od-{i}" for i in range(60)])
+
+    assert len(fetcher.conditions) == 2
+    for batch in fetcher.conditions:
+        assert [condition["field"] for condition in batch] == [
+            "base_info.departments.department_id",
+            "work_info.staff_status",
+        ]
+        assert batch[1]["operator"] == "eq"
+        assert batch[1]["value"] == "1"
