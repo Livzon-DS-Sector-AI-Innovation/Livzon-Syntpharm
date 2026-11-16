@@ -11086,7 +11086,7 @@ export interface paths {
         };
         /**
          * 下载交付物附件
-         * @description 下载交付物附件文件（本地存储）
+         * @description 下载交付物附件文件（对象存储优先，本地/历史目录兜底）
          */
         get: operations["download_deliverable_file_api_v1_research_rd_stage_deliverables__deliverable_id__download_get"];
         put?: never;
@@ -11720,7 +11720,10 @@ export interface paths {
         put?: never;
         /**
          * 上传资料并开始入库处理
-         * @description 上传后立即触发 RAGFlow 解析；单份失败不影响其余文件，跳过原因逐条返回。
+         * @description 请求内只做校验与落盘，推送 RAGFlow 与触发解析交给后台任务。
+         *
+         *     远端上传单次超时配到 300s，放在请求里会把接口拖成超时；这里立即返回
+         *     「已提交」，前端沿用资料列表的轮询看入库进度。
          */
         post: operations["upload_documents_api_v1_research_knowledge_bases__kb_id__documents_post"];
         delete?: never;

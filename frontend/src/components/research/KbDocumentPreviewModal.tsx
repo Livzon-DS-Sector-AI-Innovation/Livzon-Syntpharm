@@ -14,7 +14,8 @@
  * 弹窗只负责外壳（标题/页脚），内容交给按资料 id 重新挂载的 KbPreviewBody，
  * 这样换资料时状态天然重置，不需要在 effect 里「先清空再加载」。
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Alert,
   App,
@@ -248,14 +249,21 @@ function KbPreviewBody({ kbId, doc }: { kbId: string; doc: KbDocumentItem }) {
     setSheetGrid(sheet ? readSheetGrid(sheet) : null)
   }, [])
 
-  const [chunks, setChunks] = useState<KbChunkItem[]>([])
-  const [chunkTotal, setChunkTotal] = useState(0)
   const [chunkPage, setChunkPage] = useState(1)
-  const [chunkLoading, setChunkLoading] = useState(false)
-  const [chunkError, setChunkError] = useState('')
   // 取图失败的切片：隐藏破图并给出提示（图片在对象存储里可能已被清理）
   const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set())
-  const chunkRequestedRef = useRef(false)
+
+  // 切到「提取的文字」页签才取数（浏览器打不开的格式默认就在这个页签）
+  const chunksQuery = useQuery({
+    queryKey: ['kb-document-chunks', kbId, doc.id, chunkPage],
+    queryFn: () => fetchKbDocumentChunks(kbId, doc.id, chunkPage, CHUNK_PAGE_SIZE),
+    enabled: tab === 'chunks' && kind !== 'unsupported',
+  })
+  const chunks = chunksQuery.data?.items ?? []
+  const chunkTotal = chunksQuery.data?.total ?? 0
+  const chunkLoading = chunksQuery.isFetching
+  const chunkError = chunksQuery.error instanceof Error ? chunksQuery.error.message : ''
+  const loadChunks = (page: number) => setChunkPage(page)
 
   // 加载原文（只在挂载时跑一次：换资料靠上层的 key 重挂载）
   useEffect(() => {
@@ -306,31 +314,6 @@ function KbPreviewBody({ kbId, doc }: { kbId: string; doc: KbDocumentItem }) {
     if (mode !== 'docx' || !docxBlob || !docxContainer) return
     void renderDocx(docxBlob, docxContainer)
   }, [mode, docxBlob, docxContainer, renderDocx])
-
-  // 切到「提取的文字」页签时加载一次（浏览器打不开的格式默认就在这个页签）
-  const loadChunks = useCallback(
-    async (page: number) => {
-      setChunkLoading(true)
-      setChunkError('')
-      try {
-        const data = await fetchKbDocumentChunks(kbId, doc.id, page, CHUNK_PAGE_SIZE)
-        setChunks(data.items ?? [])
-        setChunkTotal(data.total ?? 0)
-        setChunkPage(data.page ?? page)
-      } catch (e: unknown) {
-        setChunkError(e instanceof Error ? e.message : '提取的文字没能加载出来，请稍后重试')
-      } finally {
-        setChunkLoading(false)
-      }
-    },
-    [kbId, doc.id],
-  )
-
-  useEffect(() => {
-    if (tab !== 'chunks' || chunkRequestedRef.current) return
-    chunkRequestedRef.current = true
-    void loadChunks(1)
-  }, [tab, loadChunks])
 
   const sourcePane = (() => {
     if (sourceError) {

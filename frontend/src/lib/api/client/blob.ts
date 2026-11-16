@@ -16,18 +16,36 @@ export function authHeaders(): Record<string, string> {
 }
 
 /**
- * 取同源文件流；404 给出可读提示，其余状态带状态码，便于调用方直接弹 message。
+ * 取同源文件流响应；404 给出可读提示，其余状态带状态码，便于调用方直接弹 message。
+ *
+ * 需要读 `Content-Disposition` 取服务端文件名的下载场景用本函数，
+ * 只要 Blob 的预览场景用 `fetchBlob`。
  * @param path 以 / 开头的站内路径
  * @param notFoundMessage 404 时的提示文案
+ * @param errorLabel 非 404 失败时的文案前缀（默认「加载失败」）
  */
-export async function fetchBlob(path: string, notFoundMessage = '文件还未生成'): Promise<Blob> {
+export async function fetchBlobResponse(
+  path: string,
+  notFoundMessage = '文件还未生成',
+  errorLabel = '加载失败',
+): Promise<Response> {
   const response = await fetch(path, {
     method: 'GET',
     headers: authHeaders(),
     credentials: 'include',
   })
   if (!response.ok) {
-    throw new Error(response.status === 404 ? notFoundMessage : `加载失败（${response.status}）`)
+    throw new Error(response.status === 404 ? notFoundMessage : `${errorLabel}（${response.status}）`)
   }
+  return response
+}
+
+/**
+ * 取同源文件流；404 给出可读提示，其余状态带状态码，便于调用方直接弹 message。
+ * @param path 以 / 开头的站内路径
+ * @param notFoundMessage 404 时的提示文案
+ */
+export async function fetchBlob(path: string, notFoundMessage = '文件还未生成'): Promise<Blob> {
+  const response = await fetchBlobResponse(path, notFoundMessage)
   return response.blob()
 }

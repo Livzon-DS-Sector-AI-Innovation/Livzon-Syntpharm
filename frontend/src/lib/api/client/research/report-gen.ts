@@ -6,6 +6,8 @@
  */
 
 import { apiGet } from '@/lib/api/client'
+import { fetchBlob, fetchBlobResponse } from '@/lib/api/client/blob'
+import { saveBlob } from '@/lib/utils/download'
 import {
   REPORT_GEN_METRIC_DEFAULT_WINDOW,
   type ReportGenDocumentVersionList,
@@ -96,15 +98,6 @@ export async function fetchReportGenSteps(
   return result ?? { items: [], last_seq: afterSeq }
 }
 
-function authHeaders(): Record<string, string> {
-  if (typeof document === 'undefined') return {}
-  const token = document.cookie
-    .split(';')
-    .map((item) => item.trim())
-    .find((item) => item.startsWith('auth_token='))
-  return token ? { Authorization: `Bearer ${token.slice('auth_token='.length)}` } : {}
-}
-
 function pickFileName(disposition: string | null, fallback: string): string {
   if (!disposition) return fallback
   const utf8 = disposition.match(/filename\*=UTF-8''([^;]+)/i)
@@ -118,13 +111,7 @@ function pickFileName(disposition: string | null, fallback: string): string {
 
 /** 取成品 docx 的 Blob，用于在线预览。 */
 export async function fetchReportGenDocumentBlob(jobId: string): Promise<Blob> {
-  const response = await fetch(`${API_BASE}/jobs/${jobId}/document`, {
-    method: 'GET',
-    headers: authHeaders(),
-    credentials: 'include',
-  })
-  if (!response.ok) throw new Error(response.status === 404 ? '成品还未生成' : `加载失败（${response.status}）`)
-  return response.blob()
+  return fetchBlob(`${API_BASE}/jobs/${jobId}/document`, '成品还未生成')
 }
 
 /** 下载成品 docx；失败直接抛错，由调用方提示。 */
@@ -138,23 +125,8 @@ export async function downloadReportGenVersion(versionId: string, fallbackName: 
 }
 
 async function downloadBlob(url: string, fallbackName: string): Promise<string> {
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: authHeaders(),
-    credentials: 'include',
-  })
-  if (!response.ok) {
-    throw new Error(response.status === 404 ? '文件还未生成' : `下载失败（${response.status}）`)
-  }
-  const blob = await response.blob()
+  const response = await fetchBlobResponse(url, '文件还未生成', '下载失败')
   const filename = pickFileName(response.headers.get('Content-Disposition'), fallbackName)
-  const objectUrl = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = objectUrl
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(objectUrl)
+  saveBlob(await response.blob(), filename)
   return filename
 }

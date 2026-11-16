@@ -17,23 +17,22 @@ import {
 
 type KnowledgeBaseItem = components['schemas']['KnowledgeBaseItem']
 type KbDocumentItem = components['schemas']['KbDocumentItem']
+/** 创建入参：project_id 必填，其余沿用生成类型的可选字段（不二次手写字段名） */
+type KnowledgeBaseCreateInput = Pick<components['schemas']['KnowledgeBaseCreateRequest'], 'project_id'> &
+  Partial<components['schemas']['KnowledgeBaseCreateRequest']>
 
 /** 知识库页面路由，写操作后据此失效缓存 */
 const KNOWLEDGE_BASE_PATH = '/research/knowledge-bases'
 
 /** 为研发项目创建知识库：名称留空时后端按项目名生成 */
-export async function createKnowledgeBase(payload: {
-  project_id: string
-  name?: string
-  description?: string
-}): Promise<KnowledgeBaseItem> {
+export async function createKnowledgeBase(payload: KnowledgeBaseCreateInput): Promise<KnowledgeBaseItem> {
   const kb = await createKnowledgeBaseApi({
     project_id: payload.project_id,
     name: payload.name ?? '',
     description: payload.description ?? '',
     // 留空表示用后端部署配置里的默认向量模型与切片方式
-    embedding_model: '',
-    chunk_method: '',
+    embedding_model: payload.embedding_model ?? '',
+    chunk_method: payload.chunk_method ?? '',
   })
   revalidatePath(KNOWLEDGE_BASE_PATH)
   return kb

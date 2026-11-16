@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Alert, App, Button, Drawer, Popconfirm, Space, Table, Tag, Tooltip } from 'antd'
 import { DeleteOutlined, DownloadOutlined, EyeOutlined, UndoOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
@@ -44,32 +45,16 @@ export function DeliverableTemplateVersionDrawer({
   onDownload,
 }: Props) {
   const { message: msgApi } = App.useApp()
-  const [versions, setVersions] = useState<DocGenTemplateVersion[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [busyId, setBusyId] = useState<string | null>(null)
-  /** 递增即重新拉取列表（回滚/删除后刷新） */
-  const [reloadKey, setReloadKey] = useState(0)
 
-  // 父组件以模板 ID 作为 key 挂载本组件，切换模板时状态天然从零开始，无需在 effect 里清空
-  useEffect(() => {
-    if (!open || !templateId) return
-    let cancelled = false
-    const fetchVersions = async () => {
-      setLoading(true)
-      try {
-        const data = await fetchDeliverableTemplateVersions(templateId)
-        if (!cancelled) setVersions(data)
-      } catch (e) {
-        if (!cancelled) msgApi.error(e instanceof Error ? e.message : '加载版本历史失败')
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    void fetchVersions()
-    return () => {
-      cancelled = true
-    }
-  }, [open, templateId, reloadKey, msgApi])
+  const versionsQuery = useQuery({
+    queryKey: ['deliverable-template-versions', templateId],
+    queryFn: () => fetchDeliverableTemplateVersions(templateId as string),
+    enabled: open && !!templateId,
+  })
+  const versions = versionsQuery.data ?? []
+  const loading = open && !!templateId && versionsQuery.isPending
 
   const handleRestore = async (version: DocGenTemplateVersion) => {
     if (!templateId) return
@@ -77,7 +62,7 @@ export function DeliverableTemplateVersionDrawer({
     try {
       const result = await restoreDeliverableTemplateVersion(templateId, version.id)
       msgApi.success(`已回滚到 v${result.from_version_no}，当前生效版本为 v${result.version_no}`)
-      setReloadKey((k) => k + 1)
+      await queryClient.invalidateQueries({ queryKey: ['deliverable-template-versions', templateId] })
       onChanged()
     } catch (e) {
       msgApi.error(e instanceof Error ? e.message : '回滚失败')
@@ -92,7 +77,7 @@ export function DeliverableTemplateVersionDrawer({
     try {
       await deleteDeliverableTemplateVersion(templateId, version.id)
       msgApi.success(`已删除 v${version.version_no}`)
-      setReloadKey((k) => k + 1)
+      await queryClient.invalidateQueries({ queryKey: ['deliverable-template-versions', templateId] })
     } catch (e) {
       msgApi.error(e instanceof Error ? e.message : '删除失败')
     } finally {
@@ -209,6 +194,14 @@ export function DeliverableTemplateVersionDrawer({
         title="每次上传或替换文件都会自动存一份，这里可以看到全部记录"
         description="点「恢复」会用这个版本的内容新建一个当前版本，原来的记录都还在，所以覆盖错了也能找回。正在使用的版本不能删除。"
       />
+      {versionsQuery.isError && (
+        <Alert
+          type="error"
+          showIcon
+          style={{ marginBottom: 12 }}
+          title={versionsQuery.error instanceof Error ? versionsQuery.error.message : '加载版本历史失败'}
+        />
+      )}
       <Table
         rowKey="id"
         dataSource={versions}

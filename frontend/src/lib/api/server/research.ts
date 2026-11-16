@@ -35,27 +35,14 @@ async function uploadFetch<T>(url: string, formData: FormData): Promise<T> {
 
 // ===== deliverables.ts =====
 
-export async function createDeliverable(data: {
-  project_id: string
-  stage: string
-  deliverable_type: string
-  title: string
-  status?: string
-  version?: string
-  content?: string
-}) {
+export async function createDeliverable(data: components['schemas']['RdStageDeliverableCreate']) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-stage-deliverables`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateDeliverable(id: string, data: {
-  title?: string
-  status?: string
-  version?: string
-  content?: string
-}) {
+export async function updateDeliverable(id: string, data: components['schemas']['RdStageDeliverableUpdate']) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/rd-stage-deliverables/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -79,18 +66,7 @@ export async function uploadDeliverableFile(deliverableId: string, formData: For
 }
 
 /** 在阶段交付文档里直接发起一次 AI 生成；生成在后台任务里跑，这里只拿回三个 id。 */
-export async function generateDeliverableReport(data: {
-  project_id: string
-  stage: string
-  deliverable_type: string
-  deliverable_id?: string | null
-  template_id?: string | null
-  title?: string | null
-  version?: string | null
-  doc_code?: string | null
-  drug_name?: string | null
-  supplement_text?: string | null
-}) {
+export async function generateDeliverableReport(data: components['schemas']['RdStageDeliverableGenerateRequest']) {
   return apiFetchData<components['schemas']['RdStageDeliverableGenerateResult']>(
     `${getApiBaseUrl()}/api/v1/research/rd-stage-deliverables/generate`,
     { method: 'POST', body: JSON.stringify(data) },

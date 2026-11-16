@@ -238,9 +238,9 @@ export function ReportGenDetail({ jobId, initialJob }: Props) {
               </Button>
             </Tooltip>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 20, fontWeight: 600, color: '#1F2329' }}>
+              <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0, color: '#1F2329' }}>
                 {job.report_title || '研发报告生成'}
-              </span>
+              </h1>
               <Tag color={meta.color} style={{ margin: 0 }}>{meta.label}</Tag>
             </div>
             <div style={{ marginTop: 8, display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#5A6472' }}>

@@ -102,7 +102,17 @@ export function CreateReportModal({
     queryClient.invalidateQueries({ queryKey: ['kb-documents', kb?.id] })
   }, [queryClient, projectId, kb?.id])
 
-  // ─── 编辑模式：报告本体字段 + 最近一次任务的生成输入快照 ───
+  // ─── 编辑模式：最近一次任务的生成输入快照（doc_code / drug_name / supplement 只存在于任务快照） ───
+  const { data: latestJob } = useQuery({
+    queryKey: ['report-gen-jobs', 'latest', editingReport?.id],
+    queryFn: () => fetchReportGenJobs({ reportId: editingReport?.id as string }),
+    enabled: open && !!editingReport,
+    // 回填失败不影响编辑：用户可重新填写，这里静默降级
+    retry: false,
+    select: (list) => list.items[0] ?? null,
+  })
+
+  // ─── 编辑模式：报告本体字段 ───
   useEffect(() => {
     if (!open) return
     form.resetFields()
@@ -117,25 +127,17 @@ export function CreateReportModal({
       version: editingReport.version,
       summary: editingReport.summary || '',
     })
-    // doc_code / drug_name / supplement 只存在于任务快照里，从最近一次任务回填
-    let cancelled = false
-    fetchReportGenJobs({ reportId: editingReport.id })
-      .then((list) => {
-        if (cancelled) return
-        const latest = list.items[0]
-        if (!latest) return
-        form.setFieldsValue({
-          doc_code: latest.doc_code || '',
-          drug_name: latest.drug_name || '',
-          supplement: latest.supplement_text || '',
-          template_id: latest.deliverable_template_id || undefined,
-        })
-      })
-      .catch(() => {
-        // 回填失败不影响编辑：用户可重新填写
-      })
-    return () => { cancelled = true }
   }, [open, editingReport, form])
+
+  useEffect(() => {
+    if (!open || !latestJob) return
+    form.setFieldsValue({
+      doc_code: latestJob.doc_code || '',
+      drug_name: latestJob.drug_name || '',
+      supplement: latestJob.supplement_text || '',
+      template_id: latestJob.deliverable_template_id || undefined,
+    })
+  }, [open, latestJob, form])
 
   // ─── 模板母本预览 ───
   const [tplPreviewOpen, setTplPreviewOpen] = useState(false)
