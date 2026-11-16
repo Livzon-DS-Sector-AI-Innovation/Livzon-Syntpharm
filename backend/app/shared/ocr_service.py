@@ -46,7 +46,7 @@ class SubprocessOCRService:
                 self._proc.kill()
                 self._proc.wait(timeout=5)
             except Exception:
-                pass
+                logger.debug("OCR 旧进程未能正常结束，继续启动新进程", exc_info=True)
 
         self._proc = subprocess.Popen(
             [sys.executable, WORKER_SCRIPT],
@@ -148,7 +148,7 @@ class SubprocessOCRService:
                 try:
                     self._proc.kill()
                 except Exception:
-                    pass
+                    logger.debug("OCR 超时后杀进程失败，继续重启 worker", exc_info=True)
                 self._start_worker()
                 raise RuntimeError(f"OCR request timed out after {timeout}s")
 

@@ -3,6 +3,9 @@
 上传、下载原先散在 ``api.py`` 里；AI 生成完成后也要把 docx 写进同一个目录，
 抽出来给 ``api.py`` 与 ``deliverable_generation.py`` 共用，避免服务层反向 import api。
 
+存储策略与 ``doc_template/store.py`` 一致：MinIO 启用时写对象存储（模块 bucket），
+未启用或上传失败时退回本地 ``UPLOAD_DIR``，读取两处都找，保证历史附件不丢。
+
 文件名规则与历史一致：``{deliverable_id}_{原始文件名}``。所有写入前都对文件名
 做 ``os.path.basename``，防止调用方带 ``../`` 把文件写到目录外。
 """
@@ -13,12 +16,17 @@ import logging
 import os
 from uuid import UUID
 
+from app.core import storage
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
+MODULE = "research"
+
 # 交付物附件目录：由配置派生，不再硬编码 /tmp（容器重启即丢）。
 _DELIVERABLE_SUBDIR: tuple[str, ...] = ("research", "deliverables")
+# MinIO 对象键前缀：与本地目录保持同一层级，便于对照排查
+_KEY_PREFIX = "research/deliverables"
 
 
 def deliverable_upload_dir() -> str:
@@ -43,23 +51,53 @@ def stored_file_name(deliverable_id: UUID, file_name: str) -> str:
     return f"{deliverable_id}_{safe_file_name(file_name)}"
 
 
+def deliverable_object_key(deliverable_id: UUID, file_name: str) -> str:
+    """对象存储里的键：``research/deliverables/{deliverable_id}_{原始文件名}``。"""
+    return f"{_KEY_PREFIX}/{stored_file_name(deliverable_id, file_name)}"
+
+
 def deliverable_download_url(deliverable_id: UUID) -> str:
     """交付物附件的下载地址（后端代理，浏览器不直连存储）。"""
     return f"/api/v1/research/rd-stage-deliverables/{deliverable_id}/download"
 
 
 def save_deliverable_bytes(deliverable_id: UUID, file_name: str, data: bytes) -> int:
-    """把字节写进交付物附件目录，返回字节数。
+    """把字节写进对象存储（未启用/失败时退回本地目录），返回字节数。
 
     同名文件直接覆盖：同一条交付文档重新生成时应当替换掉旧附件，
     历史版本由「新建一条交付文档记录」承载，不靠磁盘上堆同名文件。
     """
+    key = deliverable_object_key(deliverable_id, file_name)
+    if storage.is_enabled():
+        try:
+            storage.upload_object(MODULE, key, data, len(data), "application/octet-stream")
+            return len(data)
+        except Exception:  # noqa: BLE001 - 存储不可用时退回本地，保证功能可用
+            logger.exception("交付物附件上传对象存储失败，退回本地存储", extra={"key": key})
     target_dir = deliverable_upload_dir()
     os.makedirs(target_dir, exist_ok=True)
     file_path = os.path.join(target_dir, stored_file_name(deliverable_id, file_name))
     with open(file_path, "wb") as handle:
         handle.write(data)
     return len(data)
+
+
+def load_deliverable_bytes(deliverable_id: UUID, file_name: str) -> bytes | None:
+    """按交付文档取附件字节：先对象存储（新写入位置），再本地/历史目录。"""
+    key = deliverable_object_key(deliverable_id, file_name)
+    if storage.is_enabled():
+        try:
+            result = storage.get_object(MODULE, key)
+        except Exception:  # noqa: BLE001 - 读取失败继续尝试本地副本
+            logger.exception("交付物附件读取对象存储失败，尝试本地副本", extra={"key": key})
+        else:
+            if result:
+                return result[0]
+    file_path = resolve_deliverable_path(deliverable_id, file_name)
+    if file_path is not None:
+        with open(file_path, "rb") as handle:
+            return handle.read()
+    return None
 
 
 def resolve_deliverable_path(deliverable_id: UUID, file_name: str) -> str | None:

@@ -16,8 +16,10 @@ import asyncio
 import hashlib
 import logging
 import mimetypes
+import shutil
 import uuid
 from collections.abc import Awaitable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -63,6 +65,13 @@ ALLOWED_EXTENSIONS = frozenset(
 )
 MAX_FILES_PER_UPLOAD = 10
 MAX_FILE_MB = 100
+
+# 上传暂存目录（UPLOAD_DIR/kb-pending/<batch_id>）：请求内落盘，后台任务推送远端后删除
+STAGING_SUBDIR: tuple[str, ...] = ("kb-pending",)
+
+# 在线预览转 PDF 的硬超时：AGENTS.md 要求 HTTP 请求内操作不超过 5 秒，
+# 超时直接回退原件（前端按实际 MIME 选展示方式），不把慢文档拖成接口超时。
+PREVIEW_CONVERSION_TIMEOUT_SECONDS = 5.0
 
 
 # ---------------------------------------------------------------------------
@@ -306,6 +315,123 @@ async def sync_documents(
     return await load_documents(session, kb.id)
 
 
+@dataclass(slots=True)
+class StagedUpload:
+    """已落盘、等待推送 RAGFlow 的上传项。"""
+
+    file_name: str
+    file_ext: str
+    content_type: str
+    path: Path
+    size_bytes: int
+
+
+def ensure_uploadable(kb: RdKnowledgeBase) -> None:
+    """上传前置校验：知识库必须已建好远端数据集（毫秒级，不调外部服务）。"""
+    if kb.status != "active" or not kb.ragflow_dataset_id:
+        raise BadRequestException("知识库还没准备好，暂时不能上传资料。请稍等一会儿再试")
+
+
+def staging_dir(batch_id: uuid.UUID) -> Path:
+    """本批上传的暂存目录（UPLOAD_DIR/kb-pending/<batch_id>）。"""
+    return Path(get_settings().UPLOAD_DIR, *STAGING_SUBDIR, str(batch_id))
+
+
+def clear_staging(batch_id: uuid.UUID) -> None:
+    """清理暂存目录；后台任务结束时无条件调用（失败只忽略）。"""
+    shutil.rmtree(staging_dir(batch_id), ignore_errors=True)
+
+
+async def stage_upload_files(files: list[UploadFile]) -> tuple[uuid.UUID, list[StagedUpload], list[dict[str, str]]]:
+    """请求内只做扩展名/大小校验与本地落盘，返回 (批次号, 待推送项, 跳过项)。
+
+    不在这里调 RAGFlow：远端上传的耗时不可预估（单次超时配到 300s），
+    必须交给后台任务 ``upload_staged``，否则会把接口拖成超时。
+
+    暂存放本地 ``UPLOAD_DIR``（与交付物附件同卷）：当前后端为单实例部署，
+    后台任务与请求在同一进程/同一卷上；若将来多副本，需改放对象存储。
+    """
+    if not files:
+        raise BadRequestException("还没有选择文件")
+    if len(files) > MAX_FILES_PER_UPLOAD:
+        raise BadRequestException(f"一次最多上传 {MAX_FILES_PER_UPLOAD} 个文件，请分几次上传")
+
+    batch_id = uuid.uuid4()
+    target = staging_dir(batch_id)
+    staged: list[StagedUpload] = []
+    skipped: list[dict[str, str]] = []
+
+    for upload in files:
+        name = (upload.filename or "").strip() or "未命名文件"
+        ext = Path(name).suffix.lower()
+        if ext not in ALLOWED_EXTENSIONS:
+            skipped.append({"file_name": name, "reason": f"这种文件不能入库（{ext or '没有扩展名'}）"})
+            continue
+        content = await upload.read()
+        if not content:
+            skipped.append({"file_name": name, "reason": "文件内容为空"})
+            continue
+        if len(content) > MAX_FILE_MB * 1024 * 1024:
+            skipped.append({"file_name": name, "reason": f"超过 {MAX_FILE_MB}MB 上限"})
+            continue
+        target.mkdir(parents=True, exist_ok=True)
+        # 序号前缀防止同名文件互相覆盖
+        path = target / f"{len(staged):02d}_{Path(name).name}"
+        path.write_bytes(content)
+        staged.append(
+            StagedUpload(
+                file_name=name,
+                file_ext=ext,
+                content_type=upload.content_type or "application/octet-stream",
+                path=path,
+                size_bytes=len(content),
+            )
+        )
+
+    if not staged:
+        clear_staging(batch_id)
+    return batch_id, staged, skipped
+
+
+async def upload_staged(
+    session: AsyncSession,
+    kb: RdKnowledgeBase,
+    staged: list[StagedUpload],
+    *,
+    user_id: uuid.UUID | None = None,
+) -> tuple[list[str], list[dict[str, str]], list[RdKbDocument]]:
+    """把暂存文件推送到 RAGFlow 并触发解析（后台任务内执行）。"""
+    ensure_uploadable(kb)
+    client = RagflowClient()
+    uploaded: list[str] = []
+    skipped: list[dict[str, str]] = []
+    new_doc_ids: list[str] = []
+    now = datetime.now(UTC)
+
+    for item in staged:
+        reason, doc_ids = await _upload_one(
+            session,
+            kb,
+            client,
+            name=item.file_name,
+            ext=item.file_ext,
+            content=item.path.read_bytes(),
+            content_type=item.content_type,
+            user_id=user_id,
+            now=now,
+        )
+        if reason:
+            skipped.append({"file_name": item.file_name, "reason": reason})
+            continue
+        new_doc_ids.extend(doc_ids)
+        uploaded.append(item.file_name)
+
+    await session.flush()
+    await _trigger_parse(client, kb, new_doc_ids, skipped)
+    documents = await sync_documents(session, kb, client=client)
+    return uploaded, skipped, documents
+
+
 async def upload_documents(
     session: AsyncSession,
     kb: RdKnowledgeBase,
@@ -313,13 +439,12 @@ async def upload_documents(
     *,
     user_id: uuid.UUID | None = None,
 ) -> tuple[list[str], list[dict[str, str]], list[RdKbDocument]]:
-    """上传资料到知识库并立即触发解析。
+    """上传资料到知识库并立即触发解析（同步路径，测试与脚本用）。
 
-    返回 (成功文件名, 跳过项, 刷新后的文档列表)。单个文件失败不影响其余文件，
-    逐份读取上传以避免一次性把所有文件读进内存。
+    HTTP 请求不再走这里：接口只做本地预览校验与落盘，推送 RAGFlow 交给
+    ``upload_staged``（后台任务），避免把 300s 级的远端上传卡在请求里。
     """
-    if kb.status != "active" or not kb.ragflow_dataset_id:
-        raise BadRequestException("知识库还没准备好，暂时不能上传资料。请稍等一会儿再试")
+    ensure_uploadable(kb)
     if not files:
         raise BadRequestException("还没有选择文件")
     if len(files) > MAX_FILES_PER_UPLOAD:
@@ -344,51 +469,83 @@ async def upload_documents(
         if len(content) > MAX_FILE_MB * 1024 * 1024:
             skipped.append({"file_name": name, "reason": f"超过 {MAX_FILE_MB}MB 上限"})
             continue
-        try:
-            created = await client.upload_document(
-                kb.ragflow_dataset_id, name, content, upload.content_type or "application/octet-stream"
-            )
-        except RagflowError as exc:
-            skipped.append({"file_name": name, "reason": f"上传到知识库服务失败：{exc.message}"})
+        reason, doc_ids = await _upload_one(
+            session,
+            kb,
+            client,
+            name=name,
+            ext=ext,
+            content=content,
+            content_type=upload.content_type or "application/octet-stream",
+            user_id=user_id,
+            now=now,
+        )
+        if reason:
+            skipped.append({"file_name": name, "reason": reason})
             continue
-        doc_ids = [str(item.get("id") or "") for item in created if item.get("id")]
-        if not doc_ids:
-            skipped.append({"file_name": name, "reason": "知识库服务未返回文档 ID"})
-            continue
-        digest = hashlib.sha256(content).hexdigest()
-        for doc_id in doc_ids:
-            session.add(
-                RdKbDocument(
-                    kb_id=kb.id,
-                    ragflow_document_id=doc_id,
-                    file_name=name,
-                    file_ext=ext,
-                    size_bytes=len(content),
-                    sha256=digest,
-                    run_status="UNSTART",
-                    parse_started_at=now,
-                    created_by=user_id,
-                    updated_by=user_id,
-                )
-            )
         new_doc_ids.extend(doc_ids)
         uploaded.append(name)
 
     await session.flush()
-
-    if new_doc_ids:
-        try:
-            await client.parse_documents(kb.ragflow_dataset_id, new_doc_ids)
-        except RagflowError as exc:
-            # 解析未触发：文件已入库，用户可稍后在列表里点「重新解析」
-            logger.warning(
-                "知识库解析触发失败，等待人工重试",
-                extra={"kb_id": str(kb.id), "documents": len(new_doc_ids), "error": exc.message},
-            )
-            skipped.append({"file_name": f"（{len(new_doc_ids)} 份文件）", "reason": f"解析触发失败：{exc.message}"})
-
+    await _trigger_parse(client, kb, new_doc_ids, skipped)
     documents = await sync_documents(session, kb, client=client)
     return uploaded, skipped, documents
+
+
+async def _upload_one(
+    session: AsyncSession,
+    kb: RdKnowledgeBase,
+    client: RagflowClient,
+    *,
+    name: str,
+    ext: str,
+    content: bytes,
+    content_type: str,
+    user_id: uuid.UUID | None,
+    now: datetime,
+) -> tuple[str, list[str]]:
+    """把一份文件推到 RAGFlow 并落本地镜像行；返回 (跳过原因, 远端文档 ID)。"""
+    try:
+        created = await client.upload_document(kb.ragflow_dataset_id, name, content, content_type)
+    except RagflowError as exc:
+        return f"上传到知识库服务失败：{exc.message}", []
+    doc_ids = [str(item.get("id") or "") for item in created if item.get("id")]
+    if not doc_ids:
+        return "知识库服务未返回文档 ID", []
+    digest = hashlib.sha256(content).hexdigest()
+    for doc_id in doc_ids:
+        session.add(
+            RdKbDocument(
+                kb_id=kb.id,
+                ragflow_document_id=doc_id,
+                file_name=name,
+                file_ext=ext,
+                size_bytes=len(content),
+                sha256=digest,
+                run_status="UNSTART",
+                parse_started_at=now,
+                created_by=user_id,
+                updated_by=user_id,
+            )
+        )
+    return "", doc_ids
+
+
+async def _trigger_parse(
+    client: RagflowClient, kb: RdKnowledgeBase, doc_ids: list[str], skipped: list[dict[str, str]]
+) -> None:
+    """触发 RAGFlow 解析；失败只记日志 + 跳过项，文件已在库，用户可点「重新解析」。"""
+    if not doc_ids:
+        return
+    try:
+        await client.parse_documents(kb.ragflow_dataset_id, doc_ids)
+    except RagflowError as exc:
+        # 解析未触发：文件已入库，用户可稍后在列表里点「重新解析」
+        logger.warning(
+            "知识库解析触发失败，等待人工重试",
+            extra={"kb_id": str(kb.id), "documents": len(doc_ids), "error": exc.message},
+        )
+        skipped.append({"file_name": f"（{len(doc_ids)} 份文件）", "reason": f"解析触发失败：{exc.message}"})
 
 
 async def delete_document(
@@ -472,8 +629,23 @@ async def document_file(kb: RdKnowledgeBase, row: RdKbDocument, *, as_pdf: bool 
     content_type = content_type or "application/octet-stream"
 
     if as_pdf and content_type != "application/pdf":
-        # LibreOffice 调用是阻塞的，放线程池里跑，别占住事件循环
-        pdf = await asyncio.to_thread(get_file_conversion().convert_bytes_to_pdf, content, row.file_name)
+        # LibreOffice 调用是阻塞的，放线程池里跑，别占住事件循环；
+        # 转换耗时不可预估，HTTP 请求内必须给硬超时，超时回退原件。
+        try:
+            pdf = await asyncio.wait_for(
+                asyncio.to_thread(get_file_conversion().convert_bytes_to_pdf, content, row.file_name),
+                timeout=PREVIEW_CONVERSION_TIMEOUT_SECONDS,
+            )
+        except TimeoutError:
+            logger.warning(
+                "资料转 PDF 超时，回退为原件",
+                extra={
+                    "file_name": row.file_name,
+                    "timeout_seconds": PREVIEW_CONVERSION_TIMEOUT_SECONDS,
+                    "module_name": "research",
+                },
+            )
+            pdf = None
         if pdf:
             return pdf, "application/pdf"
         logger.warning("资料转 PDF 失败，回退为原件", extra={"file_name": row.file_name, "module_name": "research"})

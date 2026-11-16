@@ -252,6 +252,9 @@ class Settings(BaseSettings):
     # Upload
     MAX_UPLOAD_SIZE_MB: int = 50
 
+    # OCR 服务开关（PaddleOCR 在部分环境会段错误，部署时可临时关闭）
+    OCR_ENABLED: bool = True
+
     # MinIO / S3-compatible object storage
     MINIO_ENABLED: bool = False
     MINIO_ENDPOINT: str = "localhost:9000"

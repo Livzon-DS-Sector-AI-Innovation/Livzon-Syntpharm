@@ -35,8 +35,10 @@ def _safe_stem(filename: str) -> str:
 # 字节流转 PDF 的缓存目录与容量上限：预览会重复点，同一份文件不重复转换
 _PDF_CACHE_DIR = Path(tempfile.gettempdir()) / "office-pdf-preview-cache"
 _PDF_CACHE_MAX_FILES = 200
-# 单次转换超时：大表格/多图文档偏慢，给足时间但不无限等
-_CONVERT_TIMEOUT_SECONDS = 180
+# 单次转换超时：大表格/多图文档偏慢，给足时间但不无限等。
+# HTTP 请求内调用由调用方再套 5 秒硬超时（超时后本次转换仍在后台跑完并落缓存，
+# 下次预览命中缓存即时返回），这里只需保证不会无限占用并发名额。
+_CONVERT_TIMEOUT_SECONDS = 60
 
 
 class FileConversionService:

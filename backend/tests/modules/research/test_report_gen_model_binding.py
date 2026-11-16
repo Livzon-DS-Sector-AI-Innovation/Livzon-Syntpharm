@@ -72,14 +72,12 @@ class _Steps:
 # ─── 绑定解析 ──────────────────────────────────────────────────────────────
 
 
-@pytest.mark.asyncio
 async def test_blank_setting_keeps_active_model() -> None:
     binding = await resolve_binding("   ")
     assert binding.is_empty is True
     assert binding.call_kwargs() == {"config_name": None, "model_override": None}
 
 
-@pytest.mark.asyncio
 async def test_registered_config_name_switches_whole_config(monkeypatch: pytest.MonkeyPatch) -> None:
     async def fake(_name: str, _config_type: str) -> SimpleNamespace:
         return _named("qwen-prod", "qwen3-max")
@@ -93,7 +91,6 @@ async def test_registered_config_name_switches_whole_config(monkeypatch: pytest.
     assert binding.call_kwargs() == {"config_name": "qwen-prod", "model_override": None}
 
 
-@pytest.mark.asyncio
 async def test_unregistered_value_only_overrides_model(monkeypatch: pytest.MonkeyPatch) -> None:
     async def fake(_name: str, _config_type: str) -> None:
         return None
@@ -106,7 +103,6 @@ async def test_unregistered_value_only_overrides_model(monkeypatch: pytest.Monke
     assert binding.call_kwargs() == {"config_name": None, "model_override": "DeepSeek-V4-Flash"}
 
 
-@pytest.mark.asyncio
 async def test_structure_slot_reuses_main_binding(monkeypatch: pytest.MonkeyPatch) -> None:
     lookups: list[str] = []
 
@@ -126,7 +122,6 @@ async def test_structure_slot_reuses_main_binding(monkeypatch: pytest.MonkeyPatc
 # ─── 任务快照 ──────────────────────────────────────────────────────────────
 
 
-@pytest.mark.asyncio
 async def test_job_snapshot_wins_over_live_config(monkeypatch: pytest.MonkeyPatch) -> None:
     async def fake(name: str, _config_type: str) -> SimpleNamespace:
         return _named(name, f"{name}-model")
@@ -147,7 +142,6 @@ async def test_job_snapshot_wins_over_live_config(monkeypatch: pytest.MonkeyPatc
     assert merged.tool_mode == "auto", "快照只覆盖模型三档，运行参数沿用实时配置"
 
 
-@pytest.mark.asyncio
 async def test_legacy_job_without_snapshot_keeps_live_config() -> None:
     job = SimpleNamespace(model_config_name=None, structure_model_name=None, fallback_model_name=None)
     live = _config()
@@ -171,7 +165,6 @@ def test_finalize_cannot_be_disabled() -> None:
     assert "finalize" in names
 
 
-@pytest.mark.asyncio
 async def test_execute_tool_refuses_disabled_tool() -> None:
     called: list[str] = []
 
@@ -194,7 +187,6 @@ async def test_execute_tool_refuses_disabled_tool() -> None:
 # ─── 兜底切换 ──────────────────────────────────────────────────────────────
 
 
-@pytest.mark.asyncio
 async def test_main_model_failure_switches_to_fallback_once() -> None:
     steps = _Steps()
     job = SimpleNamespace(id=uuid4(), used_fallback=False)
@@ -218,7 +210,6 @@ async def test_main_model_failure_switches_to_fallback_once() -> None:
     assert "自动补齐" in steps.records[0][1]
 
 
-@pytest.mark.asyncio
 async def test_fallback_failure_propagates_without_retry_loop() -> None:
     calls: list[str | None] = []
     job = SimpleNamespace(id=uuid4(), used_fallback=False)
@@ -236,7 +227,6 @@ async def test_fallback_failure_propagates_without_retry_loop() -> None:
     assert switch.current is switch.fallback
 
 
-@pytest.mark.asyncio
 async def test_no_fallback_configured_keeps_original_error() -> None:
     async def boom(_binding: ModelBinding) -> str:
         raise LLMProviderError("502")
@@ -251,7 +241,6 @@ async def test_no_fallback_configured_keeps_original_error() -> None:
     assert job.used_fallback is False
 
 
-@pytest.mark.asyncio
 async def test_tools_unsupported_is_not_treated_as_model_failure() -> None:
     """协议不支持要抛回上层做 tools→json 降级，不能白白切到兜底模型。"""
 
@@ -271,7 +260,6 @@ async def test_tools_unsupported_is_not_treated_as_model_failure() -> None:
 # ─── 运行时配置解析 ────────────────────────────────────────────────────────
 
 
-@pytest.mark.asyncio
 async def test_load_config_normalizes_disabled_tool_list(monkeypatch: pytest.MonkeyPatch) -> None:
     from app.modules.research.report_gen import config as config_module
 

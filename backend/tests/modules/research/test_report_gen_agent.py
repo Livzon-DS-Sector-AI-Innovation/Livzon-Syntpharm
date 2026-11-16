@@ -60,7 +60,6 @@ def test_tool_specs_are_complete_and_closed() -> None:
         assert function["parameters"]["type"] == "object"
 
 
-@pytest.mark.asyncio
 async def test_execute_tool_supports_async_and_sync_handlers() -> None:
     async def async_handler(arguments: dict[str, object]) -> ToolOutcome:
         return ToolOutcome(ok=True, summary=f"async:{arguments['q']}", payload={"echo": arguments["q"]})
@@ -79,14 +78,12 @@ async def test_execute_tool_supports_async_and_sync_handlers() -> None:
     assert second.summary == "sync:收尾"
 
 
-@pytest.mark.asyncio
 async def test_unknown_tool_is_a_failed_step_not_an_exception() -> None:
     outcome = await execute_tool("delete_database", {}, _runtime())  # type: ignore[arg-type]
     assert outcome.ok is False
     assert "未知工具" in outcome.summary
 
 
-@pytest.mark.asyncio
 async def test_missing_required_argument_short_circuits_before_handler() -> None:
     """模型发空参数调用时不进 handler，直接点明缺哪些必填项。"""
     called: list[dict[str, object]] = []
@@ -105,7 +102,6 @@ async def test_missing_required_argument_short_circuits_before_handler() -> None
     assert called == []
 
 
-@pytest.mark.asyncio
 async def test_tool_exception_is_swallowed_into_failed_outcome() -> None:
     async def boom(arguments: dict[str, object]) -> ToolOutcome:
         raise RuntimeError("知识库不可用")
@@ -233,7 +229,6 @@ def _patched_search(
     return runtime
 
 
-@pytest.mark.asyncio
 async def test_search_budget_reserves_half_for_remote_chunks(monkeypatch: pytest.MonkeyPatch) -> None:
     """事实库不能吃满预算：查询带品种名时会把远程切片挤掉，正文就只能留空。"""
     calls: list[tuple[str, int]] = []
@@ -263,7 +258,6 @@ def test_human_locked_summary_lists_positions_without_values() -> None:
     assert with_human_locked_summary("基础提示词", []) == "基础提示词"
 
 
-@pytest.mark.asyncio
 async def test_search_budget_falls_back_to_local_chunks_when_both_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     """事实库与 RAGFlow 都没命中时，本地切片仍按完整预算兜底。"""
     calls: list[tuple[str, int]] = []

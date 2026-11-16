@@ -16,8 +16,9 @@ from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.core.database import async_session_factory, get_db
 from app.core.deps import RequiredUser
+from app.core.jobs import submit_job
 from app.core.response import build_response
 from app.modules.research.knowledge_base import service
 from app.modules.research.knowledge_base.schemas import (
@@ -132,25 +133,53 @@ async def upload_documents(
     files: list[UploadFile] = File(..., description="资料文件（可多个）"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """上传后立即触发 RAGFlow 解析；单份失败不影响其余文件，跳过原因逐条返回。"""
+    """请求内只做校验与落盘，推送 RAGFlow 与触发解析交给后台任务。
+
+    远端上传单次超时配到 300s，放在请求里会把接口拖成超时；这里立即返回
+    「已提交」，前端沿用资料列表的轮询看入库进度。
+    """
     kb = await service.get_knowledge_base(db, kb_id)
-    uploaded, skipped, documents = await service.upload_documents(
-        db, kb, list(files), user_id=current_user.id if current_user else None
-    )
-    await db.commit()
-    message = f"已上传 {len(uploaded)} 份资料并开始解析" if uploaded else "没有文件被上传"
+    service.ensure_uploadable(kb)
+    batch_id, staged, skipped = await service.stage_upload_files(list(files))
+
+    if not staged:
+        message = f"没有文件被上传（{len(skipped)} 份被跳过）" if skipped else "没有文件被上传"
+        return build_response(data={"uploaded": [], "skipped": skipped, "documents": []}, message=message)
+
+    user_id = current_user.id if current_user else None
+
+    async def _runner(job_id: UUID) -> dict[str, Any]:
+        try:
+            async with async_session_factory() as bg_db:
+                kb_bg = await service.get_knowledge_base(bg_db, kb_id)
+                uploaded, failed, _documents = await service.upload_staged(bg_db, kb_bg, staged, user_id=user_id)
+                await bg_db.commit()
+            logger.info(
+                "知识库资料入库完成",
+                extra={
+                    "kb_id": str(kb_id),
+                    "job_id": str(job_id),
+                    "uploaded": len(uploaded),
+                    "skipped": len(failed),
+                    "module_name": "research",
+                },
+            )
+            return {"uploaded": len(uploaded), "skipped": len(failed)}
+        finally:
+            # 暂存文件只在本次任务内有效：无论成功失败都清掉
+            service.clear_staging(batch_id)
+
+    await submit_job("research.kb-upload", _runner)
+
+    message = f"已提交 {len(staged)} 份资料，正在入库处理，稍后在这里查看进度"
     if skipped:
         message += f"，{len(skipped)} 份被跳过"
     logger.info(
-        "知识库资料上传完成",
-        extra={"kb_id": str(kb.id), "uploaded": len(uploaded), "skipped": len(skipped), "module_name": "research"},
+        "知识库资料上传已入队",
+        extra={"kb_id": str(kb.id), "staged": len(staged), "skipped": len(skipped), "module_name": "research"},
     )
     return build_response(
-        data={
-            "uploaded": uploaded,
-            "skipped": skipped,
-            "documents": [service.document_payload(row) for row in documents],
-        },
+        data={"uploaded": [item.file_name for item in staged], "skipped": skipped, "documents": []},
         message=message,
     )
 

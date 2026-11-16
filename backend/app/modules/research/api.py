@@ -6,7 +6,7 @@ import uuid
 from uuid import UUID
 
 from fastapi import Body, Depends, File, Query, UploadFile
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -2309,6 +2309,7 @@ async def update_filing(
 @router.get(
     "/rd-stage-deliverables/generation/options",
     summary="获取阶段交付文档「AI 生成报告」的预填项与模板候选",
+    response_model=DataResponse[RdStageDeliverableGenerationOptions],
 )
 async def get_stage_deliverable_generation_options_api(
     current_user: RequiredUser,
@@ -2337,6 +2338,7 @@ async def get_stage_deliverable_generation_options_api(
 @router.get(
     "/rd-stage-deliverables/report-links",
     summary="按报告批量反查来源交付文档",
+    response_model=DataResponse[list[RdStageDeliverableReportLink]],
 )
 async def list_stage_deliverable_report_links_api(
     current_user: RequiredUser,
@@ -2360,6 +2362,7 @@ async def list_stage_deliverable_report_links_api(
 @router.post(
     "/rd-stage-deliverables/generate",
     summary="在阶段交付文档中直接生成研发报告",
+    response_model=DataResponse[RdStageDeliverableGenerateResult],
 )
 async def generate_stage_deliverable_report_api(
     data: RdStageDeliverableGenerateRequest,
@@ -2382,6 +2385,7 @@ async def generate_stage_deliverable_report_api(
 @router.get(
     "/rd-stage-deliverables/{deliverable_id}/generation",
     summary="查询阶段交付文档的生成进度",
+    response_model=DataResponse[RdStageDeliverableGenerationStatus],
 )
 async def get_stage_deliverable_generation_status_api(
     deliverable_id: UUID,
@@ -2555,21 +2559,31 @@ async def download_deliverable_file(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:stage-deliverable:read")),
     db: AsyncSession = Depends(get_db),
-) -> FileResponse:
-    """下载交付物附件文件（本地存储）"""
+) -> StreamingResponse:
+    """下载交付物附件文件（对象存储优先，本地/历史目录兜底）"""
+    import io
+    from urllib.parse import quote
 
     deliverable = await service.get_rd_stage_deliverable(db, deliverable_id)
 
     if not deliverable.file_name:
         raise AppException(status_code=404, message="未找到附件文件")
 
-    # 取附件路径时兼容历史版本写在 /tmp 下的文件
-    file_path = deliverable_files.resolve_deliverable_path(deliverable_id, deliverable.file_name)
+    content = deliverable_files.load_deliverable_bytes(deliverable_id, deliverable.file_name)
 
-    if file_path is None:
+    if content is None:
         raise NotFoundException("文件")
 
-    return FileResponse(file_path, filename=deliverable.file_name, media_type="application/octet-stream")
+    filename = deliverable.file_name
+    ascii_name = filename.encode("ascii", "ignore").decode().strip() or "attachment"
+    return StreamingResponse(
+        io.BytesIO(content),
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(filename)}",
+            "Content-Length": str(len(content)),
+        },
+    )
 
 
 # ===== 中试研究 API =====

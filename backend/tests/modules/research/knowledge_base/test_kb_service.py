@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import io
 import uuid
+from pathlib import Path
 
 import pytest
+from fastapi import UploadFile
 
 from app.core.config import RagflowSettings
 from app.core.exceptions import BadRequestException, NotFoundException
@@ -255,5 +258,60 @@ async def test_document_file_requires_ready_kb() -> None:
 
     with pytest.raises(BadRequestException) as exc:
         await service.document_file(kb, _doc("DONE"))
+
+    assert "还没准备好" in str(exc.value)
+
+
+# ---------------------------------------------------------------------------
+# 上传暂存（请求内只落盘，推送远端交给后台任务）
+# ---------------------------------------------------------------------------
+
+
+def _upload(name: str, data: bytes) -> UploadFile:
+    return UploadFile(file=io.BytesIO(data), filename=name)
+
+
+async def test_stage_upload_files_writes_to_staging(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """请求内只做扩展名校验与落盘：合法文件进暂存目录，非法扩展名进跳过项。"""
+
+    class _Settings:
+        UPLOAD_DIR = str(tmp_path)
+
+    monkeypatch.setattr(service, "get_settings", lambda: _Settings())
+
+    batch_id, staged, skipped = await service.stage_upload_files(
+        [_upload("米诺地尔调研报告.docx", b"hello"), _upload("virus.exe", b"bin")]
+    )
+
+    assert [item.file_name for item in staged] == ["米诺地尔调研报告.docx"]
+    assert staged[0].path.read_bytes() == b"hello"
+    assert staged[0].path.parent == service.staging_dir(batch_id)
+    assert skipped == [{"file_name": "virus.exe", "reason": "这种文件不能入库（.exe）"}]
+
+    service.clear_staging(batch_id)
+
+
+async def test_stage_upload_files_clears_empty_batch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """没有一份合法文件时不留空目录。"""
+
+    class _Settings:
+        UPLOAD_DIR = str(tmp_path)
+
+    monkeypatch.setattr(service, "get_settings", lambda: _Settings())
+
+    batch_id, staged, skipped = await service.stage_upload_files([_upload("virus.exe", b"bin")])
+
+    assert staged == []
+    assert len(skipped) == 1
+    assert not service.staging_dir(batch_id).exists()
+
+
+async def test_upload_staged_requires_ready_kb() -> None:
+    """后台任务执行前再校验一次：知识库没建好就不推远端。"""
+    kb = _kb()
+    kb.status = "creating"
+
+    with pytest.raises(BadRequestException) as exc:
+        await service.upload_staged(session=None, kb=kb, staged=[])  # type: ignore[arg-type]
 
     assert "还没准备好" in str(exc.value)
