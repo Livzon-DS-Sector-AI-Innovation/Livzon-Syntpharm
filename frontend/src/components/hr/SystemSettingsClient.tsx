@@ -63,14 +63,6 @@ export default function SystemSettingsClient() {
       </div>
 
       <Form form={form} layout="vertical">
-        <Divider>飞书 - 平台主 Bot（其他模块）</Divider>
-        <Form.Item label={feishuLabel('App ID')} name="FEISHU__PLATFORM__APP_ID">
-          <Input placeholder="cli_xxxx..." />
-        </Form.Item>
-        <Form.Item label={feishuLabel('App Secret')} name="FEISHU__PLATFORM__APP_SECRET">
-          <Input.Password placeholder="飞书 App Secret" />
-        </Form.Item>
-
         <Divider>飞书 - HR Bot（招聘 / 人事）</Divider>
         <Form.Item label={feishuLabel('HR Bot App ID')} name="FEISHU__HR__CREDENTIALS__APP_ID">
           <Input placeholder="cli_xxxx..." />
@@ -93,17 +85,6 @@ export default function SystemSettingsClient() {
         </Form.Item>
         <Form.Item label={feishuLabel('培训 Bot App Secret')} name="FEISHU__TRAINING__CREDENTIALS__APP_SECRET">
           <Input.Password placeholder="飞书 Training App Secret" />
-        </Form.Item>
-
-        <Divider>AI 模型</Divider>
-        <Form.Item label="AI_BASE_URL" name="AI_BASE_URL">
-          <Input placeholder="https://api.moonshot.cn/v1" />
-        </Form.Item>
-        <Form.Item label="AI_API_KEY" name="AI_API_KEY">
-          <Input.Password placeholder="sk-..." />
-        </Form.Item>
-        <Form.Item label="AI_MODEL" name="AI_MODEL">
-          <Input placeholder="deepseek-v4-pro" />
         </Form.Item>
       </Form>
     </Card>
