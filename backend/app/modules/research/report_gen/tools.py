@@ -31,6 +31,7 @@ from app.modules.research.models import (
     RdReportGenSlot,
     RdStageRecord,
 )
+from app.modules.research.report_gen.cell_semantics import validate_cell_value
 from app.modules.research.report_gen.outline import (
     MAX_OUTLINE_TEXT,
     TemplateOutline,
@@ -117,6 +118,8 @@ class ReportGenRuntime:
         self._source_seq = 0
         self._append_seq = 0
         self.rejected = 0
+        # 出稿前语义复核命中的位置：只标记待核对，不改内容
+        self.semantic_mismatches: list[dict[str, Any]] = []
         self.finalized = False
         self.final_summary = ""
         self.kb: RdKnowledgeBase | None = None
@@ -177,8 +180,13 @@ class ReportGenRuntime:
             payload["tables"] = self.outline.table_count
             payload["note"] = (
                 "key 就是写入时用的位置标识：p{n} 段落、t{表}r{行}c{列} 单元格。"
-                "context 是上一段/表头文字，用来判断该位置该写什么。"
+                "context 是上一段/行标题文字；表格还有一个 column_hint（列路径，如「自研成本 › 研发投入」），"
+                "两者一起说明该位置该写什么。expect 是这一格期望的内容类型"
+                "（number 数值 / cas CAS号 / formula 分子式 / opinion 评审意见 / text 文本），"
+                "写入前会按它校验。"
                 "append=true 的是「标签：」段：text 只给冒号后的值，标签由系统保留。"
+                "注意：不要按顺序往一排空格里填值；对不上 column_hint 含义的格子留空，"
+                "由人工补写。"
             )
         return ToolOutcome(
             ok=True,
@@ -523,6 +531,18 @@ class ReportGenRuntime:
             if not text:
                 results.append({"key": key, "ok": False, "error": "text 不能为空"})
                 continue
+            # 语义校验：这一格是意见栏/CAS号/数值列，值就得对得上。缺这一层，
+            # 模型会把「其他名称」写进意见栏、把分子量写进成本列，只有成品才暴露。
+            mismatch = validate_cell_value(
+                value=text,
+                expect=position.expect,
+                row_hint=position.row_hint,
+                column_hint=position.column_hint,
+            )
+            if mismatch:
+                self.rejected += 1
+                results.append({"key": key, "ok": False, "where": position.label, "error": mismatch})
+                continue
             row = self._upsert_row(
                 slot_key=key,
                 label=position.label,
@@ -704,6 +724,8 @@ class ReportGenRuntime:
     def finalize(self, arguments: dict[str, Any]) -> ToolOutcome:
         self.finalized = True
         self.final_summary = str(arguments.get("summary") or "").strip()
+        # 出稿前复核一遍：实时校验只能拦住写入那一刻，模板换版、后改语义都可能漏网
+        mismatches = self.semantic_self_check()
         coverage = self.coverage()
         return ToolOutcome(
             ok=True,
@@ -711,23 +733,75 @@ class ReportGenRuntime:
                 f"生成结束：已写 {coverage['written']}/{coverage['writable_total']} 处"
                 f"，未写空位 {coverage['unwritten']} 处"
                 + (f"，被拒绝 {coverage['rejected']} 次" if coverage["rejected"] else "")
+                + (f"，{len(mismatches)} 处内容与格子含义不符已标待核对" if mismatches else "")
             ),
             payload={
                 **coverage,
                 "summary": self.final_summary,
                 "unwritten_sample": coverage["unwritten_sample"],
+                "semantic_mismatch_sample": mismatches[:10],
             },
         )
+
+    def semantic_self_check(self) -> list[dict[str, Any]]:
+        """出稿前语义复核：内容与格子含义不符的位置标成待核对，不改内容。
+
+        实时校验拦的是「写入那一刻」，这一层兜的是「已经写进去的」：模板换版导致行列
+        语义变了、人工改过的值不合适、上一版遗留的记录等。标待核对而不是删内容——
+        受控文档里丢字比错字更难被发现。
+        """
+        mismatches: list[dict[str, Any]] = []
+        for key, row in self.slot_rows.items():
+            position = self.positions.get(key)
+            if position is None or position.kind != KIND_TABLE_CELL:
+                continue
+            value = (row.value or "").strip()
+            if not value:
+                continue
+            # 人工写的以人工为准：不再回头改它的状态，只在清单里保留人工标记
+            if str(row.edit_source or "ai") == "manual" or self._human_locked(key):
+                continue
+            reason = validate_cell_value(
+                value=value,
+                expect=position.expect,
+                row_hint=position.row_hint,
+                column_hint=position.column_hint,
+            )
+            if reason is None:
+                continue
+            anchor = dict(row.anchor) if isinstance(row.anchor, dict) else {}
+            anchor["verify_reason"] = reason
+            anchor["verify_kind"] = "semantic"
+            row.anchor = anchor
+            row.state = "pending"
+            mismatches.append({"key": key, "where": position.label, "reason": reason})
+            logger.info(
+                "report gen cell semantic mismatch",
+                extra={
+                    "job_id": str(getattr(self.job, "id", "")),
+                    "slot_key": key,
+                    "table_index": position.index,
+                    "biz_module": "research",
+                },
+            )
+        self.semantic_mismatches = mismatches
+        return mismatches
 
     # ------------------------------------------------------------------
     # 覆盖率与内部工具
     # ------------------------------------------------------------------
     def coverage(self) -> dict[str, Any]:
-        """本次写入覆盖率：已写位置取自写入记录，分母是母本可写位置总数。"""
+        """本次写入覆盖率：已写位置取自写入记录，分母是母本可写位置总数。
+
+        语义自检命中的位置不算「已填写」：内容在那儿但意思不对，等于还得人补，
+        计进已填写只会让覆盖率虚高、把问题藏起来。
+        """
+        mismatch_keys = {str(item.get("key")) for item in self.semantic_mismatches}
         written_keys = {
             key
             for key, row in self.slot_rows.items()
-            if (row.value or "").strip()
+            if key not in mismatch_keys
+            and (row.value or "").strip()
             and str((row.anchor or {}).get("kind") or KIND_PARAGRAPH) in (KIND_PARAGRAPH, KIND_TABLE_CELL)
         }
         writable_total = self.outline.writable_total
@@ -737,6 +811,8 @@ class ReportGenRuntime:
             "written": len(written_keys),
             "unwritten": len(unwritten),
             "rejected": self.rejected,
+            # 内容写进去了但与格子含义不符（自检标待核对）的数量，不算「已填写」
+            "semantic_mismatch": len(self.semantic_mismatches),
             "appended": sum(
                 1
                 for row in self.slot_rows.values()

@@ -51964,6 +51964,23 @@ export interface components {
              */
             context?: string | null;
             /**
+             * Column Hint
+             * @description 表格列路径，如「自研成本 › 研发投入」
+             */
+            column_hint?: string | null;
+            /**
+             * Row Span
+             * @description 合并单元格跨的行数
+             * @default 1
+             */
+            row_span: number;
+            /**
+             * Col Span
+             * @description 合并单元格跨的列数
+             * @default 1
+             */
+            col_span: number;
+            /**
              * Index
              * @description 段落下标；表格位置为 table_index
              */

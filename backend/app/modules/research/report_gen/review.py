@@ -131,6 +131,10 @@ def _state_of(row: RdReportGenSlot | None) -> tuple[str, str | None]:
     if row.state == "conflict":
         return "conflict", "这一处资料互相矛盾，需要人工判断后再定稿"
     if row.state == "pending":
+        # 出稿自检标出来的「内容与格子含义不符」：原因写在 anchor 里，优先展示它
+        verify = (row.anchor or {}).get("verify_reason") if isinstance(row.anchor, dict) else None
+        if isinstance(verify, str) and verify.strip():
+            return "needs_verify", verify.strip()
         return "needs_verify", "已填写，但没有可引用的来源，需要人工确认"
     return "written", None
 
@@ -199,8 +203,10 @@ def _item_of_position(
     outline: TemplateOutline,
 ) -> ReportGenFieldItemData:
     state, reason = _state_of(row)
-    if not position.writable and row is None:
-        reason = "这是模板里固定的内容，需要时可以直接补写"
+    if not position.writable:
+        # 不可写原因以母本判定为准（封面版式/标题/已有完整内容…），别用笼统一句话盖掉；
+        # 已经写过的位置也要说明「这处本来就不该写」，否则人看不出为什么会被填。
+        reason = position.reason or reason or "这是模板里固定的内容，需要时可以直接补写"
     return ReportGenFieldItemData(
         key=position.key,
         kind=position.kind,
@@ -220,6 +226,9 @@ def _item_of_position(
         evidence=_clip(row.evidence if row is not None else None, MAX_EVIDENCE_CHARS),
         confidence=row.confidence if row is not None else None,
         context=_clip(position.context, MAX_TEXT_CHARS),
+        column_hint=_clip(position.column_hint, MAX_TEXT_CHARS) or None,
+        row_span=position.row_span,
+        col_span=position.col_span,
         index=position.index,
         row=position.row,
         col=position.col,

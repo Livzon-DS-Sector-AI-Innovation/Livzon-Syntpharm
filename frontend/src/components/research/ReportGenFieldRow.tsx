@@ -95,6 +95,13 @@ export const ReportGenFieldRow = memo(function ReportGenFieldRow({ item, selecte
               : ''}
           </div>
         )}
+        {(item.column_hint || (item.col_span ?? 1) > 1) && (
+          <div style={{ marginTop: 2, fontSize: 11, color: '#8C8C8C' }}>
+            {item.column_hint ? `列：${item.column_hint}` : ''}
+            {item.column_hint && (item.col_span ?? 1) > 1 ? ' · ' : ''}
+            {(item.col_span ?? 1) > 1 ? `合并 ${item.col_span} 列` : ''}
+          </div>
+        )}
       </span>
       <span
         style={{

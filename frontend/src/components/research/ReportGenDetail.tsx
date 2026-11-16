@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Alert, App, Button, Card, Collapse, Drawer, Empty, Space, Spin, Tabs, Tag, Tooltip } from 'antd'
@@ -54,6 +54,9 @@ export function ReportGenDetail({ jobId, initialJob }: Props) {
   const [versionsOpen, setVersionsOpen] = useState(false)
   const [traceOpen, setTraceOpen] = useState(false)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  // 右栏是否处于编辑态：编辑卡直接占用右栏（不再弹抽屉）。
+  // 浮层会盖住右侧清单、把 body 锁死滚动，于是「点一处就编辑」时预览和右栏都被挡住没法用。
+  const [editing, setEditing] = useState(false)
   // 右栏页签：填写清单（位置与编辑卡）/ 参考资料（引用源，不进正文）
   const [rightTab, setRightTab] = useState<'fields' | 'references'>('fields')
   // 每次保存/回滚都换一版文件，预览需要重新拉取，不能只靠文件名判断
@@ -104,8 +107,21 @@ export function ReportGenDetail({ jobId, initialJob }: Props) {
     [versionData],
   )
 
+  // 任务完成的那一刻补拉一次清单：完成前拉到的清单还没有文档（has_document=false），
+  // 而运行态一结束就不再轮询，不补拉的话清单与预览的定位标记会停在完成前那一份。
+  // 任务状态与 document_object_key 是同一次 commit 落库的，补拉一定能看到文档。
+  useEffect(() => {
+    if (job?.status !== 'completed' || !job.has_document) return
+    void queryClient.invalidateQueries({ queryKey: ['report-gen-outline', jobId] })
+    // 完成瞬间可能刚好有一次生成期发出的清单请求在途（回来后仍是旧数据），2.5 秒后再补一次
+    const timer = window.setTimeout(() => {
+      void queryClient.invalidateQueries({ queryKey: ['report-gen-outline', jobId] })
+    }, 2500)
+    return () => window.clearTimeout(timer)
+  }, [job?.status, job?.has_document, jobId, queryClient])
+
   const handleContentSaved = useCallback(() => {
-    setSelectedKey(null)
+    setEditing(false)
     setDocumentVersion((value) => value + 1)
     void queryClient.invalidateQueries({ queryKey: ['report-gen-outline', jobId] })
     void queryClient.invalidateQueries({ queryKey: ['report-gen-job', jobId] })
@@ -183,17 +199,20 @@ export function ReportGenDetail({ jobId, initialJob }: Props) {
   }
 
   const handleSelectField = useCallback((item: ReportGenFieldItem) => {
-    // 在预览/清单里点位置时统一回到「填写清单」，编辑抽屉才对应得上
+    // 在预览/清单里点位置时统一回到「填写清单」，右栏编辑卡才对应得上
     setRightTab('fields')
     setSelectedKey(item.key)
+    setEditing(true)
   }, [])
 
   const handleLocateKey = useCallback((key: string) => {
     setRightTab('fields')
     setSelectedKey(key)
+    setEditing(true)
   }, [])
 
-  const closeEditor = useCallback(() => setSelectedKey(null), [])
+  // 只收起编辑卡，保留选中行：清单重新出现时会滚回那一行，用户知道刚才改的是哪一处
+  const closeEditor = useCallback(() => setEditing(false), [])
 
   const openTrace = useCallback(() => setTraceOpen(true), [])
 
@@ -425,6 +444,7 @@ export function ReportGenDetail({ jobId, initialJob }: Props) {
               <ReportGenPreviewPane
                 jobId={jobId}
                 data={outline}
+                hasDocument={job.has_document}
                 selectedKey={selectedKey}
                 documentVersion={documentVersion}
                 onSelect={handleSelectField}
@@ -435,12 +455,14 @@ export function ReportGenDetail({ jobId, initialJob }: Props) {
           </div>
           <div
             style={{
+              position: 'relative',
               flex: '0 1 430px',
               minWidth: 340,
               height: '100%',
               background: '#FFFFFF',
             }}
           >
+            {/* 清单常驻不卸载：编辑某一处时不丢它的滚动位置与筛选条件 */}
             <Tabs
               size="small"
               activeKey={rightTab}
@@ -483,32 +505,35 @@ export function ReportGenDetail({ jobId, initialJob }: Props) {
                 },
               ]}
             />
+            {/* 编辑卡只在右栏这一格里浮起：预览与页面其余部分照常可见可点，
+                也不像整屏抽屉那样盖住右栏、锁死滚动。 */}
+            {editing && selectedItem && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  zIndex: 2,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  background: '#FFFFFF',
+                  borderLeft: '1px solid #EDEFF2',
+                }}
+              >
+                <ReportGenSlotEditor
+                  key={selectedItem.key}
+                  jobId={jobId}
+                  item={selectedItem}
+                  baseVersionId={currentVersionId}
+                  onBack={closeEditor}
+                  onSaved={handleContentSaved}
+                />
+              </div>
+            )}
           </div>
         </div>
       </Card>
 
       <ReportGenFeedbackPanel jobId={jobId} disabled={running} />
-
-      {/* 编辑抽屉：清单保持原位，不因点开某一处而丢掉滚动位置与筛选条件 */}
-      <Drawer
-        open={!!selectedItem}
-        onClose={closeEditor}
-        width="min(480px, 92vw)"
-        closable={false}
-        destroyOnClose
-        styles={{ body: { padding: 0, height: '100%' } }}
-      >
-        {selectedItem && (
-          <ReportGenSlotEditor
-            key={selectedItem.key}
-            jobId={jobId}
-            item={selectedItem}
-            baseVersionId={currentVersionId}
-            onBack={closeEditor}
-            onSaved={handleContentSaved}
-          />
-        )}
-      </Drawer>
 
       <Drawer
         open={traceOpen}

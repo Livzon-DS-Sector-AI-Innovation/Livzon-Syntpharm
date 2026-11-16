@@ -176,6 +176,9 @@ class ReportGenFieldItemData(BaseModel):
     evidence: str | None = Field(None, description="原文证据（引文）")
     confidence: float | None = None
     context: str | None = Field(None, description="上一段或表头提示，帮助判断该处写什么")
+    column_hint: str | None = Field(None, description="表格列路径，如「自研成本 › 研发投入」")
+    row_span: int = Field(1, description="合并单元格跨的行数")
+    col_span: int = Field(1, description="合并单元格跨的列数")
     index: int | None = Field(None, description="段落下标；表格位置为 table_index")
     row: int | None = None
     col: int | None = None

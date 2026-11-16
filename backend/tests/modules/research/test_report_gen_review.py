@@ -186,7 +186,8 @@ async def test_written_and_unwritten_positions_are_merged(monkeypatch: pytest.Mo
     assert "没有填写" in (items["p4"].reason or "")
     assert items["p2"].writable is False
     assert items["p2"].state == "blank"
-    assert "模板里固定的内容" in (items["p2"].reason or "")
+    # 不可写原因用母本判定的具体说法（这里已有完整内容），不再被笼统一句话盖掉
+    assert "完整内容" in (items["p2"].reason or "")
     assert data.stats.writable_total == 3
     assert data.stats.written == 1
     assert data.stats.blank == 2
@@ -360,3 +361,25 @@ async def test_outline_api_returns_envelope(client: AsyncClient, monkeypatch: py
     assert payload["stats"]["writable_total"] == 2
     assert payload["items"][0]["key"] == "p1"
     assert payload["items"][0]["state"] == "written"
+
+
+async def test_semantic_mismatch_reason_is_shown(monkeypatch: pytest.MonkeyPatch) -> None:
+    """出稿自检标出来的「内容与格子含义不符」：清单要显示具体原因，而不是笼统的需人工确认。"""
+    _patch_store(monkeypatch)
+    job_id = uuid4()
+    reason = "这是意见栏，要写中文评审意见，不能写名称、编号或型号"
+    rows = [
+        _slot(
+            job_id,
+            "p1",
+            value="其他名称",
+            state="pending",
+            anchor={"kind": "paragraph", "verify_reason": reason, "verify_kind": "semantic"},
+        )
+    ]
+
+    data = await _review(_job(job_id), rows)
+
+    item = next(item for item in data.items if item.key == "p1")
+    assert item.state == "needs_verify"
+    assert item.reason == reason

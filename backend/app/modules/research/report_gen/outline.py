@@ -16,11 +16,15 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from app.modules.research.report_gen.cell_semantics import expect_of
 from app.modules.research.report_gen.structure import fingerprint
+
+logger = logging.getLogger(__name__)
 
 # 正文里的填空占位：连续下划线（半角/全角）或模板里常见的 XXX/XXXX。
 # 命中时不整段覆盖，只替换占位部分，保住「品种名称：」「表2 XXX主要物料供应信息」
@@ -73,6 +77,25 @@ _NUMBER_PREFIX_RE = re.compile(
 # 交给模型看的原文截断：只要够判断「这是什么位置」，不把整篇母本塞进 context。
 MAX_OUTLINE_TEXT = 80
 MAX_CONTEXT_TEXT = 40
+# 表头回溯：最多往上三层（多级表头够用），超过 16 字或带句末标点的当正文，不当表头。
+MAX_HEADER_DEPTH = 3
+MAX_HEADER_TEXT = 16
+# 封面/标题页：整区不写正文。判定靠结构信号，不靠文字猜测——
+# 线上曾把封面 p0~p9（十连空段）当正文空位，AI 直接在首页写了四段概述。
+COVER_REASON = "这是封面/标题页的版式内容，不写正文；正文请写到章节标题下的可写位置"
+# 封面上常见的字段名：出现即认为前置区是封面（不是正文）
+_COVER_WORD_RE = re.compile(
+    r"文件名称|文件编号|报告编号|编\s*号|版\s*本|版\s*次|密\s*级|编制|审核|批准|生效日期|日\s*期"
+)
+# 前置区出现这么多字的段落就按正文看，不判封面（避免把「正文从第一段开始」的模板锁死）
+_COVER_MAX_PROSE_CHARS = 40
+_COVER_MAX_PROSE_COUNT = 2
+# 封面字段名只认短标签：整句正文里出现「日期」不算封面
+_COVER_MAX_LABEL_CHARS = 20
+_HEADER_SENTENCE_RE = re.compile(r"[。！？；]|[,，;]\s")
+# 「商品名：制剂」「规格：片剂」这类「标签：值」是数据格，不是表头
+_HEADER_LABEL_VALUE_RE = re.compile(r"[：:]")
+_HEADER_CHAR_RE = re.compile(r"[0-9A-Za-z\u4e00-\u9fa5]")
 
 
 @dataclass(slots=True)
@@ -110,6 +133,13 @@ class WritablePosition:
     section: str
     fingerprint: str
     append: bool = False  # True=「标签：」段，写入时只接冒号后的值
+    # 表格位置的语义（段落位置留空）：行标题、「A › B」多级列路径、合并跨度、期望内容类型。
+    # 模型据此判断「这一格是什么」，写入校验据此判断「值能不能写」。
+    row_hint: str = ""
+    column_hint: str = ""
+    row_span: int = 1
+    col_span: int = 1
+    expect: str = ""
 
     def brief(self) -> dict[str, Any]:
         item: dict[str, Any] = {
@@ -123,6 +153,12 @@ class WritablePosition:
         }
         if self.append:
             item["append"] = True
+        if self.column_hint:
+            item["column_hint"] = _cut(self.column_hint, MAX_CONTEXT_TEXT)
+        if self.expect and self.expect != "text":
+            item["expect"] = self.expect
+        if self.row_span > 1 or self.col_span > 1:
+            item["merged"] = f"{self.row_span}行×{self.col_span}列"
         if not self.writable and self.reason:
             item["reason"] = self.reason
         return item
@@ -359,58 +395,246 @@ def _section_timeline(paragraphs: list[Any]) -> tuple[list[str], list[str | None
     return titles, blocks, levels
 
 
+def _cover_region(texts: list[str], levels: list[int | None]) -> tuple[set[int], int | None]:
+    """识别封面/标题页：返回（封面段落下标集合, 首个标题下标）。
+
+    封面不是靠文字猜的，而是一组结构信号：
+
+    - 第一个章节标题之前存在连续 ≥3 个空段落（线上事故形态：p0~p9 十连空）；
+    - 该区出现「文件名称/文件编号/版本/密级/编制/审核/批准/日期」这类封面字段名；
+    - 首个标题是「目录 / 修订记录 / 变更历史」这类前置标题（以目录开头的文档，其前必是封面）。
+
+    反例保护，避免把「正文从第一段就开始」的模板整段锁死：前置区已有 ≥2 段长正文时
+    按正文看（不判封面）；封面字段名只认短标签（≤20 字），避免正文里出现「日期」这类词被误判。
+    """
+    first_heading = next((index for index, level in enumerate(levels) if level is not None), None)
+    if first_heading is None or first_heading == 0:
+        return set(), first_heading
+
+    region = list(range(0, first_heading))
+    prose = [texts[index] for index in region if len(texts[index]) > _COVER_MAX_PROSE_CHARS]
+    if len(prose) >= _COVER_MAX_PROSE_COUNT:
+        return set(), first_heading
+
+    longest_empty = 0
+    empty_run = 0
+    for index in region:
+        empty_run = empty_run + 1 if not texts[index] else 0
+        longest_empty = max(longest_empty, empty_run)
+
+    has_cover_words = any(
+        len(texts[index]) <= _COVER_MAX_LABEL_CHARS and _COVER_WORD_RE.search(texts[index]) for index in region
+    )
+    first_is_front_matter = is_toc_title(texts[first_heading]) or is_fixed_title(texts[first_heading])
+    if not (longest_empty >= 3 or has_cover_words or first_is_front_matter):
+        return set(), first_heading
+    return set(region), first_heading
+
+
 def _table_section(table_start: int, titles: list[str]) -> str:
     if table_start <= 0 or not titles:
         return ""
     return titles[min(table_start - 1, len(titles) - 1)]
 
 
-def _cell_header(table: Any, row: int, col: int) -> str:
-    """表头提示：第一行同列文字；没有表头就退到本行首格（行标题）。"""
-    try:
-        rows = table.rows
-    except (AttributeError, IndexError):
+def _meaningful_header(text: str | None) -> str:
+    """能不能当「表头文字」用。
+
+    合并表头的实际内容经常是 ``XXXX（原料药）``、``____`` 这类占位，或者干脆是一整句话；
+    把它们当列语义回给模型，比不给还糟（模型会照着「XXXX（原料药）」瞎填）。
+    """
+    value = " ".join((text or "").split())
+    if not value or len(value) > MAX_HEADER_TEXT:
         return ""
-    if row > 0 and rows:
-        try:
-            return (rows[0].cells[col].text or "").strip()
-        except (IndexError, AttributeError):
-            pass
-    try:
-        return (rows[row].cells[0].text or "").strip() if row < len(rows) else ""
-    except (IndexError, AttributeError):
+    if BLANK_RE.search(value):
         return ""
+    if _HEADER_SENTENCE_RE.search(value) or _HEADER_LABEL_VALUE_RE.search(value):
+        return ""
+    if not _HEADER_CHAR_RE.search(value):
+        return ""
+    return value
 
 
-def _cell_positions(table: Any, table_index: int, section: str, fixed_section: str | None) -> list[WritablePosition]:
-    """展开一张表的单元格；合并单元格按底层 w:tc 去重，只收第一次出现。"""
-    items: list[WritablePosition] = []
+def _row_hint(rows: list[list[Any]], row: int, col: int) -> str:
+    """行标题：该行左侧最近的短标签（「技术部意见」「原研企业」）。"""
+    line = rows[row] if row < len(rows) else []
+    for index in range(min(col, len(line)) - 1, -1, -1):
+        text = _meaningful_header(line[index].text)
+        if text:
+            return text
+    return ""
+
+
+def _column_hint(rows: list[list[Any]], row: int, col: int) -> str:
+    """列路径：向上逐行取同列（含覆盖该列的合并格）的表头文字，最多三层。
+
+    最近的一层放最后，拼成「自主研发成本 › 研发投入」这种从上到下的路径；
+    遇到句子或占位就停（再往上已经不是表头了）。
+    """
+    parts: list[str] = []
+    for index in range(row - 1, max(row - 1 - MAX_HEADER_DEPTH, -1), -1):
+        line = rows[index] if index < len(rows) else []
+        text = _meaningful_header(line[col].text) if col < len(line) else ""
+        if not text or (parts and parts[-1] == text):
+            continue
+        parts.append(text)
+    return " › ".join(reversed(parts))
+
+
+def _table_grid(table: Any) -> tuple[list[list[Any]], dict[str, tuple[int, int, int, int]]]:
+    """展开表格网格，并统计每个底层 ``w:tc`` 的首个坐标与行列跨度。
+
+    python-docx 的 ``row.cells`` 已按网格展开合并单元格（同一个 ``w:tc`` 会重复出现），
+    所以这里只用一次扫描：出现位置的最小 (行,列) 就是锚点，出现过的不同行数/列数就是跨度。
+    与渲染侧 ``table.rows[r].cells[c]`` 用的是同一套网格坐标，key 不需要变。
+    """
+    rows: list[list[Any]] = []
+    markers: list[list[str]] = []
+    for row in table.rows:
+        cells = list(row.cells)
+        rows.append(cells)
+        markers.append([cell._tc.getroottree().getpath(cell._tc) for cell in cells])  # noqa: SLF001
+
+    spans: dict[str, tuple[int, int, int, int]] = {}
+    for row_index, line in enumerate(markers):
+        for col_index, marker in enumerate(line):
+            if marker not in spans:
+                spans[marker] = (row_index, col_index, 1, 1)
+    for marker, (row0, col0, _, _) in list(spans.items()):
+        hit_rows = {index for index, line in enumerate(markers) if marker in line}
+        hit_cols = {index for index, item in enumerate(markers[row0]) if item == marker}
+        spans[marker] = (row0, col0, len(hit_rows), len(hit_cols))
+    return rows, spans
+
+
+def _cell_label(
+    table_index: int,
+    row: int,
+    col: int,
+    row_hint: str,
+    column_hint: str,
+    row_span: int,
+    col_span: int,
+) -> str:
+    """可读位置名：有语义时用「表3 · 技术部意见 · 研发投入」，没有就退回行列号。"""
+    parts = [f"表{table_index + 1}"]
+    if row_hint:
+        parts.append(row_hint)
+    if column_hint:
+        parts.append(column_hint)
+    if len(parts) == 1:
+        parts.append(f"第{row + 1}行第{col + 1}列")
+    label = " · ".join(parts)
+    if col_span > 1:
+        label += f"（合并 {col_span} 列）"
+    elif row_span > 1:
+        label += f"（合并 {row_span} 行）"
+    return label
+
+
+def _is_label_column(rows: list[list[Any]], col: int) -> bool:
+    """最左列是不是「行标题列」：该列非空的格全是短标签（技术部意见/原研企业这类）。
+
+    行标题列里的空格是版面留白，不是要填的位置——让模型去写，它就会把值塞进标题栏。
+    """
+    texts: list[str] = []
+    for line in rows:
+        if col >= len(line):
+            continue
+        text = (line[col].text or "").strip()
+        if text:
+            texts.append(text)
+    if len(texts) < 2:
+        return False
+    return all(bool(_meaningful_header(text)) for text in texts)
+
+
+def _blank_cell_count(cells: list[Any], fixed_section: str | None) -> int:
+    """该行有几个「空的、样式上允许写」的独立单元格（合并区只算一个）。
+
+    用来识别「一排空格但看不出列含义」的数据行：合并区若按网格位置计数，
+    一个跨 9 列的意见格会被数成 9 个空格，反而把它自己判成数据行。
+    """
+    count = 0
     seen: set[str] = set()
+    for cell in cells:
+        if (cell.text or "").strip():
+            continue
+        tc = cell._tc  # noqa: SLF001 - 按底层 w:tc 去重，避免合并区重复计数
+        marker = tc.getroottree().getpath(tc)
+        if marker in seen:
+            continue
+        seen.add(marker)
+        paragraph = cell.paragraphs[0] if cell.paragraphs else None
+        style = _style_name(paragraph) if paragraph is not None else ""
+        writable, _, _ = judge_text("", style=style, fixed_section=fixed_section, appendable=False)
+        if writable:
+            count += 1
+    return count
+
+
+def _cell_positions(
+    table: Any,
+    table_index: int,
+    section: str,
+    fixed_section: str | None,
+    *,
+    cover: bool = False,
+) -> list[WritablePosition]:
+    """展开一张表的单元格：合并区域按底层 w:tc 去重，并带上行标题/列路径语义。"""
+    items: list[WritablePosition] = []
     try:
-        rows = list(table.rows)
-    except (AttributeError, IndexError):
+        rows, spans = _table_grid(table)
+    except (AttributeError, IndexError):  # 结构怪异的表不让整次生成挂掉，退化为不产出位置
         return items
 
-    for row_index, row in enumerate(rows):
-        try:
-            cells = list(row.cells)
-        except (AttributeError, IndexError):
-            continue
+    # 每行有多少个「空的、本可写」的格：用来识别「一排空格但看不出列含义」的数据行
+    blank_per_row = [_blank_cell_count(line, fixed_section) for line in rows]
+    label_column = _is_label_column(rows, 0)
+
+    seen: set[str] = set()
+    for row_index, cells in enumerate(rows):
         for col_index, cell in enumerate(cells):
             tc = cell._tc  # noqa: SLF001 - 合并单元格去重需要底层 w:tc 节点
             marker = tc.getroottree().getpath(tc)
             if marker in seen:
                 continue
             seen.add(marker)
+            _row0, _col0, row_span, col_span = spans.get(marker, (row_index, col_index, 1, 1))
+
             paragraph = cell.paragraphs[0] if cell.paragraphs else None
             style = _style_name(paragraph) if paragraph is not None else ""
             text = (cell.text or "").strip()
             writable, reason, _append = judge_text(text, style=style, fixed_section=fixed_section, appendable=False)
+
+            row_hint = _row_hint(rows, row_index, col_index)
+            # 键值行（左侧标签 + 右侧一个跨列的值格）的列语义来自标签本身：
+            # 再往上找表头只会拿到上一块表的「药品名称」，反倒把意见栏指错方向。
+            column_hint = "" if col_span > 1 and col_index > 0 else _column_hint(rows, row_index, col_index)
+
+            # 行标题列里的空格是版面留白，不是要填的位置
+            if cover:
+                # 封面表也是版面（抬头、文件名称、签字栏）：整表禁写，原因与封面段落一致
+                writable = False
+                reason = COVER_REASON
+            elif writable and not text and col_index == 0 and label_column:
+                writable = False
+                reason = "这一列是每行的标题栏，不需要填写内容"
+
+            # 一排空格又没有任何列语义：宁可不可写，也不能让模型按顺序把值塞进去
+            if writable and not text and not column_hint and blank_per_row[row_index] >= 3:
+                writable = False
+                reason = "这一行有多列空格，但看不出每列要填什么；先不要按顺序填，请确认列含义后再写，或留空由人工补"
+
+            label = _cell_label(table_index, row_index, col_index, row_hint, column_hint, row_span, col_span)
+            if cover:
+                label = f"封面 · {label}"
+
             items.append(
                 WritablePosition(
                     key=f"t{table_index}r{row_index}c{col_index}",
                     kind="table_cell",
-                    label=f"表{table_index + 1}第{row_index + 1}行第{col_index + 1}列",
+                    label=label,
                     style=style,
                     text=text,
                     index=table_index,
@@ -419,9 +643,14 @@ def _cell_positions(table: Any, table_index: int, section: str, fixed_section: s
                     para_index=0,
                     writable=writable,
                     reason=reason,
-                    context=_cell_header(table, row_index, col_index),
+                    context=row_hint or column_hint,
                     section=section,
                     fingerprint=fingerprint(text),
+                    row_hint=row_hint,
+                    column_hint=column_hint,
+                    row_span=row_span,
+                    col_span=col_span,
+                    expect=expect_of(row_hint, column_hint),
                 )
             )
     return items
@@ -435,15 +664,28 @@ def build_outline(document: Any) -> TemplateOutline:
 
     outline = TemplateOutline(paragraph_count=len(paragraphs), table_count=len(document.tables))
 
+    # 封面/标题页：整区不写正文（标签段除外），避免 AI 把概述写进首页留白
+    cover, first_heading = _cover_region(texts, levels)
+    if cover:
+        logger.info(
+            "cover region detected",
+            extra={"cover_paragraphs": len(cover), "biz_module": "research"},
+        )
+
     for index, paragraph in enumerate(paragraphs):
         style = _style_name(paragraph)
         text = texts[index]
         writable, reason, append = judge_text(text, style=style, fixed_section=blocks[index])
+        in_cover = index in cover
+        if in_cover and not append:
+            # 封面只禁「写整段正文」：「文件编号：____」这类标签段仍要能补值
+            writable = False
+            reason = COVER_REASON
         outline.positions.append(
             WritablePosition(
                 key=f"p{index}",
                 kind="paragraph",
-                label=f"正文第{index + 1}段",
+                label=f"封面第{index + 1}段" if in_cover else f"正文第{index + 1}段",
                 style=style,
                 text=text,
                 index=index,
@@ -464,7 +706,9 @@ def build_outline(document: Any) -> TemplateOutline:
         start = table_starts[table_index] if table_index < len(table_starts) else 0
         section = _table_section(start, titles)
         fixed = section if section and is_fixed_title(section) else None
-        outline.positions.extend(_cell_positions(table, table_index, section, fixed))
+        # 表在第一个标题之前（start <= 首个标题下标）= 封面表
+        table_in_cover = bool(cover) and first_heading is not None and start <= first_heading
+        outline.positions.extend(_cell_positions(table, table_index, section, fixed, cover=table_in_cover))
 
     # 章节树：标题段落切分，end 取下一个标题前一段
     current: TemplateSection | None = None
@@ -481,6 +725,7 @@ def build_outline(document: Any) -> TemplateOutline:
 
 __all__ = [
     "BLANK_RE",
+    "COVER_REASON",
     "MAX_OUTLINE_TEXT",
     "TemplateOutline",
     "TemplateSection",

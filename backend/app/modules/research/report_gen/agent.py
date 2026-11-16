@@ -769,6 +769,17 @@ async def _execute(session: AsyncSession, job: RdReportGenJob, config: ReportGen
         reference = runtime.write_references()
         await steps.add("status", reference.summary, status="ok" if reference.ok else "failed")
 
+    # 出稿前语义复核：内容与格子含义不符的标待核对（finalize 里也调一次，这里兜住
+    # 「没走 finalize 就出稿」的路径：轮次上限、被终止）
+    mismatches = runtime.semantic_self_check()
+    if mismatches:
+        await steps.add(
+            "status",
+            f"自检发现 {len(mismatches)} 处内容与格子含义不符，已标为待核对",
+            result="；".join(f"{item['where']}：{item['reason']}" for item in mismatches[:5]),
+            status="failed",
+        )
+
     coverage = runtime.coverage()
     _apply_coverage(job, coverage)
     job.current_step = STEP_TEXT_RENDERING

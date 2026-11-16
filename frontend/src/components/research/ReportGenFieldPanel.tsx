@@ -63,11 +63,21 @@ export const ReportGenFieldPanel = memo(function ReportGenFieldPanel({
   const [collapsed, setCollapsed] = useState<string[]>([])
   const listRef = useRef<HTMLDivElement | null>(null)
 
-  // 在预览里点某处位置时，清单要跟着滚到那一行：编辑抽屉在右侧，看不见就等于没定位
+  // 在预览里点某处位置时，清单要跟着滚到那一行，否则看不见就等于没定位。
+  //
+  // 这里只滚清单自己的容器：`scrollIntoView` 会连带滚动所有可滚祖先（含 `overflow:hidden`
+  // 的外层 Card），一次定位就能把整页顶走两万多像素，预览区露出空白，看起来像文档没了。
   useEffect(() => {
-    if (!selectedKey) return
-    listRef.current?.querySelector<HTMLElement>(`[data-field-key="${selectedKey}"]`)?.scrollIntoView({
-      block: 'nearest',
+    const scroller = listRef.current
+    if (!selectedKey || !scroller) return
+    const row = scroller.querySelector<HTMLElement>(`[data-field-key="${selectedKey}"]`)
+    if (!row) return
+    const rowRect = row.getBoundingClientRect()
+    const listRect = scroller.getBoundingClientRect()
+    if (rowRect.top >= listRect.top && rowRect.bottom <= listRect.bottom) return
+    scroller.scrollTo({
+      top: Math.max(scroller.scrollTop + (rowRect.top - listRect.top) - 8, 0),
+      behavior: 'smooth',
     })
   }, [selectedKey])
 

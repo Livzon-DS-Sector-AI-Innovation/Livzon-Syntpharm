@@ -234,7 +234,8 @@ def test_references_dedupe_by_source_and_are_idempotent() -> None:
     assert len(entries) == 2
     assert entries[0].startswith("[1] 小试报告.pdf（用于：")
     assert "正文第2段" in entries[0]
-    assert "表1第2行第2列" in entries[0]
+    # 位置名带上了行标题/列语义（表1 · 纯度 · 结果），不再是纯行列号
+    assert "表1 · " in entries[0]
     assert entries[1].startswith("[2] 工艺规程.docx（用于：")
     # 重复调用不新增第二条引用源
     assert runtime.write_references().payload["duplicated"] is True
@@ -300,3 +301,119 @@ def test_coverage_counts_written_and_unwritten() -> None:
     finalized = runtime.finalize({"summary": "完成"})
     assert "已写 2/" in finalized.summary
     assert runtime.finalized is True
+
+
+def _semantic_template() -> DocxDocument:
+    """合并表头 + 数值列 + CAS 列 + 意见栏：线上错填那张表的等价结构。"""
+    document = Document()
+    document.add_paragraph("1 基本信息", style="Heading 1")
+    table = document.add_table(rows=4, cols=4)
+    table.cell(0, 0).text = "项目"
+    table.cell(0, 1).merge(table.cell(0, 3)).text = "自研成本"
+    table.cell(1, 0).text = "指标"
+    table.cell(1, 1).text = "研发投入"
+    table.cell(1, 2).text = "CAS号"
+    table.cell(1, 3).text = "知识产权"
+    table.cell(3, 0).text = "技术部意见"
+    table.cell(3, 1).merge(table.cell(3, 3))
+    return document
+
+
+def test_write_cell_refuses_field_label_into_opinion_cell() -> None:
+    """「其他名称」写进意见栏：线上错填的形态，必须当场拒绝并给出可读原因。"""
+    runtime = _runtime(document=_semantic_template())
+
+    outcome = runtime.write_cell({"items": [{"table_index": 0, "row": 3, "col": 1, "text": "其他名称"}]})
+
+    assert outcome.ok is False
+    assert runtime.rejected == 1
+    assert runtime.slot_rows == {}
+    error = str(outcome.payload["errors"][0])
+    assert "意见" in error or "字段名" in error
+
+
+def test_write_cell_refuses_wrong_type_per_column() -> None:
+    runtime = _runtime(document=_semantic_template())
+
+    outcome = runtime.write_cell(
+        {
+            "items": [
+                {"table_index": 0, "row": 2, "col": 1, "text": "米诺地尔"},  # 研发投入：数值列
+                {"table_index": 0, "row": 2, "col": 2, "text": "Minoxidil"},  # CAS 列
+            ]
+        }
+    )
+
+    assert outcome.ok is False
+    assert runtime.slot_rows == {}
+    errors = " ".join(str(item) for item in outcome.payload["errors"])
+    assert "数字" in errors
+    assert "CAS" in errors
+
+
+def test_write_cell_accepts_values_matching_semantics() -> None:
+    runtime = _runtime(document=_semantic_template())
+
+    outcome = runtime.write_cell(
+        {
+            "items": [
+                {"table_index": 0, "row": 2, "col": 1, "text": "约 300 万元", "source_ids": ["s1"]},
+                {"table_index": 0, "row": 2, "col": 2, "text": "38304-91-5", "source_ids": ["s1"]},
+                {"table_index": 0, "row": 3, "col": 1, "text": "建议补充稳定性数据后再定稿。", "source_ids": ["s1"]},
+            ]
+        }
+    )
+
+    assert outcome.ok is True
+    assert outcome.payload["written"] == 3
+    assert set(runtime.slot_rows) == {"t0r2c1", "t0r2c2", "t0r3c1"}
+
+
+def test_semantic_self_check_marks_needs_verify_and_leaves_coverage_alone() -> None:
+    """已在档的错误内容：自检标待核对、写清原因，并不再算进「已填写」。"""
+    row = SimpleNamespace(
+        slot_key="t0r3c1",
+        slot_label="表1 · 技术部意见",
+        anchor={"kind": "table_cell", "table_index": 0, "row": 3, "col": 1},
+        value="其他名称",
+        state="filled",
+        edit_source="ai",
+        source_name=None,
+        evidence=None,
+        confidence=None,
+    )
+    runtime = _runtime(document=_semantic_template(), rows={"t0r3c1": row})
+
+    mismatches = runtime.semantic_self_check()
+
+    assert len(mismatches) == 1
+    assert row.state == "pending"
+    assert (row.anchor or {})["verify_kind"] == "semantic"
+    assert "意见" in str((row.anchor or {})["verify_reason"])
+    coverage = runtime.coverage()
+    assert coverage["written"] == 0
+    assert coverage["semantic_mismatch"] == 1
+
+    outcome = runtime.finalize({"summary": "完成"})
+    assert outcome.ok is True
+    assert outcome.payload["semantic_mismatch_sample"]
+    assert "待核对" in outcome.summary
+
+
+def test_semantic_self_check_skips_manual_edits() -> None:
+    """人工改过的值以人工为准：自检不动它，也不改状态。"""
+    row = SimpleNamespace(
+        slot_key="t0r3c1",
+        slot_label="表1 · 技术部意见",
+        anchor={"kind": "table_cell", "table_index": 0, "row": 3, "col": 1},
+        value="其他名称",
+        state="filled",
+        edit_source="manual",
+        source_name=None,
+        evidence=None,
+        confidence=None,
+    )
+    runtime = _runtime(document=_semantic_template(), rows={"t0r3c1": row})
+
+    assert runtime.semantic_self_check() == []
+    assert row.state == "filled"

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Alert, App, Button, Flex, Input, Popconfirm, Tag, Tooltip } from 'antd'
 import {
-  CloseOutlined,
+  ArrowLeftOutlined,
   DeleteOutlined,
   PlusOutlined,
   SaveOutlined,
@@ -142,8 +142,8 @@ export function ReportGenSlotEditor({ jobId, item, baseVersionId, onBack, onSave
   return (
     <Flex vertical style={{ height: '100%', minHeight: 0 }}>
       <div style={{ padding: '10px 16px', borderBottom: '1px solid #EDEFF2' }}>
-        <Button size="small" type="link" icon={<CloseOutlined />} onClick={onBack} style={{ paddingLeft: 0 }}>
-          关闭编辑
+        <Button size="small" type="link" icon={<ArrowLeftOutlined />} onClick={onBack} style={{ paddingLeft: 0 }}>
+          返回填写清单
         </Button>
         <Flex gap={8} align="center" wrap style={{ marginTop: 2 }}>
           <span style={{ fontSize: 15, fontWeight: 600, color: '#1F2329' }}>{item.label}</span>
@@ -154,6 +154,7 @@ export function ReportGenSlotEditor({ jobId, item, baseVersionId, onBack, onSave
         </Flex>
         <div style={{ marginTop: 4, fontSize: 12, color: '#8C8C8C' }}>
           {item.section ? `${item.section} · ` : ''}
+          {item.column_hint ? `列：${item.column_hint} · ` : ''}
           {item.source_name ? `来源：${item.source_name}` : '人工补写不需要来源'}
         </div>
       </div>

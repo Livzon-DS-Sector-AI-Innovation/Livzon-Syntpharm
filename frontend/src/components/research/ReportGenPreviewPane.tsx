@@ -17,6 +17,13 @@ import { useDocxPreview } from './useDocxPreview'
 interface Props {
   jobId: string
   data?: ReportGenOutline
+  /**
+   * 任务是否已有成品文档。
+   *
+   * 由任务状态决定，不能用清单里的 has_document：清单只随轮次变化，任务刚完成时
+   * 拿到的还是完成前那一份（has_document=false），会把预览一直卡在空态，只能刷新整页。
+   */
+  hasDocument?: boolean
   selectedKey: string | null
   onSelect: (item: ReportGenFieldItem) => void
   /** 文档换版（编辑保存后）时递增，触发重新拉取与重渲 */
@@ -133,11 +140,39 @@ function alignParagraphs(domTexts: string[], docTexts: string[]): number[] {
 }
 
 /**
+ * 表格 → 虚拟网格：按 ``colspan`` / ``rowspan`` 占位，把每个单元格放回它在网格里的列号。
+ *
+ * 直接拿 ``row.children`` 的下标当列号，一遇合并单元格就会从这一格开始整体错位：
+ * 后端（python-docx）的 ``t{表}r{行}c{列}`` 是网格坐标，合并区按其首个网格位置记一个 key，
+ * 两边必须用同一套坐标，否则高亮和「点哪改哪」会落到隔壁格。
+ */
+function buildVirtualGrid(table: HTMLElement): (HTMLElement | null)[][] {
+  const grid: (HTMLElement | null)[][] = []
+  const rows = Array.from(table.querySelectorAll('tr'))
+  rows.forEach((row, rowIndex) => {
+    const line: (HTMLElement | null)[] = (grid[rowIndex] ??= [])
+    let col = 0
+    for (const node of Array.from(row.children)) {
+      if (node.tagName !== 'TD' && node.tagName !== 'TH') continue
+      const cell = node as HTMLTableCellElement
+      while (line[col]) col += 1
+      const colSpan = Math.max(cell.colSpan || 1, 1)
+      const rowSpan = Math.max(cell.rowSpan || 1, 1)
+      for (let dr = 0; dr < rowSpan; dr += 1) {
+        const target: (HTMLElement | null)[] = (grid[rowIndex + dr] ??= [])
+        for (let dc = 0; dc < colSpan; dc += 1) target[col + dc] = cell
+      }
+      col += colSpan
+    }
+  })
+  return grid
+}
+
+/**
  * 给渲染出的 DOM 打位置标记。
  *
  * 表格按下标对应 `document.tables`（表格数量与顺序不会被分页符改变）；
  * 段落按对齐结果对应 `document.paragraphs`，表格内的 `<p>` 一律不计入。
- * 合并单元格会让 td 序号与 outline 的 col 错位，命中率要回报给用户看。
  */
 function applyMarks(container: HTMLElement, data: ReportGenOutline): MarkResult {
   clearMarks(container)
@@ -174,12 +209,13 @@ function applyMarks(container: HTMLElement, data: ReportGenOutline): MarkResult 
 
   tables.forEach((table, tableIndex) => {
     const prefix = `t${tableIndex}`
-    for (const row of Array.from(table.querySelectorAll('tr'))) {
-      const cells = Array.from(row.children).filter(
-        (cell) => cell.tagName === 'TD' || cell.tagName === 'TH',
-      ) as HTMLElement[]
-      cells.forEach((cell, colIndex) => {
-        const key = `${prefix}r${row.rowIndex}c${colIndex}`
+    const grid = buildVirtualGrid(table)
+    grid.forEach((line, rowIndex) => {
+      line.forEach((cell, colIndex) => {
+        // 合并单元格在网格里会出现多次：只在首次出现的坐标打标记，
+        // 与后端「按底层 w:tc 去重、key 取首个网格坐标」的规则一致
+        if (!cell || cell.dataset.posKey) return
+        const key = `${prefix}r${rowIndex}c${colIndex}`
         const item = writable.get(key)
         if (item) {
           total += 1
@@ -190,13 +226,18 @@ function applyMarks(container: HTMLElement, data: ReportGenOutline): MarkResult 
         const lockedItem = locked.get(key)
         if (lockedItem) decorate(cell, lockedItem)
       })
-    }
+    })
   })
 
   return { hits, total, domParagraphs: paragraphs.length, aligned }
 }
 
-/** 选中态：描边加粗并滚到视口中间；取消时按原语义恢复虚线框。 */
+/**
+ * 选中态：描边加粗并滚到预览区中间；取消时按原语义恢复虚线框。
+ *
+ * 只滚预览自己的滚动容器，不用 `scrollIntoView`：后者会连带把整页滚走，
+ * 标题、工具条被顶出视口后整个预览看起来像「没了」。
+ */
 function setSelected(container: HTMLElement, key: string | null): void {
   container.querySelectorAll<HTMLElement>('[data-selected="true"]').forEach((element) => {
     element.dataset.selected = 'false'
@@ -209,7 +250,13 @@ function setSelected(container: HTMLElement, key: string | null): void {
   target.dataset.selected = 'true'
   target.style.outline = '2px solid #1677FF'
   target.style.outlineOffset = '2px'
-  target.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  const scroller = target.closest<HTMLElement>('[data-docx-scroll]')
+  if (!scroller) return
+  const targetRect = target.getBoundingClientRect()
+  const scrollerRect = scroller.getBoundingClientRect()
+  const top =
+    scroller.scrollTop + (targetRect.top - scrollerRect.top) - (scroller.clientHeight - targetRect.height) / 2
+  scroller.scrollTo({ top: Math.max(top, 0), behavior: 'smooth' })
 }
 
 /**
@@ -221,19 +268,29 @@ function setSelected(container: HTMLElement, key: string | null): void {
 export const ReportGenPreviewPane = memo(function ReportGenPreviewPane({
   jobId,
   data,
+  hasDocument,
   selectedKey,
   onSelect,
   documentVersion = 0,
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const renderedBlobRef = useRef<Blob | null>(null)
+  // 记录「哪一份 blob 渲染进了哪个容器节点」：容器节点被 React 换掉时也必须重渲，
+  // 只比 blob 的话新节点会一直是空白
+  const renderedRef = useRef<{ blob: Blob; container: HTMLElement } | null>(null)
   const { renderDocx, loading, error } = useDocxPreview()
   const [marks, setMarks] = useState<MarkResult | null>(null)
 
-  const { data: blob, isFetching, refetch } = useQuery({
+  const documentReady = hasDocument ?? !!data?.has_document
+
+  const {
+    data: blob,
+    isFetching,
+    error: blobError,
+    refetch,
+  } = useQuery({
     queryKey: ['report-gen-document', jobId, documentVersion],
     queryFn: () => fetchReportGenDocumentBlob(jobId),
-    enabled: !!data?.has_document,
+    enabled: documentReady,
     staleTime: 60_000,
     retry: 1,
   })
@@ -246,17 +303,19 @@ export const ReportGenPreviewPane = memo(function ReportGenPreviewPane({
 
   useEffect(() => {
     const container = containerRef.current
-    if (!container || !blob || !data) return
+    // 有文档就先把文档渲染出来，清单还没到（或还是完成前那一份）不影响出稿
+    if (!container || !blob) return
     let cancelled = false
     // 清单变化（刷新/编辑）时只重标，不重新下载重渲：docx-preview 重渲一次有明显闪烁
-    const needRender = renderedBlobRef.current !== blob
+    const needRender = renderedRef.current?.blob !== blob || renderedRef.current?.container !== container
     void (async () => {
       if (needRender) {
-        await renderDocx(blob, container)
-        renderedBlobRef.current = blob
+        // 只有渲染成功才记账：失败时下次重渲染还会再试，不会一直停在空白
+        const rendered = await renderDocx(blob, container)
+        if (rendered) renderedRef.current = { blob, container }
       }
       if (cancelled) return
-      setMarks(applyMarks(container, data))
+      setMarks(data ? applyMarks(container, data) : null)
     })()
     return () => {
       cancelled = true
@@ -281,7 +340,7 @@ export const ReportGenPreviewPane = memo(function ReportGenPreviewPane({
   const missCount = marks ? Math.max(marks.total - marks.hits, 0) : 0
   const appendedCount = (data?.items ?? []).filter((item) => APPENDED_KINDS.includes(item.kind)).length
 
-  if (!data?.has_document) {
+  if (!documentReady) {
     return (
       <Flex align="center" justify="center" style={{ height: '100%', minHeight: 320, background: '#FAFBFC' }}>
         <Empty
@@ -324,14 +383,14 @@ export const ReportGenPreviewPane = memo(function ReportGenPreviewPane({
           message={`有 ${missCount} 处版式较复杂，预览里没能高亮，请在右侧清单里点选`}
         />
       )}
-      {error && (
+      {(error || (blobError && !blob)) && (
         <Alert
           type="error"
           showIcon
           banner
           message="文档预览没能打开"
           description={
-            <Tooltip title={error}>
+            <Tooltip title={error ?? (blobError instanceof Error ? blobError.message : '文档下载失败')}>
               <span style={{ fontSize: 12 }}>
                 可以先点右上角「重新加载」重试，或直接下载 Word 文档查看；改动不受影响。
               </span>
@@ -340,7 +399,10 @@ export const ReportGenPreviewPane = memo(function ReportGenPreviewPane({
         />
       )}
 
-      <div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'auto', padding: '16px 8px 40px' }}>
+      <div
+        data-docx-scroll
+        style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'auto', padding: '16px 8px 40px' }}
+      >
         {(loading || (isFetching && !blob)) && (
           <Flex align="center" justify="center" style={{ position: 'absolute', inset: 0, zIndex: 2 }}>
             <Spin tip="正在加载文档预览" />
