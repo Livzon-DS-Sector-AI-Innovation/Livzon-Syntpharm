@@ -98,9 +98,7 @@ async def main(apply: bool, project_id: uuid.UUID | None) -> int:
         if slides:
             project_ids = {slide.project_id for slide in slides}
             rows = await session.execute(
-                select(PptVideoProject.id, PptVideoProject.default_language).where(
-                    PptVideoProject.id.in_(project_ids)
-                )
+                select(PptVideoProject.id, PptVideoProject.default_language).where(PptVideoProject.id.in_(project_ids))
             )
             languages = {row.id: (row.default_language or "zh") for row in rows}
 

@@ -439,9 +439,7 @@ async def test_update_personal_replaces_model_list(db_session: AsyncSession, use
     assert updated.model_name == "new-1"
 
 
-async def test_update_personal_legacy_model_name_keeps_other_models(
-    db_session: AsyncSession, users
-) -> None:
+async def test_update_personal_legacy_model_name_keeps_other_models(db_session: AsyncSession, users) -> None:
     owner, _ = users
     config = await _add_config(
         db_session, "legacy", owner_id=owner.id, model_name="old", available_models=["old", "keep"]

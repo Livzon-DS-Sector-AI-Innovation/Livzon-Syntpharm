@@ -168,9 +168,7 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
             """本页的语音 + 分镜 + 指纹：纯计算与网络 IO，不碰 session，可以并发。"""
             started = time.perf_counter()
             image_sha = sha256_file(image_path)
-            effective = service.resolve_effective(
-                slide, project, engine_name, engine_version, dict_fingerprint
-            )
+            effective = service.resolve_effective(slide, project, engine_name, engine_version, dict_fingerprint)
             if not effective.script:
                 raise JobFailedError(f"第 {slide.slide_no} 页讲稿为空")
             page_audio = await service.prepare_page_audio(
