@@ -1,31 +1,37 @@
 #!/bin/bash
-# 测试服务器状态检查脚本
-# 在测试服务器上运行: bash scripts/test-server-status.sh
+# 服务状态检查脚本（默认检查本地 base + dev 栈）
+# 用法: bash scripts/test-server-status.sh
+#
+# 仓库没有独立的测试环境 compose 文件，默认对齐本地开发栈（docker-compose.yml +
+# docker-compose.dev.yml）。要检查其它环境，用环境变量覆盖：
+#   COMPOSE_FILES="-f docker-compose.uat-infra.yml -f docker-compose.uat.yml" \
+#   CONTAINER_PREFIX=uat- bash scripts/test-server-status.sh
 
-# compose 端口映射需与 docker-compose.infra.yml / docker-compose.test.yml 保持一致
-# （.env.test 存在时加载，避免 ${VAR} 插值告警）
+COMPOSE_FILES=${COMPOSE_FILES:-"-f docker-compose.yml -f docker-compose.dev.yml"}
+CONTAINER_PREFIX=${CONTAINER_PREFIX:-erp-}
+HEALTHCHECK_HOST=${HEALTHCHECK_HOST:-localhost}
+
 COMPOSE_ARGS=()
-if [ -f .env.test ]; then
-    COMPOSE_ARGS=(--env-file .env.test)
+if [ -f .env.local ]; then
+    COMPOSE_ARGS=(--env-file .env.local)
 fi
 
-echo "=== 测试服务器状态检查 ==="
+echo "=== 服务状态检查（${COMPOSE_FILES}）==="
 echo ""
 
 echo "📦 容器状态:"
-docker compose "${COMPOSE_ARGS[@]}" \
-    -f docker-compose.infra.yml \
-    -f docker-compose.test.yml \
+# shellcheck disable=SC2086  # COMPOSE_FILES 需按空格拆成多个 -f 参数
+docker compose "${COMPOSE_ARGS[@]}" $COMPOSE_FILES \
     ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 echo ""
 
 echo "🔍 健康检查:"
-# 参数: 容器名(不含 test- 前缀) 宿主端口 [HTTP 探测路径]
+# 参数: 容器名(不含前缀) [宿主端口] [HTTP 探测路径]；端口留空表示无端口映射，只看容器状态
 check_service() {
     local name="$1"
-    local port="$2"
+    local port="${2:-}"
     local path="${3:-/}"
-    local container="test-${name}"
+    local container="${CONTAINER_PREFIX}${name}"
 
     if ! docker ps --format '{{.Names}}' | grep -qx "$container"; then
         echo "   $name: ✗ (容器未运行)"
@@ -41,8 +47,13 @@ check_service() {
         unhealthy) echo "   $name: ✗ (unhealthy)"; return ;;
     esac
 
+    if [ -z "$port" ]; then
+        echo "   $name: ✓ (运行中，无端口映射)"
+        return
+    fi
+
     # 无 HEALTHCHECK 的服务（edbo-service/frontend/nginx）退回 HTTP 端口探测
-    if curl -sf --connect-timeout 3 --max-time 3 "http://localhost:${port}${path}" > /dev/null 2>&1; then
+    if curl -sf --connect-timeout 3 --max-time 3 "http://${HEALTHCHECK_HOST}:${port}${path}" > /dev/null 2>&1; then
         echo "   $name: ✓ (port ${port})"
     else
         echo "   $name: ✗ (port ${port} 不通)"
@@ -53,7 +64,7 @@ check_service postgres 5432
 check_service redis 6379
 check_service minio 9000 /minio/health/live
 check_service backend 8000 /health/ready
-check_service edbo-service 8001
+check_service edbo-service
 check_service frontend 3000
 check_service nginx 80
 echo ""

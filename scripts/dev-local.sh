@@ -2,22 +2,26 @@
 # 个人开发模式一键启动脚本
 # 本机只启动 backend + frontend，数据库/Redis/MinIO/EDBO 全部连 UAT
 # 用法: bash scripts/dev-local.sh
+#
+# 覆盖文件统一为 base + dev.yml（docker-compose.local-dev.yml 已在 #114 删除）；
+# 容器环境变量来自仓库根 .env，.env.local 只用于 compose 插值，两者需保持一致。
 
 set -e
 
 cd "$(dirname "$0")/.."
 
-COMPOSE_FILES="-f docker-compose.local-dev.yml"
+COMPOSE_ARGS=(-f docker-compose.yml -f docker-compose.dev.yml)
+ENV_FILE="${ENV_FILE:-.env.local}"
 
-# 检查配置
-if [ ! -f .env.local ]; then
-    echo "❌ 请先配置 .env.local"
-    echo "   cp .env.local.example .env.local && vim .env.local"
+# 检查配置：.env.local 供 compose 插值（如 ALLOWED_DEV_ORIGINS），缺失时给出可照抄的模板
+if [ ! -f "$ENV_FILE" ]; then
+    echo "❌ 缺少 $ENV_FILE"
+    echo "   cp .env.dev.example $ENV_FILE 后按本机环境修改（ENV_FILE 可覆盖该路径）"
     exit 1
 fi
 
-# 从 .env.local 的 DATABASE_URL 提取 UAT 主机（默认 172.17.62.101 内网 IP）
-UAT_HOST=$(grep -E '^DATABASE_URL=' .env.local | head -1 | sed -E 's#.*@([^:/]+):.*#\1#')
+# 从 $ENV_FILE 的 DATABASE_URL 提取 UAT 主机（默认 172.17.62.101 内网 IP）
+UAT_HOST=$(grep -E '^DATABASE_URL=' "$ENV_FILE" | head -1 | sed -E 's#.*@([^:/]+):.*#\1#')
 UAT_HOST="${UAT_HOST:-172.17.62.101}"
 
 echo "🔍 检查 UAT 服务连通性 (${UAT_HOST})..."
@@ -47,7 +51,7 @@ fi
 
 echo ""
 echo "🚀 启动本地开发环境（仅 backend + frontend）..."
-docker compose $COMPOSE_FILES --env-file .env.local up -d --build backend frontend
+docker compose "${COMPOSE_ARGS[@]}" --env-file "$ENV_FILE" up -d --build backend frontend
 
 echo ""
 echo "✅ 开发环境已启动"
@@ -56,7 +60,7 @@ echo "   Backend:   http://localhost:8000"
 echo "   API Docs:  http://localhost:8000/docs"
 echo ""
 echo "📋 常用命令:"
-echo "   查看日志:  docker compose $COMPOSE_FILES logs -f"
-echo "   停止服务:  docker compose $COMPOSE_FILES down"
-echo "   重启后端:  docker compose $COMPOSE_FILES restart backend"
-echo "   执行迁移:  docker compose $COMPOSE_FILES --env-file .env.local run --rm migrate"
+echo "   查看日志:  docker compose ${COMPOSE_ARGS[*]} logs -f"
+echo "   停止服务:  docker compose ${COMPOSE_ARGS[*]} down"
+echo "   重启后端:  docker compose ${COMPOSE_ARGS[*]} restart backend"
+echo "   执行迁移:  docker compose ${COMPOSE_ARGS[*]} --env-file $ENV_FILE run --rm migrate"
