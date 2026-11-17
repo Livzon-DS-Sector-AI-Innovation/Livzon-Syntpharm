@@ -33,6 +33,16 @@ class LLMRateLimitError(LLMProviderError):
     pass
 
 
+class LLMToolsUnsupportedError(LLMProviderError):
+    """Raised when the endpoint/model rejects OpenAI-compatible ``tools``.
+
+    用于模块侧降级：Agent 编排可以先按 tool_calls 跑，遇到该异常再整体切到
+    JSON-action 协议，避免不同网关模型能力差异导致功能不可用。
+    """
+
+    pass
+
+
 class LLMOutputError(LLMError):
     """Raised when LLM response cannot be parsed."""
 

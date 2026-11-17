@@ -35,6 +35,7 @@ import { fetchPilotWorkflow } from '@/lib/api/client/pilot-workflow'
 import { startPilotWorkflow, approvePilotWorkflowStep, uploadPilotWorkflowDocument, deletePilotWorkflow } from '@/actions/research'
 import { PermissionGate } from '@/components/auth/PermissionGate'
 import { PERM } from '@/lib/permissions/codes'
+import { useSmartBack } from '../useSmartBack'
 
 const { Text } = Typography
 
@@ -71,6 +72,7 @@ interface Props {
 export function PilotWorkflowDetail({ workflowId, initialWorkflow }: Props) {
   const router = useRouter()
   const { message } = App.useApp()
+  const smartBack = useSmartBack({ fallbackHref: '/research/pilot-workflow', fallbackLabel: '试点流程列表' })
   const [starting, setStarting] = useState(false)
   const [approving, setApproving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -175,10 +177,11 @@ export function PilotWorkflowDetail({ workflowId, initialWorkflow }: Props) {
         <div>
           <Button
             icon={<ArrowLeftOutlined />}
-            onClick={() => router.push('/research/pilot-workflow')}
+            onClick={smartBack.back}
             className="mb-2"
+            title={smartBack.hint}
           >
-            返回列表
+            {smartBack.label}
           </Button>
           <h1 className="text-xl font-semibold">{workflow.product_name}</h1>
           <Text type="secondary">

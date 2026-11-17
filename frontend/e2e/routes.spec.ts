@@ -519,7 +519,7 @@ const researchRoutes: RouteCase[] = [
   { path: '/research/initiations', module: 'research', kind: 'normal', expected: heading('立项管理') },
   { path: '/research/research-tracks', module: 'research', kind: 'normal', expected: heading('研究项管理') },
   { path: '/research/reports', module: 'research', kind: 'normal', expected: heading('研发报告') },
-  { path: '/research/deliverable-templates', module: 'research', kind: 'normal', expected: heading('交付物模板管理') },
+  { path: '/research/deliverable-templates', module: 'research', kind: 'normal', expected: heading('交付文档模板') },
   { path: '/research/process-optimization', module: 'research', kind: 'normal', expected: heading('工艺优化') },
   { path: '/research/process-validation', module: 'research', kind: 'normal', expected: heading('工艺验证') },
   { path: '/research/route-development', module: 'research', kind: 'normal', expected: heading('打通路线') },

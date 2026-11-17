@@ -1,5 +1,6 @@
 
 
+import type { components } from '@/types/generated/schema'
 import {
   RdProject,
   RdMilestone,
@@ -16,8 +17,13 @@ import {
   StageTransitionCheck,
   RdDeliverableTemplate,
   RdTrackConclusionVersion,
+  RdDeliverableGenerationOptions,
+  RdDeliverableGenerationStatus,
+  RdDeliverableReportLink,
 } from '@/types/research/rd-project'
 import { apiGet, apiFetchPaginated } from '@/lib/api/client'
+
+type RdReportUpdate = components['schemas']['RdReportUpdate']
 
 const API_BASE = '/api/v1'
 
@@ -92,16 +98,67 @@ export async function fetchDeliverables(projectId: string, params: { stage?: str
   return result || []
 }
 
+/**
+ * 阶段交付文档 → AI 生成：向导第 1、2 步的预填值与模板候选。
+ * 一次请求拿齐标题、版本、编码、模板和「是否已有在跑的任务」，向导不必串行取数。
+ */
+export async function fetchDeliverableGenerationOptions(params: {
+  projectId: string
+  stage: string
+  deliverableType: string
+  deliverableId?: string | null
+}): Promise<RdDeliverableGenerationOptions> {
+  const qs = new URLSearchParams({
+    project_id: params.projectId,
+    stage: params.stage,
+    deliverable_type: params.deliverableType,
+  })
+  if (params.deliverableId) qs.set('deliverable_id', params.deliverableId)
+  return apiGet<RdDeliverableGenerationOptions>(`${API_BASE}/research/rd-stage-deliverables/generation/options?${qs}`)
+}
+
+/** 向导第 3 步轮询：只在任务 queued/running 时调用。 */
+export async function fetchDeliverableGenerationStatus(deliverableId: string): Promise<RdDeliverableGenerationStatus> {
+  return apiGet<RdDeliverableGenerationStatus>(`${API_BASE}/research/rd-stage-deliverables/${deliverableId}/generation`)
+}
+
+/** 研发报告列表显示「来源交付文档」：按报告 ID 批量反查，一次请求。 */
+export async function fetchDeliverableReportLinks(reportIds: string[]): Promise<RdDeliverableReportLink[]> {
+  if (!reportIds.length) return []
+  const qs = new URLSearchParams({ report_ids: reportIds.join(',') })
+  return apiGet<RdDeliverableReportLink[]>(`${API_BASE}/research/rd-stage-deliverables/report-links?${qs}`)
+}
+
 export async function fetchExperimentLogs(projectId: string): Promise<RdExperimentLog[]> {
   const result = await apiGet<RdExperimentLog[]>(`${API_BASE}/research/experiment-logs?project_id=${projectId}`)
   return result || []
 }
 
-export async function fetchReports(projectId: string): Promise<RdReport[]> {
-  const result = await apiGet<RdReport[]>(`${API_BASE}/research/reports?project_id=${projectId}`)
+/**
+ * 研发报告列表。
+ *
+ * projectId 不传时返回全部项目的报告（每行带 project_name），供「全部项目」视图使用；
+ * limit 仅在跨项目时用于截断，研究报告总量小，默认由后端取 200。
+ */
+export async function fetchReports(projectId?: string, limit?: number): Promise<RdReport[]> {
+  const qs = new URLSearchParams()
+  if (projectId) qs.set('project_id', projectId)
+  if (limit) qs.set('limit', String(limit))
+  const query = qs.toString()
+  const result = await apiGet<RdReport[]>(
+    `${API_BASE}/research/reports${query ? `?${query}` : ''}`,
+  )
   return result || []
 }
 
+export async function updateReport(reportId: string, data: RdReportUpdate): Promise<RdReport> {
+  const { fetchApi } = await import('@/lib/api/client')
+  const json = await fetchApi<{ code: number; data: RdReport; message?: string }>(
+    `${API_BASE}/research/reports/${reportId}`,
+    { method: 'PUT', body: JSON.stringify(data) }
+  )
+  return json.data
+}
 
 export async function fetchInitiations(projectId: string): Promise<RdInitiation[]> {
   const result = await apiGet<RdInitiation[]>(`${API_BASE}/research/initiations?project_id=${projectId}`)
