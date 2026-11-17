@@ -15,7 +15,7 @@ import {
 } from '@/actions/validation-audit'
 import { RegistrationPageHeader } from '../RegistrationPageHeader'
 import ui from '../registration-ui.module.css'
-import { IconCheckSquare } from '../registration-icons'
+import { IconCheckSquare } from '../RegistrationIcons'
 
 const { Dragger } = Upload
 const { Text } = Typography

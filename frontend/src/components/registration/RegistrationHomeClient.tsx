@@ -21,7 +21,7 @@ import {
   IconTitleDoc, IconRefresh, IconPlus, IconShieldCheck, IconGlobe, IconLink,
   IconCert, IconList, IconWarn, IconCheckCircle, IconGrid, IconFile, IconBulb,
   IconBook, IconActivity, IconSliders, IconEdit, IconCheckSquare, IconMessage, IconFlask,
-} from './registration-icons'
+} from './RegistrationIcons'
 
 /* ---------- 业务功能区配置（分组语义：紫=台账与进度 / 蓝=申报资料 / 绿=AI 与合规） ---------- */
 interface BizItem {

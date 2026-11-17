@@ -27,11 +27,11 @@ import {
   fetchProjectLogsServer,
   fetchRegistrationProjectsServer,
 } from '@/actions/registration'
-import { searchPersonnel } from '@/lib/api/client/identity'
-import type { PreStage, RegistrationProject } from '@/types/registration'
+import type { PreStage, ProjectCreatePayload, RegistrationProject } from '@/types/registration'
+import { RemoteUserSelect } from '@/components/common/RemoteUserSelect'
 import { DataUnavailable } from '@/components/common/DataUnavailable'
 import { RegistrationPageHeader } from './RegistrationPageHeader'
-import { RegSvg } from './registration-icons'
+import { RegSvg } from './RegistrationIcons'
 import ui from './registration-ui.module.css'
 import styles from './projects.module.css'
 import {
@@ -43,7 +43,7 @@ import {
   IconRefresh,
   IconTrash,
   IconWarn,
-} from './registration-icons'
+} from './RegistrationIcons'
 
 // ── 常量（与后端状态机一致） ──
 
@@ -75,7 +75,7 @@ const TYPE_CARDS = [
   { value: '再注册', desc: '证书到期前申请延续，沿用原资料基础', icon: <RegSvg size={15}><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" /></RegSvg> },
   { value: '变更', desc: '已获批内容发生变化，按变更等级申报', icon: <RegSvg size={15}><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z" /></RegSvg> },
   { value: '补充申请', desc: '审评过程中应要求补充资料或说明', icon: <RegSvg size={15}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M12 18v-6M9 15h6" /></RegSvg> },
-]
+] as const
 
 const IconSync = (
   <RegSvg size={12}>
@@ -169,7 +169,7 @@ export function ProjectsPageClient() {
   const [selected, setSelected] = useState<RegistrationProject | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
-  const [regType, setRegType] = useState<string>('新注册')
+  const [regType, setRegType] = useState<ProjectCreatePayload['registration_type']>('新注册')
   const [submitting, setSubmitting] = useState(false)
   const [logText, setLogText] = useState('')
   const [logSaving, setLogSaving] = useState(false)
@@ -199,12 +199,6 @@ export function ProjectsPageClient() {
     enabled: !!selected && drawerOpen,
   })
   const logs = useMemo(() => logsQuery.data ?? [], [logsQuery.data])
-
-  const personnelQuery = useQuery({
-    queryKey: ['identity-personnel-options'],
-    queryFn: () => searchPersonnel('', 0, 100),
-    enabled: createOpen,
-  })
 
   const refreshAll = () => {
     void queryClient.invalidateQueries({ queryKey: ['registration-projects'] })
@@ -254,7 +248,7 @@ export function ProjectsPageClient() {
       const result = await createRegistrationProject({
         name: values.name,
         product_name: values.product_name,
-        registration_type: regType as '新注册' | '再注册' | '变更' | '补充申请',
+        registration_type: regType,
         project_no: values.project_no?.trim() || null,
         market: values.market ?? null,
         owner: values.owner ?? null,
@@ -790,13 +784,14 @@ export function ProjectsPageClient() {
                   options={['美国', '欧盟', '国内', 'WHO', '其他'].map(v => ({ label: v, value: v }))}
                 />
               </Form.Item>
-              <Form.Item name="owner" label="负责人" rules={[{ required: true, message: '请选择负责人' }]}>
-                <Select
-                  showSearch
-                  placeholder="选择负责人"
-                  optionFilterProp="label"
-                  options={(personnelQuery.data?.items ?? []).map(p => ({ label: p.name, value: p.name }))}
-                />
+              <Form.Item
+                name="owner"
+                label="负责人"
+                rules={[{ required: true, message: '请选择负责人' }]}
+                // 后端 owner 存姓名快照（str），这里从选中人员取 name 写入表单
+                getValueFromEvent={(person: { id: string; name: string } | null) => person?.name ?? null}
+              >
+                <RemoteUserSelect placeholder="选择负责人" allowClear feishuBoundOnly={false} />
               </Form.Item>
             </div>
 

@@ -16,7 +16,7 @@ import {
 import { DataUnavailable } from '@/components/common/DataUnavailable'
 import { RegistrationPageHeader } from '@/components/registration/RegistrationPageHeader'
 import ui from '@/components/registration/registration-ui.module.css'
-import { IconBook, IconRefresh } from '@/components/registration/registration-icons'
+import { IconBook, IconRefresh } from '@/components/registration/RegistrationIcons'
 
 const { RangePicker } = DatePicker
 

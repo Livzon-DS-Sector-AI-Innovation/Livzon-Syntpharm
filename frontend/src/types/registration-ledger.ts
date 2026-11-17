@@ -64,36 +64,23 @@ export interface WcCertificate {
   updated_at: string
 }
 
-/** 即将到期/已过期的证书条目（概览页"需要关注"预警） */
-export interface ExpiringCertificateItem {
-  id: string
-  product_name: string
-  certificate_name: string | null
-  valid_until: string
-  /** 距到期天数；负数表示已过期天数 */
-  days_left: number
-  /** 来源子表，用于生成台账定位链接；certificate = 主证书表（registration_certificates） */
+/**
+ * 即将到期/已过期的证书条目（概览页"需要关注"预警）
+ *
+ * 契约模型来自后端 OpenAPI；仅把 `ledger_type` 从 `string` 收敛为字面量联合，
+ * 以便前端做标签映射与台账定位链接。
+ */
+export type ExpiringCertificateItem = Omit<
+  components['schemas']['ExpiringCertificateItem'],
+  'ledger_type'
+> & {
+  /** 来源子表；certificate = 主证书表（registration_certificates） */
   ledger_type: 'domestic' | 'overseas' | 'copp' | 'wc' | 'certificate'
 }
 
-export interface LedgerSummary {
-  domestic_count: number
-  overseas_count: number
-  overseas_countries: number
-  international_review_count: number
-  copp_count: number
-  wc_count: number
-  reviewing_count: number
-  planned_count: number
-  /** 今年新增（按发证日期统计） */
-  domestic_new_this_year: number
-  overseas_new_this_year: number
-  copp_new_this_year: number
-  wc_new_this_year: number
-  /** 证书有效期预警（已过期 + 90 天内到期） */
+/** 契约模型，来自后端 OpenAPI（`expiring_certificates` 后端恒返回数组，故收紧为非可选） */
+export type LedgerSummary = components['schemas']['LedgerSummary'] & {
   expiring_certificates: ExpiringCertificateItem[]
-  expired_count: number
-  expiring_soon_count: number
 }
 
 export interface ReviewingDrug {

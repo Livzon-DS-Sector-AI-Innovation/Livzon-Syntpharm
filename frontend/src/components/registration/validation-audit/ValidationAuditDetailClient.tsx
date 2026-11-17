@@ -31,9 +31,9 @@ import {
   fetchValidationAuditReport,
 } from '@/lib/api/client/validation-audit'
 import { RegistrationPageHeader } from '../RegistrationPageHeader'
-import { tagClassOf } from '../registration-ui'
+import { tagClassOf } from '../registrationUi'
 import ui from '../registration-ui.module.css'
-import { IconCheckSquare, IconRefresh } from '../registration-icons'
+import { IconCheckSquare, IconRefresh } from '../RegistrationIcons'
 
 const { Text } = Typography
 

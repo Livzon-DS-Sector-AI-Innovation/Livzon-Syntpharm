@@ -7,7 +7,7 @@ import { Select, Table, Upload, Modal, Form, Input, DatePicker, InputNumber, App
 import type { ColumnsType } from 'antd/es/table'
 import { RegistrationPageHeader } from '@/components/registration'
 import ui from '@/components/registration/registration-ui.module.css'
-import { IconBook, IconUpload, IconDownload, IconPlus } from '@/components/registration/registration-icons'
+import { IconBook, IconUpload, IconDownload, IconPlus } from '@/components/registration/RegistrationIcons'
 import {
   fetchDomesticApprovals, exportDomesticApprovals,
   fetchOverseasApprovals, exportOverseasApprovals,

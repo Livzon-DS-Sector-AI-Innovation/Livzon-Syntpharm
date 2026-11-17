@@ -33,7 +33,7 @@ from app.modules.registration.schemas import (
     SupplementaryReplyListItem,
     SupplementaryReplyResponse,
 )
-from app.platform.identity.models import User
+from app.platform.identity.public_api import resolve_user_names
 
 logger = logging.getLogger(__name__)
 
@@ -265,11 +265,8 @@ class AuthorizationLetterService:
         return item
 
     async def _resolve_user_names(self, user_ids: set[UUID]) -> dict[UUID, str]:
-        """批量解析操作人姓名（与注册项目页同一模式）"""
-        if not user_ids:
-            return {}
-        result = await self.session.execute(select(User).where(User.id.in_(user_ids)))
-        return {u.id: u.name for u in result.scalars().all()}
+        """批量解析操作人姓名（统一走 identity 公共 API）"""
+        return await resolve_user_names(self.session, user_ids)
 
     @staticmethod
     def _trail_to_item(obj: AuthorizationLetterTrail, names: dict[UUID, str]) -> AuthorizationLetterTrailItem:

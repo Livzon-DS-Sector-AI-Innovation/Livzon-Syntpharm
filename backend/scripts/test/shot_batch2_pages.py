@@ -1,15 +1,20 @@
 """临时脚本：第二批 6 页截图 + 控制台报错检查。"""
 
 import asyncio
+import os
 import sys
+from pathlib import Path
 
-sys.path.insert(0, "/app")
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from sqlalchemy import select
 
 from app.core.database import async_session_factory
 from app.platform.identity.models import User
 from app.platform.identity.service import generate_jwt
+
+# 前端地址从环境变量读取，避免硬编码
+FRONTEND_URL = os.environ["FRONTEND_URL"]
 
 
 async def main() -> None:
@@ -24,7 +29,7 @@ async def main() -> None:
     async with async_playwright() as p:
         browser = await p.chromium.launch(args=["--host-resolver-rules=MAP localhost frontend"])
         ctx = await browser.new_context(viewport={"width": 1440, "height": 900})
-        await ctx.add_cookies([{"name": "auth_token", "value": token, "url": "http://localhost:3000"}])
+        await ctx.add_cookies([{"name": "auth_token", "value": token, "url": FRONTEND_URL}])
         page = await ctx.new_page()
         errors: list[str] = []
         page.on("console", lambda m: errors.append(f"{page.url}: {m.text[:120]}") if m.type == "error" else None)
@@ -36,7 +41,7 @@ async def main() -> None:
             ("va-new", "/registration/validation-audit/new", "h1"),
         ]
         for name, path, wait in simple_pages:
-            await page.goto("http://localhost:3000" + path, wait_until="domcontentloaded")
+            await page.goto(FRONTEND_URL + path, wait_until="domcontentloaded")
             await page.wait_for_selector(wait, timeout=60000)
             await page.wait_for_timeout(3000)
             title = await page.evaluate("document.querySelector('h1')?.textContent")
@@ -44,7 +49,7 @@ async def main() -> None:
             await page.screenshot(path=f"/tmp/p2-{name}.png")
 
         # 法规详情：从列表点第一行进入
-        await page.goto("http://localhost:3000/registration/regulation/list", wait_until="domcontentloaded")
+        await page.goto(f"{FRONTEND_URL}/registration/regulation/list", wait_until="domcontentloaded")
         await page.wait_for_timeout(4000)
         clicked = await page.evaluate("""() => {
           const rows = document.querySelectorAll('[class*=panel] div[style*=border-left]')
@@ -59,7 +64,7 @@ async def main() -> None:
             print("reg-detail: no rows, skipped")
 
         # 验证审计详情：从列表点第一行「查看」
-        await page.goto("http://localhost:3000/registration/validation-audit", wait_until="domcontentloaded")
+        await page.goto(f"{FRONTEND_URL}/registration/validation-audit", wait_until="domcontentloaded")
         await page.wait_for_timeout(4000)
         clicked = await page.evaluate("""() => {
           const btn = document.querySelector('tbody tr button[class*=opLink]')

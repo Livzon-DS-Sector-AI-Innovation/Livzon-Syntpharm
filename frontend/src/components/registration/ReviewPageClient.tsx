@@ -30,7 +30,7 @@ import styles from './review-progress.module.css'
 import {
   IconActivity, IconRefresh, IconPlus, IconFlask, IconBulb,
   IconClock, IconShieldCheck, IconTrash, IconCheck,
-} from './registration-icons'
+} from './RegistrationIcons'
 
 type DrugType = '仿制药' | '创新药' | '原料药'
 
