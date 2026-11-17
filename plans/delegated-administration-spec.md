@@ -16,7 +16,7 @@ And change menu behavior from hide to show: items without permission render grey
 2. As a super admin, I want to be the only one who can appoint or remove module owners, so that module control stays accountable.
 3. As a super admin, I want to also be able to appoint module delegates directly, so that I can bootstrap a module before an owner is chosen.
 4. As a super admin, I want module-created roles to appear in the global role management list, so that I retain oversight and can intervene.
-5. As a super admin, I want to remove the last resort manually, so that the system never ends up without a super admin.
+5. As a super admin, I want the system to always keep at least two super admins, so that losing one account never locks everyone out of administration.
 6. As a module owner, I want a 模块配置 page inside my module, so that I manage my module without entering global system settings.
 7. As a module owner, I want to create custom roles containing only my module's permission codes, so that I can model my module's real jobs (e.g. 偏差审核员).
 8. As a module owner, I want to edit custom roles I created, so that I can adjust them as work changes.
@@ -56,7 +56,8 @@ And change menu behavior from hide to show: items without permission render grey
 
 - To create, modify, or remove a grant for a role of level N in a module, the actor must hold a role with level strictly greater than N in the same module — or be super admin.
 - This single rule yields: delegate cannot touch delegate grants (1 ≯ 1); owner cannot touch fellow owners (2 ≯ 2); only super admin manages owner grants; owners manage delegates and custom roles; delegates manage only custom roles.
-- The existing guards remain: no self-granting, last-superadmin protection, scope capping.
+- The existing guards remain: no self-granting, scope capping.
+- The last-superadmin guard is raised from last-one to **last-two**: removing or disabling a super admin grant is blocked when it would leave fewer than two active super admins. Prevents total lockout if a sole super admin's account is lost (only a super admin can grant super admin, so recovery would otherwise need database surgery).
 
 ### Data scope
 

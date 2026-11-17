@@ -20,7 +20,7 @@
 
 ### 后端
 
-1. `permission.roles` 表加 `level` 列 + Alembic 迁移（单模块原则：permission schema）
+1. `permission.roles` 表加 `level` 列 + Alembic 迁移（单模块原则：permission schema）；超管保底从「最后一名」升级为「最后两名」（`guard_last_superadmin` 阈值 1 → 2，防止唯一超管账号丢失导致无法恢复）
 2. 注册表自动生成 `{module}:owner` / `{module}:delegate` / `{module}:admin:read`；启动同步时自动扩量
 3. 级别守卫：授权操作时校验操作者同模块级别严格大于目标角色级别（超管放行）
 4. 角色/授权 API 按模块过滤（负责人/代表视图）；创建模块角色时拒绝非本模块权限码
