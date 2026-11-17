@@ -112,9 +112,17 @@ Good tests here check external behavior: an HTTP request is allowed or denied; a
 - Migrating historical custom roles to any new structure.
 - Department-tree-aware scopes (`department_and_children` stays equivalent to `department`).
 
+## Open Decision: Owner-assignment surface
+
+How the super admin assigns module owners is not yet decided. Three options, prototyped at http://localhost:8931/owner-assignment-ui.html (←/→ to switch):
+
+- **Option A — tab inside 权限管理**: a fourth tab 「模块负责人」 next to 角色管理 / 授权管理 / 权限目录. A card per module showing current owners + inline search-and-assign. Least new navigation; fits where permission work already happens.
+- **Option B — dedicated page**: a new entry card on the 系统管理 overview opening a standalone page (table of all modules × their owners). Most visible as a distinct administrative duty; adds a new page.
+- **Option C — reuse 授权管理**: no new surface at all. Assigning an owner is just granting the `{module}:owner` role in the existing grant flow; owner grants group at the top of the list. Zero new UI; but owner assignment hides inside a general-purpose tool.
+
 ## Further Notes
 
 - Requirement doc (Feishu wiki): https://j0eukrlohu.feishu.cn/wiki/X6Dxw2Ubyi27X8kWTnFc7wShnIe
 - Design record: `docs/adr/0008-delegated-administration.md`; vocabulary in `GLOSSARY.md` (模块负责人 / 模块代表 / 角色级别 / 授权).
 - Implementation plan with ordered tasks: `plans/delegated-administration-plan.md`.
-- Throwaway prototypes (not in repo): logic walkthrough and 12-module settings-page mock.
+- Throwaway prototypes (not in repo): logic walkthrough (delegation-logic.html), 12-module settings-page mock (module-settings-all.html), owner-assignment surface (owner-assignment-ui.html).
