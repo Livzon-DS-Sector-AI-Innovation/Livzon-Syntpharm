@@ -21,6 +21,12 @@ export type AuthorizationLetter = components['schemas']['AuthorizationLetterResp
 /** 契约模型，来自后端 OpenAPI */
 export type AuthorizationLetterListItem = components['schemas']['AuthorizationLetterListItem']
 
+/** 契约模型，来自后端 OpenAPI */
+export type AuthorizationLetterTrail = components['schemas']['AuthorizationLetterTrailItem']
+
+/** 契约模型，来自后端 OpenAPI */
+export type AuthorizationLetterFilterOptions = components['schemas']['AuthorizationLetterFilterOptions']
+
 
 export interface AuthorizationLetterCreateInput {
   product_name: string
@@ -36,8 +42,9 @@ export type AuthorizationLetterResponse = components['schemas']['DataResponse_Au
 
 
 export interface AuthorizationLetterListParams {
+  keyword?: string
   product_name?: string
-  preparation_unit?: string
+  year?: number
   page?: number
   page_size?: number
 }
@@ -113,6 +120,7 @@ export interface Drug {
   name: string
   type: '仿制药' | '创新药' | '原料药'
   acceptance_date: string
+  acceptance_number?: string | null
   current_node: number
   created_at: string
   updated_at: string
@@ -124,12 +132,50 @@ export interface DrugNode {
   drug_id: string
   node_index: number
   actual_date: string | null
+  skipped: boolean
   created_at: string
   updated_at: string
 }
 
+export type NodeStatus = 'completed' | 'in_progress' | 'pending' | 'skipped'
+
+export interface NodePrediction {
+  node_index: number
+  node_name: string
+  status: NodeStatus
+  actual_date: string | null
+  estimated_date: string | null
+  estimated_range: [string, string] | null
+  delta_days: number | null
+}
+
+export interface DrugPrediction {
+  drug_id: string
+  total_nodes: number
+  completed_nodes: number
+  current_node_index: number | null
+  days_in_current_node: number | null
+  estimated_approval_date: string | null
+  nodes: NodePrediction[]
+}
+
 /** 契约模型，来自后端 OpenAPI（`projects.py` 已声明 `DataResponse[ProjectResponse]`） */
 export type RegistrationProject = components['schemas']['ProjectResponse']
+
+/** 契约模型，来自后端 OpenAPI */
+export type ProjectProgressLog = components['schemas']['ProgressLogResponse']
+
+/** 契约模型，来自后端 OpenAPI */
+export type ProjectKpi = components['schemas']['ProjectKpiResponse']
+
+/** 契约模型，来自后端 OpenAPI */
+export type ProjectCreatePayload = components['schemas']['ProjectCreate']
+
+/** 契约模型，来自后端 OpenAPI */
+export type ProjectUpdatePayload = components['schemas']['ProjectUpdate']
+
+/** 申报前阶段 key（与后端 PreStage 一致） */
+export type PreStage = 'initiation' | 'data_preparation' | 'internal_review' | 'submission' | 'accepted'
 
 export interface Holiday {
   id: string

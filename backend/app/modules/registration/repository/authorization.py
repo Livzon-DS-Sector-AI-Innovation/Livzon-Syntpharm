@@ -2,11 +2,12 @@
 
 from uuid import UUID
 
-from sqlalchemy import asc, desc, func, select
+from sqlalchemy import Integer, asc, desc, extract, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.registration.models import (
     AuthorizationLetter,
+    AuthorizationLetterTrail,
     ReferenceStandard,
     SupplementaryReply,
 )
@@ -28,8 +29,9 @@ class AuthorizationLetterRepository:
     async def list_letters(
         self,
         *,
+        keyword: str | None = None,
         product_name: str | None = None,
-        preparation_unit: str | None = None,
+        year: int | None = None,
         page: int = 1,
         page_size: int = 20,
         sort_by: str = "created_at",
@@ -37,10 +39,20 @@ class AuthorizationLetterRepository:
     ) -> tuple[list[AuthorizationLetter], int]:
         stmt = select(AuthorizationLetter).where(AuthorizationLetter.is_deleted.is_(False))
 
+        if keyword:
+            like = f"%{keyword}%"
+            stmt = stmt.where(
+                or_(
+                    AuthorizationLetter.product_name.ilike(like),
+                    AuthorizationLetter.registration_number.ilike(like),
+                    AuthorizationLetter.preparation_unit.ilike(like),
+                    AuthorizationLetter.preparation_name.ilike(like),
+                )
+            )
         if product_name:
-            stmt = stmt.where(AuthorizationLetter.product_name.ilike(f"%{product_name}%"))
-        if preparation_unit:
-            stmt = stmt.where(AuthorizationLetter.preparation_unit.ilike(f"%{preparation_unit}%"))
+            stmt = stmt.where(AuthorizationLetter.product_name == product_name)
+        if year:
+            stmt = stmt.where(extract("year", AuthorizationLetter.created_at) == year)
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total_result = await self.session.execute(count_stmt)
@@ -55,6 +67,21 @@ class AuthorizationLetterRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all()), total
 
+    async def list_distinct_products(self) -> list[str]:
+        """已有授权书记录中的品种去重列表（供筛选下拉与主数据合并）"""
+        result = await self.session.execute(
+            select(AuthorizationLetter.product_name).where(AuthorizationLetter.is_deleted.is_(False)).distinct()
+        )
+        return list(result.scalars().all())
+
+    async def list_years(self) -> list[int]:
+        """按生成时间提取年份选项，降序"""
+        year_col = extract("year", AuthorizationLetter.created_at).cast(Integer)
+        result = await self.session.execute(
+            select(year_col).where(AuthorizationLetter.is_deleted.is_(False)).distinct()
+        )
+        return sorted((y for y in result.scalars().all() if y is not None), reverse=True)
+
     async def create(self, letter: AuthorizationLetter) -> AuthorizationLetter:
         self.session.add(letter)
         await self.session.flush()
@@ -64,6 +91,38 @@ class AuthorizationLetterRepository:
     async def soft_delete(self, letter: AuthorizationLetter) -> None:
         letter.is_deleted = True
         await self.session.flush()
+
+    # ── 留痕（只增不删） ──
+
+    async def add_trail(
+        self,
+        *,
+        letter_id: UUID,
+        action: str,
+        detail: str,
+        created_by: UUID | None = None,
+    ) -> AuthorizationLetterTrail:
+        trail = AuthorizationLetterTrail(
+            letter_id=letter_id,
+            action=action,
+            detail=detail,
+            created_by=created_by,
+        )
+        self.session.add(trail)
+        await self.session.flush()
+        await self.session.refresh(trail)
+        return trail
+
+    async def list_trails(self, letter_id: UUID) -> list[AuthorizationLetterTrail]:
+        result = await self.session.execute(
+            select(AuthorizationLetterTrail)
+            .where(
+                AuthorizationLetterTrail.letter_id == letter_id,
+                AuthorizationLetterTrail.is_deleted.is_(False),
+            )
+            .order_by(AuthorizationLetterTrail.created_at.desc())
+        )
+        return list(result.scalars().all())
 
 
 class SupplementaryReplyRepository:

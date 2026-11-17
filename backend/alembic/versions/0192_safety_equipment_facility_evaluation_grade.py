@@ -1,7 +1,7 @@
 """safety equipment facility hazard evaluation grade
 
-Revision ID: 0116_safety_equipment_facility_evaluation_grade
-Revises: 0115_agent_ppt_video_highlight_project_default
+Revision ID: 0168_safety_equipment_facility_evaluation_grade
+Revises: 0167_agent_ppt_video_highlight_project_default
 Create Date: 2026-11-10
 
 《设备设施危险源台账》新增评价级别：
@@ -15,8 +15,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0116_safety_equipment_facility_evaluation_grade"
-down_revision: str = "0115_agent_ppt_video_highlight_project_default"
+revision: str = "0192_safety_equipment_facility_evaluation_grade"
+down_revision: str = "0191_agent_ppt_video_highlight_project_default"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -26,6 +26,10 @@ _INDEX = "ix_equipment_facility_hazards_evaluation_grade"
 
 
 def upgrade() -> None:
+    # 双轨合并守卫：main 链同构迁移（现 0186 no-op 占位）在 prod 已应用过本变更，跳过
+    existing = {c["name"] for c in sa.inspect(op.get_bind()).get_columns(_TABLE, schema=_SCHEMA)}
+    if "evaluation_grade" in existing:
+        return
     op.add_column(
         _TABLE,
         sa.Column(

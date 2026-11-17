@@ -53,6 +53,10 @@ _BACKFILL_QA_HEAD = sa.text(
 
 
 def upgrade() -> None:
+    # 双轨合并守卫：main 链同构迁移（现 0174 no-op 占位）在 prod 已应用过本变更，跳过
+    existing = {c["name"] for c in sa.inspect(op.get_bind()).get_columns(_TABLE, schema=_SCHEMA)}
+    if "qa_reviewer_id" in existing:
+        return
     op.add_column(
         _TABLE,
         sa.Column(

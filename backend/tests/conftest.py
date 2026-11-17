@@ -13,6 +13,14 @@ Fixtures override ``get_db`` and ``get_current_user`` only.
 
 from __future__ import annotations
 
+import os
+
+# 测试专用加密密钥：无 ENCRYPTION_KEY（或为空串，如 compose env_file 注入的空值）时
+# encrypt_api_key 拒绝写入（写入路径强校验）。注入固定的测试 Fernet key，
+# 保证 agent/LLM 配置相关用例在任何环境都可运行。仅测试使用，不覆盖真实密钥。
+if not os.environ.get("ENCRYPTION_KEY"):
+    os.environ["ENCRYPTION_KEY"] = "vPZtaLr4UKXHBA77Il1ti6hAzw82-ylKsJ1plibABDA="
+
 import uuid
 from collections.abc import AsyncIterator
 

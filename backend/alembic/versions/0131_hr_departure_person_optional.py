@@ -10,6 +10,8 @@ Create Date: 2026-11-13
 
 from collections.abc import Sequence
 
+import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "0131_hr_departure_person_optional"
@@ -22,6 +24,11 @@ _SCHEMA = "hr"
 
 
 def upgrade() -> None:
+    # 双轨合并守卫：基线旧表无 person_id 时跳过（最终结构以 main 链 0116 为准，已含可空 person_id）
+    if "person_id" not in {
+        c["name"] for c in sa.inspect(op.get_bind()).get_columns(_TABLE, schema=_SCHEMA)
+    }:
+        return
     op.alter_column(
         _TABLE,
         "person_id",

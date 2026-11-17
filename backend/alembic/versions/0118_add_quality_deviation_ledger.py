@@ -17,7 +17,7 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from alembic import op
 
 revision: str = "0118_add_quality_deviation_ledger"
-down_revision: str = "0117_safety_hazard_safety_officer"
+down_revision: str = "0169_safety_hazard_safety_officer"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -45,6 +45,9 @@ _LEVEL_IN = ", ".join(f"'{value}'" for value in _LEVELS)
 
 
 def upgrade() -> None:
+    # 双轨合并守卫：main 链同构迁移（现 0170 no-op 占位）在 prod 已应用过本变更，跳过
+    if sa.inspect(op.get_bind()).has_table(_TABLE, schema=_SCHEMA):
+        return
     op.create_table(
         _TABLE,
         sa.Column("id", PG_UUID(as_uuid=True), primary_key=True),

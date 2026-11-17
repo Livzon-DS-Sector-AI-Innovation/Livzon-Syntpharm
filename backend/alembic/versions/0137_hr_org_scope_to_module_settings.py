@@ -24,6 +24,9 @@ _KEYS = ("HR_ORG_SYNC_ROOT_DEPARTMENT_ID", "HR_ORG_SYNC_ROOT_DEPARTMENT_NAME")
 
 
 def upgrade() -> None:
+    # 双轨合并守卫：源表不存在时跳过（不同环境的 HR 设置表归属不同）
+    if not sa.inspect(op.get_bind()).has_table("system_settings", schema="hr"):
+        return
     op.execute(
         sa.text(
             """

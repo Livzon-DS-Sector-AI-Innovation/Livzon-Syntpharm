@@ -1,5 +1,12 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: 50m
+    max-file: "3"
+
 services:
   postgres:
+    logging: *default-logging
     image: postgres:17
     container_name: erp-postgres
     restart: unless-stopped
@@ -15,6 +22,7 @@ services:
       timeout: 5s
       retries: 5
   redis:
+    logging: *default-logging
     image: redis:8-alpine
     container_name: erp-redis
     restart: unless-stopped
@@ -34,6 +42,7 @@ services:
       retries: 5
   minio:
     # 固定版本：latest 指向的旧镜像读不了 xl-single 格式数据目录，会导致启动崩溃循环
+    logging: *default-logging
     image: minio/minio:RELEASE.2025-04-22T22-12-26Z
     container_name: erp-minio
     restart: unless-stopped
@@ -56,6 +65,7 @@ services:
       timeout: 5s
       retries: 5
   migrate:
+    logging: *default-logging
     build: ./backend
     container_name: erp-migrate
     env_file:
@@ -71,6 +81,7 @@ services:
     - head
     restart: 'no'
   backend:
+    logging: *default-logging
     build: ./backend
     container_name: erp-backend
     restart: unless-stopped
@@ -117,12 +128,14 @@ services:
     - ./uploads:/app/uploads
     - ./storage:/app/storage
   edbo-service:
+    logging: *default-logging
     build:
       context: ./backend
       dockerfile: edbo_service/Dockerfile
     container_name: erp-edbo-service
     restart: unless-stopped
   frontend:
+    logging: *default-logging
     build:
       context: ./frontend
       target: runtime
@@ -133,6 +146,7 @@ services:
     depends_on:
     - backend
   nginx:
+    logging: *default-logging
     image: nginx:stable-alpine
     container_name: erp-nginx
     restart: unless-stopped

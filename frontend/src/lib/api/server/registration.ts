@@ -3,9 +3,12 @@ import type { components } from '@/types/generated/schema'
 import type { ApiResponse } from '@/types/common'
 import type { PageResult } from '@/lib/api/page'
 import type {
+  AuthorizationLetterFilterOptions,
   AuthorizationLetterListItem,
   ParseCOAResponse,
   ProductInfo,
+  ProjectKpi,
+  ProjectProgressLog,
   ReferenceStandardListItem,
   RegistrationProject,
   SupplementaryReplyListItem,
@@ -54,15 +57,25 @@ export async function deleteReferenceStandard(id: string) {
 }
 
 export async function fetchAuthorizationLetters(
-  params: { page: number; page_size: number },
+  params: { page: number; page_size: number; keyword?: string; product_name?: string; year?: number },
 ): Promise<PageResult<AuthorizationLetterListItem>> {
   const searchParams = new URLSearchParams({
     page: params.page.toString(),
     page_size: params.page_size.toString(),
   })
+  if (params.keyword) searchParams.set('keyword', params.keyword)
+  if (params.product_name) searchParams.set('product_name', params.product_name)
+  if (params.year) searchParams.set('year', String(params.year))
   return apiFetchPaginated<AuthorizationLetterListItem>(
     `${getApiBaseUrl()}/api/v1/registration/authorization-letters?${searchParams.toString()}`,
   )
+}
+
+export async function fetchAuthorizationLetterFilterOptions(): Promise<AuthorizationLetterFilterOptions> {
+  const raw = await apiFetch<ApiResponse<AuthorizationLetterFilterOptions>>(
+    `${getApiBaseUrl()}/api/v1/registration/authorization-letters/filter-options`,
+  )
+  return unwrapResponse(raw)
 }
 
 export async function fetchRegistrationProducts(): Promise<ProductInfo[]> {
@@ -97,7 +110,7 @@ export async function fetchSupplementaryReplies(
 }
 
 export async function createDrug(data: DrugCreate) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/drugs/`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/drugs`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -130,13 +143,50 @@ export async function parseCOA(file: File): Promise<ParseCOAResponse> {
   return unwrapResponse(raw)
 }
 
-export async function fetchRegistrationProjects(): Promise<RegistrationProject[]> {
+export async function fetchRegistrationProjects(params?: {
+  search?: string
+  registration_type?: string
+  status?: string
+}): Promise<RegistrationProject[]> {
   // 该集合端点的规范路径带尾斜杠（后端 @router.get("/")）；浏览器直连会被 Next 的
   // trailingSlash 归一化 308 掉、再被后端 307 到 backend:8000 触发跨域，因此必须服务端取数。
+  const searchParams = new URLSearchParams()
+  if (params?.search) searchParams.set('search', params.search)
+  if (params?.registration_type) searchParams.set('registration_type', params.registration_type)
+  if (params?.status) searchParams.set('status', params.status)
+  const query = searchParams.toString()
   const raw = await apiFetch<ApiResponse<RegistrationProject[]>>(
-    `${getApiBaseUrl()}/api/v1/registration/projects/`,
+    `${getApiBaseUrl()}/api/v1/registration/projects/${query ? `?${query}` : ''}`,
   )
   return unwrapResponse(raw)
+}
+
+export async function fetchProjectKpi(): Promise<ProjectKpi> {
+  const raw = await apiFetch<ApiResponse<ProjectKpi>>(
+    `${getApiBaseUrl()}/api/v1/registration/projects/kpi`,
+  )
+  return unwrapResponse(raw)
+}
+
+export async function fetchProjectLogs(projectId: string): Promise<ProjectProgressLog[]> {
+  const raw = await apiFetch<ApiResponse<ProjectProgressLog[]>>(
+    `${getApiBaseUrl()}/api/v1/registration/projects/${projectId}/logs`,
+  )
+  return unwrapResponse(raw) ?? []
+}
+
+export async function advanceProjectStage(id: string, stage: string) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/projects/${id}/stage`, {
+    method: 'POST',
+    body: JSON.stringify({ stage }),
+  })
+}
+
+export async function addProjectLog(id: string, content: string) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/projects/${id}/logs`, {
+    method: 'POST',
+    body: JSON.stringify({ content }),
+  })
 }
 
 export async function createRegistrationProject(data: components['schemas']['ProjectCreate']) {
