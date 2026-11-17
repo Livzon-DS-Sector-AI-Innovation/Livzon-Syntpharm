@@ -31,6 +31,7 @@ EXPECTED_TOOLS = {
     "write_paragraph",
     "write_cell",
     "append_paragraph",
+    "append_subsection",
     "append_table_rows",
     "append_references",
     "finalize",

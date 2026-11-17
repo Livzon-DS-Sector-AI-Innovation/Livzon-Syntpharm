@@ -296,6 +296,11 @@ export const REPORT_GEN_TOOLS: ReportGenToolMeta[] = [
     description: '模板里的条目不够时，按已有段落格式新增段落。',
   },
   {
+    name: 'append_subsection',
+    label: '新增子标题',
+    description: '资料比模板多时，按已有子标题格式新增子章节（大标题不变），目录同步更新。',
+  },
+  {
     name: 'append_table_rows',
     label: '新增表格行',
     description: '按模板行格式往表格末尾新增行。',

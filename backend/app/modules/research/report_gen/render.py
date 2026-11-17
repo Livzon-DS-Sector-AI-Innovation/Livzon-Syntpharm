@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, cast
@@ -22,6 +23,7 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.text.paragraph import Paragraph
 
+from app.modules.research.report_gen.numbering import NumberToken, bump_number, parse_number, strip_number
 from app.modules.research.report_gen.structure import fingerprint, open_document
 
 logger = logging.getLogger(__name__)
@@ -369,11 +371,28 @@ def _paragraph_element(ref: Paragraph, text: str) -> Any:
     return new_p
 
 
-def _apply_appends(document: Any, fills: list[SlotFill], unresolved: list[str]) -> int:
-    """回放「在母本某段之后插入新段落」，按写入序号排序，支持链式追加。"""
+def _style_name_of(paragraph: Paragraph) -> str:
+    """段落样式名；样式表缺失的文档不让出稿挂掉。"""
+    try:
+        style = paragraph.style
+    except (AttributeError, KeyError):
+        return ""
+    return (style.name if style is not None else "") or ""
+
+
+def _apply_appends(document: Any, fills: list[SlotFill], unresolved: list[str]) -> tuple[int, list[Paragraph]]:
+    """回放「在母本某段之后插入新段落」，按写入序号排序，支持链式追加。
+
+    返回（写入记录数, 新增的标题段落）。子章节记录带 ``paragraphs``：先插标题，再按
+    各自 clone_from 插正文，最后把 ``positions[slot_key]`` 指到正文末段——模型之后用
+    ``append_paragraph(after=as1)`` 继续补写时，内容会接在正文后面而不是标题后面。
+    """
+    from app.modules.research.report_gen.outline import paragraph_heading_level
+
     positions: dict[str, Paragraph] = {f"p{index}": item for index, item in enumerate(document.paragraphs)}
     cursor: dict[str, Paragraph] = {}
     written = 0
+    headings: list[Paragraph] = []
 
     for fill in sorted(fills, key=_seq):
         value = (fill.value or "").strip()
@@ -398,15 +417,362 @@ def _apply_appends(document: Any, fills: list[SlotFill], unresolved: list[str]) 
             ref = document.paragraphs[clone_index]
 
         last = parent
-        for line in value.split("\n"):
-            new_p = _paragraph_element(ref, line)
+        paragraphs = anchor.get("paragraphs")
+        if isinstance(paragraphs, list) and paragraphs:
+            title = str(anchor.get("title") or value.split("\n")[0]).strip()
+            new_p = _paragraph_element(ref, title)
             last._p.addnext(new_p)  # noqa: SLF001
             last = Paragraph(new_p, ref._parent)
+            if paragraph_heading_level(last) is not None:
+                headings.append(last)
+            for entry in paragraphs:
+                if not isinstance(entry, dict):
+                    continue
+                text = str(entry.get("text") or "").strip()
+                if not text:
+                    continue
+                body_ref = ref
+                body_clone = entry.get("clone_from")
+                if isinstance(body_clone, int) and 0 <= body_clone < len(document.paragraphs):
+                    body_ref = document.paragraphs[body_clone]
+                for line in text.split("\n"):
+                    body_p = _paragraph_element(body_ref, line)
+                    last._p.addnext(body_p)  # noqa: SLF001
+                    last = Paragraph(body_p, body_ref._parent)
+        else:
+            for line in value.split("\n"):
+                new_p = _paragraph_element(ref, line)
+                last._p.addnext(new_p)  # noqa: SLF001
+                last = Paragraph(new_p, ref._parent)
+                if line.strip() and paragraph_heading_level(last) is not None:
+                    headings.append(last)
         positions[fill.slot_key] = last
         cursor[parent_key] = last
         written += 1
 
-    return written
+    return written, headings
+
+
+# ----------------------------------------------------------------------
+# 目录（Word TOC 域）
+# ----------------------------------------------------------------------
+_TOC_INSTR_RE = re.compile(r"^\s*TOC\b", re.IGNORECASE)
+_TOC_LEVEL_RANGE_RE = re.compile(r'\\o\s*"(\d+)-(\d+)"')
+_TOC_STYLE_LEVEL_RE = re.compile(r"(\d+)")
+
+
+def _collapse(text: str | None) -> str:
+    return " ".join((text or "").split())
+
+
+def _toc_instruction(document: Any) -> Any | None:
+    """找到 TOC 域的指令节点；没有目录域返回 None（不凭空造目录）。"""
+    for node in document.element.body.iter(qn("w:instrText")):
+        if _TOC_INSTR_RE.match(node.text or ""):
+            return node
+    return None
+
+
+def _toc_max_level(instr: Any) -> int:
+    """目录包含到几级标题：``TOC \\o "1-2"`` → 2；没写范围时按 9 级处理。"""
+    match = _TOC_LEVEL_RANGE_RE.search(instr.text or "")
+    if match is not None:
+        try:
+            return max(int(match.group(2)), 1)
+        except ValueError:
+            pass
+    return 9
+
+
+def _paragraph_index_of(document: Any, node: Any) -> int | None:
+    """目录指令段落在 ``document.paragraphs`` 里的下标：只数正文直属 ``w:p``。"""
+    index = 0
+    for child in document.element.body.iterchildren():
+        if child.tag.rsplit("}", 1)[-1] != "p":
+            continue
+        if child is node:
+            return index
+        index += 1
+    return None
+
+
+def _toc_entries(document: Any, instr: Any) -> list[Paragraph]:
+    """TOC 域结果里的缓存条目：指令段之后连续的 toc 样式段落。"""
+    from app.modules.research.report_gen.outline import is_toc_style
+
+    node = instr.getparent()
+    while node is not None and node.tag != qn("w:p"):
+        node = node.getparent()
+    if node is None:
+        return []
+    start = _paragraph_index_of(document, node)
+    if start is None:
+        return []
+    entries: list[Paragraph] = []
+    for paragraph in document.paragraphs[start + 1 :]:
+        if not is_toc_style(_style_name_of(paragraph)):
+            break
+        entries.append(paragraph)
+    return entries
+
+
+def _toc_entry_level(paragraph: Paragraph) -> int | None:
+    """目录条目级别：``toc 2`` / ``TOC 2`` → 2；样式名没数字返回 None。"""
+    match = _TOC_STYLE_LEVEL_RE.search(_style_name_of(paragraph))
+    return int(match.group(1)) if match else None
+
+
+def _toc_page_text(paragraph: Paragraph) -> str:
+    """目录条目里缓存的页码：条目文字最后一个 ``w:t``（``4.4. 路线4<TAB>5`` → ``5``）。
+
+    只认纯数字：条目没有页码时最后一个 ``w:t`` 往往是标题文字，照抄会把标题当页码。
+    """
+    texts = [node.text or "" for node in paragraph._p.iter(qn("w:t"))]  # noqa: SLF001
+    value = texts[-1].strip() if texts else ""
+    return value if re.fullmatch(r"\d{1,4}", value) else ""
+
+
+def _entry_number(paragraph: Paragraph) -> NumberToken | None:
+    return parse_number(paragraph.text or "")
+
+
+def _next_entry_number(reference: Paragraph, level: int) -> tuple[str, str] | None:
+    """按参照条目推算新条目的编号：同级末位+1；参照是纯阿拉伯上级时接 ``.1``。"""
+    parsed = _entry_number(reference)
+    reference_level = _toc_entry_level(reference)
+    if parsed is None or reference_level is None:
+        return None
+    if reference_level == level:
+        bumped = bump_number(parsed)
+        return (bumped.render(), parsed.separator) if bumped else None
+    if reference_level < level and not parsed.chinese and not parsed.head and not parsed.tail:
+        return f"{parsed.render()}.1", parsed.separator
+    return None
+
+
+def _replace_entry_number(paragraph: Paragraph, token: NumberToken) -> None:
+    """只改条目首个文本 run 里的编号，保留超链接域与页码域，条目仍可点击。"""
+    for node in paragraph._p.iter(qn("w:t")):  # noqa: SLF001
+        text = node.text or ""
+        parsed = parse_number(text)
+        if parsed is None:
+            if text.strip():
+                return
+            continue
+        node.text = f"{token.render()}{text[parsed.end :]}"
+        return
+
+
+def _shift_following_entries(entries: list[Paragraph], inserted: Paragraph, level: int) -> None:
+    """新条目插进去后，后续同级条目编号顺延一位，更深层级跟着换前缀。
+
+    例：在 ``4.4`` 后插入 ``4.5 路线5``，原 ``4.5 综合选择和说明`` 变 ``4.6``；
+    若它下面还有 ``4.5.1`` 这类子条目，也同步变成 ``4.6.1``。中文序号（四、/（四））
+    同样按末位顺延，前后缀与分隔符原样保留。
+    """
+    start = next((index for index, entry in enumerate(entries) if entry is inserted), None)
+    if start is None:
+        return
+    shifted_parent: NumberToken | None = None
+    for entry in entries[start + 1 :]:
+        entry_level = _toc_entry_level(entry)
+        if entry_level is None:
+            continue
+        if entry_level < level:
+            break
+        parsed = _entry_number(entry)
+        if parsed is None:
+            continue
+        if entry_level == level:
+            bumped = bump_number(parsed)
+            if bumped is None:
+                continue
+            _replace_entry_number(entry, bumped)
+            shifted_parent = bumped
+        elif shifted_parent is not None and not parsed.chinese:
+            parts = list(shifted_parent.parts) + parsed.parts[level:]
+            replacement = NumberToken(
+                head=parsed.head,
+                parts=parts,
+                tail=parsed.tail,
+                separator=parsed.separator,
+                chinese=False,
+                end=parsed.end,
+            )
+            _replace_entry_number(entry, replacement)
+
+
+def _toc_entry_element(reference: Paragraph, title: str, page: str) -> Any:
+    """克隆一条目录条目的版式，换成新标题与页码；不复制超链接域（书签还不存在）。"""
+    element = deepcopy(reference._p)
+    for child in list(element):
+        if child.tag != qn("w:pPr"):
+            element.remove(child)
+
+    r_pr = None
+    for run in reference._p.iter(qn("w:r")):  # noqa: SLF001
+        if run.find(qn("w:t")) is not None:
+            r_pr = run.find(qn("w:rPr"))
+            break
+
+    def append_run(text: str | None = None, *, tab: bool = False) -> None:
+        run = OxmlElement("w:r")
+        if r_pr is not None:
+            run.append(deepcopy(r_pr))
+        if tab:
+            run.append(OxmlElement("w:tab"))
+        if text:
+            node = OxmlElement("w:t")
+            node.set(qn("xml:space"), "preserve")
+            node.text = text
+            run.append(node)
+        element.append(run)
+
+    append_run(title)
+    append_run(tab=True)
+    if page:
+        append_run(page)
+    return element
+
+
+def _previous_heading(heading: Paragraph) -> Paragraph | None:
+    """文中上一个标题段落：新增子标题在目录里就排在它后面。"""
+    from app.modules.research.report_gen.outline import paragraph_heading_level
+
+    node = heading._p.getprevious()  # noqa: SLF001
+    while node is not None:
+        if node.tag == qn("w:p"):
+            candidate = Paragraph(node, heading._parent)
+            if paragraph_heading_level(candidate) is not None:
+                return candidate
+        node = node.getprevious()
+    return None
+
+
+def _title_key(text: str | None) -> str:
+    """标题比对键：去空白、去明文编号（``4.4. 路线4`` / ``（四）路线4`` → ``路线4``）。"""
+    return strip_number(text)
+
+
+def _find_entry_for(entries: list[Paragraph], title: str) -> Paragraph | None:
+    """按标题文字找到对应的目录条目（``4.4. 路线4<TAB>5`` 里含「路线4」）。"""
+    needle = _title_key(title)
+    if not needle:
+        return None
+    for entry in entries:
+        if needle in _title_key(entry.text):
+            return entry
+    return None
+
+
+def _document_order_headings(document: Any, headings: list[Paragraph]) -> list[Paragraph]:
+    """按正文顺序重排新增标题：模型可能从后往前插，目录顺序必须跟文档一致。"""
+    order = {
+        paragraph._p.getroottree().getpath(paragraph._p): index  # noqa: SLF001
+        for index, paragraph in enumerate(document.paragraphs)
+    }
+    ordered = sorted(
+        headings,
+        key=lambda paragraph: order.get(paragraph._p.getroottree().getpath(paragraph._p), 10**9),  # noqa: SLF001
+    )
+    seen: set[str] = set()
+    result: list[Paragraph] = []
+    for paragraph in ordered:
+        path = paragraph._p.getroottree().getpath(paragraph._p)  # noqa: SLF001
+        if path in seen:
+            continue
+        seen.add(path)
+        result.append(paragraph)
+    return result
+
+
+def _mark_toc_dirty(instr: Any) -> None:
+    """给 TOC 域的 begin 打 dirty：Word/WPS 打开时重算标题、编号与页码。"""
+    node = instr.getparent()
+    while node is not None:
+        field = node.find(qn("w:fldChar"))
+        if field is not None and field.get(qn("w:fldCharType")) == "begin":
+            field.set(qn("w:dirty"), "true")
+            return
+        node = node.getprevious()
+
+
+def _mark_fields_update(document: Any) -> None:
+    """settings.xml 写 updateFields：打开文档时统一更新域（含目录页码）。"""
+    settings = document.settings.element
+    element = settings.find(qn("w:updateFields"))
+    if element is None:
+        element = OxmlElement("w:updateFields")
+        settings.insert_element_before(
+            element,
+            "w:hdrShapeDefaults",
+            "w:footnotePr",
+            "w:endnotePr",
+            "w:compat",
+            "w:docVars",
+            "w:rsids",
+        )
+    element.set(qn("w:val"), "true")
+
+
+def _refresh_toc(document: Any, headings: list[Paragraph]) -> int:
+    """新增子标题后同步目录缓存，并让 Word 在打开时重算页码与自动编号。
+
+    目录是真正的 TOC 域：页码由 PAGEREF 缓存、编号由 Word 生成。这里只做两件事：
+
+    1) 按新增标题在文中的位置，克隆同级目录条目插进缓存——网页预览（docx-preview）
+       不会执行域，只能看到缓存条目，不插就永远显示旧目录；条目编号按参照条目顺延
+       （4.4 后插路线5 → 4.5 路线5，原 4.5 综合选择顺延成 4.6）；
+    2) 打 dirty + updateFields，Word/WPS 打开时按实际版式重排，页码与编号自然校正。
+
+    页码先沿用参照条目的值：排版只有 Word 知道，自己算一个错的比留旧值更难发现。
+    """
+    from app.modules.research.report_gen.outline import paragraph_heading_level
+
+    instr = _toc_instruction(document)
+    if instr is None:
+        return 0
+    max_level = _toc_max_level(instr)
+    entries = _toc_entries(document, instr)
+    _mark_toc_dirty(instr)
+    _mark_fields_update(document)
+    if not entries:
+        return 0
+
+    by_heading: dict[str, Paragraph] = {}
+    synced = 0
+    for heading in _document_order_headings(document, headings):
+        level = paragraph_heading_level(heading)
+        title = _collapse(heading.text)
+        if level is None or level > max_level or not title:
+            continue
+        previous = _previous_heading(heading)
+        reference = None
+        if previous is not None:
+            path = previous._p.getroottree().getpath(previous._p)  # noqa: SLF001
+            reference = by_heading.get(path) or _find_entry_for(entries, previous.text)
+        if reference is None:
+            same_level = [entry for entry in entries if _toc_entry_level(entry) == level]
+            reference = same_level[-1] if same_level else entries[-1]
+        if reference is None:
+            continue
+        display_title = strip_number(title) or title
+        numbered = _next_entry_number(reference, level)
+        entry_text = f"{numbered[0]}{numbered[1]}{display_title}" if numbered else display_title
+        element = _toc_entry_element(reference, entry_text, _toc_page_text(reference))
+        reference._p.addnext(element)  # noqa: SLF001
+        new_entry = Paragraph(element, reference._parent)
+        # 内存条目表也要按目录顺序插入：顺延逻辑从新条目往后找同级条目
+        reference_index = next(
+            (index for index, entry in enumerate(entries) if entry is reference),
+            len(entries) - 1,
+        )
+        entries.insert(reference_index + 1, new_entry)
+        if numbered is not None:
+            _shift_following_entries(entries, new_entry, level)
+        by_heading[heading._p.getroottree().getpath(heading._p)] = new_entry  # noqa: SLF001
+        synced += 1
+    return synced
 
 
 def _clear_paragraph(paragraph: Paragraph) -> None:
@@ -528,10 +894,18 @@ def render_document(
         else:
             gaps += 1
 
-    filled += _apply_appends(document, appends, unresolved)
+    appended, appended_headings = _apply_appends(document, appends, unresolved)
+    filled += appended
     written.extend(fill.slot_key for fill in appends if fill.slot_key not in unresolved)
     filled += _apply_table_rows(document, row_appends, unresolved)
     written.extend(fill.slot_key for fill in row_appends if fill.slot_key not in unresolved)
+
+    if appended_headings:
+        toc_entries = _refresh_toc(document, appended_headings)
+        logger.info(
+            "report-gen toc refreshed",
+            extra={"headings": len(appended_headings), "entries": toc_entries},
+        )
 
     output = RenderOutput(
         document=_save(document),

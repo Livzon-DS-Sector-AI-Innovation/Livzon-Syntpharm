@@ -32,6 +32,7 @@ from app.modules.research.models import (
     RdStageRecord,
 )
 from app.modules.research.report_gen.cell_semantics import validate_cell_value
+from app.modules.research.report_gen.numbering import strip_number
 from app.modules.research.report_gen.outline import (
     MAX_OUTLINE_TEXT,
     TemplateOutline,
@@ -54,6 +55,10 @@ _MAX_TOOL_TEXT = 1500
 _DEFAULT_QUERY_LIMIT = 5
 # 单个段落的正文上限：模板里的空位不是写长篇的地方
 _MAX_WRITE_CHARS = 4000
+# 生成期最多新增多少个子章节：防止模型把整篇报告重写一遍
+_MAX_APPEND_SECTIONS = 20
+# 母本里没有、由生成期追加的两类记录
+_APPEND_KINDS = (KIND_APPEND_PARAGRAPH, KIND_APPEND_TABLE_ROWS)
 
 
 @dataclass(slots=True)
@@ -116,7 +121,16 @@ class ReportGenRuntime:
         self.sources: dict[str, dict[str, str]] = {}
         self._source_index: dict[tuple[str, str], str] = {}
         self._source_seq = 0
-        self._append_seq = 0
+        # 追加序号跨重跑连续：同一任务重跑时 as/ap 共用一套序号，从已有记录的最大值起算，
+        # 否则新加的 as1 会与上一版的 ap1 撞序，出稿顺序不稳定
+        self._append_seq = max(
+            (
+                int((row.anchor or {}).get("seq") or 0)
+                for row in slot_rows.values()
+                if isinstance(row.anchor, dict) and str(row.anchor.get("kind") or "") in _APPEND_KINDS
+            ),
+            default=0,
+        )
         self.rejected = 0
         # 出稿前语义复核命中的位置：只标记待核对，不改内容
         self.semantic_mismatches: list[dict[str, Any]] = []
@@ -185,6 +199,8 @@ class ReportGenRuntime:
                 "（number 数值 / cas CAS号 / formula 分子式 / opinion 评审意见 / text 文本），"
                 "写入前会按它校验。"
                 "append=true 的是「标签：」段：text 只给冒号后的值，标签由系统保留。"
+                "带 heading 的是标题段（1-9 级）；新增子标题时传 only_writable=false，"
+                "用已有子标题的 p 下标作 title_clone_from。"
                 "注意：不要按顺序往一排空格里填值；对不上 column_hint 含义的格子留空，"
                 "由人工补写。"
             )
@@ -628,6 +644,149 @@ class ReportGenRuntime:
             results.append({"key": key, "ok": True, "after": after, "state": row.state})
         return self._write_outcome(f"在 {after} 之后追加段落", results, ok_count)
 
+    def append_subsection(self, arguments: dict[str, Any]) -> ToolOutcome:
+        """在一级标题不变的前提下新增子标题（路线、供应商、杂质等任何重复子章节都适用）。
+
+        与 ``append_paragraph`` 的分工：本工具只负责「新增一个子章节」，
+        克隆源必须是母本已有子标题（二级及以下，样式名或大纲级别均可），因此不会凭空
+        多出大标题；子标题下的正文可以一并通过 ``body`` 给出，也可以之后再
+        ``append_paragraph``。
+
+        自动编号的母本（标题带 numPr）里，模型常把「4.5 路线5」「（五）路线5」整串写进
+        title，与 Word 自动编号叠加会变成双编号，这里统一剥掉编号前缀。
+        """
+        after = str(arguments.get("after") or "").strip()
+        if not after:
+            return ToolOutcome(
+                ok=False,
+                summary="after 不能为空",
+                payload={"error": "after 需要写成 p12 / as1 这样的位置标识"},
+            )
+        if after not in self.positions and after not in self.slot_rows:
+            return ToolOutcome(
+                ok=False,
+                summary=f"after={after} 不是有效位置",
+                payload={"error": f"没有 {after} 这个位置，请用 read_template_outline 确认后再插入"},
+            )
+        section = self._anchor_section(after)
+        if section and self.outline.is_fixed_section(section):
+            return ToolOutcome(
+                ok=False,
+                summary=f"{after} 位于「{section}」，该章节整章禁写",
+                payload={"error": "目录、附件、变更历史、签字审批区不能新增子标题，请换正文位置"},
+            )
+
+        items, error = self._items(arguments, ("title",))
+        if error:
+            return ToolOutcome(ok=False, summary=error, payload={"error": error})
+        appended = sum(
+            1
+            for row in self.slot_rows.values()
+            if isinstance(row.anchor, dict)
+            and str(row.anchor.get("kind") or "") == KIND_APPEND_PARAGRAPH
+            and str(row.anchor.get("heading") or "").isdigit()
+        )
+        if appended + len(items) > _MAX_APPEND_SECTIONS:
+            return ToolOutcome(
+                ok=False,
+                summary=f"一次任务最多新增 {_MAX_APPEND_SECTIONS} 个子标题",
+                payload={"error": f"已新增 {appended} 个，本次超出上限；多余的资料请写进已有子章节"},
+            )
+
+        results: list[dict[str, Any]] = []
+        ok_count = 0
+        for item in items:
+            title = str(item.get("title") or "").strip()
+            if not title:
+                results.append({"key": after, "ok": False, "error": "title 不能为空"})
+                continue
+            clone_from = _as_int(item.get("title_clone_from"))
+            if clone_from is None:
+                results.append({"key": after, "ok": False, "error": "需要 title_clone_from：已有子标题的母本段落下标"})
+                continue
+            template = self.positions.get(f"p{clone_from}")
+            if template is None:
+                results.append({"key": after, "ok": False, "error": f"title_clone_from={clone_from} 不是母本段落"})
+                continue
+            level = template.heading or None
+            if level is None:
+                results.append(
+                    {"key": after, "ok": False, "error": "title_clone_from 指向的不是标题段，请用已有子标题"}
+                )
+                continue
+            if level < 2:
+                results.append(
+                    {
+                        "key": after,
+                        "ok": False,
+                        "error": "这是大标题（一级标题）格式，不能新增；请用已有子标题（二级及以下）的段落下标",
+                    }
+                )
+                continue
+            if template.numbered:
+                title = strip_number(title) or title
+            if not title:
+                results.append({"key": after, "ok": False, "error": "title 去掉编号后为空"})
+                continue
+
+            body, body_error = self._subsection_body(item.get("body"))
+            if body_error:
+                results.append({"key": after, "ok": False, "error": body_error})
+                continue
+
+            seq, key = self._next_append_key("as")
+            display = "\n".join([title, *[str(entry["text"]) for entry in body]])
+            row = self._upsert_row(
+                slot_key=key,
+                label=f"新增子标题{seq}：{title}",
+                position=None,
+                anchor={
+                    "kind": KIND_APPEND_PARAGRAPH,
+                    "after": after,
+                    "clone_from": clone_from,
+                    "heading": level,
+                    "title": title,
+                    "paragraphs": body,
+                    "seq": seq,
+                    "section": section or "",
+                    "location": f"新增子章节：{title}",
+                    "source_ids": self._source_ids(item),
+                },
+                value=_cut(display, _MAX_WRITE_CHARS),
+            )
+            ok_count += 1
+            results.append({"key": key, "ok": True, "heading": title, "level": level, "state": row.state})
+        return self._write_outcome(f"在 {after} 之后新增子标题", results, ok_count)
+
+    def _anchor_section(self, key: str) -> str | None:
+        """锚点所在章节：母本位置取 outline，追加记录取落库时记下的章节名。"""
+        position = self.positions.get(key)
+        if position is not None:
+            return position.section or None
+        row = self.slot_rows.get(key)
+        anchor = row.anchor if row is not None and isinstance(row.anchor, dict) else {}
+        value = str(anchor.get("section") or "").strip()
+        return value or None
+
+    def _subsection_body(self, raw: Any) -> tuple[list[dict[str, Any]], str | None]:
+        """子标题下的正文段：每段都要指定克隆源，出稿时按顺序插在标题之后。"""
+        if raw in (None, []):
+            return [], None
+        if not isinstance(raw, list):
+            return [], "body 必须是数组，每项包含 text 与 clone_from"
+        paragraphs: list[dict[str, Any]] = []
+        for entry in raw:
+            if not isinstance(entry, dict):
+                return [], "body 里的每一项都必须是对象"
+            text = str(entry.get("text") or "").strip()
+            clone_from = _as_int(entry.get("clone_from"))
+            if not text:
+                return [], "body 里的 text 不能为空"
+            if clone_from is None or not 0 <= clone_from < self.outline.paragraph_count:
+                return [], "body 里的 clone_from 必须是有效的母本段落下标"
+            paragraphs.append({"text": _cut(text, _MAX_WRITE_CHARS), "clone_from": clone_from})
+        return paragraphs, None
+
     def append_table_rows(self, arguments: dict[str, Any]) -> ToolOutcome:
         """往表格追加行：每行一条记录，参考资料才能说清「这一处写在哪一行」。"""
         table_index = _as_int(arguments.get("table_index"))
@@ -814,9 +973,7 @@ class ReportGenRuntime:
             # 内容写进去了但与格子含义不符（自检标待核对）的数量，不算「已填写」
             "semantic_mismatch": len(self.semantic_mismatches),
             "appended": sum(
-                1
-                for row in self.slot_rows.values()
-                if str((row.anchor or {}).get("kind") or "") in (KIND_APPEND_PARAGRAPH, KIND_APPEND_TABLE_ROWS)
+                1 for row in self.slot_rows.values() if str((row.anchor or {}).get("kind") or "") in _APPEND_KINDS
             ),
             "unwritten_sample": unwritten[:20],
         }
@@ -834,8 +991,10 @@ class ReportGenRuntime:
             if len(items) > limit:
                 return [], f"一次最多写 {limit} 处，请拆成多次调用（本次给了 {len(items)} 处）"
             return items, None
-        single = {key: arguments.get(key) for key in required_keys if arguments.get(key) not in (None, "")}
-        if single and len(single) == len(required_keys):
+        # 兼容模型只给单条（不带 items）的写法：除 items 外的参数都收进这一条，
+        # 否则 clone_from / title_clone_from / source_ids 这类可选字段会被静默丢掉
+        single = {key: value for key, value in arguments.items() if key != "items" and value not in (None, "", [], {})}
+        if single and all(single.get(key) is not None for key in required_keys):
             return [single], None
         return [], f"缺少 items：请用 items 数组一次提交 1-{limit} 处，每项包含 {'、'.join(required_keys)}"
 
@@ -1065,7 +1224,7 @@ TOOL_SPECS: list[dict[str, Any]] = [
                 "properties": {
                     "after": {
                         "type": "string",
-                        "description": "插在谁之后：母本位置 p{下标}/t{表}r{行}c{列}，或本次追加的 ap{n}",
+                        "description": "插在谁之后：母本位置 p{下标}/t{表}r{行}c{列}，或本次追加的 as{n}/ap{n}",
                     },
                     "items": {
                         "type": "array",
@@ -1081,6 +1240,63 @@ TOOL_SPECS: list[dict[str, Any]] = [
                                 "source_ids": _SOURCE_IDS_SCHEMA,
                             },
                             "required": ["text", "clone_from"],
+                        },
+                    },
+                },
+                "required": ["after", "items"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "append_subsection",
+            "description": (
+                "在一级标题不变的前提下新增子标题：某一章只有 N 个同级子标题、资料里还有第 N+1 个时用"
+                "（路线、供应商、杂质、批次等任何重复条目都适用）。"
+                "title_clone_from 必须是母本已有同级子标题的段落下标"
+                "（先 read_template_outline(only_writable=false) 查），克隆其格式与自动编号，"
+                "不能传一级标题；body 可带子标题下的正文段，按顺序插在标题之后。"
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "after": {
+                        "type": "string",
+                        "description": "插在谁之后：母本位置 p{下标}，或本次新增的 as{n}/ap{n}",
+                    },
+                    "items": {
+                        "type": "array",
+                        "description": "要新增的子章节，1-10 项",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "title": {
+                                    "type": "string",
+                                    "description": "子标题文字；自动编号模板只写标题（如「路线5」），不要写「4.5」",
+                                },
+                                "title_clone_from": {
+                                    "type": "integer",
+                                    "description": "克隆格式用的母本子标题段落下标（如路线4的标题段）",
+                                },
+                                "body": {
+                                    "type": "array",
+                                    "description": "子标题下的正文段，可省略",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "text": {"type": "string"},
+                                            "clone_from": {
+                                                "type": "integer",
+                                                "description": "克隆格式用的母本正文段落下标",
+                                            },
+                                        },
+                                        "required": ["text", "clone_from"],
+                                    },
+                                },
+                                "source_ids": _SOURCE_IDS_SCHEMA,
+                            },
+                            "required": ["title", "title_clone_from"],
                         },
                     },
                 },

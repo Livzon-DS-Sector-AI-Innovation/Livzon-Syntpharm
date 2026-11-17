@@ -16,6 +16,9 @@ from uuid import uuid4
 
 from docx import Document
 from docx.document import Document as DocxDocument
+from docx.enum.style import WD_STYLE_TYPE
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 
 from app.modules.research.report_gen.outline import build_outline
 from app.modules.research.report_gen.structure import open_document
@@ -417,3 +420,168 @@ def test_semantic_self_check_skips_manual_edits() -> None:
 
     assert runtime.semantic_self_check() == []
     assert row.state == "filled"
+
+
+# ----------------------------------------------------------------------
+# 新增子标题：一级标题不变，只按资料扩增子章节
+# ----------------------------------------------------------------------
+def _section_template(*, numbered: bool = False) -> DocxDocument:
+    """一级标题 + 一个子标题 + 正文：模拟「4 工艺路线的调研 / 路线4」。"""
+    document = Document()
+    document.add_paragraph("4 工艺路线的调研", style="Heading 1")  # p0
+    heading = document.add_paragraph("路线4", style="Heading 2")  # p1
+    if numbered:
+        _mark_numbered(heading)
+    document.add_paragraph("路线4的内容")  # p2
+    return document
+
+
+def _mark_numbered(paragraph: Any) -> None:
+    """给标题段加 numPr：自动编号模板的等价结构（编号由 Word 显示）。"""
+    p_pr = paragraph._p.get_or_add_pPr()
+    num_pr = OxmlElement("w:numPr")
+    ilvl = OxmlElement("w:ilvl")
+    ilvl.set(qn("w:val"), "0")
+    num_id = OxmlElement("w:numId")
+    num_id.set(qn("w:val"), "1")
+    num_pr.append(ilvl)
+    num_pr.append(num_id)
+    p_pr.append(num_pr)
+
+
+def test_append_subsection_adds_child_heading_and_body() -> None:
+    runtime = _runtime(document=_section_template())
+
+    outcome = runtime.append_subsection(
+        {
+            "after": "p2",
+            "items": [
+                {
+                    "title": "路线5",
+                    "title_clone_from": 1,
+                    "body": [{"text": "路线5的内容", "clone_from": 2}],
+                    "source_ids": ["s1"],
+                }
+            ],
+        }
+    )
+
+    assert outcome.ok is True
+    row = runtime.slot_rows["as1"]
+    anchor = row.anchor or {}
+    assert anchor["heading"] == 2
+    assert anchor["title"] == "路线5"
+    assert anchor["after"] == "p2"
+    assert anchor["paragraphs"] == [{"text": "路线5的内容", "clone_from": 2}]
+    assert row.slot_label == "新增子标题1：路线5"
+    # 清单展示值压成单行；出稿按 anchor.paragraphs 逐段插入
+    assert row.value == "路线5 路线5的内容"
+    assert runtime.coverage()["appended"] == 1
+
+
+def test_append_subsection_rejects_top_level_heading() -> None:
+    runtime = _runtime(document=_section_template())
+
+    outcome = runtime.append_subsection({"after": "p2", "items": [{"title": "新的大标题", "title_clone_from": 0}]})
+
+    assert outcome.ok is False
+    assert "大标题" in " ".join(str(item) for item in outcome.payload["errors"])
+    assert runtime.slot_rows == {}
+
+
+def test_append_subsection_rejects_non_heading_clone_source() -> None:
+    runtime = _runtime(document=_section_template())
+
+    outcome = runtime.append_subsection({"after": "p2", "items": [{"title": "路线5", "title_clone_from": 2}]})
+
+    assert outcome.ok is False
+    assert "不是标题" in " ".join(str(item) for item in outcome.payload["errors"])
+
+
+def test_append_subsection_rejects_fixed_section_anchor() -> None:
+    runtime = _runtime(document=_fixed_template())
+
+    outcome = runtime.append_subsection({"after": "p3", "items": [{"title": "塞进附件", "title_clone_from": 2}]})
+
+    assert outcome.ok is False
+    assert "禁写" in outcome.summary
+    assert runtime.slot_rows == {}
+
+
+def test_append_subsection_strips_word_auto_number() -> None:
+    runtime = _runtime(document=_section_template(numbered=True))
+
+    outcome = runtime.append_subsection({"after": "p2", "items": [{"title": "4.5 路线5", "title_clone_from": 1}]})
+
+    assert outcome.ok is True
+    assert (runtime.slot_rows["as1"].anchor or {})["title"] == "路线5"
+
+
+def test_append_subsection_strips_chinese_auto_number() -> None:
+    """自动编号模板里模型写「（五）路线5」也要剥掉编号，避免与 Word 编号叠加。"""
+    runtime = _runtime(document=_section_template(numbered=True))
+
+    outcome = runtime.append_subsection({"after": "p2", "items": [{"title": "（五）路线5", "title_clone_from": 1}]})
+
+    assert outcome.ok is True
+    assert (runtime.slot_rows["as1"].anchor or {})["title"] == "路线5"
+
+
+def test_append_subsection_accepts_custom_style_heading() -> None:
+    """子标题用自定义样式 + 大纲级别时，也要能当克隆源。"""
+    document = Document()
+    style = document.styles.add_style("二级标题", WD_STYLE_TYPE.PARAGRAPH)
+    node = OxmlElement("w:outlineLvl")
+    node.set(qn("w:val"), "1")  # 0-based → 2 级
+    style.element.get_or_add_pPr().append(node)
+    document.add_paragraph("章节", style="Heading 1")  # p0
+    document.add_paragraph("子标题", style="二级标题")  # p1
+    document.add_paragraph("子标题内容")  # p2
+
+    runtime = _runtime(document=document)
+    outcome = runtime.append_subsection({"after": "p2", "items": [{"title": "新子标题", "title_clone_from": 1}]})
+
+    assert outcome.ok is True
+    assert (runtime.slot_rows["as1"].anchor or {})["heading"] == 2
+
+
+def test_single_item_call_keeps_optional_fields() -> None:
+    """模型不带 items 只给单条时，title_clone_from / source_ids 不能被丢掉。"""
+    runtime = _runtime(document=_section_template())
+
+    outcome = runtime.append_subsection({"after": "p2", "title": "路线5", "title_clone_from": 1})
+
+    assert outcome.ok is True
+    assert (runtime.slot_rows["as1"].anchor or {})["heading"] == 2
+
+    writer = _runtime()
+    written = writer.write_paragraph({"index": 1, "text": "路线4 补充", "source_ids": ["s1"]})
+    assert written.ok is True
+    assert writer.slot_rows["p1"].state == "filled"
+
+
+def test_append_subsection_seq_continues_after_existing_appends() -> None:
+    """重跑时已有 ap1：新增子标题必须顺延成 as2/seq2，不能与上一版撞序。"""
+    rows = {"ap1": SimpleNamespace(anchor={"kind": "append_paragraph", "seq": 1}, value="上一版追加")}
+    runtime = _runtime(document=_section_template(), rows=rows)
+
+    outcome = runtime.append_subsection({"after": "ap1", "items": [{"title": "路线5", "title_clone_from": 1}]})
+
+    assert outcome.ok is True
+    assert (runtime.slot_rows["as2"].anchor or {})["seq"] == 2
+
+
+def test_append_subsection_respects_append_limit() -> None:
+    rows = {
+        f"as{index}": SimpleNamespace(
+            anchor={"kind": "append_paragraph", "heading": 2, "seq": index},
+            value="已有",
+        )
+        for index in range(1, 21)
+    }
+    runtime = _runtime(document=_section_template(), rows=rows)
+
+    outcome = runtime.append_subsection({"after": "p2", "items": [{"title": "路线5", "title_clone_from": 1}]})
+
+    assert outcome.ok is False
+    assert "最多新增" in outcome.summary

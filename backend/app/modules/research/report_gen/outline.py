@@ -21,6 +21,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from docx.oxml.ns import qn
+
 from app.modules.research.report_gen.cell_semantics import expect_of
 from app.modules.research.report_gen.structure import fingerprint
 
@@ -133,6 +135,8 @@ class WritablePosition:
     section: str
     fingerprint: str
     append: bool = False  # True=「标签：」段，写入时只接冒号后的值
+    numbered: bool = False  # 标题段是否带 Word 自动编号（numPr）：增补子标题时用来去掉重复编号
+    heading: int = 0  # 标题级别（1-9）；0=正文。样式名与大纲级别（w:outlineLvl）都算
     # 表格位置的语义（段落位置留空）：行标题、「A › B」多级列路径、合并跨度、期望内容类型。
     # 模型据此判断「这一格是什么」，写入校验据此判断「值能不能写」。
     row_hint: str = ""
@@ -153,6 +157,8 @@ class WritablePosition:
         }
         if self.append:
             item["append"] = True
+        if self.heading:
+            item["heading"] = self.heading
         if self.column_hint:
             item["column_hint"] = _cut(self.column_hint, MAX_CONTEXT_TEXT)
         if self.expect and self.expect != "text":
@@ -245,6 +251,25 @@ def _style_name(paragraph: Any) -> str:
         return ""
 
 
+def _numbered(paragraph: Any) -> bool:
+    """标题段是否带自动编号：增补子标题时据此决定要不要剥掉模型自带的「4.5」。
+
+    编号可能直接写在段落上，也可能来自样式（自定义标题样式常见），两处都要看。
+    """
+    try:
+        p_pr = paragraph._p.pPr  # noqa: SLF001 - 自动编号属性只在底层元素上
+    except AttributeError:
+        p_pr = None
+    if p_pr is not None and p_pr.numPr is not None:
+        return True
+    try:
+        style_element = paragraph.style.element
+    except (AttributeError, KeyError):
+        return False
+    style_p_pr = style_element.find(qn("w:pPr"))
+    return style_p_pr is not None and style_p_pr.find(qn("w:numPr")) is not None
+
+
 def heading_level(style: str | None) -> int | None:
     """标题级别：Heading 2 / 标题 2 → 2，Title → 1；普通样式返回 None。"""
     name = (style or "").strip()
@@ -260,6 +285,43 @@ def heading_level(style: str | None) -> int | None:
         except ValueError:
             return 1
     return 1
+
+
+def _outline_level_of(p_pr: Any) -> int | None:
+    """``w:outlineLvl`` → 1-9；0 是正文级别、9 是 body text，均按无级别处理。"""
+    if p_pr is None:
+        return None
+    node = p_pr.find(qn("w:outlineLvl"))
+    if node is None:
+        return None
+    try:
+        value = int(node.get(qn("w:val")) or "")
+    except (TypeError, ValueError):
+        return None
+    return value + 1 if 0 <= value <= 8 else None
+
+
+def paragraph_heading_level(paragraph: Any) -> int | None:
+    """段落标题级别：先认样式名，再认段落/样式上的大纲级别。
+
+    模板不一定用 ``Heading 2`` 这种样式名，中文模板常见「二级标题」「章节标题」这类
+    自定义样式；只要它设了大纲级别，Word 的 TOC 域（``\\o``/``\\u``）就会收录，
+    这里也必须按标题处理，否则新增子标题会找不到克隆源、目录也认不出新标题。
+    """
+    level = heading_level(_style_name(paragraph))
+    if level is not None:
+        return level
+    try:
+        level = _outline_level_of(paragraph._p.pPr)  # noqa: SLF001
+    except AttributeError:
+        level = None
+    if level is not None:
+        return level
+    try:
+        style_element = paragraph.style.element
+    except (AttributeError, KeyError):
+        return None
+    return _outline_level_of(style_element.find(qn("w:pPr")))
 
 
 def is_toc_style(style: str | None) -> bool:
@@ -314,16 +376,18 @@ def judge_text(
     style: str,
     fixed_section: str | None,
     appendable: bool = True,
+    heading: int | None = None,
 ) -> tuple[bool, str | None, bool]:
     """可写判定：返回 (是否可写, 拒绝原因, 是否标签追加)。
 
     工具与渲染共用这一份。``fixed_section`` 非空表示这段落在「固定章节」
     （附件/变更历史/签字审批区），直接拒绝。``appendable`` 只对正文段落开：
     表格单元格的「标签：」仍按固定文字处理，避免单元格里再拼一段。
+    ``heading`` 是外部已算好的标题级别（样式名或大纲级别）；不传则只按样式名判断。
     """
     if fixed_section:
         return False, f"这属于「{fixed_section}」章节的版面或流程内容，不需要填写业务内容", False
-    level = heading_level(style)
+    level = heading_level(style) if heading is None else heading
     if level is not None:
         return False, "这是标题，不能改写", False
     if is_toc_style(style):
@@ -373,7 +437,7 @@ def _section_timeline(paragraphs: list[Any]) -> tuple[list[str], list[str | None
     ``固定章节名`` 非空表示该段位于目录、附件、变更历史、签字审批这类整章禁写的区域。
     """
     styles = [_style_name(item) for item in paragraphs]
-    levels = [heading_level(style) for style in styles]
+    levels = [paragraph_heading_level(item) for item in paragraphs]
     titles: list[str] = [""] * len(paragraphs)
     blocks: list[str | None] = [None] * len(paragraphs)
     title = ""
@@ -675,7 +739,7 @@ def build_outline(document: Any) -> TemplateOutline:
     for index, paragraph in enumerate(paragraphs):
         style = _style_name(paragraph)
         text = texts[index]
-        writable, reason, append = judge_text(text, style=style, fixed_section=blocks[index])
+        writable, reason, append = judge_text(text, style=style, fixed_section=blocks[index], heading=levels[index])
         in_cover = index in cover
         if in_cover and not append:
             # 封面只禁「写整段正文」：「文件编号：____」这类标签段仍要能补值
@@ -698,6 +762,8 @@ def build_outline(document: Any) -> TemplateOutline:
                 section=titles[index],
                 fingerprint=fingerprint(text),
                 append=append,
+                numbered=_numbered(paragraph),
+                heading=levels[index] or 0,
             )
         )
 
@@ -737,4 +803,5 @@ __all__ = [
     "is_fixed_title",
     "is_toc_style",
     "judge_text",
+    "paragraph_heading_level",
 ]

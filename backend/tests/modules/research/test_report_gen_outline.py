@@ -11,6 +11,8 @@ from io import BytesIO
 from docx import Document
 from docx.document import Document as DocxDocument
 from docx.enum.style import WD_STYLE_TYPE
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 
 from app.modules.research.report_gen.outline import (
     build_outline,
@@ -18,6 +20,7 @@ from app.modules.research.report_gen.outline import (
     heading_level,
     is_fixed_title,
     judge_text,
+    paragraph_heading_level,
 )
 from app.modules.research.report_gen.structure import open_document
 
@@ -340,6 +343,52 @@ def test_no_cover_keeps_front_paragraphs_writable() -> None:
     outline = build_outline(open_document(_docx(prose)))
     assert outline.by_key()["p0"].writable is False  # 已有完整文字，本来就不可写
     assert outline.by_key()["p3"].writable is True
+
+
+def _outline_style(document: DocxDocument, name: str, level: int) -> None:
+    """自定义标题样式：只有大纲级别，没有 Heading N 这种样式名。"""
+    style = document.styles.add_style(name, WD_STYLE_TYPE.PARAGRAPH)
+    p_pr = style.element.get_or_add_pPr()
+    node = OxmlElement("w:outlineLvl")
+    node.set(qn("w:val"), str(level - 1))
+    p_pr.append(node)
+
+
+def test_custom_style_with_outline_level_is_heading() -> None:
+    """中文模板常见「章节标题/子标题」自定义样式：按大纲级别认标题，不只看样式名。"""
+    document = Document()
+    _outline_style(document, "章节标题", 1)
+    _outline_style(document, "子标题", 2)
+    document.add_paragraph("1 项目概况", style="章节标题")
+    document.add_paragraph("")
+    document.add_paragraph("1.1 背景", style="子标题")
+    document.add_paragraph("")
+
+    outline = build_outline(open_document(_docx(document)))
+
+    assert outline.by_key()["p0"].heading == 1
+    assert outline.by_key()["p0"].writable is False
+    assert outline.by_key()["p1"].writable is True
+    assert outline.by_key()["p1"].section == "1 项目概况"
+    assert outline.by_key()["p2"].heading == 2
+    assert outline.by_key()["p3"].section == "1.1 背景"
+
+
+def test_paragraph_outline_level_is_heading() -> None:
+    """直接给段落设大纲级别（自定义样式或手写格式）也要按标题处理。"""
+    document = Document()
+    paragraph = document.add_paragraph("2 试验数据")
+    node = OxmlElement("w:outlineLvl")
+    node.set(qn("w:val"), "1")  # 0-based → 2 级
+    paragraph._p.get_or_add_pPr().append(node)
+    document.add_paragraph("")
+
+    outline = build_outline(open_document(_docx(document)))
+
+    assert paragraph_heading_level(paragraph) == 2
+    assert outline.by_key()["p0"].heading == 2
+    assert outline.by_key()["p0"].writable is False
+    assert outline.by_key()["p1"].section == "2 试验数据"
 
 
 def test_cover_table_cells_are_locked() -> None:
