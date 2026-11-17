@@ -1,6 +1,10 @@
 """Authorization letter and supplementary reply ORM models."""
 
-from sqlalchemy import Index, String, Text
+import uuid
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.shared.base_model import BaseModel
@@ -34,6 +38,31 @@ class AuthorizationLetter(BaseModel):
     output_file_key: Mapped[str] = mapped_column(String(256), nullable=False, comment="生成文件 key")
     output_file_name: Mapped[str] = mapped_column(String(256), nullable=False, comment="生成文件名")
     remarks: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
+
+
+class AuthorizationLetterTrail(BaseModel):
+    """授权书留痕日志表（审计追踪：只增不删不改，不提供更新/删除接口）"""
+
+    __tablename__ = "authorization_letter_trails"
+    __table_args__ = (
+        CheckConstraint("action IN ('generate', 'download')", name="ck_authorization_letter_trails_action"),
+        Index("ix_authorization_letter_trails_letter", "letter_id"),
+        {"schema": "registration"},
+    )
+
+    letter_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("registration.authorization_letters.id"),
+        nullable=False,
+        comment="授权书记录ID",
+    )
+    action: Mapped[str] = mapped_column(String(16), nullable=False, comment="动作：generate=生成 / download=下载")
+    detail: Mapped[str] = mapped_column(Text, nullable=False, comment="留痕描述（生成时记模板版本）")
+    # 覆盖为 Python 侧默认值：同事务内 Postgres now() 恒定，无法保证时间线倒序稳定
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(ZoneInfo("Asia/Shanghai")),
+        server_default=func.now(),
+    )
 
 
 class SupplementaryReply(BaseModel):

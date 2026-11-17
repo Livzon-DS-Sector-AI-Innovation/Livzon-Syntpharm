@@ -2,8 +2,10 @@
 
 from app.modules.registration.schemas.authorization import (
     AuthorizationLetterCreate,
+    AuthorizationLetterFilterOptions,
     AuthorizationLetterListItem,
     AuthorizationLetterResponse,
+    AuthorizationLetterTrailItem,
     ProductInfo,
     ReferenceStandardCreate,
     ReferenceStandardListItem,
@@ -52,8 +54,10 @@ from app.modules.registration.schemas.validation_audit import (
 
 __all__ = [
     "AuthorizationLetterCreate",
+    "AuthorizationLetterFilterOptions",
     "AuthorizationLetterListItem",
     "AuthorizationLetterResponse",
+    "AuthorizationLetterTrailItem",
     "AuditIssueItem",
     "AuditMode",
     "AuditResult",

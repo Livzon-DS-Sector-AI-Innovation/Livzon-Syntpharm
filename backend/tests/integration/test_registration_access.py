@@ -6,12 +6,12 @@ from httpx import AsyncClient
 
 
 async def test_drugs_authenticated(auth_client: AsyncClient) -> None:
-    """GET /api/v1/registration/drugs/ returns 200 with authentication."""
-    response = await auth_client.get("/api/v1/registration/drugs/")
+    """GET /api/v1/registration/drugs returns 200 with authentication."""
+    response = await auth_client.get("/api/v1/registration/drugs")
     assert response.status_code == 200
 
 
 async def test_drugs_anonymous(auth_client: AsyncClient) -> None:
-    """GET /api/v1/registration/drugs/ returns 200 — Phase 1 auth not enforced."""
-    response = await auth_client.get("/api/v1/registration/drugs/")
+    """GET /api/v1/registration/drugs returns 200 — Phase 1 auth not enforced."""
+    response = await auth_client.get("/api/v1/registration/drugs")
     assert response.status_code == 200

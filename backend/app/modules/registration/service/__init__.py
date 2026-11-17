@@ -25,6 +25,7 @@ from app.modules.registration.service.holiday import (
     get_holidays,
     update_holiday,
 )
+from app.modules.registration.service.prediction import predict_drug
 from app.modules.registration.service.project import (
     create_project,
     delete_project,
@@ -60,6 +61,7 @@ __all__ = [
     "get_holidays",
     "get_project",
     "get_projects",
+    "predict_drug",
     "update_certificate",
     "update_drug",
     "update_holiday",
