@@ -20,6 +20,7 @@ from app.modules.agent.models import (
     REVISION_STATUS_FAILED,
     REVISION_STATUS_SUCCEEDED,
     REWRITE_MODE_FILL_BLANK,
+    REWRITE_MODE_FILL_MISSING,
     REWRITE_MODE_REWRITE_ALL,
     REWRITE_MODE_REWRITE_ONE,
     REWRITE_MODE_REWRITE_SELECTED,
@@ -168,6 +169,75 @@ async def test_select_targets_selected_and_one_modes_use_uid(db_session: AsyncSe
 # ── 执行 ──────────────────────────────────────────────────────────────────
 
 
+async def test_select_targets_fill_missing_uses_slide_uids(db_session: AsyncSession) -> None:
+    """补全模式按 slide_uid 选页，且不要求讲稿为空（它就是要改已有讲稿）。"""
+    project = await _make_project(db_session)
+    first = await _add_slide(db_session, project, 1, text="第一页有字", script="已有讲稿")
+    await _add_slide(db_session, project, 2, text="第二页有字", script="已有讲稿")
+
+    slides = sorted(await _slides(db_session, project), key=lambda item: item.slide_no)
+    targets, skipped = rewrite._select_targets(
+        slides,
+        rewrite.RewriteRequest(mode=REWRITE_MODE_FILL_MISSING, slide_uids=[str(first.slide_uid)]),
+    )
+
+    assert [slide.slide_no for slide in targets] == [1]
+    assert skipped == 0
+
+
+async def test_fill_missing_rewrites_target_and_records_revision(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    project = await _make_project(db_session)
+    slide = await _add_slide(db_session, project, 1, text="收率提升\n产线满负荷", script="本页只讲收率提升。")
+    slide.layout = {
+        "width": 12192000,
+        "height": 6858000,
+        "shapes": [
+            {
+                "name": "a",
+                "kind": "TEXT_BOX (17)",
+                "text": "收率提升",
+                "left": 800000,
+                "top": 400000,
+                "width": 3000000,
+                "height": 600000,
+            },
+            {
+                "name": "b",
+                "kind": "TEXT_BOX (17)",
+                "text": "产线满负荷",
+                "left": 800000,
+                "top": 1200000,
+                "width": 3000000,
+                "height": 600000,
+            },
+        ],
+    }
+    await db_session.flush()
+    _fake_llm(monkeypatch, {1: "本页只讲收率提升。另外产线满负荷。"})
+
+    result = await rewrite.run(
+        db_session,
+        project,
+        rewrite.RewriteRequest(
+            mode=REWRITE_MODE_FILL_MISSING,
+            slide_uids=[str(slide.slide_uid)],
+            instruction="漏讲要点：产线满负荷",
+        ),
+        SETTINGS,
+    )
+
+    assert result.done == 1
+    refreshed = await db_session.get(PptVideoSlide, slide.id)
+    assert refreshed is not None
+    await db_session.refresh(refreshed)
+    assert "产线满负荷" in refreshed.script_text
+    assert refreshed.coverage_score is not None and refreshed.coverage_score >= 0.6
+    revision = await db_session.get(PptVideoScriptRevision, result.revision_id)
+    assert revision is not None and revision.mode == REWRITE_MODE_FILL_MISSING
+
+
 async def test_run_writes_script_and_keeps_before_snapshot(
     db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -206,7 +276,7 @@ async def test_run_writes_script_and_keeps_before_snapshot(
     refreshed = await db_session.get(PptVideoSlide, slide.id)
     assert refreshed is not None
     await db_session.refresh(refreshed)
-    assert refreshed.script_text == "新的讲稿内容"
+    assert refreshed.script_text == "新的讲稿内容。"
     assert refreshed.script_source == SCRIPT_SOURCE_AI
     assert refreshed.script_stale is False
     # 讲稿变了就必须让旧音频失效，否则成片还是旧的旁白
@@ -219,7 +289,7 @@ async def test_run_writes_script_and_keeps_before_snapshot(
     assert revision.applied is True
     assert revision.status == REVISION_STATUS_SUCCEEDED
     assert revision.before == {str(slide.slide_uid): "旧的讲稿内容"}
-    assert revision.after == {str(slide.slide_uid): "新的讲稿内容"}
+    assert revision.after == {str(slide.slide_uid): "新的讲稿内容。"}
     assert revision.model_name == _model().model_name
     assert revision.requested_by_name == "张三"
     assert revision.instruction == "更口语一点"

@@ -83,9 +83,10 @@ def test_normalize_segments_drops_unknown_and_duplicate_targets() -> None:
     )
 
     # 模型编出来的 id（s99）与非字符串一律丢弃；每段最多留两个目标
+    # 段末统一补句末标点：TTS 要靠它断句，拼接回讲稿也必须与 script_text 完全一致
     assert segments == [
-        {"text": "收率提升", "targets": ["s0", "s1"]},
-        {"text": "纯字符串段", "targets": []},
+        {"text": "收率提升。", "targets": ["s0", "s1"]},
+        {"text": "纯字符串段。", "targets": []},
     ]
 
 
@@ -95,6 +96,40 @@ def test_normalize_segments_caps_total_length() -> None:
         set(),
     )
     assert len(segments_to_text(segments)) == MAX_SCRIPT_CHARS
+
+
+def test_normalize_segments_appends_punctuation_without_doubling() -> None:
+    """段末缺标点要补，已有句末标点不能重复补。"""
+    segments = script_ai.normalize_segments(
+        [
+            {"text": "收率提升"},
+            {"text": "产线满负荷。"},
+            {"text": "停下来了吗？"},
+            {"text": "注意安全！"},
+            {"text": "分号也算句末；"},
+            {"text": "还有省略号……"},
+        ],
+        set(),
+    )
+
+    assert [segment["text"] for segment in segments] == [
+        "收率提升。",
+        "产线满负荷。",
+        "停下来了吗？",
+        "注意安全！",
+        "分号也算句末；",
+        "还有省略号……",
+    ]
+    # 关键不变式：各段直接拼接必须等于写库的 script_text
+    script = script_ai.segments_to_script(segments)
+    assert "".join(segment["text"] for segment in segments) == script
+
+
+def test_normalize_segments_uses_english_period_for_english() -> None:
+    segments = script_ai.normalize_segments([{"text": "Yield improved"}, {"text": "Line is full."}], set(), "en")
+
+    assert [segment["text"] for segment in segments] == ["Yield improved.", "Line is full."]
+    assert script_ai.segments_to_script(segments, "en") == "Yield improved. Line is full."
 
 
 def segments_to_text(segments: list[dict[str, Any]]) -> str:
@@ -118,7 +153,7 @@ def test_extract_batch_segments_falls_back_to_legacy_script() -> None:
 
     result = script_ai.extract_batch_segments(payload, {1, 2, 3}, {2: {"s0"}})
 
-    assert result[1] == [{"text": "整页一段的旧格式", "targets": []}]
+    assert result[1] == [{"text": "整页一段的旧格式。", "targets": []}]
     assert result[2] == [{"text": "新格式。", "targets": ["s0"]}]
     assert 3 not in result
     assert 99 not in result
@@ -199,18 +234,18 @@ def _add_slide(
     notes: str | None = None,
     script: str = "",
     source: str = "",
-) -> None:
-    session.add(
-        PptVideoSlide(
-            id=uuid.uuid4(),
-            project_id=project.id,
-            slide_no=slide_no,
-            script_text=script,
-            script_source=source,
-            page_text=text,
-            page_notes=notes,
-        )
+) -> PptVideoSlide:
+    slide = PptVideoSlide(
+        id=uuid.uuid4(),
+        project_id=project.id,
+        slide_no=slide_no,
+        script_text=script,
+        script_source=source,
+        page_text=text,
+        page_notes=notes,
     )
+    session.add(slide)
+    return slide
 
 
 async def test_generate_only_fills_blank_pages(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -249,7 +284,7 @@ async def test_generate_only_fills_blank_pages(db_session: AsyncSession, monkeyp
     }
     assert slides[1].script_text == "上传的讲稿"
     assert slides[1].script_source == SCRIPT_SOURCE_UPLOAD
-    assert slides[2].script_text == "第二页 AI 初稿"
+    assert slides[2].script_text == "第二页 AI 初稿。"
     assert slides[2].script_source == SCRIPT_SOURCE_AI
     assert slides[3].script_text == ""
 
@@ -257,6 +292,51 @@ async def test_generate_only_fills_blank_pages(db_session: AsyncSession, monkeyp
     assert refreshed is not None
     assert refreshed.script_ai_status == SCRIPT_AI_STATUS_DONE
     assert refreshed.script_ai_progress == 100
+
+
+async def test_generate_writes_coverage_fields(db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch) -> None:
+    """AI 写入讲稿时同步落覆盖度：前端才能标「可能漏讲」。"""
+    project = await _make_project(db_session)
+    slide = _add_slide(db_session, project, 1, text="收率提升\n产线满负荷")
+    slide.layout = {
+        "width": 12192000,
+        "height": 6858000,
+        "shapes": [
+            {
+                "name": "a",
+                "kind": "TEXT_BOX (17)",
+                "text": "收率提升",
+                "left": 800000,
+                "top": 400000,
+                "width": 3000000,
+                "height": 600000,
+            },
+            {
+                "name": "b",
+                "kind": "TEXT_BOX (17)",
+                "text": "产线满负荷",
+                "left": 800000,
+                "top": 1200000,
+                "width": 3000000,
+                "height": 600000,
+            },
+        ],
+    }
+    await db_session.flush()
+
+    async def fake_chat_json(messages, expected_keys=None) -> dict[str, Any]:
+        return {"slides": [{"slide_no": 1, "script": "本页只讲收率提升。"}]}
+
+    monkeypatch.setattr(llm_client, "chat_json", fake_chat_json)
+
+    await script_ai.generate_for_project(db_session, project, replace(DEFAULTS, script_ai_batch_size=1))
+
+    refreshed = await db_session.get(PptVideoSlide, slide.id)
+    assert refreshed is not None
+    assert refreshed.coverage_score is not None
+    assert 0 < refreshed.coverage_score < 1
+    assert refreshed.coverage_missing == ["产线满负荷"]
+    assert refreshed.coverage_checked_at is not None
 
 
 async def test_generate_returns_done_when_nothing_to_do(

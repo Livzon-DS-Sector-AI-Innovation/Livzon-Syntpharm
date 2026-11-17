@@ -3362,6 +3362,12 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "POST",
         "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/edit-image",
     ),
+    # 覆盖度自检：手工重算会写回幻灯片记录，按写操作授权
+    ApiBindingDef(
+        "agent:ppt-video:manage",
+        "POST",
+        "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/recheck-coverage",
+    ),
 )
 # ── 登录入口 / 当前用户自取（豁免绑定兜底）─────────────────────────
 # 这些接口无法绑定权限码，若按「未登记即 403」处理，开启

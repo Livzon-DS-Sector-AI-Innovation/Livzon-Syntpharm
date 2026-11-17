@@ -407,6 +407,8 @@ async def update_project(
             highlight_override_enabled=payload.highlight_override_enabled,
             clear_highlight_style=payload.clear_highlight_style,
             clear_highlight_color=payload.clear_highlight_color,
+            pronunciation_dict=payload.pronunciation_dict,
+            clear_pronunciation_dict=payload.clear_pronunciation_dict,
             updated_by=current_user.id,
         )
         detail = await agent_service.get_detail(db, project_id, settings, user_id=current_user.id)
@@ -437,6 +439,7 @@ async def update_slide(
     ctx: PermissionContext = Depends(require_permission(PERM_MANAGE)),
     db: AsyncSession = Depends(get_db),
 ) -> DataResponse[SlideItem]:
+    settings = await agent_config.load_settings()
     with _translate_errors():
         slide = await agent_service.update_slide(
             db,
@@ -459,8 +462,27 @@ async def update_slide(
             clear_highlight_color=payload.clear_highlight_color,
             clear_highlight_regions=payload.clear_highlight_regions,
             updated_by=current_user.id,
+            settings=settings,
         )
-        item = agent_service.slide_item(slide, project_id)
+        item = agent_service.slide_item(slide, project_id, min_score=settings.coverage_min_score)
+    return DataResponse[SlideItem](data=item)
+
+
+@router.post(
+    "/ppt-videos/{project_id}/slides/{slide_uid}/recheck-coverage",
+    summary="重算单页讲稿覆盖度（手工触发）",
+)
+async def recheck_slide_coverage(
+    project_id: uuid.UUID,
+    slide_uid: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(PERM_MANAGE)),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[SlideItem]:
+    settings = await agent_config.load_settings()
+    with _translate_errors():
+        slide = await agent_service.recheck_coverage(db, project_id, slide_uid, settings)
+        item = agent_service.slide_item(slide, project_id, min_score=settings.coverage_min_score)
     return DataResponse[SlideItem](data=item)
 
 

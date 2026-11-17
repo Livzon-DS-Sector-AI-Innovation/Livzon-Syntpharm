@@ -21,6 +21,7 @@ import difflib
 import hashlib
 import re
 import unicodedata
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -111,6 +112,45 @@ def normalize_text(value: str | None) -> str:
         return ""
     text = unicodedata.normalize("NFKC", value).replace("\u00a0", " ")
     return _WHITESPACE_RE.sub(" ", text).strip()
+
+
+#: 行聚类带宽 = 页内形状高度中位数 × 该比例；太小会把同一行拆开，太大会串行
+_READING_BAND_RATIO = 0.6
+
+#: 视作「这句话已经结束」的字符：合并段/生成段时不再补标点，缺了才补
+SENTENCE_END_CHARS = "。！？；!?;…."
+
+
+def ensure_sentence_end(text: str, language: str = "zh") -> str:
+    """保证一段口播文本以句末标点结尾；已有则原样返回。
+
+    TTS 靠标点断句，缺标点会把两段连读成一句（听感突然变快），
+    所以「段末必须有标点」是讲稿与音频之间的硬约定。
+    """
+    stripped = (text or "").strip()
+    if not stripped or stripped[-1] in SENTENCE_END_CHARS:
+        return stripped
+    return f"{stripped}{'.' if language == 'en' else '。'}"
+
+
+def reading_order[T](items: list[T], box_of: Callable[[T], tuple[int, int, int, int] | None]) -> list[T]:
+    """把形状按视觉阅读顺序排：先按 top 聚成行，行内按 left。
+
+    PPT 的 `slide.shapes` 是文件内部的 z-order，不是「上→下、左→右」；
+    直接按它拼页文本，左右两栏页面会抽成「右栏 → 标题 → 左栏」，讲稿自然跟着乱。
+
+    没有几何信息的形状（占位符异常）保持原顺序追加到末尾，不丢内容。
+    """
+    rows = [(box_of(item), item) for item in items]
+    valid = [(box, item) for box, item in rows if box is not None]
+    missing = [item for box, item in rows if box is None]
+    if not valid:
+        return list(missing)
+
+    heights = sorted(box[3] for box, _ in valid if box[3] > 0)
+    band = max(1, int(heights[len(heights) // 2] * _READING_BAND_RATIO)) if heights else 1
+    valid.sort(key=lambda pair: (pair[0][1] // band, pair[0][0]))
+    return [item for _, item in valid] + missing
 
 
 def _shapes(layout: Any) -> list[dict[str, Any]]:

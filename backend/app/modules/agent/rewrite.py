@@ -23,10 +23,9 @@ import asyncio
 import logging
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, cast
+from typing import Any
 
 from sqlalchemy import func, select, update
-from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import async_session_factory
@@ -40,6 +39,7 @@ from app.modules.agent.models import (
     REVISION_STATUS_RUNNING,
     REVISION_STATUS_SUCCEEDED,
     REWRITE_MODE_FILL_BLANK,
+    REWRITE_MODE_FILL_MISSING,
     REWRITE_MODE_REWRITE_ALL,
     REWRITE_MODE_REWRITE_ONE,
     REWRITE_MODE_REWRITE_SELECTED,
@@ -59,6 +59,7 @@ from app.modules.agent.script_ai import (
     _set_status,
     batch_progress,
     build_messages,
+    coverage_values,
     extract_batch_segments,
     is_blank_script,
     is_generatable,
@@ -118,6 +119,7 @@ def _select_targets(slides: list[PptVideoSlide], request: RewriteRequest) -> tup
             REWRITE_MODE_REWRITE_SELECTED,
             REWRITE_MODE_REWRITE_ONE,
             REWRITE_MODE_SOURCE_REPLACE,
+            REWRITE_MODE_FILL_MISSING,
         ):
             selected = str(slide.slide_uid) in wanted
         else:  # fill_blank
@@ -192,6 +194,7 @@ async def _write_script(
     *,
     only_if_blank: bool,
     segments: list[dict[str, Any]] | None = None,
+    coverage_fields: dict[str, Any] | None = None,
 ) -> bool:
     """写入讲稿与段级绑定；讲稿变了就清空音频指纹，强制重新 TTS。"""
     conditions = [
@@ -214,6 +217,7 @@ async def _write_script(
             audio_sha256=None,
             duration_ms=0,
             updated_at=func.now(),
+            **(coverage_fields or {}),
         )
         .returning(PptVideoSlide.slide_uid)
     )
@@ -267,6 +271,12 @@ async def run(
     batch_size = max(1, settings.script_ai_batch_size)
     only_if_blank = request.mode == REWRITE_MODE_FILL_BLANK
     task_hint = "" if only_if_blank else _TASK_HINT
+    if request.mode == REWRITE_MODE_FILL_MISSING:
+        # 覆盖度补全：保留原讲稿，把漏讲要点按阅读顺序补进去（要点清单由调用方写进 instruction）
+        task_hint = (
+            "请重写下列页码的讲稿：保留原有内容与数字，把页面文字中尚未讲到的要点按页面阅读顺序"
+            "补充进去，不要新增页面之外的结论。"
+        )
     after: dict[str, str] = {}
 
     for start in range(0, len(targets), batch_size):
@@ -322,6 +332,7 @@ async def run(
                 script,
                 only_if_blank=only_if_blank,
                 segments=segments,
+                coverage_fields=coverage_values(script, slide.layout, settings.coverage_element_threshold),
             )
             if wrote:
                 after[str(slide.slide_uid)] = script
@@ -468,26 +479,32 @@ async def rollback_revision(
     if not revision.applied:
         raise ValueError("该修订已回滚过")
 
+    settings: PptVideoSettings | None = None
     restored = 0
     for slide_uid, script in (revision.before or {}).items():
-        updated = await session.execute(
-            update(PptVideoSlide)
-            .where(
+        slide = await session.scalar(
+            select(PptVideoSlide).where(
                 PptVideoSlide.project_id == project_id,
                 PptVideoSlide.slide_uid == uuid.UUID(str(slide_uid)),
                 PptVideoSlide.is_deleted.is_(False),
             )
-            .values(
-                script_text=script or "",
-                # 回滚可能连「上传讲稿」都要退回去，段级绑定与文本不再配套，一并清空
-                script_segments=None,
-                audio_object_key=None,
-                audio_sha256=None,
-                duration_ms=0,
-                updated_at=func.now(),
-            )
         )
-        restored += cast(CursorResult[Any], updated).rowcount or 0
+        if slide is None:
+            continue
+        slide.script_text = script or ""
+        # 回滚可能连「上传讲稿」都要退回去，段级绑定与文本不再配套，一并清空
+        slide.script_segments = None
+        slide.audio_object_key = None
+        slide.audio_sha256 = None
+        slide.duration_ms = 0
+        # 覆盖率按回滚后的讲稿重算：否则「补全本页」回滚后界面还显示已达标
+        if settings is None:
+            settings = await load_settings()
+        values = coverage_values(slide.script_text, slide.layout, settings.coverage_element_threshold)
+        slide.coverage_score = values["coverage_score"]
+        slide.coverage_missing = values["coverage_missing"]
+        slide.coverage_checked_at = values["coverage_checked_at"]
+        restored += 1
 
     revision.applied = False
     revision.status = REVISION_STATUS_FAILED if revision.status == REVISION_STATUS_RUNNING else revision.status

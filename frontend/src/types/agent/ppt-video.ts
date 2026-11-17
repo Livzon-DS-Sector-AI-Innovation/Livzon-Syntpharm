@@ -55,7 +55,13 @@ export const REGION_MODE_OPTIONS: { value: RegionMode; label: string }[] = [
 export const REGION_SOURCE_LABEL = { element: '页内元素', manual: '手绘区域' } as const
 
 /** 改写语义（与后端 RewriteMode 对齐） */
-export type RewriteMode = 'fill_blank' | 'rewrite_all' | 'rewrite_selected' | 'rewrite_one'
+export type RewriteMode =
+  | 'fill_blank'
+  | 'rewrite_all'
+  | 'rewrite_selected'
+  | 'rewrite_one'
+  /** 覆盖度补全：按漏讲要点重写指定页，保留原有内容 */
+  | 'fill_missing'
 
 /** 模型来源：项目覆盖 / 全局默认 / 系统活跃配置 / 环境变量兜底 */
 export type ModelSource = 'project' | 'global' | 'active' | 'env'
@@ -82,6 +88,7 @@ export const REWRITE_MODE_LABEL: Record<RewriteMode, string> = {
   rewrite_all: '全部重写',
   rewrite_selected: '按指令改写',
   rewrite_one: 'AI 改写本页',
+  fill_missing: '补全漏讲',
 }
 
 export const REWRITE_MODE_HINT: Record<RewriteMode, string> = {
@@ -89,6 +96,7 @@ export const REWRITE_MODE_HINT: Record<RewriteMode, string> = {
   rewrite_all: '按页面顺序重写全部讲稿，覆盖前自动存快照',
   rewrite_selected: '用一句指令改写勾选的页面，覆盖前自动存快照',
   rewrite_one: '只改当前这一页，直接把结果写回编辑框',
+  fill_missing: '保留原讲稿，把页面未讲到的要点补进去，覆盖前自动存快照',
 }
 
 export const DIFF_STATUS_LABEL: Record<DiffStatus, string> = {
@@ -105,6 +113,7 @@ export const REVISION_MODE_LABEL: Record<string, string> = {
   rewrite_selected: '按指令改写',
   rewrite_one: 'AI 改写单页',
   source_replace: '换源重写',
+  fill_missing: '补全漏讲',
 }
 
 export const REVISION_STATUS_LABEL: Record<string, string> = {
@@ -220,6 +229,10 @@ export interface ProjectUpdatePayload {
   highlight_override_enabled?: boolean
   clear_highlight_style?: boolean
   clear_highlight_color?: boolean
+  /** 项目级发音词典（整份替换）：原文 → 合成替代文本 */
+  pronunciation_dict?: Record<string, string>
+  /** 清空项目级发音词典 */
+  clear_pronunciation_dict?: boolean
 }
 
 /** 渲染阶段文案：后端返回机器码，界面显示中文 */

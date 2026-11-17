@@ -93341,6 +93341,74 @@
         }
       }
     },
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/recheck-coverage": {
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u91cd\u7b97\u5355\u9875\u8bb2\u7a3f\u8986\u76d6\u5ea6\uff08\u624b\u5de5\u89e6\u53d1\uff09",
+        "operationId": "recheck_slide_coverage_api_v1_agent_ppt_videos__project_id__slides__slide_uid__recheck_coverage_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "slide_uid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slide Uid"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_SlideItem_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/regions": {
       "get": {
         "tags": [
@@ -162950,6 +163018,18 @@
             "title": "Module Highlight Color",
             "default": ""
           },
+          "pronunciation_dict": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Pronunciation Dict"
+          },
+          "coverage_min_score": {
+            "type": "number",
+            "title": "Coverage Min Score",
+            "default": 0.75
+          },
           "updated_at": {
             "anyOf": [
               {
@@ -163657,6 +163737,25 @@
           "clear_highlight_color": {
             "type": "boolean",
             "title": "Clear Highlight Color",
+            "default": false
+          },
+          "pronunciation_dict": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pronunciation Dict"
+          },
+          "clear_pronunciation_dict": {
+            "type": "boolean",
+            "title": "Clear Pronunciation Dict",
             "default": false
           }
         },
@@ -176745,7 +176844,8 @@
               "rewrite_all",
               "rewrite_selected",
               "rewrite_one",
-              "source_replace"
+              "source_replace",
+              "fill_missing"
             ],
             "title": "Mode"
           },
@@ -182032,7 +182132,8 @@
               "fill_blank",
               "rewrite_all",
               "rewrite_selected",
-              "rewrite_one"
+              "rewrite_one",
+              "fill_missing"
             ],
             "title": "Mode",
             "default": "rewrite_selected"
@@ -182788,6 +182889,36 @@
             "type": "boolean",
             "title": "Has Audio",
             "default": false
+          },
+          "coverage_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Score"
+          },
+          "coverage_missing": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coverage Missing"
+          },
+          "coverage_ok": {
+            "type": "boolean",
+            "title": "Coverage Ok",
+            "default": true
           }
         },
         "type": "object",
@@ -182937,7 +183068,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 2000
+                "maxLength": 4000
               },
               {
                 "type": "null"

@@ -19230,6 +19230,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/recheck-coverage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 重算单页讲稿覆盖度（手工触发） */
+        post: operations["recheck_slide_coverage_api_v1_agent_ppt_videos__project_id__slides__slide_uid__recheck_coverage_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/agent/ppt-videos/{project_id}/slides/{slide_uid}/regions": {
         parameters: {
             query?: never;
@@ -49595,6 +49612,15 @@ export interface components {
              * @default
              */
             module_highlight_color: string;
+            /** Pronunciation Dict */
+            pronunciation_dict?: {
+                [key: string]: string;
+            };
+            /**
+             * Coverage Min Score
+             * @default 0.75
+             */
+            coverage_min_score: number;
             /** Updated At */
             updated_at?: string | null;
         };
@@ -49810,6 +49836,15 @@ export interface components {
              * @default false
              */
             clear_highlight_color: boolean;
+            /** Pronunciation Dict */
+            pronunciation_dict?: {
+                [key: string]: string;
+            } | null;
+            /**
+             * Clear Pronunciation Dict
+             * @default false
+             */
+            clear_pronunciation_dict: boolean;
         };
         /** PurchaseApprovalRecordResponse */
         PurchaseApprovalRecordResponse: {
@@ -55325,7 +55360,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "fill_blank" | "rewrite_all" | "rewrite_selected" | "rewrite_one" | "source_replace";
+            mode: "fill_blank" | "rewrite_all" | "rewrite_selected" | "rewrite_one" | "source_replace" | "fill_missing";
             /** Instruction */
             instruction?: string | null;
             /** Model Name */
@@ -57772,7 +57807,7 @@ export interface components {
              * @default rewrite_selected
              * @enum {string}
              */
-            mode: "fill_blank" | "rewrite_all" | "rewrite_selected" | "rewrite_one";
+            mode: "fill_blank" | "rewrite_all" | "rewrite_selected" | "rewrite_one" | "fill_missing";
             /** Slide Uids */
             slide_uids?: string[];
             /** Instruction */
@@ -58129,6 +58164,15 @@ export interface components {
              * @default false
              */
             has_audio: boolean;
+            /** Coverage Score */
+            coverage_score?: number | null;
+            /** Coverage Missing */
+            coverage_missing?: string[] | null;
+            /**
+             * Coverage Ok
+             * @default true
+             */
+            coverage_ok: boolean;
         };
         /**
          * SlideRegionItem
@@ -112594,6 +112638,40 @@ export interface operations {
                 "application/json": components["schemas"]["SlideUpdateRequest"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_SlideItem_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recheck_slide_coverage_api_v1_agent_ppt_videos__project_id__slides__slide_uid__recheck_coverage_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                slide_uid: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
