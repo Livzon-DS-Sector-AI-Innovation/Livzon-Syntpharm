@@ -19,7 +19,7 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0167_agent_ppt_video_highlight_project_default"
+revision: str = "0191_agent_ppt_video_highlight_project_default"
 down_revision: str = "0178_agent_ppt_video_highlight_override_enabled"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

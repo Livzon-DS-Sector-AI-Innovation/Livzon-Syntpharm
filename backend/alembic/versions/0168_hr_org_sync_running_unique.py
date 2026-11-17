@@ -29,6 +29,15 @@ _INDEX = "uq_hr_org_sync_runs_running"
 
 
 def upgrade() -> None:
+    # main 侧的 0117_hr_org_sync_running_unique 已建过同名索引；本迁移与它在
+    # 合并后的图里处于不同分支，先应用哪个取决于拓扑序，故这里做成幂等。
+    exists = op.get_bind().execute(
+        sa.text("SELECT 1 FROM pg_indexes WHERE schemaname = :schema AND indexname = :name"),
+        {"schema": _SCHEMA, "name": _INDEX},
+    ).first()
+    if exists:
+        return
+
     op.execute(
         sa.text(
             """
