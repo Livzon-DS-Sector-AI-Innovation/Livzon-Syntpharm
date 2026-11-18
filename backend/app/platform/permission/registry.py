@@ -3268,6 +3268,9 @@ EXEMPT_ROUTES: tuple[tuple[str, str], ...] = (
     # 飞书审批完成回调：由飞书服务器发起，不可能携带用户 JWT，
     # 鉴权改为「verification token + 签名校验」（见 hr/api.py 的回调校验）。
     ("POST", "/api/v1/hr/webhook/feishu-approval"),
+    # 首页工作台：登录用户只读自己的待办 / 流程，不挂模块权限码；
+    # 内部按 effective_permission_codes 逐数据源门控（无权限的源不返回数据）。
+    ("GET", "/api/v1/workbench/overview"),
 )
 
 
