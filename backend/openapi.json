@@ -1569,57 +1569,6 @@
         }
       }
     },
-    "/api/v1/identity/sync/user-info": {
-      "post": {
-        "tags": [
-          "\u98de\u4e66\u540c\u6b65",
-          "\u98de\u4e66\u540c\u6b65"
-        ],
-        "summary": "\u540c\u6b65\u98de\u4e66\u7528\u6237\u4fe1\u606f\uff08\u8d44\u6599 + \u5934\u50cf + \u90e8\u95e8\uff0c\u540e\u53f0\u6267\u884c\uff09",
-        "description": "\u7528\u6237\u7ba1\u7406\u9875\u300c\u540c\u6b65\u98de\u4e66\u7528\u6237\u4fe1\u606f\u300d\u5165\u53e3\u3002\n\n\u4e0e `/sync/all` \u590d\u7528\u540c\u4e00\u540e\u53f0\u4efb\u52a1\uff08\u90e8\u95e8 + \u6210\u5458\u5168\u91cf\u540c\u6b65\uff09\uff0c\u533a\u522b\u53ea\u5728\u6743\u9650\uff1a\n\u8fd9\u91cc\u989d\u5916\u5141\u8bb8\u4ec5\u6301\u6709\u300c\u7528\u6237\u7ba1\u7406\u300d\u6743\u9650\u7684\u8d26\u53f7\u89e6\u53d1\uff0c\u65b9\u4fbf\u7ba1\u7406\u5458\u81ea\u884c\u8865\u9f50\u5934\u50cf\u4e0e\u90e8\u95e8\u3002\n\u672c\u6b21\u4e0d\u5206\u914d\u8d26\u53f7\uff08\u98de\u4e66 user_id / \u5de5\u53f7\u6743\u9650\u672a\u5f00\u901a\uff09\uff0c\u53ea\u56de\u586b\u8d44\u6599\u3002",
-        "operationId": "trigger_sync_user_info_api_v1_identity_sync_user_info_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/SyncUserInfoTriggerApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/identity/feishu-config": {
       "get": {
         "tags": [
@@ -177999,47 +177948,6 @@
         "type": "object",
         "title": "SyncTriggerRequest"
       },
-      "SyncUserInfoTriggerApiResponse": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "$ref": "#/components/schemas/SyncUserInfoTriggerData"
-          }
-        },
-        "type": "object",
-        "required": [
-          "data"
-        ],
-        "title": "SyncUserInfoTriggerApiResponse"
-      },
-      "SyncUserInfoTriggerData": {
-        "properties": {
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "status",
-          "message"
-        ],
-        "title": "SyncUserInfoTriggerData",
-        "description": "\u300c\u540c\u6b65\u98de\u4e66\u7528\u6237\u4fe1\u606f\u300d\u89e6\u53d1\u7ed3\u679c\uff08\u540e\u53f0\u6267\u884c\uff0c\u7559\u610f later \u5230\u7528\u6237\u5217\u8868\u5237\u65b0\uff09\u3002"
-      },
       "SystemInfoData": {
         "properties": {
           "app_name": {
@@ -182917,6 +182825,31 @@
             "title": "Is Superuser",
             "default": false
           },
+          "has_profile": {
+            "type": "boolean",
+            "title": "Has Profile",
+            "default": false
+          },
+          "employment_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "left"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employment Status"
+          },
+          "employment_label": {
+            "type": "string",
+            "title": "Employment Label",
+            "default": ""
+          },
           "bind_result": {
             "anyOf": [
               {
@@ -183241,6 +183174,31 @@
             "type": "boolean",
             "title": "Is Superuser",
             "default": false
+          },
+          "has_profile": {
+            "type": "boolean",
+            "title": "Has Profile",
+            "default": false
+          },
+          "employment_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "left"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employment Status"
+          },
+          "employment_label": {
+            "type": "string",
+            "title": "Employment Label",
+            "default": ""
           },
           "initial_password": {
             "anyOf": [
@@ -183592,6 +183550,31 @@
             "type": "boolean",
             "title": "Is Superuser",
             "default": false
+          },
+          "has_profile": {
+            "type": "boolean",
+            "title": "Has Profile",
+            "default": false
+          },
+          "employment_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "left"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employment Status"
+          },
+          "employment_label": {
+            "type": "string",
+            "title": "Employment Label",
+            "default": ""
           }
         },
         "type": "object",
@@ -184243,6 +184226,31 @@
             "type": "boolean",
             "title": "Is Superuser",
             "default": false
+          },
+          "has_profile": {
+            "type": "boolean",
+            "title": "Has Profile",
+            "default": false
+          },
+          "employment_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "left"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employment Status"
+          },
+          "employment_label": {
+            "type": "string",
+            "title": "Employment Label",
+            "default": ""
           },
           "account_deleted": {
             "type": "boolean",

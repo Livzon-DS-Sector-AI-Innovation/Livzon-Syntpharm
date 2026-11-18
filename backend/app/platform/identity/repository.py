@@ -206,6 +206,7 @@ class UserRepository:
         session: AsyncSession,
         *,
         keyword: str | None = None,
+        keyword_open_ids: list[str] | None = None,
         status: str | None = None,
         auth_source: str | None = None,
         unbound_only: bool = False,
@@ -231,13 +232,18 @@ class UserRepository:
         if keyword:
             # 用户管理搜索：与 list_all 同一套转义口径，避免 `%`/`_` 被当通配符
             pattern = _like_pattern(keyword)
-            filter_expr = or_(
+            conditions = [
                 User.name.ilike(pattern, escape="\\"),
                 User.username.ilike(pattern, escape="\\"),
                 User.email.ilike(pattern, escape="\\"),
                 User.mobile.ilike(pattern, escape="\\"),
                 User.employee_no.ilike(pattern, escape="\\"),
-            )
+            ]
+            # 列表展示值以 HR 档案为准（#219）：HR 侧命中的 open_id 也要纳入，
+            # 否则会出现「列表显示 HR 新姓名/新工号却搜不到」。
+            if keyword_open_ids:
+                conditions.append(User.feishu_open_id.in_(keyword_open_ids))
+            filter_expr = or_(*conditions)
             base = base.where(filter_expr)
             count_stmt = count_stmt.where(filter_expr)
         if status:

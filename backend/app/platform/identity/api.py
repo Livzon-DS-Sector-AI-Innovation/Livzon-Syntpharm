@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
-from app.core.deps import PermissionContext, RequiredUser, require_any_permission, require_permission
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import (
     AppException,
     BadRequestException,
@@ -55,7 +55,6 @@ from app.platform.identity.schemas import (
     SyncAllTriggerApiResponse,
     SyncDepartmentsTriggerApiResponse,
     SyncMembersTriggerApiResponse,
-    SyncUserInfoTriggerApiResponse,
     TestLoginResponse,
     TestLoginUser,
     TokenResponse,
@@ -568,30 +567,10 @@ async def trigger_sync_all(
     )
 
 
-@sync_router.post(
-    "/user-info",
-    summary="同步飞书用户信息（资料 + 头像 + 部门，后台执行）",
-    response_model=SyncUserInfoTriggerApiResponse,
-)
-async def trigger_sync_user_info(
-    ctx: PermissionContext = Depends(require_any_permission("platform:config:manage", "platform:user:manage")),
-) -> Any:
-    """用户管理页「同步飞书用户信息」入口。
-
-    与 `/sync/all` 复用同一后台任务（部门 + 成员全量同步），区别只在权限：
-    这里额外允许仅持有「用户管理」权限的账号触发，方便管理员自行补齐头像与部门。
-    本次不分配账号（飞书 user_id / 工号权限未开通），只回填资料。
-    """
-    from app.platform.identity.service import sync_livzon_feishu_contacts_all
-
-    await submit_job("identity.sync-user-info", lambda _job_id: sync_livzon_feishu_contacts_all())
-    logger.info("Feishu user info sync triggered")
-    return build_response(
-        data={
-            "status": "ok",
-            "message": "已开始在后台同步飞书用户信息（姓名 / 部门 / 职位 / 头像），约 1 分钟后刷新列表查看结果。",
-        },
-    )
+# 用户管理页的「同步飞书用户信息」入口已下线（#219）：
+# 人员属性统一以 HR 员工档案为唯一来源、在列表接口实时装配，
+# 不再保留「把飞书写回 identity.users」的入口，避免两套口径并存。
+# 组织与人员同步请走 HR 模块：POST /api/v1/hr/org/sync。
 
 
 # ── Livzon Feishu Config ──────────────────────────────────────────
@@ -698,9 +677,15 @@ async def list_users_management(
     super_ids = set(await list_superuser_user_ids(db))
     exclude_user_ids = None if await user_is_superuser(db, ctx.user) else list(super_ids)
 
+    # #219：列表展示值以 HR 档案为准，搜索也要覆盖 HR 侧命中的人（姓名/工号/手机号），
+    # 否则会出现「列表显示 HR 新姓名却搜不到」。两次查询均为百级 IN 查询，无 N+1。
+    from app.modules.hr.public_api import get_profiles_by_open_ids, search_profile_open_ids
+
+    keyword_open_ids = await search_profile_open_ids(db, keyword) if keyword else []
     users, total = await repo.list_users(
         db,
         keyword=keyword,
+        keyword_open_ids=keyword_open_ids,
         status=status,
         auth_source=auth_source,
         unbound_only=unbound_only,
@@ -711,10 +696,12 @@ async def list_users_management(
     )
     items = []
     roles_map = await repo.get_roles_for_users(db, [u.id for u in users])
-    # #219：人员属性以 HR 为准，一次 IN 查询批量装配，避免逐行 N+1。
-    from app.modules.hr.public_api import get_profiles_by_open_ids
-
-    profiles = await get_profiles_by_open_ids(db, [u.feishu_open_id or "" for u in users])
+    # 需要已移出的历史档案来区分「在职」与「已离职/调出」，故 include_inactive=True
+    profiles = await get_profiles_by_open_ids(
+        db,
+        [u.feishu_open_id or "" for u in users],
+        include_inactive=True,
+    )
     for u in users:
         item = UserManagementItem.model_validate(u)
         item.roles = roles_map.get(u.id, [])
@@ -722,10 +709,30 @@ async def list_users_management(
         item.is_superuser = u.id in super_ids
         profile = profiles.get((u.feishu_open_id or "").strip())
         if profile is not None:
+            # 姓名/联系方式/工号/部门/职务/头像都以 HR 为唯一来源，本地列仅作缺值回退
+            item.name = profile.get("name") or item.name
+            item.mobile = profile.get("mobile") or item.mobile
+            item.email = profile.get("email") or item.email
+            item.employee_no = profile.get("employee_no") or item.employee_no
+            item.position = profile.get("job_title_name") or item.position
             department_names = profile.get("department_names") or []
             item.department = department_names[-1] if department_names else item.department
-            item.position = profile.get("job_title_name") or item.position
-            item.employee_no = profile.get("employee_no") or item.employee_no
+            # 头像同样以 HR 为准：前端优先消费 avatar_thumb，本地旧快照不能覆盖 HR 值
+            avatar = profile.get("avatar_url") or item.avatar_url
+            item.avatar_url = avatar
+            item.avatar_thumb = avatar or item.avatar_thumb
+            item.has_profile = True
+            # 在职口径：先用 HR 的 is_current 近似（staff_status 上游尚未落值）
+            if profile.get("is_current"):
+                item.employment_status = "active"
+                item.employment_label = "在职"
+            else:
+                item.employment_status = "left"
+                item.employment_label = "已离职/调出"
+        else:
+            item.has_profile = False
+            item.employment_status = None
+            item.employment_label = "未建档案"
         items.append(item.model_dump())
     resp = UserManagementListResponse(items=items, total=total, offset=offset, limit=limit)
     return build_response(data=resp.model_dump())

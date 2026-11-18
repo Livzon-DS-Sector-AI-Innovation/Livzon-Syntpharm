@@ -28,8 +28,8 @@ import {
   LogoutOutlined,
   MoreOutlined,
   PlusOutlined,
+  ProfileOutlined,
   ReloadOutlined,
-  SyncOutlined,
   UserSwitchOutlined,
 } from '@ant-design/icons'
 import {
@@ -45,7 +45,6 @@ import {
   updateUser,
 } from '@/actions/users'
 import { createGrant, fetchRoles } from '@/actions/permission'
-import { syncFeishuUserInfo } from '@/actions/settings'
 import { UserLabel } from '@/components/common/UserAvatar'
 import type {
   LocalUserCreate,
@@ -172,8 +171,6 @@ export default function UserManagementClient() {
   // 批量启用/禁用：选中行 + 结果汇总（失败项逐条列原因）
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([])
   const [batching, setBatching] = useState(false)
-  // 同步飞书用户信息：后台任务，接口立即返回，按钮只防重复点击
-  const [syncingFeishu, setSyncingFeishu] = useState(false)
   const [batchResult, setBatchResult] = useState<UserBatchStatusResult | null>(null)
   const [sessionUser, setSessionUser] = useState<UserManagementItem | null>(null)
   const [sessions, setSessions] = useState<UserSession[]>([])
@@ -238,26 +235,6 @@ export default function UserManagementClient() {
     // 刷新后行可能已变化，清掉选择避免批量操作指向旧数据
     setSelectedRowKeys([])
     refetchUsers()
-  }
-
-  /**
-   * 同步飞书用户信息：只回填姓名 / 英文名 / 部门 / 职位 / 头像，不分配账号、不改状态与角色。
-   * 后端是后台任务（约 1 分钟），触发后延迟刷新一次列表，避免用户以为没生效。
-   */
-  const handleSyncFeishu = async () => {
-    setSyncingFeishu(true)
-    try {
-      const result = await syncFeishuUserInfo()
-      message.success(result.message || '已开始在后台同步飞书用户信息')
-      window.setTimeout(() => {
-        setSelectedRowKeys([])
-        refetchUsers()
-      }, 60_000)
-    } catch (err) {
-      message.error(err instanceof Error ? err.message : '同步飞书用户信息失败')
-    } finally {
-      setSyncingFeishu(false)
-    }
   }
 
   /** 筛选条件变化：回到第 1 页并清空跨页选中（否则会对着看不见的行做批量操作）。 */
@@ -611,67 +588,78 @@ export default function UserManagementClient() {
 
   const columns = [
     {
-      title: '姓名',
-      dataIndex: 'name',
+      title: '姓名 / 账号',
       key: 'name',
-      width: 170,
-      // 头像来自飞书同步（avatar_thumb 优先），加载失败自动回退首字色块；悬停看全名
-      render: (name: string, record: UserManagementItem) => (
-        <Tooltip title={name || '-'} placement="topLeft">
-          <span className="block max-w-full truncate">
-            <UserLabel name={name} src={record.avatar_thumb ?? record.avatar_url} avatarSize={26} />
-          </span>
-        </Tooltip>
-      ),
-    },
-    {
-      title: '账号',
-      dataIndex: 'username',
-      key: 'username',
-      width: 150,
-      render: (username: string | null) => (
-        <span className="text-[12px] text-[var(--color-steel)]">{username || '未分配账号'}</span>
-      ),
+      width: 220,
+      // 姓名与账号合并为一列：姓名来自 HR 档案（优先级最高），账号是登录凭据。
+      // 姓名同时是「查看档案」入口（链接而非按钮）：只读管理员没有 canManage，
+      // 但看档案是只读操作，不应被操作列的权限连带挡住。
+      render: (_: unknown, record: UserManagementItem) => {
+        const profileHref =
+          record.has_profile && record.feishu_open_id
+            ? `/hr/profile?open_id=${encodeURIComponent(record.feishu_open_id)}`
+            : null
+        const label = (
+          <UserLabel name={record.name} src={record.avatar_thumb ?? record.avatar_url} avatarSize={26} />
+        )
+        return (
+          <Tooltip title={record.name || '-'} placement="topLeft">
+            <div className="min-w-0">
+              <span className="block max-w-full truncate">
+                {profileHref ? (
+                  <Link
+                    href={profileHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex max-w-full items-center text-[var(--color-primary)] hover:underline"
+                  >
+                    {label}
+                  </Link>
+                ) : (
+                  label
+                )}
+              </span>
+              <span className="mt-0.5 block truncate text-[12px] text-[var(--color-steel)]">
+                {record.username || '未分配账号'}
+              </span>
+            </div>
+          </Tooltip>
+        )
+      },
     },
     {
       title: '部门',
       dataIndex: 'department',
       key: 'department',
-      width: 140,
+      width: 150,
       ellipsis: true,
       render: (department: string | null) => <span className="text-[13px]">{department || '-'}</span>,
     },
     {
-      title: '职位',
-      dataIndex: 'position',
-      key: 'position',
-      width: 130,
-      ellipsis: true,
-      render: (position: string | null) => <span className="text-[13px]">{position || '-'}</span>,
-    },
-    {
-      title: '角色',
-      key: 'roles',
-      width: 180,
+      title: '是否在职',
+      key: 'employment',
+      width: 120,
+      // 口径：实时取 HR 档案的 is_current（在册 = 在职）；与账号启用/停用是两个概念
       render: (_: unknown, record: UserManagementItem) => {
-        const roles = record.roles ?? []
-        if (!roles.length) {
-          return <Tag>未授权</Tag>
+        if (!record.has_profile) {
+          return (
+            <Tooltip title="该账号未匹配到 HR 员工档案（按飞书 open_id 关联）">
+              <Tag>未建档案</Tag>
+            </Tooltip>
+          )
         }
-        return (
-          <Space size={4} wrap>
-            {roles.map((name) => (
-              // 角色用中性灰：一屏多个角色时不再一片紫色，把颜色留给状态
-              <Tag key={name}>{name}</Tag>
-            ))}
-          </Space>
+        return record.employment_status === 'active' ? (
+          <Tag color="success">在职</Tag>
+        ) : (
+          <Tag>已离职/调出</Tag>
         )
       },
     },
     {
-      title: '状态',
+      title: '账号状态',
       dataIndex: 'status',
-      width: 110,
+      width: 130,
+      // 账号自身的启用/停用，与「是否在职」分列，避免把离职当成停用去操作
       render: (status: string, record: UserManagementItem) => (
         <Space size={4}>
           {/* 只有「启用」用绿色；「禁用」是正常业务状态，不用红色制造紧张感 */}
@@ -682,27 +670,14 @@ export default function UserManagementClient() {
       ),
     },
     {
-      title: '来源 / 飞书',
-      key: 'source_feishu',
-      width: 150,
-      // 纯文字而非彩色 Tag：这一列是背景信息，不需要抢注意力
-      render: (_: unknown, record: UserManagementItem) => {
-        const source = AUTH_SOURCE_LABEL[record.auth_source ?? ''] ?? (record.auth_source || '-')
-        const bound = !!(record.feishu_open_id || record.feishu_user_id)
-        return (
-          <span className="text-[12px] text-[var(--color-steel)]">
-            {source} · {bound ? '已绑定' : '未绑定'}
-          </span>
-        )
-      },
-    },
-    {
-      title: '创建时间',
-      dataIndex: 'created_at',
-      key: 'created_at',
+      title: '上次登录',
+      dataIndex: 'last_login_at',
+      key: 'last_login_at',
       width: 170,
       render: (value: string | null) => (
-        <span className="text-[12px] text-[var(--color-steel)]">{formatDateTime(value)}</span>
+        <span className="text-[12px] text-[var(--color-steel)]">
+          {value ? formatDateTime(value) : '从未登录'}
+        </span>
       ),
     },
     // 操作列：行内只留高频的「编辑 + 启停」；会话 / 删除收进「⋯」菜单
@@ -714,14 +689,28 @@ export default function UserManagementClient() {
             width: 180,
             fixed: 'right' as const,
             render: (_: unknown, record: UserManagementItem) => {
-              const menuItems: MenuProps['items'] = [
-                {
-                  key: 'sessions',
-                  icon: <LogoutOutlined />,
-                  label: '查看会话',
-                  onClick: () => handleOpenSessions(record),
-                },
-              ]
+              const menuItems: MenuProps['items'] = []
+              // 人员资料以 HR 档案为准：直接跳档案页定位，不在本地弹窗重复展示
+              if (record.has_profile && record.feishu_open_id) {
+                menuItems.push({
+                  key: 'profile',
+                  icon: <ProfileOutlined />,
+                  label: '查看档案',
+                  onClick: () => {
+                    window.open(
+                      `/hr/profile?open_id=${encodeURIComponent(record.feishu_open_id ?? '')}`,
+                      '_blank',
+                      'noopener,noreferrer',
+                    )
+                  },
+                })
+              }
+              menuItems.push({
+                key: 'sessions',
+                icon: <LogoutOutlined />,
+                label: '查看会话',
+                onClick: () => handleOpenSessions(record),
+              })
               if (canDelete) {
                 menuItems.push({ type: 'divider' })
                 menuItems.push({
@@ -830,13 +819,6 @@ export default function UserManagementClient() {
               刷新
             </Button>
             {canManage && (
-              <Tooltip title="从飞书通讯录同步姓名、英文名、部门、职位与头像；不分配账号、不改状态与角色">
-                <Button icon={<SyncOutlined />} loading={syncingFeishu} onClick={handleSyncFeishu}>
-                  同步飞书用户信息
-                </Button>
-              </Tooltip>
-            )}
-            {canManage && (
               <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
                 新建用户
               </Button>
@@ -852,8 +834,8 @@ export default function UserManagementClient() {
             loading={loading}
             rowSelection={rowSelection}
             // 固定操作列需要明确的滚动宽度，否则「编辑 / 启停 / ⋯」会被挤断
-            // 列宽合计：姓名 170 + 账号 150 + 部门 140 + 职位 130 + 角色 180 + 状态 110 + 来源/飞书 150 + 创建时间 170 + 操作 180 + 多选 50
-            scroll={{ x: 1430 }}
+            // 列宽合计：多选 50 + 姓名账号 220 + 部门 150 + 是否在职 120 + 账号状态 130 + 上次登录 170 + 操作 180
+            scroll={{ x: 1020 }}
             pagination={{
               current: page,
               pageSize,
@@ -946,6 +928,16 @@ export default function UserManagementClient() {
               <Select options={statusOptions} />
             </Form.Item>
           </Space>
+          {editingUser && (
+            // 来源/飞书绑定/创建时间不再占列表列，收敛到这里只读展示（背景信息）
+            <Text type="secondary" className="mb-4 block -mt-2 text-[12px]">
+              登录来源：{AUTH_SOURCE_LABEL[editingUser.auth_source ?? ''] ?? editingUser.auth_source ?? '-'}
+              {' · '}飞书：{editingUser.feishu_open_id || editingUser.feishu_user_id ? '已绑定' : '未绑定'}
+              {' · '}创建时间：{formatDateTime(editingUser.created_at)}
+              {' · '}上次登录：
+              {editingUser.last_login_at ? formatDateTime(editingUser.last_login_at) : '从未登录'}
+            </Text>
+          )}
           {!editingUser && (
             <Form.Item name="role_ids" label="同时授予角色" className="mb-1">
               <Select

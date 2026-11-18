@@ -496,30 +496,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/identity/sync/user-info": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 同步飞书用户信息（资料 + 头像 + 部门，后台执行）
-         * @description 用户管理页「同步飞书用户信息」入口。
-         *
-         *     与 `/sync/all` 复用同一后台任务（部门 + 成员全量同步），区别只在权限：
-         *     这里额外允许仅持有「用户管理」权限的账号触发，方便管理员自行补齐头像与部门。
-         *     本次不分配账号（飞书 user_id / 工号权限未开通），只回填资料。
-         */
-        post: operations["trigger_sync_user_info_api_v1_identity_sync_user_info_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/identity/feishu-config": {
         parameters: {
             query?: never;
@@ -56642,30 +56618,6 @@ export interface components {
              */
             autoAnalyze: boolean;
         };
-        /** SyncUserInfoTriggerApiResponse */
-        SyncUserInfoTriggerApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data: components["schemas"]["SyncUserInfoTriggerData"];
-        };
-        /**
-         * SyncUserInfoTriggerData
-         * @description 「同步飞书用户信息」触发结果（后台执行，留意 later 到用户列表刷新）。
-         */
-        SyncUserInfoTriggerData: {
-            /** Status */
-            status: string;
-            /** Message */
-            message: string;
-        };
         /** SystemInfoData */
         SystemInfoData: {
             /** App Name */
@@ -58658,6 +58610,18 @@ export interface components {
              * @default false
              */
             is_superuser: boolean;
+            /**
+             * Has Profile
+             * @default false
+             */
+            has_profile: boolean;
+            /** Employment Status */
+            employment_status?: ("active" | "left") | null;
+            /**
+             * Employment Label
+             * @default
+             */
+            employment_label: string;
             /** Bind Result */
             bind_result?: {
                 [key: string]: number;
@@ -58770,6 +58734,18 @@ export interface components {
              * @default false
              */
             is_superuser: boolean;
+            /**
+             * Has Profile
+             * @default false
+             */
+            has_profile: boolean;
+            /** Employment Status */
+            employment_status?: ("active" | "left") | null;
+            /**
+             * Employment Label
+             * @default
+             */
+            employment_label: string;
             /** Initial Password */
             initial_password?: string | null;
         };
@@ -58894,6 +58870,18 @@ export interface components {
              * @default false
              */
             is_superuser: boolean;
+            /**
+             * Has Profile
+             * @default false
+             */
+            has_profile: boolean;
+            /** Employment Status */
+            employment_status?: ("active" | "left") | null;
+            /**
+             * Employment Label
+             * @default
+             */
+            employment_label: string;
         };
         /** UserManagementListApiResponse */
         UserManagementListApiResponse: {
@@ -59082,6 +59070,18 @@ export interface components {
              * @default false
              */
             is_superuser: boolean;
+            /**
+             * Has Profile
+             * @default false
+             */
+            has_profile: boolean;
+            /** Employment Status */
+            employment_status?: ("active" | "left") | null;
+            /**
+             * Employment Label
+             * @default
+             */
+            employment_label: string;
             /**
              * Account Deleted
              * @default false
@@ -62020,37 +62020,6 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["SyncAllTriggerApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    trigger_sync_user_info_api_v1_identity_sync_user_info_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["SyncUserInfoTriggerApiResponse"];
                 };
             };
             /** @description Validation Error */
