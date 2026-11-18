@@ -6,7 +6,7 @@ import os
 import uuid
 from dataclasses import dataclass, field
 
-from sqlalchemy import JSON, Boolean, Float, Integer, String, Text, select
+from sqlalchemy import JSON, Boolean, Float, Index, Integer, String, Text, select, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -85,7 +85,16 @@ class LLMConfigModel(BaseModel):
     """Database model for LLM configuration."""
 
     __tablename__ = "llm_configs"
-    __table_args__ = {"schema": "core", "comment": "LLM configuration table"}
+    __table_args__ = (
+        # 个人配置按 owner 过滤的查询走这条部分索引（0136 迁移用原生 SQL 建立）
+        Index(
+            "ix_core_llm_configs_owner",
+            "owner_user_id",
+            "visibility",
+            postgresql_where=text("is_deleted = false"),
+        ),
+        {"schema": "core", "comment": "LLM configuration table"},
+    )
 
     config_name: Mapped[str] = mapped_column(String(128), nullable=False, comment="Configuration name")
     config_type: Mapped[str] = mapped_column(

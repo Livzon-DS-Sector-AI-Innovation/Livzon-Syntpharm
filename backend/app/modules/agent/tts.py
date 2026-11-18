@@ -308,8 +308,7 @@ def concat_wavs(
         gaps = [max(0, int(pause_ms))] * boundaries
     else:
         gaps = [
-            max(0, int(pauses[index])) if index < len(pauses) else max(0, int(pause_ms))
-            for index in range(boundaries)
+            max(0, int(pauses[index])) if index < len(pauses) else max(0, int(pause_ms)) for index in range(boundaries)
         ]
 
     out_path.parent.mkdir(parents=True, exist_ok=True)

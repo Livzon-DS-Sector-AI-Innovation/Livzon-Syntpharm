@@ -22,7 +22,7 @@
 def _init_pypinyin(self):
     large_pinyin.load()
     load_phrases_dict(self.phrases_dict)
-    load_single_dict({ord('地'): 'de,di4'})
+    load_single_dict({ord("地"): "de,di4"})
 ```
 
 因此「先构造 `ZHG2P`，再调用 `load_phrases_dict`」即可覆盖读音（后加载的键覆盖先前的键）。
@@ -46,6 +46,7 @@ def _init_pypinyin(self):
 
 ```python
 from pypinyin import load_phrases_dict
+
 load_phrases_dict({"重楼": [["chong2"], ["lou2"]]})
 ```
 

@@ -521,9 +521,7 @@ async def _synthesize_by_segments(
         durations.append(int(item))
 
     pauses = [pause_after_segment(segment.text, settings) for segment in segments[:-1]]
-    merged_path, _joined_ms = await asyncio.to_thread(
-        tts.concat_wavs, part_paths, audio_path, pause_ms, pauses
-    )
+    merged_path, _joined_ms = await asyncio.to_thread(tts.concat_wavs, part_paths, audio_path, pause_ms, pauses)
     duration = await asyncio.to_thread(tts.wav_duration_ms, merged_path)
     wav_bytes = await asyncio.to_thread(merged_path.read_bytes)
     await asyncio.to_thread(
@@ -595,9 +593,7 @@ async def prepare_page_audio(
     sha_hint = (slide.audio_sha256 or "") if slide.audio_key == audio_fingerprint else ""
 
     if not segments:
-        return await _ensure_whole_page_audio(
-            effective, audio_fingerprint, audio_path, engine_name, sha_hint, lexicon
-        )
+        return await _ensure_whole_page_audio(effective, audio_fingerprint, audio_path, engine_name, sha_hint, lexicon)
 
     durations = _load_segment_durations(audio_fingerprint)
     if _download_object(audio_object_key(audio_fingerprint), audio_path) and len(durations) == len(segments):
@@ -636,9 +632,7 @@ async def prepare_page_audio(
         whole_fingerprint = build_audio_key(effective.script_sha256, effective.voice_fingerprint)
         whole_path = work_dir / "audio" / f"{whole_fingerprint}.wav"
         whole_sha = (slide.audio_sha256 or "") if slide.audio_key == whole_fingerprint else ""
-        return await _ensure_whole_page_audio(
-            effective, whole_fingerprint, whole_path, engine_name, whole_sha, lexicon
-        )
+        return await _ensure_whole_page_audio(effective, whole_fingerprint, whole_path, engine_name, whole_sha, lexicon)
 
 
 # ── 项目 ────────────────────────────────────────────────────────────────────
@@ -1275,9 +1269,7 @@ async def update_project(
         project.pronunciation_dict = None
     elif pronunciation_dict is not None:
         cleaned = {
-            key.strip(): value.strip()
-            for key, value in pronunciation_dict.items()
-            if key.strip() and value.strip()
+            key.strip(): value.strip() for key, value in pronunciation_dict.items() if key.strip() and value.strip()
         }
         if len(cleaned) > pronunciation.MAX_ENTRIES:
             raise ServiceError(f"发音词典最多 {pronunciation.MAX_ENTRIES} 条，请精简后再保存")

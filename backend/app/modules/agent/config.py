@@ -44,7 +44,6 @@ RENDER_VERSION = 2
 SCRIPT_GUIDE_MAX_CHARS = 2000
 
 
-
 #: 逐段合成时的标点分级停顿：逗号/顿号/冒号短停，句末长停，未识别回落 segment_pause_ms
 PAUSE_SHORT_CHARS = "，,、：:"
 PAUSE_LONG_CHARS = "。！？!?；;…."
@@ -233,9 +232,7 @@ async def load_settings() -> PptVideoSettings:
 
     coverage_element_raw = await _text("AGENT_PPT_VIDEO_COVERAGE_ELEMENT_THRESHOLD", "")
     try:
-        coverage_element = (
-            float(coverage_element_raw) if coverage_element_raw else DEFAULTS.coverage_element_threshold
-        )
+        coverage_element = float(coverage_element_raw) if coverage_element_raw else DEFAULTS.coverage_element_threshold
     except ValueError:
         coverage_element = DEFAULTS.coverage_element_threshold
 
@@ -326,9 +323,7 @@ async def load_settings() -> PptVideoSettings:
                 2000,
             ),
         ),
-        silence_trim_ms=max(
-            0, min(await _number("AGENT_PPT_VIDEO_SILENCE_TRIM_MS", DEFAULTS.silence_trim_ms), 500)
-        ),
+        silence_trim_ms=max(0, min(await _number("AGENT_PPT_VIDEO_SILENCE_TRIM_MS", DEFAULTS.silence_trim_ms), 500)),
         highlight_min_dwell_ms=max(
             0,
             min(

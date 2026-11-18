@@ -1,6 +1,6 @@
 """create agent schema and ppt video tables
 
-Revision ID: 0118_create_agent_schema_and_ppt_video_tables
+Revision ID: 0134_create_agent_schema_and_ppt_video_tables
 Revises: 0117_hr_org_sync_running_unique
 Create Date: 2026-11-03
 
@@ -23,7 +23,7 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from alembic import op
 
-revision: str = "0118_create_agent_schema_and_ppt_video_tables"
+revision: str = "0134_create_agent_schema_and_ppt_video_tables"
 down_revision: str = "0117_hr_org_sync_running_unique"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

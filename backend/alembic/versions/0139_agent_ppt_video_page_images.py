@@ -1,7 +1,7 @@
 """add page images version to ppt video project
 
-Revision ID: 0123_agent_ppt_video_page_images
-Revises: 0122_agent_ppt_video_script_revision
+Revision ID: 0139_agent_ppt_video_page_images
+Revises: 0138_agent_ppt_video_script_revision
 Create Date: 2026-11-03
 
 页图从「渲染时顺手生成」改为「上传后异步生成」，需要一个字段回答
@@ -18,8 +18,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0123_agent_ppt_video_page_images"
-down_revision: str = "0122_agent_ppt_video_script_revision"
+revision: str = "0139_agent_ppt_video_page_images"
+down_revision: str = "0138_agent_ppt_video_script_revision"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

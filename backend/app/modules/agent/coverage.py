@@ -80,11 +80,7 @@ def compute_coverage(
     max_missing: int = MAX_MISSING,
 ) -> CoverageResult:
     """按页面元素清单检查讲稿覆盖度。"""
-    elements = [
-        ref
-        for ref in iter_elements(layout)
-        if len(normalize_text(ref.text)) >= MIN_ELEMENT_CHARS
-    ]
+    elements = [ref for ref in iter_elements(layout) if len(normalize_text(ref.text)) >= MIN_ELEMENT_CHARS]
     if not elements or not (script_text or "").strip():
         return CoverageResult(score=0.0, missing=[], checked=False)
 

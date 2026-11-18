@@ -302,10 +302,24 @@ async def test_generate_writes_coverage_fields(db_session: AsyncSession, monkeyp
         "width": 12192000,
         "height": 6858000,
         "shapes": [
-            {"name": "a", "kind": "TEXT_BOX (17)", "text": "收率提升", "left": 800000, "top": 400000,
-             "width": 3000000, "height": 600000},
-            {"name": "b", "kind": "TEXT_BOX (17)", "text": "产线满负荷", "left": 800000, "top": 1200000,
-             "width": 3000000, "height": 600000},
+            {
+                "name": "a",
+                "kind": "TEXT_BOX (17)",
+                "text": "收率提升",
+                "left": 800000,
+                "top": 400000,
+                "width": 3000000,
+                "height": 600000,
+            },
+            {
+                "name": "b",
+                "kind": "TEXT_BOX (17)",
+                "text": "产线满负荷",
+                "left": 800000,
+                "top": 1200000,
+                "width": 3000000,
+                "height": 600000,
+            },
         ],
     }
     await db_session.flush()
