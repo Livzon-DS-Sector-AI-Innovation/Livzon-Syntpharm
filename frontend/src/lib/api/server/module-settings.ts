@@ -1,5 +1,10 @@
 import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
-import type { ModuleSetting, ModuleSettingUpdate } from '@/types/module-settings'
+import type {
+  ModuleSetting,
+  ModuleSettingBatchResult,
+  ModuleSettingBatchUpdate,
+  ModuleSettingUpdate,
+} from '@/types/module-settings'
 
 // 服务端调用统一走 API_BASE_URL（与其它 lib/api/server/* 模块一致），
 // 不依赖 apiFetch 对相对路径的兜底拼接。
@@ -28,6 +33,18 @@ export async function updateModuleSetting(
   data: ModuleSettingUpdate
 ): Promise<{ data: ModuleSetting }> {
   return apiFetch<{ data: ModuleSetting }>(M(`/${module}/${key}`), {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(data),
+  })
+}
+
+/** 批量更新（布尔项批量启停等），失败项逐条返回原因。 */
+export async function batchUpdateModuleSettings(
+  headers: Record<string, string>,
+  data: ModuleSettingBatchUpdate
+): Promise<{ data: ModuleSettingBatchResult }> {
+  return apiFetch<{ data: ModuleSettingBatchResult }>(M('/batch'), {
     method: 'PUT',
     headers,
     body: JSON.stringify(data),

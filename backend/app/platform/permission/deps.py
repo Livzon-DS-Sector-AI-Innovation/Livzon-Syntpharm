@@ -21,7 +21,14 @@ from app.platform.identity.models import User
 from app.platform.permission.service.authorization import (
     PermissionContext,
     build_permission_context,
+    is_superuser_with_cache,
 )
+from app.platform.permission.service.delegation import MANAGE_ENTRY_SUFFIX
+from app.platform.permission.service.management import effective_permission_codes
+
+PLATFORM_ROLE_READ = "platform:role:read"
+PLATFORM_ROLE_MANAGE = "platform:role:manage"
+PLATFORM_GRANT_MANAGE = "platform:grant:manage"
 
 PermissionDependency = Callable[..., Awaitable[PermissionContext]]
 
@@ -85,10 +92,84 @@ def require_route_permission(
     return _dependency
 
 
+def require_module_management() -> PermissionDependency:
+    """依赖工厂：允许「全局权限管理员」或「任一模块负责人/模块管理员」进入。
+
+    通过后仍需由 `service/delegation.py` 按目标角色与目标模块做细粒度判定
+    （本依赖只解决"有没有资格碰角色/授权接口"这一层，不代替 R1–R11）。
+    """
+
+    async def _dependency(
+        user: User = Depends(require_current_user),
+        db: AsyncSession = Depends(get_db),
+    ) -> PermissionContext:
+        if await is_superuser_with_cache(db, user):
+            return PermissionContext(user=user, permission_code=PLATFORM_ROLE_MANAGE, is_superuser=True)
+
+        codes = await effective_permission_codes(db, user)
+        if PLATFORM_ROLE_MANAGE in codes:
+            return PermissionContext(user=user, permission_code=PLATFORM_ROLE_MANAGE)
+        for code in sorted(codes):
+            if code.endswith(MANAGE_ENTRY_SUFFIX):
+                return PermissionContext(user=user, permission_code=code)
+        raise ForbiddenException("缺少权限：platform:role:manage 或任一模块的模块管理入口")
+
+    return _dependency
+
+
+def require_role_catalog_read() -> PermissionDependency:
+    """依赖工厂：「角色管理」只读目录接口（权限树 / 权限码接口清单）的准入。
+
+    准入集合 = 系统管理员 / `platform:role:read` / `platform:role:manage` /
+    任一模块的模块管理入口码。模块负责人、模块管理员不持有 `platform:role:read`
+    （其权限只有本模块业务码 + `{module}:admin:read`），若沿用单码判定，他们在
+    模块配置页「新建角色」时权限树会 403、界面表现为空树。
+    """
+
+    async def _dependency(
+        user: User = Depends(require_current_user),
+        db: AsyncSession = Depends(get_db),
+    ) -> PermissionContext:
+        if await is_superuser_with_cache(db, user):
+            return PermissionContext(user=user, permission_code=PLATFORM_ROLE_MANAGE, is_superuser=True)
+
+        codes = await effective_permission_codes(db, user)
+        for code in (PLATFORM_ROLE_READ, PLATFORM_ROLE_MANAGE):
+            if code in codes:
+                return PermissionContext(user=user, permission_code=code)
+        for code in sorted(codes):
+            if code.endswith(MANAGE_ENTRY_SUFFIX):
+                return PermissionContext(user=user, permission_code=code)
+        raise ForbiddenException("缺少权限：platform:role:read / platform:role:manage 或任一模块的模块管理入口")
+
+    return _dependency
+
+
+def require_assignment_admin() -> PermissionDependency:
+    """依赖工厂：仅系统管理员（或既有平台授权管理员）可任命模块负责人/模块管理员。"""
+
+    async def _dependency(
+        user: User = Depends(require_current_user),
+        db: AsyncSession = Depends(get_db),
+    ) -> PermissionContext:
+        if await is_superuser_with_cache(db, user):
+            return PermissionContext(user=user, permission_code=PLATFORM_GRANT_MANAGE, is_superuser=True)
+
+        codes = await effective_permission_codes(db, user)
+        if PLATFORM_GRANT_MANAGE in codes:
+            return PermissionContext(user=user, permission_code=PLATFORM_GRANT_MANAGE)
+        raise ForbiddenException("只有系统管理员能任命或移除模块负责人与模块管理员")
+
+    return _dependency
+
+
 __all__ = [
     "PermissionContext",
     "require_any_permission",
+    "require_assignment_admin",
     "require_current_user",
+    "require_module_management",
     "require_permission",
+    "require_role_catalog_read",
     "require_route_permission",
 ]

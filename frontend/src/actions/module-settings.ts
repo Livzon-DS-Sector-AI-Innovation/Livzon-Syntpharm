@@ -2,11 +2,17 @@
 
 import { cookies } from 'next/headers'
 import {
+  batchUpdateModuleSettings as apiBatchUpdateModuleSettings,
   getModuleSettings as apiGetModuleSettings,
   getModuleSetting as apiGetModuleSetting,
   updateModuleSetting as apiUpdateModuleSetting,
 } from '@/lib/api/server/module-settings'
-import type { ModuleSetting, ModuleSettingUpdate } from '@/types/module-settings'
+import type {
+  ModuleSetting,
+  ModuleSettingBatchResult,
+  ModuleSettingBatchUpdate,
+  ModuleSettingUpdate,
+} from '@/types/module-settings'
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const cookieStore = await cookies()
@@ -37,5 +43,12 @@ export async function updateModuleSetting(
 ): Promise<{ data: ModuleSetting }> {
   const headers = await getAuthHeaders()
   return apiUpdateModuleSetting(headers, module, key, data)
+}
+
+export async function batchUpdateModuleSettings(
+  data: ModuleSettingBatchUpdate
+): Promise<{ data: ModuleSettingBatchResult }> {
+  const headers = await getAuthHeaders()
+  return apiBatchUpdateModuleSettings(headers, data)
 }
 

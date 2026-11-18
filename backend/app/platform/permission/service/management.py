@@ -14,6 +14,7 @@ from app.core.config import get_settings
 from app.core.database import async_session_factory
 from app.core.exceptions import ForbiddenException
 from app.platform.identity.models import User
+from app.platform.permission.constants import MIN_ACTIVE_SUPERADMINS
 from app.platform.permission.models import (
     GRANT_ACTIVE,
     PERMISSION_ACTIVE,
@@ -105,6 +106,7 @@ async def _sync_roles(db: AsyncSession) -> None:
                     code=r.code,
                     name=r.name,
                     category=r.category,
+                    role_type=r.role_type,
                     module_code=r.module_code,
                     description=r.description,
                     is_builtin=True,
@@ -115,6 +117,7 @@ async def _sync_roles(db: AsyncSession) -> None:
             continue
         existing.name = r.name
         existing.category = r.category
+        existing.role_type = r.role_type
         existing.module_code = r.module_code
         existing.description = r.description
         existing.is_superuser = r.is_superuser
@@ -126,6 +129,10 @@ async def _sync_role_permissions(db: AsyncSession) -> None:
         role = await _get_role_by_code(db, role_code)
         if role is None:
             continue
+        # 手工接管：系统管理员改过这个内置角色的权限后，同步不再覆盖（可「恢复默认」解除）
+        if role.sync_locked:
+            logger.info("内置角色已被手工接管，跳过自动扩量", extra={"role_code": role_code})
+            continue
         for code in codes:
             result = await db.execute(
                 select(RolePermission.id).where(
@@ -136,6 +143,25 @@ async def _sync_role_permissions(db: AsyncSession) -> None:
             )
             if result.scalar_one_or_none() is None:
                 db.add(RolePermission(role_id=role.id, permission_code=code))
+
+
+async def reset_role_to_default(db: AsyncSession, role: Role) -> int:
+    """把内置角色的权限恢复为注册表装配值，并重新纳入自动扩量。
+
+    返回恢复后的权限码数量。非内置角色或注册表里没有该角色时抛 ForbiddenException。
+    """
+    codes = BUILTIN_ROLE_PERMISSIONS.get(role.code)
+    if not role.is_builtin or codes is None:
+        raise ForbiddenException("只能对内置角色执行「恢复默认」")
+
+    # 复用 repository 的全量覆盖逻辑（会复活历史行，避免撞 (role_id, code) 唯一约束）
+    await RoleRepository().set_role_permissions(db, role.id, list(codes))
+    role.sync_locked = False
+    logger.info(
+        "内置角色已恢复默认权限",
+        extra={"role_code": role.code, "permission_count": len(codes)},
+    )
+    return len(codes)
 
 
 async def _sync_api_bindings(db: AsyncSession) -> None:
@@ -242,12 +268,19 @@ def guard_self_escalation(actor_id: uuid.UUID | None, grant: UserRoleGrant) -> N
 
 
 async def guard_last_superadmin(db: AsyncSession, grant: UserRoleGrant) -> None:
-    """删除 super_admin 授权前，确保系统中还有其他超级管理员。"""
+    """移除/停用系统管理员授权前，确保移除后仍有至少 2 名活跃系统管理员。
+
+    阈值从「最后一名」提到「最后两名」：只有系统管理员能授出系统管理员角色，
+    唯一超管账号一旦丢失（离职/锁定），守卫本身会挡住恢复路径，只能改库。
+    """
     role = await get_role(db, grant.role_id)
     if role is None or not role.is_superuser:
         return
-    if await count_active_superadmins(db) <= 1:
-        raise ForbiddenException("不能移除最后一个超级管理员")
+    if grant.status != GRANT_ACTIVE or grant.is_deleted:
+        return
+    # 当前活跃超管数 - 1（本次被移除的这条）必须仍 >= MIN_ACTIVE_SUPERADMINS
+    if await count_active_superadmins(db) <= MIN_ACTIVE_SUPERADMINS:
+        raise ForbiddenException(f"系统管理员至少保留 {MIN_ACTIVE_SUPERADMINS} 名，无法移除或停用")
 
 
 # ── 管理员分级：防越级提权 + 超管账号保护 ─────────────────────────────

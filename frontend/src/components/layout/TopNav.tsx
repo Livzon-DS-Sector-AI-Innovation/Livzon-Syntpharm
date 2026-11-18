@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Dropdown } from "antd"
@@ -15,21 +15,24 @@ import {
   IdcardOutlined,
 } from "@ant-design/icons"
 import { UserAvatar } from "@/components/common/UserAvatar"
-import { resolveMenus } from "@/lib/menu/resolve"
-import { ModuleIcon, SearchIcon, BellIcon } from "@/components/Icons"
+import { ModuleIcon } from "@/components/Icons"
 import { logout } from "@/actions/auth"
-import type { PermissionView } from "@/lib/permissions/modules"
+import type { ResolvedModule } from "@/lib/menu/resolve"
 import { useSidebarStore } from "@/stores/sidebar"
+import { MenuLockLabel } from "./MenuLockLabel"
+import { TopNavSearch } from "./TopNavSearch"
+import { TopNavNotifications } from "./TopNavNotifications"
 
 interface TopNavProps {
   onMenuClick?: () => void
-  permissionView: PermissionView
+  /** 服务端下发的权限视图解析后的菜单树（由 AppShell 统一计算，避免本组件重复解析） */
+  menus: ResolvedModule[]
   /** 当前登录用户（服务端下发，避免首屏先显示「未登录」再跳成用户名） */
   userName: string
   avatarUrl?: string | null
 }
 
-export function TopNav({ onMenuClick, permissionView, userName, avatarUrl }: TopNavProps) {
+export function TopNav({ onMenuClick, menus, userName, avatarUrl }: TopNavProps) {
   const pathname = usePathname()
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -49,12 +52,6 @@ export function TopNav({ onMenuClick, permissionView, userName, avatarUrl }: Top
   }
 
   const displayName = userName
-
-  // 可见模块与排序 = 「代码菜单结构 + 服务端下发的菜单配置」合并结果（见 lib/menu/resolve.ts）
-  const visibleMenus = useMemo(
-    () => resolveMenus(permissionView.menuConfig, new Set(permissionView.granted), permissionView.isSuperuser),
-    [permissionView],
-  )
 
   return (
     <header className="h-16 bg-[var(--color-canvas)] border-b border-[var(--color-hairline)] flex items-center px-5 shrink-0">
@@ -92,9 +89,13 @@ export function TopNav({ onMenuClick, permissionView, userName, avatarUrl }: Top
               label: <Link href="/home">首页</Link>,
               icon: <HomeOutlined className="w-4 h-4" />,
             },
-            ...visibleMenus.map((mod) => ({
+            ...menus.map((mod) => ({
               key: mod.key,
-              label: <Link href={mod.path}>{mod.label}</Link>,
+              label: (
+                <Link href={mod.path} className={mod.noAccess ? "opacity-55" : undefined}>
+                  {mod.noAccess ? <MenuLockLabel label={mod.label} /> : mod.label}
+                </Link>
+              ),
               icon: <ModuleIcon name={mod.icon} className="w-4 h-4" />,
             })),
           ],
@@ -102,7 +103,7 @@ export function TopNav({ onMenuClick, permissionView, userName, avatarUrl }: Top
         }}
       >
         <button className="md:hidden flex items-center gap-1 ml-2 mr-auto text-[15px] font-semibold text-[var(--color-ink)]">
-          {visibleMenus.find((m) => m.key === activeModule)?.label || ""}
+          {menus.find((m) => m.key === activeModule)?.label || ""}
           <span className="text-[10px] text-[var(--color-steel)]">▾</span>
         </button>
       </Dropdown>
@@ -125,23 +126,26 @@ export function TopNav({ onMenuClick, permissionView, userName, avatarUrl }: Top
             <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-[var(--color-primary)] rounded-full" />
           )}
         </Link>
-        {visibleMenus.map((mod) => {
+        {menus.map((mod) => {
           const isActive = activeModule === mod.key
+          // 无权限模块：灰显 + 锁，但仍可点击（模块 layout 守卫渲染无权限页）
+          const tone = mod.noAccess
+            ? "text-[var(--color-steel)] opacity-55 hover:opacity-70"
+            : isActive
+              ? "text-[var(--color-ink)]"
+              : "text-[var(--color-steel)] hover:text-[var(--color-charcoal)]"
           return (
             <Link
               key={mod.key}
               href={mod.path}
               className={`
                 flex items-center gap-1.5 px-3 h-full text-[14px] font-medium transition-colors whitespace-nowrap relative
-                ${isActive
-                  ? "text-[var(--color-ink)]"
-                  : "text-[var(--color-steel)] hover:text-[var(--color-charcoal)]"
-                }
+                ${tone}
               `}
             >
               <ModuleIcon name={mod.icon} className="w-4 h-4" />
-              {mod.label}
-              {isActive && (
+              {mod.noAccess ? <MenuLockLabel label={mod.label} /> : mod.label}
+              {isActive && !mod.noAccess && (
                 <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-[var(--color-primary)] rounded-full" />
               )}
             </Link>
@@ -149,8 +153,9 @@ export function TopNav({ onMenuClick, permissionView, userName, avatarUrl }: Top
         })}
       </nav>
 
-      {/* Right Section */}
-      <div className="flex items-center gap-1 ml-4 shrink-0">
+      {/* Right Section：移动端导航条隐藏后没有 flex-1 撑开，用 ml-auto 把图标推到最右，
+          否则铃铛/头像会停在中间，下拉弹层也右对齐不了视口 */}
+      <div className="flex items-center gap-1 ml-auto md:ml-4 shrink-0">
         <button
           onClick={toggleSidebar}
           className="w-8 h-8 items-center justify-center rounded-[var(--rounded-sm)] text-[var(--color-steel)] hover:text-[var(--color-charcoal)] hover:bg-[var(--color-surface)] transition-colors hidden md:flex"
@@ -158,13 +163,8 @@ export function TopNav({ onMenuClick, permissionView, userName, avatarUrl }: Top
         >
           {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
         </button>
-        <button className="w-8 h-8 flex items-center justify-center rounded-[var(--rounded-sm)] text-[var(--color-steel)] hover:text-[var(--color-charcoal)] hover:bg-[var(--color-surface)] transition-colors">
-          <SearchIcon className="w-[18px] h-[18px]" />
-        </button>
-        <button className="w-8 h-8 flex items-center justify-center rounded-[var(--rounded-sm)] text-[var(--color-steel)] hover:text-[var(--color-charcoal)] hover:bg-[var(--color-surface)] transition-colors relative">
-          <BellIcon className="w-[18px] h-[18px]" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[var(--color-error)] rounded-full" />
-        </button>
+        <TopNavSearch menus={menus} />
+        <TopNavNotifications />
         <Dropdown
           menu={{
             items: [

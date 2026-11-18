@@ -96,6 +96,20 @@ def _module_node(
     }
 
 
+def count_permission_leaves(tree: list[dict[str, Any]]) -> int:
+    """统计树里的权限叶子数（`total_permissions` 用）。
+
+    树被裁剪（如模块负责人只拿本模块）后，总数要跟着裁剪结果走，
+    不能继续返回全量注册表条数。
+    """
+    total = 0
+    for node in tree:
+        if node.get("type") == "permission":
+            total += 1
+        total += count_permission_leaves(node.get("children") or [])
+    return total
+
+
 def build_permission_tree() -> tuple[list[dict[str, Any]], int]:
     """构建权限目录树。
 

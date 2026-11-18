@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import { Input, Select, Spin, Tree } from 'antd'
+import { Button, Input, Select, Spin, Tree } from 'antd'
 import type { DataNode } from 'antd/es/tree'
 import { useQuery } from '@tanstack/react-query'
 import { fetchDirectoryDepartments, type DirectoryDepartmentNode } from '@/lib/api/client/hr'
@@ -113,7 +113,7 @@ export default function DepartmentTreeSelect({
   const [keyword, setKeyword] = useState('')
 
   // 部门树用 React Query 缓存：首次渲染即可回显已选部门名称，展开不重复请求。
-  const { data: nodes = [], isLoading } = useQuery<DirectoryDepartmentNode[]>({
+  const { data: nodes = [], isLoading, isError, refetch } = useQuery<DirectoryDepartmentNode[]>({
     queryKey: ['hr-directory-departments'],
     queryFn: fetchDirectoryDepartments,
     staleTime: 5 * 60 * 1000,
@@ -173,6 +173,15 @@ export default function DepartmentTreeSelect({
           {isLoading ? (
             <div style={{ padding: '12px 0', textAlign: 'center' }}>
               <Spin size="small" />
+            </div>
+          ) : isError ? (
+            // 接口失败（401/403/500）不能伪装成「没有数据」：UAT 曾因 HR 组织同步失败
+            // 导致部门表为空，运维误判成前端问题。
+            <div style={{ padding: '12px 0', textAlign: 'center', color: '#b45309' }}>
+              部门加载失败，请稍后重试
+              <Button type="link" size="small" onClick={() => void refetch()}>
+                重试
+              </Button>
             </div>
           ) : visibleRows.length === 0 ? (
             <div style={{ padding: '12px 0', textAlign: 'center', color: '#999' }}>未找到匹配的部门</div>

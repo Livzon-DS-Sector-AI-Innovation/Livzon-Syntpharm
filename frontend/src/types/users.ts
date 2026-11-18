@@ -18,6 +18,14 @@ export type UserBatchStatusResult = {
   failed: NonNullable<components['schemas']['UserBatchStatusData']['failed']>
 }
 
+export type UserBatchDeleteRequest = components['schemas']['UserBatchDeleteRequest']
+
+/** 批量删除结果：结构与批量启停一致（成功 id 列表 + 逐条失败原因）。 */
+export type UserBatchDeleteResult = {
+  succeeded: NonNullable<components['schemas']['UserBatchDeleteData']['succeeded']>
+  failed: NonNullable<components['schemas']['UserBatchDeleteData']['failed']>
+}
+
 export type FeishuBindRequest = components['schemas']['FeishuBindRequest']
 export type LocalUserCreate = components['schemas']['LocalUserCreate']
 export type UserCreateResult = components['schemas']['UserCreateData']

@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
-from app.core.deps import PermissionContext, RequiredUser, require_any_permission, require_permission
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import (
     AppException,
     BadRequestException,
@@ -50,15 +50,18 @@ from app.platform.identity.schemas import (
     PersonnelItem,
     PersonnelListApiResponse,
     PersonnelListResponse,
+    RoleBrief,
     SessionListApiResponse,
     SessionRevokeApiResponse,
     SyncAllTriggerApiResponse,
     SyncDepartmentsTriggerApiResponse,
     SyncMembersTriggerApiResponse,
-    SyncUserInfoTriggerApiResponse,
     TestLoginResponse,
     TestLoginUser,
     TokenResponse,
+    UserBatchDeleteApiResponse,
+    UserBatchDeleteData,
+    UserBatchDeleteRequest,
     UserBatchFailure,
     UserBatchStatusApiResponse,
     UserBatchStatusData,
@@ -68,6 +71,9 @@ from app.platform.identity.schemas import (
     UserCreateData,
     UserDeleteApiResponse,
     UserDeleteData,
+    UserLookupItem,
+    UserLookupListApiResponse,
+    UserLookupListResponse,
     UserManagementApiResponse,
     UserManagementItem,
     UserManagementListApiResponse,
@@ -76,6 +82,11 @@ from app.platform.identity.schemas import (
     UserResponse,
     UserUnbindFeishuApiResponse,
 )
+from app.platform.permission.public_api import get_role_briefs_by_user_ids
+from app.shared.module_registry import BUSINESS_MODULES
+
+# 模块编码 → 中文名（用户列表角色列的提示文案用，不额外 join 表）
+_MODULE_NAME_BY_CODE = {module.code: module.name for module in BUSINESS_MODULES}
 
 logger = logging.getLogger(__name__)
 
@@ -381,8 +392,10 @@ async def get_me(
 
     Authentication via Bearer header or auth_token cookie.
 
-    #219：部门 / 职务 / 工号 / 头像以 HR 员工档案为准，账号表只提供认证字段。
-    账号未与 HR 档案关联时回退到登录快照。
+    #219：姓名 / 手机 / 邮箱 / 部门 / 职务 / 工号 / 头像以 HR 员工档案为准，
+    账号表只提供认证字段。逐字段「HR 有值才覆盖」——HR 档案存在但某字段尚未
+    同步（如部门为空、last_synced_at 为空）时必须回退登录快照，否则个人中心
+    会被空值清空，与用户管理列表的口径也不一致。
     """
     payload = UserResponse.model_validate(current_user)
     open_id = (current_user.feishu_open_id or "").strip()
@@ -394,8 +407,11 @@ async def get_me(
             department_names = profile.get("department_names") or []
             payload = payload.model_copy(
                 update={
-                    "department": department_names[-1] if department_names else None,
-                    "position": profile.get("job_title_name") or None,
+                    "name": profile.get("name") or payload.name,
+                    "mobile": profile.get("mobile") or payload.mobile,
+                    "email": profile.get("email") or payload.email,
+                    "department": (department_names[-1] if department_names else None) or payload.department,
+                    "position": profile.get("job_title_name") or payload.position,
                     "employee_no": profile.get("employee_no") or payload.employee_no,
                     "avatar_url": profile.get("avatar_url") or payload.avatar_url,
                 }
@@ -570,30 +586,10 @@ async def trigger_sync_all(
     )
 
 
-@sync_router.post(
-    "/user-info",
-    summary="同步飞书用户信息（资料 + 头像 + 部门，后台执行）",
-    response_model=SyncUserInfoTriggerApiResponse,
-)
-async def trigger_sync_user_info(
-    ctx: PermissionContext = Depends(require_any_permission("platform:config:manage", "platform:user:manage")),
-) -> Any:
-    """用户管理页「同步飞书用户信息」入口。
-
-    与 `/sync/all` 复用同一后台任务（部门 + 成员全量同步），区别只在权限：
-    这里额外允许仅持有「用户管理」权限的账号触发，方便管理员自行补齐头像与部门。
-    本次不分配账号（飞书 user_id / 工号权限未开通），只回填资料。
-    """
-    from app.platform.identity.service import sync_livzon_feishu_contacts_all
-
-    await submit_job("identity.sync-user-info", lambda _job_id: sync_livzon_feishu_contacts_all())
-    logger.info("Feishu user info sync triggered")
-    return build_response(
-        data={
-            "status": "ok",
-            "message": "已开始在后台同步飞书用户信息（姓名 / 部门 / 职位 / 头像），约 1 分钟后刷新列表查看结果。",
-        },
-    )
+# 用户管理页的「同步飞书用户信息」入口已下线（#219）：
+# 人员属性统一以 HR 员工档案为唯一来源、在列表接口实时装配，
+# 不再保留「把飞书写回 identity.users」的入口，避免两套口径并存。
+# 组织与人员同步请走 HR 模块：POST /api/v1/hr/org/sync。
 
 
 # ── Livzon Feishu Config ──────────────────────────────────────────
@@ -700,9 +696,15 @@ async def list_users_management(
     super_ids = set(await list_superuser_user_ids(db))
     exclude_user_ids = None if await user_is_superuser(db, ctx.user) else list(super_ids)
 
+    # #219：列表展示值以 HR 档案为准，搜索也要覆盖 HR 侧命中的人（姓名/工号/手机号），
+    # 否则会出现「列表显示 HR 新姓名却搜不到」。两次查询均为百级 IN 查询，无 N+1。
+    from app.modules.hr.public_api import get_profiles_by_open_ids, search_profile_open_ids
+
+    keyword_open_ids = await search_profile_open_ids(db, keyword) if keyword else []
     users, total = await repo.list_users(
         db,
         keyword=keyword,
+        keyword_open_ids=keyword_open_ids,
         status=status,
         auth_source=auth_source,
         unbound_only=unbound_only,
@@ -712,24 +714,127 @@ async def list_users_management(
         limit=limit,
     )
     items = []
-    roles_map = await repo.get_roles_for_users(db, [u.id for u in users])
-    # #219：人员属性以 HR 为准，一次 IN 查询批量装配，避免逐行 N+1。
-    from app.modules.hr.public_api import get_profiles_by_open_ids
-
-    profiles = await get_profiles_by_open_ids(db, [u.feishu_open_id or "" for u in users])
+    user_ids = [u.id for u in users]
+    roles_map = await repo.get_roles_for_users(db, user_ids)
+    role_briefs_map = await get_role_briefs_by_user_ids(db, user_ids)
+    # 需要已移出的历史档案来区分「在职」与「已离职/调出」，故 include_inactive=True
+    profiles = await get_profiles_by_open_ids(
+        db,
+        [u.feishu_open_id or "" for u in users],
+        include_inactive=True,
+    )
     for u in users:
         item = UserManagementItem.model_validate(u)
         item.roles = roles_map.get(u.id, [])
+        item.role_details = [
+            RoleBrief(
+                id=brief.id,
+                name=brief.name,
+                module_code=brief.module_code,
+                module_name=_MODULE_NAME_BY_CODE.get(brief.module_code or ""),
+            )
+            for brief in role_briefs_map.get(u.id, [])
+        ]
         # 批量操作的复选框据此置灰（前端体验层，后端批量接口仍逐条校验）
         item.is_superuser = u.id in super_ids
         profile = profiles.get((u.feishu_open_id or "").strip())
         if profile is not None:
+            # 姓名/联系方式/工号/部门/职务/头像都以 HR 为唯一来源，本地列仅作缺值回退
+            item.name = profile.get("name") or item.name
+            item.mobile = profile.get("mobile") or item.mobile
+            item.email = profile.get("email") or item.email
+            item.employee_no = profile.get("employee_no") or item.employee_no
+            item.position = profile.get("job_title_name") or item.position
             department_names = profile.get("department_names") or []
             item.department = department_names[-1] if department_names else item.department
-            item.position = profile.get("job_title_name") or item.position
-            item.employee_no = profile.get("employee_no") or item.employee_no
+            # 头像同样以 HR 为准：前端优先消费 avatar_thumb，本地旧快照不能覆盖 HR 值
+            avatar = profile.get("avatar_url") or item.avatar_url
+            item.avatar_url = avatar
+            item.avatar_thumb = avatar or item.avatar_thumb
+            item.has_profile = True
+            # 在职口径：先用 HR 的 is_current 近似（staff_status 上游尚未落值）
+            if profile.get("is_current"):
+                item.employment_status = "active"
+                item.employment_label = "在职"
+            else:
+                item.employment_status = "left"
+                item.employment_label = "已离职/调出"
+        else:
+            item.has_profile = False
+            item.employment_status = None
+            item.employment_label = "未建档案"
         items.append(item.model_dump())
     resp = UserManagementListResponse(items=items, total=total, offset=offset, limit=limit)
+    return build_response(data=resp.model_dump())
+
+
+@user_router.get(
+    "/users/lookup",
+    summary="人员下拉（仅启用账号）",
+    response_model=UserLookupListApiResponse,
+)
+async def lookup_users(
+    ctx: PermissionContext = Depends(require_permission("platform:person:lookup")),
+    keyword: str | None = Query(None, description="按姓名/账号/工号/手机号搜索"),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """选人组件的数据源：系统用户管理口径，只返回启用账号。
+
+    与「用户管理」列表的区别：
+    - 固定 ``status=active``：停用账号不参与任何选人；
+    - 只返回展示字段（姓名 / 账号 / 部门 / 职务 / 头像），不含联系方式与角色；
+    - 沿用同一条保护规则：非超管调用时看不到超管账号。
+
+    负责 / 管理员内置角色默认持有 ``platform:person:lookup``，
+    因此模块负责人与模块管理员都能在角色、授权页选人。
+    """
+    from app.platform.permission.public_api import list_superuser_user_ids, user_is_superuser
+
+    repo = UserRepository()
+    super_ids = set(await list_superuser_user_ids(db))
+    exclude_user_ids = None if await user_is_superuser(db, ctx.user) else list(super_ids)
+
+    # 展示值与搜索口径都以 HR 档案为准（与用户管理列表一致）：
+    # 否则会出现「列表显示 HR 新姓名，按新姓名却搜不到」。
+    from app.modules.hr.public_api import get_profiles_by_open_ids, search_profile_open_ids
+
+    keyword_open_ids = await search_profile_open_ids(db, keyword) if keyword else []
+    users, total = await repo.list_users(
+        db,
+        keyword=keyword,
+        keyword_open_ids=keyword_open_ids,
+        status="active",
+        exclude_user_ids=exclude_user_ids,
+        offset=offset,
+        limit=limit,
+    )
+    profiles = await get_profiles_by_open_ids(db, [u.feishu_open_id or "" for u in users])
+    items: list[UserLookupItem] = []
+    for u in users:
+        profile = profiles.get((u.feishu_open_id or "").strip())
+        name = u.name
+        department = u.department
+        position = u.position
+        avatar_url = u.avatar_url
+        if profile is not None:
+            name = profile.get("name") or name
+            position = profile.get("job_title_name") or position
+            department_names = profile.get("department_names") or []
+            department = department_names[-1] if department_names else department
+            avatar_url = profile.get("avatar_url") or avatar_url
+        items.append(
+            UserLookupItem(
+                id=u.id,
+                name=name,
+                username=u.username,
+                department=department,
+                position=position,
+                avatar_url=avatar_url,
+            )
+        )
+    resp = UserLookupListResponse(items=items, total=total)
     return build_response(data=resp.model_dump())
 
 
@@ -969,6 +1074,97 @@ async def batch_update_user_status(
 
     await db.commit()
     return build_response(data=UserBatchStatusData(succeeded=succeeded, failed=failed).model_dump())
+
+
+@user_router.post(
+    "/users/batch-delete",
+    summary="批量删除账号（仅超级管理员，软删除）",
+    response_model=UserBatchDeleteApiResponse,
+)
+async def batch_delete_users(
+    payload: UserBatchDeleteRequest,
+    ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """批量删除账号（单次最多 100 个）。
+
+    逐条复用单条删除的全部护栏：仅超级管理员、不能删自己、不能删系统内置账号、
+    不能删最后一个超级管理员。失败条目不影响其他条目，结果里返回失败原因。
+    删除动作与单条删除一致：软删除 + 清空角色授权 + 审计；会话在提交后吊销，
+    Redis 不可用时只降级为「会话未吊销」，不回滚已完成的删除。
+    """
+    from app.platform.identity.service import SYSTEM_ADMIN_USERNAME
+    from app.platform.identity.session import revoke_all_user_sessions
+    from app.platform.permission.public_api import (
+        list_superuser_user_ids,
+        revoke_all_user_grants,
+        user_is_superuser,
+    )
+
+    if not await user_is_superuser(db, ctx.user):
+        raise ForbiddenException("只有超级管理员可以删除账号")
+
+    repo = UserRepository()
+    succeeded: list[uuid.UUID] = []
+    failed: list[UserBatchFailure] = []
+    deleted_ids: list[uuid.UUID] = []
+
+    # dict.fromkeys 去重且保持顺序：前端重复选同一条不应重复处理
+    for user_id in dict.fromkeys(payload.user_ids):
+        user = await repo.get_by_id(db, user_id)
+        if user is None:
+            failed.append(UserBatchFailure(id=user_id, reason="账号不存在或已删除"))
+            continue
+        if user.id == ctx.user.id:
+            failed.append(UserBatchFailure(id=user.id, username=user.username, reason="不能删除当前登录账号"))
+            continue
+        if (user.username or "").strip().lower() == SYSTEM_ADMIN_USERNAME.lower():
+            failed.append(UserBatchFailure(id=user.id, username=user.username, reason="系统内置账号不允许删除"))
+            continue
+
+        super_ids = await list_superuser_user_ids(db)
+        if user.id in super_ids and len(super_ids) <= 1:
+            failed.append(
+                UserBatchFailure(id=user.id, username=user.username, reason="不能删除最后一个超级管理员账号"),
+            )
+            continue
+
+        old_value = {
+            "username": user.username,
+            "name": user.name,
+            "status": user.status,
+            "auth_source": user.auth_source,
+        }
+        # soft_delete_user 内部 flush：同批后续的「最后一个超管」判断能看到本次删除
+        await repo.soft_delete_user(db, user, operator_id=ctx.user.id)
+        revoked_grants = await revoke_all_user_grants(db, user.id)
+        await record_audit_log(
+            db,
+            user=ctx.user,
+            action="user.delete",
+            resource_type="user",
+            resource_id=user.id,
+            old_value=old_value,
+            new_value={
+                "is_deleted": True,
+                "status": "disabled",
+                "revoked_grants": revoked_grants,
+                "batch": True,
+            },
+        )
+        succeeded.append(user.id)
+        deleted_ids.append(user.id)
+
+    await db.commit()
+
+    # 会话存放在 Redis，提交成功之后再吊销：事务回滚时不应把用户误踢下线。
+    for deleted_id in deleted_ids:
+        try:
+            await revoke_all_user_sessions(deleted_id)
+        except Exception:
+            logger.warning("批量删除账号后吊销会话失败 user_id=%s", deleted_id, exc_info=True)
+
+    return build_response(data=UserBatchDeleteData(succeeded=succeeded, failed=failed).model_dump())
 
 
 @user_router.delete(
