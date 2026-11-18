@@ -50,6 +50,7 @@ from app.platform.identity.schemas import (
     PersonnelItem,
     PersonnelListApiResponse,
     PersonnelListResponse,
+    RoleBrief,
     SessionListApiResponse,
     SessionRevokeApiResponse,
     SyncAllTriggerApiResponse,
@@ -70,6 +71,9 @@ from app.platform.identity.schemas import (
     UserCreateData,
     UserDeleteApiResponse,
     UserDeleteData,
+    UserLookupItem,
+    UserLookupListApiResponse,
+    UserLookupListResponse,
     UserManagementApiResponse,
     UserManagementItem,
     UserManagementListApiResponse,
@@ -78,6 +82,11 @@ from app.platform.identity.schemas import (
     UserResponse,
     UserUnbindFeishuApiResponse,
 )
+from app.platform.permission.public_api import get_role_briefs_by_user_ids
+from app.shared.module_registry import BUSINESS_MODULES
+
+# 模块编码 → 中文名（用户列表角色列的提示文案用，不额外 join 表）
+_MODULE_NAME_BY_CODE = {module.code: module.name for module in BUSINESS_MODULES}
 
 logger = logging.getLogger(__name__)
 
@@ -698,7 +707,9 @@ async def list_users_management(
         limit=limit,
     )
     items = []
-    roles_map = await repo.get_roles_for_users(db, [u.id for u in users])
+    user_ids = [u.id for u in users]
+    roles_map = await repo.get_roles_for_users(db, user_ids)
+    role_briefs_map = await get_role_briefs_by_user_ids(db, user_ids)
     # 需要已移出的历史档案来区分「在职」与「已离职/调出」，故 include_inactive=True
     profiles = await get_profiles_by_open_ids(
         db,
@@ -708,6 +719,15 @@ async def list_users_management(
     for u in users:
         item = UserManagementItem.model_validate(u)
         item.roles = roles_map.get(u.id, [])
+        item.role_details = [
+            RoleBrief(
+                id=brief.id,
+                name=brief.name,
+                module_code=brief.module_code,
+                module_name=_MODULE_NAME_BY_CODE.get(brief.module_code or ""),
+            )
+            for brief in role_briefs_map.get(u.id, [])
+        ]
         # 批量操作的复选框据此置灰（前端体验层，后端批量接口仍逐条校验）
         item.is_superuser = u.id in super_ids
         profile = profiles.get((u.feishu_open_id or "").strip())
@@ -738,6 +758,76 @@ async def list_users_management(
             item.employment_label = "未建档案"
         items.append(item.model_dump())
     resp = UserManagementListResponse(items=items, total=total, offset=offset, limit=limit)
+    return build_response(data=resp.model_dump())
+
+
+@user_router.get(
+    "/users/lookup",
+    summary="人员下拉（仅启用账号）",
+    response_model=UserLookupListApiResponse,
+)
+async def lookup_users(
+    ctx: PermissionContext = Depends(require_permission("platform:person:lookup")),
+    keyword: str | None = Query(None, description="按姓名/账号/工号/手机号搜索"),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """选人组件的数据源：系统用户管理口径，只返回启用账号。
+
+    与「用户管理」列表的区别：
+    - 固定 ``status=active``：停用账号不参与任何选人；
+    - 只返回展示字段（姓名 / 账号 / 部门 / 职务 / 头像），不含联系方式与角色；
+    - 沿用同一条保护规则：非超管调用时看不到超管账号。
+
+    负责 / 管理员内置角色默认持有 ``platform:person:lookup``，
+    因此模块负责人与模块管理员都能在角色、授权页选人。
+    """
+    from app.platform.permission.public_api import list_superuser_user_ids, user_is_superuser
+
+    repo = UserRepository()
+    super_ids = set(await list_superuser_user_ids(db))
+    exclude_user_ids = None if await user_is_superuser(db, ctx.user) else list(super_ids)
+
+    # 展示值与搜索口径都以 HR 档案为准（与用户管理列表一致）：
+    # 否则会出现「列表显示 HR 新姓名，按新姓名却搜不到」。
+    from app.modules.hr.public_api import get_profiles_by_open_ids, search_profile_open_ids
+
+    keyword_open_ids = await search_profile_open_ids(db, keyword) if keyword else []
+    users, total = await repo.list_users(
+        db,
+        keyword=keyword,
+        keyword_open_ids=keyword_open_ids,
+        status="active",
+        exclude_user_ids=exclude_user_ids,
+        offset=offset,
+        limit=limit,
+    )
+    profiles = await get_profiles_by_open_ids(db, [u.feishu_open_id or "" for u in users])
+    items: list[UserLookupItem] = []
+    for u in users:
+        profile = profiles.get((u.feishu_open_id or "").strip())
+        name = u.name
+        department = u.department
+        position = u.position
+        avatar_url = u.avatar_url
+        if profile is not None:
+            name = profile.get("name") or name
+            position = profile.get("job_title_name") or position
+            department_names = profile.get("department_names") or []
+            department = department_names[-1] if department_names else department
+            avatar_url = profile.get("avatar_url") or avatar_url
+        items.append(
+            UserLookupItem(
+                id=u.id,
+                name=name,
+                username=u.username,
+                department=department,
+                position=position,
+                avatar_url=avatar_url,
+            )
+        )
+    resp = UserLookupListResponse(items=items, total=total)
     return build_response(data=resp.model_dump())
 
 

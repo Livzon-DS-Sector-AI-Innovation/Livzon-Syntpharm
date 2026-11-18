@@ -11,8 +11,9 @@ function auth(token?: string): Record<string, string> | undefined {
 
 // ── 角色 ──────────────────────────────────────────────────────────
 
-export function getRoles(token?: string) {
-  return apiFetch<Schemas['RoleListResponse']>(P('/roles'), { headers: auth(token) })
+export function getRoles(moduleCode?: string, token?: string) {
+  const q = moduleCode ? `?module_code=${encodeURIComponent(moduleCode)}` : ''
+  return apiFetch<Schemas['RoleListResponse']>(P(`/roles${q}`), { headers: auth(token) })
 }
 
 export function createRole(data: Schemas['app__platform__permission__schemas__RoleCreate'], token?: string) {
@@ -32,6 +33,13 @@ export function updateRole(
     method: 'PUT',
     headers: auth(token),
     body: JSON.stringify(data),
+  })
+}
+
+export function resetRoleToDefault(id: string, token?: string) {
+  return apiFetch<Schemas['RoleDetailApiResponse']>(P(`/roles/${id}/reset-default`), {
+    method: 'POST',
+    headers: auth(token),
   })
 }
 
@@ -74,9 +82,47 @@ export function getPermissionPreview(userId: string, token?: string) {
   return apiFetch<Schemas['MyPermissionsResponse']>(P(`/preview/${userId}`), { headers: auth(token) })
 }
 
-export function getGrants(userId?: string, token?: string) {
-  const q = userId ? `?user_id=${userId}` : ''
+export function getGrants(userId?: string, moduleCode?: string, token?: string) {
+  const params = new URLSearchParams()
+  if (userId) params.set('user_id', userId)
+  if (moduleCode) params.set('module_code', moduleCode)
+  const q = params.toString() ? `?${params.toString()}` : ''
   return apiFetch<Schemas['GrantListResponse']>(P(`/grants${q}`), { headers: auth(token) })
+}
+
+// ── 模块负责人 / 模块管理员（系统管理员侧）─────────────────────────────
+
+export function getModuleAdmins(token?: string) {
+  return apiFetch<Schemas['ModuleAdminListResponse']>(P('/module-admins'), { headers: auth(token) })
+}
+
+export function assignModuleAdmin(data: Schemas['ModuleAdminAssignRequest'], token?: string) {
+  return apiFetch<Schemas['app__platform__permission__schemas__MessageApiResponse']>(P('/module-admins'), {
+    method: 'POST',
+    headers: auth(token),
+    body: JSON.stringify(data),
+  })
+}
+
+export function removeModuleAdmin(data: Schemas['ModuleAdminAssignRequest'], token?: string) {
+  return apiFetch<Schemas['app__platform__permission__schemas__MessageApiResponse']>(P('/module-admins/remove'), {
+    method: 'POST',
+    headers: auth(token),
+    body: JSON.stringify(data),
+  })
+}
+
+// ── 按人查权限（离职 / 调岗收权）──────────────────────────────────────
+
+export function getUserAccess(userId: string, token?: string) {
+  return apiFetch<Schemas['UserAccessResponse']>(P(`/user-access/${userId}`), { headers: auth(token) })
+}
+
+export function disableUserAccess(userId: string, token?: string) {
+  return apiFetch<Schemas['UserAccessDisableResponse']>(P(`/user-access/${userId}/disable`), {
+    method: 'POST',
+    headers: auth(token),
+  })
 }
 
 export function createGrant(data: Schemas['GrantCreate'], token?: string) {

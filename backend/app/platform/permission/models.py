@@ -2,8 +2,8 @@
 
 设计要点（对照《权限体系设计对比报告》第六节）：
 - 权限目录 permissions：代码注册表为唯一权威，DB 只做只读镜像 + 生命周期登记（发布后不可删、只能退役）。
-- 角色 roles：平台角色（super_admin / permission_admin / config_admin）+
-  模块角色（{module}:admin/operator/approver/viewer）。
+- 角色 roles：系统管理员 super_admin + 每模块两个内置角色（{module}:head 模块负责人 /
+  {module}:manager 模块管理员）+ 管理员自建的岗位角色（role_type=job）。
 - role_permissions：角色→权限码（纯动作授权，不含数据范围）。
 - user_role_grants：用户角色授权，是「单条授权判定」的最小单元——动作权限与数据范围必须落在同一条授权内。
 - api_bindings：接口精确绑定登记簿（方法 + 路由模板），未登记受保护接口一律 403。
@@ -12,20 +12,21 @@
 import uuid
 from typing import Any
 
-from sqlalchemy import Boolean, ForeignKey, Index, String, UniqueConstraint, Uuid
+from sqlalchemy import Boolean, ForeignKey, Index, String, UniqueConstraint, Uuid, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 # 确保 identity.users 表注册（BaseModel 的 created_by/updated_by 外键目标），
 # 否则单独 import 本模块时 FK 解析报 NoReferencedTableError
 import app.platform.identity.models  # noqa: F401
+from app.platform.permission.constants import ROLE_TYPE_JOB
 from app.shared.base_model import BaseModel
 
 # 权限目录状态
 PERMISSION_ACTIVE = "active"
 PERMISSION_DEPRECATED = "deprecated"
 
-# 角色类别
+# 角色类别（历史常量，保留在此以兼容既有调用方；权威定义见 constants.py）
 ROLE_CATEGORY_PLATFORM = "platform"
 ROLE_CATEGORY_MODULE = "module"
 
@@ -81,6 +82,7 @@ class Role(BaseModel):
         UniqueConstraint("code", name="uq_permission_roles_code"),
         Index("ix_permission_roles_category", "category"),
         Index("ix_permission_roles_module_code", "module_code"),
+        Index("ix_permission_roles_role_type", "role_type"),
         {"schema": "permission"},
     )
 
@@ -91,8 +93,22 @@ class Role(BaseModel):
         nullable=False,
         comment="platform / module",
     )
+    role_type: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default=ROLE_TYPE_JOB,
+        server_default=ROLE_TYPE_JOB,
+        comment="system / head / manager / job",
+    )
     module_code: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="模块编码（模块角色必填）")
     description: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="角色说明")
+    sync_locked: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        comment="内置角色是否已被人工接管（true 时启动同步不再改动其权限）",
+    )
     is_builtin: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
@@ -147,6 +163,14 @@ class UserRoleGrant(BaseModel):
         Index("ix_permission_user_role_grants_user", "user_id"),
         Index("ix_permission_user_role_grants_role", "role_id"),
         Index("ix_permission_user_role_grants_status", "status"),
+        # 同一人同一角色只允许一条活跃授权（历史重复行由 0130 迁移清洗后停用）
+        Index(
+            "uq_permission_user_role_grants_active",
+            "user_id",
+            "role_id",
+            unique=True,
+            postgresql_where=text("is_deleted = false AND status = 'active'"),
+        ),
         {"schema": "permission"},
     )
 

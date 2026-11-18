@@ -33,12 +33,18 @@ interface ModuleSettingsClientProps {
   moduleCode: string
   moduleName: string
   moduleDescription: string
+  /**
+   * 作为「模块配置」页签内容嵌入时传 true：
+   * 外层页面已有页头与容器留白，这里不再重复渲染，避免出现两级大标题与双份内边距。
+   */
+  embedded?: boolean
 }
 
 export default function ModuleSettingsClient({
   moduleCode,
   moduleName,
   moduleDescription,
+  embedded = false,
 }: ModuleSettingsClientProps) {
   const { message } = App.useApp()
 
@@ -198,8 +204,8 @@ export default function ModuleSettingsClient({
   ]
 
   return (
-    <div className="settings-scope settings-enter mx-auto max-w-[1320px] md:px-6 md:py-6">
-      <SettingsPageHeader title={`${moduleName}配置`} description={moduleDescription} />
+    <div className={embedded ? '' : 'settings-scope settings-enter mx-auto max-w-[1320px] md:px-6 md:py-6'}>
+      {embedded ? null : <SettingsPageHeader title={`${moduleName}配置`} description={moduleDescription} />}
 
       <SettingsListCard>
         <Table
@@ -209,6 +215,7 @@ export default function ModuleSettingsClient({
           loading={loading}
           pagination={false}
           scroll={{ x: 'max-content' }}
+          locale={{ emptyText: '本模块暂无运行时配置项' }}
         />
       </SettingsListCard>
 

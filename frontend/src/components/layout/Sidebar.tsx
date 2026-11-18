@@ -6,12 +6,13 @@ import { useQuery } from "@tanstack/react-query"
 import { Menu } from "antd"
 import type { MenuProps } from "antd"
 import type { SubMenuItem } from "@/lib/menu-config"
-import { resolveMenus } from "@/lib/menu/resolve"
+import type { ResolvedModule } from "@/lib/menu/resolve"
 import type { PermissionView } from "@/lib/permissions/modules"
 import { fetchWarehouseFeishuTablesByParams } from "@/lib/api/client/warehouse"
 import type { WarehouseFeishuBusinessDomain, WarehouseFeishuTable } from "@/types/warehouse"
 import { HomeOutlined, IdcardOutlined, SettingOutlined } from "@ant-design/icons"
 import { useSidebarStore } from "@/stores/sidebar"
+import { MenuLockLabel } from "./MenuLockLabel"
 
 type MenuItem = Required<MenuProps>['items'][number]
 
@@ -122,11 +123,26 @@ function buildKeyPathMap(items: SubMenuItem[]): Map<string, string> {
   return map
 }
 
+/**
+ * 菜单标签：
+ * - `noAccess`（无权限）→ 灰显 + 锁图标，**仍可点击**（点击后由模块 layout 守卫渲染无权限页）
+ * - `disabled`（未开发）→ 由 Antd Menu 的 disabled 处理，灰显且不可点
+ */
+function renderMenuLabel(label: string, noAccess?: boolean) {
+  if (!noAccess) return label
+  return (
+    <span className="opacity-55">
+      <MenuLockLabel label={label} />
+    </span>
+  )
+}
+
 function buildMenuItems(
   items: SubMenuItem[],
   onNavigateToPath: (path: string) => void,
 ): MenuItem[] {
   return items.map((item): MenuItem => {
+    const label = renderMenuLabel(item.label, item.noAccess)
     if (item.children && item.children.length > 0) {
       const children = buildMenuItems(item.children, onNavigateToPath)
       const parentPath = item.path
@@ -134,18 +150,18 @@ function buildMenuItems(
       if (parentPath) {
         return {
           key: item.key,
-          label: item.label,
+          label,
           children,
           onTitleClick: () => onNavigateToPath(parentPath),
         }
       }
       return {
         key: item.key,
-        label: item.label,
+        label,
         children,
       }
     }
-    const leaf: MenuItem = { key: item.key, label: item.label }
+    const leaf: MenuItem = { key: item.key, label }
     if (item.disabled) {
       leaf.disabled = true
     }
@@ -231,9 +247,11 @@ interface SidebarProps {
   /** 移动端抽屉内使用：强制展开，忽略桌面折叠状态 */
   forceExpanded?: boolean
   permissionView: PermissionView
+  /** 由 AppShell 统一解析的菜单树（桌面侧栏与移动抽屉共用，避免重复计算） */
+  menus: ResolvedModule[]
 }
 
-export function Sidebar({ onNavigate, forceExpanded = false, permissionView }: SidebarProps) {
+export function Sidebar({ onNavigate, forceExpanded = false, permissionView, menus }: SidebarProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { collapsed: collapsedState } = useSidebarStore()
@@ -252,13 +270,8 @@ export function Sidebar({ onNavigate, forceExpanded = false, permissionView }: S
   )
   const queryString = searchParams.toString()
   const query = useMemo(() => new URLSearchParams(queryString), [queryString])
-  const granted = useMemo(() => new Set(permissionView.granted), [permissionView.granted])
-  // 菜单树 = 代码结构 + 服务端下发的菜单配置（显隐 / 权重 / 权限 / 自定义项）
-  const resolvedModules = useMemo(
-    () => resolveMenus(permissionView.menuConfig, granted, permissionView.isSuperuser),
-    [permissionView, granted],
-  )
-  const currentModule = resolvedModules.find((mod) => mod.key === moduleKey)
+  // 菜单树 = 代码结构 + 服务端下发的菜单配置（显隐 / 权重 / 权限 / 自定义项），已在 AppShell 解析
+  const currentModule = menus.find((mod) => mod.key === moduleKey)
 
   const moduleChildren = useMemo(() => {
     if (!currentModule) return []
@@ -284,7 +297,9 @@ export function Sidebar({ onNavigate, forceExpanded = false, permissionView }: S
 
   // Sync openKeys when navigation changes (adjusting state during render)
   const [prevNavKey, setPrevNavKey] = useState<string>('')
-  const navKey = currentModule ? `${currentModule}-${pathname}-${query}` : ''
+  // 用模块 key 拼导航指纹：以前直接把 currentModule 对象插进模板串，得到的是 "[object Object]"，
+  // 换模块时指纹不变，上一模块的展开项会被带到新模块。
+  const navKey = currentModule ? `${currentModule.key}|${pathname}|${queryString}` : ''
   if (navKey !== prevNavKey && currentModule) {
     setPrevNavKey(navKey)
     const ancestorKeys = collectAncestorKeys(moduleChildren, pathname, query)

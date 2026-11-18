@@ -5,6 +5,7 @@
 """
 
 import uuid
+from dataclasses import dataclass
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -57,6 +58,42 @@ async def get_role_names_by_user_ids(
     result: dict[uuid.UUID, list[str]] = {}
     for user_id, role_name in rows:
         result.setdefault(user_id, []).append(role_name)
+    return result
+
+
+@dataclass(frozen=True)
+class RoleBriefData:
+    """角色简要信息（跨模块消费用，避免暴露 permission 的 ORM 模型）。"""
+
+    id: uuid.UUID
+    name: str
+    module_code: str | None
+
+
+async def get_role_briefs_by_user_ids(
+    db: AsyncSession,
+    user_ids: list[uuid.UUID],
+) -> dict[uuid.UUID, list[RoleBriefData]]:
+    """批量取用户的有效角色（含所属模块编码），供用户管理列表「角色」列展示。"""
+    if not user_ids:
+        return {}
+    from app.platform.permission.models import GRANT_ACTIVE, Role, UserRoleGrant
+
+    stmt = (
+        select(UserRoleGrant.user_id, Role.id, Role.name, Role.module_code)
+        .join(Role, Role.id == UserRoleGrant.role_id)
+        .where(
+            UserRoleGrant.user_id.in_(user_ids),
+            UserRoleGrant.is_deleted == False,  # noqa: E712
+            UserRoleGrant.status == GRANT_ACTIVE,
+            Role.is_deleted == False,  # noqa: E712
+        )
+        .order_by(Role.module_code, Role.name)
+    )
+    rows = (await db.execute(stmt)).all()
+    result: dict[uuid.UUID, list[RoleBriefData]] = {}
+    for user_id, role_id, role_name, module_code in rows:
+        result.setdefault(user_id, []).append(RoleBriefData(id=role_id, name=role_name, module_code=module_code))
     return result
 
 

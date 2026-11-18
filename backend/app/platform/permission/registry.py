@@ -11,6 +11,15 @@
 
 from dataclasses import dataclass
 
+from app.platform.permission.constants import (
+    ADMIN_ENTRY_ACTION,
+    ADMIN_ENTRY_RESOURCE,
+    ROLE_TYPE_HEAD,
+    ROLE_TYPE_JOB,
+    ROLE_TYPE_MANAGER,
+    ROLE_TYPE_SYSTEM,
+    admin_entry_code,
+)
 from app.shared.module_registry import BUSINESS_MODULES
 
 # ── 动作集合 ──────────────────────────────────────────────────────
@@ -53,6 +62,7 @@ class RoleDef:
     module_code: str | None
     description: str
     is_superuser: bool = False
+    role_type: str = ROLE_TYPE_JOB
 
 
 @dataclass(frozen=True)
@@ -64,6 +74,10 @@ class ApiBindingDef:
 
 
 # ── 平台权限码 ────────────────────────────────────────────────────
+
+# 选人组件（人员下拉）专用码：只查启用账号的展示字段。
+# 模块负责人 / 模块管理员内置角色默认持有，用于在角色与授权页选人。
+PERSON_LOOKUP_CODE = "platform:person:lookup"
 
 PLATFORM_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("platform:user:read", "查看用户", "platform", "user", "read"),
@@ -83,6 +97,16 @@ PLATFORM_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("platform:llm-config:manage", "管理模型配置", "platform", "llm-config", "manage"),
     PermissionDef("platform:module-setting:read", "查看模块配置", "platform", "module-setting", "read"),
     PermissionDef("platform:module-setting:manage", "管理模块配置", "platform", "module-setting", "manage"),
+    # 人员下拉专用（选人组件）：只返回启用账号的姓名/账号/部门/职务，不含联系方式等敏感字段。
+    # 与 platform:user:read 分开，避免「能查人员下拉」被误解为「能进用户管理页」。
+    PermissionDef(
+        PERSON_LOOKUP_CODE,
+        "人员查询",
+        "platform",
+        "person",
+        "lookup",
+        description="授权/角色等管理页的人员下拉（仅启用账号，只含展示字段）",
+    ),
 )
 
 
@@ -105,6 +129,7 @@ RESOURCE_LABELS: dict[str, str] = {
     "hazard-category": "隐患类别字典",
     "llm-config": "模型配置",
     "module-setting": "模块配置",
+    "person": "人员查询",
     # ── research（研发管理）资源 ──
     "project": "研发项目",
     "track": "研究跟踪",
@@ -289,6 +314,26 @@ BUSINESS_MODULE_PERMISSIONS: tuple[PermissionDef, ...] = tuple(
     )
     for module in BUSINESS_MODULES
 )
+
+
+# ── 模块管理入口码（委派式权限管理）──────────────────────────────────
+# 每个业务模块一个 `{module}:admin:read`，是「进入本模块配置页 + 调用本模块
+# 角色/授权接口」的入口。只装进「模块负责人」「模块管理员」两个内置角色，
+# 岗位角色不可勾选（见 ADMIN_ENTRY_CODES 与 service/delegation.py 的硬校验）。
+MODULE_ADMIN_PERMISSIONS: tuple[PermissionDef, ...] = tuple(
+    PermissionDef(
+        code=admin_entry_code(module.code),
+        name=f"{module.name} - 模块管理入口",
+        module=module.code,
+        resource=ADMIN_ENTRY_RESOURCE,
+        action=ADMIN_ENTRY_ACTION,
+        description="进入本模块「模块配置」页并管理本模块岗位角色与授权（仅模块负责人/模块管理员内置角色持有）",
+    )
+    for module in BUSINESS_MODULES
+)
+
+# 管理入口码集合：岗位角色不得包含其中任何一项
+ADMIN_ENTRY_CODES: frozenset[str] = frozenset(p.code for p in MODULE_ADMIN_PERMISSIONS)
 
 
 # ── 业务模块细粒度权限码：safety（安全管理）───────────────────
@@ -1172,6 +1217,7 @@ PRODUCTION_PERMISSIONS: tuple[PermissionDef, ...] = (
 ALL_PERMISSIONS: tuple[PermissionDef, ...] = (
     PLATFORM_PERMISSIONS
     + BUSINESS_MODULE_PERMISSIONS
+    + MODULE_ADMIN_PERMISSIONS
     + SAFETY_PERMISSIONS
     + RESEARCH_PERMISSIONS
     + WAREHOUSE_PERMISSIONS
@@ -1187,32 +1233,78 @@ ALL_PERMISSIONS: tuple[PermissionDef, ...] = (
 
 
 # ── 内置角色 ──────────────────────────────────────────────────────
-# 内置角色**只保留超级管理员**（2026-10-13 按需求精简）：
-# 原先的 48 个模块角色（{module}:{admin|operator|approver|viewer}）与
-# permission_admin / config_admin 已下线，不再由注册表声明。
-#
-# 需要其他角色时，由管理员在「权限管理 → 角色管理」里**自建**（可勾选权限码）。
+# 三类内置角色（2026-11 委派式权限管理）：
+# 1. 系统管理员 super_admin —— 全部权限，唯一能任命/移除模块负责人与模块管理员。
+# 2. 模块负责人 {module}:head —— 该模块全部业务权限 + 模块管理入口，可进入模块配置页。
+# 3. 模块管理员 {module}:manager —— 只持有模块管理入口，管岗位角色与授权。
+# 三类均不可删除；模块负责人随注册表新增权限码自动扩量（只增不删）。
+# 岗位角色（{module}:{name}）仍由模块负责人/管理人在权限树上自建。
 
 PLATFORM_ROLES: tuple[RoleDef, ...] = (
     RoleDef(
         code="super_admin",
-        name="超级管理员",
+        name="系统管理员",
         category="platform",
         module_code=None,
-        description="拥有全部权限，判定时直接放行",
+        description="拥有全部权限，判定时直接放行（唯一可任命模块负责人与模块管理员）",
         is_superuser=True,
+        role_type=ROLE_TYPE_SYSTEM,
     ),
 )
 
-ALL_BUILTIN_ROLES: tuple[RoleDef, ...] = PLATFORM_ROLES
+
+def _business_codes_of(module_code: str) -> tuple[str, ...]:
+    """某模块的全部业务权限码（排除模块管理入口码）。"""
+    return tuple(p.code for p in ALL_PERMISSIONS if p.module == module_code and p.code not in ADMIN_ENTRY_CODES)
+
+
+MODULE_BUILTIN_ROLES: tuple[RoleDef, ...] = tuple(
+    role
+    for module in BUSINESS_MODULES
+    for role in (
+        RoleDef(
+            code=f"{module.code}:head",
+            name=f"{module.name}负责人",
+            category="module",
+            module_code=module.code,
+            description="模块负责人：拥有本模块全部业务权限，可进入模块配置页管理岗位角色与授权",
+            role_type=ROLE_TYPE_HEAD,
+        ),
+        RoleDef(
+            code=f"{module.code}:manager",
+            name=f"{module.name}管理员",
+            category="module",
+            module_code=module.code,
+            description="模块管理员：拥有本模块全部业务权限，可进入模块配置页管理岗位角色与授权",
+            role_type=ROLE_TYPE_MANAGER,
+        ),
+    )
+)
+
+ALL_BUILTIN_ROLES: tuple[RoleDef, ...] = PLATFORM_ROLES + MODULE_BUILTIN_ROLES
 
 
 # ── 内置角色 → 权限码映射 ──────────────────────────────────────────
 # super_admin 通过 is_superuser 直接放行，不在此绑定权限码。
-# 其余内置角色已下线（2026-10-13），故此处为空：其他角色的权限由管理员
-# 自建角色时在权限树上勾选，写入 permission.role_permissions。
-
-BUILTIN_ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {}
+# 模块负责人与模块管理员**权限一致**（2026-11-18 用户口径）：都是本模块全部业务码
+# + 模块管理入口码，启动同步时只增不删、随注册表自动扩量。
+# 两者的区别不在权限集合，而在**任命关系**：负责人由系统管理员任命，
+# 管理人由本模块负责人任命；模块负责人不能被本模块其他人移除。
+BUILTIN_ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
+    role_code: codes
+    for module in BUSINESS_MODULES
+    for role_code, codes in (
+        (
+            f"{module.code}:head",
+            # 人员查询：负责人/管理员都要能在角色与授权页选人（选人数据源已改为系统账号）
+            _business_codes_of(module.code) + (admin_entry_code(module.code), PERSON_LOOKUP_CODE),
+        ),
+        (
+            f"{module.code}:manager",
+            _business_codes_of(module.code) + (admin_entry_code(module.code), PERSON_LOOKUP_CODE),
+        ),
+    )
+}
 
 
 # ── 接口绑定登记簿（首批：平台管理接口）────────────────────────────
@@ -1233,12 +1325,18 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:user:read", "GET", "/api/v1/identity/sessions"),
     ApiBindingDef("platform:user:manage", "DELETE", "/api/v1/identity/sessions/{jti}"),
     ApiBindingDef("platform:user:manage", "DELETE", "/api/v1/identity/users/{id}/sessions"),
+    # 选人组件的人员下拉（系统用户管理口径：只返回启用账号的展示字段）
+    ApiBindingDef("platform:person:lookup", "GET", "/api/v1/identity/users/lookup"),
     # 组织架构 / 人员名单（平台用户读权限即可）
     ApiBindingDef("platform:user:read", "GET", "/api/v1/identity/departments"),
     ApiBindingDef("platform:user:read", "GET", "/api/v1/identity/departments/{dept_id}"),
     ApiBindingDef("platform:user:read", "GET", "/api/v1/identity/personnel"),
     # 登录记录（审计类）
     ApiBindingDef("platform:audit:read", "GET", "/api/v1/identity/login-logs"),
+    # HR 人员/部门目录（统一人员选择器 PersonSelect / DepartmentTreeSelect 的数据源）
+    # 与 identity/personnel 同口径：只返回姓名、部门、职务等展示信息，不含敏感字段
+    ApiBindingDef("platform:user:read", "GET", "/api/v1/hr/directory/departments"),
+    ApiBindingDef("platform:user:read", "GET", "/api/v1/hr/directory/people"),
     # 模型配置（含 API key，仅平台管理员）
     ApiBindingDef("platform:llm-config:read", "GET", "/api/v1/llm/configs"),
     ApiBindingDef("platform:llm-config:read", "GET", "/api/v1/llm/configs/{config_id}"),
@@ -1266,6 +1364,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:role:manage", "POST", "/api/v1/permission/roles"),
     ApiBindingDef("platform:role:manage", "PUT", "/api/v1/permission/roles/{id}"),
     ApiBindingDef("platform:role:manage", "DELETE", "/api/v1/permission/roles/{id}"),
+    ApiBindingDef("platform:role:manage", "POST", "/api/v1/permission/roles/{id}/reset-default"),
     ApiBindingDef("platform:role:manage", "POST", "/api/v1/permission/roles/batch-status"),
     ApiBindingDef("platform:role:manage", "POST", "/api/v1/permission/roles/batch-delete"),
     # 权限目录
@@ -1285,6 +1384,13 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:grant:manage", "DELETE", "/api/v1/permission/grants/{id}"),
     ApiBindingDef("platform:grant:manage", "POST", "/api/v1/permission/grants/batch-status"),
     ApiBindingDef("platform:grant:manage", "POST", "/api/v1/permission/grants/batch-delete"),
+    # 模块负责人 / 模块管理员（系统管理员侧）
+    ApiBindingDef("platform:grant:read", "GET", "/api/v1/permission/module-admins"),
+    ApiBindingDef("platform:grant:manage", "POST", "/api/v1/permission/module-admins"),
+    ApiBindingDef("platform:grant:manage", "POST", "/api/v1/permission/module-admins/remove"),
+    # 按人查权限（离职/调岗收权兜底）
+    ApiBindingDef("platform:grant:read", "GET", "/api/v1/permission/user-access/{user_id}"),
+    ApiBindingDef("platform:grant:manage", "POST", "/api/v1/permission/user-access/{user_id}/disable"),
     # 当前用户权限（登录用户自取）
     ApiBindingDef("platform:permission:read", "GET", "/api/v1/permission/my-permissions"),
     # 系统运维

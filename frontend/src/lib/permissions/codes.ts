@@ -29,6 +29,27 @@ export const MODULE_PERM = {
   qualityRead: 'quality:module:read',
 } as const
 
+/**
+ * 模块管理入口码（每模块 1 个）：进入本模块「模块配置」页、管理岗位角色与授权。
+ *
+ * 与后端 `MODULE_ADMIN_PERMISSIONS` 一一对应：`<module>:admin:read`。
+ * 只由「模块负责人」「模块管理员」两个内置角色持有，岗位角色不可勾选。
+ */
+export const ADMIN_ENTRY_PERM = {
+  productionAdmin: 'production:admin:read',
+  equipmentAdmin: 'equipment:admin:read',
+  safetyAdmin: 'safety:admin:read',
+  environmentAdmin: 'environment:admin:read',
+  energyAdmin: 'energy:admin:read',
+  warehouseAdmin: 'warehouse:admin:read',
+  procurementAdmin: 'procurement:admin:read',
+  administrationAdmin: 'administration:admin:read',
+  hrAdmin: 'hr:admin:read',
+  researchAdmin: 'research:admin:read',
+  registrationAdmin: 'registration:admin:read',
+  qualityAdmin: 'quality:admin:read',
+} as const
+
 /** 研发管理（research）接口级权限码，与后端 RESEARCH_PERMISSIONS 一一对应 */
 export const RESEARCH_PERM = {
   researchProjectRead: 'research:project:read',
@@ -563,7 +584,10 @@ export const PERM = {
   llmConfigManage: 'platform:llm-config:manage',
   moduleSettingRead: 'platform:module-setting:read',
   moduleSettingManage: 'platform:module-setting:manage',
+  /** 人员下拉（选人组件）：只查启用账号的展示字段 */
+  personLookup: 'platform:person:lookup',
   ...MODULE_PERM,
+  ...ADMIN_ENTRY_PERM,
   ...RESEARCH_PERM,
   ...WAREHOUSE_PERM,
   ...PROCUREMENT_PERM,

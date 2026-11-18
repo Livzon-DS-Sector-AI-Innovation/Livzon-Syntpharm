@@ -210,21 +210,20 @@ class RoleRepository:
         role_id: uuid.UUID,
         permission_codes: list[str],
     ) -> None:
-        """全量设置角色权限码（软删旧关联 + 新增缺失项）。"""
+        """全量设置角色权限码（复用/复活已有行 + 软删多余 + 新增缺失）。
+
+        注意 `(role_id, permission_code)` 有唯一约束，所以**不能**先软删再插入同一权限码：
+        必须把历史行复活复用，否则会撞唯一键（`重置内置角色权限` 时必然触发）。
+        """
         wanted = set(permission_codes)
 
-        # 删除不再需要的
-        result = await db.execute(
-            select(RolePermission).where(
-                RolePermission.role_id == role_id,
-                RolePermission.is_deleted == False,  # noqa: E712
-            )
-        )
+        result = await db.execute(select(RolePermission).where(RolePermission.role_id == role_id))
         for rp in result.scalars().all():
-            if rp.permission_code not in wanted:
-                rp.is_deleted = True
-            else:
+            if rp.permission_code in wanted:
+                rp.is_deleted = False  # 复活历史行
                 wanted.discard(rp.permission_code)
+            elif not rp.is_deleted:
+                rp.is_deleted = True
 
         # 新增缺失的
         for code in wanted:
@@ -233,6 +232,24 @@ class RoleRepository:
     async def soft_delete_role(self, db: AsyncSession, role: Role) -> None:
         role.is_deleted = True
         role.status = "disabled"
+
+    async def disable_grants_for_role(self, db: AsyncSession, role_id: uuid.UUID) -> int:
+        """停用某角色的全部活跃授权（删除角色时调用，返回受影响行数）。
+
+        停用而不是软删：授权列表里仍能看到"已停用"的行，判错时可一键恢复。
+        """
+        result = await db.execute(
+            select(UserRoleGrant).where(
+                UserRoleGrant.role_id == role_id,
+                UserRoleGrant.status == "active",
+                UserRoleGrant.is_deleted == False,  # noqa: E712
+            )
+        )
+        grants = list(result.scalars().all())
+        for grant in grants:
+            grant.status = "disabled"
+        await db.flush()
+        return len(grants)
 
 
 class PermissionRepository:

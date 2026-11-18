@@ -206,7 +206,7 @@ export default function UserManagementClient() {
   // 新建用户时可「同时授予角色」：拉角色列表供多选
   const { data: roles = [] } = useQuery<RoleDetail[]>({
     queryKey: ['permission-roles'],
-    queryFn: fetchRoles,
+    queryFn: () => fetchRoles(),
     staleTime: 5 * 60_000,
   })
 
@@ -674,6 +674,25 @@ export default function UserManagementClient() {
       width: 150,
       ellipsis: true,
       render: (department: string | null) => <span className="text-[13px]">{department || '-'}</span>,
+    },
+    {
+      title: '角色',
+      key: 'roles',
+      width: 220,
+      // 角色来自权限管理的授权（含模块归属），空值显示「—」而不是空白
+      render: (_: unknown, record: UserManagementItem) => {
+        const details = record.role_details ?? []
+        if (details.length === 0) return <span className="text-[13px] text-[var(--color-steel)]">—</span>
+        return (
+          <Space size={[4, 4]} wrap>
+            {details.map((role) => (
+              <Tooltip key={role.id} title={role.module_name ? `模块：${role.module_name}` : '平台角色'}>
+                <Tag color={role.module_code ? undefined : 'blue'}>{role.name}</Tag>
+              </Tooltip>
+            ))}
+          </Space>
+        )
+      },
     },
     {
       title: '是否在职',

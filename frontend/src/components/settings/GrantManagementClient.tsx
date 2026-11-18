@@ -83,7 +83,7 @@ export default function GrantManagementClient() {
 
   const { data: roles = [] } = useQuery({
     queryKey: ['permission-roles'],
-    queryFn: fetchRoles,
+    queryFn: () => fetchRoles(),
   })
 
   // 用户下拉不再一次性全量拉取（旧实现写死 limit=100，523 个账号里大半选不到），

@@ -55,6 +55,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/identity/users/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 人员下拉（仅启用账号）
+         * @description 选人组件的数据源：系统用户管理口径，只返回启用账号。
+         *
+         *     与「用户管理」列表的区别：
+         *     - 固定 ``status=active``：停用账号不参与任何选人；
+         *     - 只返回展示字段（姓名 / 账号 / 部门 / 职务 / 头像），不含联系方式与角色；
+         *     - 沿用同一条保护规则：非超管调用时看不到超管账号。
+         *
+         *     负责 / 管理员内置角色默认持有 ``platform:person:lookup``，
+         *     因此模块负责人与模块管理员都能在角色、授权页选人。
+         */
+        get: operations["lookup_users_api_v1_identity_users_lookup_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/identity/ensure-by-profile": {
         parameters: {
             query?: never;
@@ -936,6 +964,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/permission/roles/{role_id}/reset-default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset Role Permissions
+         * @description 把内置角色的权限恢复为代码注册表的装配值，并重新纳入启动自动扩量。
+         */
+        post: operations["reset_role_permissions_api_v1_permission_roles__role_id__reset_default_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/permission/roles/{role_id}": {
         parameters: {
             query?: never;
@@ -1243,6 +1291,89 @@ export interface paths {
         get: operations["preview_user_access_api_v1_permission_preview__user_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/module-admins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Module Admins
+         * @description 按模块列出负责人与管理人（含"未指派"空态所需的全部模块）。
+         */
+        get: operations["list_module_admins_api_v1_permission_module_admins_get"];
+        put?: never;
+        /**
+         * Assign Module Admin
+         * @description 指派模块负责人 / 模块管理员（仅系统管理员）。
+         */
+        post: operations["assign_module_admin_api_v1_permission_module_admins_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/module-admins/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remove Module Admin
+         * @description 移除模块负责人 / 模块管理员（仅系统管理员）。
+         */
+        post: operations["remove_module_admin_api_v1_permission_module_admins_remove_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/user-access/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Access */
+        get: operations["get_user_access_api_v1_permission_user_access__user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/user-access/{user_id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disable User Access
+         * @description 停用某用户的全部模块授权（离职/调岗收权）。
+         *
+         *     系统管理员授权不在此处处理：超管降级受「保底两人」约束，需单独操作。
+         */
+        post: operations["disable_user_access_api_v1_permission_user_access__user_id__disable_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -42162,6 +42293,75 @@ export interface components {
              */
             perms?: string[] | null;
         };
+        /** ModuleAdminAssignRequest */
+        ModuleAdminAssignRequest: {
+            /** Module Code */
+            module_code: string;
+            /**
+             * Role Type
+             * @description head=模块负责人 / manager=模块管理员
+             */
+            role_type: string;
+            /**
+             * User Id
+             * Format: uuid
+             * @description identity.users.id 或 hr.employee_profiles.id
+             */
+            user_id: string;
+        };
+        /**
+         * ModuleAdminGroup
+         * @description 一个模块的负责人与管理人清单。
+         */
+        ModuleAdminGroup: {
+            /** Module Code */
+            module_code: string;
+            /** Module Name */
+            module_name: string;
+            /** Heads */
+            heads?: components["schemas"]["ModuleAdminUser"][];
+            /** Managers */
+            managers?: components["schemas"]["ModuleAdminUser"][];
+        };
+        /** ModuleAdminListResponse */
+        ModuleAdminListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["ModuleAdminGroup"][];
+        };
+        /**
+         * ModuleAdminUser
+         * @description 某个模块下的一名负责人/管理人。
+         */
+        ModuleAdminUser: {
+            /**
+             * Grant Id
+             * Format: uuid
+             */
+            grant_id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Name */
+            name?: string | null;
+            /** Username */
+            username?: string | null;
+            /** Role Code */
+            role_code: string;
+            /** Role Type */
+            role_type: string;
+        };
         /**
          * ModuleSettingApiResponse
          * @description Single-item envelope (404 returns data=None).
@@ -51024,6 +51224,23 @@ export interface components {
             /** Label */
             label: string;
         };
+        /**
+         * RoleBrief
+         * @description 用户列表「角色」列用：角色名 + 所属模块。
+         */
+        RoleBrief: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Module Code */
+            module_code?: string | null;
+            /** Module Name */
+            module_name?: string | null;
+        };
         /** RoleDetailApiResponse */
         RoleDetailApiResponse: {
             /**
@@ -51051,6 +51268,11 @@ export interface components {
             name: string;
             /** Category */
             category: string;
+            /**
+             * Role Type
+             * @default job
+             */
+            role_type: string;
             /** Module Code */
             module_code?: string | null;
             /** Description */
@@ -51070,6 +51292,11 @@ export interface components {
              * @default active
              */
             status: string;
+            /**
+             * Sync Locked
+             * @default false
+             */
+            sync_locked: boolean;
             /** Permission Codes */
             permission_codes?: string[];
         };
@@ -58551,6 +58778,87 @@ export interface components {
              */
             status?: string | null;
         };
+        /** UserAccessData */
+        UserAccessData: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Name */
+            name?: string | null;
+            /** Username */
+            username?: string | null;
+            /**
+             * Is Superuser
+             * @default false
+             */
+            is_superuser: boolean;
+            /** Items */
+            items?: components["schemas"]["UserAccessItem"][];
+        };
+        /** UserAccessDisableData */
+        UserAccessDisableData: {
+            /**
+             * Disabled
+             * @default 0
+             */
+            disabled: number;
+        };
+        /** UserAccessDisableResponse */
+        UserAccessDisableResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserAccessDisableData"];
+        };
+        /**
+         * UserAccessItem
+         * @description 某用户的一条模块权限（离职/调岗收权兜底视图）。
+         */
+        UserAccessItem: {
+            /**
+             * Grant Id
+             * Format: uuid
+             */
+            grant_id: string;
+            /**
+             * Role Id
+             * Format: uuid
+             */
+            role_id: string;
+            /** Role Code */
+            role_code: string;
+            /** Role Name */
+            role_name: string;
+            /** Role Type */
+            role_type: string;
+            /** Module Code */
+            module_code?: string | null;
+            /** Status */
+            status: string;
+        };
+        /** UserAccessResponse */
+        UserAccessResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserAccessData"];
+        };
         /** UserBatchDeleteApiResponse */
         UserBatchDeleteApiResponse: {
             /**
@@ -58714,6 +59022,8 @@ export interface components {
             created_at?: string | null;
             /** Roles */
             roles?: string[];
+            /** Role Details */
+            role_details?: components["schemas"]["RoleBrief"][];
             /**
              * Is Superuser
              * @default false
@@ -58838,6 +59148,8 @@ export interface components {
             created_at?: string | null;
             /** Roles */
             roles?: string[];
+            /** Role Details */
+            role_details?: components["schemas"]["RoleBrief"][];
             /**
              * Is Superuser
              * @default false
@@ -58894,6 +59206,51 @@ export interface components {
              * @default 0
              */
             revoked_sessions: number;
+        };
+        /**
+         * UserLookupItem
+         * @description 选人组件的一行：只含展示字段，不含手机号/邮箱等敏感信息。
+         */
+        UserLookupItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Username */
+            username?: string | null;
+            /** Department */
+            department?: string | null;
+            /** Position */
+            position?: string | null;
+            /** Avatar Url */
+            avatar_url?: string | null;
+        };
+        /** UserLookupListApiResponse */
+        UserLookupListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserLookupListResponse"];
+        };
+        /** UserLookupListResponse */
+        UserLookupListResponse: {
+            /** Items */
+            items?: components["schemas"]["UserLookupItem"][];
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
         };
         /** UserManagementApiResponse */
         UserManagementApiResponse: {
@@ -58974,6 +59331,8 @@ export interface components {
             created_at?: string | null;
             /** Roles */
             roles?: string[];
+            /** Role Details */
+            role_details?: components["schemas"]["RoleBrief"][];
             /**
              * Is Superuser
              * @default false
@@ -59174,6 +59533,8 @@ export interface components {
             created_at?: string | null;
             /** Roles */
             roles?: string[];
+            /** Role Details */
+            role_details?: components["schemas"]["RoleBrief"][];
             /**
              * Is Superuser
              * @default false
@@ -61213,8 +61574,11 @@ export interface components {
         };
         /** RoleCreate */
         app__platform__permission__schemas__RoleCreate: {
-            /** Code */
-            code: string;
+            /**
+             * Code
+             * @description 留空时由后端自动生成（模块角色为 {module}:role-NNN，平台角色为 platform:role-NNN）
+             */
+            code?: string | null;
             /** Name */
             name: string;
             /**
@@ -61403,6 +61767,42 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["UserCreateApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    lookup_users_api_v1_identity_users_lookup_get: {
+        parameters: {
+            query?: {
+                /** @description 按姓名/账号/工号/手机号搜索 */
+                keyword?: string | null;
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserLookupListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62936,7 +63336,10 @@ export interface operations {
     };
     list_roles_api_v1_permission_roles_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description 按模块过滤（模块负责人/管理人只能查本模块） */
+                module_code?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: {
@@ -62979,6 +63382,39 @@ export interface operations {
                 "application/json": components["schemas"]["app__platform__permission__schemas__RoleCreate"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["RoleDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_role_permissions_api_v1_permission_roles__role_id__reset_default_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -63301,6 +63737,8 @@ export interface operations {
         parameters: {
             query?: {
                 user_id?: string | null;
+                /** @description 按模块过滤（模块负责人/管理人只能查本模块） */
+                module_code?: string | null;
             };
             header?: never;
             path?: never;
@@ -63591,6 +64029,173 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["MyPermissionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_module_admins_api_v1_permission_module_admins_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["ModuleAdminListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_module_admin_api_v1_permission_module_admins_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModuleAdminAssignRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["app__platform__permission__schemas__MessageApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_module_admin_api_v1_permission_module_admins_remove_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModuleAdminAssignRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["app__platform__permission__schemas__MessageApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_access_api_v1_permission_user_access__user_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserAccessResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disable_user_access_api_v1_permission_user_access__user_id__disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserAccessDisableResponse"];
                 };
             };
             /** @description Validation Error */

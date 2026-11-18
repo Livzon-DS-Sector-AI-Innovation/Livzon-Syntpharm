@@ -40,3 +40,35 @@ export async function searchPersonnel(
   const items = data?.items ?? []
   return { items, total: data?.total ?? items.length }
 }
+
+// ── 人员下拉（选人组件数据源）────────────────────────────────────────
+
+/** 人员下拉项：系统账号口径，只含展示字段（不含手机号/邮箱/角色）。 */
+export type UserLookupItem = components['schemas']['UserLookupItem']
+
+export interface UserLookupPage {
+  items: UserLookupItem[]
+  total: number
+}
+
+/**
+ * 分页获取启用账号（选人组件的唯一数据源）。
+ *
+ * 与 HR 公共目录的区别：这里只返回 `identity.users` 中 `status=active` 的账号，
+ * 即「系统管理 → 用户管理」里能登录的人；未开号的 HR 员工不会被列出。
+ */
+export async function fetchUserLookup(params?: {
+  keyword?: string
+  offset?: number
+  limit?: number
+}): Promise<UserLookupPage> {
+  const searchParams = new URLSearchParams()
+  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  searchParams.set('offset', String(params?.offset ?? 0))
+  searchParams.set('limit', String(params?.limit ?? 50))
+  const data = await apiGet<components['schemas']['UserLookupListApiResponse']['data']>(
+    `${API_BASE}/identity/users/lookup?${searchParams.toString()}`,
+    { cache: 'no-store' },
+  )
+  return { items: data?.items ?? [], total: data?.total ?? 0 }
+}

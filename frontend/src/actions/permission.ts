@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { unwrapResponse } from '@/lib/api/server/base'
 import { normalizeBatchResult } from '@/lib/api/batch'
 import {
+  assignModuleAdmin as assignModuleAdminApi,
   batchCreateGrants as batchCreateGrantsApi,
   batchDeleteGrants as batchDeleteGrantsApi,
   batchDeleteRoles as batchDeleteRolesApi,
@@ -14,15 +15,20 @@ import {
   createRole as createRoleApi,
   deleteGrant as deleteGrantApi,
   deleteRole as deleteRoleApi,
+  disableUserAccess as disableUserAccessApi,
   getApiBindings as getApiBindingsApi,
   getDepartments as getDepartmentsApi,
   getGrants as getGrantsApi,
+  getModuleAdmins as getModuleAdminsApi,
   getMyPermissions as getMyPermissionsApi,
   getPermissions as getPermissionsApi,
   getPermissionApiBindings as getPermissionApiBindingsApi,
   getPermissionPreview as getPermissionPreviewApi,
   getPermissionTree as getPermissionTreeApi,
   getRoles as getRolesApi,
+  resetRoleToDefault as resetRoleToDefaultApi,
+  getUserAccess as getUserAccessApi,
+  removeModuleAdmin as removeModuleAdminApi,
   updateGrant as updateGrantApi,
   updateRole as updateRoleApi,
 } from '@/lib/api/server/permission'
@@ -34,6 +40,8 @@ import type {
   GrantCreateInput,
   GrantItem,
   GrantUpdateInput,
+  ModuleAdminAssignInput,
+  ModuleAdminGroup,
   MyPermissions,
   PermissionActionResult,
   PermissionApiBindingItem,
@@ -42,6 +50,7 @@ import type {
   RoleCreateInput,
   RoleDetail,
   RoleUpdateInput,
+  UserAccessData,
 } from '@/types/permission'
 
 async function getAuthToken(): Promise<string | undefined> {
@@ -53,9 +62,10 @@ const PERMISSION_PATH = '/settings/permission'
 
 // ── 角色 ──────────────────────────────────────────────────────────
 
-export async function fetchRoles(): Promise<RoleDetail[]> {
+/** `moduleCode` 传入时只返回该模块的角色（模块配置页用；后端同时做作用域校验）。 */
+export async function fetchRoles(moduleCode?: string): Promise<RoleDetail[]> {
   const token = await getAuthToken()
-  return unwrapResponse(await getRolesApi(token)) ?? []
+  return unwrapResponse(await getRolesApi(moduleCode, token)) ?? []
 }
 
 /** 授权数据范围选部门用的部门选项（hr.departments.code + name）。 */
@@ -96,6 +106,18 @@ export async function updateRole(
   }
 }
 
+/** 把内置角色权限恢复为注册表默认值，并重新纳入启动自动扩量。 */
+export async function resetRoleToDefault(id: string): Promise<PermissionActionResult<RoleDetail>> {
+  const token = await getAuthToken()
+  try {
+    const role = unwrapResponse(await resetRoleToDefaultApi(id, token))
+    revalidatePath(PERMISSION_PATH)
+    return { ok: true, data: role }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '恢复默认失败' }
+  }
+}
+
 export async function deleteRole(id: string): Promise<PermissionActionResult<null>> {
   const token = await getAuthToken()
   try {
@@ -132,9 +154,56 @@ export async function fetchPermissionApiBindings(code: string): Promise<Permissi
 
 // ── 授权 ──────────────────────────────────────────────────────────
 
-export async function fetchGrants(userId?: string): Promise<GrantItem[]> {
+export async function fetchGrants(userId?: string, moduleCode?: string): Promise<GrantItem[]> {
   const token = await getAuthToken()
-  return unwrapResponse(await getGrantsApi(userId, token)) ?? []
+  return unwrapResponse(await getGrantsApi(userId, moduleCode, token)) ?? []
+}
+
+// ── 模块负责人 / 模块管理员（系统管理员侧）─────────────────────────────
+
+export async function fetchModuleAdmins(): Promise<ModuleAdminGroup[]> {
+  const token = await getAuthToken()
+  return unwrapResponse(await getModuleAdminsApi(token)) ?? []
+}
+
+export async function assignModuleAdmin(data: ModuleAdminAssignInput): Promise<PermissionActionResult<null>> {
+  const token = await getAuthToken()
+  try {
+    await assignModuleAdminApi(data, token)
+    revalidatePath(PERMISSION_PATH)
+    return { ok: true, data: null }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '指派失败' }
+  }
+}
+
+export async function removeModuleAdmin(data: ModuleAdminAssignInput): Promise<PermissionActionResult<null>> {
+  const token = await getAuthToken()
+  try {
+    await removeModuleAdminApi(data, token)
+    revalidatePath(PERMISSION_PATH)
+    return { ok: true, data: null }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '移除失败' }
+  }
+}
+
+// ── 按人查权限（离职 / 调岗收权）──────────────────────────────────────
+
+export async function fetchUserAccess(userId: string): Promise<UserAccessData | null> {
+  const token = await getAuthToken()
+  return unwrapResponse(await getUserAccessApi(userId, token)) ?? null
+}
+
+export async function disableAllUserAccess(userId: string): Promise<PermissionActionResult<number>> {
+  const token = await getAuthToken()
+  try {
+    const data = unwrapResponse(await disableUserAccessApi(userId, token))
+    revalidatePath(PERMISSION_PATH)
+    return { ok: true, data: data?.disabled ?? 0 }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '停用失败' }
+  }
 }
 
 export async function createGrant(data: GrantCreateInput): Promise<GrantItem> {

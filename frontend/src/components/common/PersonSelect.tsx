@@ -3,15 +3,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Divider, Select, Spin } from 'antd'
 import type { ReactNode } from 'react'
-import { fetchDirectoryPeople, type DirectoryPersonItem } from '@/lib/api/client/hr'
+import type { DirectoryPersonItem } from '@/lib/api/client/hr'
+import { fetchUserLookup, type UserLookupItem } from '@/lib/api/client/identity'
 import { UserAvatar, UserLabel } from '@/components/common/UserAvatar'
 
 /**
- * 统一人员选择器（#219）。
+ * 统一人员选择器。
  *
- * 数据源是 HR 公共目录 `GET /api/v1/hr/directory/people`，返回的是
- * `hr.employee_profiles.id`（人员主数据 UUID）+ 姓名快照。全系统所有「选人」
- * 场景都必须走这里，不得再各自查 identity.users 或 hr.employees。
+ * 数据源是系统用户管理口径 `GET /api/v1/identity/users/lookup`，返回
+ * `identity.users.id`（账号 UUID），**只包含启用账号**：没有账号的 HR 员工
+ * 不会被列出，业务表也不再经由「按需建号」隐式产生账号。
+ *
+ * 全系统所有「选人」场景都必须走这里，不得再各自查 identity.users、
+ * hr.employee_profiles 或 hr.directory。
  */
 
 const SEARCH_DEBOUNCE_MS = 300
@@ -22,6 +26,25 @@ export interface PickedPerson {
   /** hr.employee_profiles.id */
   id: string
   name: string
+}
+
+/**
+ * 把系统账号映射成选择器内部统一结构。
+ *
+ * 字段名沿用 HR 目录的 DirectoryPersonItem：调用点（表单回填、姓名快照展示）
+ * 都按这套字段写，换数据源后无需逐个改动。语义对照：
+ * employee_no ← 登录账号，job_title_name ← 职务，department_names ← 所属部门。
+ */
+function toDirectoryPerson(account: UserLookupItem): DirectoryPersonItem {
+  return {
+    id: account.id,
+    name: account.name,
+    employee_no: account.username ?? '',
+    job_title_name: account.position ?? '',
+    department_names: account.department ? [account.department] : [],
+    department_path: [],
+    avatar_url: account.avatar_url ?? '',
+  }
 }
 
 function avatarOf(person: DirectoryPersonItem): string | undefined {
@@ -86,9 +109,10 @@ function useDirectorySearch() {
     loadingRef.current = true
     setLoading(true)
     try {
-      const page = await fetchDirectoryPeople({ keyword: keyword || undefined, offset, limit: PAGE_SIZE })
+      const page = await fetchUserLookup({ keyword: keyword || undefined, offset, limit: PAGE_SIZE })
       if (seq !== requestSeq.current) return
-      setOptions((prev) => (offset === 0 ? page.items : mergeById(prev, page.items)))
+      const items = page.items.map(toDirectoryPerson)
+      setOptions((prev) => (offset === 0 ? items : mergeById(prev, items)))
       setTotal(page.total)
       offsetRef.current = offset + page.items.length
     } catch {

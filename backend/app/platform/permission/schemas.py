@@ -17,11 +17,14 @@ class RoleResponse(BaseModel):
     code: str
     name: str
     category: str
+    role_type: str = "job"
     module_code: str | None = None
     description: str | None = None
     is_builtin: bool = False
     is_superuser: bool = False
     status: str = "active"
+    # 内置角色是否已被人工接管（true 时启动同步不再改动其权限）
+    sync_locked: bool = False
 
 
 class RoleDetailResponse(RoleResponse):
@@ -41,7 +44,12 @@ class RoleDetailApiResponse(BaseModel):
 
 
 class RoleCreate(BaseModel):
-    code: str = Field(..., min_length=2, max_length=128)
+    code: str | None = Field(
+        None,
+        min_length=2,
+        max_length=128,
+        description="留空时由后端自动生成（模块角色为 {module}:role-NNN，平台角色为 platform:role-NNN）",
+    )
     name: str = Field(..., min_length=1, max_length=200)
     category: str = Field(default="module", pattern="^(platform|module)$")
     module_code: str | None = Field(None, max_length=64)
@@ -270,3 +278,74 @@ class PermissionTreeResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: PermissionTreeData
+
+
+# ── 模块负责人 / 模块管理员（系统管理员侧）───────────────────────────
+
+
+class ModuleAdminUser(BaseModel):
+    """某个模块下的一名负责人/管理人。"""
+
+    grant_id: UUID
+    user_id: UUID
+    name: str | None = None
+    username: str | None = None
+    role_code: str
+    role_type: str
+
+
+class ModuleAdminGroup(BaseModel):
+    """一个模块的负责人与管理人清单。"""
+
+    module_code: str
+    module_name: str
+    heads: list[ModuleAdminUser] = Field(default_factory=list)
+    managers: list[ModuleAdminUser] = Field(default_factory=list)
+
+
+class ModuleAdminListResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[ModuleAdminGroup]
+
+
+class ModuleAdminAssignRequest(BaseModel):
+    module_code: str = Field(..., max_length=64)
+    role_type: str = Field(..., pattern="^(head|manager)$", description="head=模块负责人 / manager=模块管理员")
+    user_id: UUID = Field(..., description="identity.users.id 或 hr.employee_profiles.id")
+
+
+class UserAccessItem(BaseModel):
+    """某用户的一条模块权限（离职/调岗收权兜底视图）。"""
+
+    grant_id: UUID
+    role_id: UUID
+    role_code: str
+    role_name: str
+    role_type: str
+    module_code: str | None = None
+    status: str
+
+
+class UserAccessData(BaseModel):
+    user_id: UUID
+    name: str | None = None
+    username: str | None = None
+    is_superuser: bool = False
+    items: list[UserAccessItem] = Field(default_factory=list)
+
+
+class UserAccessResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: UserAccessData
+
+
+class UserAccessDisableData(BaseModel):
+    disabled: int = 0
+
+
+class UserAccessDisableResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: UserAccessDisableData
