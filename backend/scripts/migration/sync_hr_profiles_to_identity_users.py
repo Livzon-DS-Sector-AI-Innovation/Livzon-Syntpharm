@@ -63,9 +63,7 @@ async def _sync(session: AsyncSession, *, apply: bool) -> SyncStats:
     stats.profiles = len(profiles)
 
     open_ids = [profile.open_id for profile in profiles]
-    existing = await session.execute(
-        select(User).where(User.feishu_open_id.in_(open_ids), User.is_deleted.is_(False))
-    )
+    existing = await session.execute(select(User).where(User.feishu_open_id.in_(open_ids), User.is_deleted.is_(False)))
     users_by_open_id = {user.feishu_open_id: user for user in existing.scalars().all() if user.feishu_open_id}
 
     for profile in profiles:

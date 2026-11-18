@@ -300,7 +300,7 @@ async def get_profile_by_open_id(session: AsyncSession, open_id: str) -> dict[st
 
 
 async def find_profiles_by_name(session: AsyncSession, name: str) -> list[dict[str, Any]]:
-    """Return current profiles whose name matches exactly (同名多人时返回全部）. """
+    """Return current profiles whose name matches exactly (同名多人时返回全部）."""
     if not name or not name.strip():
         return []
     result = await session.execute(
@@ -368,11 +368,16 @@ async def find_department_row_by_name(session: AsyncSession, name: str) -> dict[
     if exact is not None:
         return _department_row(exact)
     fuzzy = (
-        await session.execute(
-            base.where(or_(HrDepartment.name.ilike(f"%{value}"), HrDepartment.name.ilike(f"%{value}%")))
-            .order_by(HrDepartment.order, HrDepartment.name)
+        (
+            await session.execute(
+                base.where(or_(HrDepartment.name.ilike(f"%{value}"), HrDepartment.name.ilike(f"%{value}%"))).order_by(
+                    HrDepartment.order, HrDepartment.name
+                )
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     return _department_row(fuzzy[0]) if fuzzy else None
 
 

@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import uuid
-from types import SimpleNamespace
 from typing import Any
 
 from app.modules.safety.feishu import identity_resolver as resolver_module

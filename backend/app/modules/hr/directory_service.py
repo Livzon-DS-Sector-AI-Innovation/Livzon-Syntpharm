@@ -103,12 +103,7 @@ async def list_people(
             if not scope:
                 return [], 0
             conditions.append(
-                or_(
-                    *[
-                        EmployeeProfile.department_ids.contains([feishu_id])
-                        for feishu_id in sorted(scope)
-                    ]
-                )
+                or_(*[EmployeeProfile.department_ids.contains([feishu_id]) for feishu_id in sorted(scope)])
             )
 
     if keyword and keyword.strip():
@@ -121,9 +116,7 @@ async def list_people(
             )
         )
 
-    total = (
-        await session.execute(select(func.count()).select_from(EmployeeProfile).where(*conditions))
-    ).scalar_one()
+    total = (await session.execute(select(func.count()).select_from(EmployeeProfile).where(*conditions))).scalar_one()
     result = await session.execute(
         select(EmployeeProfile)
         .where(*conditions)
