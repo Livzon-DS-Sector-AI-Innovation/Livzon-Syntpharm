@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import { useSearchParams } from 'next/navigation'
 import { Skeleton, Tabs } from 'antd'
 import ModulePermissionPanel from './ModulePermissionPanel'
-import ModuleSettingsClient from '@/components/settings/ModuleSettingsClient'
+import ModuleSettingsClient from './ModuleSettingsClient'
 import type { ModuleSettingsCustomComponent, ModuleSettingsDefinition } from './settings-registry'
 
 /**

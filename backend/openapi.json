@@ -13,7 +13,7 @@
           "\u7528\u6237\u4fe1\u606f"
         ],
         "summary": "\u83b7\u53d6\u5f53\u524d\u767b\u5f55\u7528\u6237\u4fe1\u606f",
-        "description": "Return the currently authenticated user's profile.\n\nAuthentication via Bearer header or auth_token cookie.\n\n#219\uff1a\u90e8\u95e8 / \u804c\u52a1 / \u5de5\u53f7 / \u5934\u50cf\u4ee5 HR \u5458\u5de5\u6863\u6848\u4e3a\u51c6\uff0c\u8d26\u53f7\u8868\u53ea\u63d0\u4f9b\u8ba4\u8bc1\u5b57\u6bb5\u3002\n\u8d26\u53f7\u672a\u4e0e HR \u6863\u6848\u5173\u8054\u65f6\u56de\u9000\u5230\u767b\u5f55\u5feb\u7167\u3002",
+        "description": "Return the currently authenticated user's profile.\n\nAuthentication via Bearer header or auth_token cookie.\n\n#219\uff1a\u59d3\u540d / \u624b\u673a / \u90ae\u7bb1 / \u90e8\u95e8 / \u804c\u52a1 / \u5de5\u53f7 / \u5934\u50cf\u4ee5 HR \u5458\u5de5\u6863\u6848\u4e3a\u51c6\uff0c\n\u8d26\u53f7\u8868\u53ea\u63d0\u4f9b\u8ba4\u8bc1\u5b57\u6bb5\u3002\u9010\u5b57\u6bb5\u300cHR \u6709\u503c\u624d\u8986\u76d6\u300d\u2014\u2014HR \u6863\u6848\u5b58\u5728\u4f46\u67d0\u5b57\u6bb5\u5c1a\u672a\n\u540c\u6b65\uff08\u5982\u90e8\u95e8\u4e3a\u7a7a\u3001last_synced_at \u4e3a\u7a7a\uff09\u65f6\u5fc5\u987b\u56de\u9000\u767b\u5f55\u5feb\u7167\uff0c\u5426\u5219\u4e2a\u4eba\u4e2d\u5fc3\n\u4f1a\u88ab\u7a7a\u503c\u6e05\u7a7a\uff0c\u4e0e\u7528\u6237\u7ba1\u7406\u5217\u8868\u7684\u53e3\u5f84\u4e5f\u4e0d\u4e00\u81f4\u3002",
         "operationId": "get_me_api_v1_identity_me_get",
         "parameters": [
           {
@@ -91166,7 +91166,7 @@
           "Module Settings"
         ],
         "summary": "Get",
-        "description": "List all module settings, optionally filtered by module.",
+        "description": "List all module settings, optionally filtered by module.\n\n\u4fee\u6539\u4eba\u59d3\u540d\u7528\u4e00\u6b21 LEFT JOIN \u5e26\u51fa\uff0c\u907f\u514d\u9010\u884c\u56de\u67e5\uff08N+1\uff09\u3002",
         "operationId": "get_api_v1_module_settings_get",
         "parameters": [
           {
@@ -91287,15 +91287,76 @@
         }
       }
     },
+    "/api/v1/module-settings/batch": {
+      "put": {
+        "tags": [
+          "\u6a21\u5757\u914d\u7f6e",
+          "Module Settings"
+        ],
+        "summary": "Put Batch",
+        "description": "\u6279\u91cf\u66f4\u65b0\u914d\u7f6e\u503c\uff08\u5e03\u5c14\u9879\u6279\u91cf\u542f\u505c\u590d\u7528\u6b64\u63a5\u53e3\uff09\u3002\n\n\u9010\u6761\u72ec\u7acb\u6821\u9a8c\uff1a\u6210\u529f\u9879\u7edf\u4e00\u63d0\u4ea4\uff0c\u5931\u8d25\u9879\u5355\u72ec\u8fd4\u56de\u539f\u56e0\uff0c\u4e92\u4e0d\u5f71\u54cd\u3002",
+        "operationId": "put_batch_api_v1_module_settings_batch_put",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModuleSettingBatchUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModuleSettingBatchApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/module-settings/{module}/{key}": {
       "get": {
         "tags": [
           "\u6a21\u5757\u914d\u7f6e",
           "Module Settings"
         ],
-        "summary": "Get",
+        "summary": "Get One",
         "description": "Get a specific setting by module and key.",
-        "operationId": "get_api_v1_module_settings__module___key__get",
+        "operationId": "get_one_api_v1_module_settings__module___key__get",
         "parameters": [
           {
             "name": "module",
@@ -91361,7 +91422,7 @@
           "Module Settings"
         ],
         "summary": "Put",
-        "description": "Update a setting value.",
+        "description": "Update a setting value.\n\n- \u6309 ``value_type`` \u505a\u670d\u52a1\u7aef\u6821\u9a8c\uff0c\u975e\u6cd5\u503c\u76f4\u63a5 400\uff1b\n- \u5bc6\u94a5\u7c7b\u914d\u7f6e\u4f20\u7a7a\u4e32\u8868\u793a\u300c\u4fdd\u6301\u4e0d\u53d8\u300d\uff08\u754c\u9762\u4e0d\u56de\u586b\u660e\u6587\uff0c\u65e0\u6cd5\u533a\u5206\u300c\u6e05\u7a7a\u300d\uff09\u3002",
         "operationId": "put_api_v1_module_settings__module___key__put",
         "parameters": [
           {
@@ -128806,6 +128867,17 @@
             "title": "Version",
             "default": 1
           },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
           "role_code": {
             "anyOf": [
               {
@@ -145338,6 +145410,144 @@
         "title": "ModuleSettingApiResponse",
         "description": "Single-item envelope (404 returns data=None)."
       },
+      "ModuleSettingBatchApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ModuleSettingBatchResult"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ModuleSettingBatchApiResponse",
+        "description": "Batch envelope."
+      },
+      "ModuleSettingBatchFailure": {
+        "properties": {
+          "module": {
+            "type": "string",
+            "title": "Module"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "module",
+          "key",
+          "reason"
+        ],
+        "title": "ModuleSettingBatchFailure",
+        "description": "\u6279\u91cf\u66f4\u65b0\u4e2d\u5931\u8d25\u7684\u4e00\u6761\u3002"
+      },
+      "ModuleSettingBatchItem": {
+        "properties": {
+          "module": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Module"
+          },
+          "key": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Key"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "module",
+          "key",
+          "value"
+        ],
+        "title": "ModuleSettingBatchItem",
+        "description": "\u5355\u6761\u6279\u91cf\u66f4\u65b0\u9879\u3002"
+      },
+      "ModuleSettingBatchResult": {
+        "properties": {
+          "succeeded": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Succeeded"
+          },
+          "failed": {
+            "items": {
+              "$ref": "#/components/schemas/ModuleSettingBatchFailure"
+            },
+            "type": "array",
+            "title": "Failed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "succeeded",
+          "failed"
+        ],
+        "title": "ModuleSettingBatchResult",
+        "description": "\u6279\u91cf\u66f4\u65b0\u7ed3\u679c\uff1a\u6210\u529f\u7684\u7528 ``module:key`` \u8868\u793a\uff0c\u5931\u8d25\u9879\u5e26\u539f\u56e0\u3002"
+      },
+      "ModuleSettingBatchUpdate": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ModuleSettingBatchItem"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "ModuleSettingBatchUpdate",
+        "description": "\u6279\u91cf\u66f4\u65b0\u8bf7\u6c42\uff08\u5e03\u5c14\u9879\u6279\u91cf\u542f\u505c\u4e3a\u4e3b\uff0c\u4e5f\u63a5\u53d7\u5176\u4ed6\u7c7b\u578b\uff09\u3002"
+      },
       "ModuleSettingCreate": {
         "properties": {
           "module": {
@@ -145373,6 +145583,51 @@
               }
             ],
             "title": "Description"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label",
+            "description": "\u914d\u7f6e\u9879\u4e2d\u6587\u540d"
+          },
+          "group_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Name",
+            "description": "\u529f\u80fd\u57df\u5206\u7ec4\u540d"
+          },
+          "is_secret": {
+            "type": "boolean",
+            "title": "Is Secret",
+            "description": "\u662f\u5426\u5bc6\u94a5\u7c7b\u914d\u7f6e",
+            "default": false
+          },
+          "value_hint": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Hint",
+            "description": "\u53d6\u503c\u63d0\u793a"
           }
         },
         "type": "object",
@@ -145435,13 +145690,62 @@
             "type": "string",
             "title": "Key"
           },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "group_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Name"
+          },
           "value": {
             "type": "string",
             "title": "Value"
           },
+          "value_masked": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Masked"
+          },
+          "has_value": {
+            "type": "boolean",
+            "title": "Has Value",
+            "default": true
+          },
           "value_type": {
             "type": "string",
             "title": "Value Type"
+          },
+          "value_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Hint"
           },
           "description": {
             "anyOf": [
@@ -145453,6 +145757,27 @@
               }
             ],
             "title": "Description"
+          },
+          "is_secret": {
+            "type": "boolean",
+            "title": "Is Secret",
+            "default": false
+          },
+          "updated_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By Name"
+          },
+          "manually_adjusted": {
+            "type": "boolean",
+            "title": "Manually Adjusted",
+            "default": false
           },
           "created_at": {
             "anyOf": [
@@ -145486,7 +145811,7 @@
           "value_type"
         ],
         "title": "ModuleSettingResponse",
-        "description": "Response schema for a module setting."
+        "description": "Response schema for a module setting.\n\n``value`` \u5bf9\u5bc6\u94a5\u7c7b\u914d\u7f6e\u8fd4\u56de\u7a7a\u4e32\uff0c\u771f\u5b9e\u503c\u53ea\u4ee5\u63a9\u7801\u5f62\u5f0f\u51fa\u73b0\u5728 ``value_masked``\uff1b\n\u524d\u7aef\u7f16\u8f91\u5bc6\u94a5\u9879\u65f6\u7559\u7a7a\u5373\u8868\u793a\u300c\u4fdd\u6301\u4e0d\u53d8\u300d\u3002"
       },
       "ModuleSettingUpdate": {
         "properties": {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Input, Table, Tabs, Tag, Typography } from 'antd'
+import { Empty, Input, Table, Tabs, Tag, Typography } from 'antd'
 import { fetchApiBindings, fetchPermissions } from '@/actions/permission'
 import type { PermissionItem } from '@/types/permission'
 import { SettingsListCard } from './SettingsListCard'
@@ -90,6 +90,13 @@ function PermissionTable() {
           showSizeChanger: true,
           showTotal: (t) => `共 ${t} 条`,
         }}
+        locale={{
+          emptyText: query ? (
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有匹配的权限码，换个关键词试试" />
+          ) : (
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="权限目录还没有数据" />
+          ),
+        }}
       />
     </SettingsListCard>
   )
@@ -153,6 +160,13 @@ function ApiBindingTable() {
           pageSize: 20,
           showSizeChanger: true,
           showTotal: (t) => `共 ${t} 条`,
+        }}
+        locale={{
+          emptyText: query ? (
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有匹配的接口绑定" />
+          ) : (
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="还没有登记接口绑定" />
+          ),
         }}
       />
     </SettingsListCard>

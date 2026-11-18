@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Button, Input, Result, Select, Table, Tag } from 'antd'
+import { Button, Empty, Input, Result, Select, Table, Tag } from 'antd'
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { getLoginLogs } from '@/actions/identity'
 import { SettingsListCard } from './SettingsListCard'
@@ -151,6 +151,14 @@ export default function LoginLogsClient() {
         dataSource={data?.items || []}
         loading={isLoading}
         scroll={{ x: 'max-content' }}
+        locale={{
+          emptyText:
+            status || keyword ? (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有符合筛选条件的登录记录" />
+            ) : (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="还没有登录记录" />
+            ),
+        }}
         pagination={{
           current: page,
           pageSize,

@@ -1,7 +1,7 @@
 """Module runtime configuration settings — database-backed."""
 
 import sqlalchemy as sa
-from sqlalchemy import String, Text
+from sqlalchemy import Boolean, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.shared.base_model import BaseModel
@@ -48,4 +48,26 @@ class ModuleSetting(BaseModel):
         Text,
         nullable=True,
         comment="Human-readable description for UI display",
+    )
+    label: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        comment="配置项中文名（未回填时界面回退显示 key）",
+    )
+    group_name: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        comment="功能域分组名（未回填时归入「其他」）",
+    )
+    is_secret: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        comment="是否密钥类配置（列表只返回掩码，导出不含明文）",
+    )
+    value_hint: Mapped[str | None] = mapped_column(
+        String(200),
+        nullable=True,
+        comment="取值提示 / 取值范围（界面在编辑框中提示）",
     )

@@ -105,6 +105,8 @@ class GrantResponse(BaseModel):
     status: str = "active"
     granted_by: UUID | None = None
     version: int = 1
+    # 授予时间（授权列表展示，取自 user_role_grants.created_at）
+    created_at: str | None = None
     # 冗余展示字段（join 查询填充）
     role_code: str | None = None
     role_name: str | None = None

@@ -17,8 +17,10 @@ export interface paths {
          *
          *     Authentication via Bearer header or auth_token cookie.
          *
-         *     #219：部门 / 职务 / 工号 / 头像以 HR 员工档案为准，账号表只提供认证字段。
-         *     账号未与 HR 档案关联时回退到登录快照。
+         *     #219：姓名 / 手机 / 邮箱 / 部门 / 职务 / 工号 / 头像以 HR 员工档案为准，
+         *     账号表只提供认证字段。逐字段「HR 有值才覆盖」——HR 档案存在但某字段尚未
+         *     同步（如部门为空、last_synced_at 为空）时必须回退登录快照，否则个人中心
+         *     会被空值清空，与用户管理列表的口径也不一致。
          */
         get: operations["get_me_api_v1_identity_me_get"];
         put?: never;
@@ -18757,6 +18759,8 @@ export interface paths {
         /**
          * Get
          * @description List all module settings, optionally filtered by module.
+         *
+         *     修改人姓名用一次 LEFT JOIN 带出，避免逐行回查（N+1）。
          */
         get: operations["get_api_v1_module_settings_get"];
         put?: never;
@@ -18771,6 +18775,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/module-settings/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Put Batch
+         * @description 批量更新配置值（布尔项批量启停复用此接口）。
+         *
+         *     逐条独立校验：成功项统一提交，失败项单独返回原因，互不影响。
+         */
+        put: operations["put_batch_api_v1_module_settings_batch_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/module-settings/{module}/{key}": {
         parameters: {
             query?: never;
@@ -18779,13 +18805,16 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get
+         * Get One
          * @description Get a specific setting by module and key.
          */
-        get: operations["get_api_v1_module_settings__module___key__get"];
+        get: operations["get_one_api_v1_module_settings__module___key__get"];
         /**
          * Put
          * @description Update a setting value.
+         *
+         *     - 按 ``value_type`` 做服务端校验，非法值直接 400；
+         *     - 密钥类配置传空串表示「保持不变」（界面不回填明文，无法区分「清空」）。
          */
         put: operations["put_api_v1_module_settings__module___key__put"];
         post?: never;
@@ -35361,6 +35390,8 @@ export interface components {
              * @default 1
              */
             version: number;
+            /** Created At */
+            created_at?: string | null;
             /** Role Code */
             role_code?: string | null;
             /** Role Name */
@@ -42445,6 +42476,68 @@ export interface components {
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /**
+         * ModuleSettingBatchApiResponse
+         * @description Batch envelope.
+         */
+        ModuleSettingBatchApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["ModuleSettingBatchResult"];
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /**
+         * ModuleSettingBatchFailure
+         * @description 批量更新中失败的一条。
+         */
+        ModuleSettingBatchFailure: {
+            /** Module */
+            module: string;
+            /** Key */
+            key: string;
+            /** Label */
+            label?: string | null;
+            /** Reason */
+            reason: string;
+        };
+        /**
+         * ModuleSettingBatchItem
+         * @description 单条批量更新项。
+         */
+        ModuleSettingBatchItem: {
+            /** Module */
+            module: string;
+            /** Key */
+            key: string;
+            /** Value */
+            value: string;
+        };
+        /**
+         * ModuleSettingBatchResult
+         * @description 批量更新结果：成功的用 ``module:key`` 表示，失败项带原因。
+         */
+        ModuleSettingBatchResult: {
+            /** Succeeded */
+            succeeded: string[];
+            /** Failed */
+            failed: components["schemas"]["ModuleSettingBatchFailure"][];
+        };
+        /**
+         * ModuleSettingBatchUpdate
+         * @description 批量更新请求（布尔项批量启停为主，也接受其他类型）。
+         */
+        ModuleSettingBatchUpdate: {
+            /** Items */
+            items: components["schemas"]["ModuleSettingBatchItem"][];
+        };
+        /**
          * ModuleSettingCreate
          * @description Request schema for creating a new setting.
          */
@@ -42471,6 +42564,27 @@ export interface components {
             value_type: string;
             /** Description */
             description?: string | null;
+            /**
+             * Label
+             * @description 配置项中文名
+             */
+            label?: string | null;
+            /**
+             * Group Name
+             * @description 功能域分组名
+             */
+            group_name?: string | null;
+            /**
+             * Is Secret
+             * @description 是否密钥类配置
+             * @default false
+             */
+            is_secret: boolean;
+            /**
+             * Value Hint
+             * @description 取值提示
+             */
+            value_hint?: string | null;
         };
         /**
          * ModuleSettingListApiResponse
@@ -42494,6 +42608,9 @@ export interface components {
         /**
          * ModuleSettingResponse
          * @description Response schema for a module setting.
+         *
+         *     ``value`` 对密钥类配置返回空串，真实值只以掩码形式出现在 ``value_masked``；
+         *     前端编辑密钥项时留空即表示「保持不变」。
          */
         ModuleSettingResponse: {
             /** Id */
@@ -42502,12 +42619,37 @@ export interface components {
             module: string;
             /** Key */
             key: string;
+            /** Label */
+            label?: string | null;
+            /** Group Name */
+            group_name?: string | null;
             /** Value */
             value: string;
+            /** Value Masked */
+            value_masked?: string | null;
+            /**
+             * Has Value
+             * @default true
+             */
+            has_value: boolean;
             /** Value Type */
             value_type: string;
+            /** Value Hint */
+            value_hint?: string | null;
             /** Description */
             description?: string | null;
+            /**
+             * Is Secret
+             * @default false
+             */
+            is_secret: boolean;
+            /** Updated By Name */
+            updated_by_name?: string | null;
+            /**
+             * Manually Adjusted
+             * @default false
+             */
+            manually_adjusted: boolean;
             /** Created At */
             created_at?: string | null;
             /** Updated At */
@@ -107411,7 +107553,42 @@ export interface operations {
             };
         };
     };
-    get_api_v1_module_settings__module___key__get: {
+    put_batch_api_v1_module_settings_batch_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModuleSettingBatchUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["ModuleSettingBatchApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_one_api_v1_module_settings__module___key__get: {
         parameters: {
             query?: never;
             header?: never;

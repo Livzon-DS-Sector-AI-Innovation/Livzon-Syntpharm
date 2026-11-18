@@ -6,6 +6,7 @@ import {
   Alert,
   App,
   Button,
+  Empty,
   Form,
   Input,
   Modal,
@@ -369,6 +370,14 @@ export default function RoleManagementClient() {
             pageSize: 20,
             showSizeChanger: true,
             showTotal: (t) => `共 ${t} 条`,
+          }}
+          locale={{
+            emptyText:
+              roles.length > 0 ? (
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有匹配的角色，换个关键词试试" />
+              ) : (
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="还没有角色，先新建一个再授权" />
+              ),
           }}
         />
       </SettingsListCard>

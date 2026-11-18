@@ -686,6 +686,7 @@ async def list_grants(
             status=g.status,
             granted_by=g.granted_by,
             version=g.version,
+            created_at=g.created_at.isoformat() if g.created_at else None,
             role_code=role_code,
             role_name=role_name,
             user_name=user_name,
@@ -783,6 +784,7 @@ async def create_grant(
             status=grant.status,
             granted_by=grant.granted_by,
             version=grant.version,
+            created_at=grant.created_at.isoformat() if grant.created_at else None,
             role_code=role.code,
             role_name=role.name,
         )
@@ -1000,6 +1002,7 @@ async def update_grant(
             status=grant.status,
             granted_by=grant.granted_by,
             version=grant.version,
+            created_at=grant.created_at.isoformat() if grant.created_at else None,
             role_code=role.code if role else None,
             role_name=role.name if role else None,
         )

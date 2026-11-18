@@ -779,6 +779,16 @@ body {
   background: var(--color-surface);
 }
 
+/* ---- 列表：模块配置 · 权限管理（岗位角色 / 授权）统一行高 ----
+   两张表都是 size="small"，默认 3px 内边距会让「纯文字行」与「带按钮/头像行」
+   高低不一；这里统一成固定行高并垂直居中，行间距保持一致。 */
+.settings-scope .ant-table-tbody > tr.module-perm-row > td {
+  height: 40px;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  vertical-align: middle;
+}
+
 /* ---- 展开 / 折叠项：入场动画（antd 表格展开行与树形子行自带 no motion，默认瞬变）---- */
 @keyframes settings-expand-enter {
   from {

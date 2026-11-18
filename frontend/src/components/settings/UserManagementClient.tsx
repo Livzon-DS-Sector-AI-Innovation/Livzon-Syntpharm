@@ -8,6 +8,7 @@ import {
   App,
   Button,
   Dropdown,
+  Empty,
   Form,
   Input,
   Modal,
@@ -907,6 +908,14 @@ export default function UserManagementClient() {
                 setPage(nextPageSize === pageSize ? nextPage : 1)
                 setPageSize(nextPageSize)
               },
+            }}
+            locale={{
+              emptyText:
+                keyword || authSource || pendingFilter ? (
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有符合筛选条件的账号" />
+                ) : (
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="还没有账号，飞书同步或新建后会出现在这里" />
+                ),
             }}
           />
         </div>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Alert, App, Button, Card, Empty, Popconfirm, Space, Spin, Table, Tag, Typography } from 'antd'
+import { Alert, App, Button, Card, Empty, Popconfirm, Skeleton, Space, Table, Tag, Tooltip, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import PersonSelect from '@/components/common/PersonSelect'
 import { disableAllUserAccess, fetchUserAccess } from '@/actions/permission'
@@ -57,7 +57,19 @@ export default function UserAccessPanel() {
       dataIndex: 'module_code',
       render: (code: string | null) => code ?? <Text type="secondary">平台</Text>,
     },
-    { title: '角色', dataIndex: 'role_name' },
+    {
+      title: '角色',
+      dataIndex: 'role_name',
+      ellipsis: { showTitle: false },
+      render: (name: string | null | undefined) =>
+        name ? (
+          <Tooltip title={name}>
+            <span className="block max-w-[280px] truncate">{name}</span>
+          </Tooltip>
+        ) : (
+          <Text type="secondary">—</Text>
+        ),
+    },
     {
       title: '类型',
       dataIndex: 'role_type',
@@ -91,9 +103,9 @@ export default function UserAccessPanel() {
       </Card>
 
       {isFetching && !data ? (
-        <div className="flex justify-center py-16">
-          <Spin />
-        </div>
+        <Card size="small">
+          <Skeleton active paragraph={{ rows: 5 }} />
+        </Card>
       ) : data ? (
         <Card
           size="small"
@@ -119,11 +131,22 @@ export default function UserAccessPanel() {
             columns={columns}
             dataSource={items}
             pagination={false}
-            locale={{ emptyText: '该员工没有任何模块授权' }}
+            scroll={{ x: 'max-content' }}
+            locale={{
+              emptyText: (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description="该员工没有任何模块授权，权限是干净的"
+                />
+              ),
+            }}
           />
         </Card>
       ) : (
-        <Empty description="选择员工后显示其在全部模块的权限" />
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description="先在上方搜索并选择员工，再查看其在全部模块的授权"
+        />
       )}
     </div>
   )

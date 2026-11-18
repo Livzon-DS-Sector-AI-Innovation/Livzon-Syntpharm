@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { App, Button, Card, Segmented, Skeleton, Space, Tag, Typography } from 'antd'
+import { App, Button, Card, Empty, Segmented, Skeleton, Space, Tag, Typography } from 'antd'
 import { UserAddOutlined } from '@ant-design/icons'
 import PersonSelect from '@/components/common/PersonSelect'
 import { assignModuleAdmin, fetchModuleAdmins, removeModuleAdmin } from '@/actions/permission'
@@ -105,6 +105,13 @@ export default function ModuleAdminPanel() {
       {isLoading ? (
         <Card size="small">
           <Skeleton active paragraph={{ rows: 8 }} />
+        </Card>
+      ) : groups.length === 0 ? (
+        <Card size="small">
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="还没有可指派的模块，请确认模块注册表已加载"
+          />
         </Card>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
