@@ -15,7 +15,8 @@ from app.core.database import async_session_factory
 from app.platform.identity.models import User
 from app.platform.identity.service import generate_jwt
 
-FRONTEND = "http://localhost:3000"
+# 前端地址从环境变量读取，避免硬编码；例: FRONTEND_URL="http://localhost:3000"
+FRONTEND = os.environ["FRONTEND_URL"]
 
 CHECK_JS = """
 () => {

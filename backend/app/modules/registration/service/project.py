@@ -5,7 +5,6 @@ from datetime import date, datetime, timedelta
 from typing import Any, cast
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.registration import repository as repo
@@ -18,7 +17,7 @@ from app.modules.registration.schemas.project import (
     ProjectUpdate,
 )
 from app.modules.registration.service.prediction import predict_drug
-from app.platform.identity.models import User
+from app.platform.identity.public_api import resolve_user_names
 
 _TZ = ZoneInfo("Asia/Shanghai")
 
@@ -76,13 +75,6 @@ async def _write_system_log(db: AsyncSession, project_id: uuid.UUID, content: st
     await project_repo.add_log(db, project_id=project_id, log_type="system", content=content)
 
 
-async def _resolve_user_names(db: AsyncSession, user_ids: set[uuid.UUID]) -> dict[uuid.UUID, str]:
-    if not user_ids:
-        return {}
-    result = await db.execute(select(User).where(User.id.in_(user_ids)))
-    return {u.id: u.name for u in result.scalars().all()}
-
-
 def _log_to_dict(log: ProjectProgressLog, names: dict[uuid.UUID, str]) -> dict[str, Any]:
     return {
         "id": log.id,
@@ -122,7 +114,7 @@ async def get_projects(
     )
     latest = await project_repo.latest_logs_for_projects(db, [p.id for p in projects])
     user_ids = {log.created_by for log in latest.values() if log.created_by}
-    names = await _resolve_user_names(db, user_ids)
+    names = await resolve_user_names(db, user_ids)
     return [_project_to_response_dict(p, latest.get(p.id), names) for p in projects]
 
 
@@ -137,7 +129,7 @@ async def get_project_detail(db: AsyncSession, project_id: uuid.UUID) -> dict[st
     project = await get_project(db, project_id)
     latest = await project_repo.latest_logs_for_projects(db, [project.id])
     log = latest.get(project.id)
-    names = await _resolve_user_names(db, {log.created_by} if log and log.created_by else set())
+    names = await resolve_user_names(db, {log.created_by} if log and log.created_by else set())
     return _project_to_response_dict(project, log, names)
 
 
@@ -149,7 +141,7 @@ async def get_kpi(db: AsyncSession) -> dict[str, int]:
 async def get_project_logs(db: AsyncSession, project_id: uuid.UUID) -> list[dict[str, Any]]:
     await get_project(db, project_id)
     logs = await project_repo.list_logs(db, project_id)
-    names = await _resolve_user_names(db, {log.created_by for log in logs if log.created_by})
+    names = await resolve_user_names(db, {log.created_by for log in logs if log.created_by})
     return [_log_to_dict(log, names) for log in logs]
 
 
@@ -259,7 +251,7 @@ async def add_progress_log(
     project.latest_progress = content
     await db.commit()
     await db.refresh(log)
-    names = await _resolve_user_names(db, {log.created_by} if log.created_by else set())
+    names = await resolve_user_names(db, {log.created_by} if log.created_by else set())
     return _log_to_dict(log, names)
 
 

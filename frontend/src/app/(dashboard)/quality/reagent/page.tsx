@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useIsMobile } from '@/hooks/useMediaQuery'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table,
@@ -181,8 +182,10 @@ export default function QualityReagentPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [filters, setFilters] = useState(initialFilters)
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('table')
-  const [isMobile, setIsMobile] = useState(false)
+  const isMobile = useIsMobile()
+  // 视图模式：用户手动切换后以手动选择为准；未手动切换时按断点默认（移动端卡片 / 桌面表格）
+  const [viewModeOverride, setViewModeOverride] = useState<'card' | 'table' | null>(null)
+  const viewMode = viewModeOverride ?? (isMobile ? 'card' : 'table')
 
   const [createForm] = Form.useForm()
   const [editForm] = Form.useForm()
@@ -200,18 +203,6 @@ export default function QualityReagentPage() {
   const [aiLoading, setAiLoading] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
   const queryClient = useQueryClient()
-
-  // 检测移动端
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)')
-    const update = () => {
-      setIsMobile(mq.matches)
-      setViewMode(mq.matches ? 'card' : 'table')
-    }
-    update()
-    mq.addEventListener('change', update)
-    return () => mq.removeEventListener('change', update)
-  }, [])
 
   // 加载数据
   const { data: queryResult, isLoading: loading, refetch } = useQuery({
@@ -711,7 +702,7 @@ export default function QualityReagentPage() {
           {!isMobile && (
             <Segmented
               value={viewMode}
-              onChange={(v) => setViewMode(v as 'card' | 'table')}
+              onChange={(v) => setViewModeOverride(v as 'card' | 'table')}
               options={[
                 { value: 'table', icon: <TableOutlined />, label: '表格' },
                 { value: 'card', icon: <AppstoreOutlined />, label: '卡片' },

@@ -137,25 +137,17 @@ export interface DrugNode {
   updated_at: string
 }
 
-export type NodeStatus = 'completed' | 'in_progress' | 'pending' | 'skipped'
+/** 契约模型，来自后端 OpenAPI（后端恒返回该字段，故去掉可选性，值仍可能为 null） */
+export type NodePrediction = Required<components['schemas']['NodePrediction']>
 
-export interface NodePrediction {
-  node_index: number
-  node_name: string
-  status: NodeStatus
-  actual_date: string | null
-  estimated_date: string | null
-  estimated_range: [string, string] | null
-  delta_days: number | null
-}
+/** 契约模型，来自后端 OpenAPI */
+export type NodeStatus = NodePrediction['status']
 
-export interface DrugPrediction {
-  drug_id: string
-  total_nodes: number
-  completed_nodes: number
-  current_node_index: number | null
-  days_in_current_node: number | null
-  estimated_approval_date: string | null
+/** 契约模型，来自后端 OpenAPI（后端恒返回该字段，故去掉可选性，值仍可能为 null） */
+export type DrugPrediction = Omit<
+  Required<components['schemas']['DrugPredictionResponse']>,
+  'nodes'
+> & {
   nodes: NodePrediction[]
 }
 

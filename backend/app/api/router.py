@@ -57,6 +57,7 @@ from app.platform.permission.api import router as permission_router
 from app.platform.system import router as system_router
 from app.platform.system.menu_api import router as system_menu_router
 from app.platform.system.ops_api import router as system_ops_router
+from app.platform.workbench.api import router as workbench_router
 
 api_router = APIRouter()
 
@@ -72,6 +73,7 @@ api_router.include_router(system_ops_router, prefix="/system", tags=["系统运�
 api_router.include_router(system_menu_router, prefix="/system", tags=["菜单管理"])
 api_router.include_router(permission_router, prefix="/permission", tags=["权限管理"])
 api_router.include_router(audit_router, prefix="/audit", tags=["操作记录"])
+api_router.include_router(workbench_router, prefix="/workbench", tags=["工作台"])
 api_router.include_router(production_router, prefix="/production", tags=["生产管理"])
 api_router.include_router(equipment_router, prefix="/equipment", tags=["设备管理"])
 api_router.include_router(safety_router, prefix="/safety", tags=["安全管理"])

@@ -3,12 +3,13 @@
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { unwrapResponse } from '@/lib/api/server/base'
-import { normalizeUserBatchStatus } from '@/lib/api/batch'
+import { normalizeUserBatchDelete, normalizeUserBatchStatus } from '@/lib/api/batch'
 import {
   getUsers as getUsersServer,
   createUser as createUserServer,
   updateUser as updateUserServer,
   deleteUser as deleteUserServer,
+  batchDeleteUsers as batchDeleteUsersServer,
   batchUpdateUserStatus as batchUpdateUserStatusServer,
   resetUserPassword as resetUserPasswordServer,
   changeMyPassword as changeMyPasswordServer,
@@ -25,6 +26,8 @@ import type {
   UserManagementUpdate,
   PasswordResetRequest,
   PasswordResetResult,
+  UserBatchDeleteRequest,
+  UserBatchDeleteResult,
   UserBatchStatusRequest,
   UserBatchStatusResult,
   ChangePasswordRequest,
@@ -98,6 +101,20 @@ export async function batchUpdateUserStatus(
     return { ok: true, data: result }
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : '批量操作失败' }
+  }
+}
+
+/** 批量删除账号：逐条软删除 + 清空授权 + 吊销会话（后端限定仅超级管理员）。 */
+export async function batchDeleteUsers(
+  data: UserBatchDeleteRequest,
+): Promise<UsersActionResult<UserBatchDeleteResult>> {
+  const token = await getAuthToken()
+  try {
+    const result = normalizeUserBatchDelete(unwrapResponse(await batchDeleteUsersServer(data, token)))
+    revalidatePath('/settings/users')
+    return { ok: true, data: result }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '批量删除失败' }
   }
 }
 

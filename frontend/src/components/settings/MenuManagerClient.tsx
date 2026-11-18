@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   App,
   Button,
+  Empty,
   Form,
   Input,
   InputNumber,
@@ -18,7 +19,7 @@ import {
   Tag,
   Typography,
 } from 'antd'
-import { CheckOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import { CheckOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { moduleMenus, type SubMenuItem } from '@/lib/menu-config'
 import { getMenuConfig, saveMenuConfig } from '@/actions/menu'
 import { fetchPermissions } from '@/actions/permission'
@@ -228,6 +229,57 @@ function buildConfig(rows: MenuRow[]): MenuConfigData {
   return { items, custom }
 }
 
+/**
+ * 菜单树检索：命中「名称 / 路径 / key / 权限码（含中文名）」即保留，
+ * 同时保留其祖先链，父级命中时保留全部子项，保证层级可读。
+ *
+ * 菜单是父子结构，不做分页——分页会把子项割到下一页，反而破坏层级。
+ */
+function filterMenuTree(
+  rows: MenuRow[],
+  keyword: string,
+  permNameByCode: Map<string, string>,
+): MenuRow[] {
+  const needle = keyword.trim().toLowerCase()
+  if (!needle) return rows
+
+  const permLabel = (code: string) => permNameByCode.get(code) ?? code
+  const matches = (row: MenuRow): boolean =>
+    [row.label, row.path, row.key, ...row.perms, ...row.perms.map(permLabel)].some((value) =>
+      value?.toLowerCase().includes(needle),
+    )
+
+  const walk = (list: MenuRow[], ancestorMatched: boolean): MenuRow[] =>
+    list.flatMap((row) => {
+      const selfMatched = ancestorMatched || matches(row)
+      const children = row.children ? walk(row.children, selfMatched) : []
+      if (!selfMatched && children.length === 0) return []
+      return [
+        {
+          ...row,
+          children: selfMatched && row.children ? row.children : children.length ? children : undefined,
+        },
+      ]
+    })
+
+  return walk(rows, false)
+}
+
+/** 收集所有「有子项」的节点 key，用于检索时自动展开 */
+function collectParentKeys(rows: MenuRow[]): string[] {
+  const keys: string[] = []
+  const walk = (list: MenuRow[]) => {
+    list.forEach((row) => {
+      if (row.children?.length) {
+        keys.push(row.key)
+        walk(row.children)
+      }
+    })
+  }
+  walk(rows)
+  return keys
+}
+
 export default function MenuManagerClient() {
   const { message, modal } = App.useApp()
   const router = useRouter()
@@ -242,6 +294,8 @@ export default function MenuManagerClient() {
   const [committing, setCommitting] = useState(false)
   // 展开态：默认**全部折叠**，用户手动展开/收起后保留
   const [expandedKeys, setExpandedKeys] = useState<string[]>([])
+  // 菜单树检索：按名称 / 路径 / 权限码过滤，命中项的父级保留以便看清层级
+  const [keyword, setKeyword] = useState('')
   const [createForm] = Form.useForm()
   const [editForm] = Form.useForm()
 
@@ -284,6 +338,15 @@ export default function MenuManagerClient() {
   }
 
   const rows = useMemo(() => (config ? buildTree(config) : []), [config])
+
+  /** 检索后的树：命中项的祖先链保留；父级命中时保留其全部子项 */
+  const visibleRows = useMemo(
+    () => filterMenuTree(rows, keyword, permNameByCode),
+    [rows, keyword, permNameByCode],
+  )
+
+  /** 检索状态下自动展开所有有子项的节点，避免命中项藏在折叠里 */
+  const searchExpandedKeys = useMemo(() => collectParentKeys(visibleRows), [visibleRows])
 
   /** 可以当父级的选项：模块级（null）+ 内置模块 / 分组 + 自定义项 */
   const parentOptions = useMemo(
@@ -564,6 +627,17 @@ export default function MenuManagerClient() {
       <SettingsListCard
         toolbar={
           <>
+            <Input
+              allowClear
+              prefix={<SearchOutlined className="text-[var(--color-stone)]" />}
+              placeholder="搜索菜单名称、路径或权限码"
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+              style={{ width: 280 }}
+            />
+            {keyword.trim() ? (
+              <span className="text-[12px] text-[var(--color-steel)]">已按关键词过滤，命中项自动展开</span>
+            ) : null}
             <Button
               icon={<ReloadOutlined />}
               loading={isFetching}
@@ -608,15 +682,23 @@ export default function MenuManagerClient() {
         <Table
           rowKey="key"
           columns={columns}
-          dataSource={rows}
+          dataSource={visibleRows}
           loading={isLoading}
+          // 菜单是层级结构，分页会把子项割到下一页，这里用检索 + 自动展开代替分页
           pagination={false}
           scroll={{ x: 1050 }}
           expandable={{
-            // 默认全部折叠；展开状态受控（避免在 effect 里 setState）
-            expandedRowKeys: expandedKeys,
+            // 默认全部折叠；检索时自动展开命中路径，其余时间受控于用户点击
+            expandedRowKeys: keyword.trim() ? searchExpandedKeys : expandedKeys,
             onExpandedRowsChange: (keys) => setExpandedKeys(keys.map(String)),
             indentSize: 18,
+          }}
+          locale={{
+            emptyText: keyword.trim() ? (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有匹配的菜单项，换个关键词试试" />
+            ) : (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无菜单配置" />
+            ),
           }}
         />
       </SettingsListCard>

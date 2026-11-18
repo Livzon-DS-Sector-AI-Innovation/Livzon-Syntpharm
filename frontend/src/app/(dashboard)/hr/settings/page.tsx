@@ -1,28 +1,8 @@
-import { getCurrentUser } from '@/actions/auth'
-import { ModuleSettingsClient, NoAccessResult } from '@/components/settings'
-import { PERM } from '@/lib/permissions/codes'
-import { hasPermission } from '@/lib/permissions/server'
+import ModuleSettingsPage from '@/components/module-settings/ModuleSettingsPage'
 
 export const dynamic = 'force-dynamic'
 
-export default async function HRSettingsPage() {
-  const user = await getCurrentUser()
-
-  if (!user) {
-    return <NoAccessResult title="请先登录" subTitle="登录后即可访问模块设置。" />
-  }
-
-  if (!(await hasPermission(PERM.configRead))) {
-    return (
-      <NoAccessResult subTitle="查看模块设置需要「平台配置查看」权限，请联系管理员为你的账号分配。" />
-    )
-  }
-
-  return (
-    <ModuleSettingsClient
-      moduleCode="hr"
-      moduleName="人事管理"
-      moduleDescription="配置人事模块的飞书机器人、AI 模型和系统提示词等参数。"
-    />
-  )
+/** 人事管理 · 模块配置（权限管理 + 本模块其他配置）。准入：hr:admin:read */
+export default function HrSettingsPage() {
+  return <ModuleSettingsPage moduleCode="hr" />
 }

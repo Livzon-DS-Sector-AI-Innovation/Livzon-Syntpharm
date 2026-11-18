@@ -16,6 +16,9 @@ from app.core.database import async_session_factory
 from app.platform.identity.models import User
 from app.platform.identity.service import generate_jwt
 
+# 后端地址从环境变量读取，避免硬编码；例: BACKEND_URL="http://localhost:8000"
+BACKEND_URL = os.environ["BACKEND_URL"]
+
 
 async def main() -> None:
     async with async_session_factory() as db:
@@ -24,14 +27,13 @@ async def main() -> None:
     for user in users:
         token = generate_jwt(user)
         req = urllib.request.Request(
-            "http://localhost:8000/api/v1/registration/drugs",
+            f"{BACKEND_URL}/api/v1/registration/drugs",
             headers={"Authorization": f"Bearer {token}"},
         )
         try:
             with urllib.request.urlopen(req, timeout=10) as resp:
                 if resp.status == 200:
                     print(f"OK {user.name} ({user.id})")
-                    print(f"TOKEN={token}")
                     return
         except urllib.error.HTTPError as e:
             print(f"{e.code} {user.name}")

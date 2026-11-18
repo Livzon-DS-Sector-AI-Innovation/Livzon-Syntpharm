@@ -1,15 +1,20 @@
 """临时脚本：对比概览页与申报进度页的字号阶梯。"""
 
 import asyncio
+import os
 import sys
+from pathlib import Path
 
-sys.path.insert(0, "/app")
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from sqlalchemy import select
 
 from app.core.database import async_session_factory
 from app.platform.identity.models import User
 from app.platform.identity.service import generate_jwt
+
+# 前端地址从环境变量读取，避免硬编码
+FRONTEND_URL = os.environ["FRONTEND_URL"]
 
 JS = """
 () => {
@@ -45,13 +50,13 @@ async def main() -> None:
     async with async_playwright() as p:
         browser = await p.chromium.launch(args=["--host-resolver-rules=MAP localhost frontend"])
         ctx = await browser.new_context(viewport={"width": 1440, "height": 900})
-        await ctx.add_cookies([{"name": "auth_token", "value": token, "url": "http://localhost:3000"}])
+        await ctx.add_cookies([{"name": "auth_token", "value": token, "url": FRONTEND_URL}])
         page = await ctx.new_page()
         for name, path, wait in [
             ("概览页", "/registration", "[class*=queueRow]"),
             ("申报进度页", "/registration/review", "tbody tr.ant-table-row td"),
         ]:
-            await page.goto("http://localhost:3000" + path, wait_until="domcontentloaded")
+            await page.goto(FRONTEND_URL + path, wait_until="domcontentloaded")
             await page.wait_for_selector(wait, timeout=90000)
             await page.wait_for_timeout(2000)
             r = await page.evaluate(JS)

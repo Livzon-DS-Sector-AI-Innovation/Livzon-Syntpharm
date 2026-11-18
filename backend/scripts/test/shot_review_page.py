@@ -20,7 +20,8 @@ from app.platform.identity.service import generate_jwt
 # 通过 host-resolver-rules 把 localhost 解析到 frontend 容器：
 # dev 服务器的跨站资源白名单（ALLOWED_DEV_ORIGINS）默认只放行 localhost，
 # 直接用 http://frontend:3000 会被拦，导致客户端 JS 不加载。
-FRONTEND = "http://localhost:3000"
+# 前端地址从环境变量读取，避免硬编码；例: FRONTEND_URL="http://localhost:3000"
+FRONTEND = os.environ["FRONTEND_URL"]
 
 
 async def main() -> None:

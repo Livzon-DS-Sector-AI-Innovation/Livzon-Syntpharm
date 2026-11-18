@@ -4,6 +4,7 @@ import type {
   ChangePasswordRequest,
   LocalUserCreate,
   PasswordResetRequest,
+  UserBatchDeleteRequest,
   UserBatchStatusRequest,
   UserManagementUpdate,
 } from '@/types/users'
@@ -63,6 +64,15 @@ export async function updateUser(id: string, data: UserManagementUpdate, token?:
 
 export async function batchUpdateUserStatus(data: UserBatchStatusRequest, token?: string) {
   return apiFetch<Schemas['UserBatchStatusApiResponse']>(U('/users/batch-status'), {
+    method: 'POST',
+    headers: auth(token),
+    body: JSON.stringify(data),
+  })
+}
+
+/** 批量删除账号（后端限定仅超级管理员可调用）。 */
+export async function batchDeleteUsers(data: UserBatchDeleteRequest, token?: string) {
+  return apiFetch<Schemas['UserBatchDeleteApiResponse']>(U('/users/batch-delete'), {
     method: 'POST',
     headers: auth(token),
     body: JSON.stringify(data),

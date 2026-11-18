@@ -19,6 +19,7 @@ import {
 } from 'antd'
 import { EyeOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import {
+  batchCreateGrants,
   batchDeleteGrants,
   batchUpdateGrantStatus,
   createGrant,
@@ -29,11 +30,11 @@ import {
   fetchUserPreview,
   updateGrant,
 } from '@/actions/permission'
-import type { BatchResult, DepartmentOption, GrantCreateInput, GrantItem, ScopeType } from '@/types/permission'
+import type { BatchResult, DepartmentOption, GrantItem, ScopeType } from '@/types/permission'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
 import { UserLabel } from '@/components/common/UserAvatar'
-import { PersonSelect } from '@/components/common/PersonSelect'
+import { PersonMultiSelect, PersonSelect } from '@/components/common/PersonSelect'
 import { SettingsListCard } from './SettingsListCard'
 import { BatchActionBar, BatchDeleteConfirmModal, BatchResultModal } from './BatchOperations'
 import { moduleMenus } from '@/lib/menu-config'
@@ -82,7 +83,7 @@ export default function GrantManagementClient() {
 
   const { data: roles = [] } = useQuery({
     queryKey: ['permission-roles'],
-    queryFn: fetchRoles,
+    queryFn: () => fetchRoles(),
   })
 
   // 用户下拉不再一次性全量拉取（旧实现写死 limit=100，523 个账号里大半选不到），
@@ -126,7 +127,7 @@ export default function GrantManagementClient() {
   const handleCreate = () => {
     setEditing(null)
     form.resetFields()
-    form.setFieldsValue({ scope_type: 'all', scope_dept_codes: [] })
+    form.setFieldsValue({ user_ids: [], scope_type: 'all', scope_dept_codes: [] })
     setLimitScope(false)
     setModalOpen(true)
   }
@@ -151,7 +152,8 @@ export default function GrantManagementClient() {
   const handleSave = async () => {
     try {
       const values = (await form.validateFields()) as {
-        user_id: string
+        user_id?: string
+        user_ids?: string[]
         role_ids: string[]
         scope_type: ScopeType
         scope_dept_codes: string[]
@@ -230,43 +232,29 @@ export default function GrantManagementClient() {
           message.success(`已保存（${summary}）`)
         }
       } else {
-        // 一次可授多个角色：逐个创建；该用户已拥有的角色自动跳过
-        const picked = values.role_ids ?? []
-        const ownedRoleIds = new Set(
-          grants.filter((g) => g.user_id === values.user_id && g.status === 'active').map((g) => g.role_id),
-        )
-        const roleIds = picked.filter((id) => !ownedRoleIds.has(id))
-        const skipped = picked.length - roleIds.length
-
-        let created = 0
-        const failures: string[] = []
-        for (const roleId of roleIds) {
-          const payload: GrantCreateInput = {
-            user_id: values.user_id,
-            role_id: roleId,
-            scope_type: scopeTypeValue,
-            scope_dept_codes: scopeCodes,
-          }
-          try {
-            await createGrant(payload)
-            created += 1
-          } catch (error) {
-            const roleName = roles.find((r) => r.id === roleId)?.name ?? roleId
-            failures.push(`${roleName}：${error instanceof Error ? error.message : '创建失败'}`)
-          }
-        }
-
-        if (created === 0 && failures.length > 0) {
-          // 全部失败：保留弹窗方便调整
-          message.error(`授权创建失败：${failures.join('；')}`)
+        // 批量授权：多用户 × 多角色一次提交；已拥有的组合由后端幂等跳过
+        const result = await batchCreateGrants({
+          user_ids: values.user_ids ?? [],
+          role_ids: values.role_ids ?? [],
+          scope_type: scopeTypeValue,
+          scope_dept_codes: scopeCodes,
+        })
+        if (!result.ok) {
+          message.error(result.message)
           return
         }
-        if (failures.length > 0) {
-          message.warning(`已创建 ${created} 个授权；失败 ${failures.length} 个：${failures.join('；')}`)
-        } else if (skipped > 0) {
-          message.success(`已创建 ${created} 个授权（${skipped} 个角色该用户已拥有，已跳过）`)
-        } else {
-          message.success(`已创建 ${created} 个授权`)
+        if (!result.data.succeeded.length && result.data.failed.length) {
+          // 全部失败：保留弹窗方便调整（失败原因逐条列出）
+          message.error(
+            `授权创建失败：${result.data.failed
+              .map((item) => `${item.label || item.key}：${item.reason}`)
+              .join('；')}`,
+          )
+          return
+        }
+        setBatchResult(result.data)
+        if (!result.data.failed.length) {
+          message.success(`已处理 ${result.data.succeeded.length} 条授权（已拥有的角色不重复创建）`)
         }
       }
       setModalOpen(false)
@@ -403,7 +391,7 @@ export default function GrantManagementClient() {
       <div>
         <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">授权管理</h2>
         <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
-          给用户发角色，他就拥有该角色的全部权限；一次可选择多个角色。默认不限制可见数据；需要限制时勾选「限制可见数据」。
+          给用户发角色，他就拥有该角色的全部权限；新建授权可一次选多个用户、多个角色。默认不限制可见数据；需要限制时勾选「限制可见数据」。
         </p>
       </div>
 
@@ -475,7 +463,7 @@ export default function GrantManagementClient() {
       />
 
       <Modal
-        title={editing ? '编辑该用户的角色授权' : '新建授权'}
+        title={editing ? '编辑该用户的角色授权' : '批量授权'}
         open={modalOpen}
         onOk={handleSave}
         onCancel={() => setModalOpen(false)}
@@ -496,17 +484,18 @@ export default function GrantManagementClient() {
             </>
           ) : (
             <Form.Item
-              name="user_id"
-              label="用户"
+              name="user_ids"
+              label="用户（可多选）"
               rules={[{ required: true, message: '请选择用户' }]}
-              style={{ width: '100%', maxWidth: 320 }}
-              // 组件回传 UUID，表单直接存 id：授权接口只认 id，姓名由组件内部快照回显
+              style={{ width: '100%', maxWidth: 420 }}
+              // 组件回传 { id, name } 数组，表单里只存 id 数组：授权接口只认 id
+              getValueFromEvent={(persons: { id: string }[] | undefined) => (persons ?? []).map((p) => p.id)}
             >
-              <PersonSelect
+              <PersonMultiSelect
                 // 授权要覆盖未绑定飞书的本地账号，故不限制 feishu_bound_only
                 feishuBoundOnly={false}
                 showUsername
-                placeholder="搜索姓名或账号选择用户"
+                placeholder="搜索姓名，可一次选多个用户"
               />
             </Form.Item>
           )}
@@ -584,7 +573,7 @@ export default function GrantManagementClient() {
           showUsername
           placeholder="选择用户，查看其当前权限下能访问的模块 / 页面"
           value={previewUserId}
-          onChange={(next) => setPreviewUserId(typeof next === 'string' ? next : undefined)}
+          onChange={(person) => setPreviewUserId(person?.id)}
         />
         <div className="mt-4">
           {previewData && (

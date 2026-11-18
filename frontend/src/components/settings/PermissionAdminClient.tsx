@@ -4,13 +4,15 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Spin, Tabs } from 'antd'
 import GrantManagementClient from './GrantManagementClient'
+import ModuleAdminPanel from './ModuleAdminPanel'
 import PermissionCatalogClient from './PermissionCatalogClient'
 import RoleManagementClient from './RoleManagementClient'
+import UserAccessPanel from './UserAccessPanel'
 import { SettingsPageHeader } from './SettingsPageHeader'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
 
-const TAB_KEYS = ['roles', 'grants', 'permissions'] as const
+const TAB_KEYS = ['roles', 'grants', 'module-admins', 'user-access', 'permissions'] as const
 type TabKey = (typeof TAB_KEYS)[number]
 
 /**
@@ -40,6 +42,19 @@ export default function PermissionAdminClient({ initialTab }: { initialTab?: str
           // 有 grant:manage 必然需要进入授权管理（只读列表接口同样接受 manage）
           visible: can(PERM.grantRead) || can(PERM.grantManage),
         },
+        {
+          key: 'module-admins',
+          label: '模块负责人与模块管理员',
+          children: <ModuleAdminPanel />,
+          // 指派权在系统管理员手里：与「授权管理」同一口径（grant:manage）
+          visible: can(PERM.grantManage),
+        },
+        {
+          key: 'user-access',
+          label: '按人查权限',
+          children: <UserAccessPanel />,
+          visible: can(PERM.grantManage),
+        },
         { key: 'permissions', label: '权限目录', children: <PermissionCatalogClient />, visible: can(PERM.permissionRead) },
       ].filter((t) => t.visible),
     [can],
@@ -67,17 +82,15 @@ export default function PermissionAdminClient({ initialTab }: { initialTab?: str
 
   return (
     <div className="settings-scope settings-enter mx-auto max-w-[1320px] md:px-6 md:py-6">
-            <SettingsPageHeader
-              title="权限管理"
-              description="管理角色、用户授权与数据范围、权限目录与接口绑定登记簿。"
-            />
-            <Tabs
+      <SettingsPageHeader title="权限管理" description="管理角色、用户授权与数据范围、权限目录与接口绑定登记簿。" />
+      <Tabs
         activeKey={effectiveKey}
         onChange={(key) => {
           setActiveKey(key as TabKey)
           router.replace(`/settings/permission?tab=${key}`, { scroll: false })
         }}
         items={tabs}
+        destroyOnHidden
       />
     </div>
   )
