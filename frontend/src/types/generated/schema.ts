@@ -1074,10 +1074,11 @@ export interface paths {
          * Get Permission Tree
          * @description 权限目录树（模块 → 资源 → 权限码），供角色管理按模块 / 功能勾选权限。
          *
-         *     权限码口径取 `platform:role:read` 而非 `platform:permission:read`：
-         *     该树只服务于「角色管理」勾选权限，跟随角色读权限，避免出现
-         *     「有角色管理权、却因缺权限目录读权而整个角色页报错」的口径不一致。
+         *     准入取 `require_role_catalog_read()`：除 `platform:role:read` / `platform:role:manage`
+         *     外，也放行模块负责人与模块管理员（他们只持有本模块业务码 + `{module}:admin:read`，
+         *     缺少 `platform:role:read`；否则模块配置页「新建角色」的权限树会 403 成空树）。
          *
+         *     按模块管理入口进入的操作者只返回其可管理模块的子树；平台级角色管理员返回全量。
          *     纯注册表数据、不查库，因此权限表未迁移时也可正常返回。
          */
         get: operations["get_permission_tree_api_v1_permission_tree_get"];
@@ -1100,8 +1101,9 @@ export interface paths {
          * List Permission Api Bindings
          * @description 单个权限码绑定的接口清单，供角色管理勾选权限时按需展开。
          *
-         *     权限口径与 `/tree` 一致取 `platform:role:read`：这份清单只服务于「勾这个权限会放开哪些接口」，
-         *     角色管理员通常没有 `platform:api-binding:read`，复用登记簿端点会 403。
+         *     准入与 `/tree` 一致取 `require_role_catalog_read()`：这份清单只服务于
+         *     「勾这个权限会放开哪些接口」，角色管理员通常没有 `platform:api-binding:read`，
+         *     复用登记簿端点会 403。按模块管理入口进入的操作者只能查本模块的权限码。
          *
          *     纯注册表数据、不查库，因此权限表未迁移时也可正常返回。
          */
@@ -1414,6 +1416,68 @@ export interface paths {
         get: operations["export_audit_logs_api_v1_audit_logs_export_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbench/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Workbench Overview
+         * @description 首页工作台数据：审核待办 + 我参与的流程（含按模块分组的计数）。
+         */
+        get: operations["workbench_overview_api_v1_workbench_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbench/todos/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark Todo Read
+         * @description 标记单条待办已读（幂等）。
+         *
+         *     只影响当前用户自己的铃铛计数，不改业务单据状态。
+         */
+        post: operations["mark_todo_read_api_v1_workbench_todos_read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbench/todos/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark All Todos Read
+         * @description 一键已读：批量写入客户端当前看到的未读项（空列表直接返回 0）。
+         */
+        post: operations["mark_all_todos_read_api_v1_workbench_todos_read_all_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -45751,6 +45815,24 @@ export interface components {
             updated_at: string;
         };
         /**
+         * ProcessSectionModel
+         * @description 我参与的流程区块。
+         */
+        ProcessSectionModel: {
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Has More
+             * @default false
+             */
+            has_more: boolean;
+            /** Groups */
+            groups?: components["schemas"]["WorkbenchGroupModel"][];
+        };
+        /**
          * ProcessSpecApiResponse
          * @description 工艺规程响应包装
          */
@@ -57082,6 +57164,91 @@ export interface components {
             /** Name */
             name: string;
         };
+        /**
+         * TodoReadBatchRequest
+         * @description 一键已读：客户端传当前看到的全部未读项（受 todo_limit 影响，与用户所见一致）。
+         */
+        TodoReadBatchRequest: {
+            /** Items */
+            items?: components["schemas"]["TodoReadMark"][];
+        };
+        /**
+         * TodoReadMark
+         * @description 一条待办已读标记（客户端把 ``/overview`` 返回的指纹原样回传）。
+         */
+        TodoReadMark: {
+            /**
+             * Source
+             * @description 数据源标识，如 quality.deviation.todos
+             */
+            source: string;
+            /**
+             * Item Id
+             * @description 待办条目 ID
+             */
+            item_id: string;
+            /**
+             * Fingerprint
+             * @description 内容指纹，来自 /overview
+             */
+            fingerprint: string;
+        };
+        /** TodoReadResultData */
+        TodoReadResultData: {
+            /**
+             * Marked
+             * @description 本次写入（含更新）的已读记录数
+             * @default 0
+             */
+            marked: number;
+        };
+        /** TodoReadResultResponse */
+        TodoReadResultResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["TodoReadResultData"];
+        };
+        /**
+         * TodoSectionModel
+         * @description 审核待办区块。
+         */
+        TodoSectionModel: {
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Unread Total
+             * @default 0
+             */
+            unread_total: number;
+            /**
+             * Has More
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Person Total
+             * @default 0
+             */
+            person_total: number;
+            /**
+             * Role Total
+             * @default 0
+             */
+            role_total: number;
+            /** Groups */
+            groups?: components["schemas"]["WorkbenchGroupModel"][];
+        };
         /** TokenResponse */
         TokenResponse: {
             /** Access Token */
@@ -61014,6 +61181,143 @@ export interface components {
          */
         WorkRecordStatusEnum: "in_progress" | "completed" | "evaluated";
         /**
+         * WorkbenchGroupModel
+         * @description 按模块分组后的条目集合。
+         */
+        WorkbenchGroupModel: {
+            /** Module Key */
+            module_key: string;
+            /** Module Label */
+            module_label: string;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+            /**
+             * Has More
+             * @default false
+             */
+            has_more: boolean;
+            /** Items */
+            items?: components["schemas"]["WorkbenchItemModel"][];
+        };
+        /**
+         * WorkbenchItemModel
+         * @description 一条待办 / 流程事项。
+         */
+        WorkbenchItemModel: {
+            /** Id */
+            id: string;
+            /**
+             * Source
+             * @description 数据源标识，如 deviation / iqc / hazard
+             */
+            source: string;
+            /**
+             * Module Key
+             * @description 模块码：quality / safety
+             */
+            module_key: string;
+            /** Module Label */
+            module_label: string;
+            /**
+             * Doc Type Label
+             * @description 单据类型中文名，如「偏差台账」
+             */
+            doc_type_label: string;
+            /** Title */
+            title: string;
+            /** Doc No */
+            doc_no?: string | null;
+            /**
+             * Status
+             * @default
+             */
+            status: string;
+            /**
+             * Status Label
+             * @default
+             */
+            status_label: string;
+            /**
+             * Step Label
+             * @description 当前环节中文
+             */
+            step_label?: string | null;
+            /**
+             * Match Kind
+             * @description 判定依据：person=待我审批 / role=同角色待办
+             */
+            match_kind: string;
+            /**
+             * Match Kind Label
+             * @default
+             */
+            match_kind_label: string;
+            /**
+             * Age Days
+             * @description 停留天数
+             */
+            age_days?: number | null;
+            /**
+             * Overdue
+             * @default false
+             */
+            overdue: boolean;
+            /**
+             * Path
+             * @description 前端跳转路径；空表示暂无页面
+             */
+            path?: string | null;
+            /**
+             * My Roles
+             * @description 我在该流程中的角色
+             */
+            my_roles?: string[];
+            /**
+             * Is Read
+             * @description 当前用户是否已读（按内容指纹判定，仅待办有效）
+             * @default false
+             */
+            is_read: boolean;
+            /**
+             * Fingerprint
+             * @description 内容指纹；标记已读时原样回传，内容变化后自动失效
+             * @default
+             */
+            fingerprint: string;
+        };
+        /** WorkbenchOverviewData */
+        WorkbenchOverviewData: {
+            todos?: components["schemas"]["TodoSectionModel"];
+            processes?: components["schemas"]["ProcessSectionModel"];
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /**
+             * Degraded Sources
+             * @description 取数失败被降级的数据源（前端可提示「部分数据暂不可用」）
+             */
+            degraded_sources?: string[];
+        };
+        /** WorkbenchOverviewResponse */
+        WorkbenchOverviewResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["WorkbenchOverviewData"];
+        };
+        /**
          * WorkshopRanking
          * @description 车间排名
          */
@@ -64278,6 +64582,110 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    workbench_overview_api_v1_workbench_overview_get: {
+        parameters: {
+            query?: {
+                todo_limit?: number;
+                process_limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["WorkbenchOverviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_todo_read_api_v1_workbench_todos_read_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TodoReadMark"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["TodoReadResultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_all_todos_read_api_v1_workbench_todos_read_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TodoReadBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["TodoReadResultResponse"];
                 };
             };
             /** @description Validation Error */

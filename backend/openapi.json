@@ -3597,7 +3597,7 @@
           "\u6743\u9650\u7ba1\u7406"
         ],
         "summary": "Get Permission Tree",
-        "description": "\u6743\u9650\u76ee\u5f55\u6811\uff08\u6a21\u5757 \u2192 \u8d44\u6e90 \u2192 \u6743\u9650\u7801\uff09\uff0c\u4f9b\u89d2\u8272\u7ba1\u7406\u6309\u6a21\u5757 / \u529f\u80fd\u52fe\u9009\u6743\u9650\u3002\n\n\u6743\u9650\u7801\u53e3\u5f84\u53d6 `platform:role:read` \u800c\u975e `platform:permission:read`\uff1a\n\u8be5\u6811\u53ea\u670d\u52a1\u4e8e\u300c\u89d2\u8272\u7ba1\u7406\u300d\u52fe\u9009\u6743\u9650\uff0c\u8ddf\u968f\u89d2\u8272\u8bfb\u6743\u9650\uff0c\u907f\u514d\u51fa\u73b0\n\u300c\u6709\u89d2\u8272\u7ba1\u7406\u6743\u3001\u5374\u56e0\u7f3a\u6743\u9650\u76ee\u5f55\u8bfb\u6743\u800c\u6574\u4e2a\u89d2\u8272\u9875\u62a5\u9519\u300d\u7684\u53e3\u5f84\u4e0d\u4e00\u81f4\u3002\n\n\u7eaf\u6ce8\u518c\u8868\u6570\u636e\u3001\u4e0d\u67e5\u5e93\uff0c\u56e0\u6b64\u6743\u9650\u8868\u672a\u8fc1\u79fb\u65f6\u4e5f\u53ef\u6b63\u5e38\u8fd4\u56de\u3002",
+        "description": "\u6743\u9650\u76ee\u5f55\u6811\uff08\u6a21\u5757 \u2192 \u8d44\u6e90 \u2192 \u6743\u9650\u7801\uff09\uff0c\u4f9b\u89d2\u8272\u7ba1\u7406\u6309\u6a21\u5757 / \u529f\u80fd\u52fe\u9009\u6743\u9650\u3002\n\n\u51c6\u5165\u53d6 `require_role_catalog_read()`\uff1a\u9664 `platform:role:read` / `platform:role:manage`\n\u5916\uff0c\u4e5f\u653e\u884c\u6a21\u5757\u8d1f\u8d23\u4eba\u4e0e\u6a21\u5757\u7ba1\u7406\u5458\uff08\u4ed6\u4eec\u53ea\u6301\u6709\u672c\u6a21\u5757\u4e1a\u52a1\u7801 + `{module}:admin:read`\uff0c\n\u7f3a\u5c11 `platform:role:read`\uff1b\u5426\u5219\u6a21\u5757\u914d\u7f6e\u9875\u300c\u65b0\u5efa\u89d2\u8272\u300d\u7684\u6743\u9650\u6811\u4f1a 403 \u6210\u7a7a\u6811\uff09\u3002\n\n\u6309\u6a21\u5757\u7ba1\u7406\u5165\u53e3\u8fdb\u5165\u7684\u64cd\u4f5c\u8005\u53ea\u8fd4\u56de\u5176\u53ef\u7ba1\u7406\u6a21\u5757\u7684\u5b50\u6811\uff1b\u5e73\u53f0\u7ea7\u89d2\u8272\u7ba1\u7406\u5458\u8fd4\u56de\u5168\u91cf\u3002\n\u7eaf\u6ce8\u518c\u8868\u6570\u636e\u3001\u4e0d\u67e5\u5e93\uff0c\u56e0\u6b64\u6743\u9650\u8868\u672a\u8fc1\u79fb\u65f6\u4e5f\u53ef\u6b63\u5e38\u8fd4\u56de\u3002",
         "operationId": "get_permission_tree_api_v1_permission_tree_get",
         "parameters": [
           {
@@ -3648,7 +3648,7 @@
           "\u6743\u9650\u7ba1\u7406"
         ],
         "summary": "List Permission Api Bindings",
-        "description": "\u5355\u4e2a\u6743\u9650\u7801\u7ed1\u5b9a\u7684\u63a5\u53e3\u6e05\u5355\uff0c\u4f9b\u89d2\u8272\u7ba1\u7406\u52fe\u9009\u6743\u9650\u65f6\u6309\u9700\u5c55\u5f00\u3002\n\n\u6743\u9650\u53e3\u5f84\u4e0e `/tree` \u4e00\u81f4\u53d6 `platform:role:read`\uff1a\u8fd9\u4efd\u6e05\u5355\u53ea\u670d\u52a1\u4e8e\u300c\u52fe\u8fd9\u4e2a\u6743\u9650\u4f1a\u653e\u5f00\u54ea\u4e9b\u63a5\u53e3\u300d\uff0c\n\u89d2\u8272\u7ba1\u7406\u5458\u901a\u5e38\u6ca1\u6709 `platform:api-binding:read`\uff0c\u590d\u7528\u767b\u8bb0\u7c3f\u7aef\u70b9\u4f1a 403\u3002\n\n\u7eaf\u6ce8\u518c\u8868\u6570\u636e\u3001\u4e0d\u67e5\u5e93\uff0c\u56e0\u6b64\u6743\u9650\u8868\u672a\u8fc1\u79fb\u65f6\u4e5f\u53ef\u6b63\u5e38\u8fd4\u56de\u3002",
+        "description": "\u5355\u4e2a\u6743\u9650\u7801\u7ed1\u5b9a\u7684\u63a5\u53e3\u6e05\u5355\uff0c\u4f9b\u89d2\u8272\u7ba1\u7406\u52fe\u9009\u6743\u9650\u65f6\u6309\u9700\u5c55\u5f00\u3002\n\n\u51c6\u5165\u4e0e `/tree` \u4e00\u81f4\u53d6 `require_role_catalog_read()`\uff1a\u8fd9\u4efd\u6e05\u5355\u53ea\u670d\u52a1\u4e8e\n\u300c\u52fe\u8fd9\u4e2a\u6743\u9650\u4f1a\u653e\u5f00\u54ea\u4e9b\u63a5\u53e3\u300d\uff0c\u89d2\u8272\u7ba1\u7406\u5458\u901a\u5e38\u6ca1\u6709 `platform:api-binding:read`\uff0c\n\u590d\u7528\u767b\u8bb0\u7c3f\u7aef\u70b9\u4f1a 403\u3002\u6309\u6a21\u5757\u7ba1\u7406\u5165\u53e3\u8fdb\u5165\u7684\u64cd\u4f5c\u8005\u53ea\u80fd\u67e5\u672c\u6a21\u5757\u7684\u6743\u9650\u7801\u3002\n\n\u7eaf\u6ce8\u518c\u8868\u6570\u636e\u3001\u4e0d\u67e5\u5e93\uff0c\u56e0\u6b64\u6743\u9650\u8868\u672a\u8fc1\u79fb\u65f6\u4e5f\u53ef\u6b63\u5e38\u8fd4\u56de\u3002",
         "operationId": "list_permission_api_bindings_api_v1_permission_permissions__code__api_bindings_get",
         "parameters": [
           {
@@ -4912,6 +4912,200 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workbench/overview": {
+      "get": {
+        "tags": [
+          "\u5de5\u4f5c\u53f0"
+        ],
+        "summary": "Workbench Overview",
+        "description": "\u9996\u9875\u5de5\u4f5c\u53f0\u6570\u636e\uff1a\u5ba1\u6838\u5f85\u529e + \u6211\u53c2\u4e0e\u7684\u6d41\u7a0b\uff08\u542b\u6309\u6a21\u5757\u5206\u7ec4\u7684\u8ba1\u6570\uff09\u3002",
+        "operationId": "workbench_overview_api_v1_workbench_overview_get",
+        "parameters": [
+          {
+            "name": "todo_limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 20,
+              "minimum": 1,
+              "default": 5,
+              "title": "Todo Limit"
+            }
+          },
+          {
+            "name": "process_limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 20,
+              "minimum": 1,
+              "default": 5,
+              "title": "Process Limit"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkbenchOverviewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workbench/todos/read": {
+      "post": {
+        "tags": [
+          "\u5de5\u4f5c\u53f0"
+        ],
+        "summary": "Mark Todo Read",
+        "description": "\u6807\u8bb0\u5355\u6761\u5f85\u529e\u5df2\u8bfb\uff08\u5e42\u7b49\uff09\u3002\n\n\u53ea\u5f71\u54cd\u5f53\u524d\u7528\u6237\u81ea\u5df1\u7684\u94c3\u94db\u8ba1\u6570\uff0c\u4e0d\u6539\u4e1a\u52a1\u5355\u636e\u72b6\u6001\u3002",
+        "operationId": "mark_todo_read_api_v1_workbench_todos_read_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TodoReadMark"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoReadResultResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workbench/todos/read-all": {
+      "post": {
+        "tags": [
+          "\u5de5\u4f5c\u53f0"
+        ],
+        "summary": "Mark All Todos Read",
+        "description": "\u4e00\u952e\u5df2\u8bfb\uff1a\u6279\u91cf\u5199\u5165\u5ba2\u6237\u7aef\u5f53\u524d\u770b\u5230\u7684\u672a\u8bfb\u9879\uff08\u7a7a\u5217\u8868\u76f4\u63a5\u8fd4\u56de 0\uff09\u3002",
+        "operationId": "mark_all_todos_read_api_v1_workbench_todos_read_all_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TodoReadBatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoReadResultResponse"
+                }
               }
             }
           },
@@ -152430,6 +152624,30 @@
         "title": "ProcessParameterResponse",
         "description": "\u5de5\u827a\u53c2\u6570\u54cd\u5e94"
       },
+      "ProcessSectionModel": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More",
+            "default": false
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbenchGroupModel"
+            },
+            "type": "array",
+            "title": "Groups"
+          }
+        },
+        "type": "object",
+        "title": "ProcessSectionModel",
+        "description": "\u6211\u53c2\u4e0e\u7684\u6d41\u7a0b\u533a\u5757\u3002"
+      },
       "ProcessSpecApiResponse": {
         "properties": {
           "code": {
@@ -179187,6 +179405,127 @@
         "title": "TestLoginUser",
         "description": "E2E \u6d4b\u8bd5\u8d26\u53f7\u4fe1\u606f\u3002"
       },
+      "TodoReadBatchRequest": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TodoReadMark"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "TodoReadBatchRequest",
+        "description": "\u4e00\u952e\u5df2\u8bfb\uff1a\u5ba2\u6237\u7aef\u4f20\u5f53\u524d\u770b\u5230\u7684\u5168\u90e8\u672a\u8bfb\u9879\uff08\u53d7 todo_limit \u5f71\u54cd\uff0c\u4e0e\u7528\u6237\u6240\u89c1\u4e00\u81f4\uff09\u3002"
+      },
+      "TodoReadMark": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Source",
+            "description": "\u6570\u636e\u6e90\u6807\u8bc6\uff0c\u5982 quality.deviation.todos"
+          },
+          "item_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Item Id",
+            "description": "\u5f85\u529e\u6761\u76ee ID"
+          },
+          "fingerprint": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Fingerprint",
+            "description": "\u5185\u5bb9\u6307\u7eb9\uff0c\u6765\u81ea /overview"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "item_id",
+          "fingerprint"
+        ],
+        "title": "TodoReadMark",
+        "description": "\u4e00\u6761\u5f85\u529e\u5df2\u8bfb\u6807\u8bb0\uff08\u5ba2\u6237\u7aef\u628a ``/overview`` \u8fd4\u56de\u7684\u6307\u7eb9\u539f\u6837\u56de\u4f20\uff09\u3002"
+      },
+      "TodoReadResultData": {
+        "properties": {
+          "marked": {
+            "type": "integer",
+            "title": "Marked",
+            "description": "\u672c\u6b21\u5199\u5165\uff08\u542b\u66f4\u65b0\uff09\u7684\u5df2\u8bfb\u8bb0\u5f55\u6570",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "TodoReadResultData"
+      },
+      "TodoReadResultResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TodoReadResultData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "TodoReadResultResponse"
+      },
+      "TodoSectionModel": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "unread_total": {
+            "type": "integer",
+            "title": "Unread Total",
+            "default": 0
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More",
+            "default": false
+          },
+          "person_total": {
+            "type": "integer",
+            "title": "Person Total",
+            "default": 0
+          },
+          "role_total": {
+            "type": "integer",
+            "title": "Role Total",
+            "default": 0
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbenchGroupModel"
+            },
+            "type": "array",
+            "title": "Groups"
+          }
+        },
+        "type": "object",
+        "title": "TodoSectionModel",
+        "description": "\u5ba1\u6838\u5f85\u529e\u533a\u5757\u3002"
+      },
       "TokenResponse": {
         "properties": {
           "access_token": {
@@ -189039,6 +189378,227 @@
         ],
         "title": "WorkRecordStatusEnum",
         "description": "\u65bd\u5de5\u8bb0\u5f55\u72b6\u6001\u679a\u4e3e"
+      },
+      "WorkbenchGroupModel": {
+        "properties": {
+          "module_key": {
+            "type": "string",
+            "title": "Module Key"
+          },
+          "module_label": {
+            "type": "string",
+            "title": "Module Label"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "default": 0
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More",
+            "default": false
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WorkbenchItemModel"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "module_key",
+          "module_label"
+        ],
+        "title": "WorkbenchGroupModel",
+        "description": "\u6309\u6a21\u5757\u5206\u7ec4\u540e\u7684\u6761\u76ee\u96c6\u5408\u3002"
+      },
+      "WorkbenchItemModel": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "\u6570\u636e\u6e90\u6807\u8bc6\uff0c\u5982 deviation / iqc / hazard"
+          },
+          "module_key": {
+            "type": "string",
+            "title": "Module Key",
+            "description": "\u6a21\u5757\u7801\uff1aquality / safety"
+          },
+          "module_label": {
+            "type": "string",
+            "title": "Module Label"
+          },
+          "doc_type_label": {
+            "type": "string",
+            "title": "Doc Type Label",
+            "description": "\u5355\u636e\u7c7b\u578b\u4e2d\u6587\u540d\uff0c\u5982\u300c\u504f\u5dee\u53f0\u8d26\u300d"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "doc_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Doc No"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": ""
+          },
+          "status_label": {
+            "type": "string",
+            "title": "Status Label",
+            "default": ""
+          },
+          "step_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Label",
+            "description": "\u5f53\u524d\u73af\u8282\u4e2d\u6587"
+          },
+          "match_kind": {
+            "type": "string",
+            "title": "Match Kind",
+            "description": "\u5224\u5b9a\u4f9d\u636e\uff1aperson=\u5f85\u6211\u5ba1\u6279 / role=\u540c\u89d2\u8272\u5f85\u529e"
+          },
+          "match_kind_label": {
+            "type": "string",
+            "title": "Match Kind Label",
+            "default": ""
+          },
+          "age_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age Days",
+            "description": "\u505c\u7559\u5929\u6570"
+          },
+          "overdue": {
+            "type": "boolean",
+            "title": "Overdue",
+            "default": false
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path",
+            "description": "\u524d\u7aef\u8df3\u8f6c\u8def\u5f84\uff1b\u7a7a\u8868\u793a\u6682\u65e0\u9875\u9762"
+          },
+          "my_roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "My Roles",
+            "description": "\u6211\u5728\u8be5\u6d41\u7a0b\u4e2d\u7684\u89d2\u8272"
+          },
+          "is_read": {
+            "type": "boolean",
+            "title": "Is Read",
+            "description": "\u5f53\u524d\u7528\u6237\u662f\u5426\u5df2\u8bfb\uff08\u6309\u5185\u5bb9\u6307\u7eb9\u5224\u5b9a\uff0c\u4ec5\u5f85\u529e\u6709\u6548\uff09",
+            "default": false
+          },
+          "fingerprint": {
+            "type": "string",
+            "title": "Fingerprint",
+            "description": "\u5185\u5bb9\u6307\u7eb9\uff1b\u6807\u8bb0\u5df2\u8bfb\u65f6\u539f\u6837\u56de\u4f20\uff0c\u5185\u5bb9\u53d8\u5316\u540e\u81ea\u52a8\u5931\u6548",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "source",
+          "module_key",
+          "module_label",
+          "doc_type_label",
+          "title",
+          "match_kind"
+        ],
+        "title": "WorkbenchItemModel",
+        "description": "\u4e00\u6761\u5f85\u529e / \u6d41\u7a0b\u4e8b\u9879\u3002"
+      },
+      "WorkbenchOverviewData": {
+        "properties": {
+          "todos": {
+            "$ref": "#/components/schemas/TodoSectionModel"
+          },
+          "processes": {
+            "$ref": "#/components/schemas/ProcessSectionModel"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "degraded_sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Degraded Sources",
+            "description": "\u53d6\u6570\u5931\u8d25\u88ab\u964d\u7ea7\u7684\u6570\u636e\u6e90\uff08\u524d\u7aef\u53ef\u63d0\u793a\u300c\u90e8\u5206\u6570\u636e\u6682\u4e0d\u53ef\u7528\u300d\uff09"
+          }
+        },
+        "type": "object",
+        "required": [
+          "generated_at"
+        ],
+        "title": "WorkbenchOverviewData"
+      },
+      "WorkbenchOverviewResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/WorkbenchOverviewData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "WorkbenchOverviewResponse"
       },
       "WorkshopRanking": {
         "properties": {

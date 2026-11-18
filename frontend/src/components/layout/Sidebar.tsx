@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useMemo, useState } from "react"
+import type { ReactNode } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Menu } from "antd"
 import type { MenuProps } from "antd"
@@ -11,6 +12,7 @@ import type { PermissionView } from "@/lib/permissions/modules"
 import { fetchWarehouseFeishuTablesByParams } from "@/lib/api/client/warehouse"
 import type { WarehouseFeishuBusinessDomain, WarehouseFeishuTable } from "@/types/warehouse"
 import { HomeOutlined, IdcardOutlined, SettingOutlined } from "@ant-design/icons"
+import { ModuleIcon } from "@/components/Icons"
 import { useSidebarStore } from "@/stores/sidebar"
 import { MenuLockLabel } from "./MenuLockLabel"
 
@@ -22,16 +24,18 @@ type MenuItem = Required<MenuProps>['items'][number]
  */
 const SIMPLE_PAGES: Record<
   string,
-  { title: string; selectedKey: string; path: string; items: MenuItem[] }
+  { title: string; icon: ReactNode; selectedKey: string; path: string; items: MenuItem[] }
 > = {
   home: {
     title: "首页",
+    icon: <HomeOutlined />,
     selectedKey: "home",
     path: "/home",
     items: [{ key: "home", label: "工作台", icon: <HomeOutlined /> }],
   },
   profile: {
     title: "个人中心",
+    icon: <IdcardOutlined />,
     selectedKey: "profile",
     path: "/profile",
     items: [{ key: "profile", label: "个人信息", icon: <IdcardOutlined /> }],
@@ -330,7 +334,10 @@ export function Sidebar({ onNavigate, forceExpanded = false, permissionView, men
         }`}
       >
         <div className="flex-1 overflow-y-auto min-w-[224px]">
-          <div className="px-4 pt-5 pb-3">
+          <div className="px-4 pt-5 pb-3 flex items-center gap-2">
+            <span className="shrink-0 text-[18px] text-[var(--color-steel)]">
+              {simple.icon}
+            </span>
             <h2 className="text-[18px] font-semibold text-[var(--color-charcoal)]">
               {simple.title}
             </h2>
@@ -362,9 +369,18 @@ export function Sidebar({ onNavigate, forceExpanded = false, permissionView, men
     >
       <div className="flex-1 overflow-y-auto min-w-[224px]">
         <div
-          className={`px-4 pt-5 pb-3${moduleKey === "safety" ? " cursor-pointer group" : ""}`}
+          className={`px-4 pt-5 pb-3 flex items-center gap-2${
+            moduleKey === "safety" ? " cursor-pointer group" : ""
+          }`}
           onClick={moduleKey === "safety" ? () => router.push(currentModule.path) : undefined}
         >
+          <span
+            className={`shrink-0 text-[var(--color-steel)]${
+              moduleKey === "safety" ? " group-hover:text-[var(--color-primary)] transition-colors" : ""
+            }`}
+          >
+            <ModuleIcon name={currentModule.icon} className="w-[18px] h-[18px]" />
+          </span>
           <h2
             className={`text-[18px] font-semibold text-[var(--color-charcoal)]${
               moduleKey === "safety" ? " group-hover:text-[var(--color-primary)] transition-colors" : ""
