@@ -39,7 +39,10 @@ class EquipmentPersonnel(BaseModel):
     )
 
     user_id: Mapped[_uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), nullable=True, comment="逻辑引用 identity.users.id"
+        UUID(as_uuid=True), nullable=True, comment="legacy：逻辑引用 identity.users.id"
+    )
+    profile_id: Mapped[_uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, comment="人员主数据 hr.employee_profiles.id"
     )
     name: Mapped[str] = mapped_column(String(100), comment="冗余，人员姓名")
     employee_no: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="冗余，工号")

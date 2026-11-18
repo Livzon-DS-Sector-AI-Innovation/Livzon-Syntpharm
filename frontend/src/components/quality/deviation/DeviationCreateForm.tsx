@@ -22,7 +22,7 @@ import type {
   DeviationLedgerCreateInput,
   DeviationLedgerOption,
 } from '@/types/quality'
-import { RemoteUserMultiSelect, RemoteUserSelect } from '@/components/common/RemoteUserSelect'
+import { PersonMultiSelect, PersonSelect } from '@/components/common/PersonSelect'
 import { toPersonId, toPersonIds } from '@/lib/utils/form-person'
 import {
   CrossDeptReviewerFields,
@@ -208,7 +208,7 @@ export function DeviationCreateForm({
                 rules={[{ required: true, message: '请选择发现人' }]}
                 normalize={toPersonId}
               >
-                <RemoteUserSelect
+                <PersonSelect
                   placeholder={currentUserName || '搜索姓名选择发现人'}
                   label={discovererLabel}
                   feishuBoundOnly={false}
@@ -244,7 +244,7 @@ export function DeviationCreateForm({
                 rules={[{ required: true, message: '请至少选择一名调查人' }]}
                 normalize={toPersonIds}
               >
-                <RemoteUserMultiSelect placeholder="搜索姓名选择调查人，可多选" feishuBoundOnly={false} />
+                <PersonMultiSelect placeholder="搜索姓名选择调查人，可多选" feishuBoundOnly={false} />
               </Form.Item>
             </Col>
 

@@ -24,7 +24,7 @@ import {
   deleteDepartmentContact,
   updateDepartmentContact,
 } from '@/actions/quality'
-import { RemoteUserMultiSelect, RemoteUserSelect } from '@/components/common/RemoteUserSelect'
+import { PersonMultiSelect, PersonSelect } from '@/components/common/PersonSelect'
 import { toPersonId, toPersonIds } from '@/lib/utils/form-person'
 import { PeopleNamesInline, PersonInline } from './deviation/PersonInline'
 import type { PersonSnapshot } from './deviation/CrossDeptReviewerFields'
@@ -419,7 +419,7 @@ export function DepartmentContactPage({
               tooltip="本部门任何偏差都会指派给他审核"
               normalize={toPersonId}
             >
-              <RemoteUserSelect
+              <PersonSelect
                 placeholder="搜索姓名选择人员"
                 allowClear
                 feishuBoundOnly={false}
@@ -432,7 +432,7 @@ export function DepartmentContactPage({
               tooltip="生产车间偏差提级审核时使用"
               normalize={toPersonId}
             >
-              <RemoteUserSelect
+              <PersonSelect
                 placeholder="搜索姓名选择人员"
                 allowClear
                 feishuBoundOnly={false}
@@ -445,7 +445,7 @@ export function DepartmentContactPage({
               tooltip="本部门已配置则优先，未配置回退质量保证部"
               normalize={toPersonId}
             >
-              <RemoteUserSelect
+              <PersonSelect
                 placeholder="搜索姓名选择人员"
                 allowClear
                 feishuBoundOnly={false}
@@ -460,7 +460,7 @@ export function DepartmentContactPage({
               tooltip="「所属QA审核」节点处理人，也是最终编号环节处理人"
               normalize={toPersonId}
             >
-              <RemoteUserSelect
+              <PersonSelect
                 placeholder="搜索姓名选择人员"
                 allowClear
                 feishuBoundOnly={false}
@@ -473,7 +473,7 @@ export function DepartmentContactPage({
               tooltip="「QA负责人审核」节点处理人：本部门已配置则优先，未配置回退质量保证部"
               normalize={toPersonId}
             >
-              <RemoteUserSelect
+              <PersonSelect
                 placeholder="搜索姓名选择人员"
                 allowClear
                 feishuBoundOnly={false}
@@ -482,7 +482,7 @@ export function DepartmentContactPage({
             </Form.Item>
           </div>
           <Form.Item name="gmp_staff_ids" label="GMP 人员" normalize={toPersonIds}>
-            <RemoteUserMultiSelect
+            <PersonMultiSelect
               placeholder="搜索姓名选择人员，可多选"
               labels={labelsOf(formValues?.gmp_staff_ids)}
               avatarSrcs={avatarsOf(formValues?.gmp_staff_ids)}
@@ -490,7 +490,7 @@ export function DepartmentContactPage({
             />
           </Form.Item>
           <Form.Item name="additional_contacts" label="其他联系人" normalize={toPersonIds}>
-            <RemoteUserMultiSelect
+            <PersonMultiSelect
               placeholder="搜索姓名选择人员，可多选"
               labels={labelsOf(formValues?.additional_contacts)}
               avatarSrcs={avatarsOf(formValues?.additional_contacts)}

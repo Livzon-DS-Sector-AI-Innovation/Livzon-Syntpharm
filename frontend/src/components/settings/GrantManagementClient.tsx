@@ -33,7 +33,7 @@ import type { BatchResult, DepartmentOption, GrantCreateInput, GrantItem, ScopeT
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
 import { UserLabel } from '@/components/common/UserAvatar'
-import { RemoteUserSelect } from '@/components/common/RemoteUserSelect'
+import { PersonSelect } from '@/components/common/PersonSelect'
 import { SettingsListCard } from './SettingsListCard'
 import { BatchActionBar, BatchDeleteConfirmModal, BatchResultModal } from './BatchOperations'
 import { moduleMenus } from '@/lib/menu-config'
@@ -86,7 +86,7 @@ export default function GrantManagementClient() {
   })
 
   // 用户下拉不再一次性全量拉取（旧实现写死 limit=100，523 个账号里大半选不到），
-  // 改由 RemoteUserSelect 分页 + 服务端搜索按需取数。
+  // 改由 PersonSelect 分页 + 服务端搜索按需取数。
   const { data: departments = [] } = useQuery<DepartmentOption[]>({
     queryKey: ['permission-department-options'],
     queryFn: fetchDepartmentOptions,
@@ -503,7 +503,7 @@ export default function GrantManagementClient() {
               // 组件回传 { id, name }，表单里只存 id：授权接口只认 id，姓名由组件内部快照回显
               getValueFromEvent={(person: { id: string } | null) => person?.id}
             >
-              <RemoteUserSelect
+              <PersonSelect
                 // 授权要覆盖未绑定飞书的本地账号，故不限制 feishu_bound_only
                 feishuBoundOnly={false}
                 showUsername
@@ -579,7 +579,7 @@ export default function GrantManagementClient() {
         footer={null}
         width="min(560px, calc(100vw - 24px))"
       >
-        <RemoteUserSelect
+        <PersonSelect
           allowClear
           feishuBoundOnly={false}
           showUsername

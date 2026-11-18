@@ -16,6 +16,9 @@ export interface paths {
          * @description Return the currently authenticated user's profile.
          *
          *     Authentication via Bearer header or auth_token cookie.
+         *
+         *     #219：部门 / 职务 / 工号 / 头像以 HR 员工档案为准，账号表只提供认证字段。
+         *     账号未与 HR 档案关联时回退到登录快照。
          */
         get: operations["get_me_api_v1_identity_me_get"];
         put?: never;
@@ -46,6 +49,28 @@ export interface paths {
          *       不应该变成长期凭据。
          */
         post: operations["create_user_management_api_v1_identity_users_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/ensure-by-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 按 HR 员工档案预建/复用平台账号（登录前授权用）
+         * @description 幂等地把 HR 员工物化成平台账号，返回 ``user_id`` 供授权挂载。
+         *
+         *     被授权人可能从未登录过；首次飞书登录会按 ``feishu_open_id`` 认领同一行。
+         */
+        post: operations["ensure_user_by_employee_profile_api_v1_identity_ensure_by_profile_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9658,6 +9683,46 @@ export interface paths {
          * @description 按镜像 id 或飞书 open_id 返回一个人的完整档案。
          */
         get: operations["get_employee_profile_api_v1_hr_people__person_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hr/directory/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 公共部门树（全量展开，任意层级可选）
+         * @description Return the whole org tree with ``hr.departments.id`` as the reference key.
+         */
+        get: operations["get_directory_departments_api_v1_hr_directory_departments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hr/directory/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 公共人员列表（在任员工，支持关键词与部门筛选）
+         * @description Return current employees; historical (removed) rows stay out of pickers.
+         */
+        get: operations["list_directory_people_api_v1_hr_directory_people_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -29059,6 +29124,127 @@ export interface components {
              */
             operator?: string | null;
         };
+        /** DirectoryDepartmentNode */
+        DirectoryDepartmentNode: {
+            /**
+             * Id
+             * @description hr.departments.id（业务引用键）
+             */
+            id: string;
+            /**
+             * Code
+             * @description 部门编码；供权限数据范围使用
+             * @default
+             */
+            code: string;
+            /** Name */
+            name: string;
+            /**
+             * Parent Id
+             * @description 父部门 hr.departments.id
+             */
+            parent_id?: string | null;
+            /**
+             * Level
+             * @description 0 = 公司，N = 第 N 级部门
+             * @default 0
+             */
+            level: number;
+            /**
+             * Path Names
+             * @description 根 → 自身的部门名称路径
+             */
+            path_names?: string[];
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /** Children */
+            children?: components["schemas"]["DirectoryDepartmentNode"][];
+        };
+        /** DirectoryDepartmentTreeApiResponse */
+        DirectoryDepartmentTreeApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DirectoryDepartmentTreeData"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** DirectoryDepartmentTreeData */
+        DirectoryDepartmentTreeData: {
+            /** Items */
+            items?: components["schemas"]["DirectoryDepartmentNode"][];
+        };
+        /** DirectoryPeopleListApiResponse */
+        DirectoryPeopleListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DirectoryPeopleListData"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** DirectoryPeopleListData */
+        DirectoryPeopleListData: {
+            /** Items */
+            items?: components["schemas"]["DirectoryPersonItem"][];
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+        };
+        /** DirectoryPersonItem */
+        DirectoryPersonItem: {
+            /**
+             * Id
+             * @description hr.employee_profiles.id（业务引用键）
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Employee No
+             * @default
+             */
+            employee_no: string;
+            /**
+             * Job Title Name
+             * @default
+             */
+            job_title_name: string;
+            /** Department Names */
+            department_names?: string[];
+            /** Department Path */
+            department_path?: {
+                [key: string]: string;
+            }[];
+            /**
+             * Avatar Url
+             * @default
+             */
+            avatar_url: string;
+        };
         /** DiskUsage */
         DiskUsage: {
             /** Path */
@@ -30663,6 +30849,13 @@ export interface components {
             /** Name */
             name: string;
             /**
+             * Is Current
+             * @default true
+             */
+            is_current: boolean;
+            /** Removed At */
+            removed_at?: string | null;
+            /**
              * Mobile
              * @default
              */
@@ -30931,6 +31124,11 @@ export interface components {
             open_id: string;
             /** Name */
             name: string;
+            /**
+             * Is Current
+             * @default true
+             */
+            is_current: boolean;
             /**
              * Avatar Url
              * @default
@@ -32296,6 +32494,40 @@ export interface components {
              * @description 不计入全厂汇总的能源类型
              */
             excluded_energy_types?: ("electricity" | "water" | "steam" | "natural_gas")[] | null;
+        };
+        /** EnsureIdentityUserApiResponse */
+        EnsureIdentityUserApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["EnsureIdentityUserData"];
+        };
+        /** EnsureIdentityUserData */
+        EnsureIdentityUserData: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /**
+         * EnsureIdentityUserRequest
+         * @description 按 HR 员工档案预建（或复用）平台账号。
+         */
+        EnsureIdentityUserRequest: {
+            /**
+             * Employee Profile Id
+             * Format: uuid
+             * @description hr.employee_profiles.id
+             */
+            employee_profile_id: string;
         };
         /**
          * EquipmentCategoryCreate
@@ -60622,6 +60854,41 @@ export interface operations {
             };
         };
     };
+    ensure_user_by_employee_profile_api_v1_identity_ensure_by_profile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnsureIdentityUserRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["EnsureIdentityUserApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_user_management_api_v1_identity_users__user_id__put: {
         parameters: {
             query?: never;
@@ -83766,6 +84033,75 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["EmployeeProfileDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_directory_departments_api_v1_hr_directory_departments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DirectoryDepartmentTreeApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_directory_people_api_v1_hr_directory_people_get: {
+        parameters: {
+            query?: {
+                /** @description 姓名 / 工号 / 手机号关键词 */
+                keyword?: string | null;
+                /** @description 部门 hr.departments.id；含下级部门 */
+                department_id?: string | null;
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DirectoryPeopleListApiResponse"];
                 };
             };
             /** @description Validation Error */

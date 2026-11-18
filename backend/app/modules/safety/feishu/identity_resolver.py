@@ -3,13 +3,14 @@
 职责：将隐患记录中的姓名/部门文本字段解析为飞书 open_id，
      供 send_user_card() 发送 DM 通知。
 
-所有查询基于本地 identity.users / identity.departments 表（每日同步自飞书），
-不直接调用飞书 Contact API，保持安全模块独立。
+#219：数据源改为 HR 主数据（``hr.employee_profiles`` / ``hr.departments``），
+统一经 HR ``public_api`` 只读访问，不再读 ``identity.users`` /
+``identity.departments``（后者已下线）。解析结果只依赖 ``open_id``。
 
 解析链路：
   ① 责任人        ← rectification_responsible_person_name
-  ② 部门负责人    ← department → 部门 leader
-  ③ 分管领导      ← department → 父部门 leader
+  ② 部门负责人    ← department → 部门 leader_ids
+  ③ 分管领导      ← department → 父部门 leader_ids
   ④ 隐患发现人    ← discovered_by_name / discovered_by
   ⑤ 分管安全员    ← department → DEPT_CONFIG safety_officer
 """
@@ -18,9 +19,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Literal
-
-from sqlalchemy import or_, select
+from typing import TYPE_CHECKING, Any, Literal
 
 from app.modules.safety.feishu.dept_config import DEPARTMENT_CONFIG
 
@@ -28,7 +27,6 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
     from app.modules.safety.models import HazardReport
-    from app.platform.identity.models import Department, User
 
 logger = logging.getLogger(__name__)
 
@@ -155,13 +153,17 @@ class IdentityResolver:
             return NameMatch(status="matched", person=self._user_to_person(users[0]), name=raw)
 
         if department_hint:
-            filtered = [u for u in users if u.department and department_hint in u.department]
+            filtered = [
+                u
+                for u in users
+                if department_hint in "".join(str(item) for item in (u.get("department_names") or []))
+            ]
             if len(filtered) == 1:
                 logger.info(
                     "resolve_by_name_strict: %r 同名 %d 人，部门消歧 → %r",
                     raw,
                     len(users),
-                    filtered[0].name,
+                    filtered[0].get("name"),
                 )
                 return NameMatch(status="matched", person=self._user_to_person(filtered[0]), name=raw)
             if filtered:
@@ -198,9 +200,10 @@ class IdentityResolver:
         if dept is None:
             logger.warning("resolve_department_leader: 未找到部门 %r", department_name)
             return None
+        dept_name = str(dept.get("name") or "")
 
         # ── 配置优先：Bitable 人工维护的部门负责人 ──
-        config = DEPARTMENT_CONFIG.get(dept.name)
+        config = DEPARTMENT_CONFIG.get(dept_name)
         if config and config.get("leader"):
             leader_name = config["leader"]
             logger.info(
@@ -208,28 +211,30 @@ class IdentityResolver:
                 department_name,
                 leader_name,
             )
-            return await self.resolve_by_name(leader_name, department_hint=dept.name)
+            return await self.resolve_by_name(leader_name, department_hint=dept_name)
 
-        # ── 回退：identity.departments 的 leader_user_id ──
-        if not dept.leader_user_id:
-            logger.warning("resolve_department_leader: 部门 %r 无 leader_user_id", dept.name)
-            return None
-
-        leader = await self._find_user_by_user_id(dept.leader_user_id)
+        # ── 回退：HR 部门主数据的 leader_ids（飞书 open_id 列表） ──
+        leader_ids = [str(item) for item in (dept.get("leader_ids") or []) if item]
+        leader: dict[str, Any] | None = None
+        for leader_id in leader_ids:
+            leader = await self._find_user_by_user_id(leader_id)
+            if leader is not None:
+                break
         if leader is None:
             logger.warning(
-                "resolve_department_leader: leader %r 不在 identity.users",
-                dept.leader_user_id,
+                "resolve_department_leader: 部门 %r 无可用负责人（leader_ids=%s）",
+                dept_name,
+                leader_ids,
             )
             return None
 
         logger.info(
             "resolve_department_leader: %r → %r (leader of %r)",
             department_name,
-            leader.name,
-            dept.name,
+            leader.get("name"),
+            dept_name,
         )
-        return self._user_to_person(leader, dept.name)
+        return self._user_to_person(leader, dept_name)
 
     async def resolve_supervising_leader(
         self,
@@ -253,7 +258,8 @@ class IdentityResolver:
             return None
 
         # ── 配置优先：Bitable 人工维护的分管领导 ──
-        config = DEPARTMENT_CONFIG.get(dept.name)
+        dept_name = str(dept.get("name") or "")
+        config = DEPARTMENT_CONFIG.get(dept_name)
         if config and config.get("supervisor"):
             supervisor_name = config["supervisor"]
             logger.info(
@@ -261,43 +267,43 @@ class IdentityResolver:
                 department_name,
                 supervisor_name,
             )
-            return await self.resolve_by_name(supervisor_name, department_hint=dept.name)
+            return await self.resolve_by_name(supervisor_name, department_hint=dept_name)
 
-        # ── 回退：identity.departments 的父部门 leader ──
-        if not dept.parent_feishu_department_id:
-            logger.info("resolve_supervising_leader: %r 无父部门，无分管领导", dept.name)
+        # ── 回退：HR 部门主数据的父部门 leader_ids ──
+        parent_feishu_id = str(dept.get("parent_feishu_department_id") or "")
+        if not parent_feishu_id:
+            logger.info("resolve_supervising_leader: %r 无父部门，无分管领导", dept_name)
             return None
 
-        parent_dept = await self._find_department_by_id(dept.parent_feishu_department_id)
+        parent_dept = await self._find_department_by_id(parent_feishu_id)
         if parent_dept is None:
             logger.warning(
-                "resolve_supervising_leader: 父部门 %r 不在 identity.departments",
-                dept.parent_feishu_department_id,
+                "resolve_supervising_leader: 父部门 %r 不在 hr.departments",
+                parent_feishu_id,
             )
             return None
 
-        if not parent_dept.leader_user_id:
-            logger.warning(
-                "resolve_supervising_leader: 父部门 %r 无 leader_user_id",
-                parent_dept.name,
-            )
-            return None
-
-        leader = await self._find_user_by_user_id(parent_dept.leader_user_id)
+        leader_ids = [str(item) for item in (parent_dept.get("leader_ids") or []) if item]
+        leader: dict[str, Any] | None = None
+        for leader_id in leader_ids:
+            leader = await self._find_user_by_user_id(leader_id)
+            if leader is not None:
+                break
         if leader is None:
             logger.warning(
-                "resolve_supervising_leader: 父部门 leader %r 不在 identity.users",
-                parent_dept.leader_user_id,
+                "resolve_supervising_leader: 父部门 %r 无可用负责人（leader_ids=%s）",
+                parent_dept.get("name"),
+                leader_ids,
             )
             return None
 
         logger.info(
             "resolve_supervising_leader: %r → 父部门 %r → leader %r",
             department_name,
-            parent_dept.name,
-            leader.name,
+            parent_dept.get("name"),
+            leader.get("name"),
         )
-        return self._user_to_person(leader, parent_dept.name)
+        return self._user_to_person(leader, str(parent_dept.get("name") or ""))
 
     async def resolve_safety_officer(
         self,
@@ -320,9 +326,10 @@ class IdentityResolver:
             logger.warning("resolve_safety_officer: 未找到部门 %r", department_name)
             return None
 
-        config = DEPARTMENT_CONFIG.get(dept.name)
+        dept_name = str(dept.get("name") or "")
+        config = DEPARTMENT_CONFIG.get(dept_name)
         if not config or not config.get("safety_officer"):
-            logger.info("resolve_safety_officer: 部门 %r 未配置安全员", dept.name)
+            logger.info("resolve_safety_officer: 部门 %r 未配置安全员", dept_name)
             return None
 
         officer_name = config["safety_officer"]
@@ -331,7 +338,7 @@ class IdentityResolver:
             department_name,
             officer_name,
         )
-        return await self.resolve_by_name(officer_name, department_hint=dept.name)
+        return await self.resolve_by_name(officer_name, department_hint=dept_name)
 
     # ── 隐患模型便捷方法 ──────────────────────────────────────
 
@@ -412,35 +419,35 @@ class IdentityResolver:
 
     @staticmethod
     def _user_to_person(
-        user: User,
+        user: dict[str, Any],
         department: str | None = None,
     ) -> ResolvedPerson:
-        """将 identity.User ORM 对象转为 ResolvedPerson。"""
+        """将 HR 人员档案（``hr.employee_profiles`` 序列化结果）转为 ResolvedPerson。
+
+        #219：人员主数据改为 HR 档案，飞书通知统一走 ``open_id``（档案不保存
+        user_id / union_id），因此 ``user_id`` 留空。
+        """
+        names = user.get("department_names") or []
         return ResolvedPerson(
-            open_id=user.feishu_open_id or "",
-            user_id=user.feishu_user_id or "",
-            name=user.name,
-            department=department or user.department,
-            id=str(user.id) if user.id else "",
+            open_id=str(user.get("open_id") or ""),
+            user_id="",
+            name=str(user.get("name") or ""),
+            department=department or (str(names[-1]) if names else None),
+            id=str(user.get("id") or ""),
         )
 
-    async def _find_users_by_name(self, name: str) -> list[User]:
-        """在 identity.users 中按姓名精确匹配，返回全部命中（含同名）。"""
-        from app.platform.identity.models import User as IdentityUser
+    async def _find_users_by_name(self, name: str) -> list[dict[str, Any]]:
+        """在 HR 人员主数据中按姓名精确匹配，返回全部命中（含同名）。"""
+        from app.modules.hr.public_api import find_profiles_by_name
 
-        stmt = select(IdentityUser).where(
-            IdentityUser.name == name,
-            IdentityUser.is_deleted == False,  # noqa: E712
-        )
-        result = await self._session.execute(stmt)
-        return list(result.scalars().all())
+        return await find_profiles_by_name(self._session, name)
 
     async def _find_user_by_name(
         self,
         name: str,
         department_hint: str | None = None,
-    ) -> User | None:
-        """在 identity.users 中按姓名查找用户（宽松：多命中时取第一个）。
+    ) -> dict[str, Any] | None:
+        """在 HR 人员主数据中按姓名查找用户（宽松：多命中时取第一个）。
 
         策略：
           1. 精确匹配 name
@@ -458,13 +465,17 @@ class IdentityResolver:
 
         # 多人同名，尝试用部门提示消歧
         if department_hint:
-            filtered = [u for u in users if u.department and department_hint in u.department]
+            filtered = [
+                u
+                for u in users
+                if department_hint in "".join(str(item) for item in (u.get("department_names") or []))
+            ]
             if len(filtered) == 1:
                 logger.info(
                     "_find_user_by_name: %r 多命中 %d，部门消歧 → %r",
                     name,
                     len(users),
-                    filtered[0].name,
+                    filtered[0].get("name"),
                 )
                 return filtered[0]
             if filtered:
@@ -482,116 +493,26 @@ class IdentityResolver:
         )
         return users[0]
 
-    async def _find_user_by_user_id(self, user_id: str) -> User | None:
-        """按 feishu_user_id 查找用户，失败时回退 feishu_open_id。
+    async def _find_user_by_user_id(self, user_id: str) -> dict[str, Any] | None:
+        """按飞书 id 在 HR 人员主数据中查找（档案只保存 open_id）。"""
+        from app.modules.hr.public_api import find_profile_by_feishu_id
 
-        部门表中的 leader_user_id 可能是 user_id 或 open_id 格式，
-        取决于飞书 API 调用时的 user_id_type 参数。
-        """
-        from app.platform.identity.models import User as IdentityUser
+        return await find_profile_by_feishu_id(self._session, user_id)
 
-        # 先按 user_id 查
-        stmt = select(IdentityUser).where(
-            IdentityUser.feishu_user_id == user_id,
-            IdentityUser.is_deleted == False,  # noqa: E712
-        )
-        result = await self._session.execute(stmt)
-        user = result.scalar_one_or_none()
-        if user is not None:
-            return user
+    async def _find_user_by_email(self, email: str) -> dict[str, Any] | None:
+        """按 email 查找人员（Bitable open_id 与档案 open_id 不匹配时的回退）。"""
+        from app.modules.hr.public_api import find_profile_by_email
 
-        # 回退按 open_id 查
-        stmt2 = select(IdentityUser).where(
-            IdentityUser.feishu_open_id == user_id,
-            IdentityUser.is_deleted == False,  # noqa: E712
-        )
-        result2 = await self._session.execute(stmt2)
-        user2 = result2.scalar_one_or_none()
-        if user2 is not None:
-            return user2
+        return await find_profile_by_email(self._session, email)
 
-        return None
+    async def _find_department_by_name(self, name: str) -> dict[str, Any] | None:
+        """在 HR 部门主数据中匹配部门（精确 → 结尾匹配 → 包含）。"""
+        from app.modules.hr.public_api import find_department_row_by_name
 
-    async def _find_user_by_email(self, email: str) -> User | None:
-        """按 email 查找用户（Bitable open_id 与 identity.users open_id 不匹配时的回退）。"""
-        from app.platform.identity.models import User as IdentityUser
+        return await find_department_row_by_name(self._session, name)
 
-        if not email:
-            return None
-        stmt = select(IdentityUser).where(
-            IdentityUser.email == email,
-            IdentityUser.is_deleted == False,  # noqa: E712
-        )
-        result = await self._session.execute(stmt)
-        return result.scalar_one_or_none()
-
-    async def _find_department_by_name(self, name: str) -> Department | None:
-        """在 identity.departments 中模糊匹配部门。
-
-        策略（按优先级）：
-          1. 精确匹配 name
-          2. name 以查询结尾（如 '生产部' 匹配 '原料药生产部'）
-          3. name 包含查询
-          4. 多个匹配 → 取第一个 + warning
-        """
-        from app.platform.identity.models import Department as IdentityDept
-
-        if not name or not name.strip():
-            return None
-
-        name = name.strip()
-
-        # 策略 1: 精确匹配
-        stmt = select(IdentityDept).where(
-            IdentityDept.name == name,
-            IdentityDept.is_deleted == False,  # noqa: E712
-            IdentityDept.status_is_deleted == False,  # noqa: E712
-        )
-        result = await self._session.execute(stmt)
-        dept = result.scalar_one_or_none()
-        if dept is not None:
-            return dept
-
-        # 策略 2+3: 模糊匹配
-        stmt = (
-            select(IdentityDept)
-            .where(
-                IdentityDept.is_deleted == False,  # noqa: E712
-                IdentityDept.status_is_deleted == False,  # noqa: E712
-                or_(
-                    IdentityDept.name.ilike(f"%{name}"),
-                    IdentityDept.name.ilike(f"%{name}%"),
-                ),
-            )
-            .order_by(IdentityDept.order, IdentityDept.name)
-        )
-        result = await self._session.execute(stmt)
-        depts = list(result.scalars().all())
-
-        if not depts:
-            return None
-
-        if len(depts) > 1:
-            logger.warning(
-                "_find_department_by_name: %r 模糊匹配 %d 个部门，取第一个 %r",
-                name,
-                len(depts),
-                depts[0].name,
-            )
-
-        return depts[0]
-
-    async def _find_department_by_id(
-        self,
-        feishu_department_id: str,
-    ) -> Department | None:
+    async def _find_department_by_id(self, feishu_department_id: str) -> dict[str, Any] | None:
         """按 feishu_department_id 精确查找部门。"""
-        from app.platform.identity.models import Department as IdentityDept
+        from app.modules.hr.public_api import get_department_row_by_feishu_id
 
-        stmt = select(IdentityDept).where(
-            IdentityDept.feishu_department_id == feishu_department_id,
-            IdentityDept.is_deleted == False,  # noqa: E712
-            IdentityDept.status_is_deleted == False,  # noqa: E712
-        )
-        result = await self._session.execute(stmt)
-        return result.scalar_one_or_none()
+        return await get_department_row_by_feishu_id(self._session, feishu_department_id)

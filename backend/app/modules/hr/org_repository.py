@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.hr.models import EmployeeProfile, HrDepartment, HrOrgSyncRun
-from app.modules.hr.org_domain import OrgDepartmentRecord
+from app.modules.hr.org_domain import OrgDepartmentRecord, department_code_for
 from app.modules.hr.org_sync import SyncRunRecord
 
 
@@ -41,6 +41,10 @@ class SqlAlchemyOrgDepartmentStore:
             self.session.add(department)
 
         department.name = record.name
+        if not department.code:
+            # Permission data scopes key on hr.departments.code; synced rows would
+            # otherwise stay empty and vanish from the scope picker.
+            department.code = department_code_for(record.id)
         if record.level is not None:
             department.level = record.level
         elif record.department_path:
@@ -122,6 +126,7 @@ async def resolve_leader_names(session: AsyncSession, leader_ids: set[str]) -> d
     result = await session.execute(
         select(EmployeeProfile).where(
             EmployeeProfile.is_deleted.is_(False),
+            EmployeeProfile.is_current.is_(True),
             EmployeeProfile.open_id.in_(ids),
         )
     )
@@ -140,6 +145,7 @@ async def resolve_leader_avatars(session: AsyncSession, leader_ids: set[str]) ->
     result = await session.execute(
         select(EmployeeProfile).where(
             EmployeeProfile.is_deleted.is_(False),
+            EmployeeProfile.is_current.is_(True),
             EmployeeProfile.open_id.in_(ids),
         )
     )
