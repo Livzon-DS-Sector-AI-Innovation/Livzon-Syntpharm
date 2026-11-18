@@ -390,8 +390,10 @@ async def get_me(
 
     Authentication via Bearer header or auth_token cookie.
 
-    #219：部门 / 职务 / 工号 / 头像以 HR 员工档案为准，账号表只提供认证字段。
-    账号未与 HR 档案关联时回退到登录快照。
+    #219：姓名 / 手机 / 邮箱 / 部门 / 职务 / 工号 / 头像以 HR 员工档案为准，
+    账号表只提供认证字段。逐字段「HR 有值才覆盖」——HR 档案存在但某字段尚未
+    同步（如部门为空、last_synced_at 为空）时必须回退登录快照，否则个人中心
+    会被空值清空，与用户管理列表的口径也不一致。
     """
     payload = UserResponse.model_validate(current_user)
     open_id = (current_user.feishu_open_id or "").strip()
@@ -403,8 +405,11 @@ async def get_me(
             department_names = profile.get("department_names") or []
             payload = payload.model_copy(
                 update={
-                    "department": department_names[-1] if department_names else None,
-                    "position": profile.get("job_title_name") or None,
+                    "name": profile.get("name") or payload.name,
+                    "mobile": profile.get("mobile") or payload.mobile,
+                    "email": profile.get("email") or payload.email,
+                    "department": (department_names[-1] if department_names else None) or payload.department,
+                    "position": profile.get("job_title_name") or payload.position,
                     "employee_no": profile.get("employee_no") or payload.employee_no,
                     "avatar_url": profile.get("avatar_url") or payload.avatar_url,
                 }
