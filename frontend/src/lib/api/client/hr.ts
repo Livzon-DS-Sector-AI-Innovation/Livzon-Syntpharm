@@ -1,3 +1,4 @@
+import type { components } from '@/types/generated/schema'
 import { apiGet, apiGetWithMeta } from '../client'
 
 import {
@@ -633,4 +634,49 @@ export async function fetchEmployeeDepartments(): Promise<OrgDepartmentTreeRespo
   return apiGet<OrgDepartmentTreeResponse['data']>(`${API_BASE}/hr/people/departments`, {
     cache: 'no-store',
   })
+}
+
+// ── HR 公共目录（#219：全系统唯一的选人 / 选部门数据源）─────────────
+
+/** 公共目录人员项：`id` 是 hr.employee_profiles.id，业务表应存这个 UUID。 */
+export type DirectoryPersonItem = components['schemas']['DirectoryPersonItem']
+
+/** 公共目录部门节点：`id` 是 hr.departments.id，任意层级都可选。 */
+export type DirectoryDepartmentNode = components['schemas']['DirectoryDepartmentNode']
+
+export interface DirectoryPeoplePage {
+  items: DirectoryPersonItem[]
+  total: number
+}
+
+/**
+ * 分页获取在任员工（仅 is_current=true）。
+ * 关键参数走服务端，用于选择器的防抖搜索与滚动续载。
+ */
+export async function fetchDirectoryPeople(params?: {
+  keyword?: string
+  department_id?: string
+  offset?: number
+  limit?: number
+}): Promise<DirectoryPeoplePage> {
+  const searchParams = new URLSearchParams()
+  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  if (params?.department_id) searchParams.set('department_id', params.department_id)
+  searchParams.set('offset', String(params?.offset ?? 0))
+  searchParams.set('limit', String(params?.limit ?? 50))
+
+  const data = await apiGet<components['schemas']['DirectoryPeopleListData']>(
+    `${API_BASE}/hr/directory/people?${searchParams.toString()}`,
+    { cache: 'no-store' },
+  )
+  return { items: data.items ?? [], total: data.total ?? 0 }
+}
+
+/** 获取全量展开的部门树（任意层级可选，节点显示完整层级路径）。 */
+export async function fetchDirectoryDepartments(): Promise<DirectoryDepartmentNode[]> {
+  const data = await apiGet<components['schemas']['DirectoryDepartmentTreeData']>(
+    `${API_BASE}/hr/directory/departments`,
+    { cache: 'no-store' },
+  )
+  return data.items ?? []
 }

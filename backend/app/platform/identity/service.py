@@ -1321,26 +1321,15 @@ async def handle_livzon_feishu_card_action_event(
 
 
 def _apply_contact_profile(user: User, detail: dict[str, Any]) -> None:
-    """把通讯录详情里的 部门 / 职务 / 工号 / 企业邮箱 写入用户记录（只补齐非空值）。"""
+    """把通讯录详情里的 工号 / 企业邮箱 / 头像 / 冻结状态 写入用户记录。
+
+    #219：`department` / `position` / `feishu_department_ids` 不再写入
+    `identity.users`——部门与职务统一从 `hr.employee_profiles` 读取，账号表只保留
+    认证所需的登录快照。只补齐非空值，不清空已有快照。
+    """
     employee_no = (detail.get("employee_no") or "").strip()
     if employee_no:
         user.employee_no = employee_no
-
-    job_title = (detail.get("job_title") or "").strip()
-    if job_title:
-        user.position = job_title
-
-    # 部门名取部门路径的最后一级（最具体的部门）
-    department_path = detail.get("department_path") or []
-    department_name = ""
-    if department_path:
-        department_name = (department_path[-1].get("department_name") or "").strip()
-    if department_name:
-        user.department = department_name
-
-    department_ids = detail.get("department_ids") or []
-    if department_ids:
-        user.feishu_department_ids = json.dumps(list(department_ids), ensure_ascii=False)
 
     enterprise_email = (detail.get("enterprise_email") or "").strip()
     if enterprise_email:
@@ -1388,11 +1377,10 @@ async def enrich_user_from_feishu_contact(
             return
         _apply_contact_profile(user, detail)
         logger.info(
-            "已补齐飞书通讯录资料: open_id=%s 部门=%s 职务=%s 工号=%s",
+            "已补齐飞书通讯录资料: open_id=%s 工号=%s 状态=%s",
             open_id,
-            user.department,
-            user.position,
             user.employee_no,
+            user.status,
         )
     except Exception:  # noqa: BLE001 - 资料补齐失败绝不能影响登录主流程
         logger.warning("补齐飞书通讯录资料失败（不影响登录）: %s", identifier, exc_info=True)
@@ -1524,6 +1512,48 @@ def generate_jwt(user: User) -> str:
         "exp": now + timedelta(seconds=settings.JWT_EXPIRE_SECONDS),
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+
+
+async def ensure_identity_user(db: AsyncSession, employee_profile_id: UUID) -> User:
+    """幂等地按 HR 员工档案确保存在平台账号（#219 预授权接缝）。
+
+    权限授予仍以 ``identity.users.id`` 为键，但被授权人可能从未登录过，因此
+    授权前先把账号行物化出来：
+
+    * 按 profile 的 ``open_id`` 查已有账号，存在则直接复用；
+    * 不存在则创建最小无密码账号（``auth_source=feishu``），员工首次飞书登录时
+      会按 ``feishu_open_id`` 认领同一行。
+
+    部门 / 职务 / 工号不在账号表落地，展示时经 HR ``public_api`` 读取。
+    """
+    from app.modules.hr.public_api import get_profile_by_id
+
+    profile = await get_profile_by_id(db, employee_profile_id)
+    if profile is None:
+        raise AppException(status_code=404, message="员工档案不存在")
+    open_id = str(profile.get("open_id") or "").strip()
+    if not open_id:
+        raise AppException(status_code=422, message="员工档案缺少飞书 open_id，无法建号")
+
+    user = await _repo.get_by_feishu_open_id(db, open_id)
+    if user is not None:
+        return user
+
+    user = await _repo.create(
+        db,
+        name=str(profile.get("name") or "未命名员工"),
+        username=await allocate_default_username(db),
+        employee_no=(str(profile.get("employee_no") or "") or None),
+        feishu_open_id=open_id,
+        status="active",
+        auth_source="feishu",
+    )
+    logger.info(
+        "已按 HR 档案预建平台账号: open_id=%s user_id=%s",
+        open_id,
+        user.id,
+    )
+    return user
 
 
 async def get_or_create_e2e_user(db: AsyncSession) -> User:

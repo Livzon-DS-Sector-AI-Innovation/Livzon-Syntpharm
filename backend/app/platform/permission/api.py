@@ -543,10 +543,18 @@ async def create_grant(
     if role is None:
         raise NotFoundException("角色")
 
-    # 超管保护 + 防越级：目标账号层级校验 + 授出角色不能超出操作者权限范围
-    target_user = (await db.execute(select(User).where(User.id == payload.user_id))).scalar_one_or_none()
-    if target_user is None:
+    # #219：统一人员选择器返回 hr.employee_profiles.id，而授权键仍是
+    # identity.users.id；查不到账号时按 HR 档案按需建号（登录前授权）。
+    from app.platform.identity.public_api import resolve_person_user_id
+
+    target_user_id = await resolve_person_user_id(db, payload.user_id)
+    if target_user_id is None:
         raise NotFoundException("用户")
+    if target_user_id == ctx.user.id:
+        raise ForbiddenException("不能给自己授权")
+
+    # 超管保护 + 防越级：目标账号层级校验 + 授出角色不能超出操作者权限范围
+    target_user = (await db.execute(select(User).where(User.id == target_user_id))).scalar_one()
     await guard_manage_target(db, actor=ctx.user, target=target_user)
     await assert_actor_can_grant_role(db, actor=ctx.user, role=role)
 
@@ -562,7 +570,7 @@ async def create_grant(
     grant_repo = GrantRepository()
     grant = await grant_repo.create_grant(
         db,
-        user_id=payload.user_id,
+        user_id=target_user_id,
         role_id=payload.role_id,
         scope_type=payload.scope_type,
         scope_dept_codes=payload.scope_dept_codes,

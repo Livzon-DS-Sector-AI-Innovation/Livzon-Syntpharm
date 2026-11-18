@@ -661,3 +661,19 @@ class SyncUserInfoTriggerApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: SyncUserInfoTriggerData
+
+
+class EnsureIdentityUserRequest(BaseModel):
+    """按 HR 员工档案预建（或复用）平台账号。"""
+
+    employee_profile_id: UUID = Field(..., description="hr.employee_profiles.id")
+
+
+class EnsureIdentityUserData(BaseModel):
+    user_id: UUID
+
+
+class EnsureIdentityUserApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: EnsureIdentityUserData

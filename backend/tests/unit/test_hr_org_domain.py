@@ -15,10 +15,20 @@ from __future__ import annotations
 from app.modules.hr.org_domain import (
     OrgDepartmentRecord,
     build_org_tree,
+    department_code_for,
     parse_directory_department,
     select_departments_to_hide,
 )
 from tests.fixtures.org_scope import IN_SCOPE_COMPANY_ID, IN_SCOPE_COMPANY_NAME
+
+
+def test_department_code_is_stable_and_bounded() -> None:
+    code = department_code_for("od-level2")
+
+    assert code == department_code_for("od-level2")
+    assert code.startswith("FSH-")
+    assert len(code) <= 32
+    assert code != department_code_for("od-other")
 
 
 def _mget_payload(**overrides: object) -> dict[str, object]:

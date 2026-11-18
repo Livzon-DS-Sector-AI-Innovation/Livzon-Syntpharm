@@ -3391,6 +3391,11 @@ EXEMPT_ROUTES: tuple[tuple[str, str], ...] = (
     # 飞书审批完成回调：由飞书服务器发起，不可能携带用户 JWT，
     # 鉴权改为「verification token + 签名校验」（见 hr/api.py 的回调校验）。
     ("POST", "/api/v1/hr/webhook/feishu-approval"),
+    # 公共目录（#219）：全系统选择器共用的选人 / 选部门数据源。装备、质量、
+    # 安全模块的操作人通常没有 hr:* 模块权限码，若绑定 HR 读权限会 403，
+    # 因此只要求登录（路由自身 require_user），不挂权限码。
+    ("GET", "/api/v1/hr/directory/departments"),
+    ("GET", "/api/v1/hr/directory/people"),
 )
 
 

@@ -32,7 +32,14 @@ class DepartmentContact(BaseModel):
         {"schema": "quality"},
     )
 
-    department: Mapped[str] = mapped_column(String(255), nullable=False, comment="部门名称")
+    department: Mapped[str] = mapped_column(
+        String(255), nullable=False, comment="部门名称（唯一键，偏差流程按名称解析处理人）"
+    )
+    hr_department_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        nullable=True,
+        comment="部门主数据 hr.departments.id（逻辑引用）",
+    )
     dept_head_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("identity.users.id"),
