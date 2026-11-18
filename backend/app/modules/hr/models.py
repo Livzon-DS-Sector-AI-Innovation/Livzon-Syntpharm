@@ -527,23 +527,40 @@ class Candidate(BaseModel):
 
 
 class EmployeeProfile(BaseModel):
-    """飞书通讯录人员镜像（ticket #198）。
+    """飞书通讯录人员镜像（ticket #198 / #219）。
 
-    以飞书 open_id 为唯一键，保存员工档案页面展示的人员字段。同步只 upsert，
-    不删除、不按"未返回"停用任何人；历史离职人员仍可作为台账的人员来源。
+    以飞书 open_id 为业务匹配键：同一 open_id 同时只有一条 ``is_current`` 行，
+    离职/跌出目录的行保留为历史（``is_current=False`` + ``removed_at``），
+    因此历史台账（``hr.departure_records.person_id``）不会因同步而断链。
+    再入职会新增一行并置为在任，旧行保持历史状态。
     不保存 employee_id、subscription_ids、leader_id 以及内嵌的 department 对象。
     """
 
     __tablename__ = "employee_profiles"
     __table_args__ = (
-        UniqueConstraint("open_id", name="uq_hr_employee_profiles_open_id"),
+        Index(
+            "uq_hr_employee_profiles_open_id_current",
+            "open_id",
+            unique=True,
+            postgresql_where=text("is_current"),
+        ),
         Index("ix_hr_employee_profiles_name", "name"),
         Index("ix_hr_employee_profiles_employee_no", "employee_no"),
         Index("ix_hr_employee_profiles_staff_status", "staff_status"),
         {"schema": "hr"},
     )
 
-    open_id: Mapped[str] = mapped_column(String(128), nullable=False, comment="飞书 open_id（唯一键）")
+    open_id: Mapped[str] = mapped_column(String(128), nullable=False, comment="飞书 open_id（在任记录唯一）")
+    is_current: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default="true",
+        comment="是否当前在任记录；离职/跌出目录置 false，历史行保留",
+    )
+    removed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="跌出目录/离职时标记时间"
+    )
     name: Mapped[str] = mapped_column(String(100), nullable=False, server_default="", comment="姓名")
     mobile: Mapped[str] = mapped_column(String(32), nullable=False, server_default="", comment="手机号")
     email: Mapped[str] = mapped_column(String(255), nullable=False, server_default="", comment="邮箱")

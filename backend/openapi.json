@@ -13,7 +13,7 @@
           "\u7528\u6237\u4fe1\u606f"
         ],
         "summary": "\u83b7\u53d6\u5f53\u524d\u767b\u5f55\u7528\u6237\u4fe1\u606f",
-        "description": "Return the currently authenticated user's profile.\n\nAuthentication via Bearer header or auth_token cookie.",
+        "description": "Return the currently authenticated user's profile.\n\nAuthentication via Bearer header or auth_token cookie.\n\n#219\uff1a\u90e8\u95e8 / \u804c\u52a1 / \u5de5\u53f7 / \u5934\u50cf\u4ee5 HR \u5458\u5de5\u6863\u6848\u4e3a\u51c6\uff0c\u8d26\u53f7\u8868\u53ea\u63d0\u4f9b\u8ba4\u8bc1\u5b57\u6bb5\u3002\n\u8d26\u53f7\u672a\u4e0e HR \u6863\u6848\u5173\u8054\u65f6\u56de\u9000\u5230\u767b\u5f55\u5feb\u7167\u3002",
         "operationId": "get_me_api_v1_identity_me_get",
         "parameters": [
           {
@@ -256,6 +256,67 @@
               "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/UserCreateApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/identity/ensure-by-profile": {
+      "post": {
+        "tags": [
+          "\u7528\u6237\u4fe1\u606f",
+          "\u7528\u6237\u4fe1\u606f"
+        ],
+        "summary": "\u6309 HR \u5458\u5de5\u6863\u6848\u9884\u5efa/\u590d\u7528\u5e73\u53f0\u8d26\u53f7\uff08\u767b\u5f55\u524d\u6388\u6743\u7528\uff09",
+        "description": "\u5e42\u7b49\u5730\u628a HR \u5458\u5de5\u7269\u5316\u6210\u5e73\u53f0\u8d26\u53f7\uff0c\u8fd4\u56de ``user_id`` \u4f9b\u6388\u6743\u6302\u8f7d\u3002\n\n\u88ab\u6388\u6743\u4eba\u53ef\u80fd\u4ece\u672a\u767b\u5f55\u8fc7\uff1b\u9996\u6b21\u98de\u4e66\u767b\u5f55\u4f1a\u6309 ``feishu_open_id`` \u8ba4\u9886\u540c\u4e00\u884c\u3002",
+        "operationId": "ensure_user_by_employee_profile_api_v1_identity_ensure_by_profile_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnsureIdentityUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnsureIdentityUserApiResponse"
                 }
               }
             }
@@ -46849,6 +46910,167 @@
               "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/EmployeeProfileDetailApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hr/directory/departments": {
+      "get": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u516c\u5171\u76ee\u5f55"
+        ],
+        "summary": "\u516c\u5171\u90e8\u95e8\u6811\uff08\u5168\u91cf\u5c55\u5f00\uff0c\u4efb\u610f\u5c42\u7ea7\u53ef\u9009\uff09",
+        "description": "Return the whole org tree with ``hr.departments.id`` as the reference key.",
+        "operationId": "get_directory_departments_api_v1_hr_directory_departments_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DirectoryDepartmentTreeApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hr/directory/people": {
+      "get": {
+        "tags": [
+          "\u4eba\u4e8b\u7ba1\u7406",
+          "HR \u516c\u5171\u76ee\u5f55"
+        ],
+        "summary": "\u516c\u5171\u4eba\u5458\u5217\u8868\uff08\u5728\u4efb\u5458\u5de5\uff0c\u652f\u6301\u5173\u952e\u8bcd\u4e0e\u90e8\u95e8\u7b5b\u9009\uff09",
+        "description": "Return current employees; historical (removed) rows stay out of pickers.",
+        "operationId": "list_directory_people_api_v1_hr_directory_people_get",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u59d3\u540d / \u5de5\u53f7 / \u624b\u673a\u53f7\u5173\u952e\u8bcd",
+              "title": "Keyword"
+            },
+            "description": "\u59d3\u540d / \u5de5\u53f7 / \u624b\u673a\u53f7\u5173\u952e\u8bcd"
+          },
+          {
+            "name": "department_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u90e8\u95e8 hr.departments.id\uff1b\u542b\u4e0b\u7ea7\u90e8\u95e8",
+              "title": "Department Id"
+            },
+            "description": "\u90e8\u95e8 hr.departments.id\uff1b\u542b\u4e0b\u7ea7\u90e8\u95e8"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DirectoryPeopleListApiResponse"
                 }
               }
             }
@@ -122107,6 +122329,219 @@
         "title": "DetectedProblem",
         "description": "\u672c\u6b21\u6821\u9a8c\u68c0\u51fa\u7684\u95ee\u9898\n\n\u6765\u81ea\u5185\u5b58\u4e2d\u7684\u68c0\u6d4b\u7ed3\u679c\uff0c\u5c1a\u672a\u843d\u5e93\uff1b\u5b57\u6bb5\u968f\u6765\u6e90\uff08\u67e5\u91cd / AI \u51b2\u7a81 / AI \u5408\u89c4\uff09\u800c\u5b9a\u3002"
       },
+      "DirectoryDepartmentNode": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "hr.departments.id\uff08\u4e1a\u52a1\u5f15\u7528\u952e\uff09"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "\u90e8\u95e8\u7f16\u7801\uff1b\u4f9b\u6743\u9650\u6570\u636e\u8303\u56f4\u4f7f\u7528",
+            "default": ""
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id",
+            "description": "\u7236\u90e8\u95e8 hr.departments.id"
+          },
+          "level": {
+            "type": "integer",
+            "title": "Level",
+            "description": "0 = \u516c\u53f8\uff0cN = \u7b2c N \u7ea7\u90e8\u95e8",
+            "default": 0
+          },
+          "path_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Path Names",
+            "description": "\u6839 \u2192 \u81ea\u8eab\u7684\u90e8\u95e8\u540d\u79f0\u8def\u5f84"
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order",
+            "default": 0
+          },
+          "children": {
+            "items": {
+              "$ref": "#/components/schemas/DirectoryDepartmentNode"
+            },
+            "type": "array",
+            "title": "Children"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "DirectoryDepartmentNode"
+      },
+      "DirectoryDepartmentTreeApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DirectoryDepartmentTreeData"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DirectoryDepartmentTreeApiResponse"
+      },
+      "DirectoryDepartmentTreeData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DirectoryDepartmentNode"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "DirectoryDepartmentTreeData"
+      },
+      "DirectoryPeopleListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DirectoryPeopleListData"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DirectoryPeopleListApiResponse"
+      },
+      "DirectoryPeopleListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DirectoryPersonItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "DirectoryPeopleListData"
+      },
+      "DirectoryPersonItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "hr.employee_profiles.id\uff08\u4e1a\u52a1\u5f15\u7528\u952e\uff09"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "employee_no": {
+            "type": "string",
+            "title": "Employee No",
+            "default": ""
+          },
+          "job_title_name": {
+            "type": "string",
+            "title": "Job Title Name",
+            "default": ""
+          },
+          "department_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Names"
+          },
+          "department_path": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Department Path"
+          },
+          "avatar_url": {
+            "type": "string",
+            "title": "Avatar Url",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "DirectoryPersonItem"
+      },
       "DiskUsage": {
         "properties": {
           "path": {
@@ -126252,6 +126687,23 @@
             "type": "string",
             "title": "Name"
           },
+          "is_current": {
+            "type": "boolean",
+            "title": "Is Current",
+            "default": true
+          },
+          "removed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Removed At"
+          },
           "mobile": {
             "type": "string",
             "title": "Mobile",
@@ -126699,6 +127151,11 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "is_current": {
+            "type": "boolean",
+            "title": "Is Current",
+            "default": true
           },
           "avatar_url": {
             "type": "string",
@@ -130307,6 +130764,58 @@
         },
         "type": "object",
         "title": "EnergyWorkshopUpdate"
+      },
+      "EnsureIdentityUserApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EnsureIdentityUserData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnsureIdentityUserApiResponse"
+      },
+      "EnsureIdentityUserData": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "EnsureIdentityUserData"
+      },
+      "EnsureIdentityUserRequest": {
+        "properties": {
+          "employee_profile_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Employee Profile Id",
+            "description": "hr.employee_profiles.id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "employee_profile_id"
+        ],
+        "title": "EnsureIdentityUserRequest",
+        "description": "\u6309 HR \u5458\u5de5\u6863\u6848\u9884\u5efa\uff08\u6216\u590d\u7528\uff09\u5e73\u53f0\u8d26\u53f7\u3002"
       },
       "EquipmentCategoryCreate": {
         "properties": {

@@ -1,15 +1,14 @@
 'use client'
 
-import { useMemo } from 'react'
 import {
-  RemoteUserSelect,
-  type RemoteUserSelectOption,
-} from '@/components/common/RemoteUserSelect'
+  PersonMultiSelect,
+  PersonSelect,
+} from '@/components/common/PersonSelect'
 
 /**
  * 系统用户选择器（安全模块的对外门面）。
  *
- * 取数与分页逻辑已统一收口到 `components/common/RemoteUserSelect`：
+ * 取数与分页逻辑已统一收口到 `components/common/PersonSelect`：
  * 打开即 50 条、滚到底自动续载、关键字走服务端搜索。
  * 这里只保留历史 props 形状，让隐患登记、隐患详情、设备巡检抽屉等既有调用点零改动。
  *
@@ -38,31 +37,17 @@ export default function PersonnelSelect({
   disabled,
   onChange,
 }: PersonnelSelectProps) {
-  // 历史 props 只有姓名/头像快照，转成统一组件的 fallbackOptions
-  const fallbackOptions = useMemo<RemoteUserSelectOption[]>(
-    () => (value && label ? [{ value, label, avatar: avatarSrc ?? undefined }] : []),
-    [value, label, avatarSrc],
-  )
-
   return (
-    <RemoteUserSelect
+    <PersonSelect
       value={value}
-      fallbackOptions={fallbackOptions}
+      label={label}
+      avatarSrc={avatarSrc}
       feishuBoundOnly
       // 台账里的人员多为必填，保持原有「不可清空」行为
       allowClear={false}
       placeholder={placeholder}
       disabled={disabled}
-      onChange={(next, picked) => {
-        const id = typeof next === 'string' ? next : null
-        if (!id) {
-          onChange(null)
-          return
-        }
-        // onChange 第二参给出本次选中的行，姓名快照与头像一次拿全
-        const row = Array.isArray(picked) ? picked[0] : picked
-        onChange({ id, name: row?.label ?? label ?? id })
-      }}
+      onChange={onChange}
     />
   )
 }
@@ -93,38 +78,15 @@ export function PersonnelMultiSelect({
   disabled,
   onChange,
 }: PersonnelMultiSelectProps) {
-  const selectedIds = useMemo(() => value ?? [], [value])
-
-  const fallbackOptions = useMemo<RemoteUserSelectOption[]>(
-    () =>
-      selectedIds.map((id, index) => ({
-        value: id,
-        label: labels?.[index] ?? id,
-        avatar: avatarSrcs?.[index] ?? undefined,
-      })),
-    [selectedIds, labels, avatarSrcs],
-  )
-  const nameById = useMemo(
-    () => new Map(fallbackOptions.map((option) => [option.value, option.label])),
-    [fallbackOptions],
-  )
-
   return (
-    <RemoteUserSelect
-      mode="multiple"
-      value={selectedIds}
-      fallbackOptions={fallbackOptions}
+    <PersonMultiSelect
+      value={value}
+      labels={labels}
+      avatarSrcs={avatarSrcs}
       feishuBoundOnly
       placeholder={placeholder}
       disabled={disabled}
-      onChange={(next, picked) => {
-        const nextIds = Array.isArray(next) ? next : []
-        const rows = Array.isArray(picked) ? picked : []
-        const pickedById = new Map(rows.map((row) => [row.value, row.label]))
-        onChange(
-          nextIds.map((id) => ({ id, name: pickedById.get(id) ?? nameById.get(id) ?? id })),
-        )
-      }}
+      onChange={onChange}
     />
   )
 }

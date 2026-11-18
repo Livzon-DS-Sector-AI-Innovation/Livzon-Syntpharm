@@ -33,6 +33,9 @@ from app.platform.identity.schemas import (
     DepartmentListApiResponse,
     DepartmentResponse,
     DepartmentTreeNode,
+    EnsureIdentityUserApiResponse,
+    EnsureIdentityUserData,
+    EnsureIdentityUserRequest,
     FeishuBindRequest,
     FeishuConfigApiResponse,
     FeishuConfigUpsert,
@@ -372,12 +375,32 @@ async def logout(
 @user_router.get("/me", summary="获取当前登录用户信息", response_model=CurrentUserApiResponse)
 async def get_me(
     current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Return the currently authenticated user's profile.
 
     Authentication via Bearer header or auth_token cookie.
+
+    #219：部门 / 职务 / 工号 / 头像以 HR 员工档案为准，账号表只提供认证字段。
+    账号未与 HR 档案关联时回退到登录快照。
     """
-    return build_response(data=UserResponse.model_validate(current_user).model_dump())
+    payload = UserResponse.model_validate(current_user)
+    open_id = (current_user.feishu_open_id or "").strip()
+    if open_id:
+        from app.modules.hr.public_api import get_profile_by_open_id
+
+        profile = await get_profile_by_open_id(db, open_id)
+        if profile is not None:
+            department_names = profile.get("department_names") or []
+            payload = payload.model_copy(
+                update={
+                    "department": department_names[-1] if department_names else None,
+                    "position": profile.get("job_title_name") or None,
+                    "employee_no": profile.get("employee_no") or payload.employee_no,
+                    "avatar_url": profile.get("avatar_url") or payload.avatar_url,
+                }
+            )
+    return build_response(data=payload.model_dump())
 
 
 # ── Departments ─────────────────────────────────────────────────────
@@ -690,14 +713,44 @@ async def list_users_management(
     )
     items = []
     roles_map = await repo.get_roles_for_users(db, [u.id for u in users])
+    # #219：人员属性以 HR 为准，一次 IN 查询批量装配，避免逐行 N+1。
+    from app.modules.hr.public_api import get_profiles_by_open_ids
+
+    profiles = await get_profiles_by_open_ids(db, [u.feishu_open_id or "" for u in users])
     for u in users:
         item = UserManagementItem.model_validate(u)
         item.roles = roles_map.get(u.id, [])
         # 批量操作的复选框据此置灰（前端体验层，后端批量接口仍逐条校验）
         item.is_superuser = u.id in super_ids
+        profile = profiles.get((u.feishu_open_id or "").strip())
+        if profile is not None:
+            department_names = profile.get("department_names") or []
+            item.department = department_names[-1] if department_names else item.department
+            item.position = profile.get("job_title_name") or item.position
+            item.employee_no = profile.get("employee_no") or item.employee_no
         items.append(item.model_dump())
     resp = UserManagementListResponse(items=items, total=total, offset=offset, limit=limit)
     return build_response(data=resp.model_dump())
+
+
+@user_router.post(
+    "/ensure-by-profile",
+    summary="按 HR 员工档案预建/复用平台账号（登录前授权用）",
+    response_model=EnsureIdentityUserApiResponse,
+)
+async def ensure_user_by_employee_profile(
+    payload: EnsureIdentityUserRequest,
+    ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """幂等地把 HR 员工物化成平台账号，返回 ``user_id`` 供授权挂载。
+
+    被授权人可能从未登录过；首次飞书登录会按 ``feishu_open_id`` 认领同一行。
+    """
+    from app.platform.identity.service import ensure_identity_user as _ensure_identity_user
+
+    user = await _ensure_identity_user(db, payload.employee_profile_id)
+    return build_response(data=EnsureIdentityUserData(user_id=user.id).model_dump(mode="json"))
 
 
 @user_router.post(

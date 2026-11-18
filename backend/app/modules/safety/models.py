@@ -1349,6 +1349,9 @@ class SpecialOperationPersonnel(BaseModel):
     personnel_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="人员编号")
     name: Mapped[str] = mapped_column(String(100), nullable=False, comment="姓名")
     department: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="所属部门")
+    profile_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, comment="人员主数据 hr.employee_profiles.id（逻辑引用）"
+    )
     certificate_type: Mapped[str] = mapped_column(String(32), nullable=False, comment="证书类型（对应8种特殊作业）")
     certificate_number: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="证书编号")
     issuing_authority: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="发证机关")

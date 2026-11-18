@@ -25,6 +25,7 @@ from app.core.config import get_settings
 from app.core.config_model import ModuleSetting
 from app.core.exceptions import BadRequestException, NotFoundException
 from app.platform.identity.models import User
+from app.platform.identity.public_api import resolve_person_user_id
 
 from . import deviation_notify as notify
 from .deviation_config_schemas import (
@@ -115,7 +116,7 @@ class DeviationConfigService:
         department = payload.department.strip()
         if not department:
             raise BadRequestException("请填写部门名称")
-        await self._assert_users_exist(self._person_ids(payload))
+        resolved = await self._normalize_person_ids(self._person_ids(payload))
 
         existing = (
             await self.db.execute(select(DepartmentContact).where(DepartmentContact.department == department))
@@ -130,7 +131,7 @@ class DeviationConfigService:
             row = DepartmentContact(department=department)
             self.db.add(row)
 
-        self._apply_payload(row, payload)
+        self._apply_payload(row, payload, resolved)
         row.created_by = row.created_by or actor_id
         row.updated_by = actor_id
         await self.db.commit()
@@ -147,12 +148,13 @@ class DeviationConfigService:
     ) -> DepartmentContactItem:
         """编辑部门联系人。部门名称为唯一键，不在本接口修改。"""
         row = await self._get_contact(contact_id)
-        await self._assert_users_exist(self._person_ids(payload))
+        resolved = await self._normalize_person_ids(self._person_ids(payload))
 
         fields = payload.model_dump(exclude_unset=True)
         for field_name in _PERSON_FIELDS:
             if field_name in fields:
-                setattr(row, field_name, fields[field_name])
+                value = fields[field_name]
+                setattr(row, field_name, resolved.get(value, value) if value is not None else None)
         for field_name in _TOKEN_FIELDS:
             if field_name in fields:
                 setattr(row, field_name, _normalize_tokens(fields[field_name]))
@@ -505,25 +507,49 @@ class DeviationConfigService:
             if getattr(payload, field_name, None) is not None
         ]
 
-    async def _assert_users_exist(self, user_ids: Sequence[uuid.UUID]) -> None:
-        """外键字段先校验，避免提交时抛 IntegrityError 变成 500。"""
-        if not user_ids:
-            return
+    async def _normalize_person_ids(self, person_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, uuid.UUID]:
+        """把人员引用归一化成 ``identity.users.id``（#219 迁移期兼容）。
+
+        选择器返回 ``hr.employee_profiles.id``，而 ``department_contacts`` 的
+        5 个人员列仍是 ``identity.users.id`` 外键。查不到账号时按 HR 档案按需
+        建号；两者都不存在则拒绝提交，避免 IntegrityError 变成 500。
+        """
+        if not person_ids:
+            return {}
+        # 先用一次 IN 查询判定哪些 id 已经是账号 id（绝大多数历史调用点），
+        # 只有未命中的才当作 HR 档案 id 解析，避免逐行查询。
         rows = await self.db.execute(
-            select(User.id).where(User.id.in_(set(user_ids)), User.is_deleted.is_(False))  # noqa: E712
+            select(User.id).where(User.id.in_(set(person_ids)), User.is_deleted.is_(False))  # noqa: E712
         )
         found = {row.id for row in rows.all()}
-        missing = [str(user_id) for user_id in user_ids if user_id not in found]
-        if missing:
-            raise BadRequestException("所选人员不存在或已停用")
+        mapping: dict[uuid.UUID, uuid.UUID] = {person_id: person_id for person_id in person_ids if person_id in found}
+        for person_id in person_ids:
+            if person_id in found:
+                continue
+            user_id = await resolve_person_user_id(self.db, person_id)
+            if user_id is None:
+                raise BadRequestException("所选人员不存在或已停用")
+            mapping[person_id] = user_id
+        return mapping
 
     @staticmethod
-    def _apply_payload(row: DepartmentContact, payload: DepartmentContactCreateRequest) -> None:
-        row.dept_head_id = payload.dept_head_id
-        row.production_head_id = payload.production_head_id
-        row.quality_head_id = payload.quality_head_id
-        row.qa_reviewer_id = payload.qa_reviewer_id
-        row.qa_head_id = payload.qa_head_id
+    def _apply_payload(
+        row: DepartmentContact,
+        payload: DepartmentContactCreateRequest,
+        resolved: dict[uuid.UUID, uuid.UUID] | None = None,
+    ) -> None:
+        mapping = resolved or {}
+        row.dept_head_id = mapping.get(payload.dept_head_id, payload.dept_head_id) if payload.dept_head_id else None
+        row.production_head_id = (
+            mapping.get(payload.production_head_id, payload.production_head_id) if payload.production_head_id else None
+        )
+        row.quality_head_id = (
+            mapping.get(payload.quality_head_id, payload.quality_head_id) if payload.quality_head_id else None
+        )
+        row.qa_reviewer_id = (
+            mapping.get(payload.qa_reviewer_id, payload.qa_reviewer_id) if payload.qa_reviewer_id else None
+        )
+        row.qa_head_id = mapping.get(payload.qa_head_id, payload.qa_head_id) if payload.qa_head_id else None
         # 新字段优先；两者都为空时保留调用方传入的历史数组（兼容导入脚本）
         row.qa_staff_ids = _qa_staff_snapshot(payload.qa_reviewer_id, payload.qa_head_id) or _normalize_tokens(
             payload.qa_staff_ids

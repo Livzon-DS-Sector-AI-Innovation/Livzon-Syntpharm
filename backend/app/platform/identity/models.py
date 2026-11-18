@@ -13,6 +13,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     Uuid,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -72,6 +73,13 @@ class User(BaseModel):
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     feishu_department_ids: Mapped[str | None] = mapped_column(Text, nullable=True, comment="飞书部门ID列表，JSON数组")
     external_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    preferences: Mapped[dict[str, Any]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=dict,
+        server_default=text("'{}'::jsonb"),
+        comment="个人偏好（主题/语言等）；人员属性一律从 HR 读取",
+    )
 
 
 class Department(BaseModel):

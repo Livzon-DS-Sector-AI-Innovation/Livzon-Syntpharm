@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { App, Drawer, Form, Input, Select, DatePicker, Button, Space, InputNumber } from 'antd'
 import dayjs from 'dayjs'
 import { useEquipmentStore } from '@/stores/equipment'
-import { useEquipmentTaxonomyQuery } from '@/hooks/useEquipmentLedger'
+import DepartmentTreeSelect from '@/components/common/DepartmentTreeSelect'
 import { EquipmentStatus } from '@/types/equipment/generated-bridge'
 import { createEquipment, updateEquipment } from '@/actions/equipment'
 
@@ -33,8 +33,7 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
     editingEquipment,
     closeEquipmentDrawer,
   } = useEquipmentStore()
-  const { data: taxonomy } = useEquipmentTaxonomyQuery()
-  const departments = taxonomy?.departments ?? []
+
 
 
 
@@ -174,13 +173,8 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
           <Input placeholder="请输入设备位置" />
         </Form.Item>
         <Form.Item name="department_id" label="归属部门">
-          <Select
-            placeholder="请选择归属部门"
-            allowClear
-            showSearch
-            optionFilterProp="label"
-            options={departments.map(d => ({ label: d.name, value: d.id }))}
-          />
+          {/* #219：统一部门选择器（下拉内搜索 + 全展开组织树，任意层级可选，值为 hr.departments.id） */}
+          <DepartmentTreeSelect placeholder="请选择归属部门（可搜索）" allowClear />
         </Form.Item>
         <Form.Item name="responsible_person_name" label="负责人">
           <Input placeholder="请输入负责人"  />

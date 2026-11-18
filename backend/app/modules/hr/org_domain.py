@@ -6,12 +6,25 @@ recursive tree rules can be tested without a database.
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass, field
 from typing import Any
 
 from app.modules.hr.feishu_values import int_value, optional_int_value, text_value
 
 COMPANY_LEVEL = 0
+
+
+def department_code_for(feishu_department_id: str) -> str:
+    """Derive a stable department code from a Feishu department id.
+
+    Permission data scopes reference ``hr.departments.code``; synced departments
+    otherwise keep ``code`` empty, which makes them disappear from the scope
+    picker. The code is deterministic so repeated syncs never churn the value
+    and manually maintained codes are never overwritten.
+    """
+    digest = hashlib.sha256(feishu_department_id.encode("utf-8")).hexdigest()[:10].upper()
+    return f"FSH-{digest}"
 
 
 _DATA_SOURCE_LABELS: dict[int, str] = {
