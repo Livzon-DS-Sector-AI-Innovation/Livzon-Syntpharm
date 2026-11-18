@@ -1,0 +1,393 @@
+/*
+ * 注册管理模块共享样式：设计令牌 + 页头 / 按钮 / 面板 / 标签 / KPI / 表格容器
+ * 页面根节点挂 .regUi 后，内部即可使用全部令牌变量。
+ */
+/* 令牌作用域：抽屉/弹窗等 portal 内容挂在 body 下，需在内容根节点单独挂此类才能继承令牌 */
+.tokenScope {
+  /* 设计令牌（与注册模块设计原型一致） */
+  --brand-600: #4F46C9;
+  --brand-500: #5F56D6;
+  --brand-100: #E9EAFC;
+  --brand-50: #F3F4FE;
+  --info-600: #0B6CAD;
+  --info-50: #EAF4FB;
+  --ok-600: #0E8568;
+  --ok-50: #E9F6F1;
+  --warn-600: #B4640A;
+  --warn-50: #FCF3E3;
+  --risk-600: #C03A2E;
+  --risk-50: #FBEBE9;
+  --ink-1: #1F2333;
+  --ink-2: #4D5266;
+  --ink-3: #878DA3;
+  --line: #E7E8F0;
+  --bg: #F5F6FA;
+  --card: #FFFFFF;
+  --r-lg: 12px;
+  --r-md: 8px;
+  --shadow-1: 0 1px 2px rgba(31, 35, 51, 0.04);
+  --shadow-2: 0 6px 16px -6px rgba(31, 35, 51, 0.10);
+  --t-fast: 150ms ease;
+
+  font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  color: var(--ink-1);
+  -webkit-font-smoothing: antialiased;
+}
+
+.regUi {
+  composes: tokenScope;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-size: 14px;
+  /* 灰底白卡层次：负边距抵消 AppShell main 的 padding（p-3 / md:p-6），铺满主内容区 */
+  background: var(--bg);
+  margin: -12px;
+  padding: 12px;
+  min-height: calc(100% + 24px);
+}
+@media (min-width: 768px) {
+  .regUi {
+    margin: -24px;
+    padding: 24px;
+    min-height: calc(100% + 48px);
+  }
+}
+
+/* ============ 页头 ============ */
+.pageHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.pageTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pageTitle h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+}
+.titleIco {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--brand-600);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.pageSub {
+  font-size: 16px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+.headActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ============ 按钮 ============ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--r-md);
+  font-size: 17px; /* 按钮按最终版字号阶梯 17px */
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink-2);
+  text-decoration: none;
+  transition: all var(--t-fast);
+}
+.btn:hover {
+  border-color: var(--brand-500);
+  color: var(--brand-600);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.btnPrimary {
+  composes: btn;
+  background: var(--brand-600);
+  border-color: var(--brand-600);
+  color: #fff;
+}
+.btnPrimary:hover {
+  background: var(--brand-500);
+  border-color: var(--brand-500);
+  color: #fff;
+}
+
+/* ============ 面板 ============ */
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+}
+.panelHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.panelIco {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.panelTitle {
+  font-size: 15px;
+  font-weight: 600;
+}
+.countPill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 999px;
+}
+.countPillBrand {
+  composes: countPill;
+  background: var(--brand-50);
+  color: var(--brand-600);
+}
+.countPillWarn {
+  composes: countPill;
+  background: var(--warn-50);
+  color: var(--warn-600);
+}
+.countPillOk {
+  composes: countPill;
+  background: var(--ok-50);
+  color: var(--ok-600);
+}
+.panelMore {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--brand-600);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+.panelMore:hover {
+  text-decoration: underline;
+  color: var(--brand-600);
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.toolbarGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tableWrap {
+  padding: 8px 18px 16px;
+}
+
+/* ============ 标准表格（注册模块统一：表头浅冷灰、悬停浅紫、当前页紫底白字） ============ */
+.tableStd :global(.ant-table-tbody > tr > td) {
+  font-size: 14px;
+  padding: 14px 18px !important;
+}
+.tableStd :global(.ant-table-tbody > tr:hover > td) {
+  background: var(--brand-50) !important;
+}
+.tableStd :global(.ant-table-thead > tr > th) {
+  background: #FAFBFE !important;
+  font-size: 13px;
+  color: #878DA3 !important;
+  font-weight: 500;
+  padding: 12px 18px !important;
+}
+.tableStd :global(.ant-pagination-item-active) {
+  background: var(--brand-600) !important;
+  border-color: var(--brand-600) !important;
+}
+.tableStd :global(.ant-pagination-item-active a) {
+  color: #fff !important;
+}
+
+/* 操作列：详情=紫色文字链接；删除=灰色图标，悬停变红 */
+.opLink {
+  color: var(--brand-600);
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+}
+.opLink:hover {
+  text-decoration: underline;
+}
+.opDel {
+  color: var(--ink-3);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px;
+  margin-left: 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  transition: all var(--t-fast);
+}
+.opDel:hover {
+  color: var(--risk-600);
+  background: var(--risk-50);
+}
+
+/* ============ 标签 ============ */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px; /* 小标签按最终版字号阶梯 15px */
+  font-weight: 500;
+  padding: 1px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.tagPlain {
+  composes: tag;
+  background: var(--bg);
+  color: var(--ink-2);
+}
+.tagBrand {
+  composes: tag;
+  background: var(--brand-50);
+  color: var(--brand-600);
+}
+.tagInfo {
+  composes: tag;
+  background: var(--info-50);
+  color: var(--info-600);
+}
+.tagWarn {
+  composes: tag;
+  background: var(--warn-50);
+  color: var(--warn-600);
+}
+.tagRisk {
+  composes: tag;
+  background: var(--risk-50);
+  color: var(--risk-600);
+}
+.tagOk {
+  composes: tag;
+  background: var(--ok-50);
+  color: var(--ok-600);
+}
+
+/* ============ KPI 卡 ============ */
+.kpiRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.kpi {
+  background: var(--accent-bg);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, #fff);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-1);
+  transition: transform var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast);
+}
+.kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-2);
+  border-color: color-mix(in srgb, var(--accent) 40%, #fff);
+}
+.kpiClickable {
+  composes: kpi;
+  cursor: pointer;
+}
+.kpiTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.kpiChip {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  background: #fff;
+  box-shadow: var(--shadow-1);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+}
+.kpiLabel {
+  font-size: 16px;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.kpiLink {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.85;
+}
+.kpiNum {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--accent);
+  line-height: 1.2;
+}
+.kpiNum small {
+  font-size: 16px;
+  font-weight: 600;
+  color: inherit;
+  opacity: 0.55;
+}
+.kpiSub {
+  font-size: 12px;
+  color: color-mix(in srgb, var(--accent) 40%, var(--ink-2));
+  margin-top: 2px;
+}
+.kpiSub b {
+  font-weight: 500;
+  color: var(--accent);
+}
+
+@media (max-width: 1100px) {
+  .kpiRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

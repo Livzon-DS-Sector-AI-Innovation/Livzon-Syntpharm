@@ -1,7 +1,7 @@
 """equipment personnel: HR profile reference
 
-Revision ID: 0120_equipment_personnel_profile_ref
-Revises: 0119_identity_users_preferences
+Revision ID: 0127_equipment_personnel_profile_ref
+Revises: 0126_identity_users_preferences
 Create Date: 2026-11-17
 
 Ticket #219: equipment keeps its own personnel pool (role / category bindings)
@@ -20,8 +20,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0120_equipment_personnel_profile_ref"
-down_revision: str | None = "0119_identity_users_preferences"
+revision: str = "0127_equipment_personnel_profile_ref"
+down_revision: str | None = "0126_identity_users_preferences"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

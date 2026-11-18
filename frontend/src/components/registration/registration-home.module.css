@@ -1,0 +1,261 @@
+/*
+ * 注册概览首页专属样式
+ * 设计令牌与通用类（页头/按钮/面板/标签/KPI）来自 registration-ui.module.css，
+ * 此处仅保留首页专属布局与区块，通过 composes 复用共享类。
+ */
+
+.root {
+  padding: 0 4px 16px; /* 主容器已有 p-3/md:p-6，主区内边距由此补齐到约 28px */
+}
+
+/* ============ 共享类转引 ============ */
+.panel { composes: panel from './registration-ui.module.css'; }
+.panelHead { composes: panelHead from './registration-ui.module.css'; }
+.panelIco { composes: panelIco from './registration-ui.module.css'; }
+.panelTitle { composes: panelTitle from './registration-ui.module.css'; }
+.countPillBrand { composes: countPillBrand from './registration-ui.module.css'; }
+.countPillWarn { composes: countPillWarn from './registration-ui.module.css'; }
+.countPillOk { composes: countPillOk from './registration-ui.module.css'; }
+.panelMore { composes: panelMore from './registration-ui.module.css'; }
+.tagBrand { composes: tagBrand from './registration-ui.module.css'; }
+.tagInfo { composes: tagInfo from './registration-ui.module.css'; }
+.tagWarn { composes: tagWarn from './registration-ui.module.css'; }
+.tagRisk { composes: tagRisk from './registration-ui.module.css'; }
+.tagOk { composes: tagOk from './registration-ui.module.css'; }
+.kpiRow { composes: kpiRow from './registration-ui.module.css'; }
+.kpi { composes: kpiClickable from './registration-ui.module.css'; }
+.kpiTop { composes: kpiTop from './registration-ui.module.css'; }
+.kpiChip { composes: kpiChip from './registration-ui.module.css'; }
+.kpiLabel { composes: kpiLabel from './registration-ui.module.css'; }
+.kpiLink { composes: kpiLink from './registration-ui.module.css'; }
+.kpiNum { composes: kpiNum from './registration-ui.module.css'; }
+.kpiSub { composes: kpiSub from './registration-ui.module.css'; }
+
+/* ============ 工作区（7:5 两栏） ============ */
+.workRow {
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.queueRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background var(--t-fast);
+  text-decoration: none;
+  color: inherit;
+}
+.queueRow:last-of-type {
+  border-bottom: none;
+}
+.queueRow:hover {
+  background: var(--brand-50);
+}
+.queueName {
+  font-size: 14px;
+  font-weight: 600;
+}
+.queueMeta {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 2px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.queueRight {
+  margin-left: auto;
+  text-align: right;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.alertRow {
+  display: flex;
+  gap: 12px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background var(--t-fast);
+  text-decoration: none;
+  color: inherit;
+}
+.alertRow:last-of-type {
+  border-bottom: none;
+}
+.alertRow:hover {
+  background: var(--bg);
+}
+.alertTag {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.alertText {
+  font-size: 13px;
+  color: var(--ink-1);
+}
+.alertSub {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+.alertAct {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--brand-600);
+  align-self: center;
+  white-space: nowrap;
+}
+.alertRow:hover .alertAct {
+  text-decoration: underline;
+}
+
+.panelFoot {
+  padding: 10px 18px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--ink-3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.emptyBody {
+  padding: 28px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.okState {
+  margin: 13px 18px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--ok-50);
+  border: 1px solid color-mix(in srgb, var(--ok-600) 18%, #fff);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ok-600);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ============ 业务功能区 ============ */
+.bizHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 4px;
+}
+.bizHead h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+.bizHead span {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.bizGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.bizGroup {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+}
+.bizGroupHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 10px 2px;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--accent-bg);
+}
+.bizGroupHead .kpiChip {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+.bizGroupTitle {
+  font-size: 14px;
+  font-weight: 600;
+}
+.bizGroupCount {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.bizItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 8px;
+  padding: 10px;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background var(--t-fast);
+  text-decoration: none;
+  color: inherit;
+}
+.bizItem:last-child {
+  margin-bottom: 8px;
+}
+.bizItem:hover {
+  background: var(--accent-bg);
+}
+.bizIco {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: var(--accent-bg);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+}
+.bizName {
+  font-size: 14px;
+  font-weight: 600;
+}
+.bizDesc {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 1px;
+}
+.bizArrow {
+  margin-left: auto;
+  color: var(--ink-3);
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+.bizItem:hover .bizArrow {
+  opacity: 1;
+  color: var(--accent);
+}
+
+@media (max-width: 1100px) {
+  .workRow {
+    grid-template-columns: 1fr;
+  }
+  .bizGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,6 +1,6 @@
 """hr employee profiles: current-employment flag and soft removal
 
-Revision ID: 0118_hr_employee_profiles_employment
+Revision ID: 0125_hr_employee_profiles_employment
 Revises: 0117_hr_org_sync_running_unique
 Create Date: 2026-11-17
 
@@ -22,8 +22,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0118_hr_employee_profiles_employment"
-down_revision: str | None = "0117_hr_org_sync_running_unique"
+revision: str = "0125_hr_employee_profiles_employment"
+down_revision: str | None = "0122_merge_main_hr_and_registration_heads"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

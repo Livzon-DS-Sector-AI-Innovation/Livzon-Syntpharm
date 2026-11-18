@@ -1,5 +1,12 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: 50m
+    max-file: "3"
+
 services:
   postgres:
+    logging: *default-logging
     image: postgres:17
     container_name: erp-postgres
     restart: unless-stopped
@@ -15,6 +22,7 @@ services:
       timeout: 5s
       retries: 5
   redis:
+    logging: *default-logging
     image: redis:8-alpine
     container_name: erp-redis
     restart: unless-stopped
@@ -33,6 +41,7 @@ services:
       timeout: 5s
       retries: 5
   minio:
+    logging: *default-logging
     image: minio/minio:latest
     container_name: erp-minio
     restart: unless-stopped
@@ -55,6 +64,7 @@ services:
       timeout: 5s
       retries: 5
   migrate:
+    logging: *default-logging
     build: ./backend
     container_name: erp-migrate
     env_file:
@@ -70,6 +80,7 @@ services:
     - head
     restart: 'no'
   backend:
+    logging: *default-logging
     build: ./backend
     container_name: erp-backend
     restart: unless-stopped
@@ -93,6 +104,7 @@ services:
     ports:
     - 8000:8000
   edbo-service:
+    logging: *default-logging
     build:
       context: ./backend
       dockerfile: edbo_service/Dockerfile
@@ -101,6 +113,7 @@ services:
     ports:
     - 8001:8000
   frontend:
+    logging: *default-logging
     build:
       context: ./frontend
       target: runtime
@@ -113,6 +126,7 @@ services:
     ports:
     - 3000:3000
   nginx:
+    logging: *default-logging
     image: nginx:stable-alpine
     container_name: erp-nginx
     restart: unless-stopped
