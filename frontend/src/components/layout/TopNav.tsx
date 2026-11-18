@@ -15,11 +15,13 @@ import {
   IdcardOutlined,
 } from "@ant-design/icons"
 import { UserAvatar } from "@/components/common/UserAvatar"
-import { ModuleIcon, SearchIcon, BellIcon } from "@/components/Icons"
+import { ModuleIcon } from "@/components/Icons"
 import { logout } from "@/actions/auth"
 import type { ResolvedModule } from "@/lib/menu/resolve"
 import { useSidebarStore } from "@/stores/sidebar"
 import { MenuLockLabel } from "./MenuLockLabel"
+import { TopNavSearch } from "./TopNavSearch"
+import { TopNavNotifications } from "./TopNavNotifications"
 
 interface TopNavProps {
   onMenuClick?: () => void
@@ -151,8 +153,9 @@ export function TopNav({ onMenuClick, menus, userName, avatarUrl }: TopNavProps)
         })}
       </nav>
 
-      {/* Right Section */}
-      <div className="flex items-center gap-1 ml-4 shrink-0">
+      {/* Right Section：移动端导航条隐藏后没有 flex-1 撑开，用 ml-auto 把图标推到最右，
+          否则铃铛/头像会停在中间，下拉弹层也右对齐不了视口 */}
+      <div className="flex items-center gap-1 ml-auto md:ml-4 shrink-0">
         <button
           onClick={toggleSidebar}
           className="w-8 h-8 items-center justify-center rounded-[var(--rounded-sm)] text-[var(--color-steel)] hover:text-[var(--color-charcoal)] hover:bg-[var(--color-surface)] transition-colors hidden md:flex"
@@ -160,13 +163,8 @@ export function TopNav({ onMenuClick, menus, userName, avatarUrl }: TopNavProps)
         >
           {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
         </button>
-        <button className="w-8 h-8 flex items-center justify-center rounded-[var(--rounded-sm)] text-[var(--color-steel)] hover:text-[var(--color-charcoal)] hover:bg-[var(--color-surface)] transition-colors">
-          <SearchIcon className="w-[18px] h-[18px]" />
-        </button>
-        <button className="w-8 h-8 flex items-center justify-center rounded-[var(--rounded-sm)] text-[var(--color-steel)] hover:text-[var(--color-charcoal)] hover:bg-[var(--color-surface)] transition-colors relative">
-          <BellIcon className="w-[18px] h-[18px]" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[var(--color-error)] rounded-full" />
-        </button>
+        <TopNavSearch menus={menus} />
+        <TopNavNotifications />
         <Dropdown
           menu={{
             items: [

@@ -40,9 +40,12 @@ export function AppShell({
   // 切换账号（换 cookie 后服务端渲染出新 user.id）时，客户端 React Query 里可能
   // 还留着上一个账号的 current-user / my-permissions。清空缓存，避免新账号沿用
   // 旧权限渲染按钮与菜单，必须手动刷新才正常。
+  //
+  // 只有「缓存里确实有另一个账号」才清：首屏 current-user 往往还没拉取，
+  // 无条件 clear() 会把子组件刚挂载的查询（如顶栏待办）一并清掉，且不会自动重取。
   useEffect(() => {
     const cached = queryClient.getQueryData<User | null>(['current-user'])
-    if (cached?.id !== userId) {
+    if (cached && cached.id !== userId) {
       queryClient.clear()
     }
   }, [userId, queryClient])
