@@ -33,6 +33,7 @@ import {
   UserSwitchOutlined,
 } from '@ant-design/icons'
 import {
+  batchDeleteUsers,
   batchUpdateUserStatus,
   createUser,
   deleteUser,
@@ -58,6 +59,7 @@ import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
 import { invalidateUserDirectoryQueries } from '@/lib/query/userDirectory'
 import { SettingsListCard } from './SettingsListCard'
+import { BatchActionBar, BatchDeleteConfirmModal } from './BatchOperations'
 
 const { Text } = Typography
 
@@ -172,6 +174,8 @@ export default function UserManagementClient() {
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([])
   const [batching, setBatching] = useState(false)
   const [batchResult, setBatchResult] = useState<UserBatchStatusResult | null>(null)
+  // 批量删除：强确认弹窗（列出待删账号 + 输入「删除」）
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false)
   const [sessionUser, setSessionUser] = useState<UserManagementItem | null>(null)
   const [sessions, setSessions] = useState<UserSession[]>([])
   const [sessionsLoading, setSessionsLoading] = useState(false)
@@ -230,6 +234,15 @@ export default function UserManagementClient() {
       />
     )
   }
+
+  // 批量删除强确认：按当前页解析姓名；跨页选中时回退 id，避免弹窗出现空白项
+  const selectedUserLabels = selectedRowKeys.map((key) => {
+    const found = users.find((user) => user.id === String(key))
+    return {
+      key: String(key),
+      label: found ? `${found.name}${found.username ? `（${found.username}）` : ''}` : String(key),
+    }
+  })
 
   const loadUsers = () => {
     // 刷新后行可能已变化，清掉选择避免批量操作指向旧数据
@@ -417,6 +430,33 @@ export default function UserManagementClient() {
       invalidateUserDirectoryQueries(queryClient)
       if (!result.data.failed.length) {
         message.success(`已${status === 'active' ? '启用' : '禁用'} ${result.data.succeeded.length} 个账号`)
+      }
+    } finally {
+      setBatching(false)
+    }
+  }
+
+  /** 批量删除账号：仅超级管理员；弹窗列出待删账号并输入「删除」二次确认。 */
+  const handleBatchDelete = async () => {
+    if (!selectedRowKeys.length) return
+    setBatching(true)
+    try {
+      const result = await batchDeleteUsers({ user_ids: selectedRowKeys.map(String) })
+      if (!result.ok) {
+        message.error(result.message)
+        return
+      }
+      setBatchDeleteOpen(false)
+      setBatchResult(result.data)
+      const deletedCount = result.data.succeeded.length
+      setSelectedRowKeys([])
+      // 本页的行被删空：回到上一页，避免停在空表（第 1 页保持不动）
+      if (deletedCount >= users.length && page > 1) {
+        setPage(page - 1)
+      }
+      invalidateUserDirectoryQueries(queryClient)
+      if (!result.data.failed.length) {
+        message.success(`已删除 ${deletedCount} 个账号`)
       }
     } finally {
       setBatching(false)
@@ -761,19 +801,20 @@ export default function UserManagementClient() {
       <SettingsListCard
         toolbar={
           <>
-            {canManage && selectedRowKeys.length > 0 && (
-              <div className="flex w-full flex-wrap items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] px-3 py-2">
-                <Text strong>已选 {selectedRowKeys.length} 项</Text>
+            {canManage && (
+              <BatchActionBar count={selectedRowKeys.length} loading={batching} onClear={() => setSelectedRowKeys([])}>
                 <Button size="small" loading={batching} onClick={() => handleBatchStatus('active')}>
                   批量启用
                 </Button>
                 <Button size="small" loading={batching} onClick={() => handleBatchStatus('disabled')}>
                   批量禁用
                 </Button>
-                <Button size="small" type="link" onClick={() => setSelectedRowKeys([])}>
-                  取消选择
-                </Button>
-              </div>
+                {canDelete && (
+                  <Button size="small" danger loading={batching} onClick={() => setBatchDeleteOpen(true)}>
+                    批量删除
+                  </Button>
+                )}
+              </BatchActionBar>
             )}
             <div className="w-full sm:w-[130px]">
               <Select
@@ -1079,6 +1120,15 @@ export default function UserManagementClient() {
           </>
         )}
       </Modal>
+
+      {/* 批量删除账号：仅超级管理员；列出待删账号并要求输入「删除」确认 */}
+      <BatchDeleteConfirmModal
+        open={batchDeleteOpen}
+        items={selectedUserLabels}
+        loading={batching}
+        onCancel={() => setBatchDeleteOpen(false)}
+        onConfirm={handleBatchDelete}
+      />
 
       {/* 删除账号：仅超级管理员；软删除不可恢复，需输入用户名确认 */}
       <Modal

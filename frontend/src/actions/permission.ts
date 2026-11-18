@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { unwrapResponse } from '@/lib/api/server/base'
 import { normalizeBatchResult } from '@/lib/api/batch'
 import {
+  batchCreateGrants as batchCreateGrantsApi,
   batchDeleteGrants as batchDeleteGrantsApi,
   batchDeleteRoles as batchDeleteRolesApi,
   batchUpdateGrantStatus as batchUpdateGrantStatusApi,
@@ -29,6 +30,7 @@ import type {
   ApiBindingItem,
   BatchResult,
   DepartmentOption,
+  GrantBatchCreateInput,
   GrantCreateInput,
   GrantItem,
   GrantUpdateInput,
@@ -140,6 +142,18 @@ export async function createGrant(data: GrantCreateInput): Promise<GrantItem> {
   const grant = unwrapResponse(await createGrantApi(data, token))
   revalidatePath(PERMISSION_PATH)
   return grant
+}
+
+/** 批量授权：多用户 × 多角色，同一数据范围；已拥有组合由后端幂等跳过。 */
+export async function batchCreateGrants(data: GrantBatchCreateInput): Promise<PermissionActionResult<BatchResult>> {
+  const token = await getAuthToken()
+  try {
+    const result = normalizeBatchResult(unwrapResponse(await batchCreateGrantsApi(data, token)))
+    revalidatePath(PERMISSION_PATH)
+    return { ok: true, data: result }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '批量授权失败' }
+  }
 }
 
 export async function updateGrant(id: string, data: GrantUpdateInput): Promise<GrantItem> {

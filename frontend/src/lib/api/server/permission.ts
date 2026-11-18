@@ -87,6 +87,14 @@ export function createGrant(data: Schemas['GrantCreate'], token?: string) {
   })
 }
 
+export function batchCreateGrants(data: Schemas['GrantBatchCreate'], token?: string) {
+  return apiFetch<Schemas['app__platform__permission__schemas__BatchResultApiResponse']>(P('/grants/batch-create'), {
+    method: 'POST',
+    headers: auth(token),
+    body: JSON.stringify(data),
+  })
+}
+
 export function updateGrant(id: string, data: Schemas['GrantUpdate'], token?: string) {
   return apiFetch<Schemas['GrantDetailApiResponse']>(P(`/grants/${id}`), {
     method: 'PUT',

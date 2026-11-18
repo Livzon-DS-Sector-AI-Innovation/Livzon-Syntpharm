@@ -128,6 +128,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/identity/users/batch-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量删除账号（仅超级管理员，软删除）
+         * @description 批量删除账号（单次最多 100 个）。
+         *
+         *     逐条复用单条删除的全部护栏：仅超级管理员、不能删自己、不能删系统内置账号、
+         *     不能删最后一个超级管理员。失败条目不影响其他条目，结果里返回失败原因。
+         *     删除动作与单条删除一致：软删除 + 清空角色授权 + 审计；会话在提交后吊销，
+         *     Redis 不可用时只降级为「会话未吊销」，不回滚已完成的删除。
+         */
+        post: operations["batch_delete_users_api_v1_identity_users_batch_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/identity/users/{user_id}/reset-password": {
         parameters: {
             query?: never;
@@ -1093,6 +1118,32 @@ export interface paths {
         put?: never;
         /** Create Grant */
         post: operations["create_grant_api_v1_permission_grants_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/grants/batch-create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量授权（多用户 × 多角色）
+         * @description 一次给多个用户授予多个角色，统一套用同一个数据范围。
+         *
+         *     逐对 (用户, 角色) 复用单条授权护栏：不能给自己授权、目标账号层级校验、
+         *     授出角色不能超出操作者权限范围；数据范围在入口处统一校验一次。
+         *
+         *     - 已存在同用户同角色的有效授权按幂等处理：计入 succeeded、不重复插入、不写审计。
+         *     - 真正的拒绝项（用户不可用 / 角色不可用 / 越级）逐条返回原因，不影响其他组合。
+         */
+        post: operations["batch_create_grants_api_v1_permission_grants_batch_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -35007,6 +35058,32 @@ export interface components {
              */
             override_reason?: string | null;
         };
+        /**
+         * GrantBatchCreate
+         * @description 批量授权：多用户 × 多角色，统一套用同一个数据范围。
+         *
+         *     `user_ids` 可以是统一人员选择器返回的 `hr.employee_profiles.id`，也可以是
+         *     `identity.users.id`；端点内部统一经 `resolve_person_user_id` 转换。
+         */
+        GrantBatchCreate: {
+            /**
+             * User Ids
+             * @description 单次最多 100 个用户
+             */
+            user_ids: string[];
+            /**
+             * Role Ids
+             * @description 单次最多 20 个角色
+             */
+            role_ids: string[];
+            /**
+             * Scope Type
+             * @default all
+             */
+            scope_type: string;
+            /** Scope Dept Codes */
+            scope_dept_codes?: string[] | null;
+        };
         /** GrantCreate */
         GrantCreate: {
             /**
@@ -58474,6 +58551,38 @@ export interface components {
              */
             status?: string | null;
         };
+        /** UserBatchDeleteApiResponse */
+        UserBatchDeleteApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserBatchDeleteData"];
+        };
+        /** UserBatchDeleteData */
+        UserBatchDeleteData: {
+            /** Succeeded */
+            succeeded?: string[];
+            /** Failed */
+            failed?: components["schemas"]["UserBatchFailure"][];
+        };
+        /**
+         * UserBatchDeleteRequest
+         * @description 批量删除账号（仅超级管理员可用）。
+         */
+        UserBatchDeleteRequest: {
+            /**
+             * User Ids
+             * @description 单次最多 100 个账号
+             */
+            user_ids: string[];
+        };
         /** UserBatchFailure */
         UserBatchFailure: {
             /**
@@ -61447,6 +61556,41 @@ export interface operations {
             };
         };
     };
+    batch_delete_users_api_v1_identity_users_batch_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserBatchDeleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserBatchDeleteApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     reset_user_password_api_v1_identity_users__user_id__reset_password_post: {
         parameters: {
             query?: never;
@@ -63208,6 +63352,41 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["GrantDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_create_grants_api_v1_permission_grants_batch_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GrantBatchCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["app__platform__permission__schemas__BatchResultApiResponse"];
                 };
             };
             /** @description Validation Error */

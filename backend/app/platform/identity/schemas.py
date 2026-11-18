@@ -138,6 +138,23 @@ class UserBatchStatusApiResponse(BaseModel):
     data: UserBatchStatusData
 
 
+class UserBatchDeleteRequest(BaseModel):
+    """批量删除账号（仅超级管理员可用）。"""
+
+    user_ids: list[UUID] = Field(..., min_length=1, max_length=100, description="单次最多 100 个账号")
+
+
+class UserBatchDeleteData(BaseModel):
+    succeeded: list[UUID] = Field(default_factory=list)
+    failed: list[UserBatchFailure] = Field(default_factory=list)
+
+
+class UserBatchDeleteApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: UserBatchDeleteData
+
+
 # 登录用户名字符集：字母开头 + 字母数字。
 # 要求字母开头有两个原因：①登录时账号会与手机号 / 工号一起参与匹配，纯数字账号会产生歧义；
 # ②与飞书首登自动分配的用户名（如 YTH000001）保持同一种风格。

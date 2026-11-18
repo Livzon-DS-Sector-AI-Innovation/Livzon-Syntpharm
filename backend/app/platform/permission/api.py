@@ -44,6 +44,7 @@ from app.platform.permission.schemas import (
     BatchResultData,
     DepartmentOption,
     DepartmentOptionListResponse,
+    GrantBatchCreate,
     GrantCreate,
     GrantDetailApiResponse,
     GrantListResponse,
@@ -606,6 +607,148 @@ async def create_grant(
             role_name=role.name,
         )
     )
+
+
+@router.post(
+    "/grants/batch-create",
+    response_model=BatchResultApiResponse,
+    summary="批量授权（多用户 × 多角色）",
+)
+async def batch_create_grants(
+    payload: GrantBatchCreate,
+    ctx: PermissionContext = Depends(require_permission("platform:grant:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """一次给多个用户授予多个角色，统一套用同一个数据范围。
+
+    逐对 (用户, 角色) 复用单条授权护栏：不能给自己授权、目标账号层级校验、
+    授出角色不能超出操作者权限范围；数据范围在入口处统一校验一次。
+
+    - 已存在同用户同角色的有效授权按幂等处理：计入 succeeded、不重复插入、不写审计。
+    - 真正的拒绝项（用户不可用 / 角色不可用 / 越级）逐条返回原因，不影响其他组合。
+    """
+    from app.platform.identity.public_api import resolve_person_user_id
+
+    _validate_scope(payload.scope_type, payload.scope_dept_codes)
+    await _validate_department_codes(db, payload.scope_dept_codes)
+    await assert_actor_can_grant_scope(
+        db,
+        actor=ctx.user,
+        scope_type=payload.scope_type,
+        scope_dept_codes=payload.scope_dept_codes,
+    )
+
+    succeeded: list[str] = []
+    failed: list[BatchFailure] = []
+
+    # 1) 角色预取 + 授出权限校验（同一角色与目标用户无关，只判一次）
+    roles: dict[uuid.UUID, Role] = {}
+    role_errors: dict[uuid.UUID, tuple[str, str | None]] = {}
+    for role_id in dict.fromkeys(payload.role_ids):
+        role = await get_role(db, role_id)
+        if role is None:
+            role_errors[role_id] = ("角色不存在或已删除", None)
+            continue
+        try:
+            await assert_actor_can_grant_role(db, actor=ctx.user, role=role)
+        except ForbiddenException as exc:
+            role_errors[role_id] = (exc.message or "无权授予该角色", role.name)
+            continue
+        roles[role_id] = role
+
+    # 角色不可用时，所有用户都无法拿到该角色：只报一条，避免 N 份重复原因
+    for role_id, (reason, label) in role_errors.items():
+        failed.append(BatchFailure(key=str(role_id), label=label, reason=reason))
+
+    # 2) 用户预取：人员 id → 账号 id（未建号的 HR 档案按需建号，逻辑与单条授权一致）
+    targets: dict[uuid.UUID, User] = {}
+    user_errors: dict[uuid.UUID, str] = {}
+    for raw_id in dict.fromkeys(payload.user_ids):
+        resolved_id = await resolve_person_user_id(db, raw_id)
+        if resolved_id is None:
+            user_errors[raw_id] = "用户不存在"
+            continue
+        if resolved_id == ctx.user.id:
+            user_errors[raw_id] = "不能给自己授权"
+            continue
+        target = (await db.execute(select(User).where(User.id == resolved_id))).scalar_one_or_none()
+        if target is None:
+            user_errors[raw_id] = "用户不存在"
+            continue
+        try:
+            await guard_manage_target(db, actor=ctx.user, target=target, resource_label="授权")
+        except ForbiddenException as exc:
+            user_errors[raw_id] = exc.message or "无权操作该账号"
+            continue
+        targets[raw_id] = target
+
+    # 3) 已存在的有效授权：一次 IN 查询，命中的组合按幂等跳过（复用原授权 id）
+    existing_ids: dict[tuple[uuid.UUID, uuid.UUID], uuid.UUID] = {}
+    target_ids = {user.id for user in targets.values()}
+    if target_ids and roles:
+        stmt = select(UserRoleGrant.id, UserRoleGrant.user_id, UserRoleGrant.role_id).where(
+            UserRoleGrant.user_id.in_(target_ids),
+            UserRoleGrant.role_id.in_(set(roles)),
+            UserRoleGrant.status == GRANT_ACTIVE,
+            UserRoleGrant.is_deleted == False,  # noqa: E712
+        )
+        for grant_id, user_id, role_id in (await db.execute(stmt)).all():
+            existing_ids[(user_id, role_id)] = grant_id
+
+    # 4) 笛卡尔积：创建 / 幂等跳过 / 逐条记录失败
+    grant_repo = GrantRepository()
+    affected_users: set[uuid.UUID] = set()
+    handled: set[tuple[uuid.UUID, uuid.UUID]] = set()
+
+    for raw_id in dict.fromkeys(payload.user_ids):
+        target = targets.get(raw_id)
+        if target is None:
+            failed.append(BatchFailure(key=str(raw_id), reason=user_errors.get(raw_id, "用户不可用")))
+            continue
+        for role_id in dict.fromkeys(payload.role_ids):
+            role = roles.get(role_id)
+            if role is None:
+                continue  # 角色级失败已在上方统一记录
+            pair = (target.id, role_id)
+            if pair in handled:
+                continue  # 同一账号被不同人员引用重复传入时只处理一次
+            handled.add(pair)
+
+            existing_id = existing_ids.get(pair)
+            if existing_id is not None:
+                succeeded.append(str(existing_id))
+                continue
+
+            grant = await grant_repo.create_grant(
+                db,
+                user_id=target.id,
+                role_id=role_id,
+                scope_type=payload.scope_type,
+                scope_dept_codes=payload.scope_dept_codes,
+                granted_by=ctx.user.id,
+            )
+            await record_audit_log(
+                db,
+                user=ctx.user,
+                action="grant.create",
+                resource_type="grant",
+                resource_id=grant.id,
+                new_value={
+                    "user_id": str(target.id),
+                    "role_code": role.code,
+                    "scope_type": payload.scope_type,
+                    "scope_dept_codes": payload.scope_dept_codes,
+                    "batch": True,
+                },
+            )
+            succeeded.append(str(grant.id))
+            affected_users.add(target.id)
+
+    await db.commit()
+    for user_id in affected_users:
+        await _evict_user_cache(user_id)
+
+    return build_response(data=BatchResultData(succeeded=succeeded, failed=failed).model_dump())
 
 
 @router.put("/grants/{grant_id}", response_model=GrantDetailApiResponse)

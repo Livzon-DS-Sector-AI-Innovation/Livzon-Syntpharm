@@ -58,6 +58,9 @@ from app.platform.identity.schemas import (
     TestLoginResponse,
     TestLoginUser,
     TokenResponse,
+    UserBatchDeleteApiResponse,
+    UserBatchDeleteData,
+    UserBatchDeleteRequest,
     UserBatchFailure,
     UserBatchStatusApiResponse,
     UserBatchStatusData,
@@ -974,6 +977,97 @@ async def batch_update_user_status(
 
     await db.commit()
     return build_response(data=UserBatchStatusData(succeeded=succeeded, failed=failed).model_dump())
+
+
+@user_router.post(
+    "/users/batch-delete",
+    summary="批量删除账号（仅超级管理员，软删除）",
+    response_model=UserBatchDeleteApiResponse,
+)
+async def batch_delete_users(
+    payload: UserBatchDeleteRequest,
+    ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """批量删除账号（单次最多 100 个）。
+
+    逐条复用单条删除的全部护栏：仅超级管理员、不能删自己、不能删系统内置账号、
+    不能删最后一个超级管理员。失败条目不影响其他条目，结果里返回失败原因。
+    删除动作与单条删除一致：软删除 + 清空角色授权 + 审计；会话在提交后吊销，
+    Redis 不可用时只降级为「会话未吊销」，不回滚已完成的删除。
+    """
+    from app.platform.identity.service import SYSTEM_ADMIN_USERNAME
+    from app.platform.identity.session import revoke_all_user_sessions
+    from app.platform.permission.public_api import (
+        list_superuser_user_ids,
+        revoke_all_user_grants,
+        user_is_superuser,
+    )
+
+    if not await user_is_superuser(db, ctx.user):
+        raise ForbiddenException("只有超级管理员可以删除账号")
+
+    repo = UserRepository()
+    succeeded: list[uuid.UUID] = []
+    failed: list[UserBatchFailure] = []
+    deleted_ids: list[uuid.UUID] = []
+
+    # dict.fromkeys 去重且保持顺序：前端重复选同一条不应重复处理
+    for user_id in dict.fromkeys(payload.user_ids):
+        user = await repo.get_by_id(db, user_id)
+        if user is None:
+            failed.append(UserBatchFailure(id=user_id, reason="账号不存在或已删除"))
+            continue
+        if user.id == ctx.user.id:
+            failed.append(UserBatchFailure(id=user.id, username=user.username, reason="不能删除当前登录账号"))
+            continue
+        if (user.username or "").strip().lower() == SYSTEM_ADMIN_USERNAME.lower():
+            failed.append(UserBatchFailure(id=user.id, username=user.username, reason="系统内置账号不允许删除"))
+            continue
+
+        super_ids = await list_superuser_user_ids(db)
+        if user.id in super_ids and len(super_ids) <= 1:
+            failed.append(
+                UserBatchFailure(id=user.id, username=user.username, reason="不能删除最后一个超级管理员账号"),
+            )
+            continue
+
+        old_value = {
+            "username": user.username,
+            "name": user.name,
+            "status": user.status,
+            "auth_source": user.auth_source,
+        }
+        # soft_delete_user 内部 flush：同批后续的「最后一个超管」判断能看到本次删除
+        await repo.soft_delete_user(db, user, operator_id=ctx.user.id)
+        revoked_grants = await revoke_all_user_grants(db, user.id)
+        await record_audit_log(
+            db,
+            user=ctx.user,
+            action="user.delete",
+            resource_type="user",
+            resource_id=user.id,
+            old_value=old_value,
+            new_value={
+                "is_deleted": True,
+                "status": "disabled",
+                "revoked_grants": revoked_grants,
+                "batch": True,
+            },
+        )
+        succeeded.append(user.id)
+        deleted_ids.append(user.id)
+
+    await db.commit()
+
+    # 会话存放在 Redis，提交成功之后再吊销：事务回滚时不应把用户误踢下线。
+    for deleted_id in deleted_ids:
+        try:
+            await revoke_all_user_sessions(deleted_id)
+        except Exception:
+            logger.warning("批量删除账号后吊销会话失败 user_id=%s", deleted_id, exc_info=True)
+
+    return build_response(data=UserBatchDeleteData(succeeded=succeeded, failed=failed).model_dump())
 
 
 @user_router.delete(

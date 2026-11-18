@@ -214,6 +214,19 @@ class StatusBatchRequest(IdsBatchRequest):
     status: str = Field(..., pattern="^(active|disabled)$")
 
 
+class GrantBatchCreate(BaseModel):
+    """批量授权：多用户 × 多角色，统一套用同一个数据范围。
+
+    `user_ids` 可以是统一人员选择器返回的 `hr.employee_profiles.id`，也可以是
+    `identity.users.id`；端点内部统一经 `resolve_person_user_id` 转换。
+    """
+
+    user_ids: list[UUID] = Field(..., min_length=1, max_length=100, description="单次最多 100 个用户")
+    role_ids: list[UUID] = Field(..., min_length=1, max_length=20, description="单次最多 20 个角色")
+    scope_type: str = Field(default="all", pattern="^(self|department|department_and_children|all)$")
+    scope_dept_codes: list[str] | None = None
+
+
 class BatchFailure(BaseModel):
     key: str
     label: str | None = None
