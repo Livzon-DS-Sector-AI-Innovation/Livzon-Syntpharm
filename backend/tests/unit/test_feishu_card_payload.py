@@ -38,7 +38,7 @@ def _capture_requests(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
             request=httpx.Request(method, url),
         )
 
-    async def fake_token(self: Any) -> str:
+    async def fake_token(self: Any, **_kwargs: Any) -> str:
         return "t-test"
 
     monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
