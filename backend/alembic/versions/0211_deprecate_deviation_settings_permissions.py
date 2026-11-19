@@ -1,7 +1,7 @@
 """deprecate deviation settings permissions
 
-Revision ID: 0121_deprecate_deviation_settings_permissions
-Revises: 0120_add_deviation_department_config_tables
+Revision ID: 0211_deprecate_deviation_settings_permissions
+Revises: 0210_add_deviation_department_config_tables
 Create Date: 2026-11-11
 
 偏差管理改造要求下线旧「偏差流程设置 / 偏差提醒设置」与旧流程、旧报告接口，
@@ -24,8 +24,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0121_deprecate_deviation_settings_permissions"
-down_revision: str = "0120_add_deviation_department_config_tables"
+revision: str = "0211_deprecate_deviation_settings_permissions"
+down_revision: str = "0210_add_deviation_department_config_tables"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

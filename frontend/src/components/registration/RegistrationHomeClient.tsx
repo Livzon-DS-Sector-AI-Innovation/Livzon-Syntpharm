@@ -21,7 +21,7 @@ import {
   IconTitleDoc, IconRefresh, IconPlus, IconShieldCheck, IconGlobe, IconLink,
   IconCert, IconList, IconWarn, IconCheckCircle, IconGrid, IconFile, IconBulb,
   IconBook, IconActivity, IconSliders, IconEdit, IconCheckSquare, IconMessage, IconFlask,
-} from './registration-icons'
+} from './RegistrationIcons'
 
 /* ---------- 业务功能区配置（分组语义：紫=台账与进度 / 蓝=申报资料 / 绿=AI 与合规） ---------- */
 interface BizItem {
@@ -73,6 +73,7 @@ const BIZ_GROUPS: BizGroup[] = [
     accentBgVar: 'var(--ok-50)',
     items: [
       { key: 'validation-audit', name: '验证文件审核', desc: 'AI 合规性检查', icon: IconShieldCheck, href: '/registration/validation-audit' },
+      { key: 'docx-translator', name: '文档翻译', desc: 'Word 中英互译，保留原文格式', icon: IconGlobe, href: '/registration/docx-translator' },
       { key: 'reference-standard', name: '对照物质说明表', desc: '对照物质 COA 与说明表', icon: IconFlask, href: '/registration/reference-standard' },
       { key: 'regulation', name: '法规跟踪', desc: '国内外法规动态跟踪', icon: IconGlobe, href: '/registration/regulation' },
     ],

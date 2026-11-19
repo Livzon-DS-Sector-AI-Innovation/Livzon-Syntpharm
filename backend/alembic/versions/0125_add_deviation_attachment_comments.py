@@ -4,7 +4,7 @@
 严格分离。批注支持单条软删除、单条状态流转（open / resolved），因此独立建表而非塞进 JSONB。
 
 Revision ID: 0125_add_deviation_attachment_comments
-Revises: 0124_update_deviation_row_comments
+Revises: 0214_update_deviation_row_comments
 Create Date: 2026-11-12
 """
 
@@ -17,7 +17,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "0125_add_deviation_attachment_comments"
-down_revision: str | None = "0124_update_deviation_row_comments"
+down_revision: str | None = "0214_update_deviation_row_comments"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

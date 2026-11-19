@@ -17,7 +17,7 @@ import {
 } from '@/lib/api/client/regulatory-tracker'
 import { RegistrationPageHeader } from './RegistrationPageHeader'
 import ui from './registration-ui.module.css'
-import { IconActivity, IconRefresh, IconWarn } from './registration-icons'
+import { IconActivity, IconRefresh, IconWarn } from './RegistrationIcons'
 
 const ReactECharts = dynamic(() => import('echarts-for-react'), { ssr: false })
 

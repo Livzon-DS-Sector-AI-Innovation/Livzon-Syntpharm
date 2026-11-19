@@ -30,6 +30,10 @@ _TABLE = "registration_projects"
 
 
 def upgrade() -> None:
+    # 双轨合并守卫：main 链与 uat 链各有一份同构迁移，合并后都在图里，
+    # 谁先执行取决于拓扑序，故按哨兵列判断是否已由另一份完成，做成幂等。
+    if "project_no" in {c["name"] for c in sa.inspect(op.get_bind()).get_columns(_TABLE, schema=_SCHEMA)}:
+        return
     # ── registration_projects 新字段 ──
     op.add_column(
         _TABLE,

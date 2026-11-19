@@ -51,6 +51,11 @@ _DEFAULT_SETTINGS = [
         "string",
         "CDE guideline URL to track",
     ),
+    ("docx_translator", "DOCX_TRANSLATOR_MAX_FILE_MB", "50", "int", "文档翻译单文件大小上限(MB)"),
+    ("docx_translator", "DOCX_TRANSLATOR_MAX_FILES", "10", "int", "文档翻译单次任务文件数上限"),
+    ("docx_translator", "DOCX_TRANSLATOR_DEFAULT_BATCH_SIZE", "30", "int", "文档翻译每批段落数默认值"),
+    ("docx_translator", "DOCX_TRANSLATOR_MIN_SUCCESS_RATE", "90", "int", "文档翻译成功率告警阈值(%)"),
+    ("docx_translator", "DOCX_TRANSLATOR_RETENTION_DAYS", "30", "int", "文档翻译结果保留天数（<=0 不自动清理）"),
 ]
 
 
@@ -87,6 +92,7 @@ async def _seed_module_settings() -> None:
 
 async def run_seeds() -> None:
     """执行所有种子数据初始化。任何一项失败不阻塞启动。"""
+    from app.modules.registration.docx_translator.seed import run_seed as run_docx_translator_seed
     from app.modules.registration.dossier_writer.seed import run_seed as run_dossier_writer_seed
     from app.modules.registration.regulatory_tracker.seed import run_seed as run_regulatory_tracker_seed
 
@@ -94,6 +100,7 @@ async def run_seeds() -> None:
         ("module_settings", _seed_module_settings),
         ("regulatory_tracker", run_regulatory_tracker_seed),
         ("dossier_writer", run_dossier_writer_seed),
+        ("docx_translator", run_docx_translator_seed),
     ]
 
     logger.info("Running auto-seeds...")

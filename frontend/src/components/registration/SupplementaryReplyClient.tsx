@@ -10,7 +10,7 @@ import { fetchSupplementaryReplies, fetchSupplementaryReplyDownloadUrl } from '@
 import { generateSupplementaryReply, deleteSupplementaryReplyAction } from '@/actions/registration'
 import { RegistrationPageHeader } from './RegistrationPageHeader'
 import ui from './registration-ui.module.css'
-import { IconMessage, IconPlus, IconTrash } from './registration-icons'
+import { IconMessage, IconPlus, IconTrash } from './RegistrationIcons'
 import dayjs from 'dayjs'
 
 interface SupplementaryReplyClientProps {

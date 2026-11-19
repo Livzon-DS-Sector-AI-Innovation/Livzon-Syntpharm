@@ -547,6 +547,7 @@ const registrationRoutes: RouteCase[] = [
     expectData: antdTableData,
   },
   { path: '/registration/validation-audit', module: 'registration', kind: 'normal', expected: heading('验证审计') },
+  { path: '/registration/docx-translator', module: 'registration', kind: 'normal', expected: heading('文档翻译') },
   // Excluded: /registration/validation-audit/new — form page
 ]
 

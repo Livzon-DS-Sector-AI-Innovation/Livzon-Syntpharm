@@ -1,8 +1,450 @@
-import RegulationDetailClient from '@/components/registration/RegulationDetailClient'
+'use client'
 
-/**
- * 法规文件详情：id 由客户端 `useParams()` 读取，页面只做服务端外壳。
- */
+import { useEffect, useRef } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
+import { Spin } from 'antd'
+import {
+  ArrowLeftOutlined, LinkOutlined, FileTextOutlined,
+  WarningOutlined, CheckCircleOutlined, ClockCircleOutlined,
+} from '@ant-design/icons'
+import dayjs from 'dayjs'
+import Link from 'next/link'
+import { fetchDocumentDetail } from '@/lib/api/client/regulatory-tracker'
+import { markDocumentRead } from '@/actions/regulatory-tracker'
+import { DataUnavailable } from '@/components/common/DataUnavailable'
+import ui from '@/components/registration/registration-ui.module.css'
+
+// 影响等级配色（注册模块设计令牌）
+const IMPACT_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
+  high: { color: '#C03A2E', bg: '#FBEBE9', label: '高影响' },
+  medium: { color: '#B4640A', bg: '#FCF3E3', label: '中影响' },
+  low: { color: '#0B6CAD', bg: '#EAF4FB', label: '低影响' },
+  none: { color: '#878DA3', bg: '#F5F6FA', label: '无影响' },
+}
+
+// 结构化影响评估类型
+interface ImpactAssessment {
+  regulation_type?: string
+  impact_level?: 'high' | 'medium' | 'low' | 'none'
+  relevance_level?: 'direct' | 'indirect' | 'unrelated'
+  lifecycle_impacts?: Array<{ area: string; affected: boolean; reason?: string }>
+  departments?: string[]
+  ctd_sections?: string[]
+  recommended_actions?: string[]
+  notification_required?: boolean
+  evidence?: string[]
+  evidence_excerpts?: string[]
+  focus_required?: boolean
+  archive_recommended?: boolean
+  confidence?: number
+}
+
+// 文件要点维度
+const KEY_POINT_DIMENSIONS = [
+  { key: '药品研制和注册管理', areas: ['药品研发', '注册申报', '审评审批'] },
+  { key: '药品生产质量管理', areas: ['生产制造', '工艺验证', '技术转移', '质量控制'] },
+  { key: '药品经营和使用监管', areas: [] },
+  { key: '药品上市后监管', areas: ['变更管理', '持续改进', '退市管理'] },
+  { key: '法律责任', areas: [] },
+]
+
+// 部门列表
+const DEPARTMENTS = ['注册', 'QA', 'QC', '研发', '生产', '验证']
+
 export default function RegulatoryDocumentDetailPage() {
-  return <RegulationDetailClient />
+  const params = useParams()
+  const router = useRouter()
+  const docId = params.id as string
+
+  const detailQuery = useQuery({
+    queryKey: ['regulation-document', docId],
+    queryFn: () => fetchDocumentDetail(docId),
+  })
+
+  const doc = detailQuery.data ?? null
+
+  // 加载成功后就地标记已读。
+  // 这是**副作用**而非取数（取数在 useQuery 内），所以用 effect 承载；
+  // React Query v5 已移除 useQuery 的 onSuccess，改用 ref 记录已处理的 docId，
+  // 保证 refetch / 命中缓存 / StrictMode 双调用都不会重复写接口。
+  const markedReadDocIdRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!doc?.isNew) return
+    if (markedReadDocIdRef.current === docId) return
+    markedReadDocIdRef.current = docId
+    void markDocumentRead(docId).catch(() => {
+      /* 标记已读失败不阻断阅读，下次进入详情时重试 */
+    })
+  }, [doc, docId])
+
+  if (detailQuery.isError) {
+    return (
+      <DataUnavailable
+        title="法规详情加载失败"
+        description="可能是后端服务暂时不可用，请稍后重试。"
+        onRetry={() => void detailQuery.refetch()}
+      />
+    )
+  }
+
+  if (detailQuery.isPending) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Spin size="large" />
+      </div>
+    )
+  }
+
+  if (!doc) {
+    return (
+      <div className="text-center py-20 text-gray-500">
+        <FileTextOutlined style={{ fontSize: 48, marginBottom: 16 }} />
+        <p>法规文档不存在</p>
+        <Link href="/registration/regulation/list" style={{ color: '#4F46C9' }}>
+          返回列表
+        </Link>
+      </div>
+    )
+  }
+
+  // 解析结构化影响评估数据
+  const getImpactAssessment = (): ImpactAssessment | null => {
+    if (!doc.aiKeyPoints) return null
+    if (Array.isArray(doc.aiKeyPoints)) return null
+    if (typeof doc.aiKeyPoints !== 'object') return null
+    return doc.aiKeyPoints as unknown as ImpactAssessment
+  }
+
+  const impactData = getImpactAssessment()
+  const impactLevel = impactData?.impact_level || 'none'
+  const impactConfig = IMPACT_CONFIG[impactLevel] || IMPACT_CONFIG.none
+
+  // 判断 AI 状态
+  const isAnalyzed = doc.aiAnalysisStatus === 'completed' && impactData
+  const isFailed = doc.aiAnalysisStatus === 'failed'
+  const isPending = !doc.aiAnalysisStatus || doc.aiAnalysisStatus === 'pending' || doc.aiAnalysisStatus === 'analyzing'
+
+  // 获取相关部门影响
+  const getDepartmentImpacts = () => {
+    if (!impactData?.lifecycle_impacts) return {}
+    const deptMap: Record<string, Array<{ area: string; reason?: string }>> = {}
+    
+    // 简化的部门映射
+    const areaToDept: Record<string, string[]> = {
+      '药品研发': ['研发'],
+      '注册申报': ['注册'],
+      '审评审批': ['注册'],
+      '生产制造': ['生产'],
+      '工艺验证': ['生产', '验证'],
+      '技术转移': ['研发', '生产'],
+      '质量控制': ['QA', 'QC'],
+      '变更管理': ['注册', 'QA', '生产'],
+      '持续改进': ['生产', 'QA'],
+      '退市管理': ['注册', 'QA'],
+    }
+
+    impactData.lifecycle_impacts.forEach(item => {
+      if (item.affected) {
+        const depts = areaToDept[item.area] || []
+        depts.forEach(dept => {
+          if (!deptMap[dept]) deptMap[dept] = []
+          deptMap[dept].push({ area: item.area, reason: item.reason })
+        })
+      }
+    })
+
+    return deptMap
+  }
+
+  // 获取文件要点
+  const getKeyPoints = () => {
+    if (!impactData?.lifecycle_impacts) return {}
+    const result: Record<string, Array<{ area: string; affected: boolean; reason?: string }>> = {}
+    
+    KEY_POINT_DIMENSIONS.forEach(dim => {
+      const impacts = impactData.lifecycle_impacts!.filter(item => 
+        dim.areas.includes(item.area)
+      )
+      if (impacts.length > 0) {
+        result[dim.key] = impacts
+      }
+    })
+
+    return result
+  }
+
+  const deptImpacts = getDepartmentImpacts()
+  const keyPoints = getKeyPoints()
+
+  return (
+    <div className={ui.regUi}>
+      <div className="max-w-4xl mx-auto w-full space-y-5 pb-6">
+      {/* 顶部导航 */}
+      <div className="flex items-center justify-between">
+        <button type="button" className={ui.btn} onClick={() => router.push('/registration/regulation/list')}>
+          <ArrowLeftOutlined />
+          返回列表
+        </button>
+        {doc.originalUrl && (
+          <button type="button" className={ui.btn} onClick={() => window.open(doc.originalUrl!, '_blank')}>
+            <LinkOutlined />
+            查看原文
+          </button>
+        )}
+      </div>
+
+      {/* 1. 顶部结论区 */}
+      <div className="bg-white rounded-xl border border-[#E7E8F0] p-6">
+        <h1 className="text-xl font-semibold text-gray-900 mb-4">{doc.title}</h1>
+        
+        <div className="flex items-center gap-4 mb-4">
+          <span
+            className="inline-flex items-center px-2 py-0.5 rounded-md text-[13px] font-medium"
+            style={{ color: impactConfig.color, backgroundColor: impactConfig.bg }}
+          >
+            {impactConfig.label}
+          </span>
+          {impactData?.regulation_type && (
+            <span className="text-sm text-gray-500">{impactData.regulation_type}</span>
+          )}
+          <span className="text-sm text-gray-400">
+            {doc.sourceName || 'CDE'} · {doc.publishDate ? dayjs(doc.publishDate).format('YYYY-MM-DD') : ''}
+          </span>
+        </div>
+
+        {isAnalyzed && doc.aiSummary && (
+          <div className="text-gray-700 leading-relaxed">
+            <span className="text-gray-400">AI判断：</span>{doc.aiSummary}
+          </div>
+        )}
+
+        {isPending && (
+          <div className="text-gray-400 flex items-center gap-2">
+            <ClockCircleOutlined />
+            该历史法规尚未完成 AI 回填，将在 Task7 统一处理。
+          </div>
+        )}
+
+        {isFailed && (
+          <div className="text-gray-400 flex items-center gap-2">
+            <WarningOutlined />
+            AI 评估失败，V1 暂不支持手动重新分析。
+          </div>
+        )}
+      </div>
+
+      {/* 以下内容仅在已分析时显示 */}
+      {isAnalyzed && impactData && (
+        <>
+          {/* 2. 法规指南解读 */}
+          <div className="bg-white rounded-xl border border-[#E7E8F0] p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">法规指南解读</h2>
+            
+            <div className="space-y-3">
+              <div>
+                <span className="text-sm text-gray-500">文件适用范围：</span>
+                <span className="text-gray-700 ml-2">
+                  {impactData.regulation_type || '未指定'}
+                </span>
+              </div>
+              
+              <div>
+                <span className="text-sm text-gray-500">与原料药企业关系：</span>
+                <span className="text-gray-700 ml-2">
+                  {impactData.relevance_level === 'direct' && '直接相关'}
+                  {impactData.relevance_level === 'indirect' && '间接相关'}
+                  {impactData.relevance_level === 'unrelated' && '无关'}
+                  {!impactData.relevance_level && '未评估'}
+                </span>
+              </div>
+
+              <div>
+                <span className="text-sm text-gray-500">适用岗位：</span>
+                <span className="text-gray-700 ml-2">
+                  {impactData.departments && impactData.departments.length > 0
+                    ? impactData.departments.join('、')
+                    : '无特定岗位影响'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. 工作建议 */}
+          {impactData.recommended_actions && impactData.recommended_actions.length > 0 && (
+            <div className="bg-white rounded-xl border border-[#E7E8F0] p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">工作建议</h2>
+              
+              <div className="space-y-4">
+                {DEPARTMENTS.map(dept => {
+                  const impacts = deptImpacts[dept]
+                  if (!impacts || impacts.length === 0) return null
+                  
+                  return (
+                    <div key={dept} className="border-l-2 border-[#C9C9F0] pl-4">
+                      <div className="font-medium text-gray-800 mb-2">{dept}</div>
+                      <ul className="space-y-1">
+                        {impacts.map((item, idx) => (
+                          <li key={idx} className="text-sm text-gray-600">
+                            <span className="text-gray-400">{item.area}：</span>
+                            {item.reason || '建议评估影响'}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )
+                })}
+
+                {/* 通用建议 */}
+                <div className="border-l-2 border-gray-200 pl-4">
+                  <div className="font-medium text-gray-800 mb-2">通用建议</div>
+                  <ul className="space-y-1">
+                    {impactData.recommended_actions.map((action, idx) => (
+                      <li key={idx} className="text-sm text-gray-600">
+                        {action}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 4. 文件要点总结 */}
+          <div className="bg-white rounded-xl border border-[#E7E8F0] p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">文件要点总结</h2>
+            
+            <div className="space-y-3">
+              {KEY_POINT_DIMENSIONS.map(dim => {
+                const impacts = keyPoints[dim.key]
+                const hasAffected = impacts?.some(i => i.affected)
+                
+                return (
+                  <div key={dim.key} className="flex items-start gap-3">
+                    <div className="w-40 flex-shrink-0 text-sm text-gray-500">{dim.key}</div>
+                    <div className="flex-1">
+                      {hasAffected ? (
+                        <div className="space-y-1">
+                          {impacts?.filter(i => i.affected).map((item, idx) => (
+                            <div key={idx} className="text-sm text-gray-700">
+                              {item.area}：{item.reason || '有影响'}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-300">不涉及</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* 5. 影响分析 */}
+          <div className="bg-white rounded-xl border border-[#E7E8F0] p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">影响分析</h2>
+            
+            <div className="space-y-4">
+              {/* 生命周期影响 */}
+              {impactData.lifecycle_impacts && impactData.lifecycle_impacts.length > 0 && (
+                <div>
+                  <div className="text-sm font-medium text-gray-700 mb-2">生命周期影响</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {impactData.lifecycle_impacts.filter(i => i.affected).map((item, idx) => (
+                      <div key={idx} className="text-sm text-gray-600 flex items-center gap-2">
+                        <CheckCircleOutlined style={{ color: '#0E8568', fontSize: 12 }} />
+                        <span>{item.area}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 影响部门 */}
+              {impactData.departments && impactData.departments.length > 0 && (
+                <div>
+                  <div className="text-sm font-medium text-gray-700 mb-2">影响部门</div>
+                  <div className="flex flex-wrap gap-2">
+                    {impactData.departments.map((dept, idx) => (
+                      <span key={idx} className={ui.tagPlain}>{dept}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* CTD 章节 */}
+              {impactData.ctd_sections && impactData.ctd_sections.length > 0 && (
+                <div>
+                  <div className="text-sm font-medium text-gray-700 mb-2">CTD 章节</div>
+                  <div className="flex flex-wrap gap-2">
+                    {impactData.ctd_sections.map((section, idx) => (
+                      <span key={idx} className={ui.tagInfo}>{section}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 分析依据 */}
+              {impactData.evidence && impactData.evidence.length > 0 && (
+                <div>
+                  <div className="text-sm font-medium text-gray-700 mb-2">分析依据</div>
+                  <div className="bg-gray-50 rounded p-3">
+                    <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
+                      {impactData.evidence.map((item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* 分析时间 */}
+              {doc.aiAnalyzedAt && (
+                <div className="text-xs text-gray-400 pt-2 border-t">
+                  分析时间：{dayjs(doc.aiAnalyzedAt).format('YYYY-MM-DD HH:mm:ss')}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* 正文内容 */}
+      <div className="bg-white rounded-xl border border-[#E7E8F0] p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">正文内容</h2>
+        {doc.detailText ? (
+          <div className="text-gray-600 leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto">
+            {doc.detailText}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-400">暂无正文内容</div>
+        )}
+      </div>
+
+      {/* 相关法规 */}
+      {doc.relatedDocuments && doc.relatedDocuments.length > 0 && (
+        <div className="bg-white rounded-xl border border-[#E7E8F0] p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">相关法规</h2>
+          <div className="space-y-2">
+            {doc.relatedDocuments.map((item) => (
+              <div key={item.id} className="flex items-center gap-2 py-1">
+                <Link
+                  href={`/registration/regulation/${item.id}`}
+                  className="text-[#4F46C9] hover:underline"
+                >
+                  {item.title}
+                </Link>
+                <span className="text-xs text-gray-400">
+                  {item.publishDate ? dayjs(item.publishDate).format('YYYY-MM-DD') : ''}
+                  {item.classification && ` · ${item.classification}`}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      </div>
+    </div>
+  )
 }

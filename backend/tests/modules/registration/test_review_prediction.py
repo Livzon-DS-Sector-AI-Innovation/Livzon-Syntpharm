@@ -74,7 +74,6 @@ def mock_db():
 
 
 class TestPrediction:
-    @pytest.mark.asyncio
     async def test_no_nodes_predicts_from_acceptance(self, mock_db):
         drug = _make_drug({})
         result = await predict_drug(mock_db, drug)
@@ -85,7 +84,6 @@ class TestPrediction:
         assert result.nodes[0].estimated_date == add_workdays(drug.acceptance_date, 40, set(), set())
         assert result.estimated_approval_date is not None
 
-    @pytest.mark.asyncio
     async def test_completed_node_shifts_anchor(self, mock_db):
         # 节点1 实际完成 2026-02-02（周一）
         drug = _make_drug({1: (date(2026, 2, 2), False)})
@@ -95,7 +93,6 @@ class TestPrediction:
         # 节点2 预计从实际完成日起算，而非受理日
         assert result.nodes[1].estimated_date == add_workdays(date(2026, 2, 2), 20, set(), set())
 
-    @pytest.mark.asyncio
     async def test_skipped_node_excluded_from_total_and_workdays(self, mock_db):
         drug = _make_drug({1: (date(2026, 2, 2), False), 2: (None, True)})
         result = await predict_drug(mock_db, drug)
@@ -105,7 +102,6 @@ class TestPrediction:
         # 节点3 预测不累计节点2的 20 个工作日
         assert result.nodes[2].estimated_date == add_workdays(date(2026, 2, 2), 5, set(), set())
 
-    @pytest.mark.asyncio
     async def test_delta_days_positive_when_late(self, mock_db):
         # 节点1 预计 = 受理日+40wd = 2026-03-02；实际 2026-03-09 → 延迟 7 天
         drug = _make_drug({1: (date(2026, 3, 9), False)})
@@ -114,7 +110,6 @@ class TestPrediction:
         assert node1.status == "completed"
         assert node1.delta_days is not None and node1.delta_days > 0
 
-    @pytest.mark.asyncio
     async def test_all_completed_no_current(self, mock_db):
         nodes = {i: (date(2026, 2, 2), False) for i in range(1, 11)}
         drug = _make_drug(nodes)
