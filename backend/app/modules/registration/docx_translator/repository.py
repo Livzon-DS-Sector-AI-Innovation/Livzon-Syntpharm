@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -145,6 +145,19 @@ class DocxTranslationFileRepository:
         )
         await self.session.commit()
 
+    async def count_success_by_job(self, job_ref: str) -> int:
+        """按任务统计成功文件行数（任务计数以文件行为准）。"""
+        result = await self.session.execute(
+            select(func.count())
+            .select_from(DocxTranslationFile)
+            .where(
+                DocxTranslationFile.job_ref == job_ref,
+                DocxTranslationFile.is_deleted.is_(False),
+                DocxTranslationFile.success.is_(True),
+            )
+        )
+        return int(result.scalar() or 0)
+
     async def list_by_job(self, job_ref: str) -> list[DocxTranslationFile]:
         result = await self.session.execute(
             select(DocxTranslationFile)
@@ -272,10 +285,16 @@ class DocxTranslationTaskRepository:
         self,
         *,
         keyword: str | None = None,
+        status: str | None = None,
+        created_by: UUID | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[DocxTranslationTask], int]:
         stmt = select(DocxTranslationTask).where(DocxTranslationTask.is_deleted.is_(False))
+        if status:
+            stmt = stmt.where(DocxTranslationTask.status == status)
+        if created_by is not None:
+            stmt = stmt.where(DocxTranslationTask.created_by == created_by)
         if keyword:
             like = f"%{keyword.strip()}%"
             stmt = stmt.where(DocxTranslationTask.first_source_filename.ilike(like))
@@ -298,6 +317,15 @@ class DocxTranslationTaskRepository:
             .limit(limit)
         )
         return list(result.scalars().all())
+
+    async def update_progress(self, task_id: UUID, *, success_count: int, fail_count: int) -> None:
+        """逐文件回写已完成计数，让运行中的任务在列表里也有真实进度。"""
+        await self.session.execute(
+            update(DocxTranslationTask)
+            .where(DocxTranslationTask.id == task_id)
+            .values(success_count=success_count, fail_count=fail_count)
+        )
+        await self.session.commit()
 
     async def soft_delete(self, task: DocxTranslationTask) -> None:
         task.is_deleted = True

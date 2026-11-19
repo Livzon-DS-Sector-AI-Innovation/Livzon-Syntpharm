@@ -67,6 +67,7 @@ from .service import (
     load_glossary,
     load_limits,
     read_file_object,
+    reconcile_interrupted_tasks,
     resolve_batch_size,
     run_job,
     sanitize_filename,
@@ -213,6 +214,7 @@ async def get_task_detail(
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     task = await get_task(db, task_id)
+    await reconcile_interrupted_tasks(db, [task])
     files = await DocxTranslationFileRepository(db).list_by_job(task.job_ref)
     names = await resolve_user_names(db, {task.created_by} if task.created_by else set())
     allow_delete_all = ctx.is_superuser or await has_permission(db, current_user, PERM_DELETE)

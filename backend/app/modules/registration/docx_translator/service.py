@@ -301,6 +301,8 @@ async def run_job(
                 file_result=file_result,
                 user_id=user_id,
             )
+            # 文件落库后立刻回写任务计数，历史列表能看到「翻译中 2/3」
+            await update_task_progress(task_id, success_count=success_count, fail_count=fail_count)
             registry.update(job_id, files_done=done)
     except Exception as e:
         status = "failed"
@@ -350,6 +352,7 @@ __all__ = [
     "create_task",
     "delete_file_record",
     "delete_task_records",
+    "update_task_progress",
     "finish_task",
     "get_task",
     "sources_for_retranslate",
@@ -360,6 +363,7 @@ __all__ = [
     "load_limits",
     "persist_file_records",
     "read_file_object",
+    "reconcile_interrupted_tasks",
     "resolve_batch_size",
     "resolve_retention_days",
     "run_job",
@@ -414,6 +418,42 @@ async def delete_task_records(session: AsyncSession, task: DocxTranslationTask) 
                 extra={"object_key": key, "biz_module": "registration"},
                 exc_info=True,
             )
+
+
+async def reconcile_interrupted_tasks(session: AsyncSession, tasks: list[DocxTranslationTask]) -> int:
+    """把进程内已不存在的 running 任务标记为失败。
+
+    任务进度只存在进程内（registry），服务重启/热重载会丢；
+    数据库里的 running 行如果找不到对应 job，就是中断任务，
+    不清理会一直显示「翻译中」。
+    """
+    registry = get_registry()
+    changed = 0
+    for task in tasks:
+        if task.status == "running":
+            # 进程内还有该任务 → 仍在跑，交给逐文件回写
+            if registry.exists(task.job_ref):
+                continue
+            task.status = "failed"
+            task.error = "服务重启导致任务中断，请重新提交或再次翻译"
+            changed += 1
+
+        # 不论中断还是收尾异常，计数都以文件行为准，未完成的文件计入失败
+        success, fail = await _derive_task_counts(session, task)
+        if task.success_count != success or task.fail_count != fail:
+            task.success_count = success
+            task.fail_count = fail
+            changed += 1
+
+    if not changed:
+        return 0
+    await session.commit()
+    logger.warning(
+        "修正任务状态/计数: count=%d",
+        changed,
+        extra={"biz_module": "registration"},
+    )
+    return changed
 
 
 async def get_task(session: AsyncSession, task_id: UUID) -> DocxTranslationTask:
@@ -487,6 +527,29 @@ async def create_task(
         return None
 
 
+async def update_task_progress(task_id: UUID | None, *, success_count: int, fail_count: int) -> None:
+    """运行中逐文件回写计数；失败只记日志，不打断翻译主流程。"""
+    if task_id is None:
+        return
+    try:
+        async with async_session_factory() as session:
+            await DocxTranslationTaskRepository(session).update_progress(
+                task_id, success_count=success_count, fail_count=fail_count
+            )
+    except Exception:
+        logger.exception(
+            "回写翻译进度失败",
+            extra={"task_id": str(task_id), "biz_module": "registration"},
+        )
+
+
+async def _derive_task_counts(session: AsyncSession, task: DocxTranslationTask) -> tuple[int, int]:
+    """任务计数以文件行为唯一事实来源：成功=成功文件数，失败=总数-成功。"""
+    success = await DocxTranslationFileRepository(session).count_success_by_job(task.job_ref)
+    fail = max(task.source_count - success, 0)
+    return success, fail
+
+
 async def finish_task(
     task_id: UUID | None,
     *,
@@ -506,8 +569,10 @@ async def finish_task(
             if task is None:
                 return
             task.status = status
-            task.success_count = success_count
-            task.fail_count = fail_count
+            # 内存变量可能因中断而不准，收尾时按已落库的文件行回算
+            derived_success, derived_fail = await _derive_task_counts(session, task)
+            task.success_count = derived_success
+            task.fail_count = derived_fail
             task.elapsed_seconds = elapsed_seconds
             task.error = error
             await repo.save(task)
