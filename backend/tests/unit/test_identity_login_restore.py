@@ -48,9 +48,7 @@ def _soft_deleted_user(
 
 
 async def _count_by_open_id(db_session: AsyncSession, open_id: str) -> int:
-    result = await db_session.execute(
-        select(func.count()).select_from(User).where(User.feishu_open_id == open_id)
-    )
+    result = await db_session.execute(select(func.count()).select_from(User).where(User.feishu_open_id == open_id))
     return int(result.scalar_one())
 
 

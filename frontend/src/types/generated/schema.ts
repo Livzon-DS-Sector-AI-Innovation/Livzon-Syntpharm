@@ -127,6 +127,10 @@ export interface paths {
          *
          *     账号名不会被释放——`uq_identity_users_username` 不区分 `is_deleted`，删除后同名
          *     账号无法重建；如需复用名称，请另建新名（或后续做改名迁移）。
+         *
+         *     软删行仍占用飞书身份唯一约束，因此本人再次飞书登录时会**原地复活该行**
+         *     （`auth_source=feishu` 时）：复活后零权限，需管理员重新授予角色。要彻底阻断
+         *     登录请改用「禁用」，不要用「删除」。
          */
         delete: operations["delete_user_management_api_v1_identity_users__user_id__delete"];
         options?: never;
