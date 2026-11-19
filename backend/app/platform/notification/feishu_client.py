@@ -238,9 +238,7 @@ class FeishuClient:
         }
 
         try:
-            response = await self._request(
-                "POST", url, params=params, json=payload, headers=headers, deadline=deadline
-            )
+            response = await self._request("POST", url, params=params, json=payload, headers=headers, deadline=deadline)
         except httpx.HTTPStatusError as exc:
             # 飞书对失效 token 返回 HTTP 400，响应体里才是 99991663
             body = _error_payload(exc.response)
