@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Alert, App, Button, Input, Progress, Segmented, Select, Space, Tag, Typography } from 'antd'
 import { HistoryOutlined, ReloadOutlined, ThunderboltOutlined } from '@ant-design/icons'
 
 import RevisionDrawer from './RevisionDrawer'
-import { loadScriptRevisions, regenerateScriptDraft, rewriteScripts } from '@/actions/agent/ppt-video'
+import { regenerateScriptDraft, rewriteScripts } from '@/actions/agent/ppt-video'
+import { usePptVideoRevisionPolling } from '@/hooks/usePptVideoRevisionPolling'
 import { fetchPptVideoDetail } from '@/lib/api/client/agent'
 import {
   REWRITE_MODE_HINT,
@@ -59,64 +61,51 @@ export default function ScriptDraftBanner({ detail, onDetailChange }: Props) {
   const [revisionId, setRevisionId] = useState<string | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [revisionsOpen, setRevisionsOpen] = useState(false)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // 详情轮询由 React Query 负责；推到父层时按内容指纹去重，避免重复 setState
+  const pushedRef = useRef<string | null>(null)
+  const onDetailChangeRef = useRef(onDetailChange)
+  const startedAtRef = useRef(0)
 
   useEffect(() => {
-    if (!active) return
-    let cancelled = false
+    onDetailChangeRef.current = onDetailChange
+  })
 
-    const tick = async () => {
-      try {
-        const fresh = await fetchPptVideoDetail(detail.id)
-        if (!cancelled) onDetailChange(fresh)
-      } catch (error) {
-        console.warn('轮询讲稿初稿进度失败:', error)
-      }
-      if (!cancelled) timer.current = setTimeout(tick, 3000)
-    }
+  const { data: freshDetail } = useQuery({
+    queryKey: ['ppt-video', detail.id, 'draft-progress'],
+    enabled: active,
+    queryFn: () => fetchPptVideoDetail(detail.id),
+    refetchInterval: (query) => (ACTIVE.has(query.state.data?.script_ai?.status ?? '') ? 3000 : false),
+  })
 
-    timer.current = setTimeout(tick, 3000)
-    return () => {
-      cancelled = true
-      if (timer.current) clearTimeout(timer.current)
-    }
-  }, [active, detail.id, onDetailChange])
+  useEffect(() => {
+    if (!freshDetail) return
+    const key = `${freshDetail.id}:${freshDetail.script_ai?.status ?? ''}:${freshDetail.script_ai?.progress ?? 0}`
+    if (pushedRef.current === key) return
+    pushedRef.current = key
+    onDetailChangeRef.current(freshDetail)
+  }, [freshDetail])
 
-  // 改写任务：按 revision 状态收尾
+  // 计时只影响按钮文案：本地 UI 状态，用 interval 更新
   useEffect(() => {
     if (!rewriting) return
-    let cancelled = false
-    const startedAt = Date.now()
-    const tick = async () => {
-      setElapsed(Math.round((Date.now() - startedAt) / 1000))
-      const result = await loadScriptRevisions(detail.id, 10)
-      const target = revisionId ? (result.data ?? []).find((item) => item.id === revisionId) : null
-      const finished = target ? target.status === 'succeeded' || target.status === 'failed' : true
-      if (finished) {
-        if (cancelled) return
-        try {
-          const fresh = await fetchPptVideoDetail(detail.id)
-          if (!cancelled) onDetailChange(fresh)
-        } catch (error) {
-          console.warn('改写完成后刷新详情失败:', error)
-        }
-        if (target?.status === 'failed') {
-          message.error(target.error_message || '改写失败，可在修订记录里查看')
-        } else {
-          message.success('讲稿改写完成')
-        }
-        setRewriting(false)
-        setRevisionId(null)
-        return
-      }
-      timer.current = setTimeout(tick, 3000)
+    startedAtRef.current = Date.now()
+    const timer = setInterval(() => {
+      setElapsed(Math.round((Date.now() - startedAtRef.current) / 1000))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [rewriting])
+
+  // 改写任务：按 revision 状态收尾（终态回拉详情由 hook 负责）
+  usePptVideoRevisionPolling(detail.id, revisionId, (next, revision) => {
+    setRewriting(false)
+    setRevisionId(null)
+    if (next) onDetailChangeRef.current(next)
+    if (revision.status === 'failed') {
+      message.error(revision.error_message || '改写失败，可在修订记录里查看')
+    } else {
+      message.success('讲稿改写完成')
     }
-    timer.current = setTimeout(tick, 3000)
-    return () => {
-      cancelled = true
-      if (timer.current) clearTimeout(timer.current)
-    }
-  }, [rewriting, revisionId, detail.id, onDetailChange, message])
+  })
 
   const handleRetry = async () => {
     setRetrying(true)
@@ -141,26 +130,20 @@ export default function ScriptDraftBanner({ detail, onDetailChange }: Props) {
       mode,
       slide_uids: mode === 'rewrite_selected' ? scope : undefined,
       instruction: instruction.trim() || null,
-      background: true,
     })
     if (!result.success || !result.data) {
       setRewriting(false)
       message.error(result.message)
       return
     }
-    if (result.data.status === 'queued') {
-      setRevisionId(result.data.revision_id ?? null)
+    if (!result.data.revision_id) {
+      // 没有待改写页：接口直接返回已完成
+      setRewriting(false)
       message.info(result.message)
       return
     }
-    // 极短任务可能同步返回
-    setRewriting(false)
-    try {
-      onDetailChange(await fetchPptVideoDetail(detail.id))
-    } catch (error) {
-      console.warn('改写后刷新详情失败:', error)
-    }
-    message.success(result.message)
+    setRevisionId(result.data.revision_id)
+    message.info(result.message)
   }
 
   const draftBlock = active ? (

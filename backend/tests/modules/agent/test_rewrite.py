@@ -135,6 +135,40 @@ async def test_select_targets_fill_blank_only_picks_blank(db_session: AsyncSessi
     assert skipped == 1  # 第 3 页无文字无备注，跳过不算失败
 
 
+async def test_prepare_revision_snapshots_targets_and_skips_when_nothing_to_do(
+    db_session: AsyncSession,
+) -> None:
+    """提交前预建修订：前端提交后立刻能拿到 revision_id 去轮询。"""
+    project = await _make_project(db_session)
+    first = await _add_slide(db_session, project, 1, text="第一页", script="旧稿", source=SCRIPT_SOURCE_UPLOAD)
+    await _add_slide(db_session, project, 2, text="第二页", script="另一页稿", source=SCRIPT_SOURCE_UPLOAD)
+
+    revision, total = await rewrite.prepare_revision(
+        db_session,
+        project,
+        rewrite.RewriteRequest(mode=REWRITE_MODE_REWRITE_ALL, requested_by_name="张三"),
+        None,
+        project.source_version,
+    )
+
+    assert revision is not None
+    assert total == 2
+    assert revision.status == "running"
+    assert revision.requested_by_name == "张三"
+    assert revision.before is not None
+    assert revision.before[str(first.slide_uid)] == "旧稿"
+
+    # 只补空页但都已有讲稿 → 不再建任务
+    empty_revision, empty_total = await rewrite.prepare_revision(
+        db_session,
+        project,
+        rewrite.RewriteRequest(mode=REWRITE_MODE_FILL_BLANK),
+        None,
+    )
+    assert empty_revision is None
+    assert empty_total == 0
+
+
 async def _slides(session: AsyncSession, project: PptVideoProject) -> list[PptVideoSlide]:
     result = await session.scalars(select(PptVideoSlide).where(PptVideoSlide.project_id == project.id))
     return list(result.all())

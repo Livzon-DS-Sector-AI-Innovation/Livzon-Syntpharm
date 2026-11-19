@@ -517,7 +517,6 @@ class ScriptRewriteRequest(BaseModel):
     mode: RewriteMode = "rewrite_selected"
     slide_uids: list[UUID] = Field(default_factory=list)
     instruction: str | None = Field(default=None, max_length=2000)
-    background: bool = True
 
 
 class ScriptRewriteResult(BaseModel):

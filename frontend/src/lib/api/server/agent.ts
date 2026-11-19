@@ -3,51 +3,33 @@
  *
  * 约定：
  * - 一律走 `apiFetch`（内部处理 API_BASE_URL、cookie→Bearer、403 语义）；
- * - 列表接口的 total 在信封 meta 里、items 在 data 里，不能直接用 apiFetchPaginated；
+ * - 信封类型直接取自 `@/types/generated/schema` 的 `DataResponse_*`，不手写 `Envelope`；
+ * - 需要业务数据时用 `unwrapResponse`，不在调用点逐层取 `.data`；
  * - 上传用 FormData 透传，不要 JSON.stringify。
  */
 import { apiFetch, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
+import type { components } from '@/types/generated/schema'
 import type {
   AiConfigFormValue,
   AiConfigListResponse,
-  AiConfigTestResponse,
-  AiModelsDiscoverResponse,
   EditableShapeList,
-  PageImagesAccepted,
   ProjectDetail,
   ProjectPage,
-  ProjectSummary,
   ProjectUpdatePayload,
+  PptVideoListQuery,
   RevisionItem,
   ScriptRewritePayload,
-  ScriptRewriteResult,
-  SlideEditResult,
-  SlideItem,
-  SourceApplyResult,
-  SourceDiffSummary,
+  SlideUpdatePayload,
   VersionItem,
   VersionManifest,
   VoiceOption,
 } from '@/types/agent/ppt-video'
 
-interface Envelope<T> {
-  code: number
-  data: T
-  message?: string
-  meta?: { total?: number; page?: number; page_size?: number }
-}
+type Schemas = components['schemas']
 
 const API = '/api/v1/agent'
 
-export interface ProjectQuery {
-  keyword?: string
-  status?: string
-  language?: string
-  page?: number
-  page_size?: number
-}
-
-function buildQuery(params: ProjectQuery): string {
+function buildQuery(params: PptVideoListQuery): string {
   const qs = new URLSearchParams()
   if (params.keyword) qs.set('keyword', params.keyword)
   if (params.status) qs.set('status', params.status)
@@ -57,40 +39,44 @@ function buildQuery(params: ProjectQuery): string {
   return qs.toString()
 }
 
-export async function fetchPptVideoProjects(params: ProjectQuery = {}): Promise<ProjectPage> {
-  const raw = await apiFetch<Envelope<{ items: ProjectSummary[] }>>(
+export async function fetchPptVideoProjects(params: PptVideoListQuery = {}): Promise<ProjectPage> {
+  const raw = await apiFetch<Schemas['DataResponse_ProjectListResponse_']>(
     `${getApiBaseUrl()}${API}/ppt-videos?${buildQuery(params)}`,
   )
   return { items: raw.data?.items ?? [], total: raw.meta?.total ?? raw.data?.items?.length ?? 0 }
 }
 
 export async function fetchPptVideoProject(projectId: string): Promise<ProjectDetail> {
-  return apiFetch<Envelope<ProjectDetail>>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}`).then(unwrapResponse)
+  return apiFetch<Schemas['DataResponse_ProjectDetail_']>(
+    `${getApiBaseUrl()}${API}/ppt-videos/${projectId}`,
+  ).then(unwrapResponse)
 }
 
 export async function fetchVoiceCatalog(language?: 'zh' | 'en'): Promise<VoiceOption[]> {
   const suffix = language ? `?language=${language}` : ''
-  const raw = await apiFetch<Envelope<{ items: VoiceOption[] }>>(`${getApiBaseUrl()}${API}/voices${suffix}`)
+  const raw = await apiFetch<Schemas['DataResponse_VoiceCatalogResponse_']>(
+    `${getApiBaseUrl()}${API}/voices${suffix}`,
+  )
   return raw.data?.items ?? []
 }
 
 export async function fetchVersionManifest(versionId: string): Promise<VersionManifest> {
-  return apiFetch<Envelope<VersionManifest>>(
+  return apiFetch<Schemas['DataResponse_ManifestResponse_']>(
     `${getApiBaseUrl()}${API}/ppt-videos/versions/${versionId}/manifest`,
   ).then(unwrapResponse)
 }
 
 export async function fetchVersionList(projectId: string): Promise<VersionItem[]> {
-  return apiFetch<Envelope<VersionItem[]>>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/versions`).then(
-    unwrapResponse,
-  )
+  return apiFetch<Schemas['DataResponse_list_VersionItem__']>(
+    `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/versions`,
+  ).then(unwrapResponse)
 }
 
 export async function updateProjectRequest(
   projectId: string,
   payload: ProjectUpdatePayload,
-): Promise<Envelope<ProjectDetail>> {
-  return apiFetch<Envelope<ProjectDetail>>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}`, {
+): Promise<Schemas['DataResponse_ProjectDetail_']> {
+  return apiFetch<Schemas['DataResponse_ProjectDetail_']>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -100,47 +86,60 @@ export async function updateProjectRequest(
 export async function updateSlideRequest(
   projectId: string,
   slideUid: string,
-  payload: Record<string, unknown>,
-): Promise<Envelope<unknown>> {
-  return apiFetch<Envelope<unknown>>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/slides/${slideUid}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
+  payload: SlideUpdatePayload,
+): Promise<Schemas['DataResponse_SlideItem_']> {
+  return apiFetch<Schemas['DataResponse_SlideItem_']>(
+    `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/slides/${slideUid}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+  )
 }
 
 export async function previewSlideRequest(
   projectId: string,
   slideUid: string,
-): Promise<Envelope<{ audio_url: string; duration_ms: number; audio_sha256: string; slide_no: number }>> {
-  return apiFetch(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/slides/${slideUid}/preview`, {
-    method: 'POST',
-  })
+): Promise<Schemas['DataResponse_PreviewResponse_']> {
+  return apiFetch<Schemas['DataResponse_PreviewResponse_']>(
+    `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/slides/${slideUid}/preview`,
+    { method: 'POST' },
+  )
 }
 
 /** 重新生成 AI 讲稿初稿：只填空页，202 返回最新详情 */
-export async function regenerateScriptAiRequest(projectId: string): Promise<Envelope<ProjectDetail>> {
-  return apiFetch<Envelope<ProjectDetail>>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/script-ai`, {
-    method: 'POST',
-  })
+export async function regenerateScriptAiRequest(projectId: string): Promise<Schemas['DataResponse_ProjectDetail_']> {
+  return apiFetch<Schemas['DataResponse_ProjectDetail_']>(
+    `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/script-ai`,
+    { method: 'POST' },
+  )
 }
 
-export async function requestRenderRequest(projectId: string): Promise<Envelope<{ job_id: string }>> {
-  return apiFetch(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/render`, { method: 'POST' })
+export async function requestRenderRequest(projectId: string): Promise<Schemas['DataResponse_RenderAccepted_']> {
+  return apiFetch<Schemas['DataResponse_RenderAccepted_']>(
+    `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/render`,
+    { method: 'POST' },
+  )
 }
 
 /**
  * 页图重生成：后端返回 202 + job_id，前端拿它开始轮状态。
  * `apiFetch` 已把非 2xx 转成异常，这里只解信封。
  */
-export async function regeneratePageImagesRequest(projectId: string): Promise<Envelope<PageImagesAccepted>> {
-  return apiFetch<Envelope<PageImagesAccepted>>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/page-images`, {
-    method: 'POST',
-  })
+export async function regeneratePageImagesRequest(
+  projectId: string,
+): Promise<Schemas['DataResponse_PageImagesAccepted_']> {
+  return apiFetch<Schemas['DataResponse_PageImagesAccepted_']>(
+    `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/page-images`,
+    { method: 'POST' },
+  )
 }
 
-export async function deleteProjectRequest(projectId: string): Promise<Envelope<{ message: string }>> {
-  return apiFetch(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}`, { method: 'DELETE' })
+export async function deleteProjectRequest(projectId: string): Promise<Schemas['DataResponse_MessageResult_']> {
+  return apiFetch<Schemas['DataResponse_MessageResult_']>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}`, {
+    method: 'DELETE',
+  })
 }
 
 // ── AI 配置 ────────────────────────────────────────────────────────────────
@@ -149,11 +148,15 @@ export async function deleteProjectRequest(projectId: string): Promise<Envelope<
 // 后端 /ppt-videos/{project_id} 的 {project_id} 是 UUID，会把字面量路由吃掉。
 
 export async function fetchAiConfigs(): Promise<AiConfigListResponse> {
-  return apiFetch<Envelope<AiConfigListResponse>>(`${getApiBaseUrl()}${API}/ai-configs`).then(unwrapResponse)
+  return apiFetch<Schemas['DataResponse_AiConfigListResponse_']>(`${getApiBaseUrl()}${API}/ai-configs`).then(
+    unwrapResponse,
+  )
 }
 
-export async function createAiConfigRequest(payload: AiConfigFormValue): Promise<Envelope<AiConfigListResponse>> {
-  return apiFetch<Envelope<AiConfigListResponse>>(`${getApiBaseUrl()}${API}/ai-configs`, {
+export async function createAiConfigRequest(
+  payload: AiConfigFormValue,
+): Promise<Schemas['DataResponse_AiConfigListResponse_']> {
+  return apiFetch<Schemas['DataResponse_AiConfigListResponse_']>(`${getApiBaseUrl()}${API}/ai-configs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -163,16 +166,18 @@ export async function createAiConfigRequest(payload: AiConfigFormValue): Promise
 export async function updateAiConfigRequest(
   configId: string,
   payload: Partial<AiConfigFormValue>,
-): Promise<Envelope<AiConfigListResponse>> {
-  return apiFetch<Envelope<AiConfigListResponse>>(`${getApiBaseUrl()}${API}/ai-configs/${configId}`, {
+): Promise<Schemas['DataResponse_AiConfigListResponse_']> {
+  return apiFetch<Schemas['DataResponse_AiConfigListResponse_']>(`${getApiBaseUrl()}${API}/ai-configs/${configId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
 }
 
-export async function deleteAiConfigRequest(configId: string): Promise<Envelope<AiConfigListResponse>> {
-  return apiFetch<Envelope<AiConfigListResponse>>(`${getApiBaseUrl()}${API}/ai-configs/${configId}`, {
+export async function deleteAiConfigRequest(
+  configId: string,
+): Promise<Schemas['DataResponse_AiConfigListResponse_']> {
+  return apiFetch<Schemas['DataResponse_AiConfigListResponse_']>(`${getApiBaseUrl()}${API}/ai-configs/${configId}`, {
     method: 'DELETE',
   })
 }
@@ -180,8 +185,8 @@ export async function deleteAiConfigRequest(configId: string): Promise<Envelope<
 /** 连通性测试：传 config_id 测已保存配置，或传表单值直接测 */
 export async function testAiConfigRequest(
   payload: Partial<AiConfigFormValue> & { config_id?: string },
-): Promise<Envelope<AiConfigTestResponse>> {
-  return apiFetch<Envelope<AiConfigTestResponse>>(`${getApiBaseUrl()}${API}/ai-configs/test`, {
+): Promise<Schemas['DataResponse_AiConfigTestResponse_']> {
+  return apiFetch<Schemas['DataResponse_AiConfigTestResponse_']>(`${getApiBaseUrl()}${API}/ai-configs/test`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -193,8 +198,8 @@ export async function discoverAiModelsRequest(payload: {
   config_id?: string
   api_base_url?: string
   api_key?: string
-}): Promise<Envelope<AiModelsDiscoverResponse>> {
-  return apiFetch<Envelope<AiModelsDiscoverResponse>>(`${getApiBaseUrl()}${API}/ai-configs/models`, {
+}): Promise<Schemas['DataResponse_AiModelsDiscoverResponse_']> {
+  return apiFetch<Schemas['DataResponse_AiModelsDiscoverResponse_']>(`${getApiBaseUrl()}${API}/ai-configs/models`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -207,8 +212,8 @@ export async function updateGlobalAiSettingsRequest(payload: {
   clear_global_config?: boolean
   global_guide?: string | null
   clear_global_guide?: boolean
-}): Promise<Envelope<AiConfigListResponse>> {
-  return apiFetch<Envelope<AiConfigListResponse>>(`${getApiBaseUrl()}${API}/ai-configs/global`, {
+}): Promise<Schemas['DataResponse_AiConfigListResponse_']> {
+  return apiFetch<Schemas['DataResponse_AiConfigListResponse_']>(`${getApiBaseUrl()}${API}/ai-configs/global`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -224,8 +229,8 @@ export async function updateProjectAiSettingsRequest(
     script_guide?: string | null
     clear_guide?: boolean
   },
-): Promise<Envelope<ProjectDetail>> {
-  return apiFetch<Envelope<ProjectDetail>>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/ai`, {
+): Promise<Schemas['DataResponse_ProjectDetail_']> {
+  return apiFetch<Schemas['DataResponse_ProjectDetail_']>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/ai`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -234,27 +239,34 @@ export async function updateProjectAiSettingsRequest(
 
 // ── 讲稿改写 / 修订 ────────────────────────────────────────────────────────
 
+/** 提交改写：一律入队（202），返回 revision_id 供前端轮询 */
 export async function rewriteScriptsRequest(
   projectId: string,
   payload: ScriptRewritePayload,
-): Promise<Envelope<ScriptRewriteResult>> {
-  return apiFetch<Envelope<ScriptRewriteResult>>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/script-rewrite`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
+): Promise<Schemas['DataResponse_ScriptRewriteResult_']> {
+  return apiFetch<Schemas['DataResponse_ScriptRewriteResult_']>(
+    `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/script-rewrite`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+  )
 }
 
 /** 手工重算单页讲稿覆盖度（页文本/讲稿在别处被改过时用） */
-export async function recheckCoverageRequest(projectId: string, slideUid: string): Promise<Envelope<SlideItem>> {
-  return apiFetch<Envelope<SlideItem>>(
+export async function recheckCoverageRequest(
+  projectId: string,
+  slideUid: string,
+): Promise<Schemas['DataResponse_SlideItem_']> {
+  return apiFetch<Schemas['DataResponse_SlideItem_']>(
     `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/slides/${slideUid}/recheck-coverage`,
     { method: 'POST' },
   )
 }
 
 export async function fetchScriptRevisions(projectId: string, limit = 30): Promise<RevisionItem[]> {
-  const raw = await apiFetch<Envelope<{ items: RevisionItem[] }>>(
+  const raw = await apiFetch<Schemas['DataResponse_RevisionListResponse_']>(
     `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/revisions?limit=${limit}`,
   )
   return raw.data?.items ?? []
@@ -263,18 +275,22 @@ export async function fetchScriptRevisions(projectId: string, limit = 30): Promi
 export async function rollbackRevisionRequest(
   projectId: string,
   revisionId: string,
-): Promise<Envelope<{ message: string }>> {
-  return apiFetch(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/revisions/${revisionId}/rollback`, {
-    method: 'POST',
-  })
+): Promise<Schemas['DataResponse_MessageResult_']> {
+  return apiFetch<Schemas['DataResponse_MessageResult_']>(
+    `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/revisions/${revisionId}/rollback`,
+    { method: 'POST' },
+  )
 }
 
 // ── 换源 ───────────────────────────────────────────────────────────────────
 
-export async function previewSourceRequest(projectId: string, file: File): Promise<Envelope<SourceDiffSummary>> {
+export async function previewSourceRequest(
+  projectId: string,
+  file: File,
+): Promise<Schemas['DataResponse_SourceDiffSummary_']> {
   const form = new FormData()
   form.append('file', file)
-  return apiFetch<Envelope<SourceDiffSummary>>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/source`, {
+  return apiFetch<Schemas['DataResponse_SourceDiffSummary_']>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/source`, {
     method: 'POST',
     body: form,
   })
@@ -283,8 +299,8 @@ export async function previewSourceRequest(projectId: string, file: File): Promi
 export async function applySourceRequest(
   projectId: string,
   autoRewrite = true,
-): Promise<Envelope<SourceApplyResult>> {
-  return apiFetch<Envelope<SourceApplyResult>>(
+): Promise<Schemas['DataResponse_SourceApplyResult_']> {
+  return apiFetch<Schemas['DataResponse_SourceApplyResult_']>(
     `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/source/apply?auto_rewrite=${autoRewrite}`,
     { method: 'POST' },
   )
@@ -293,7 +309,7 @@ export async function applySourceRequest(
 // ── 轻量页级编辑 ───────────────────────────────────────────────────────────
 
 export async function fetchEditableShapes(projectId: string, slideUid: string): Promise<EditableShapeList> {
-  return apiFetch<Envelope<EditableShapeList>>(
+  return apiFetch<Schemas['DataResponse_EditableShapeList_']>(
     `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/slides/${slideUid}/shapes`,
   ).then(unwrapResponse)
 }
@@ -303,8 +319,8 @@ export async function editSlideTextRequest(
   slideUid: string,
   shapeIndex: number,
   text: string,
-): Promise<Envelope<SlideEditResult>> {
-  return apiFetch<Envelope<SlideEditResult>>(
+): Promise<Schemas['DataResponse_SlideEditResult_']> {
+  return apiFetch<Schemas['DataResponse_SlideEditResult_']>(
     `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/slides/${slideUid}/edit-text`,
     {
       method: 'PUT',
@@ -319,11 +335,11 @@ export async function editSlideImageRequest(
   slideUid: string,
   shapeIndex: number,
   file: File,
-): Promise<Envelope<SlideEditResult>> {
+): Promise<Schemas['DataResponse_SlideEditResult_']> {
   const form = new FormData()
   form.append('shape_index', String(shapeIndex))
   form.append('file', file)
-  return apiFetch<Envelope<SlideEditResult>>(
+  return apiFetch<Schemas['DataResponse_SlideEditResult_']>(
     `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/slides/${slideUid}/edit-image`,
     { method: 'POST', body: form },
   )

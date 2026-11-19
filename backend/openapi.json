@@ -91781,7 +91781,7 @@
         "tags": [
           "\u667a\u80fd\u4f53"
         ],
-        "summary": "\u6309\u6a21\u5f0f\u6539\u5199\u8bb2\u7a3f\uff08\u8865\u7a7a\u9875/\u6309\u6307\u4ee4/\u5355\u9875/\u5168\u90e8\uff09",
+        "summary": "\u6309\u6a21\u5f0f\u6539\u5199\u8bb2\u7a3f\uff08\u8865\u7a7a\u9875/\u6309\u6307\u4ee4/\u5355\u9875/\u5168\u90e8\uff0c\u4e00\u5f8b\u5165\u961f\uff09",
         "operationId": "rewrite_scripts_api_v1_agent_ppt_videos__project_id__script_rewrite_post",
         "parameters": [
           {
@@ -91822,7 +91822,7 @@
           }
         },
         "responses": {
-          "200": {
+          "202": {
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
@@ -174968,11 +174968,6 @@
               }
             ],
             "title": "Instruction"
-          },
-          "background": {
-            "type": "boolean",
-            "title": "Background",
-            "default": true
           }
         },
         "type": "object",

@@ -941,7 +941,11 @@ async def update_project_ai_settings(
 # ── 讲稿改写与修订 ──────────────────────────────────────────────────────────
 
 
-@router.post("/ppt-videos/{project_id}/script-rewrite", summary="按模式改写讲稿（补空页/按指令/单页/全部）")
+@router.post(
+    "/ppt-videos/{project_id}/script-rewrite",
+    status_code=202,
+    summary="按模式改写讲稿（补空页/按指令/单页/全部，一律入队）",
+)
 async def rewrite_scripts(
     project_id: uuid.UUID,
     payload: ScriptRewriteRequest,
@@ -949,7 +953,6 @@ async def rewrite_scripts(
     ctx: PermissionContext = Depends(require_permission(PERM_MANAGE)),
     db: AsyncSession = Depends(get_db),
 ) -> DataResponse[ScriptRewriteResult]:
-    settings = await agent_config.load_settings()
     with _translate_errors():
         result = await agent_service.rewrite_scripts(
             db,
@@ -957,8 +960,6 @@ async def rewrite_scripts(
             mode=payload.mode,
             slide_uids=[str(item) for item in payload.slide_uids],
             instruction=payload.instruction,
-            background=payload.background,
-            settings=settings,
             user_id=current_user.id,
             requested_by_name=getattr(current_user, "name", None),
         )

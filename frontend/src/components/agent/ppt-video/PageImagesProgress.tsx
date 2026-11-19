@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { App, Button, Progress, Typography } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 
@@ -35,54 +36,50 @@ interface Props {
  */
 export default function PageImagesProgress({ detail, onDetailChange }: Props) {
   const { message } = App.useApp()
-  const [polled, setPolled] = useState<PageImagesState | null>(null)
+  const [optimistic, setOptimistic] = useState<PageImagesState | null>(null)
   const [retrying, setRetrying] = useState(false)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // 轮询快照的选择规则（不写 setState-in-effect，避免级联渲染）：
-  // 1. 本地快照是「进行中」→ 一律用它：重试后服务端详情还停在上一次失败的终态上，
-  //    若按 job_id 比对会判成「不是同一个任务」而退回失败态，轮询当场停止；
-  // 2. 本地快照是终态 → 只在它与服务端属于同一任务时才用，避免服务端已换新任务
-  //    （换源、重新投递）却把旧的失败结论继续显示出来。
-  const serverState = detail.page_images ?? IDLE_STATE
-  const polledInFlight = polled?.status === 'queued' || polled?.status === 'running'
-  const state = polled && (polledInFlight || (polled.job_id && polled.job_id === serverState.job_id))
-    ? polled
-    : serverState
-  const running = state.status === 'queued' || state.status === 'running'
+  const notifiedRef = useRef<string | null>(null)
+  const lastStatusRef = useRef<string | null>(null)
 
   const refreshDetail = useCallback(async () => {
     const fresh = await fetchPptVideoDetail(detail.id)
     onDetailChange(fresh)
   }, [detail.id, onDetailChange])
 
+  /**
+   * 轮询规则：
+   * 1. 服务端详情还是「进行中」→ 以轮询结果为准；
+   * 2. 服务端已是终态、但本地有更新的乐观态（刚点重试）→ 用乐观态，等后台认领后再切回来。
+   */
+  const { data: polled, refetch: refetchStatus } = useQuery({
+    queryKey: ['ppt-video', detail.id, 'page-images'],
+    queryFn: () => fetchPageImagesStatus(detail.id),
+    initialData: detail.page_images ?? IDLE_STATE,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status
+      return status === 'queued' || status === 'running' ? POLL_INTERVAL_MS : false
+    },
+  })
+
+  const serverState = detail.page_images ?? IDLE_STATE
+  // 乐观态只在「轮询结果还不是这个 job」时生效；拿到同一个 job 后就交给服务端数据
+  const state: PageImagesState =
+    optimistic && polled?.job_id !== optimistic.job_id ? optimistic : (polled ?? serverState)
+  const running = state.status === 'queued' || state.status === 'running'
+
+  // 终态只提示一次：done 时回拉详情把页图 version 与缩略图带回来
   useEffect(() => {
-    if (!running) return
-    let cancelled = false
-
-    const tick = async () => {
-      try {
-        const next = await fetchPageImagesStatus(detail.id)
-        if (cancelled) return
-        setPolled(next)
-        if (TERMINAL.has(next.status)) {
-          // 终态回填一次详情：页图 version / 缩略图 url 都在详情里
-          await refreshDetail()
-          if (next.status === 'failed') message.error(next.error || '页面图生成失败')
-          return
-        }
-      } catch (error) {
-        console.warn('轮询页图进度失败:', error)
-      }
-      if (!cancelled) timer.current = setTimeout(tick, POLL_INTERVAL_MS)
-    }
-
-    timer.current = setTimeout(tick, POLL_INTERVAL_MS)
-    return () => {
-      cancelled = true
-      if (timer.current) clearTimeout(timer.current)
-    }
-  }, [running, detail.id, refreshDetail, message])
+    const previous = lastStatusRef.current
+    lastStatusRef.current = state.status
+    // 首次渲染就是终态（打开已完成的历史项目）不需要回拉与提示
+    if (previous === null || !TERMINAL.has(state.status)) return
+    const key = `${state.job_id ?? 'none'}:${state.status}`
+    if (notifiedRef.current === key) return
+    notifiedRef.current = key
+    void refreshDetail().then(() => {
+      if (state.status === 'failed') message.error(state.error || '页面图生成失败')
+    })
+  }, [state, refreshDetail, message])
 
   const handleRetry = async () => {
     setRetrying(true)
@@ -93,7 +90,7 @@ export default function PageImagesProgress({ detail, onDetailChange }: Props) {
       return
     }
     // 提交后项目行还没被后台任务认领，先给个乐观态，轮询到 running 会自然覆盖
-    setPolled({
+    setOptimistic({
       status: 'queued',
       progress: 0,
       done: 0,
@@ -101,6 +98,8 @@ export default function PageImagesProgress({ detail, onDetailChange }: Props) {
       error: null,
       job_id: result.data?.job_id ?? null,
     })
+    // 立刻拉一次：拿到 queued 才会让 refetchInterval 开始计时
+    void refetchStatus()
   }
 
   if (!running && state.status !== 'failed') return null

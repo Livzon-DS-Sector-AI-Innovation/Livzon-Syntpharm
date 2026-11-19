@@ -4,32 +4,27 @@
  * 只放 GET：所有写操作在 `src/actions/agent/ppt-video.ts`（Server Actions）。
  * 相对路径由 `src/proxy.ts` 转发到后端，禁止硬编码后端地址。
  */
-import { apiGet, fetchApi } from '@/lib/api/client'
+import { apiGet, apiGetWithMeta } from '@/lib/api/client'
+import type { components } from '@/types/generated/schema'
 import type {
   JobState,
   PageImagesState,
   ProjectDetail,
   ProjectPage,
-  ProjectSummary,
+  PptVideoListQuery,
   SlideRegionsResponse,
   VersionManifest,
 } from '@/types/agent/ppt-video'
 
-const API = '/api/v1/agent'
+type Schemas = components['schemas']
 
-export interface PptVideoQuery {
-  keyword?: string
-  status?: string
-  language?: string
-  page?: number
-  page_size?: number
-}
+const API = '/api/v1/agent'
 
 /**
  * 项目列表：`items` 在 data 内、`total` 在信封 meta 内，
- * 不能直接用 apiGet（会丢掉 meta.total），这里读原始信封。
+ * 不能直接用 apiGet（会丢掉 meta.total），走 apiGetWithMeta 保留 meta。
  */
-export async function fetchPptVideoProjects(params: PptVideoQuery = {}): Promise<ProjectPage> {
+export async function fetchPptVideoProjects(params: PptVideoListQuery = {}): Promise<ProjectPage> {
   const qs = new URLSearchParams()
   if (params.keyword) qs.set('keyword', params.keyword)
   if (params.status) qs.set('status', params.status)
@@ -37,13 +32,11 @@ export async function fetchPptVideoProjects(params: PptVideoQuery = {}): Promise
   qs.set('page', String(params.page ?? 1))
   qs.set('page_size', String(params.page_size ?? 20))
 
-  const raw = await fetchApi<{
-    code: number
-    data: { items: ProjectSummary[] }
-    meta?: { total?: number }
-  }>(`${API}/ppt-videos?${qs.toString()}`)
-  const items = raw.data?.items ?? []
-  return { items, total: raw.meta?.total ?? items.length }
+  const { data, meta } = await apiGetWithMeta<Schemas['ProjectListResponse'], Schemas['PaginationMeta']>(
+    `${API}/ppt-videos?${qs.toString()}`,
+  )
+  const items = data.items ?? []
+  return { items, total: meta.total ?? items.length }
 }
 
 export async function fetchPptVideoJob(projectId: string): Promise<JobState | null> {

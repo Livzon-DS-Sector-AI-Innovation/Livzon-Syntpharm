@@ -17,6 +17,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import shutil
 import tempfile
@@ -79,10 +80,12 @@ def pending_object_key(project_id: uuid.UUID, filename: str | None = None) -> st
     return f"ppt-video/{project_id}/pending/source{suffix}"
 
 
-def _read_pending(project_id: uuid.UUID) -> tuple[bytes, str]:
+async def _read_pending(project_id: uuid.UUID) -> tuple[bytes, str]:
     """取回待应用文件；两种后缀都探一遍，避免上传 .ppt 后找不到。"""
     for suffix in (".pptx", ".ppt"):
-        payload = storage.get_object(BUCKET_MODULE, pending_object_key(project_id, f"x{suffix}"))
+        payload = await asyncio.to_thread(
+            storage.get_object, BUCKET_MODULE, pending_object_key(project_id, f"x{suffix}")
+        )
         if payload is None:
             continue
         data, _content_type = payload
@@ -116,12 +119,8 @@ async def _load_slides(session: AsyncSession, project_id: uuid.UUID) -> list[Ppt
     return list(rows.all())
 
 
-def _parse_bytes(file_bytes: bytes, filename: str) -> tuple[list[parser.ParsedSlide], bytes]:
-    """解析上传文件，并返回归一化后的 .pptx 字节。
-
-    上传的可能是 .ppt，直接原样存成 source-vN.pptx 会让后续编辑/渲染拿到坏文件，
-    所以统一以 LibreOffice 转出的 pptx 作为新源版本。
-    """
+def _parse_bytes_sync(file_bytes: bytes, filename: str) -> tuple[list[parser.ParsedSlide], bytes]:
+    """解析上传文件，并返回归一化后的 .pptx 字节（同步实现，调用方负责下放线程）。"""
     work_dir = Path(tempfile.mkdtemp(prefix="pptvideo-replace-"))
     try:
         suffix = Path(filename).suffix.lower() or ".pptx"
@@ -131,6 +130,11 @@ def _parse_bytes(file_bytes: bytes, filename: str) -> tuple[list[parser.ParsedSl
         return parser.parse_pptx(pptx_path), pptx_path.read_bytes()
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
+
+
+async def _parse_bytes(file_bytes: bytes, filename: str) -> tuple[list[parser.ParsedSlide], bytes]:
+    """异步包装：soffice 转换是阻塞调用（最长 180s），必须在请求线程之外执行。"""
+    return await asyncio.to_thread(_parse_bytes_sync, file_bytes, filename)
 
 
 async def prepare(
@@ -145,7 +149,7 @@ async def prepare(
     if Path(filename).suffix.lower() not in (".ppt", ".pptx"):
         raise SourceReplaceError("文件格式不支持：仅支持 .ppt 或 .pptx")
 
-    parsed, _ = _parse_bytes(file_bytes, filename)
+    parsed, _ = await _parse_bytes(file_bytes, filename)
     if not parsed:
         raise SourceReplaceError("PPT 中没有可识别的幻灯片")
 
@@ -165,7 +169,8 @@ async def prepare(
     )
 
     pending_key = pending_object_key(project.id, filename)
-    storage.upload_object(
+    await asyncio.to_thread(
+        storage.upload_object,
         BUCKET_MODULE,
         pending_key,
         file_bytes,
@@ -197,8 +202,8 @@ async def apply(
     requested_by_name: str | None = None,
 ) -> ApplyResult:
     """读取 pending 文件，按对齐结果落库。整个动作在一个事务内完成。"""
-    file_bytes, pending_name = _read_pending(project.id)
-    parsed, pptx_bytes = _parse_bytes(file_bytes, pending_name)
+    file_bytes, pending_name = await _read_pending(project.id)
+    parsed, pptx_bytes = await _parse_bytes(file_bytes, pending_name)
     old_slides = await _load_slides(session, project.id)
     diff = align(
         _snapshots(old_slides),
@@ -218,7 +223,9 @@ async def apply(
     new_version = (project.source_version or 1) + 1
     new_source_key = versioned_source_key(project.id, new_version)
 
-    storage.upload_object(BUCKET_MODULE, new_source_key, pptx_bytes, len(pptx_bytes), PPTX_CONTENT_TYPE)
+    await asyncio.to_thread(
+        storage.upload_object, BUCKET_MODULE, new_source_key, pptx_bytes, len(pptx_bytes), PPTX_CONTENT_TYPE
+    )
 
     rewrite_uids: list[str] = []
     affected_uids: list[str] = []

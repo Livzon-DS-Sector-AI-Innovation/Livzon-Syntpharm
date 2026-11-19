@@ -10,6 +10,7 @@
  */
 import { revalidatePath } from 'next/cache'
 
+import { unwrapResponse } from '@/lib/api/server/base'
 import {
   applySourceRequest,
   createAiConfigRequest,
@@ -72,7 +73,7 @@ export async function updateProjectSettings(
     const raw = await updateProjectRequest(projectId, payload)
     revalidatePath(`${LIST_PATH}/${projectId}`)
     revalidatePath(LIST_PATH)
-    return { success: true, message: raw.message || '设置已保存', data: raw.data }
+    return { success: true, message: '设置已保存', data: unwrapResponse(raw) }
   } catch (error) {
     return { success: false, message: toMessage(error, '保存设置失败') }
   }
@@ -99,7 +100,7 @@ export async function saveSlideScript(
 export async function previewSlide(projectId: string, slideUid: string): Promise<ActionResult<PreviewResult>> {
   try {
     const raw = await previewSlideRequest(projectId, slideUid)
-    return { success: true, message: '试听已生成', data: raw.data as PreviewResult }
+    return { success: true, message: '试听已生成', data: unwrapResponse(raw) as PreviewResult }
   } catch (error) {
     return { success: false, message: toMessage(error, '试听失败，请稍后重试') }
   }
@@ -110,7 +111,7 @@ export async function regenerateScriptDraft(projectId: string): Promise<ActionRe
   try {
     const raw = await regenerateScriptAiRequest(projectId)
     revalidatePath(`${LIST_PATH}/${projectId}`)
-    return { success: true, message: '已开始生成剩余空页的讲稿初稿', data: raw.data }
+    return { success: true, message: '已开始生成剩余空页的讲稿初稿', data: unwrapResponse(raw) }
   } catch (error) {
     return { success: false, message: toMessage(error, '发起讲稿初稿生成失败') }
   }
@@ -122,7 +123,7 @@ export async function requestRender(projectId: string): Promise<ActionResult<Ren
     const raw = await requestRenderRequest(projectId)
     revalidatePath(`${LIST_PATH}/${projectId}`)
     revalidatePath(LIST_PATH)
-    return { success: true, message: '已加入渲染队列', data: raw.data as RenderAccepted }
+    return { success: true, message: '已加入渲染队列', data: unwrapResponse(raw) as RenderAccepted }
   } catch (error) {
     return { success: false, message: toMessage(error, '提交渲染失败') }
   }
@@ -135,7 +136,7 @@ export async function requestRender(projectId: string): Promise<ActionResult<Ren
 export async function regeneratePageImages(projectId: string): Promise<ActionResult<PageImagesAccepted>> {
   try {
     const raw = await regeneratePageImagesRequest(projectId)
-    return { success: true, message: '已开始生成页图', data: raw.data }
+    return { success: true, message: '已开始生成页图', data: unwrapResponse(raw) }
   } catch (error) {
     return { success: false, message: toMessage(error, '重新生成页图失败') }
   }
@@ -177,7 +178,7 @@ export async function createAiConfig(payload: AiConfigFormValue): Promise<Action
   try {
     const raw = await createAiConfigRequest(payload)
     revalidatePath(LIST_PATH)
-    return { success: true, message: '自定义模型已保存，仅本人可见', data: raw.data }
+    return { success: true, message: '自定义模型已保存，仅本人可见', data: unwrapResponse(raw) }
   } catch (error) {
     return { success: false, message: toMessage(error, '保存自定义模型失败') }
   }
@@ -191,7 +192,8 @@ export async function discoverAiModels(payload: {
 }): Promise<ActionResult<AiModelsDiscoverResponse>> {
   try {
     const raw = await discoverAiModelsRequest(payload)
-    return { success: raw.data.ok, message: raw.data.message, data: raw.data }
+    const data = unwrapResponse(raw)
+    return { success: data.ok, message: data.message, data }
   } catch (error) {
     return {
       success: false,
@@ -208,7 +210,7 @@ export async function updateAiConfig(
   try {
     const raw = await updateAiConfigRequest(configId, payload)
     revalidatePath(LIST_PATH)
-    return { success: true, message: '配置已更新', data: raw.data }
+    return { success: true, message: '配置已更新', data: unwrapResponse(raw) }
   } catch (error) {
     return { success: false, message: toMessage(error, '更新配置失败') }
   }
@@ -218,7 +220,7 @@ export async function deleteAiConfig(configId: string): Promise<ActionResult<AiC
   try {
     const raw = await deleteAiConfigRequest(configId)
     revalidatePath(LIST_PATH)
-    return { success: true, message: '配置已删除', data: raw.data }
+    return { success: true, message: '配置已删除', data: unwrapResponse(raw) }
   } catch (error) {
     return { success: false, message: toMessage(error, '删除配置失败') }
   }
@@ -229,7 +231,8 @@ export async function testAiConfig(
 ): Promise<ActionResult<AiConfigTestResponse>> {
   try {
     const raw = await testAiConfigRequest(payload)
-    return { success: raw.data.ok, message: raw.data.message, data: raw.data }
+    const data = unwrapResponse(raw)
+    return { success: data.ok, message: data.message, data }
   } catch (error) {
     return { success: false, message: toMessage(error, '测试失败，请检查接口地址与 Key') }
   }
@@ -246,7 +249,7 @@ export async function saveGlobalAiSettings(payload: {
   try {
     const raw = await updateGlobalAiSettingsRequest(payload)
     revalidatePath(LIST_PATH)
-    return { success: true, message: '全局 AI 配置已保存', data: raw.data }
+    return { success: true, message: '全局 AI 配置已保存', data: unwrapResponse(raw) }
   } catch (error) {
     return { success: false, message: toMessage(error, '保存全局 AI 配置失败') }
   }
@@ -266,7 +269,7 @@ export async function saveProjectAiSettings(
   try {
     const raw = await updateProjectAiSettingsRequest(projectId, payload)
     revalidatePath(`${LIST_PATH}/${projectId}`)
-    return { success: true, message: '项目 AI 设置已保存', data: raw.data }
+    return { success: true, message: '项目 AI 设置已保存', data: unwrapResponse(raw) }
   } catch (error) {
     return { success: false, message: toMessage(error, '保存项目 AI 设置失败') }
   }
@@ -281,11 +284,9 @@ export async function rewriteScripts(
   try {
     const raw = await rewriteScriptsRequest(projectId, payload)
     revalidatePath(`${LIST_PATH}/${projectId}`)
-    const message =
-      payload.background && raw.data.status === 'queued'
-        ? '改写任务已提交，完成后页面自动刷新'
-        : '讲稿已更新'
-    return { success: true, message, data: raw.data }
+    const data = unwrapResponse(raw)
+    const message = data.status === 'queued' ? '改写任务已提交，完成后页面自动刷新' : '讲稿已更新'
+    return { success: true, message, data }
   } catch (error) {
     return { success: false, message: toMessage(error, '改写讲稿失败') }
   }
@@ -293,13 +294,13 @@ export async function rewriteScripts(
 
 /**
  * 补全本页漏讲内容：走 fill_missing 改写模式（保留原讲稿，按漏讲要点补写）。
- * 补全后回拉详情，覆盖率与修订记录一起更新。
+ * 与其他改写一样只入队，前端拿 revision_id 轮询，完成后回拉详情。
  */
 export async function completeMissing(
   projectId: string,
   slideUid: string,
   missing: string[],
-): Promise<ActionResult<ProjectDetail>> {
+): Promise<ActionResult<ScriptRewriteResult>> {
   const points = missing.map((item) => item.trim()).filter(Boolean)
   if (!points.length) {
     return { success: false, message: '本页没有可补全的漏讲要点' }
@@ -309,14 +310,10 @@ export async function completeMissing(
       mode: 'fill_missing',
       slide_uids: [slideUid],
       instruction: `本页漏讲要点（按页面阅读顺序补讲）：${points.join('；')}`,
-      background: false,
     })
-    if (raw.data.status === 'failed') {
-      return { success: false, message: raw.data.errors?.[0] || '补全失败，请检查模型配置' }
-    }
-    const detail = await fetchPptVideoProject(projectId)
+    const data = unwrapResponse(raw)
     revalidatePath(`${LIST_PATH}/${projectId}`)
-    return { success: true, message: '已补全本页讲稿，记得试听确认', data: detail }
+    return { success: true, message: '已提交补全任务，完成后自动刷新', data }
   } catch (error) {
     return { success: false, message: toMessage(error, '补全本页失败') }
   }
@@ -363,7 +360,7 @@ export async function rollbackRevision(projectId: string, revisionId: string): P
 export async function previewSourceReplace(projectId: string, file: File): Promise<ActionResult<SourceDiffSummary>> {
   try {
     const raw = await previewSourceRequest(projectId, file)
-    const summary = raw.data
+    const summary = unwrapResponse(raw)
     const message = summary.has_changes
       ? `比对完成：保留 ${summary.unchanged} 页，变更 ${summary.changed} 页，新增 ${summary.added} 页，删除 ${summary.removed} 页`
       : '页序列与当前完全一致，无需换源'
@@ -382,7 +379,7 @@ export async function applySourceReplace(
     const raw = await applySourceRequest(projectId, autoRewrite)
     revalidatePath(`${LIST_PATH}/${projectId}`)
     revalidatePath(LIST_PATH)
-    const result = raw.data
+    const result = unwrapResponse(raw)
     return {
       success: true,
       message: `已切换到第 ${result.source_version} 版源文件，${result.rewrite_uids?.length ?? 0} 页讲稿待重写`,

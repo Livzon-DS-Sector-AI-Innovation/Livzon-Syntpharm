@@ -670,8 +670,9 @@ async def create_project(
     try:
         raw_path = work_dir / f"source{suffix}"
         raw_path.write_bytes(file_bytes)
-        pptx_path = parser.convert_to_pptx(raw_path, work_dir)
-        parsed = parser.parse_pptx(pptx_path)
+        # soffice / 解析都是同步阻塞调用：下放到线程，避免占住事件循环（LibreOffice 最长可跑 180s）
+        pptx_path = await asyncio.to_thread(parser.convert_to_pptx, raw_path, work_dir)
+        parsed = await asyncio.to_thread(parser.parse_pptx, pptx_path)
         if len(parsed) > DEFAULTS.max_slides:
             raise ServiceError(f"PPT 页数过大（{len(parsed)} 页），单次最多 {DEFAULTS.max_slides} 页")
 
@@ -680,13 +681,14 @@ async def create_project(
             script_path = work_dir / f"script{Path(script_filename or 'script.txt').suffix or '.txt'}"
             script_path.write_bytes(script_bytes)
             try:
-                script_text = parser.read_script_file(script_path)
+                script_text = await asyncio.to_thread(parser.read_script_file, script_path)
             except parser.ParserError as exc:
                 raise ServiceError(str(exc)) from exc
-            script_result = parser.split_script(script_text, len(parsed))
+            script_result = await asyncio.to_thread(parser.split_script, script_text, len(parsed))
 
-        pptx_bytes = pptx_path.read_bytes()
-        storage.upload_object(
+        pptx_bytes = await asyncio.to_thread(pptx_path.read_bytes)
+        await asyncio.to_thread(
+            storage.upload_object,
             BUCKET_MODULE,
             source_object_key(project_id),
             pptx_bytes,
@@ -1678,40 +1680,48 @@ async def rewrite_scripts(
     mode: str,
     slide_uids: list[str],
     instruction: str | None,
-    background: bool,
-    settings: PptVideoSettings,
     user_id: uuid.UUID | None,
     requested_by_name: str | None,
 ) -> ScriptRewriteResult:
-    """四种语义共用入口：批量走后台任务，单页同步返回。
+    """四种语义共用入口：一律提交后台任务，接口只返回 queued + revision_id。
 
-    单页同步是刻意的：编辑区点「AI 改写本页」必须就地看到结果，
-    而批量改写可能跑几分钟，占住请求会被网关掐断。
+    单页改写曾经同步执行，但一次 LLM 调用 3~20 秒，会把 HTTP 请求拖到网关超时；
+    现在统一后台跑，前端按 `revision_id` 轮询修订记录拿结果。
     """
     project = await get_project(session, project_id)
+    request = rewrite.RewriteRequest(
+        mode=mode,
+        slide_uids=slide_uids,
+        instruction=instruction,
+        requested_by_name=requested_by_name,
+    )
+    revision, total = await rewrite.prepare_revision(session, project, request, user_id, project.source_version)
+    if revision is None:
+        # 没有待改写的页（如只补空页但都已有讲稿）：不建任务，直接按完成返回
+        return ScriptRewriteResult(status=SCRIPT_AI_STATUS_DONE, total=0)
+
+    revision_id = revision.id
     payload = {
         "mode": mode,
         "slide_uids": slide_uids,
         "instruction": instruction,
         "requested_by_name": requested_by_name,
+        "revision_id": str(revision_id),
     }
-    if background:
-        await rewrite.submit(project_id, payload, user_id)
-        return ScriptRewriteResult(status="queued", total=len(slide_uids))
-
-    result = await rewrite.run(
-        session,
-        project,
-        rewrite.RewriteRequest(
-            mode=mode,
-            slide_uids=slide_uids,
-            instruction=instruction,
-            requested_by_name=requested_by_name,
-        ),
-        settings,
-        user_id,
+    # 修订记录必须先提交：后台任务用独立会话读它
+    await session.commit()
+    job_id = await rewrite.submit(project_id, payload, user_id)
+    if job_id is None:
+        await rewrite.mark_revision_failed(session, revision_id, "改写任务登记失败，请稍后重试")
+        raise ServiceError("改写任务登记失败，请稍后重试")
+    logger.info(
+        "讲稿改写已入队: project=%s revision=%s mode=%s 页数=%s",
+        project_id,
+        revision_id,
+        mode,
+        total,
     )
-    return ScriptRewriteResult.model_validate(result.to_dict())
+    return ScriptRewriteResult(status="queued", total=total, revision_id=revision_id)
 
 
 # ── 修订记录 ───────────────────────────────────────────────────────────────

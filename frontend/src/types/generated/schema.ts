@@ -18833,7 +18833,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 按模式改写讲稿（补空页/按指令/单页/全部） */
+        /** 按模式改写讲稿（补空页/按指令/单页/全部，一律入队） */
         post: operations["rewrite_scripts_api_v1_agent_ppt_videos__project_id__script_rewrite_post"];
         delete?: never;
         options?: never;
@@ -54743,11 +54743,6 @@ export interface components {
             slide_uids?: string[];
             /** Instruction */
             instruction?: string | null;
-            /**
-             * Background
-             * @default true
-             */
-            background: boolean;
         };
         /** ScriptRewriteResult */
         ScriptRewriteResult: {
@@ -108891,7 +108886,7 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
-            200: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -36,7 +36,7 @@ import {
   saveSlideScript,
 } from '@/actions/agent/ppt-video'
 import { PermissionGate } from '@/components/auth/PermissionGate'
-import { fetchPptVideoDetail } from '@/lib/api/client/agent'
+import { usePptVideoRevisionPolling } from '@/hooks/usePptVideoRevisionPolling'
 import { PERM } from '@/lib/permissions/codes'
 import {
   HIGHLIGHT_STYLE_OPTIONS,
@@ -95,6 +95,9 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
   const [rewriting, setRewriting] = useState(false)
   const [completing, setCompleting] = useState(false)
   const [rechecking, setRechecking] = useState(false)
+  // 后台改写任务：拿到 revision_id 后由 hook 轮询，终态再回填编辑框
+  const [pendingRevisionId, setPendingRevisionId] = useState<string | null>(null)
+  const [pendingMessage, setPendingMessage] = useState('')
   const [dictOpen, setDictOpen] = useState(false)
   // 库里的配音地址优先；试听后就地覆盖，不必等整页重新拉取
   const [audioOverride, setAudioOverride] = useState<string | null | undefined>(undefined)
@@ -154,7 +157,23 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
     message.success(result.message)
   }
 
-  /** 单页改写走同步（background=false），拿到结果后直接回填编辑框 */
+  // 改写/补全都在后台跑：终态回拉详情，并把本页讲稿回填到编辑框
+  usePptVideoRevisionPolling(detail.id, pendingRevisionId, (next, revision) => {
+    setPendingRevisionId(null)
+    setRewriting(false)
+    setCompleting(false)
+    if (revision.status === 'failed') {
+      message.error(revision.error_message || '改写失败，请检查模型配置')
+      return
+    }
+    if (next) {
+      onDetailChange(next)
+      const current = (next.slides ?? []).find((item) => item.slide_uid === slide.slide_uid)
+      if (current) setScriptText(current.script_text ?? '')
+    }
+    message.success(pendingMessage || '讲稿已更新')
+  })
+
   const handleRecheckCoverage = async () => {
     setRechecking(true)
     const result = await recheckCoverage(detail.id, slide.slide_uid)
@@ -170,17 +189,19 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
   const handleCompleteMissing = async () => {
     setCompleting(true)
     const result = await completeMissing(detail.id, slide.slide_uid, slide.coverage_missing ?? [])
-    setCompleting(false)
-    if (!result.success) {
+    if (!result.success || !result.data) {
+      setCompleting(false)
       message.error(result.message)
       return
     }
-    if (result.data) {
-      onDetailChange(result.data)
-      const next = (result.data.slides ?? []).find((item) => item.slide_uid === slide.slide_uid)
-      if (next) setScriptText(next.script_text ?? '')
+    if (!result.data.revision_id) {
+      setCompleting(false)
+      message.info('本页没有需要补全的内容')
+      return
     }
-    message.success(result.message)
+    setPendingMessage('已补全本页讲稿，记得试听确认')
+    setPendingRevisionId(result.data.revision_id)
+    message.info(result.message)
   }
 
   const handleRewriteOne = async () => {
@@ -189,27 +210,20 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
       mode: 'rewrite_one',
       slide_uids: [slide.slide_uid],
       instruction: null,
-      background: false,
     })
-    setRewriting(false)
-    if (!result.success) {
+    if (!result.success || !result.data) {
+      setRewriting(false)
       message.error(result.message)
       return
     }
-    if (result.data?.status === 'failed') {
-      message.error(result.data.errors?.[0] || '本页改写失败，请检查模型配置')
+    if (!result.data.revision_id) {
+      setRewriting(false)
+      message.info('本页没有可改写的内容')
       return
     }
-    try {
-      const fresh = await fetchPptVideoDetail(detail.id)
-      onDetailChange(fresh)
-      const next = (fresh.slides ?? []).find((item) => item.slide_uid === slide.slide_uid)
-      if (next) setScriptText(next.script_text ?? '')
-      message.success('已按当前画面重写本页，记得试听确认')
-    } catch (error) {
-      console.warn('改写后刷新详情失败:', error)
-      message.warning('改写已完成，但刷新内容失败，请手动刷新页面')
-    }
+    setPendingMessage('已按当前画面重写本页，记得试听确认')
+    setPendingRevisionId(result.data.revision_id)
+    message.info(result.message)
   }
 
   /**

@@ -54,6 +54,9 @@ SETTING_GLOBAL_GUIDE = "AGENT_PPT_VIDEO_SCRIPT_AI_GUIDE"
 MAX_AVAILABLE_MODELS = 50
 MAX_MODEL_NAME_CHARS = 128
 
+#: 探测/连通性测试在 HTTP 请求内同步执行，超时必须压到 5 秒以内
+AI_PROBE_TIMEOUT_SECONDS = 4.0
+
 __all__ = [
     "MAX_AVAILABLE_MODELS",
     "MAX_MODEL_NAME_CHARS",
@@ -404,7 +407,7 @@ async def test_connection(
     api_base_url: str,
     model_name: str,
     api_key: str,
-    timeout_seconds: int = 20,
+    timeout_seconds: float = AI_PROBE_TIMEOUT_SECONDS,
 ) -> tuple[bool, str]:
     """最小代价连通性测试：发一条 8 token 的请求，只回报成功或可读的错误原因。"""
     base = api_base_url.rstrip("/")
@@ -423,7 +426,7 @@ async def test_connection(
                 headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             )
     except httpx.TimeoutException:
-        return False, "连接超时，请检查接口地址或网络"
+        return False, f"连接超时（超过 {AI_PROBE_TIMEOUT_SECONDS:.0f} 秒），请检查接口地址或网络"
     except httpx.HTTPError as exc:
         return False, f"网络错误：{exc.__class__.__name__}"
 
@@ -472,7 +475,7 @@ def _extract_models(payload: object) -> list[str]:
 async def discover_models(
     api_base_url: str,
     api_key: str,
-    timeout_seconds: int = 20,
+    timeout_seconds: float = AI_PROBE_TIMEOUT_SECONDS,
 ) -> tuple[bool, str, list[str]]:
     """按接口地址拉取模型清单（服务端代理，避免 Key 暴露给浏览器）。
 
@@ -492,7 +495,7 @@ async def discover_models(
                 headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             )
     except httpx.TimeoutException:
-        return False, "连接超时，请检查接口地址或网络", []
+        return False, f"连接超时（超过 {AI_PROBE_TIMEOUT_SECONDS:.0f} 秒），请检查接口地址或网络", []
     except httpx.HTTPError as exc:
         return False, f"网络错误：{exc.__class__.__name__}", []
 

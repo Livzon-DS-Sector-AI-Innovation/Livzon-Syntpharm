@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Alert, App, Button, Progress, Space, Tag, Typography } from 'antd'
 import { PlayCircleOutlined, ReloadOutlined } from '@ant-design/icons'
 
@@ -23,46 +24,48 @@ interface Props {
  */
 export default function RenderProgress({ detail, onDetailChange }: Props) {
   const { message } = App.useApp()
-  const [job, setJob] = useState<JobState | null>(detail.latest_job ?? null)
   const [submitting, setSubmitting] = useState(false)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const running = job ? !TERMINAL.has(job.status) : false
-  // 轮询区间等价于「任务未终态」，不再单独存一份布尔状态
-  const polling = running
+  // 刚提交时的乐观态：轮询一旦返回同一个 job_id 就交给服务端数据
+  const [optimisticJob, setOptimisticJob] = useState<JobState | null>(null)
+  const notifiedRef = useRef<string | null>(null)
+  const lastStatusRef = useRef<string | null>(null)
 
   const refreshDetail = useCallback(async () => {
     const fresh = await fetchPptVideoDetail(detail.id)
     onDetailChange(fresh)
   }, [detail.id, onDetailChange])
 
+  // 轮询等价于「任务未终态」：refetchInterval 返回 false 即停
+  const { data: polledJob, refetch: refetchJob } = useQuery({
+    queryKey: ['ppt-video', detail.id, 'job'],
+    queryFn: () => fetchPptVideoJob(detail.id),
+    initialData: detail.latest_job ?? undefined,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status
+      return status && !TERMINAL.has(status) ? 2000 : false
+    },
+  })
+
+  const job: JobState | null =
+    optimisticJob && polledJob?.job_id !== optimisticJob.job_id
+      ? optimisticJob
+      : (polledJob ?? detail.latest_job ?? null)
+  const running = job ? !TERMINAL.has(job.status) : false
+
+  // 终态只提示一次：按 job_id+status 去重；首次渲染就是终态（打开已出片的项目）不提示
   useEffect(() => {
-    if (!running) return
-    let cancelled = false
-
-    const tick = async () => {
-      try {
-        const next = await fetchPptVideoJob(detail.id)
-        if (cancelled) return
-        setJob(next)
-        if (next && TERMINAL.has(next.status)) {
-          await refreshDetail()
-          if (next.status === 'succeeded') message.success('视频已生成，可在右侧版本列表下载')
-          if (next.status === 'failed') message.error(next.error_message || '生成失败')
-          return
-        }
-      } catch (error) {
-        console.warn('轮询渲染进度失败:', error)
-      }
-      if (!cancelled) timer.current = setTimeout(tick, 2000)
-    }
-
-    timer.current = setTimeout(tick, 2000)
-    return () => {
-      cancelled = true
-      if (timer.current) clearTimeout(timer.current)
-    }
-  }, [running, detail.id, refreshDetail, message])
+    if (!job) return
+    const previous = lastStatusRef.current
+    lastStatusRef.current = `${job.job_id}:${job.status}`
+    if (previous === null || !TERMINAL.has(job.status)) return
+    const key = `${job.job_id}:${job.status}`
+    if (notifiedRef.current === key) return
+    notifiedRef.current = key
+    void refreshDetail().then(() => {
+      if (job.status === 'succeeded') message.success('视频已生成，可在右侧版本列表下载')
+      if (job.status === 'failed') message.error(job.error_message || '生成失败')
+    })
+  }, [job, refreshDetail, message])
 
   const handleRender = async () => {
     setSubmitting(true)
@@ -73,13 +76,17 @@ export default function RenderProgress({ detail, onDetailChange }: Props) {
       return
     }
     message.success(result.message)
-    setJob({
-      job_id: result.data?.job_id ?? '',
-      status: 'queued',
-      stage: 'queued',
-      progress: 0,
-      attempts: 0,
-    })
+    if (result.data) {
+      setOptimisticJob({
+        job_id: result.data.job_id,
+        status: 'queued',
+        stage: 'queued',
+        progress: 0,
+        attempts: 0,
+      })
+      // 提交后立刻拉一次：拿到 queued 才会让 refetchInterval 开始计时
+      void refetchJob()
+    }
   }
 
   return (
@@ -148,7 +155,7 @@ export default function RenderProgress({ detail, onDetailChange }: Props) {
         />
       )}
 
-      {polling && (
+      {running && (
         <Typography.Text type="secondary" className="mt-2 block text-[12px]">
           进度每 2 秒自动刷新，可离开页面，任务在后台继续
         </Typography.Text>

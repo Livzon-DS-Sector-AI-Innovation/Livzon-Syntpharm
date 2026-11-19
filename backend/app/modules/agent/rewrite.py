@@ -163,6 +163,52 @@ async def _create_revision(
     return revision
 
 
+async def prepare_revision(
+    session: AsyncSession,
+    project: PptVideoProject,
+    request: RewriteRequest,
+    user_id: uuid.UUID | None = None,
+    source_version: int | None = None,
+) -> tuple[PptVideoScriptRevision | None, int]:
+    """提交前预建修订记录，返回 (revision, 目标页数)。
+
+    为什么要预建：后台改写可能跑几分钟，前端提交后必须立刻拿到 `revision_id` 去轮询；
+    等后台任务自己建行会出现「接口返回 queued 但列表里暂时没有这一条」的竞态。
+    无目标页时返回 (None, 0)，调用方直接按「已完成」返回，不必起任务。
+    """
+    slides = list(
+        (
+            await session.scalars(
+                select(PptVideoSlide)
+                .where(PptVideoSlide.project_id == project.id, PptVideoSlide.is_deleted.is_(False))
+                .order_by(PptVideoSlide.slide_no)
+            )
+        ).all()
+    )
+    targets, _skipped = _select_targets(slides, request)
+    if not targets:
+        return None, 0
+    model = await resolve(session, project, user_id)
+    revision = await _create_revision(session, project, request, model, targets, source_version)
+    await session.flush()
+    return revision, len(targets)
+
+
+async def mark_revision_failed(session: AsyncSession, revision_id: uuid.UUID, message: str) -> None:
+    """把修订记录直接置为失败（用于任务登记失败这类「任务还没起来」的场景）。"""
+    await session.execute(
+        update(PptVideoScriptRevision)
+        .where(PptVideoScriptRevision.id == revision_id)
+        .values(
+            status=REVISION_STATUS_FAILED,
+            progress=0,
+            error_message=message[:MAX_ERROR_CHARS],
+            updated_at=func.now(),
+        )
+    )
+    await session.commit()
+
+
 async def _update_revision(
     session: AsyncSession,
     revision_id: uuid.UUID,

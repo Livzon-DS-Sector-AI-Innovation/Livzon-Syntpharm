@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   App,
@@ -99,7 +99,8 @@ export default function HighlightRegionsDrawer({ open, projectId, slide, value, 
 
   const pageWidth = data?.page_width || FALLBACK_PAGE_WIDTH
   const pageHeight = data?.page_height || FALLBACK_PAGE_HEIGHT
-  const elements = data?.items ?? []
+  // 派生数组必须 memo：否则每次渲染都是新引用，下游 useCallback/useMemo 全部失效
+  const elements = useMemo(() => data?.items ?? [], [data?.items])
 
   const commit = (nextRegions: HighlightRegionItem[], nextSentences: HighlightSentenceItem[]) => {
     setRegions(nextRegions)
@@ -222,14 +223,17 @@ export default function HighlightRegionsDrawer({ open, projectId, slide, value, 
     height: `${rect.h * 100}%`,
   })
 
-  const elementLabel = (id: string) => {
-    if (isManual(id)) {
-      const index = regions.filter((item) => isManual(item.id)).findIndex((item) => item.id === id)
-      return index >= 0 ? `手绘区域 ${index + 1}` : '手绘区域'
-    }
-    const element = elements.find((item) => item.element_id === id)
-    return element ? `${element.label}：${element.text || '（无文字）'}` : `元素 ${id}`
-  }
+  const elementLabel = useCallback(
+    (id: string) => {
+      if (isManual(id)) {
+        const index = regions.filter((item) => isManual(item.id)).findIndex((item) => item.id === id)
+        return index >= 0 ? `手绘区域 ${index + 1}` : '手绘区域'
+      }
+      const element = elements.find((item) => item.element_id === id)
+      return element ? `${element.label}：${element.text || '（无文字）'}` : `元素 ${id}`
+    },
+    [regions, elements],
+  )
 
   const regionOptions = useMemo(
     () => [
@@ -241,9 +245,7 @@ export default function HighlightRegionsDrawer({ open, projectId, slide, value, 
         .filter((item) => isManual(item.id))
         .map((item) => ({ value: item.id, label: elementLabel(item.id) })),
     ],
-    // elementLabel 依赖 regions，二者同源
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [elements, regions],
+    [elements, regions, elementLabel],
   )
 
   /** 句级规则：保留两端非空的字段，两边都空就删掉这条规则 */

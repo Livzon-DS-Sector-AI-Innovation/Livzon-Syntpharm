@@ -4,7 +4,7 @@
  * 契约模型一律来自 `@/types/generated/schema`（后端已声明具名 response_model），
  * 这里只做重命名与少量 UI 专用联合类型，避免各组件重复写 `components['schemas'][...]`。
  */
-import type { components } from '@/types/generated/schema'
+import type { components, operations } from '@/types/generated/schema'
 
 export type VoiceOption = components['schemas']['VoiceOption']
 export type JobState = components['schemas']['JobState']
@@ -136,13 +136,20 @@ export interface AiConfigFormValue {
   timeout_seconds?: number
 }
 
-/** 讲稿改写提交体（与后端 ScriptRewriteRequest 对齐） */
+/** 讲稿改写提交体（与后端 ScriptRewriteRequest 对齐，一律后台执行） */
 export interface ScriptRewritePayload {
   mode: RewriteMode
   slide_uids?: string[]
   instruction?: string | null
-  background?: boolean
 }
+
+/**
+ * 项目列表查询参数：直接取自生成契约，client / server 共用，避免手写两份。
+ * 生成类型里字段可为 null，这里原样保留，调用点用 if 收窄。
+ */
+export type PptVideoListQuery = NonNullable<
+  operations['list_projects_api_v1_agent_ppt_videos_get']['parameters']['query']
+>
 
 /** 项目默认语言；页级可覆盖，同一项目允许中英混排 */
 export type LanguageCode = 'zh' | 'en'

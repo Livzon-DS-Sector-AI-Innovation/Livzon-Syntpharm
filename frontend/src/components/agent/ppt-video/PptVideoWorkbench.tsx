@@ -102,6 +102,8 @@ export default function PptVideoWorkbench({ initialDetail, voices }: Props) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
+        {/* 页面语义标题：工作台其余部分都是 section 级标题 */}
+        <h1 className="max-w-[360px] truncate text-[16px] font-semibold text-[#1A1A1A]">{detail.name}</h1>
         <Space size={8} wrap>
           <Link
             href="/agent/ppt-videos"

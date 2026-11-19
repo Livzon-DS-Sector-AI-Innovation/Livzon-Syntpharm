@@ -105,6 +105,7 @@ services:
     - 8000:8000
   # 智能体 - PPT 配音视频渲染 worker（soffice + ffmpeg + 本地 TTS，CPU 重活与 API 隔离）
   ppt-video-worker:
+    logging: *default-logging
     build:
       context: ./backend
       dockerfile: Dockerfile.worker

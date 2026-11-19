@@ -16,9 +16,11 @@ from __future__ import annotations
 
 import argparse
 import io
+import shutil
+import subprocess
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
@@ -73,6 +75,33 @@ def _bullets(slide, left: float, top: float, width: float, height: float, items:
     return _textbox(slide, left, top, width, height, text, size=size)
 
 
+def _cjk_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    """按 fontconfig 解析中文字体，避免写死发行版字体绝对路径。
+
+    `fc-match` 缺失或解析失败时退回 Pillow 内置字体：脚本只用于生成验收素材，
+    字形不完美可以接受，但不允许因为换机器就崩。
+    """
+    binary = shutil.which("fc-match")
+    if binary:
+        try:
+            completed = subprocess.run(  # noqa: S603 - 参数为常量，不含用户输入
+                [binary, "-f", "%{file}", FONT],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False,
+            )
+            font_path = completed.stdout.strip()
+            if font_path and Path(font_path).is_file():
+                return ImageFont.truetype(font_path, size)
+        except (OSError, subprocess.SubprocessError):
+            pass
+    try:
+        return ImageFont.load_default(size)
+    except TypeError:  # Pillow < 10.1 的 load_default() 不接受 size
+        return ImageFont.load_default()
+
+
 def _build_image_page_png() -> io.BytesIO:
     """纯图片页：文字被画进图片，PPT 里没有任何文本框。"""
     width, height = 1600, 900
@@ -82,13 +111,8 @@ def _build_image_page_png() -> io.BytesIO:
     draw.rectangle([120, 240, 520, 620], fill=(234, 231, 255), outline=(86, 69, 212), width=4)
     draw.rectangle([600, 240, 1000, 620], fill=(226, 244, 235), outline=(38, 140, 96), width=4)
     draw.rectangle([1080, 240, 1480, 620], fill=(255, 240, 230), outline=(214, 110, 40), width=4)
-    try:
-        from PIL import ImageFont
-
-        font_big = ImageFont.truetype("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 56)
-        font_small = ImageFont.truetype("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 40)
-    except OSError:
-        font_big = font_small = None
+    font_big = _cjk_font(56)
+    font_small = _cjk_font(40)
     draw.text((120, 90), "原料药车间平面示意图", fill=(26, 26, 26), font=font_big)
     draw.text((160, 380), "洁净区 C 级", fill=(26, 26, 26), font=font_small)
     draw.text((640, 380), "洁净区 D 级", fill=(26, 26, 26), font=font_small)
