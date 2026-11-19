@@ -81,3 +81,21 @@ export async function fetchDeviationAttachmentCommentSummary(
   const base = `/api/v1/quality/deviation/ledger/${encodeURIComponent(ledgerId)}`
   return apiGet<DeviationAttachmentCommentSummary>(`${base}/attachment-comments/summary`)
 }
+
+// ============ 试剂库存提醒（quality.reagent-reminder） ============
+
+type ReagentReminderConfigData = components['schemas']['ReagentReminderConfigData']
+type LowStockData = components['schemas']['LowStockData']
+
+/** 库存提醒配置；未配置过时后端返回 data=null。 */
+export async function fetchReagentReminderConfig(): Promise<ReagentReminderConfigData | null> {
+  return apiGet<ReagentReminderConfigData | null>('/api/v1/quality/reagent-reminder/config')
+}
+
+/** 低于阈值的试剂预览（含每项提醒开关状态）。 */
+export async function fetchReagentLowStock(threshold: number): Promise<LowStockData['items']> {
+  const data = await apiGet<LowStockData>(
+    `/api/v1/quality/reagent-reminder/low-stock?threshold=${threshold}`
+  )
+  return data.items ?? []
+}

@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { Skeleton, Tabs } from 'antd'
 import ModulePermissionPanel from './ModulePermissionPanel'
 import ModuleSettingsClient from './ModuleSettingsClient'
-import type { ModuleSettingsCustomComponent, ModuleSettingsDefinition } from './settings-registry'
+import type { ModuleSettingsCustomComponent, ModuleSettingsDefinition } from './settingsRegistry'
 
 /**
  * 迁移进来的既有设置页（仪器 / 试剂提醒各约 400 行）按页签懒加载：

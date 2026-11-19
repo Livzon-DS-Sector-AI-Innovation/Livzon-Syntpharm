@@ -26,12 +26,12 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   return headers
 }
 
-export async function getModuleSettings(module?: string): Promise<{ data: ModuleSetting[] }> {
+export async function getModuleSettings(module?: string): Promise<ModuleSetting[]> {
   const headers = await getAuthHeaders()
   return apiGetModuleSettings(headers, module)
 }
 
-export async function getModuleSetting(module: string, key: string): Promise<{ data: ModuleSetting }> {
+export async function getModuleSetting(module: string, key: string): Promise<ModuleSetting> {
   const headers = await getAuthHeaders()
   return apiGetModuleSetting(headers, module, key)
 }
@@ -40,14 +40,14 @@ export async function updateModuleSetting(
   module: string,
   key: string,
   data: ModuleSettingUpdate
-): Promise<{ data: ModuleSetting }> {
+): Promise<ModuleSetting> {
   const headers = await getAuthHeaders()
   return apiUpdateModuleSetting(headers, module, key, data)
 }
 
 export async function batchUpdateModuleSettings(
   data: ModuleSettingBatchUpdate
-): Promise<{ data: ModuleSettingBatchResult }> {
+): Promise<ModuleSettingBatchResult> {
   const headers = await getAuthHeaders()
   return apiBatchUpdateModuleSettings(headers, data)
 }

@@ -13,9 +13,7 @@ import { batchUpdateModuleSettings, getModuleSettings } from '@/actions/module-s
 import type { ModuleSetting } from '@/types/module-settings'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
-import { SettingsListCard } from '@/components/settings/SettingsListCard'
-import { SettingsPageHeader } from '@/components/settings/SettingsPageHeader'
-import { BatchResultModal, type BatchResult } from '@/components/settings/BatchOperations'
+import { BatchResultModal, SettingsListCard, SettingsPageHeader, type BatchResult } from '@/components/settings'
 import BatchToggleModal from './BatchToggleModal'
 import RuntimeSettingGroups from './RuntimeSettingGroups'
 import {
@@ -81,7 +79,7 @@ export default function ModuleSettingsClient({
     queryKey: ['module-settings', moduleCode],
     queryFn: async () => {
       const res = await getModuleSettings(moduleCode)
-      return res.data || []
+      return res || []
     },
   })
 
@@ -105,8 +103,7 @@ export default function ModuleSettingsClient({
     if (targets.length === 0) return
     setBatchLoading(true)
     try {
-      const response = await batchUpdateModuleSettings(buildBatchPayload(targets, value))
-      const data = response.data
+      const data = await batchUpdateModuleSettings(buildBatchPayload(targets, value))
       setResult({
         succeeded: data.succeeded,
         failed: data.failed.map((item) => ({

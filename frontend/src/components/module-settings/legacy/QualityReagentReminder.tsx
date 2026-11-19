@@ -32,21 +32,15 @@ import {
   InfoCircleOutlined,
 } from '@ant-design/icons'
 import { saveReagentReminderConfig, triggerReagentReminderCheck, setReagentItemReminder } from '@/actions/quality-reagent'
+import { fetchReagentLowStock, fetchReagentReminderConfig } from '@/lib/api/client/quality'
 import { useIsMobile } from '@/hooks/useMediaQuery'
+import type { components } from '@/types/generated/schema'
 
 const { Title: _Title, Text } = Typography
 
 
-interface LowStockItem {
-  reagent_name: string
-  count: number
-  statuses: string
-  units: string
-  latest_arrival?: string
-  is_enabled: boolean
-}
-
-const API_BASE = '/api/v1'
+/** 低库存项：直接使用生成的 OpenAPI 契约（quality.reagent-reminder），不手工维护字段子集。 */
+type LowStockItem = components['schemas']['LowStockItem']
 
 export default function ReagentReminderPage({ embedded = false }: { embedded?: boolean }) {
   const [form] = Form.useForm()
@@ -59,12 +53,7 @@ export default function ReagentReminderPage({ embedded = false }: { embedded?: b
   // 加载配置
   const { data: configData, isLoading: loading } = useQuery({
     queryKey: ['reagent-reminder-config'],
-    queryFn: async () => {
-      const response = await fetch(`${API_BASE}/quality/reagent-reminder/config`)
-      const data = await response.json()
-      if (data.code === 200 && data.data) return data.data
-      return null
-    },
+    queryFn: fetchReagentReminderConfig,
   })
 
   useEffect(() => {
@@ -82,13 +71,7 @@ export default function ReagentReminderPage({ embedded = false }: { embedded?: b
   // 加载库存不足列表
   const { data: lowStockList = [], isLoading: lowStockLoading, refetch: refetchLowStock } = useQuery({
     queryKey: ['reagent-reminder-low-stock'],
-    queryFn: async () => {
-      const threshold = form.getFieldValue('low_stock_threshold') || 2
-      const response = await fetch(`${API_BASE}/quality/reagent-reminder/low-stock?threshold=${threshold}`)
-      const data = await response.json()
-      if (data.code === 200) return data.data.items || []
-      return []
-    },
+    queryFn: () => fetchReagentLowStock(form.getFieldValue('low_stock_threshold') || 2),
   })
 
   // 保存配置

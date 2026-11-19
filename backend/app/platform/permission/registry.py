@@ -1321,6 +1321,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:user:manage", "POST", "/api/v1/identity/users/{id}/reset-password"),
     ApiBindingDef("platform:user:manage", "POST", "/api/v1/identity/users/{id}/bind-feishu"),
     ApiBindingDef("platform:user:manage", "DELETE", "/api/v1/identity/users/{id}/bind-feishu"),
+    # 登录前按 HR 档案预建/复用账号（授权挂在未登录用户上）
+    ApiBindingDef("platform:user:manage", "POST", "/api/v1/identity/ensure-by-profile"),
     # 会话管理（在线会话 / 踢下线）
     ApiBindingDef("platform:user:read", "GET", "/api/v1/identity/sessions"),
     ApiBindingDef("platform:user:manage", "DELETE", "/api/v1/identity/sessions/{jti}"),

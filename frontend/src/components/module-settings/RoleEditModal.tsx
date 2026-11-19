@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Alert, App, Form, Input, Modal } from 'antd'
-import PermissionTreePanel from '@/components/settings/PermissionTreePanel'
+import { PermissionTreePanel } from '@/components/settings'
 import { createRole, updateRole } from '@/actions/permission'
 import type { PermissionTreeNode, RoleDetail } from '@/types/permission'
 

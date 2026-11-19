@@ -1,4 +1,4 @@
-import type { components } from '@/types/generated/schema'
+import type { components, operations } from '@/types/generated/schema'
 import { apiGet } from '@/lib/api/client'
 
 const API_BASE = '/api/v1'
@@ -51,17 +51,18 @@ export interface UserLookupPage {
   total: number
 }
 
+/** 人员下拉查询参数：直接取生成契约，避免手写 query 类型。 */
+export type UserLookupQuery = NonNullable<
+  operations['lookup_users_api_v1_identity_users_lookup_get']['parameters']['query']
+>
+
 /**
  * 分页获取启用账号（选人组件的唯一数据源）。
  *
  * 与 HR 公共目录的区别：这里只返回 `identity.users` 中 `status=active` 的账号，
  * 即「系统管理 → 用户管理」里能登录的人；未开号的 HR 员工不会被列出。
  */
-export async function fetchUserLookup(params?: {
-  keyword?: string
-  offset?: number
-  limit?: number
-}): Promise<UserLookupPage> {
+export async function fetchUserLookup(params?: UserLookupQuery): Promise<UserLookupPage> {
   const searchParams = new URLSearchParams()
   if (params?.keyword) searchParams.set('keyword', params.keyword)
   searchParams.set('offset', String(params?.offset ?? 0))

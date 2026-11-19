@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { App, Dropdown, Empty, Skeleton } from 'antd'
 import { CheckOutlined, ReloadOutlined } from '@ant-design/icons'
 import { BellIcon } from '@/components/Icons'
-import { WorkbenchItemRow } from '@/components/home/WorkbenchItemRow'
+import { WorkbenchItemRow } from '@/components/home'
 import { markAllTodosRead, markTodoRead, type TodoReadMark } from '@/actions/workbench'
 import {
   fetchWorkbenchTodos,

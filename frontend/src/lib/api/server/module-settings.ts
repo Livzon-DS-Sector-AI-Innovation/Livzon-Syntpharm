@@ -1,4 +1,4 @@
-import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
+import { apiFetchData, getApiBaseUrl } from '@/lib/api/server/base'
 import type {
   ModuleSetting,
   ModuleSettingBatchResult,
@@ -13,17 +13,17 @@ const M = (path: string) => `${getApiBaseUrl()}/api/v1/module-settings${path}`
 export async function getModuleSettings(
   headers: Record<string, string>,
   module?: string
-): Promise<{ data: ModuleSetting[] }> {
+): Promise<ModuleSetting[]> {
   const params = module ? `?module=${module}` : ''
-  return apiFetch<{ data: ModuleSetting[] }>(M(params), { headers })
+  return apiFetchData<ModuleSetting[]>(M(params), { headers })
 }
 
 export async function getModuleSetting(
   headers: Record<string, string>,
   module: string,
   key: string
-): Promise<{ data: ModuleSetting }> {
-  return apiFetch<{ data: ModuleSetting }>(M(`/${module}/${key}`), { headers })
+): Promise<ModuleSetting> {
+  return apiFetchData<ModuleSetting>(M(`/${module}/${key}`), { headers })
 }
 
 export async function updateModuleSetting(
@@ -31,8 +31,8 @@ export async function updateModuleSetting(
   module: string,
   key: string,
   data: ModuleSettingUpdate
-): Promise<{ data: ModuleSetting }> {
-  return apiFetch<{ data: ModuleSetting }>(M(`/${module}/${key}`), {
+): Promise<ModuleSetting> {
+  return apiFetchData<ModuleSetting>(M(`/${module}/${key}`), {
     method: 'PUT',
     headers,
     body: JSON.stringify(data),
@@ -43,8 +43,8 @@ export async function updateModuleSetting(
 export async function batchUpdateModuleSettings(
   headers: Record<string, string>,
   data: ModuleSettingBatchUpdate
-): Promise<{ data: ModuleSettingBatchResult }> {
-  return apiFetch<{ data: ModuleSettingBatchResult }>(M('/batch'), {
+): Promise<ModuleSettingBatchResult> {
+  return apiFetchData<ModuleSettingBatchResult>(M('/batch'), {
     method: 'PUT',
     headers,
     body: JSON.stringify(data),

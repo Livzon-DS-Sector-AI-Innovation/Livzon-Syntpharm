@@ -9,7 +9,8 @@ Create Date: 2026-11-18
 - 唯一键 ``(user_id, source, item_id)``：一条待办只保留一条已读记录，重复标记走 upsert；
 - ``fingerprint``：标记时的内容指纹（状态 + 当前环节 + 判定依据）。单据推进后指纹变化，
   旧记录不再命中，自动重新计入未读，避免「标了已读就再没人管」；
-- ``user_id`` 外键 CASCADE：用户删除时一并清理。
+- ``user_id`` 外键：普通外键，不做 ON DELETE CASCADE（跨模块禁止级联删除，用户行
+  只做软删除，孤儿已读记录由 ``0134`` 与应用层负责清理）。
 
 表放 ``core`` schema（平台基础设施），只涉及单一 schema。建表用 IF NOT EXISTS 语义，
 重复执行不失败（本仓库存在历史分叉库，容错优先）。
@@ -33,7 +34,7 @@ def upgrade() -> None:
         f"""
         CREATE TABLE IF NOT EXISTS {_SCHEMA}.{_TABLE} (
             id UUID PRIMARY KEY,
-            user_id UUID NOT NULL REFERENCES identity.users(id) ON DELETE CASCADE,
+            user_id UUID NOT NULL REFERENCES identity.users(id),
             source VARCHAR(100) NOT NULL,
             item_id VARCHAR(64) NOT NULL,
             fingerprint VARCHAR(255) NOT NULL,
