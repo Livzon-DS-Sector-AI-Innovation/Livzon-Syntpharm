@@ -18760,7 +18760,7 @@ export interface paths {
          * Get
          * @description List all module settings, optionally filtered by module.
          *
-         *     修改人姓名用一次 LEFT JOIN 带出，避免逐行回查（N+1）。
+         *     修改人姓名用一次批量回查带出，避免逐行回查（N+1）。
          */
         get: operations["get_api_v1_module_settings_get"];
         put?: never;

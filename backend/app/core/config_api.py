@@ -234,10 +234,7 @@ async def get(
     user_names = await resolve_user_names(db, {row.updated_by for row in rows if row.updated_by})
 
     return ApiResponse(
-        data=[
-            _to_response(row, user_names.get(row.updated_by) if row.updated_by else None)
-            for row in rows
-        ]
+        data=[_to_response(row, user_names.get(row.updated_by) if row.updated_by else None) for row in rows]
     )
 
 
