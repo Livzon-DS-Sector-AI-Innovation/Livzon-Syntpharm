@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { App, Alert, Button, InputNumber, Progress, Segmented, Upload } from 'antd'
+import { App, Alert, InputNumber, Progress, Segmented, Upload } from 'antd'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { UploadFile } from 'antd'
 import { ApiError } from '@/lib/api/client'
@@ -51,6 +51,24 @@ const MODE_NOTES: Record<DocxTranslationMode, string> = {
 const MAX_FILE_MB = 50
 const MAX_FILES = 10
 const ACCEPT = '.docx,.doc,.wps'
+const RESUME_KEY = 'docx-translator:job'
+
+/** 记住当前任务，刷新后可恢复进度轮询（sessionStorage：仅本标签页、关页即清） */
+function rememberJob(jobId: string, startedAt: number): void {
+  try {
+    window.sessionStorage.setItem(RESUME_KEY, JSON.stringify({ jobId, startedAt }))
+  } catch {
+    // 隐私模式等场景下不可写：忽略，不影响翻译本身
+  }
+}
+
+function forgetJob(): void {
+  try {
+    window.sessionStorage.removeItem(RESUME_KEY)
+  } catch {
+    // 同上
+  }
+}
 
 function formatSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`
@@ -112,8 +130,68 @@ export function DocxTranslatorPageClient() {
 
   useEffect(() => {
     if (phase !== 'done' && phase !== 'failed') return
+    // 任务已结束：历史可查，刷新不再恢复该任务
+    forgetJob()
     void queryClient.invalidateQueries({ queryKey: ['docx-tasks'] })
+    // 详情抽屉若仍打开，立即补上最后一个文件，不用等下一次轮询
+    void queryClient.invalidateQueries({ queryKey: ['docx-task-detail'] })
   }, [phase, queryClient])
+
+  // 刷新恢复：读回上次未结束的任务，继续轮询进度与计时
+  useEffect(() => {
+    let raw: string | null = null
+    try {
+      raw = window.sessionStorage.getItem(RESUME_KEY)
+    } catch {
+      raw = null
+    }
+    if (!raw) {
+      // 本地无记录（换标签页/清缓存/首次加载）：向服务端接回我自己最新的进行中任务
+      let cancelled = false
+      void (async () => {
+        try {
+          const page = await fetchTranslationTasks({ page: 1, pageSize: 1, status: 'running', mine: true })
+          const task = page.items[0]
+          if (!task || cancelled) return
+          const started = task.created_at ? Date.parse(task.created_at) : Date.now()
+          window.setTimeout(() => {
+            if (cancelled) return
+            setJobId(task.job_ref)
+            setStartedAt(started)
+          }, 0)
+        } catch {
+          // 没有进行中任务或接口不可用时保持空闲态
+        }
+      })()
+      return () => {
+        cancelled = true
+      }
+    }
+    let saved: { jobId?: string; startedAt?: number } = {}
+    try {
+      saved = JSON.parse(raw) as { jobId?: string; startedAt?: number }
+    } catch {
+      forgetJob()
+      return
+    }
+    if (!saved.jobId || !saved.startedAt) {
+      forgetJob()
+      return
+    }
+    // 超过 1 小时视为过期（与轮询 timeout 一致）
+    if (Date.now() - saved.startedAt > 3_600_000) {
+      forgetJob()
+      return
+    }
+    const job = saved.jobId
+    const started = saved.startedAt
+    // 放到宏任务里恢复，避免在 effect 同步 setState 触发级联渲染
+    const timer = window.setTimeout(() => {
+      setJobId(job)
+      setStartedAt(started)
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     if (phase !== 'running' || startedAt === null) return
@@ -139,6 +217,7 @@ export function DocxTranslatorPageClient() {
   const successFiles = displayRows.filter(item => item.success)
 
   const resetJob = () => {
+    forgetJob()
     setJobId(null)
     setStartedAt(null)
     setCarriedRows([])
@@ -172,11 +251,14 @@ export function DocxTranslatorPageClient() {
         mode,
         batchSize,
       })
+      const now = Date.now()
       setCarriedRows([])
       setElapsed(0)
-      setStartedAt(Date.now())
+      setStartedAt(now)
       setJobId(accepted.job_id)
       setActiveTab('live')
+      rememberJob(accepted.job_id, now)
+      void queryClient.invalidateQueries({ queryKey: ['docx-tasks'] })
       message.success('翻译已提交，可在右侧查看进度')
     } catch (error) {
       const text = error instanceof ApiError ? error.message : error instanceof Error ? error.message : '提交失败'
@@ -205,7 +287,11 @@ export function DocxTranslatorPageClient() {
       })
       setElapsed(0)
       setStartedAt(Date.now())
+      const now = Date.now()
+      setStartedAt(now)
       setJobId(accepted.job_id)
+      rememberJob(accepted.job_id, now)
+      void queryClient.invalidateQueries({ queryKey: ['docx-tasks'] })
       message.success(`已重新提交：${fileName}`)
     } catch (error) {
       message.error(error instanceof Error ? error.message : '重新提交失败')
@@ -218,6 +304,7 @@ export function DocxTranslatorPageClient() {
     if (!jobId) {
       return (
         <div className={styles.idle}>
+          <span className={styles.idleHalo} aria-hidden />
           <div className={styles.idleIco}>
             {IconTitleDoc}
           </div>
@@ -239,9 +326,9 @@ export function DocxTranslatorPageClient() {
           </div>
           <div className={styles.idleTitle}>任务状态已过期，请重新提交</div>
           <div className={styles.idleDesc}>服务可能已重启，任务进度只保存在内存中。</div>
-          <Button type="primary" style={{ marginTop: 16 }} onClick={resetJob}>
+          <button type="button" className={ui.btnPrimary} style={{ marginTop: 16 }} onClick={resetJob}>
             重新提交
-          </Button>
+          </button>
         </div>
       )
     }
@@ -250,9 +337,9 @@ export function DocxTranslatorPageClient() {
       return (
         <div className={styles.unavailable}>
           <Alert type="error" showIcon message="翻译任务执行失败" description={errorMessage || '请重试或联系管理员'} />
-          <Button style={{ marginTop: 16 }} onClick={resetJob}>
+          <button type="button" className={ui.btn} style={{ marginTop: 16 }} onClick={resetJob}>
             重新提交
-          </Button>
+          </button>
         </div>
       )
     }
@@ -281,6 +368,14 @@ export function DocxTranslatorPageClient() {
             </span>
             <span>{percent}%</span>
           </div>
+          {doneFiles > 0 && (
+            <div className={styles.runMoreHint}>
+              已完成 {doneFiles} 个文件
+              <button type="button" className={styles.runMoreLink} onClick={() => setActiveTab('history')}>
+                前往历史翻译查看
+              </button>
+            </div>
+          )}
           <div className={styles.runNote}>
             {IconBook}
             翻译在后台运行，可离开本页
@@ -313,6 +408,13 @@ export function DocxTranslatorPageClient() {
 
   const stateNode = renderState()
 
+  // 状态区语气：空态=紫蓝引导 / 运行=信息蓝 / 完成=成功绿 / 部分失败=警示橙 / 任务失败=风险红
+  const paneTone: 'idle' | 'running' | 'done' | 'warn' | 'failed' =
+    !jobId ? 'idle'
+      : phase === 'running' || phase === 'timeout' ? 'running'
+        : phase === 'failed' || phase === 'unavailable' ? 'failed'
+          : failedCount > 0 ? 'warn' : 'done'
+
   return (
     <div className={`${ui.regUi} ${styles.page}`}>
       <RegistrationPageHeader
@@ -324,9 +426,14 @@ export function DocxTranslatorPageClient() {
             <button type="button" className={ui.btn} onClick={() => setGlossaryOpen(true)}>
               {IconBook} 术语表
             </button>
-            <Button type="primary" loading={submitting} onClick={handleSubmit}>
-              开始翻译
-            </Button>
+            <button
+              type="button"
+              className={ui.btnPrimary}
+              disabled={submitting}
+              onClick={handleSubmit}
+            >
+              {submitting ? '提交中…' : '开始翻译'}
+            </button>
           </span>
         }
       />
@@ -334,6 +441,7 @@ export function DocxTranslatorPageClient() {
       <div className={styles.workbench}>
         <section className={styles.card}>
           <div className={styles.cardHead}>
+            <span className={styles.cardIco}>{IconUpload}</span>
             <div className={styles.cardTitle}>上传与参数</div>
             <div className={styles.cardMeta}>
               单文件 ≤{MAX_FILE_MB}MB · 单次 ≤{MAX_FILES} 个
@@ -381,7 +489,10 @@ export function DocxTranslatorPageClient() {
             )}
 
             <div className={styles.cfg}>
-              <div className={styles.cfgLabel}>语言方向</div>
+              <div className={styles.cfgLabel}>
+                <span className={`${styles.cfgDot} ${styles.cfgDotInfo}`} aria-hidden />
+                语言方向
+              </div>
               <Segmented
                 block
                 className={styles.seg}
@@ -395,7 +506,10 @@ export function DocxTranslatorPageClient() {
             </div>
 
             <div className={styles.cfg}>
-              <div className={styles.cfgLabel}>输出模式</div>
+              <div className={styles.cfgLabel}>
+                <span className={`${styles.cfgDot} ${styles.cfgDotBrand}`} aria-hidden />
+                输出模式
+              </div>
               <Segmented
                 block
                 className={`${styles.seg} ${styles.segCompact}`}
@@ -446,7 +560,7 @@ export function DocxTranslatorPageClient() {
             </div>
           </div>
           {activeTab === 'live' ? (
-            <div className={styles.statePane}>{stateNode}</div>
+            <div className={`${styles.statePane} ${styles[`statePane_${paneTone}`]}`}>{stateNode}</div>
           ) : (
             <DocxTranslatorHistory
               active={activeTab === 'history'}

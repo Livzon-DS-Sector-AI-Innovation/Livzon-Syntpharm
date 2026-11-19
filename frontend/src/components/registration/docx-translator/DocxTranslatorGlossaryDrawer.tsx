@@ -268,7 +268,7 @@ export function DocxTranslatorGlossaryDrawer({ open, onClose }: { open: boolean;
     <Drawer
       open={open}
       onClose={onClose}
-      width={880}
+      size={880}
       title={
         <div>
           <div className={styles.drawerTitle}>术语表库</div>

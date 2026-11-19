@@ -4,6 +4,7 @@ import { Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { translationDownloadUrl } from '@/lib/api/client/docx-translator'
 import type { DocxTranslationFileResult } from '@/types/docx-translator'
+import { IconDownload, IconFile } from '../RegistrationIcons'
 import styles from './docx-translator.module.css'
 
 export interface ResultRow extends DocxTranslationFileResult {
@@ -39,11 +40,16 @@ export function DocxTranslatorResultTable({ rows, onRetry, retrying }: Props) {
       title: '文件名',
       dataIndex: 'filename',
       width: '30%',
-      align: 'center',
-      render: (value: string) => (
-        <span className={styles.cellEllipsis} title={value}>
-          {value}
-        </span>
+      align: 'left',
+      render: (value: string, record) => (
+        <div className={styles.docCell}>
+          <span className={`${styles.docIco} ${styles.docIcoSm} ${record.success ? styles.docIcoOk : styles.docIcoRisk}`}>
+            {IconFile}
+          </span>
+          <span className={styles.docName} title={value}>
+            {value}
+          </span>
+        </div>
       ),
     },
     {
@@ -108,10 +114,11 @@ export function DocxTranslatorResultTable({ rows, onRetry, retrying }: Props) {
             {outputs.map(output => (
               <a
                 key={output.file_index}
-                className={styles.dlBtn}
+                className={`${styles.dlBtn} ${output.kind === 'bilingual' ? styles.dlBtnBrand : styles.dlBtnInfo}`}
                 href={translationDownloadUrl(record.job_id, output.file_index)}
                 download={output.filename}
               >
+                {IconDownload}
                 {output.kind === 'bilingual' ? '双语版' : '译文版'}
               </a>
             ))}

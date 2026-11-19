@@ -106,11 +106,15 @@ export function translationFileDownloadUrl(fileId: string): string {
 
 export async function fetchTranslationTasks(params: {
   keyword?: string
+  status?: 'running' | 'done' | 'failed'
+  mine?: boolean
   page: number
   pageSize: number
 }): Promise<DocxTranslationTaskPage> {
   const search = new URLSearchParams()
   if (params.keyword) search.set('keyword', params.keyword)
+  if (params.status) search.set('status', params.status)
+  if (params.mine) search.set('mine', 'true')
   search.set('page', String(params.page))
   search.set('page_size', String(params.pageSize))
   const res = await fetch(`${BASE}/tasks?${search.toString()}`, { cache: 'no-store' })
