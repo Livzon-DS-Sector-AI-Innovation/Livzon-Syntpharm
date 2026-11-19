@@ -18,6 +18,11 @@ _RETRY_BACKOFF = (1, 2, 4)
 # Retry 5xx (the far side is unwell) but not 4xx (the request is wrong — repeating it
 # cannot help).
 _RETRYABLE_STATUS = 500
+#: 单次 HTTP 尝试超时（秒），与引入预算前的 ``httpx.AsyncClient(timeout=30.0)`` 一致
+_HTTP_TIMEOUT = 30.0
+#: 一次 ``send_message`` 的总外部等待预算 = 单次 ``_request`` 的原有上界（3×30s + 1+2+4s）。
+#: 失效自愈的重发与首次发送共享这一预算，最坏耗时不再翻倍。
+_CALL_BUDGET_SECONDS = _MAX_RETRIES * _HTTP_TIMEOUT + sum(_RETRY_BACKOFF)
 
 #: tenant_access_token 有效期（秒）兜底值，响应里缺 ``expire`` 时使用
 _TOKEN_DEFAULT_EXPIRE = 7200
@@ -42,6 +47,11 @@ def _error_payload(response: httpx.Response) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
+def _remaining(deadline: float | None) -> float | None:
+    """距离 ``deadline`` 的剩余秒数；没有预算时返回 ``None``，保持原有行为。"""
+    return None if deadline is None else deadline - time.monotonic()
+
+
 class FeishuClient:
     """飞书机器人客户端"""
 
@@ -56,8 +66,12 @@ class FeishuClient:
         #: 并发首取只打一次飞书
         self._token_lock = asyncio.Lock()
 
-    async def get_tenant_access_token(self) -> str:
-        """获取 tenant_access_token（到期前 5 分钟自动重取）。"""
+    async def get_tenant_access_token(self, *, deadline: float | None = None) -> str:
+        """获取 tenant_access_token（到期前 5 分钟自动重取）。
+
+        ``deadline`` 是调用方给的总时长预算（``time.monotonic()`` 基准）：冷缓存时
+        取 token 的这次 HTTP 也算在预算内，不回退成「额外一份 97s」。
+        """
         if self._tenant_access_token and time.monotonic() < self._token_expires_at:
             return self._tenant_access_token
 
@@ -72,7 +86,7 @@ class FeishuClient:
                 "app_secret": self.app_secret,
             }
 
-            response = await self._request("POST", url, json=payload)
+            response = await self._request("POST", url, json=payload, deadline=deadline)
             data = response.json()
 
             if data.get("code") != 0:
@@ -103,13 +117,15 @@ class FeishuClient:
             "content": content,  # 必须是字符串
         }
 
+        # 首次发送与自愈重发共享同一份总时长预算，避免最坏耗时翻倍
+        deadline = time.monotonic() + _CALL_BUDGET_SECONDS
         try:
-            data = await self._send_once(url, params, payload)
+            data = await self._send_once(url, params, payload, deadline=deadline)
         except _InvalidTokenError:
             # tenant_access_token 被吊销或提前过期：丢弃缓存重取，只重发一次
             self.invalidate_token()
             try:
-                data = await self._send_once(url, params, payload)
+                data = await self._send_once(url, params, payload, deadline=deadline)
             except _InvalidTokenError as retry_exc:
                 raise ValueError(f"发送消息失败: {retry_exc}") from None
 
@@ -123,16 +139,20 @@ class FeishuClient:
         url: str,
         params: dict[str, str],
         payload: dict[str, Any],
+        *,
+        deadline: float | None = None,
     ) -> dict[str, Any]:
         """发送一次；token 失效时抛 ``_InvalidTokenError``，其余错误原样上抛。"""
-        token = await self.get_tenant_access_token()
+        token = await self.get_tenant_access_token(deadline=deadline)
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
         }
 
         try:
-            response = await self._request("POST", url, params=params, json=payload, headers=headers)
+            response = await self._request(
+                "POST", url, params=params, json=payload, headers=headers, deadline=deadline
+            )
         except httpx.HTTPStatusError as exc:
             # 飞书对失效 token 返回 HTTP 400，响应体里才是 99991663
             body = _error_payload(exc.response)
@@ -324,7 +344,14 @@ class FeishuClient:
 
         return departments
 
-    async def _request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
+    async def _request(
+        self,
+        method: str,
+        url: str,
+        *,
+        deadline: float | None = None,
+        **kwargs: Any,
+    ) -> httpx.Response:
         """One HTTP call, retried per `AGENTS.md:314`.
 
         Every call in this class goes through here, so the 3-attempt / 1-2-4s policy
@@ -333,12 +360,24 @@ class FeishuClient:
         Retries timeouts, connection errors and protocol errors — failures where
         repeating can genuinely help — plus 5xx, where the far side is unwell. A 4xx
         is not retried: repeating a malformed request cannot fix it.
+
+        ``deadline``（``time.monotonic()`` 基准）把这次调用计入调用方的总时长预算：
+        每次尝试的超时压到 ``min(_HTTP_TIMEOUT, 剩余)``，剩余预算不足以覆盖退避 +
+        下一次尝试时直接收尾，不再发起新请求。
         """
         last_exc: Exception | None = None
 
         for attempt in range(_MAX_RETRIES):
+            remaining = _remaining(deadline)
+            if remaining is not None and remaining <= 0:
+                logger.warning(
+                    "Feishu call budget exhausted",
+                    extra={"attempt": attempt + 1, "method": method, "url": url},
+                )
+                break
+            timeout = _HTTP_TIMEOUT if remaining is None else min(_HTTP_TIMEOUT, remaining)
             try:
-                async with httpx.AsyncClient(timeout=30.0) as client:
+                async with httpx.AsyncClient(timeout=timeout) as client:
                     response = await client.request(method, url, **kwargs)
             except (httpx.TimeoutException, httpx.ConnectError, httpx.RemoteProtocolError) as exc:
                 last_exc = exc
@@ -372,6 +411,13 @@ class FeishuClient:
                 )
 
             if attempt < _MAX_RETRIES - 1:
+                remaining = _remaining(deadline)
+                if remaining is not None and remaining <= _RETRY_BACKOFF[attempt]:
+                    logger.warning(
+                        "Feishu retry skipped: budget exhausted",
+                        extra={"attempt": attempt + 1, "method": method, "url": url},
+                    )
+                    break
                 logger.warning(
                     "Feishu request retry",
                     extra={
@@ -383,7 +429,9 @@ class FeishuClient:
                 )
                 await asyncio.sleep(_RETRY_BACKOFF[attempt])
 
-        assert last_exc is not None
+        if last_exc is None:
+            # 预算在首次尝试前就耗尽：没有原始异常可抛，用 httpx 超时族表达。
+            raise httpx.TimeoutException("飞书调用超出总时长预算")
         raise last_exc
 
     def invalidate_token(self) -> None:
