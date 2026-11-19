@@ -233,9 +233,7 @@ async def get(
     result = await db.execute(query)
     rows = result.all()
 
-    return ApiResponse(
-        data=[_to_response(setting, updated_by_name) for setting, updated_by_name in rows]
-    )
+    return ApiResponse(data=[_to_response(setting, updated_by_name) for setting, updated_by_name in rows])
 
 
 @router.put("/batch", response_model=ModuleSettingBatchApiResponse)
@@ -265,9 +263,7 @@ async def put_batch(
     for item in data.items:
         setting = existing.get((item.module, item.key))
         if setting is None:
-            failed.append(
-                ModuleSettingBatchFailure(module=item.module, key=item.key, reason="配置项不存在")
-            )
+            failed.append(ModuleSettingBatchFailure(module=item.module, key=item.key, reason="配置项不存在"))
             continue
         if setting.is_secret and not item.value.strip():
             failed.append(

@@ -154,9 +154,7 @@ class IdentityResolver:
 
         if department_hint:
             filtered = [
-                u
-                for u in users
-                if department_hint in "".join(str(item) for item in (u.get("department_names") or []))
+                u for u in users if department_hint in "".join(str(item) for item in (u.get("department_names") or []))
             ]
             if len(filtered) == 1:
                 logger.info(
@@ -466,9 +464,7 @@ class IdentityResolver:
         # 多人同名，尝试用部门提示消歧
         if department_hint:
             filtered = [
-                u
-                for u in users
-                if department_hint in "".join(str(item) for item in (u.get("department_names") or []))
+                u for u in users if department_hint in "".join(str(item) for item in (u.get("department_names") or []))
             ]
             if len(filtered) == 1:
                 logger.info(

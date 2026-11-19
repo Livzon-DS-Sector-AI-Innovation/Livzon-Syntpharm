@@ -378,9 +378,7 @@ async def backfill_metadata() -> None:
     不插行、不覆盖 ``value`` 与 ``description``，可反复执行。
     """
     async with async_session_factory() as session:
-        result = await session.execute(
-            select(ModuleSetting).where(~ModuleSetting.is_deleted)
-        )
+        result = await session.execute(select(ModuleSetting).where(~ModuleSetting.is_deleted))
         settings = result.scalars().all()
 
         updated = 0

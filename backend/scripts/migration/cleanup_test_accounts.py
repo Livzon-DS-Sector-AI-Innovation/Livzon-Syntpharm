@@ -93,9 +93,7 @@ async def _count_grants(session: AsyncSession, user_ids: list[str]) -> dict[str,
 
 async def collect_candidates(session: AsyncSession) -> tuple[list[Candidate], int, int]:
     """Return ``(matched candidates, skipped superusers, total scanned accounts)``."""
-    result = await session.execute(
-        select(User).where(User.is_deleted.is_(False)).order_by(User.created_at.asc())
-    )
+    result = await session.execute(select(User).where(User.is_deleted.is_(False)).order_by(User.created_at.asc()))
     users = list(result.scalars().all())
     super_ids = {str(uid) for uid in await list_superuser_user_ids(session)}
 
@@ -115,8 +113,7 @@ async def collect_candidates(session: AsyncSession) -> tuple[list[Candidate], in
 
     grants = await _count_grants(session, list(reasons))
     candidates = [
-        Candidate(user=user, reason=reasons[str(user.id)], grants=grants.get(str(user.id), 0))
-        for user in matched_users
+        Candidate(user=user, reason=reasons[str(user.id)], grants=grants.get(str(user.id), 0)) for user in matched_users
     ]
     return candidates, skipped_superuser, len(users)
 

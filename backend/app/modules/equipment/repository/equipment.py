@@ -425,11 +425,7 @@ def _build_order_by(
     if sort_by == "asset_no":
         return [_ASSET_NO_NATURAL_DESC if is_desc else _ASSET_NO_NATURAL_ASC, tiebreak]
     if sort_by == "department_name":
-        name_expr = (
-            case(department_names, value=Equipment.department_id, else_="")
-            if department_names
-            else literal("")
-        )
+        name_expr = case(department_names, value=Equipment.department_id, else_="") if department_names else literal("")
         key: Any = name_expr.desc() if is_desc else name_expr.asc()
         return [nulls_last(key), tiebreak]
     if sort_by == "status":
