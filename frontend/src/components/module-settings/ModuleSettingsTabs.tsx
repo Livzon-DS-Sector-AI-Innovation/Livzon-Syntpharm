@@ -23,6 +23,12 @@ const CUSTOM_COMPONENTS: Record<ModuleSettingsCustomComponent, React.ComponentTy
   'quality-instrument': dynamic(() => import('./legacy/QualityInstrumentSettings'), { loading: TAB_FALLBACK }),
   'quality-stability': dynamic(() => import('./legacy/QualityStabilitySettings'), { loading: TAB_FALLBACK }),
   'quality-reagent': dynamic(() => import('./legacy/QualityReagentReminder'), { loading: TAB_FALLBACK }),
+  'quality-department-contacts': dynamic(() => import('./legacy/QualityDepartmentContactsSettings'), {
+    loading: TAB_FALLBACK,
+  }),
+  'equipment-personnel': dynamic(() => import('@/components/equipment').then((mod) => mod.PersonnelPage), {
+    loading: TAB_FALLBACK,
+  }),
   'hr-system': dynamic(() => import('./legacy/HrSystemSettings'), { loading: TAB_FALLBACK }),
 }
 

@@ -5,6 +5,7 @@ import { App, Drawer, Form, Input, Select, DatePicker, Button, Space, InputNumbe
 import dayjs from 'dayjs'
 import { useEquipmentStore } from '@/stores/equipment'
 import DepartmentTreeSelect from '@/components/common/DepartmentTreeSelect'
+import PersonSelect from '@/components/common/PersonSelect'
 import { EquipmentStatus } from '@/types/equipment/generated-bridge'
 import { createEquipment, updateEquipment } from '@/actions/equipment'
 
@@ -176,10 +177,20 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
           {/* #219：统一部门选择器（下拉内搜索 + 全展开组织树，任意层级可选，值为 hr.departments.id） */}
           <DepartmentTreeSelect placeholder="请选择归属部门（可搜索）" allowClear />
         </Form.Item>
-        <Form.Item name="responsible_person_name" label="负责人">
-          <Input placeholder="请输入负责人"  />
+        <Form.Item
+          name="responsible_person_id"
+          label="负责人"
+          // PersonSelect 的 onChange 回传 {id,name}，表单只存 UUID
+          getValueFromEvent={(person: { id: string } | null) => person?.id}
+        >
+          <PersonSelect
+            label={editingEquipment?.responsible_person_name ?? undefined}
+            placeholder="搜索姓名选择负责人"
+            onSelect={(person) => form.setFieldValue('responsible_person_name', person?.name)}
+          />
         </Form.Item>
-        <Form.Item name="responsible_person_id" hidden>
+        {/* 姓名快照：列表与工单/维修单自动带入仍读这一列 */}
+        <Form.Item name="responsible_person_name" hidden>
           <Input />
         </Form.Item>
         <Form.Item

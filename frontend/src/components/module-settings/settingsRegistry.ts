@@ -19,6 +19,8 @@ export type ModuleSettingsCustomComponent =
   | 'quality-instrument'
   | 'quality-stability'
   | 'quality-reagent'
+  | 'quality-department-contacts'
+  | 'equipment-personnel'
   | 'hr-system'
 
 export interface ModuleSettingsTab {
@@ -71,6 +73,13 @@ export const MODULE_SETTINGS: Record<string, ModuleSettingsDefinition> = {
         component: 'quality-reagent',
         legacyPath: '/quality/reagent/reminder',
       },
+      {
+        key: 'department-contacts',
+        label: '部门联系人配置',
+        kind: 'custom',
+        component: 'quality-department-contacts',
+        legacyPath: '/quality/department-contacts',
+      },
       RUNTIME(),
     ],
   },
@@ -90,7 +99,17 @@ export const MODULE_SETTINGS: Record<string, ModuleSettingsDefinition> = {
     moduleCode: 'equipment',
     moduleLabel: '设备管理',
     description: '本模块的岗位角色与授权，以及飞书同步、维护计划生成等功能开关。',
-    tabs: [PERMISSION_TAB, { ...RUNTIME(), legacyPath: '/equipment/settings' }],
+    tabs: [
+      PERMISSION_TAB,
+      {
+        key: 'personnel',
+        label: '人员配置',
+        kind: 'custom',
+        component: 'equipment-personnel',
+        legacyPath: '/equipment/personnel',
+      },
+      { ...RUNTIME(), legacyPath: '/equipment/settings' },
+    ],
   },
   hr: {
     moduleCode: 'hr',

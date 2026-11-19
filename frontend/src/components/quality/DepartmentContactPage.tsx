@@ -36,6 +36,8 @@ import type {
 } from '@/types/quality'
 
 interface DepartmentContactPageProps {
+  /** 嵌入模块配置页签：隐藏页内 h1（外层已有页头） */
+  embedded?: boolean
   contacts: DepartmentContact[]
   memberOptions: DepartmentMemberOption[]
   notifySettings: DeviationNotifySettings | null
@@ -76,6 +78,7 @@ interface ContactFormValues {
 
 /** 部门联系人配置：调查/审核环节的处理人来源，配错会直接影响流转指派 */
 export function DepartmentContactPage({
+  embedded = false,
   contacts,
   memberOptions,
   notifySettings,
@@ -343,7 +346,9 @@ export function DepartmentContactPage({
     <div className="flex flex-col gap-4">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-[22px] font-semibold text-[var(--color-ink)]">部门联系人配置</h1>
+          {!embedded && (
+            <h1 className="text-[22px] font-semibold text-[var(--color-ink)]">部门联系人配置</h1>
+          )}
           <p className="mt-1 text-[13px] text-[var(--color-slate)]">
             偏差流转按部门取处理人：部门负责人、生产负责人、质量负责人（本部门优先、缺省回退质量保证部），以及所属 QA、QA 负责人
           </p>
