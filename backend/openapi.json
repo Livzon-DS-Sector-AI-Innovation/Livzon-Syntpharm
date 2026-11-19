@@ -91166,7 +91166,7 @@
           "Module Settings"
         ],
         "summary": "Get",
-        "description": "List all module settings, optionally filtered by module.\n\n\u4fee\u6539\u4eba\u59d3\u540d\u7528\u4e00\u6b21 LEFT JOIN \u5e26\u51fa\uff0c\u907f\u514d\u9010\u884c\u56de\u67e5\uff08N+1\uff09\u3002",
+        "description": "List all module settings, optionally filtered by module.\n\n\u4fee\u6539\u4eba\u59d3\u540d\u7528\u4e00\u6b21\u6279\u91cf\u56de\u67e5\u5e26\u51fa\uff0c\u907f\u514d\u9010\u884c\u56de\u67e5\uff08N+1\uff09\u3002",
         "operationId": "get_api_v1_module_settings_get",
         "parameters": [
           {
