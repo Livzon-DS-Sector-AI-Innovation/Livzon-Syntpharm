@@ -16,5 +16,6 @@ export { default as RegulationDashboardClient } from './RegulationDashboardClien
 export { ReviewPageClient } from './ReviewPageClient'
 export { ProjectsPageClient } from './ProjectsPageClient'
 export { NodeProgressBar } from './NodeProgressBar'
+export { DocxTranslatorPageClient } from './docx-translator'
 export { default as RegistrationHomeClient } from './RegistrationHomeClient'
 export { RegistrationPageHeader } from './RegistrationPageHeader'

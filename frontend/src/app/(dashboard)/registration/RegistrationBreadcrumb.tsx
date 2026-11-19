@@ -13,6 +13,7 @@ const PATH_LABELS: Record<string, string> = {
   'authorization-letter': '授权书管理',
   'supplementary-reply': '发补回复',
   'reference-standard': '对照物质说明表',
+  'docx-translator': '文档翻译',
 }
 
 function getBreadcrumbItems(pathname: string) {
