@@ -79,6 +79,7 @@ export default function RenderProgress({ detail, onDetailChange }: Props) {
     if (result.data) {
       setOptimisticJob({
         job_id: result.data.job_id,
+        kind: 'render',
         status: 'queued',
         stage: 'queued',
         progress: 0,

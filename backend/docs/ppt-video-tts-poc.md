@@ -119,6 +119,6 @@
 
 1. 只测了 2 条音色（`zf_001`、`af_bella`），其余 7 条未抽检；
 2. 未采内存峰值 RSS（长 PPT 是否会 OOM 未量化）；
-3. 未测并发（worker 固定 `PPT_VIDEO_WORKER_CONCURRENCY=1`）；
+3. 未测并发（worker 单任务串行，一次只处理一个任务）；
 4. 未做流式首响；
 5. 未在 worker 镜像内复测（本机裸 venv，镜像内多套 LibreOffice/ffmpeg，TTS 部分应一致）。

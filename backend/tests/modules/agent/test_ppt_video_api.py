@@ -6,14 +6,15 @@
 
 import uuid
 from types import SimpleNamespace
-from typing import Any
 
 import pytest
 from httpx import AsyncClient
 from starlette.requests import Request as StarletteRequest
 
 from app.modules.agent import api as agent_api
+from app.modules.agent import parser
 from app.modules.agent import service as agent_service
+from app.modules.agent.schemas import ProjectDetail
 from app.platform.permission.registry import ALL_PERMISSIONS, API_BINDINGS
 
 API = "/api/v1/agent"
@@ -114,33 +115,34 @@ async def test_upload_stops_before_parsing_when_client_disconnected(
     assert response.json()["code"] == 499
 
 
-async def test_upload_discards_created_project_when_client_disconnected(
+async def test_upload_returns_202_and_does_not_parse_inline(
     client: AsyncClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """解析完成后才发现断开：删掉源 PPT、不投递初稿任务，并靠异常让事务回滚。"""
-    from app.modules.agent import api as agent_api
-
+    """上传只受理：返回 202，转换与解析交给 worker（请求内不调 parser）。"""
     project = SimpleNamespace(id=uuid.uuid4())
-    calls: dict[str, Any] = {"start_script_ai": 0, "deleted": []}
-    # 第一次检测（解析前）仍在，第二次（解析后）已断开
-    answers = iter([False, True])
-
-    async def _disconnected(_request: StarletteRequest) -> bool:
-        return next(answers)
 
     async def _create(*_args: object, **_kwargs: object) -> SimpleNamespace:
         return project
 
-    async def _start_script_ai(*_args: object, **_kwargs: object) -> None:
-        calls["start_script_ai"] += 1
+    async def _detail(*_args: object, **_kwargs: object) -> ProjectDetail:
+        return ProjectDetail(
+            id=project.id,
+            name="deck",
+            source_filename="deck.pptx",
+            slide_count=0,
+            default_language="zh",
+            default_voice_id="zf_001",
+            speed=1.0,
+            status="draft",
+        )
 
-    def _delete_object(module: str, object_key: str) -> None:
-        calls["deleted"].append((module, object_key))
+    def _forbidden_parse(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("解析应移出 HTTP 请求，由 worker 消费 parse 任务")
 
-    monkeypatch.setattr(StarletteRequest, "is_disconnected", _disconnected)
     monkeypatch.setattr(agent_service, "create_project", _create)
-    monkeypatch.setattr(agent_service, "start_script_ai", _start_script_ai)
-    monkeypatch.setattr(agent_api, "delete_object", _delete_object)
+    monkeypatch.setattr(agent_service, "get_detail", _detail)
+    monkeypatch.setattr(parser, "convert_to_pptx", _forbidden_parse)
+    monkeypatch.setattr(parser, "parse_pptx", _forbidden_parse)
 
     response = await client.post(
         f"{API}/ppt-videos",
@@ -148,9 +150,18 @@ async def test_upload_discards_created_project_when_client_disconnected(
         data={"default_language": "zh"},
     )
 
-    assert response.status_code == 499
-    assert calls["start_script_ai"] == 0
-    assert calls["deleted"] == [(agent_api.BUCKET, agent_service.source_object_key(project.id))]
+    assert response.status_code == 202
+
+
+def test_upload_and_parse_routes_are_registered() -> None:
+    """契约：上传 202、解析进度 GET/POST、任务查询 GET 都必须在 OpenAPI 里。"""
+    from app.main import app as fastapi_app
+
+    paths = fastapi_app.openapi()["paths"]  # type: ignore[attr-defined]
+    assert "202" in paths[f"{API}/ppt-videos"]["post"]["responses"]
+    assert "get" in paths[f"{API}/ppt-videos/{{project_id}}/parse"]
+    assert "202" in paths[f"{API}/ppt-videos/{{project_id}}/parse"]["post"]["responses"]
+    assert "get" in paths[f"{API}/ppt-videos/{{project_id}}/jobs/{{job_id}}"]
 
 
 async def test_unknown_project_returns_404(client: AsyncClient) -> None:

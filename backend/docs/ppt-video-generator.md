@@ -16,17 +16,20 @@
 ## 1. 用户怎么用
 
 1. 进入「智能体 → PPT 配音视频」（`/agent/ppt-videos`）。
-2. 点「上传 PPT」：选 `.pptx`，逐页讲稿可选（上传即按「第 N 页」/空行/`---` 标记拆分）。
-   上传时同步完成 **pptx 解析**：每页抽成页面图片、抽出页内文字与演讲者备注。
-   解析完后台自动跑 **AI 讲稿初稿**（不阻塞上传响应）：以页内文字为主、备注作补充，
-   按项目默认语言逐页写口播稿，**只写讲稿为空的页**；页内文字与备注都为空的页不发模型，
-   在工作台标「本页无文字」。
+2. 点「上传 PPT」：选 `.pptx`，逐页讲稿可选（按「第 N 页」/空行/`---` 标记拆分）。
+   上传接口只做校验、存原始文件、建项目并入队（**202 受理**，请求内不跑 LibreOffice）；
+   工作台顶部轮询 `GET /ppt-videos/{id}/parse` 显示「解析中 / 失败可重试」。
+   解析任务在 worker 里完成 **pptx 解析**（抽出页内文字与演讲者备注），成功后自动跑
+   **AI 讲稿初稿**：以页内文字为主、备注作补充，按项目默认语言逐页写口播稿，
+   **只写讲稿为空的页**；页内文字与备注都为空的页不发模型，在工作台标「本页无文字」。
 3. 进入三栏工作台（`/agent/ppt-videos/<id>`）：
    - 左：页面时间轴（页码、时长、是否有讲稿/音频、`AI 初稿` / `本页无文字` 标签）
    - 中：当前页画面 + 讲稿编辑（语言 zh/en、音色、语速 0.5~2.0），可看讲稿来源
    - 右：属性、版本列表、manifest 抽屉
    - 顶部横幅：初稿生成进度（3 秒轮询详情）；部分失败或服务重启中断时可点「重新生成剩余页」
-4. 「试听本页」：合成（或命中缓存）该页 wav，直接在页面播放；**不产生业务副作用**，但走 Server Action。
+4. 「试听本页」：`POST .../preview` 只受理（**202 + job_id**），Kokoro 合成在 worker 里跑；
+   前端轮询 `GET /ppt-videos/{id}/jobs/{job_id}`，成功后用 `result.audio_url` 直接播放。
+   **不产生业务副作用**，但走 Server Action。
 5. 「生成视频」：提交渲染任务，接口立刻返回 `202 + job_id`；`RenderProgress` 每 2s 轮询
    `GET /ppt-videos/{id}/job`，显示 queued/running/succeeded/failed 与失败原因。
 6. 完成后在右侧版本面板看到新版本；点「复用记录」抽屉看每页 sha256 与是否命中缓存；
@@ -59,8 +62,8 @@ POST .../render (202) ──> agent.ppt_video_job（queued）
                               └─ agent.ppt_video_version（含 manifest JSON）
 ```
 
-API 与渲染彻底分离：API 侧不做 ffmpeg/LibreOffice，任何请求都不超过 5 秒；渲染在
-`ppt-video-worker` 容器里跑（`PPT_VIDEO_WORKER_CONCURRENCY=1`）。
+API 与渲染彻底分离：API 侧不做 ffmpeg/LibreOffice，任何请求都不超过 5 秒；渲染与解析在
+`ppt-video-worker` 容器里跑（worker 单任务并发固定为 1，不做多开）。
 
 ### 表（schema `agent`）
 
@@ -83,7 +86,9 @@ API 与渲染彻底分离：API 侧不做 ffmpeg/LibreOffice，任何请求都�
 
 | key | 内容 |
 |---|---|
-| `ppt-video/{project_id}/source.pptx` | 原始上传文件 |
+| `ppt-video/{project_id}/source-v{n}.pptx` | 解析后的源 PPT（由 pending 原文件转换得到） |
+| `ppt-video/{project_id}/pending/source-v{n}.{ext}` | 上传的原始文件（`.ppt`/`.pptx`）；解析成功后删除 |
+| `ppt-video/{project_id}/pending/preview-{job}.{ext}` | 换源预览临时文件；任务成功后删除 |
 | `ppt-video/{project_id}/slides/{no:03d}.png` | 页面渲染图 |
 | `ppt-video/audio/{audio_fp}.wav` | 旁白音频（内容寻址，跨项目共享） |
 | `ppt-video/segments/{segment_fp}.mp4` | 页片段（内容寻址，跨项目共享） |
@@ -95,14 +100,17 @@ API 与渲染彻底分离：API 侧不做 ffmpeg/LibreOffice，任何请求都�
 |---|---|---|---|
 | GET | `/voices` | read | 音色目录（含语言、许可） |
 | GET | `/ppt-videos` | read | 列表（分页/搜索） |
-| POST | `/ppt-videos` | manage | 上传 PPT + 可选讲稿；返回后自动后台生成初稿（响应结构不变） |
+| POST | `/ppt-videos` | manage | 上传 PPT + 可选讲稿，**202 受理**；解析任务成功后自动生成初稿 |
+| GET | `/ppt-videos/{id}/parse` | read | 解析进度（status/stage/progress/error/job_id/derived_from），前端 2s 轮询 |
+| POST | `/ppt-videos/{id}/parse` | manage | 解析失败重试，**202 + job_id**（幂等） |
+| GET | `/ppt-videos/{id}/jobs/{job_id}` | read | 异步任务进度与产物（试听音频地址、换源预览差异） |
 | GET | `/ppt-videos/{id}` | read | 详情（slides/versions/latest_job/body_stale/script_ai/page_images） |
 | POST | `/ppt-videos/{id}/page-images` | manage | 重出页图（老项目回填 / 失败重试），**202 + job_id**；进度由前端轮下一个接口 |
 | GET | `/ppt-videos/{id}/page-images/status` | read | 页图生成状态（status/progress/done/total/error/job_id），左栏进度条 2s 轮询 |
 | POST | `/ppt-videos/{id}/script-ai?force=true` | manage | （重新）生成初稿，**只填空页**；`force` 默认 true（服务重启后强制重发），上传后的自动触发用 force=false 保证幂等，202 |
 | DELETE | `/ppt-videos/{id}` | manage | 软删除（已生成文件保留） |
 | PUT | `/ppt-videos/{id}/slides/{no}` | manage | 保存单页讲稿/语言/音色/语速/高亮样式与颜色/区域级高亮配置 |
-| POST | `/ppt-videos/{id}/slides/{no}/preview` | manage | 单页试听（合成或命中缓存） |
+| POST | `/ppt-videos/{id}/slides/{no}/preview` | manage | 单页试听受理，**202 + job_id** |
 | GET | `/ppt-videos/{id}/slides/{no}/image` | read | 页面图片 |
 | GET | `/ppt-videos/{id}/slides/{no}/regions` | read | 区域设置面板数据：页面尺寸 + 可点选元素清单（id/类型/文本/EMU 坐标） |
 | GET | `/ppt-videos/{id}/slides/{no}/audio` | read | 页面旁白 wav（支持 Range） |
@@ -522,7 +530,7 @@ docker logs -f erp-ppt-video-worker 2>&1 | grep -E "页渲染完成|高亮兜底
    再考虑在代理层显式透传 `Range`/`Content-Range`（本轮未改 `proxy.ts`）。
 5. **磁盘**：页片段与音频是内容寻址、跨项目复用，但会持续增长；共用服务器上仍需定期
    `docker system prune` + 清理 MinIO 中已删项目的对象。
-6. **单任务并发为 1**（`PPT_VIDEO_WORKER_CONCURRENCY=1`）：多个项目同时点生成会排队，
+6. **单任务并发为 1**（worker 内固定）：多个项目同时点生成会排队，
    不要靠「多开 worker」提吞吐，先看 CPU 与内存。
 7. **样例数据清理**：本地验证若建了临时库（如 `erp_test_agent`），用完记得 drop。
 8. **AI 初稿只认全局激活的文本模型**：`llm_client` 没有「按调用选模型」的能力，所以初稿质量与

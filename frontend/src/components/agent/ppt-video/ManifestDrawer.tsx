@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Alert, Descriptions, Drawer, Space, Spin, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 
@@ -77,26 +77,19 @@ const columns: ColumnsType<ManifestSlideItem> = [
  * —— 每个分段带 sha256，命中缓存的页标记为「复用」，可逐页追溯。
  */
 export default function ManifestDrawer({ open, versionId, versionNo, onClose }: Props) {
-  const [manifest, setManifest] = useState<VersionManifest | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [reloadToken, setReloadToken] = useState(0)
+  const {
+    data: manifest,
+    error: queryError,
+    isPending,
+    refetch,
+  } = useQuery<VersionManifest>({
+    queryKey: ['ppt-video', 'manifest', versionId],
+    queryFn: () => fetchVersionManifest(versionId as string),
+    enabled: open && Boolean(versionId),
+  })
 
-  useEffect(() => {
-    if (!open || !versionId) return
-    let alive = true
-    fetchVersionManifest(versionId)
-      .then((data) => {
-        if (alive) setManifest(data)
-      })
-      .catch((err) => {
-        if (alive) setError(err instanceof Error ? err.message : '沿用记录加载失败')
-      })
-    return () => {
-      alive = false
-    }
-  }, [open, versionId, reloadToken])
-
-  const loading = open && Boolean(versionId) && !manifest && !error
+  const error = queryError ? (queryError instanceof Error ? queryError.message : '沿用记录加载失败') : null
+  const loading = open && Boolean(versionId) && isPending
 
   const reuse = manifest?.reuse
 
@@ -123,12 +116,7 @@ export default function ManifestDrawer({ open, versionId, versionNo, onClose }: 
           description={error}
           action={
             versionId ? (
-              <Typography.Link
-                onClick={() => {
-                  setError(null)
-                  setReloadToken((value) => value + 1)
-                }}
-              >
+              <Typography.Link onClick={() => void refetch()}>
                 重试
               </Typography.Link>
             ) : undefined

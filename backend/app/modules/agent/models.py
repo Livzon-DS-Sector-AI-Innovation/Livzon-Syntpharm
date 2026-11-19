@@ -54,6 +54,15 @@ JOB_STATUS_SUCCEEDED = "succeeded"
 JOB_STATUS_FAILED = "failed"
 JOB_STATUS_CANCELED = "canceled"
 
+# 任务类别（与 `stage` 区分：kind 决定去重/取消范围/worker 分支，
+# stage 只描述「这条任务内部走到第几步」。render 的 stage 也含 `parse`，
+# 那是「解析源文件」阶段，与 kind=parse 无关。）
+JOB_KIND_RENDER = "render"
+JOB_KIND_PARSE = "parse"
+JOB_KIND_SOURCE_PREVIEW = "source_preview"
+JOB_KIND_AUDIO = "audio"
+JOB_KINDS = (JOB_KIND_RENDER, JOB_KIND_PARSE, JOB_KIND_SOURCE_PREVIEW, JOB_KIND_AUDIO)
+
 # 项目级 AI 讲稿初稿状态
 SCRIPT_AI_STATUS_IDLE = "idle"
 SCRIPT_AI_STATUS_QUEUED = "queued"
@@ -172,6 +181,9 @@ class PptVideoProject(BaseModel):
     )
     source_version: Mapped[int] = mapped_column(
         Integer, default=1, server_default="1", nullable=False, comment="源 PPT 版本号，对象 key 为 source-v{n}.pptx"
+    )
+    pending_script_text: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="待解析任务切分的上传讲稿原文；解析完成后清空"
     )
     page_images_version: Mapped[int] = mapped_column(
         Integer,
@@ -354,11 +366,25 @@ class PptVideoVersion(BaseModel):
 
 
 class PptVideoJob(BaseModel):
-    """渲染任务队列。"""
+    """异步任务队列（渲染 / 解析 / 换源预览 / 试听合成）。"""
 
     __tablename__ = "ppt_video_job"
     __table_args__ = (
         Index("ix_agent_ppt_video_job_pick", "status", "created_at", postgresql_where=text("is_deleted = false")),
+        Index(
+            "ix_agent_ppt_video_job_claim",
+            "kind",
+            "status",
+            "created_at",
+            postgresql_where=text("is_deleted = false"),
+        ),
+        Index(
+            "ix_agent_ppt_video_job_dedupe",
+            "project_id",
+            "kind",
+            "status",
+            postgresql_where=text("is_deleted = false"),
+        ),
         _SCHEMA,
     )
 
@@ -372,12 +398,25 @@ class PptVideoJob(BaseModel):
         nullable=False,
         comment="queued/running/succeeded/failed/canceled",
     )
+    kind: Mapped[str] = mapped_column(
+        String(16),
+        default=JOB_KIND_RENDER,
+        server_default=JOB_KIND_RENDER,
+        nullable=False,
+        comment="任务类别（render/parse/source_preview/audio）；决定去重与取消范围",
+    )
     stage: Mapped[str] = mapped_column(
         String(32),
         default="queued",
         server_default="queued",
         nullable=False,
-        comment="queued/parse/render/tts/concat/upload",
+        comment="任务内部阶段（与 kind 不同）：render 走 queued/parse/render/tts/concat/upload/done",
+    )
+    payload: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON, nullable=True, comment="任务入参（试听的页 uid、换源预览的临时对象 key 等）"
+    )
+    result: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON, nullable=True, comment="任务产物（换源预览 diff、试听音频地址等）"
     )
     progress: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False, comment="进度 0~100")
     attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False, comment="已尝试次数")

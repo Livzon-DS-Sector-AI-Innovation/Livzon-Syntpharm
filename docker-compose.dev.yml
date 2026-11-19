@@ -48,7 +48,6 @@ services:
     env_file:
     - .env
     environment:
-    - PPT_VIDEO_WORKER_CONCURRENCY=1
     - HF_ENDPOINT=${HF_ENDPOINT:-https://hf-mirror.com}
     - HF_HUB_OFFLINE=1
     volumes:

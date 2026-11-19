@@ -7,11 +7,15 @@
 import { apiGet, apiGetWithMeta } from '@/lib/api/client'
 import type { components } from '@/types/generated/schema'
 import type {
+  AiConfigListResponse,
   JobState,
   PageImagesState,
+  ParseState,
   ProjectDetail,
   ProjectPage,
   PptVideoListQuery,
+  RevisionItem,
+  RevisionListResponse,
   SlideRegionsResponse,
   VersionManifest,
 } from '@/types/agent/ppt-video'
@@ -45,6 +49,51 @@ export async function fetchPptVideoJob(projectId: string): Promise<JobState | nu
 
 export async function fetchPptVideoDetail(projectId: string): Promise<ProjectDetail> {
   return apiGet<ProjectDetail>(`${API}/ppt-videos/${projectId}`)
+}
+
+/**
+ * 解析进度：解析已改为队列任务，上传后靠这个接口轮询（比整份详情便宜）。
+ */
+export async function fetchPptVideoParseState(projectId: string): Promise<ParseState> {
+  return apiGet<ParseState>(`${API}/ppt-videos/${projectId}/parse`)
+}
+
+/** 异步任务进度与产物（试听音频地址、换源预览差异）。 */
+export async function fetchPptVideoJobById(projectId: string, jobId: string): Promise<JobState> {
+  return apiGet<JobState>(`${API}/ppt-videos/${projectId}/jobs/${jobId}`)
+}
+
+const TERMINAL_JOB_STATUS = new Set(['succeeded', 'failed', 'canceled'])
+
+/**
+ * 等待异步任务到终态（试听合成、换源预览这类一次性任务）。
+ *
+ * 用轮询而不是 useEffect：调用点都是用户点击后的处理函数，轮询结束即给出结果，
+ * 不会在组件里留下需要 effect 同步的状态。
+ */
+export async function waitForPptVideoJob(
+  projectId: string,
+  jobId: string,
+  { intervalMs = 1000, timeoutMs = 120_000 }: { intervalMs?: number; timeoutMs?: number } = {},
+): Promise<JobState> {
+  const deadline = Date.now() + timeoutMs
+  for (;;) {
+    const job = await fetchPptVideoJobById(projectId, jobId)
+    if (TERMINAL_JOB_STATUS.has(job.status)) return job
+    if (Date.now() > deadline) throw new Error('任务处理超时，请稍后刷新重试')
+    await new Promise((resolve) => setTimeout(resolve, intervalMs))
+  }
+}
+
+/** AI 配置清单（抽屉打开时取一次）。 */
+export async function fetchAiConfigs(): Promise<AiConfigListResponse> {
+  return apiGet<AiConfigListResponse>(`${API}/ai-configs`)
+}
+
+/** 讲稿修订记录（抽屉打开时取一次）。 */
+export async function fetchScriptRevisionList(projectId: string, limit = 30): Promise<RevisionItem[]> {
+  const data = await apiGet<RevisionListResponse | null>(`${API}/ppt-videos/${projectId}/revisions?limit=${limit}`)
+  return data?.items ?? []
 }
 
 /**

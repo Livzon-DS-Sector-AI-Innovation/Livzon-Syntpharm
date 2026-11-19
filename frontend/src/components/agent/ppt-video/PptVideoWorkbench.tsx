@@ -7,6 +7,7 @@ import { ArrowLeftOutlined } from '@ant-design/icons'
 
 import AiConfigDrawer from './AiConfigDrawer'
 import PageImagesProgress from './PageImagesProgress'
+import ParseProgress from './ParseProgress'
 import ProjectSettingsCard from './ProjectSettingsCard'
 import RenderProgress from './RenderProgress'
 import ScriptDraftBanner from './ScriptDraftBanner'
@@ -118,6 +119,8 @@ export default function PptVideoWorkbench({ initialDetail, voices }: Props) {
           <Tag className="!m-0 !text-[11px]">源文件第 {detail.source_version} 版</Tag>
         </Space>
       </div>
+
+      <ParseProgress detail={detail} onDetailChange={setDetail} />
 
       <RenderProgress detail={detail} onDetailChange={setDetail} />
 

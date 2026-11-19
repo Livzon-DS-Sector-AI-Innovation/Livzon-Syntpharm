@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Alert,
   App,
@@ -66,8 +67,6 @@ export default function HighlightRegionsDrawer({ open, projectId, slide, value, 
   const { message } = App.useApp()
   const [regions, setRegions] = useState<HighlightRegionItem[]>(value?.regions ?? [])
   const [sentences, setSentences] = useState<HighlightSentenceItem[]>(value?.sentences ?? [])
-  const [data, setData] = useState<SlideRegionsResponse | null>(null)
-  const [loading, setLoading] = useState(false)
   const [drawing, setDrawing] = useState(false)
   const [showAllFrames, setShowAllFrames] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -77,25 +76,15 @@ export default function HighlightRegionsDrawer({ open, projectId, slide, value, 
   const dragStart = useRef<{ x: number; y: number } | null>(null)
 
   // 打开时取一次区域清单（元素坐标 + 服务端切好的句子）；取不到就只留手绘能力
-  useEffect(() => {
-    if (!open) return
-    let cancelled = false
-    void (async () => {
-      setLoading(true)
-      try {
-        const response = await fetchSlideRegions(projectId, slide.slide_uid)
-        if (!cancelled) setData(response)
-      } catch (error) {
-        console.warn('区域清单加载失败:', error)
-        if (!cancelled) message.warning('页内元素解析失败，仍可手绘区域')
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [open, projectId, slide.slide_uid, message])
+  const { data: regionsData, isFetching } = useQuery<SlideRegionsResponse>({
+    queryKey: ['ppt-video', projectId, slide.slide_uid, 'regions'],
+    queryFn: () => fetchSlideRegions(projectId, slide.slide_uid),
+    enabled: open,
+    // 解析失败不阻塞手绘：错误只体现在 data 为空，界面已有「只能手绘」的兜底
+    retry: false,
+  })
+  const data: SlideRegionsResponse | null = regionsData ?? null
+  const loading = open && isFetching
 
   const pageWidth = data?.page_width || FALLBACK_PAGE_WIDTH
   const pageHeight = data?.page_height || FALLBACK_PAGE_HEIGHT

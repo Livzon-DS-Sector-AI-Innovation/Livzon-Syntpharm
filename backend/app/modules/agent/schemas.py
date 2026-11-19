@@ -5,7 +5,7 @@
 """
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
@@ -32,17 +32,28 @@ class VoiceCatalogResponse(BaseModel):
 
 
 class JobState(BaseModel):
-    """渲染任务状态（轮询端点）。"""
+    """异步任务状态（轮询端点）。"""
 
     job_id: UUID
+    kind: str = "render"
     status: Literal["queued", "running", "succeeded", "failed", "canceled"]
     stage: str
     progress: int = Field(ge=0, le=100)
     attempts: int = 0
     error_message: str | None = None
     version_id: UUID | None = None
+    #: 任务产物（试听音频地址、换源预览 diff 等）；渲染任务为 None
+    result: dict[str, Any] | None = None
     started_at: datetime | None = None
     finished_at: datetime | None = None
+
+
+class JobAccepted(BaseModel):
+    """耗时任务受理结果（202）：前端拿 job_id 后轮询 `/jobs/{job_id}`。"""
+
+    job_id: UUID
+    kind: str
+    status: Literal["queued", "running"] = "queued"
 
 
 class HighlightRect(BaseModel):
@@ -270,6 +281,32 @@ class PageImagesAccepted(BaseModel):
     status: Literal["queued", "running"] = "queued"
 
 
+ParseStatus = Literal["none", "queued", "running", "succeeded", "failed"]
+
+
+class ParseState(BaseModel):
+    """源 PPT 解析进度。
+
+    解析已从请求内同步执行改为 `kind=parse` 的队列任务，前端按此结构轮询；
+    老项目没有解析任务时按「已有逐页记录」回退为 `succeeded`。
+    """
+
+    status: ParseStatus = "none"
+    stage: str = ""
+    progress: int = Field(default=0, ge=0, le=100)
+    error_message: str | None = None
+    job_id: UUID | None = None
+    #: job=由任务派生；project_fallback=老项目按产物判定；none=从未解析
+    derived_from: Literal["job", "project_fallback", "none"] = "none"
+
+
+class ParseAccepted(BaseModel):
+    """重试解析受理结果（202）：前端拿到 job_id 后开始轮询。"""
+
+    job_id: UUID
+    status: Literal["queued", "running"] = "queued"
+
+
 class ProjectDetail(BaseModel):
     id: UUID
     name: str
@@ -286,6 +323,7 @@ class ProjectDetail(BaseModel):
     slides: list[SlideItem] = Field(default_factory=list)
     versions: list[VersionItem] = Field(default_factory=list)
     latest_job: JobState | None = None
+    parse: ParseState = Field(default_factory=ParseState)
     script_ai: ScriptAiState = Field(default_factory=ScriptAiState)
     page_images: PageImagesState = Field(default_factory=PageImagesState)
     script_runtime: ScriptRuntime | None = None

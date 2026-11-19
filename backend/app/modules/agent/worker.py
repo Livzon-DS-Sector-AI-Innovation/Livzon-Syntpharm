@@ -55,6 +55,10 @@ from app.modules.agent.config import (
     parse_hex_color,
 )
 from app.modules.agent.models import (
+    JOB_KIND_AUDIO,
+    JOB_KIND_PARSE,
+    JOB_KIND_RENDER,
+    JOB_KIND_SOURCE_PREVIEW,
     JOB_STATUS_SUCCEEDED,
     PAGE_IMAGES_STATUS_DONE,
     PROJECT_STATUS_FAILED,
@@ -71,6 +75,9 @@ logger = logging.getLogger(__name__)
 WORKER_ID = f"{socket.gethostname()}-{os.getpid()}"
 POLL_INTERVAL_SECONDS = 3
 STALE_SECONDS = 600
+#: 两条消费循环共享一次超时重排扫描（60s 一次），避免每轮各扫一遍库
+REQUEUE_INTERVAL_SECONDS = 60
+_last_requeue_at = 0.0
 #: 阶段进度分段（与前端 `STAGE_LABEL` 一一对应）：解析 5 → 出图 10 → 逐页合成 10~85
 #: → 拼接 88 → 上传 92 → 完成由 `queue.mark_succeeded` 置 done/100。
 PROGRESS_START = 5
@@ -684,26 +691,91 @@ async def _handle_failure(session: AsyncSession, job: PptVideoJob, message: str)
     await queue.mark_failed(session, job.id, message, retry)
     if project is not None:
         project.last_error = message[:2000]
-        if not retry:
+        # 只有渲染失败才把项目置 failed；解析/预览/试听失败只写 job.error_message，
+        # 否则一次解析失败会让整个项目在列表里显示为「失败」，用户也无法重试。
+        if job.kind == JOB_KIND_RENDER and not retry:
             project.status = PROJECT_STATUS_FAILED
     await session.commit()
 
 
-async def process_once(worker_id: str = WORKER_ID) -> bool:
-    """抢占并处理一个任务；返回是否真的处理了任务。"""
+async def _run_parse_job(session: AsyncSession, job: PptVideoJob, settings: PptVideoSettings) -> None:
+    """解析任务：PPT→PPTX→逐页，落 slides 后触发初稿与页图。"""
+    await queue.heartbeat(session, job.id, "parse", PROGRESS_START)
+    await session.commit()
+    await service.parse_project(session, job.project_id, settings)
+    await session.commit()
+    await queue.mark_succeeded(session, job.id)
+    await session.commit()
+
+
+async def _run_audio_job(session: AsyncSession, job: PptVideoJob, settings: PptVideoSettings) -> None:
+    """试听任务：合成单页音频，产物（音频地址等）写入 job.result。"""
+    payload = job.payload or {}
+    slide_uid = str(payload.get("slide_uid") or "")
+    if not slide_uid:
+        raise JobFailedError("试听任务缺少页标识")
+    result = await service.render_slide_audio(session, job.project_id, slide_uid, settings)
+    await session.commit()
+    await queue.mark_succeeded(session, job.id, result=result)
+    await session.commit()
+
+
+async def _run_source_preview_job(session: AsyncSession, job: PptVideoJob, settings: PptVideoSettings) -> None:
+    """换源预览任务：读临时上传对象，跑转换与比对，差异写入 job.result。"""
+    payload = job.payload or {}
+    pending_key = str(payload.get("pending_key") or "")
+    filename = str(payload.get("filename") or "presentation.pptx")
+    if not pending_key:
+        raise JobFailedError("换源预览任务缺少临时文件")
+    data = await asyncio.to_thread(storage.get_object, service.BUCKET_MODULE, pending_key)
+    if data is None:
+        raise JobFailedError("临时文件已失效，请重新上传")
+    diff = await service.preview_source_replace(session, job.project_id, data[0], filename)
+    await session.commit()
+    await queue.mark_succeeded(session, job.id, result=diff.model_dump(mode="json"))
+    await session.commit()
+    try:
+        await asyncio.to_thread(storage.delete_object, service.BUCKET_MODULE, pending_key)
+    except Exception:  # noqa: BLE001 - 清理失败不影响预览结果
+        logger.warning("换源预览临时对象清理失败: job=%s", job.id, exc_info=True)
+
+
+async def _dispatch(session: AsyncSession, job: PptVideoJob, settings: PptVideoSettings) -> None:
+    if job.kind == JOB_KIND_PARSE:
+        await _run_parse_job(session, job, settings)
+        return
+    if job.kind == JOB_KIND_AUDIO:
+        await _run_audio_job(session, job, settings)
+        return
+    if job.kind == JOB_KIND_SOURCE_PREVIEW:
+        await _run_source_preview_job(session, job, settings)
+        return
+    await process_job(session, job, settings)
+
+
+async def process_once(worker_id: str = WORKER_ID, kinds: list[str] | None = None) -> bool:
+    """抢占并处理一个任务；返回是否真的处理了任务。
+
+    Args:
+        kinds: 只处理这些类别；None 表示不限（`--once` 调试用）。
+    """
+    global _last_requeue_at
     settings = await load_settings()
     async with async_session_factory() as session:
-        await queue.requeue_stale(session, STALE_SECONDS)
-        await session.commit()
-        job = await queue.claim(session, worker_id)
+        now = time.monotonic()
+        if now - _last_requeue_at >= REQUEUE_INTERVAL_SECONDS:
+            _last_requeue_at = now
+            await queue.requeue_stale(session, STALE_SECONDS)
+            await session.commit()
+        job = await queue.claim(session, worker_id, kinds=kinds)
         if job is None:
             await session.commit()
             return False
         await session.commit()
         job_id = job.id
-        logger.info("claimed job %s (project %s)", job_id, job.project_id)
+        logger.info("claimed job %s (project %s, kind %s)", job_id, job.project_id, job.kind)
         try:
-            await process_job(session, job, settings)
+            await _dispatch(session, job, settings)
         except Exception as exc:  # noqa: BLE001 - 任何异常都要落库并继续消费下一个任务
             logger.exception("job %s failed", job_id)
             message = str(exc) or exc.__class__.__name__
@@ -713,19 +785,30 @@ async def process_once(worker_id: str = WORKER_ID) -> bool:
         return True
 
 
-async def run_forever(stop_event: asyncio.Event) -> None:
-    logger.info("ppt-video worker started: %s", WORKER_ID)
+async def _loop(stop_event: asyncio.Event, name: str, kinds: list[str]) -> None:
+    """一个类别组的消费循环；单次异常只记日志，不退出。"""
+    logger.info("ppt-video %s loop started (%s)", name, ",".join(kinds))
     while not stop_event.is_set():
         try:
-            handled = await process_once()
+            handled = await process_once(kinds=kinds)
         except Exception:  # noqa: BLE001 - 轮询不能因单次异常退出
-            logger.exception("worker loop error")
+            logger.exception("%s loop error", name)
             handled = False
         if not handled:
             try:
                 await asyncio.wait_for(stop_event.wait(), timeout=POLL_INTERVAL_SECONDS)
             except TimeoutError:
                 continue
+    logger.info("ppt-video %s loop stopped", name)
+
+
+async def run_forever(stop_event: asyncio.Event) -> None:
+    """渲染与解析分两条循环并行：长渲染不会把上传后的解析一起堵住。"""
+    logger.info("ppt-video worker started: %s", WORKER_ID)
+    await asyncio.gather(
+        _loop(stop_event, "render", [JOB_KIND_RENDER]),
+        _loop(stop_event, "parse", [JOB_KIND_PARSE, JOB_KIND_SOURCE_PREVIEW, JOB_KIND_AUDIO]),
+    )
     logger.info("ppt-video worker stopped")
 
 

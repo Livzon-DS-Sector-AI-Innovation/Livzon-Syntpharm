@@ -3198,6 +3198,11 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "/api/v1/agent/ppt-videos/{project_id}/page-images/status",
     ),
     ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/job"),
+    # 解析进度：只读查询 / 失败重试（写，复用 manage）
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/parse"),
+    ApiBindingDef("agent:ppt-video:manage", "POST", "/api/v1/agent/ppt-videos/{project_id}/parse"),
+    # 异步任务进度与产物（试听 / 换源预览）：只读
+    ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/jobs/{job_id}"),
     ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ppt-videos/{project_id}/versions"),
     # 智能体 - AI 配置（自定义模型与全局默认模型；全局写入在函数内再校验平台管理员）
     ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/ai-configs"),

@@ -18415,8 +18415,26 @@ export interface paths {
         /** 配音视频项目列表 */
         get: operations["list_projects_api_v1_agent_ppt_videos_get"];
         put?: never;
-        /** 新建配音视频项目（上传 PPT + 可选逐页讲稿） */
+        /** 新建配音视频项目（上传 PPT + 可选逐页讲稿，202 后轮询解析进度） */
         post: operations["create_project_api_v1_agent_ppt_videos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/parse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** PPT 解析进度（异步任务） */
+        get: operations["get_parse_state_api_v1_agent_ppt_videos__project_id__parse_get"];
+        put?: never;
+        /** 重试解析（失败重投，幂等） */
+        post: operations["retry_parse_api_v1_agent_ppt_videos__project_id__parse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -18553,8 +18571,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 单页试听（合成或命中缓存） */
+        /** 单页试听受理（异步合成，轮询 /jobs/{job_id}） */
         post: operations["preview_slide_api_v1_agent_ppt_videos__project_id__slides__slide_uid__preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/ppt-videos/{project_id}/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 异步任务进度与产物（解析/试听/换源预览） */
+        get: operations["get_job_state_api_v1_agent_ppt_videos__project_id__jobs__job_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -18884,7 +18919,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 上传新 PPT 并比对页序列（不改动现有数据） */
+        /** 上传新 PPT 并比对页序列（异步受理，轮询 /jobs/{job_id} 取差异） */
         post: operations["preview_source_replace_api_v1_agent_ppt_videos__project_id__source_post"];
         delete?: never;
         options?: never;
@@ -19028,7 +19063,7 @@ export interface paths {
          * Test LLM connection
          * @description Test LLM connectivity using active config.
          */
-        post: operations["post_api_v1_llm_configs_test_post"];
+        post: operations["test_connection_api_v1_llm_configs_test_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -27588,6 +27623,21 @@ export interface components {
             data?: components["schemas"]["IdOnlyResult"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[JobAccepted] */
+        DataResponse_JobAccepted_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["JobAccepted"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[JobDeleteResult] */
         DataResponse_JobDeleteResult_: {
             /**
@@ -27601,6 +27651,51 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["JobDeleteResult"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[JobState] */
+        DataResponse_JobState_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["JobState"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[LLMConfigResponse] */
+        DataResponse_LLMConfigResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["LLMConfigResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[LLMHealthResult] */
+        DataResponse_LLMHealthResult_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["LLMHealthResult"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[LedgerImportResult] */
@@ -27754,6 +27849,36 @@ export interface components {
             data?: components["schemas"]["PageImagesState"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[ParseAccepted] */
+        DataResponse_ParseAccepted_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ParseAccepted"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[ParseState] */
+        DataResponse_ParseState_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ParseState"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[PersonnelAddResult] */
         DataResponse_PersonnelAddResult_: {
             /**
@@ -27872,21 +27997,6 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["PrejobTemplateResponse"] | null;
-            meta?: components["schemas"]["PaginationMeta"] | null;
-        };
-        /** DataResponse[PreviewResponse] */
-        DataResponse_PreviewResponse_: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["PreviewResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[ProblemHandleResult] */
@@ -28382,21 +28492,6 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["SourceApplyResult"] | null;
-            meta?: components["schemas"]["PaginationMeta"] | null;
-        };
-        /** DataResponse[SourceDiffSummary] */
-        DataResponse_SourceDiffSummary_: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["SourceDiffSummary"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[StageTransitionCheckResult] */
@@ -28908,6 +29003,22 @@ export interface components {
             message: string;
             /** Data */
             data?: components["schemas"]["InternationalReviewResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[LLMConfigResponse]] */
+        DataResponse_list_LLMConfigResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["LLMConfigResponse"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[list[MaintainerBrief]] */
@@ -41244,6 +41355,25 @@ export interface components {
          */
         ItemResult: "pass" | "fail" | "na";
         /**
+         * JobAccepted
+         * @description 耗时任务受理结果（202）：前端拿 job_id 后轮询 `/jobs/{job_id}`。
+         */
+        JobAccepted: {
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /** Kind */
+            kind: string;
+            /**
+             * Status
+             * @default queued
+             * @enum {string}
+             */
+            status: "queued" | "running";
+        };
+        /**
          * JobDeleteResult
          * @description 定时任务删除结果
          */
@@ -41261,7 +41391,7 @@ export interface components {
         };
         /**
          * JobState
-         * @description 渲染任务状态（轮询端点）。
+         * @description 异步任务状态（轮询端点）。
          */
         JobState: {
             /**
@@ -41269,6 +41399,11 @@ export interface components {
              * Format: uuid
              */
             job_id: string;
+            /**
+             * Kind
+             * @default render
+             */
+            kind: string;
             /**
              * Status
              * @enum {string}
@@ -41287,6 +41422,10 @@ export interface components {
             error_message?: string | null;
             /** Version Id */
             version_id?: string | null;
+            /** Result */
+            result?: {
+                [key: string]: unknown;
+            } | null;
             /** Started At */
             started_at?: string | null;
             /** Finished At */
@@ -41398,6 +41537,16 @@ export interface components {
             is_active?: boolean | null;
             /** Notes */
             notes?: string | null;
+        };
+        /**
+         * LLMHealthResult
+         * @description LLM 连通性探测结果（`llm_client.health_check()` 的显式模型）。
+         */
+        LLMHealthResult: {
+            /** Status */
+            status: string;
+            /** Detail */
+            detail?: string | null;
         };
         /**
          * LabelVerificationCreate
@@ -45196,6 +45345,23 @@ export interface components {
             /** Total */
             total: number;
         };
+        /**
+         * ParseAccepted
+         * @description 重试解析受理结果（202）：前端拿到 job_id 后开始轮询。
+         */
+        ParseAccepted: {
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /**
+             * Status
+             * @default queued
+             * @enum {string}
+             */
+            status: "queued" | "running";
+        };
         /** ParseResultApiResponse */
         ParseResultApiResponse: {
             /**
@@ -45226,6 +45392,41 @@ export interface components {
             chapter_count: number;
             /** Error */
             error?: string | null;
+        };
+        /**
+         * ParseState
+         * @description 源 PPT 解析进度。
+         *
+         *     解析已从请求内同步执行改为 `kind=parse` 的队列任务，前端按此结构轮询；
+         *     老项目没有解析任务时按「已有逐页记录」回退为 `succeeded`。
+         */
+        ParseState: {
+            /**
+             * Status
+             * @default none
+             * @enum {string}
+             */
+            status: "none" | "queued" | "running" | "succeeded" | "failed";
+            /**
+             * Stage
+             * @default
+             */
+            stage: string;
+            /**
+             * Progress
+             * @default 0
+             */
+            progress: number;
+            /** Error Message */
+            error_message?: string | null;
+            /** Job Id */
+            job_id?: string | null;
+            /**
+             * Derived From
+             * @default none
+             * @enum {string}
+             */
+            derived_from: "job" | "project_fallback" | "none";
         };
         /**
          * PartComplete
@@ -46218,17 +46419,6 @@ export interface components {
             created_at?: string | null;
             /** Updated At */
             updated_at?: string | null;
-        };
-        /** PreviewResponse */
-        PreviewResponse: {
-            /** Slide No */
-            slide_no: number;
-            /** Audio Url */
-            audio_url: string;
-            /** Duration Ms */
-            duration_ms: number;
-            /** Audio Sha256 */
-            audio_sha256: string;
         };
         /**
          * ProblemApiResponse
@@ -47949,6 +48139,7 @@ export interface components {
             /** Versions */
             versions?: components["schemas"]["VersionItem"][];
             latest_job?: components["schemas"]["JobState"] | null;
+            parse?: components["schemas"]["ParseState"];
             script_ai?: components["schemas"]["ScriptAiState"];
             page_images?: components["schemas"]["PageImagesState"];
             script_runtime?: components["schemas"]["ScriptRuntime"] | null;
@@ -107923,12 +108114,78 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
-            200: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DataResponse_ProjectDetail_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_parse_state_api_v1_agent_ppt_videos__project_id__parse_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ParseState_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_parse_api_v1_agent_ppt_videos__project_id__parse_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_ParseAccepted_"];
                 };
             };
             /** @description Validation Error */
@@ -108268,12 +108525,46 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_JobAccepted_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_job_state_api_v1_agent_ppt_videos__project_id__jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_PreviewResponse_"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_JobState_"];
                 };
             };
             /** @description Validation Error */
@@ -108992,12 +109283,12 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
-            200: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_SourceDiffSummary_"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_JobAccepted_"];
                 };
             };
             /** @description Validation Error */
@@ -109176,7 +109467,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["LLMConfigResponse"][];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_LLMConfigResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -109211,7 +109502,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["LLMConfigResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_LLMConfigResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -109244,7 +109535,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["LLMConfigResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_LLMConfigResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -109281,7 +109572,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["LLMConfigResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_LLMConfigResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -109326,7 +109617,7 @@ export interface operations {
             };
         };
     };
-    post_api_v1_llm_configs_test_post: {
+    test_connection_api_v1_llm_configs_test_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -109343,7 +109634,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_LLMHealthResult_"];
                 };
             };
             /** @description Validation Error */

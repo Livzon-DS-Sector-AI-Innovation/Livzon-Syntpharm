@@ -244,6 +244,13 @@ DEFAULT_SETTINGS = [
     ),
     (
         "agent",
+        "AGENT_PPT_VIDEO_SCRIPT_GUIDE_MAX_CHARS",
+        "2000",
+        "int",
+        "讲稿风格指南注入 prompt 的最大字数（超出截断）",
+    ),
+    (
+        "agent",
         "AGENT_PPT_VIDEO_HIGHLIGHT_ENABLED",
         "true",
         "bool",

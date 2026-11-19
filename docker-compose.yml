@@ -115,7 +115,6 @@ services:
     - .env
     environment:
     - REDIS_URL=redis://erp-redis:6379/0
-    - PPT_VIDEO_WORKER_CONCURRENCY=1
     - HF_ENDPOINT=${HF_ENDPOINT:-https://hf-mirror.com}
     depends_on:
       migrate:

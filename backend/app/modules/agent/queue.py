@@ -10,12 +10,15 @@
 """
 
 import uuid
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.agent.models import (
+    JOB_KIND_RENDER,
     JOB_STATUS_FAILED,
     JOB_STATUS_QUEUED,
     JOB_STATUS_RUNNING,
@@ -33,17 +36,21 @@ async def enqueue(
     project_id: uuid.UUID,
     requested_by_name: str | None = None,
     max_attempts: int = 3,
+    kind: str = JOB_KIND_RENDER,
+    payload: dict[str, Any] | None = None,
 ) -> PptVideoJob:
-    """入队一次渲染任务；同一项目已有排队任务时复用它（避免连点产生重复渲染）。"""
+    """入队一次任务；同项目 + 同类别 + 同入参已有排队任务时复用它（避免连点重复入队）。"""
+    conditions = [
+        PptVideoJob.project_id == project_id,
+        PptVideoJob.kind == kind,
+        PptVideoJob.status == JOB_STATUS_QUEUED,
+        PptVideoJob.is_deleted.is_(False),
+    ]
+    if payload is not None:
+        # 同一类任务可能对应不同入参（比如不同页的试听），入参不同不能复用
+        conditions.append(PptVideoJob.payload == payload)
     existing = await session.scalar(
-        select(PptVideoJob)
-        .where(
-            PptVideoJob.project_id == project_id,
-            PptVideoJob.status == JOB_STATUS_QUEUED,
-            PptVideoJob.is_deleted.is_(False),
-        )
-        .order_by(PptVideoJob.created_at.desc())
-        .limit(1)
+        select(PptVideoJob).where(*conditions).order_by(PptVideoJob.created_at.desc()).limit(1)
     )
     if existing is not None:
         return existing
@@ -51,23 +58,33 @@ async def enqueue(
     job = PptVideoJob(
         id=uuid.uuid4(),
         project_id=project_id,
+        kind=kind,
         status=JOB_STATUS_QUEUED,
         stage="queued",
         progress=0,
         attempts=0,
         max_attempts=max_attempts,
         requested_by_name=requested_by_name,
+        payload=payload,
     )
     session.add(job)
     await session.flush()
     return job
 
 
-async def claim(session: AsyncSession, worker_id: str) -> PptVideoJob | None:
-    """抢占一个排队任务（无任务时返回 None）。"""
+async def claim(session: AsyncSession, worker_id: str, kinds: Sequence[str] | None = None) -> PptVideoJob | None:
+    """抢占一个排队任务（无任务时返回 None）。
+
+    Args:
+        kinds: 只抢占这些类别的任务；None 表示不限类别（测试/手工排查用）。
+            worker 的渲染循环传 `[render]`，解析循环传其余类别，互不抢任务。
+    """
+    conditions = [PptVideoJob.status == JOB_STATUS_QUEUED, PptVideoJob.is_deleted.is_(False)]
+    if kinds is not None:
+        conditions.append(PptVideoJob.kind.in_(list(kinds)))
     job = await session.scalar(
         select(PptVideoJob)
-        .where(PptVideoJob.status == JOB_STATUS_QUEUED, PptVideoJob.is_deleted.is_(False))
+        .where(*conditions)
         .order_by(PptVideoJob.created_at)
         .limit(1)
         .with_for_update(skip_locked=True)
@@ -97,7 +114,13 @@ async def heartbeat(session: AsyncSession, job_id: uuid.UUID, stage: str, progre
     )
 
 
-async def mark_succeeded(session: AsyncSession, job_id: uuid.UUID, version_id: uuid.UUID) -> None:
+async def mark_succeeded(
+    session: AsyncSession,
+    job_id: uuid.UUID,
+    version_id: uuid.UUID | None = None,
+    result: dict[str, Any] | None = None,
+) -> None:
+    """任务成功收尾。只有 render 任务有产出视频版本，其余任务传 `version_id=None`。"""
     await session.execute(
         update(PptVideoJob)
         .where(PptVideoJob.id == job_id)
@@ -106,6 +129,7 @@ async def mark_succeeded(session: AsyncSession, job_id: uuid.UUID, version_id: u
             stage="done",
             progress=100,
             version_id=version_id,
+            result=result,
             finished_at=_now(),
             heartbeat_at=_now(),
             error_message=None,
@@ -160,22 +184,34 @@ async def requeue_stale(session: AsyncSession, stale_seconds: int = 300) -> int:
     return len(stale)
 
 
-async def get_latest(session: AsyncSession, project_id: uuid.UUID) -> PptVideoJob | None:
+async def get_latest(
+    session: AsyncSession, project_id: uuid.UUID, kind: str | None = JOB_KIND_RENDER
+) -> PptVideoJob | None:
+    """取该项目最新任务。
+
+    `kind` 默认 `render`，保持「渲染进度」既有语义；查解析进度时显式传
+    `kind=JOB_KIND_PARSE`，否则会把渲染任务的进度当成解析进度返回。
+    """
+    conditions = [PptVideoJob.project_id == project_id, PptVideoJob.is_deleted.is_(False)]
+    if kind is not None:
+        conditions.append(PptVideoJob.kind == kind)
     job: PptVideoJob | None = await session.scalar(
-        select(PptVideoJob)
-        .where(PptVideoJob.project_id == project_id, PptVideoJob.is_deleted.is_(False))
-        .order_by(PptVideoJob.created_at.desc())
-        .limit(1)
+        select(PptVideoJob).where(*conditions).order_by(PptVideoJob.created_at.desc()).limit(1)
     )
     return job
 
 
-async def cancel_pending(session: AsyncSession, project_id: uuid.UUID) -> int:
-    """项目删除时清掉排队中的任务（运行中的由 worker 自己收尾）。"""
+async def cancel_pending(session: AsyncSession, project_id: uuid.UUID, kinds: Sequence[str] | None = None) -> int:
+    """清掉排队中的任务（运行中的由 worker 自己收尾）。
+
+    Args:
+        kinds: 只取消这些类别；None 表示全部取消（项目删除时的语义）。
+    """
+    conditions = [PptVideoJob.project_id == project_id, PptVideoJob.status == JOB_STATUS_QUEUED]
+    if kinds is not None:
+        conditions.append(PptVideoJob.kind.in_(list(kinds)))
     result = await session.execute(
-        update(PptVideoJob)
-        .where(PptVideoJob.project_id == project_id, PptVideoJob.status == JOB_STATUS_QUEUED)
-        .values(status="canceled", stage="canceled", finished_at=_now())
+        update(PptVideoJob).where(*conditions).values(status="canceled", stage="canceled", finished_at=_now())
     )
     rowcount = getattr(result, "rowcount", 0)
     return int(rowcount or 0)

@@ -25,6 +25,7 @@ import {
   fetchScriptRevisions,
   previewSlideRequest,
   previewSourceRequest,
+  requestParseRequest,
   regeneratePageImagesRequest,
   regenerateScriptAiRequest,
   recheckCoverageRequest,
@@ -40,22 +41,27 @@ import {
 } from '@/lib/api/server/agent'
 import type {
   ActionResult,
-  AiConfigFormValue,
+  AiConfigCreateRequest,
   AiConfigListResponse,
+  AiConfigTestRequest,
   AiConfigTestResponse,
+  AiConfigUpdateRequest,
+  AiModelsDiscoverRequest,
   AiModelsDiscoverResponse,
   EditableShapeList,
+  GlobalAiSettingsRequest,
+  JobAccepted,
   PageImagesAccepted,
-  PreviewResult,
+  ParseAccepted,
+  ProjectAiSettingsRequest,
   ProjectDetail,
-  ProjectUpdatePayload,
+  ProjectUpdateRequest,
   RenderAccepted,
   RevisionItem,
-  ScriptRewritePayload,
+  ScriptRewriteRequest,
   ScriptRewriteResult,
-  SlideUpdatePayload,
+  SlideUpdateRequest,
   SourceApplyResult,
-  SourceDiffSummary,
 } from '@/types/agent/ppt-video'
 
 const LIST_PATH = '/agent/ppt-videos'
@@ -67,7 +73,7 @@ function toMessage(error: unknown, fallback: string): string {
 
 export async function updateProjectSettings(
   projectId: string,
-  payload: ProjectUpdatePayload,
+  payload: ProjectUpdateRequest,
 ): Promise<ActionResult<ProjectDetail>> {
   try {
     const raw = await updateProjectRequest(projectId, payload)
@@ -82,7 +88,7 @@ export async function updateProjectSettings(
 export async function saveSlideScript(
   projectId: string,
   slideUid: string,
-  payload: SlideUpdatePayload,
+  payload: SlideUpdateRequest,
   slideNo?: number,
 ): Promise<ActionResult<ProjectDetail>> {
   const label = slideNo ? `第 ${slideNo} 页` : '本页'
@@ -96,13 +102,24 @@ export async function saveSlideScript(
   }
 }
 
-/** 单页试听：首次会真的合成（秒级），命中缓存则直接返回既有音频 */
-export async function previewSlide(projectId: string, slideUid: string): Promise<ActionResult<PreviewResult>> {
+/** 单页试听受理（202）：拿到 job_id 后由调用方轮询 `/jobs/{job_id}` */
+export async function previewSlide(projectId: string, slideUid: string): Promise<ActionResult<JobAccepted>> {
   try {
     const raw = await previewSlideRequest(projectId, slideUid)
-    return { success: true, message: '试听已生成', data: unwrapResponse(raw) as PreviewResult }
+    return { success: true, message: '正在合成试听音频', data: unwrapResponse(raw) as JobAccepted }
   } catch (error) {
     return { success: false, message: toMessage(error, '试听失败，请稍后重试') }
+  }
+}
+
+/** 重试解析（上传后解析失败时用）：202 受理，前端轮询解析进度 */
+export async function requestParse(projectId: string): Promise<ActionResult<ParseAccepted>> {
+  try {
+    const raw = await requestParseRequest(projectId)
+    revalidatePath(`${LIST_PATH}/${projectId}`)
+    return { success: true, message: '已重新加入解析队列', data: unwrapResponse(raw) as ParseAccepted }
+  } catch (error) {
+    return { success: false, message: toMessage(error, '重试解析失败') }
   }
 }
 
@@ -174,7 +191,7 @@ export async function loadAiConfigs(): Promise<ActionResult<AiConfigListResponse
   }
 }
 
-export async function createAiConfig(payload: AiConfigFormValue): Promise<ActionResult<AiConfigListResponse>> {
+export async function createAiConfig(payload: AiConfigCreateRequest): Promise<ActionResult<AiConfigListResponse>> {
   try {
     const raw = await createAiConfigRequest(payload)
     revalidatePath(LIST_PATH)
@@ -185,11 +202,9 @@ export async function createAiConfig(payload: AiConfigFormValue): Promise<Action
 }
 
 /** 按接口地址与 Key 拉取可用模型；失败时前端允许手动填写模型名 */
-export async function discoverAiModels(payload: {
-  config_id?: string
-  api_base_url?: string
-  api_key?: string
-}): Promise<ActionResult<AiModelsDiscoverResponse>> {
+export async function discoverAiModels(
+  payload: AiModelsDiscoverRequest,
+): Promise<ActionResult<AiModelsDiscoverResponse>> {
   try {
     const raw = await discoverAiModelsRequest(payload)
     const data = unwrapResponse(raw)
@@ -205,7 +220,7 @@ export async function discoverAiModels(payload: {
 
 export async function updateAiConfig(
   configId: string,
-  payload: Partial<AiConfigFormValue>,
+  payload: AiConfigUpdateRequest,
 ): Promise<ActionResult<AiConfigListResponse>> {
   try {
     const raw = await updateAiConfigRequest(configId, payload)
@@ -227,7 +242,7 @@ export async function deleteAiConfig(configId: string): Promise<ActionResult<AiC
 }
 
 export async function testAiConfig(
-  payload: Partial<AiConfigFormValue> & { config_id?: string },
+  payload: AiConfigTestRequest,
 ): Promise<ActionResult<AiConfigTestResponse>> {
   try {
     const raw = await testAiConfigRequest(payload)
@@ -239,13 +254,9 @@ export async function testAiConfig(
 }
 
 /** 全局默认模型与全局提示词指南（需平台管理员） */
-export async function saveGlobalAiSettings(payload: {
-  global_config_id?: string | null
-  global_model_name?: string | null
-  clear_global_config?: boolean
-  global_guide?: string | null
-  clear_global_guide?: boolean
-}): Promise<ActionResult<AiConfigListResponse>> {
+export async function saveGlobalAiSettings(
+  payload: GlobalAiSettingsRequest,
+): Promise<ActionResult<AiConfigListResponse>> {
   try {
     const raw = await updateGlobalAiSettingsRequest(payload)
     revalidatePath(LIST_PATH)
@@ -258,13 +269,7 @@ export async function saveGlobalAiSettings(payload: {
 /** 项目级覆盖：模型与提示词指南留空即继承全局 */
 export async function saveProjectAiSettings(
   projectId: string,
-  payload: {
-    llm_config_id?: string | null
-    llm_model_name?: string | null
-    clear_config?: boolean
-    script_guide?: string | null
-    clear_guide?: boolean
-  },
+  payload: ProjectAiSettingsRequest,
 ): Promise<ActionResult<ProjectDetail>> {
   try {
     const raw = await updateProjectAiSettingsRequest(projectId, payload)
@@ -279,7 +284,7 @@ export async function saveProjectAiSettings(
 
 export async function rewriteScripts(
   projectId: string,
-  payload: ScriptRewritePayload,
+  payload: ScriptRewriteRequest,
 ): Promise<ActionResult<ScriptRewriteResult>> {
   try {
     const raw = await rewriteScriptsRequest(projectId, payload)
@@ -356,15 +361,11 @@ export async function rollbackRevision(projectId: string, revisionId: string): P
 
 // ── 换源 ───────────────────────────────────────────────────────────────────
 
-/** 第一步：上传新 PPT，只比对不出结果（不改动任何现有数据） */
-export async function previewSourceReplace(projectId: string, file: File): Promise<ActionResult<SourceDiffSummary>> {
+/** 第一步：上传新 PPT 受理（202），比对在 worker 里跑，差异由轮询任务取回 */
+export async function previewSourceReplace(projectId: string, file: File): Promise<ActionResult<JobAccepted>> {
   try {
     const raw = await previewSourceRequest(projectId, file)
-    const summary = unwrapResponse(raw)
-    const message = summary.has_changes
-      ? `比对完成：保留 ${summary.unchanged} 页，变更 ${summary.changed} 页，新增 ${summary.added} 页，删除 ${summary.removed} 页`
-      : '页序列与当前完全一致，无需换源'
-    return { success: true, message, data: summary }
+    return { success: true, message: '已上传，正在比对页序列', data: unwrapResponse(raw) as JobAccepted }
   } catch (error) {
     return { success: false, message: toMessage(error, 'PPT 比对失败，请确认文件未损坏') }
   }

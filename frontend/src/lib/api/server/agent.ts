@@ -10,16 +10,21 @@
 import { apiFetch, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
 import type { components } from '@/types/generated/schema'
 import type {
-  AiConfigFormValue,
+  AiConfigCreateRequest,
   AiConfigListResponse,
+  AiConfigTestRequest,
+  AiConfigUpdateRequest,
+  AiModelsDiscoverRequest,
   EditableShapeList,
+  GlobalAiSettingsRequest,
+  ProjectAiSettingsRequest,
   ProjectDetail,
   ProjectPage,
-  ProjectUpdatePayload,
+  ProjectUpdateRequest,
   PptVideoListQuery,
   RevisionItem,
-  ScriptRewritePayload,
-  SlideUpdatePayload,
+  ScriptRewriteRequest,
+  SlideUpdateRequest,
   VersionItem,
   VersionManifest,
   VoiceOption,
@@ -43,7 +48,8 @@ export async function fetchPptVideoProjects(params: PptVideoListQuery = {}): Pro
   const raw = await apiFetch<Schemas['DataResponse_ProjectListResponse_']>(
     `${getApiBaseUrl()}${API}/ppt-videos?${buildQuery(params)}`,
   )
-  return { items: raw.data?.items ?? [], total: raw.meta?.total ?? raw.data?.items?.length ?? 0 }
+  const data = unwrapResponse(raw)
+  return { items: data?.items ?? [], total: raw.meta?.total ?? data?.items?.length ?? 0 }
 }
 
 export async function fetchPptVideoProject(projectId: string): Promise<ProjectDetail> {
@@ -57,7 +63,7 @@ export async function fetchVoiceCatalog(language?: 'zh' | 'en'): Promise<VoiceOp
   const raw = await apiFetch<Schemas['DataResponse_VoiceCatalogResponse_']>(
     `${getApiBaseUrl()}${API}/voices${suffix}`,
   )
-  return raw.data?.items ?? []
+  return unwrapResponse(raw)?.items ?? []
 }
 
 export async function fetchVersionManifest(versionId: string): Promise<VersionManifest> {
@@ -74,7 +80,7 @@ export async function fetchVersionList(projectId: string): Promise<VersionItem[]
 
 export async function updateProjectRequest(
   projectId: string,
-  payload: ProjectUpdatePayload,
+  payload: ProjectUpdateRequest,
 ): Promise<Schemas['DataResponse_ProjectDetail_']> {
   return apiFetch<Schemas['DataResponse_ProjectDetail_']>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}`, {
     method: 'PATCH',
@@ -86,7 +92,7 @@ export async function updateProjectRequest(
 export async function updateSlideRequest(
   projectId: string,
   slideUid: string,
-  payload: SlideUpdatePayload,
+  payload: SlideUpdateRequest,
 ): Promise<Schemas['DataResponse_SlideItem_']> {
   return apiFetch<Schemas['DataResponse_SlideItem_']>(
     `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/slides/${slideUid}`,
@@ -98,12 +104,24 @@ export async function updateSlideRequest(
   )
 }
 
+/**
+ * 单页试听：后端 202 受理（Kokoro 推理在 worker 里跑），
+ * 前端拿 job_id 轮询 `/jobs/{job_id}`，成功后从 `result.audio_url` 取音频。
+ */
 export async function previewSlideRequest(
   projectId: string,
   slideUid: string,
-): Promise<Schemas['DataResponse_PreviewResponse_']> {
-  return apiFetch<Schemas['DataResponse_PreviewResponse_']>(
+): Promise<Schemas['DataResponse_JobAccepted_']> {
+  return apiFetch<Schemas['DataResponse_JobAccepted_']>(
     `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/slides/${slideUid}/preview`,
+    { method: 'POST' },
+  )
+}
+
+/** 重试解析（失败重投，幂等）：后端 202 受理后轮询 `/parse` 或项目详情。 */
+export async function requestParseRequest(projectId: string): Promise<Schemas['DataResponse_ParseAccepted_']> {
+  return apiFetch<Schemas['DataResponse_ParseAccepted_']>(
+    `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/parse`,
     { method: 'POST' },
   )
 }
@@ -154,7 +172,7 @@ export async function fetchAiConfigs(): Promise<AiConfigListResponse> {
 }
 
 export async function createAiConfigRequest(
-  payload: AiConfigFormValue,
+  payload: AiConfigCreateRequest,
 ): Promise<Schemas['DataResponse_AiConfigListResponse_']> {
   return apiFetch<Schemas['DataResponse_AiConfigListResponse_']>(`${getApiBaseUrl()}${API}/ai-configs`, {
     method: 'POST',
@@ -165,7 +183,7 @@ export async function createAiConfigRequest(
 
 export async function updateAiConfigRequest(
   configId: string,
-  payload: Partial<AiConfigFormValue>,
+  payload: AiConfigUpdateRequest,
 ): Promise<Schemas['DataResponse_AiConfigListResponse_']> {
   return apiFetch<Schemas['DataResponse_AiConfigListResponse_']>(`${getApiBaseUrl()}${API}/ai-configs/${configId}`, {
     method: 'PATCH',
@@ -184,7 +202,7 @@ export async function deleteAiConfigRequest(
 
 /** 连通性测试：传 config_id 测已保存配置，或传表单值直接测 */
 export async function testAiConfigRequest(
-  payload: Partial<AiConfigFormValue> & { config_id?: string },
+  payload: AiConfigTestRequest,
 ): Promise<Schemas['DataResponse_AiConfigTestResponse_']> {
   return apiFetch<Schemas['DataResponse_AiConfigTestResponse_']>(`${getApiBaseUrl()}${API}/ai-configs/test`, {
     method: 'POST',
@@ -194,11 +212,9 @@ export async function testAiConfigRequest(
 }
 
 /** 拉取某个 Key 可用的模型清单：编辑态传 config_id 复用已保存的 Key */
-export async function discoverAiModelsRequest(payload: {
-  config_id?: string
-  api_base_url?: string
-  api_key?: string
-}): Promise<Schemas['DataResponse_AiModelsDiscoverResponse_']> {
+export async function discoverAiModelsRequest(
+  payload: AiModelsDiscoverRequest,
+): Promise<Schemas['DataResponse_AiModelsDiscoverResponse_']> {
   return apiFetch<Schemas['DataResponse_AiModelsDiscoverResponse_']>(`${getApiBaseUrl()}${API}/ai-configs/models`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -206,13 +222,9 @@ export async function discoverAiModelsRequest(payload: {
   })
 }
 
-export async function updateGlobalAiSettingsRequest(payload: {
-  global_config_id?: string | null
-  global_model_name?: string | null
-  clear_global_config?: boolean
-  global_guide?: string | null
-  clear_global_guide?: boolean
-}): Promise<Schemas['DataResponse_AiConfigListResponse_']> {
+export async function updateGlobalAiSettingsRequest(
+  payload: GlobalAiSettingsRequest,
+): Promise<Schemas['DataResponse_AiConfigListResponse_']> {
   return apiFetch<Schemas['DataResponse_AiConfigListResponse_']>(`${getApiBaseUrl()}${API}/ai-configs/global`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -222,13 +234,7 @@ export async function updateGlobalAiSettingsRequest(payload: {
 
 export async function updateProjectAiSettingsRequest(
   projectId: string,
-  payload: {
-    llm_config_id?: string | null
-    llm_model_name?: string | null
-    clear_config?: boolean
-    script_guide?: string | null
-    clear_guide?: boolean
-  },
+  payload: ProjectAiSettingsRequest,
 ): Promise<Schemas['DataResponse_ProjectDetail_']> {
   return apiFetch<Schemas['DataResponse_ProjectDetail_']>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/ai`, {
     method: 'PUT',
@@ -242,7 +248,7 @@ export async function updateProjectAiSettingsRequest(
 /** 提交改写：一律入队（202），返回 revision_id 供前端轮询 */
 export async function rewriteScriptsRequest(
   projectId: string,
-  payload: ScriptRewritePayload,
+  payload: ScriptRewriteRequest,
 ): Promise<Schemas['DataResponse_ScriptRewriteResult_']> {
   return apiFetch<Schemas['DataResponse_ScriptRewriteResult_']>(
     `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/script-rewrite`,
@@ -269,7 +275,7 @@ export async function fetchScriptRevisions(projectId: string, limit = 30): Promi
   const raw = await apiFetch<Schemas['DataResponse_RevisionListResponse_']>(
     `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/revisions?limit=${limit}`,
   )
-  return raw.data?.items ?? []
+  return unwrapResponse(raw)?.items ?? []
 }
 
 export async function rollbackRevisionRequest(
@@ -284,13 +290,14 @@ export async function rollbackRevisionRequest(
 
 // ── 换源 ───────────────────────────────────────────────────────────────────
 
+/** 换源预览：202 受理，差异由 `/jobs/{job_id}` 的 `result` 返回 */
 export async function previewSourceRequest(
   projectId: string,
   file: File,
-): Promise<Schemas['DataResponse_SourceDiffSummary_']> {
+): Promise<Schemas['DataResponse_JobAccepted_']> {
   const form = new FormData()
   form.append('file', file)
-  return apiFetch<Schemas['DataResponse_SourceDiffSummary_']>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/source`, {
+  return apiFetch<Schemas['DataResponse_JobAccepted_']>(`${getApiBaseUrl()}${API}/ppt-videos/${projectId}/source`, {
     method: 'POST',
     body: form,
   })

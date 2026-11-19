@@ -29,6 +29,7 @@ from app.modules.agent import ai_config, source_replace
 from app.modules.agent import config as agent_config
 from app.modules.agent import queue as agent_queue
 from app.modules.agent import service as agent_service
+from app.modules.agent.models import JOB_KIND_PARSE
 from app.modules.agent.schemas import (
     AiConfigCreateRequest,
     AiConfigItem,
@@ -40,12 +41,14 @@ from app.modules.agent.schemas import (
     AiModelsDiscoverResponse,
     EditableShapeList,
     GlobalAiSettingsRequest,
+    JobAccepted,
     JobState,
     ManifestResponse,
     MessageResult,
     PageImagesAccepted,
     PageImagesState,
-    PreviewResponse,
+    ParseAccepted,
+    ParseState,
     ProjectAiSettingsRequest,
     ProjectDetail,
     ProjectListResponse,
@@ -60,7 +63,6 @@ from app.modules.agent.schemas import (
     SlideRegionsResponse,
     SlideUpdateRequest,
     SourceApplyResult,
-    SourceDiffSummary,
     VersionItem,
     VoiceCatalogResponse,
     VoiceOption,
@@ -276,7 +278,7 @@ async def list_projects(
     )
 
 
-@router.post("/ppt-videos", summary="新建配音视频项目（上传 PPT + 可选逐页讲稿）")
+@router.post("/ppt-videos", status_code=202, summary="新建配音视频项目（上传 PPT + 可选逐页讲稿，202 后轮询解析进度）")
 async def create_project(
     request: Request,
     file: Annotated[UploadFile, File(description="PPT 文件（.ppt / .pptx）")],
@@ -312,25 +314,42 @@ async def create_project(
             speed=speed,
             created_by=current_user.id,
         )
-        # 解析期间用户可能点了「停止上传」或直接关页：create_project 只 flush 未提交，
-        # 这里断开就清掉已写入的源 PPT 并打断事务，保证不留半成品项目。
-        if await request.is_disconnected():
-            logger.info("取消新建：客户端已断开", extra={"project_id": str(project.id)})
-            _discard_source_object(project.id)
-            raise ClientDisconnectedException()
-
-        # 上传即触发初稿生成：start_script_ai 内部提交事务后再投递后台任务，
-        # 保证后台会话能读到刚建的项目；投递失败不影响上传成功。
-        await agent_service.start_script_ai(db, project.id, settings)
-        # 页图是编辑态底图：上传后就在后台出图，用户写讲稿时已有画面可看，
-        # 之后渲染也能直接复用，不必再跑一次 soffice。
-        # 先在本事务里落 queued 再投递：返回的详情自带进度条，前端首屏即可开始轮询，
-        # 不用等用户手动刷新才看到缩略图。
-        agent_service.mark_page_images_queued(project)
-        await db.flush()
-        await agent_service.submit_page_images(project.id, project.source_version)
+        # 解析（LibreOffice 最长 180s）已改为队列任务，请求内只落库入队；
+        # 初稿与页图由解析任务在解析成功后触发，这里不再投递。
         detail = await agent_service.get_detail(db, project.id, settings, user_id=current_user.id)
     return DataResponse[ProjectDetail](data=detail)
+
+
+@router.get("/ppt-videos/{project_id}/parse", summary="PPT 解析进度（异步任务）")
+async def get_parse_state(
+    project_id: uuid.UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(PERM_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[ParseState]:
+    with _translate_errors():
+        project = await agent_service.get_project(db, project_id)
+        slides = await agent_service.list_slides(db, project_id)
+        job = await agent_queue.get_latest(db, project_id, kind=JOB_KIND_PARSE)
+        state = agent_service.parse_state(project, job, slides)
+    return DataResponse[ParseState](data=state)
+
+
+@router.post(
+    "/ppt-videos/{project_id}/parse",
+    status_code=202,
+    summary="重试解析（失败重投，幂等）",
+)
+async def retry_parse(
+    project_id: uuid.UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(PERM_MANAGE)),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[ParseAccepted]:
+    with _translate_errors():
+        job = await agent_service.request_parse(db, project_id)
+        await db.commit()
+    return DataResponse[ParseAccepted](data=ParseAccepted(job_id=job.id, status="queued"))
 
 
 @router.get("/ppt-videos/versions/{version_id}/manifest", summary="版本复用记录（每页 sha256 与命中情况）")
@@ -502,27 +521,38 @@ async def slide_regions(
     return DataResponse[SlideRegionsResponse](data=data)
 
 
-@router.post("/ppt-videos/{project_id}/slides/{slide_uid}/preview", summary="单页试听（合成或命中缓存）")
+@router.post(
+    "/ppt-videos/{project_id}/slides/{slide_uid}/preview",
+    status_code=202,
+    summary="单页试听受理（异步合成，轮询 /jobs/{job_id}）",
+)
 async def preview_slide(
     project_id: uuid.UUID,
     slide_uid: str,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(PERM_MANAGE)),
     db: AsyncSession = Depends(get_db),
-) -> DataResponse[PreviewResponse]:
+) -> DataResponse[JobAccepted]:
     settings = await agent_config.load_settings()
     with _translate_errors():
-        slide_no, audio_url, duration_ms, audio_sha256 = await agent_service.preview_slide(
-            db, project_id, slide_uid, settings
+        job = await agent_service.request_slide_preview(
+            db, project_id, slide_uid, settings, getattr(current_user, "name", None)
         )
-    return DataResponse[PreviewResponse](
-        data=PreviewResponse(
-            slide_no=slide_no,
-            audio_url=audio_url,
-            duration_ms=duration_ms,
-            audio_sha256=audio_sha256,
-        )
-    )
+        await db.commit()
+    return DataResponse[JobAccepted](data=JobAccepted(job_id=job.id, kind=job.kind))
+
+
+@router.get("/ppt-videos/{project_id}/jobs/{job_id}", summary="异步任务进度与产物（解析/试听/换源预览）")
+async def get_job_state(
+    project_id: uuid.UUID,
+    job_id: uuid.UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(PERM_READ)),
+    db: AsyncSession = Depends(get_db),
+) -> DataResponse[JobState]:
+    with _translate_errors():
+        job = await agent_service.get_job(db, project_id, job_id)
+    return DataResponse[JobState](data=agent_service.job_state(job))
 
 
 @router.get("/ppt-videos/{project_id}/slides/{slide_no}/image", summary="页面图片（播放器/编辑器大图）")
@@ -996,20 +1026,27 @@ async def rollback_script_revision(
 # ── 换源（重传整份 PPT） ────────────────────────────────────────────────────
 
 
-@router.post("/ppt-videos/{project_id}/source", summary="上传新 PPT 并比对页序列（不改动现有数据）")
+@router.post(
+    "/ppt-videos/{project_id}/source",
+    status_code=202,
+    summary="上传新 PPT 并比对页序列（异步受理，轮询 /jobs/{job_id} 取差异）",
+)
 async def preview_source_replace(
     project_id: uuid.UUID,
     file: Annotated[UploadFile, File(description="新的 PPT 文件（.ppt / .pptx）")],
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission(PERM_MANAGE)),
     db: AsyncSession = Depends(get_db),
-) -> DataResponse[SourceDiffSummary]:
+) -> DataResponse[JobAccepted]:
     file_bytes = await _read_upload(file, agent_config.MAX_UPLOAD_BYTES)
     _check_ppt_magic(file.filename or "", file_bytes)
     filename = file.filename or "presentation.pptx"
     with _translate_errors():
-        diff = await agent_service.preview_source_replace(db, project_id, file_bytes, filename)
-    return DataResponse[SourceDiffSummary](data=diff)
+        job = await agent_service.request_source_preview(
+            db, project_id, file_bytes, filename, getattr(current_user, "name", None)
+        )
+        await db.commit()
+    return DataResponse[JobAccepted](data=JobAccepted(job_id=job.id, kind=job.kind))
 
 
 @router.post("/ppt-videos/{project_id}/source/apply", summary="应用换源：未变页保留讲稿与音频，变更页自动重写")

@@ -5,6 +5,7 @@ import { Alert, App, Button, Modal, Space, Tag, Typography, Upload } from 'antd'
 import { InboxOutlined } from '@ant-design/icons'
 
 import { applySourceReplace, previewSourceReplace } from '@/actions/agent/ppt-video'
+import { waitForPptVideoJob } from '@/lib/api/client/agent'
 import {
   DIFF_STATUS_LABEL,
   type DiffStatus,
@@ -72,14 +73,30 @@ export default function SourceReplaceModal({ open, projectId, onClose, onApplied
 
   const handlePick = async (file: File) => {
     setBusy(true)
-    const result = await previewSourceReplace(projectId, file)
-    setBusy(false)
-    if (!result.success || !result.data) {
-      message.error(result.message)
-      return
+    try {
+      const result = await previewSourceReplace(projectId, file)
+      if (!result.success || !result.data) {
+        message.error(result.message)
+        return
+      }
+      // 比对在 worker 里跑（202 受理），等到终态再从任务产物取差异
+      const job = await waitForPptVideoJob(projectId, result.data.job_id)
+      if (job.status !== 'succeeded') {
+        message.error(job.error_message || 'PPT 比对失败，请确认文件未损坏')
+        return
+      }
+      const summary = job.result as unknown as SourceDiffSummary | undefined
+      if (!summary) {
+        message.error('比对结果缺失，请重试')
+        return
+      }
+      setFilename(file.name)
+      setDiff(summary)
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'PPT 比对失败，请稍后重试')
+    } finally {
+      setBusy(false)
     }
-    setFilename(file.name)
-    setDiff(result.data)
   }
 
   const handleApply = async () => {

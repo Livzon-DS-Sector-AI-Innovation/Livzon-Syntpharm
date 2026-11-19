@@ -11,7 +11,41 @@ import {
   testAiConfig,
   updateAiConfig,
 } from '@/actions/agent/ppt-video'
-import type { AiConfigFormValue, AiConfigItem } from '@/types/agent/ppt-video'
+import type {
+  AiConfigCreateRequest,
+  AiConfigFormValue,
+  AiConfigItem,
+  AiConfigUpdateRequest,
+} from '@/types/agent/ppt-video'
+
+/**
+ * 表单值 → 后端请求体（显式白名单，避免把 UI 字段当契约提交）。
+ * `available_models` 首项作为默认模型；Key 只在创建/更换时提交。
+ */
+function toCreatePayload(values: AiConfigFormValue): AiConfigCreateRequest {
+  return {
+    config_name: values.config_name,
+    api_base_url: values.api_base_url,
+    api_key: (values.api_key ?? '').trim(),
+    available_models: values.available_models,
+    model_name: values.available_models[0] ?? values.model_name ?? null,
+    temperature: values.temperature ?? 0.7,
+    timeout_seconds: values.timeout_seconds ?? 60,
+  }
+}
+
+function toUpdatePayload(values: AiConfigFormValue): AiConfigUpdateRequest {
+  return {
+    config_name: values.config_name,
+    api_base_url: values.api_base_url,
+    available_models: values.available_models,
+    model_name: values.available_models[0] ?? values.model_name ?? null,
+    temperature: values.temperature ?? null,
+    timeout_seconds: values.timeout_seconds ?? null,
+    // 编辑时留空表示不换 Key，不能把掩码当明文提交
+    api_key: values.api_key?.trim() ? values.api_key.trim() : null,
+  }
+}
 
 interface Props {
   items: AiConfigItem[]
@@ -112,12 +146,8 @@ export default function AiKeyPanel({ items, onChanged }: Props) {
     const values = await form.validateFields()
     setBusy(true)
     const result = editingId
-      ? await updateAiConfig(editingId, {
-          ...values,
-          // 编辑时留空表示不换 Key，不能把掩码当明文提交
-          api_key: values.api_key?.trim() ? values.api_key.trim() : undefined,
-        })
-      : await createAiConfig(values)
+      ? await updateAiConfig(editingId, toUpdatePayload(values))
+      : await createAiConfig(toCreatePayload(values))
     setBusy(false)
     if (!result.success) {
       message.error(result.message)

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Alert, App, Button, Drawer, Space, Tabs, Typography } from 'antd'
 import { RobotOutlined } from '@ant-design/icons'
 
@@ -21,6 +22,7 @@ import {
   saveProjectAiSettings,
   updateProjectSettings,
 } from '@/actions/agent/ppt-video'
+import { fetchAiConfigs } from '@/lib/api/client/agent'
 import {
   MODEL_SOURCE_HINT,
   MODEL_SOURCE_LABEL,
@@ -62,9 +64,14 @@ export default function AiConfigDrawer({
   onDetailChange,
 }: Props) {
   const { message, modal } = App.useApp()
-  // 首屏数据来自 RSC/props，本地只在刷新与保存后覆盖，避免用 effect 同步 props
+  // 首屏数据来自 RSC/props；项目视图没有 RSC 数据时用 React Query 取一次
   const [localData, setLocalData] = useState<AiConfigListResponse | null>(null)
-  const data = localData ?? configs
+  const { data: fetchedData } = useQuery<AiConfigListResponse>({
+    queryKey: ['agent', 'ai-configs'],
+    queryFn: fetchAiConfigs,
+    enabled: open && !localData && !configs,
+  })
+  const data = localData ?? configs ?? fetchedData ?? null
   // 用户改过才用草稿值；没改过就跟随当前作用域的数据源，关抽屉即丢弃草稿
   const [guideDraft, setGuideDraft] = useState<string | null>(null)
   const guide = guideDraft ?? (mode === 'project' ? (detail?.script_guide ?? '') : (data?.global_guide ?? ''))
@@ -84,19 +91,7 @@ export default function AiConfigDrawer({
     onConfigsChange?.(next)
   }
 
-  // 项目视图没有 RSC 首屏数据，抽屉打开时自取一次（含 can_manage_global 与全局默认）
-  useEffect(() => {
-    if (!open || data) return
-    let cancelled = false
-    void loadAiConfigs().then((result) => {
-      if (cancelled || !result.success || !result.data) return
-      setLocalData(result.data)
-      onConfigsChange?.(result.data)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [open, data, onConfigsChange])
+  
 
   const draftDirty = Boolean(mode === 'project' && detail && draft && isProjectDraftDirty(draft, detail))
   const guideDirty =
@@ -160,8 +155,13 @@ export default function AiConfigDrawer({
     setSaving(true)
     const result = await saveGlobalAiSettings(
       selection
-        ? { global_config_id: selection.configId, global_model_name: selection.modelName }
-        : { clear_global_config: true },
+        ? {
+            global_config_id: selection.configId,
+            global_model_name: selection.modelName,
+            clear_global_config: false,
+            clear_global_guide: false,
+          }
+        : { clear_global_config: true, clear_global_guide: false },
     )
     setSaving(false)
     if (!result.success || !result.data) {
@@ -179,8 +179,13 @@ export default function AiConfigDrawer({
     const result = await saveProjectAiSettings(
       detail.id,
       selection
-        ? { llm_config_id: selection.configId, llm_model_name: selection.modelName }
-        : { clear_config: true },
+        ? {
+            llm_config_id: selection.configId,
+            llm_model_name: selection.modelName,
+            clear_config: false,
+            clear_guide: false,
+          }
+        : { clear_config: true, clear_guide: false },
     )
     setSaving(false)
     if (!result.success || !result.data) {
@@ -202,6 +207,7 @@ export default function AiConfigDrawer({
       const result = await saveProjectAiSettings(detail.id, {
         script_guide: trimmed || null,
         clear_guide: !trimmed,
+        clear_config: false,
       })
       setSaving(false)
       if (!result.success || !result.data) {
@@ -213,7 +219,11 @@ export default function AiConfigDrawer({
       message.success(trimmed ? '项目文稿提示词指南已保存' : '已清空项目指南，跟随全局')
       return
     }
-    const result = await saveGlobalAiSettings({ global_guide: trimmed || null, clear_global_guide: !trimmed })
+    const result = await saveGlobalAiSettings({
+      global_guide: trimmed || null,
+      clear_global_guide: !trimmed,
+      clear_global_config: false,
+    })
     setSaving(false)
     if (!result.success || !result.data) {
       message.error(result.message)

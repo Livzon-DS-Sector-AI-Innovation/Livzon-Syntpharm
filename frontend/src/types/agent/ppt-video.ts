@@ -16,7 +16,13 @@ export type ReuseSummary = components['schemas']['ReuseSummary']
 export type VersionItem = components['schemas']['VersionItem']
 export type ProjectSummary = components['schemas']['ProjectSummary']
 export type ProjectDetail = components['schemas']['ProjectDetail']
-export type PreviewResult = components['schemas']['PreviewResponse']
+/** 试听任务的产物（`job.result` 结构；后端不再有同步返回的 PreviewResponse 端点了） */
+export interface PreviewResult {
+  slide_no: number
+  audio_url: string
+  duration_ms: number
+  audio_sha256: string
+}
 export type RenderAccepted = components['schemas']['RenderAccepted']
 export type ManifestSlideItem = components['schemas']['ManifestSlideItem']
 export type VersionManifest = components['schemas']['ManifestResponse']
@@ -41,6 +47,21 @@ export type SlideRegionItem = components['schemas']['SlideRegionItem']
 export type SlideRegionsResponse = components['schemas']['SlideRegionsResponse']
 /** 后端算出的「这句会亮什么」，含兜底来源标记；仅用于面板标注，不参与渲染 */
 export type SlideSentenceHint = components['schemas']['SlideSentenceHint']
+export type ParseState = components['schemas']['ParseState']
+export type ParseAccepted = components['schemas']['ParseAccepted']
+export type JobAccepted = components['schemas']['JobAccepted']
+export type RevisionListResponse = components['schemas']['RevisionListResponse']
+
+// ── 请求体契约：一律用后端生成的 *Request 类型，禁止手写 ──────────────────────
+export type AiConfigCreateRequest = components['schemas']['AiConfigCreateRequest']
+export type AiConfigUpdateRequest = components['schemas']['AiConfigUpdateRequest']
+export type AiConfigTestRequest = components['schemas']['AiConfigTestRequest']
+export type AiModelsDiscoverRequest = components['schemas']['AiModelsDiscoverRequest']
+export type GlobalAiSettingsRequest = components['schemas']['GlobalAiSettingsRequest']
+export type ProjectAiSettingsRequest = components['schemas']['ProjectAiSettingsRequest']
+export type ProjectUpdateRequest = components['schemas']['ProjectUpdateRequest']
+export type SlideUpdateRequest = components['schemas']['SlideUpdateRequest']
+export type ScriptRewriteRequest = components['schemas']['ScriptRewriteRequest']
 
 /** 区域三态：不亮 / 只给文字变色 / 整块铺底色（与后端 REGION_MODES 对齐） */
 export type RegionMode = 'off' | 'text' | 'area'
@@ -123,7 +144,7 @@ export const REVISION_STATUS_LABEL: Record<string, string> = {
   failed: '失败',
 }
 
-/** AI 配置抽屉里的自定义模型表单（新建/编辑共用） */
+/** AI 配置抽屉里的自定义模型表单值（UI 状态；提交前映射为生成请求体） */
 export interface AiConfigFormValue {
   config_name: string
   api_base_url: string
@@ -134,13 +155,6 @@ export interface AiConfigFormValue {
   api_key?: string
   temperature?: number
   timeout_seconds?: number
-}
-
-/** 讲稿改写提交体（与后端 ScriptRewriteRequest 对齐，一律后台执行） */
-export interface ScriptRewritePayload {
-  mode: RewriteMode
-  slide_uids?: string[]
-  instruction?: string | null
 }
 
 /**
@@ -192,28 +206,6 @@ export interface ActionResult<T> {
   data?: T
 }
 
-/** 单页编辑提交体（与后端 SlideUpdateRequest 对齐） */
-export interface SlideUpdatePayload {
-  script_text: string
-  language?: LanguageCode | null
-  voice_id?: string | null
-  speed?: number | null
-  /** 本页高亮样式覆盖；null 表示跟随项目设置 */
-  highlight_style?: string | null
-  /** 本页高亮主色 #RRGGBB；null 表示跟随项目设置 */
-  highlight_color?: string | null
-  /** 本页自定义高亮是否启用；关闭只让上面两项不生效，不清值 */
-  highlight_override_enabled?: boolean | null
-  /** 区域级配置；整份替换语义，传空数组对象即清空（后端不区分「未传」和「传空」） */
-  highlight_regions?: HighlightRegionsPayload | null
-  clear_language?: boolean
-  clear_voice?: boolean
-  clear_speed?: boolean
-  clear_highlight_style?: boolean
-  clear_highlight_color?: boolean
-  clear_highlight_regions?: boolean
-}
-
 /** 页级可选的视觉引导样式（与后端 HIGHLIGHT_STYLES 对齐） */
 export const HIGHLIGHT_STYLE_OPTIONS: { value: string; label: string }[] = [
   { value: 'text_recolor', label: '文字变色（不画框，背景不动）' },
@@ -221,26 +213,6 @@ export const HIGHLIGHT_STYLE_OPTIONS: { value: string; label: string }[] = [
   { value: 'dim', label: '仅压暗' },
   { value: 'outline', label: '仅描边' },
 ]
-
-/** 项目全局设置提交体（与后端 ProjectUpdateRequest 对齐） */
-export interface ProjectUpdatePayload {
-  name?: string
-  default_language?: LanguageCode
-  default_voice_id?: string
-  speed?: number
-  /** 项目高亮样式；空串表示清除覆盖、回到跟随模块默认 */
-  highlight_style?: string
-  /** 项目高亮主色 #RRGGBB；空串表示清除覆盖 */
-  highlight_color?: string
-  /** 项目级自定义高亮是否启用；关闭只让上面两项不生效，不清值 */
-  highlight_override_enabled?: boolean
-  clear_highlight_style?: boolean
-  clear_highlight_color?: boolean
-  /** 项目级发音词典（整份替换）：原文 → 合成替代文本 */
-  pronunciation_dict?: Record<string, string>
-  /** 清空项目级发音词典 */
-  clear_pronunciation_dict?: boolean
-}
 
 /** 渲染阶段文案：后端返回机器码，界面显示中文 */
 export const STAGE_LABEL: Record<string, string> = {

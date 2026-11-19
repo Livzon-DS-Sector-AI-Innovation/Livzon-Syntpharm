@@ -1,10 +1,12 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { App, Button, Drawer, Empty, Popconfirm, Space, Spin, Tag, Typography } from 'antd'
 import { HistoryOutlined, UndoOutlined } from '@ant-design/icons'
 
-import { loadScriptRevisions, rollbackRevision } from '@/actions/agent/ppt-video'
+import { rollbackRevision } from '@/actions/agent/ppt-video'
+import { fetchScriptRevisionList } from '@/lib/api/client/agent'
 import {
   REVISION_MODE_LABEL,
   REVISION_STATUS_LABEL,
@@ -33,25 +35,19 @@ const STATUS_COLOR: Record<string, string> = {
  */
 export default function RevisionDrawer({ open, projectId, onClose, onRolledBack }: Props) {
   const { message } = App.useApp()
-  const [items, setItems] = useState<RevisionItem[]>([])
-  const [loading, setLoading] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    const result = await loadScriptRevisions(projectId)
-    setLoading(false)
-    if (!result.success) {
-      message.error(result.message)
-      return
-    }
-    setItems(result.data ?? [])
-  }, [projectId, message])
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 抽屉打开即拉一次列表，setLoading 是同步反馈而非派生状态
-    if (open) void load()
-  }, [open, load])
+  // 抽屉打开即取一次；重复打开走缓存，刷新按钮显式 refetch
+  const {
+    data: items = [],
+    isLoading,
+    isFetching,
+    refetch,
+  } = useQuery({
+    queryKey: ['ppt-video', projectId, 'revisions'],
+    queryFn: () => fetchScriptRevisionList(projectId),
+    enabled: open,
+  })
 
   const handleRollback = async (revision: RevisionItem) => {
     setBusyId(revision.id)
@@ -63,7 +59,7 @@ export default function RevisionDrawer({ open, projectId, onClose, onRolledBack 
     }
     message.success(result.message)
     onRolledBack(result.data)
-    await load()
+    await refetch()
   }
 
   return (
@@ -84,12 +80,12 @@ export default function RevisionDrawer({ open, projectId, onClose, onRolledBack 
         body: { padding: '16px 24px', background: '#FCFCFB' },
       }}
       extra={
-        <Button size="small" onClick={() => void load()} loading={loading}>
+        <Button size="small" onClick={() => void refetch()} loading={isFetching}>
           刷新
         </Button>
       }
     >
-      {loading && !items.length ? (
+      {isLoading && !items.length ? (
         <div className="py-16 text-center">
           <Spin />
         </div>

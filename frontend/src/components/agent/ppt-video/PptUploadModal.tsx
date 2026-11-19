@@ -117,7 +117,7 @@ export default function PptUploadModal({ open, voices, onClose }: Props) {
         onUploaded: () => setPhase('processing'),
       })
       setPhase('form')
-      message.success('项目已创建，正在打开工作台')
+      message.success('项目已创建，解析在后台进行，正在打开工作台')
       onClose()
       router.push(`/agent/ppt-videos/${detail.id}`)
       router.refresh()

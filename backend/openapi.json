@@ -90029,7 +90029,7 @@
         "tags": [
           "\u667a\u80fd\u4f53"
         ],
-        "summary": "\u65b0\u5efa\u914d\u97f3\u89c6\u9891\u9879\u76ee\uff08\u4e0a\u4f20 PPT + \u53ef\u9009\u9010\u9875\u8bb2\u7a3f\uff09",
+        "summary": "\u65b0\u5efa\u914d\u97f3\u89c6\u9891\u9879\u76ee\uff08\u4e0a\u4f20 PPT + \u53ef\u9009\u9010\u9875\u8bb2\u7a3f\uff0c202 \u540e\u8f6e\u8be2\u89e3\u6790\u8fdb\u5ea6\uff09",
         "operationId": "create_project_api_v1_agent_ppt_videos_post",
         "parameters": [
           {
@@ -90060,12 +90060,128 @@
           }
         },
         "responses": {
-          "200": {
+          "202": {
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/DataResponse_ProjectDetail_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/parse": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "PPT \u89e3\u6790\u8fdb\u5ea6\uff08\u5f02\u6b65\u4efb\u52a1\uff09",
+        "operationId": "get_parse_state_api_v1_agent_ppt_videos__project_id__parse_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ParseState_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u91cd\u8bd5\u89e3\u6790\uff08\u5931\u8d25\u91cd\u6295\uff0c\u5e42\u7b49\uff09",
+        "operationId": "retry_parse_api_v1_agent_ppt_videos__project_id__parse_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_ParseAccepted_"
                 }
               }
             }
@@ -90670,7 +90786,7 @@
         "tags": [
           "\u667a\u80fd\u4f53"
         ],
-        "summary": "\u5355\u9875\u8bd5\u542c\uff08\u5408\u6210\u6216\u547d\u4e2d\u7f13\u5b58\uff09",
+        "summary": "\u5355\u9875\u8bd5\u542c\u53d7\u7406\uff08\u5f02\u6b65\u5408\u6210\uff0c\u8f6e\u8be2 /jobs/{job_id}\uff09",
         "operationId": "preview_slide_api_v1_agent_ppt_videos__project_id__slides__slide_uid__preview_post",
         "parameters": [
           {
@@ -90710,12 +90826,81 @@
           }
         ],
         "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_JobAccepted_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/ppt-videos/{project_id}/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "\u667a\u80fd\u4f53"
+        ],
+        "summary": "\u5f02\u6b65\u4efb\u52a1\u8fdb\u5ea6\u4e0e\u4ea7\u7269\uff08\u89e3\u6790/\u8bd5\u542c/\u6362\u6e90\u9884\u89c8\uff09",
+        "operationId": "get_job_state_api_v1_agent_ppt_videos__project_id__jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/DataResponse_PreviewResponse_"
+                  "$ref": "#/components/schemas/DataResponse_JobState_"
                 }
               }
             }
@@ -91990,7 +92175,7 @@
         "tags": [
           "\u667a\u80fd\u4f53"
         ],
-        "summary": "\u4e0a\u4f20\u65b0 PPT \u5e76\u6bd4\u5bf9\u9875\u5e8f\u5217\uff08\u4e0d\u6539\u52a8\u73b0\u6709\u6570\u636e\uff09",
+        "summary": "\u4e0a\u4f20\u65b0 PPT \u5e76\u6bd4\u5bf9\u9875\u5e8f\u5217\uff08\u5f02\u6b65\u53d7\u7406\uff0c\u8f6e\u8be2 /jobs/{job_id} \u53d6\u5dee\u5f02\uff09",
         "operationId": "preview_source_replace_api_v1_agent_ppt_videos__project_id__source_post",
         "parameters": [
           {
@@ -92031,12 +92216,12 @@
           }
         },
         "responses": {
-          "200": {
+          "202": {
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/DataResponse_SourceDiffSummary_"
+                  "$ref": "#/components/schemas/DataResponse_JobAccepted_"
                 }
               }
             }
@@ -92399,11 +92584,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/LLMConfigResponse"
-                  },
-                  "title": "Response List Configs Api V1 Llm Configs Get"
+                  "$ref": "#/components/schemas/DataResponse_list_LLMConfigResponse__"
                 }
               }
             }
@@ -92462,7 +92643,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/LLMConfigResponse"
+                  "$ref": "#/components/schemas/DataResponse_LLMConfigResponse_"
                 }
               }
             }
@@ -92522,7 +92703,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/LLMConfigResponse"
+                  "$ref": "#/components/schemas/DataResponse_LLMConfigResponse_"
                 }
               }
             }
@@ -92590,7 +92771,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/LLMConfigResponse"
+                  "$ref": "#/components/schemas/DataResponse_LLMConfigResponse_"
                 }
               }
             }
@@ -92667,7 +92848,7 @@
         ],
         "summary": "Test LLM connection",
         "description": "Test LLM connectivity using active config.",
-        "operationId": "post_api_v1_llm_configs_test_post",
+        "operationId": "test_connection_api_v1_llm_configs_test_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -92692,7 +92873,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "title": "Response Post Api V1 Llm Configs Test Post"
+                  "$ref": "#/components/schemas/DataResponse_LLMHealthResult_"
                 }
               }
             }
@@ -111775,6 +111956,42 @@
         "type": "object",
         "title": "DataResponse[IdOnlyResult]"
       },
+      "DataResponse_JobAccepted_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobAccepted"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[JobAccepted]"
+      },
       "DataResponse_JobDeleteResult_": {
         "properties": {
           "code": {
@@ -111810,6 +112027,114 @@
         },
         "type": "object",
         "title": "DataResponse[JobDeleteResult]"
+      },
+      "DataResponse_JobState_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[JobState]"
+      },
+      "DataResponse_LLMConfigResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LLMConfigResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[LLMConfigResponse]"
+      },
+      "DataResponse_LLMHealthResult_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LLMHealthResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[LLMHealthResult]"
       },
       "DataResponse_LedgerImportResult_": {
         "properties": {
@@ -112165,6 +112490,78 @@
         "type": "object",
         "title": "DataResponse[PageImagesState]"
       },
+      "DataResponse_ParseAccepted_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParseAccepted"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ParseAccepted]"
+      },
+      "DataResponse_ParseState_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParseState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[ParseState]"
+      },
       "DataResponse_PersonnelAddResult_": {
         "properties": {
           "code": {
@@ -112452,42 +112849,6 @@
         },
         "type": "object",
         "title": "DataResponse[PrejobTemplateResponse]"
-      },
-      "DataResponse_PreviewResponse_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PreviewResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "meta": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMeta"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "title": "DataResponse[PreviewResponse]"
       },
       "DataResponse_ProblemHandleResult_": {
         "properties": {
@@ -113676,42 +114037,6 @@
         },
         "type": "object",
         "title": "DataResponse[SourceApplyResult]"
-      },
-      "DataResponse_SourceDiffSummary_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SourceDiffSummary"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "meta": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMeta"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "title": "DataResponse[SourceDiffSummary]"
       },
       "DataResponse_StageTransitionCheckResult_": {
         "properties": {
@@ -114964,6 +115289,46 @@
         },
         "type": "object",
         "title": "DataResponse[list[InternationalReviewResponse]]"
+      },
+      "DataResponse_list_LLMConfigResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/LLMConfigResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[LLMConfigResponse]]"
       },
       "DataResponse_list_MaintainerBrief__": {
         "properties": {
@@ -143926,6 +144291,35 @@
         "title": "ItemResult",
         "description": "\u5355\u9879\u5224\u5b9a"
       },
+      "JobAccepted": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running"
+            ],
+            "title": "Status",
+            "default": "queued"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "kind"
+        ],
+        "title": "JobAccepted",
+        "description": "\u8017\u65f6\u4efb\u52a1\u53d7\u7406\u7ed3\u679c\uff08202\uff09\uff1a\u524d\u7aef\u62ff job_id \u540e\u8f6e\u8be2 `/jobs/{job_id}`\u3002"
+      },
       "JobDeleteResult": {
         "properties": {
           "job_id": {
@@ -143953,6 +144347,11 @@
             "type": "string",
             "format": "uuid",
             "title": "Job Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "default": "render"
           },
           "status": {
             "type": "string",
@@ -144003,6 +144402,18 @@
             ],
             "title": "Version Id"
           },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
           "started_at": {
             "anyOf": [
               {
@@ -144036,7 +144447,7 @@
           "progress"
         ],
         "title": "JobState",
-        "description": "\u6e32\u67d3\u4efb\u52a1\u72b6\u6001\uff08\u8f6e\u8be2\u7aef\u70b9\uff09\u3002"
+        "description": "\u5f02\u6b65\u4efb\u52a1\u72b6\u6001\uff08\u8f6e\u8be2\u7aef\u70b9\uff09\u3002"
       },
       "KnowledgeAttachmentRequest": {
         "properties": {
@@ -144330,6 +144741,31 @@
         "type": "object",
         "title": "LLMConfigUpdate",
         "description": "Request body for updating LLM config."
+      },
+      "LLMHealthResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "LLMHealthResult",
+        "description": "LLM \u8fde\u901a\u6027\u63a2\u6d4b\u7ed3\u679c\uff08`llm_client.health_check()` \u7684\u663e\u5f0f\u6a21\u578b\uff09\u3002"
       },
       "LabelVerificationCreate": {
         "properties": {
@@ -152604,6 +153040,30 @@
         "title": "PaginationMeta",
         "description": "Pagination envelope carried in ApiResponse.meta.\n\nMirrors what app/core/response.py:paginated_response() emits, so the\nOpenAPI contract names these fields instead of leaving meta an opaque dict.\n\nDeliberately a TypedDict, not a BaseModel: a BaseModel would coerce meta\ninto a model instance, and the ~73 module envelopes that declare\n`meta: dict[...]` would then fail `response_model` validation with\n\"Input should be a valid dictionary\". A TypedDict keeps meta a plain dict\nwhile still generating a named schema for the frontend."
       },
+      "ParseAccepted": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running"
+            ],
+            "title": "Status",
+            "default": "queued"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "ParseAccepted",
+        "description": "\u91cd\u8bd5\u89e3\u6790\u53d7\u7406\u7ed3\u679c\uff08202\uff09\uff1a\u524d\u7aef\u62ff\u5230 job_id \u540e\u5f00\u59cb\u8f6e\u8be2\u3002"
+      },
       "ParseResultApiResponse": {
         "properties": {
           "code": {
@@ -152664,6 +153124,70 @@
         ],
         "title": "ParseResultResponse",
         "description": "\u89e3\u6790\u7ed3\u679c\u54cd\u5e94"
+      },
+      "ParseState": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "none",
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "default": "none"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage",
+            "default": ""
+          },
+          "progress": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Progress",
+            "default": 0
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          },
+          "derived_from": {
+            "type": "string",
+            "enum": [
+              "job",
+              "project_fallback",
+              "none"
+            ],
+            "title": "Derived From",
+            "default": "none"
+          }
+        },
+        "type": "object",
+        "title": "ParseState",
+        "description": "\u6e90 PPT \u89e3\u6790\u8fdb\u5ea6\u3002\n\n\u89e3\u6790\u5df2\u4ece\u8bf7\u6c42\u5185\u540c\u6b65\u6267\u884c\u6539\u4e3a `kind=parse` \u7684\u961f\u5217\u4efb\u52a1\uff0c\u524d\u7aef\u6309\u6b64\u7ed3\u6784\u8f6e\u8be2\uff1b\n\u8001\u9879\u76ee\u6ca1\u6709\u89e3\u6790\u4efb\u52a1\u65f6\u6309\u300c\u5df2\u6709\u9010\u9875\u8bb0\u5f55\u300d\u56de\u9000\u4e3a `succeeded`\u3002"
       },
       "PartComplete": {
         "properties": {
@@ -154760,34 +155284,6 @@
           "items"
         ],
         "title": "PrejobTemplateResponse"
-      },
-      "PreviewResponse": {
-        "properties": {
-          "slide_no": {
-            "type": "integer",
-            "title": "Slide No"
-          },
-          "audio_url": {
-            "type": "string",
-            "title": "Audio Url"
-          },
-          "duration_ms": {
-            "type": "integer",
-            "title": "Duration Ms"
-          },
-          "audio_sha256": {
-            "type": "string",
-            "title": "Audio Sha256"
-          }
-        },
-        "type": "object",
-        "required": [
-          "slide_no",
-          "audio_url",
-          "duration_ms",
-          "audio_sha256"
-        ],
-        "title": "PreviewResponse"
       },
       "ProblemApiResponse": {
         "properties": {
@@ -158464,6 +158960,9 @@
                 "type": "null"
               }
             ]
+          },
+          "parse": {
+            "$ref": "#/components/schemas/ParseState"
           },
           "script_ai": {
             "$ref": "#/components/schemas/ScriptAiState"

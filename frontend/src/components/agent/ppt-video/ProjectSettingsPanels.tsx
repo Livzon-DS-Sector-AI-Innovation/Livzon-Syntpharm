@@ -9,7 +9,7 @@ import {
   highlightStyleLabel,
   type LanguageCode,
   type ProjectDetail,
-  type ProjectUpdatePayload,
+  type ProjectUpdateRequest,
   type VoiceOption,
 } from '@/types/agent/ppt-video'
 
@@ -40,7 +40,7 @@ export function draftFromDetail(detail: ProjectDetail): ProjectSettingsDraft {
 }
 
 /** 空串 = 清除项目覆盖、回到跟随模块默认；后端按同一语义处理 */
-export function buildProjectUpdatePayload(draft: ProjectSettingsDraft): ProjectUpdatePayload {
+export function buildProjectUpdatePayload(draft: ProjectSettingsDraft): ProjectUpdateRequest {
   return {
     name: draft.name.trim() || undefined,
     default_language: draft.language,
@@ -49,6 +49,9 @@ export function buildProjectUpdatePayload(draft: ProjectSettingsDraft): ProjectU
     highlight_override_enabled: draft.highlightEnabled,
     highlight_style: draft.highlightStyle ?? '',
     highlight_color: draft.highlightColor ?? '',
+    clear_highlight_style: false,
+    clear_highlight_color: false,
+    clear_pronunciation_dict: false,
   }
 }
 

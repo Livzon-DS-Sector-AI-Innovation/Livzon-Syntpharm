@@ -48,7 +48,12 @@ export default function PronunciationDictModal({ open, detail, onClose, onSaved 
       if (source && target && source !== target) payload[source] = target
     }
     setSaving(true)
-    const result = await updateProjectSettings(detail.id, { pronunciation_dict: payload })
+    const result = await updateProjectSettings(detail.id, {
+      pronunciation_dict: payload,
+      clear_highlight_style: false,
+      clear_highlight_color: false,
+      clear_pronunciation_dict: false,
+    })
     setSaving(false)
     if (!result.success || !result.data) {
       message.error(result.message)

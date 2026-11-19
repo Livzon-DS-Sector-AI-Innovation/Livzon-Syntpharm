@@ -13,6 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.agent import queue
 from app.modules.agent.models import (
+    JOB_KIND_AUDIO,
+    JOB_KIND_PARSE,
+    JOB_KIND_RENDER,
     JOB_STATUS_FAILED,
     JOB_STATUS_QUEUED,
     JOB_STATUS_RUNNING,
@@ -169,3 +172,72 @@ async def test_get_latest_returns_latest_job(db_session: AsyncSession, stale: in
 
     assert latest is not None
     assert latest.id == job.id
+
+
+# ── 任务类别隔离（解析/试听/换源预览不再混进渲染队列） ──────────────────────
+
+
+async def test_enqueue_dedupes_per_kind(db_session: AsyncSession) -> None:
+    """同项目同一时刻可以各有一条 render / parse 排队任务，互不复用。"""
+    project = await _make_project(db_session)
+
+    render_job = await queue.enqueue(db_session, project.id, kind=JOB_KIND_RENDER)
+    parse_job = await queue.enqueue(db_session, project.id, kind=JOB_KIND_PARSE)
+
+    assert render_job.id != parse_job.id
+    assert parse_job.kind == JOB_KIND_PARSE
+    again = await queue.enqueue(db_session, project.id, kind=JOB_KIND_PARSE)
+    assert again.id == parse_job.id
+
+
+async def test_claim_filters_by_kind(db_session: AsyncSession) -> None:
+    """渲染循环只拿 render，解析循环只拿其余类别。"""
+    project = await _make_project(db_session)
+    render_job = await queue.enqueue(db_session, project.id, kind=JOB_KIND_RENDER)
+    parse_job = await queue.enqueue(db_session, project.id, kind=JOB_KIND_PARSE)
+
+    claimed_render = await queue.claim(db_session, "worker-render", kinds=[JOB_KIND_RENDER])
+    assert claimed_render is not None
+    assert claimed_render.id == render_job.id
+
+    claimed_parse = await queue.claim(db_session, "worker-parse", kinds=[JOB_KIND_PARSE])
+    assert claimed_parse is not None
+    assert claimed_parse.id == parse_job.id
+
+
+async def test_cancel_pending_can_target_kind(db_session: AsyncSession) -> None:
+    project = await _make_project(db_session)
+    render_job = await queue.enqueue(db_session, project.id, kind=JOB_KIND_RENDER)
+    parse_job = await queue.enqueue(db_session, project.id, kind=JOB_KIND_PARSE)
+
+    await queue.cancel_pending(db_session, project.id, kinds=[JOB_KIND_RENDER])
+
+    await db_session.refresh(render_job)
+    await db_session.refresh(parse_job)
+    assert render_job.status == "canceled"
+    assert parse_job.status == JOB_STATUS_QUEUED
+
+
+async def test_mark_succeeded_without_version_records_result(db_session: AsyncSession) -> None:
+    """试听/换源预览没有视频版本，产物写 result。"""
+    project = await _make_project(db_session)
+    job = await queue.enqueue(db_session, project.id, kind=JOB_KIND_AUDIO)
+    await queue.claim(db_session, "worker-1", kinds=[JOB_KIND_AUDIO])
+
+    await queue.mark_succeeded(db_session, job.id, result={"audio_url": "/x.wav"})
+    await db_session.refresh(job)
+
+    assert job.status == JOB_STATUS_SUCCEEDED
+    assert job.version_id is None
+    assert job.result == {"audio_url": "/x.wav"}
+
+
+async def test_get_latest_filters_kind(db_session: AsyncSession) -> None:
+    project = await _make_project(db_session)
+    await queue.enqueue(db_session, project.id, kind=JOB_KIND_PARSE)
+    render_job = await queue.enqueue(db_session, project.id, kind=JOB_KIND_RENDER)
+
+    latest = await queue.get_latest(db_session, project.id)
+    assert latest is not None and latest.id == render_job.id
+    parse_latest = await queue.get_latest(db_session, project.id, kind=JOB_KIND_PARSE)
+    assert parse_latest is not None and parse_latest.kind == JOB_KIND_PARSE

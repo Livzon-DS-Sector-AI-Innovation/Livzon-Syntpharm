@@ -63,6 +63,15 @@ from app.modules.agent.config import (
     normalize_hex_color,
 )
 from app.modules.agent.models import (
+    JOB_KIND_AUDIO,
+    JOB_KIND_PARSE,
+    JOB_KIND_RENDER,
+    JOB_KIND_SOURCE_PREVIEW,
+    JOB_STATUS_CANCELED,
+    JOB_STATUS_FAILED,
+    JOB_STATUS_QUEUED,
+    JOB_STATUS_RUNNING,
+    JOB_STATUS_SUCCEEDED,
     PAGE_IMAGES_STATUS_DONE,
     PAGE_IMAGES_STATUS_FAILED,
     PAGE_IMAGES_STATUS_QUEUED,
@@ -92,6 +101,8 @@ from app.modules.agent.schemas import (
     ManifestResponse,
     ManifestSlideItem,
     PageImagesState,
+    ParseState,
+    ParseStatus,
     ProjectDetail,
     ProjectSummary,
     ReuseSummary,
@@ -127,6 +138,14 @@ PAGE_IMAGES_QUEUE_STALE_SECONDS = 2 * 60
 #: 区域面板回给前端的句子数上限（与 `MAX_SENTENCE_RULES` 同量级，够配到每一句）
 _SENTENCE_PREVIEW_STEPS = 32
 
+#: 任务状态 → 解析进度状态（canceled 单独处理为「无解析态」）
+_PARSE_STATUS_BY_JOB: dict[str, ParseStatus] = {
+    JOB_STATUS_QUEUED: "queued",
+    JOB_STATUS_RUNNING: "running",
+    JOB_STATUS_SUCCEEDED: "succeeded",
+    JOB_STATUS_FAILED: "failed",
+}
+
 
 class ServiceError(ValueError):
     """业务校验失败，message 直接回给前端（HTTP 400）。"""
@@ -142,6 +161,15 @@ class NotFoundError(LookupError):
 def source_object_key(project_id: uuid.UUID, version: int = 1) -> str:
     """源 PPT 按版本存，改坏了可以回上一版。"""
     return f"ppt-video/{project_id}/source-v{version}.pptx"
+
+
+def pending_source_key(project_id: uuid.UUID, version: int = 1, suffix: str = ".pptx") -> str:
+    """上传的原始文件（可能还是 .ppt）：解析任务读取它，成功后删除。
+
+    解析要跑 LibreOffice（最长 180s），不能放在 HTTP 请求里，所以请求只负责
+    把原文件落到临时前缀并入队，转换与解析交给 worker。
+    """
+    return f"ppt-video/{project_id}/pending/source-v{version}{suffix}"
 
 
 def slide_image_key(project_id: uuid.UUID, slide_uid: uuid.UUID) -> str:
@@ -651,7 +679,11 @@ async def create_project(
     speed: float,
     created_by: uuid.UUID | None,
 ) -> PptVideoProject:
-    """上传 PPT（+ 可选讲稿）→ 解析页序 → 建项目与逐页记录。"""
+    """校验 + 存原始上传 + 建项目行 + 入队解析（不在请求里跑 LibreOffice）。
+
+    解析（PPT→PPTX→逐页）交给 `parse_project`，由 worker 消费 `kind=parse`
+    的任务执行；请求内只做参数校验、对象上传与建行，保证 5 秒内返回。
+    """
     suffix = Path(filename).suffix.lower()
     if suffix not in (".ppt", ".pptx"):
         raise ServiceError("文件格式不支持：仅支持 .ppt 或 .pptx")
@@ -666,77 +698,176 @@ async def create_project(
         raise ServiceError("语速需在 0.5~2.0 之间")
 
     project_id = uuid.uuid4()
-    work_dir = Path(tempfile.mkdtemp(prefix=f"pptvideo-{project_id.hex[:8]}-"))
-    try:
-        raw_path = work_dir / f"source{suffix}"
-        raw_path.write_bytes(file_bytes)
-        # soffice / 解析都是同步阻塞调用：下放到线程，避免占住事件循环（LibreOffice 最长可跑 180s）
-        pptx_path = await asyncio.to_thread(parser.convert_to_pptx, raw_path, work_dir)
-        parsed = await asyncio.to_thread(parser.parse_pptx, pptx_path)
-        if len(parsed) > DEFAULTS.max_slides:
-            raise ServiceError(f"PPT 页数过大（{len(parsed)} 页），单次最多 {DEFAULTS.max_slides} 页")
+    await asyncio.to_thread(
+        storage.upload_object,
+        BUCKET_MODULE,
+        pending_source_key(project_id, 1, suffix),
+        file_bytes,
+        len(file_bytes),
+        "application/octet-stream",
+    )
 
-        script_result: parser.ScriptParseResult | None = None
-        if script_bytes:
+    pending_script_text: str | None = None
+    if script_bytes:
+        work_dir = Path(tempfile.mkdtemp(prefix=f"pptvideo-script-{project_id.hex[:8]}-"))
+        try:
             script_path = work_dir / f"script{Path(script_filename or 'script.txt').suffix or '.txt'}"
             script_path.write_bytes(script_bytes)
             try:
-                script_text = await asyncio.to_thread(parser.read_script_file, script_path)
+                pending_script_text = await asyncio.to_thread(parser.read_script_file, script_path)
             except parser.ParserError as exc:
                 raise ServiceError(str(exc)) from exc
-            script_result = await asyncio.to_thread(parser.split_script, script_text, len(parsed))
+        finally:
+            shutil.rmtree(work_dir, ignore_errors=True)
 
-        pptx_bytes = await asyncio.to_thread(pptx_path.read_bytes)
-        await asyncio.to_thread(
-            storage.upload_object,
-            BUCKET_MODULE,
-            source_object_key(project_id),
-            pptx_bytes,
-            len(pptx_bytes),
-            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        )
+    project = PptVideoProject(
+        id=project_id,
+        name=(name or Path(filename).stem)[:255],
+        source_filename=filename[:255],
+        source_object_key=source_object_key(project_id),
+        source_sha256="",
+        slide_count=0,
+        default_language=default_language,
+        default_voice_id=voice_id,
+        speed=speed,
+        status=PROJECT_STATUS_DRAFT,
+        pending_script_text=pending_script_text,
+        created_by=created_by,
+        updated_by=created_by,
+    )
+    session.add(project)
+    await session.flush()
+    await queue.enqueue(session, project_id, kind=JOB_KIND_PARSE, max_attempts=DEFAULTS.max_attempts)
+    await session.flush()
+    return project
 
-        project = PptVideoProject(
-            id=project_id,
-            name=(name or Path(filename).stem)[:255],
-            source_filename=filename[:255],
-            source_object_key=source_object_key(project_id),
-            source_sha256=sha256_bytes(pptx_bytes),
-            slide_count=len(parsed),
-            default_language=default_language,
-            default_voice_id=voice_id,
-            speed=speed,
-            status=PROJECT_STATUS_DRAFT,
-            created_by=created_by,
-            updated_by=created_by,
-        )
-        session.add(project)
-        for item in parsed:
-            script = ""
-            if script_result is not None:
-                script = script_result.slides.get(item.slide_no, "")
-            script = script[:MAX_SCRIPT_CHARS]
-            session.add(
-                PptVideoSlide(
-                    id=uuid.uuid4(),
-                    project_id=project_id,
-                    slide_uid=uuid.uuid4(),
-                    slide_no=item.slide_no,
-                    source_index=item.slide_no,
-                    script_text=script,
-                    script_source=SCRIPT_SOURCE_UPLOAD if not script_ai.is_blank_script(script) else "",
-                    page_text=(item.text or "")[:8000] or None,
-                    page_notes=(item.notes or "")[:8000] or None,
-                    layout=item.layout,
-                    page_fingerprint=item.fingerprint,
-                    created_by=created_by,
-                    updated_by=created_by,
-                )
+
+async def parse_project(
+    session: AsyncSession,
+    project_id: uuid.UUID,
+    settings: PptVideoSettings | None = None,
+) -> None:
+    """worker 端消费解析任务：转换 → 逐页 → 落 slides → 触发初稿与页图。
+
+    幂等：若上次尝试已写入 slides（收尾阶段失败），不重复插页，只补后续动作。
+    成功后删除临时上传对象；失败保留，供「重试解析」再次消费。
+    """
+    settings = settings or DEFAULTS
+    project = await get_project(session, project_id)
+    version = project.source_version or 1
+    suffix = Path(project.source_filename).suffix.lower() or ".pptx"
+    pending_key = pending_source_key(project.id, version, suffix)
+
+    existing = await list_slides(session, project.id)
+    if not existing:
+        work_dir = Path(tempfile.mkdtemp(prefix=f"pptvideo-parse-{project.id.hex[:8]}-"))
+        try:
+            payload = await asyncio.to_thread(storage.get_object, BUCKET_MODULE, pending_key)
+            if payload is None:
+                raise ServiceError("源 PPT 临时文件已失效，请重新上传")
+            raw_path = work_dir / f"source{suffix}"
+            raw_path.write_bytes(payload[0])
+            # soffice / 解析都是同步阻塞调用：下放到线程（LibreOffice 最长可跑 180s）
+            pptx_path = await asyncio.to_thread(parser.convert_to_pptx, raw_path, work_dir)
+            parsed = await asyncio.to_thread(parser.parse_pptx, pptx_path)
+            if len(parsed) > settings.max_slides:
+                raise ServiceError(f"PPT 页数过大（{len(parsed)} 页），单次最多 {settings.max_slides} 页")
+
+            script_result: parser.ScriptParseResult | None = None
+            if project.pending_script_text:
+                script_result = await asyncio.to_thread(parser.split_script, project.pending_script_text, len(parsed))
+
+            pptx_bytes = await asyncio.to_thread(pptx_path.read_bytes)
+            await asyncio.to_thread(
+                storage.upload_object,
+                BUCKET_MODULE,
+                source_object_key(project.id, version),
+                pptx_bytes,
+                len(pptx_bytes),
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
             )
-        await session.flush()
-        return project
-    finally:
-        shutil.rmtree(work_dir, ignore_errors=True)
+            project.source_sha256 = sha256_bytes(pptx_bytes)
+            project.slide_count = len(parsed)
+            project.pending_script_text = None
+            for item in parsed:
+                script = ""
+                if script_result is not None:
+                    script = script_result.slides.get(item.slide_no, "")
+                script = script[:MAX_SCRIPT_CHARS]
+                session.add(
+                    PptVideoSlide(
+                        id=uuid.uuid4(),
+                        project_id=project.id,
+                        slide_uid=uuid.uuid4(),
+                        slide_no=item.slide_no,
+                        source_index=item.slide_no,
+                        script_text=script,
+                        script_source=SCRIPT_SOURCE_UPLOAD if not script_ai.is_blank_script(script) else "",
+                        page_text=(item.text or "")[:8000] or None,
+                        page_notes=(item.notes or "")[:8000] or None,
+                        layout=item.layout,
+                        page_fingerprint=item.fingerprint,
+                        created_by=project.created_by,
+                        updated_by=project.created_by,
+                    )
+                )
+            await session.flush()
+        finally:
+            shutil.rmtree(work_dir, ignore_errors=True)
+
+    # 解析完成后才触发下游：初稿与页图都依赖已落库的逐页记录
+    await start_script_ai(session, project.id, settings)
+    mark_page_images_queued(project)
+    await session.flush()
+    await submit_page_images(project.id, project.source_version)
+
+    try:
+        await asyncio.to_thread(storage.delete_object, BUCKET_MODULE, pending_key)
+    except Exception:  # noqa: BLE001 - 清理失败不影响解析结果，留痕便于人工清理
+        logger.warning("解析完成后清理临时源文件失败: project=%s", project.id, exc_info=True)
+
+
+async def request_parse(
+    session: AsyncSession,
+    project_id: uuid.UUID,
+) -> PptVideoJob:
+    """重新入队解析（失败重试 / 幂等重投）。
+
+    已有排队或运行中的解析任务时直接返回它，避免连点产生重复任务。
+    """
+    project = await get_project(session, project_id)
+    if project.slide_count and await list_slides(session, project_id):
+        raise ServiceError("项目已解析完成，无需重复解析")
+    latest = await queue.get_latest(session, project_id, kind=JOB_KIND_PARSE)
+    if latest is not None and latest.status in (JOB_STATUS_QUEUED, JOB_STATUS_RUNNING):
+        return latest
+    suffix = Path(project.source_filename).suffix.lower() or ".pptx"
+    pending_key = pending_source_key(project.id, project.source_version or 1, suffix)
+    if await asyncio.to_thread(storage.stat_object, BUCKET_MODULE, pending_key) is None:
+        raise ServiceError("源文件临时副本已失效，请重新上传")
+    job = await queue.enqueue(session, project_id, kind=JOB_KIND_PARSE, max_attempts=DEFAULTS.max_attempts)
+    await session.flush()
+    return job
+
+
+def parse_state(
+    project: PptVideoProject,
+    job: PptVideoJob | None,
+    slides: list[PptVideoSlide],
+) -> ParseState:
+    """解析进度：优先用最新 parse 任务；老项目没有任务时按产物回退。"""
+    if job is not None and job.status != JOB_STATUS_CANCELED:
+        return ParseState(
+            status=_PARSE_STATUS_BY_JOB.get(job.status, "running"),
+            stage=job.stage,
+            progress=job.progress or 0,
+            error_message=job.error_message,
+            job_id=job.id,
+            derived_from="job",
+        )
+    if project.slide_count or slides:
+        return ParseState(status="succeeded", stage="done", progress=100, derived_from="project_fallback")
+    return ParseState(status="none", derived_from="none")
 
 
 async def start_script_ai(
@@ -1038,12 +1169,14 @@ def job_state(job: PptVideoJob | None) -> JobState | None:
         return None
     return JobState(
         job_id=job.id,
+        kind=job.kind,
         status=job.status,
         stage=job.stage,
         progress=job.progress or 0,
         attempts=job.attempts or 0,
         error_message=job.error_message,
         version_id=job.version_id,
+        result=job.result,
         started_at=job.started_at,
         finished_at=job.finished_at,
     )
@@ -1098,6 +1231,7 @@ async def get_detail(
     slides = await list_slides(session, project_id)
     versions = await list_versions(session, project_id)
     job = await queue.get_latest(session, project_id)
+    parse_job = await queue.get_latest(session, project_id, kind=JOB_KIND_PARSE)
     engine_name, engine_version = current_engine(settings)
     current_body = compute_body_input_key(
         slides, project, engine_name, engine_version, build_lexicon(settings, project).fingerprint
@@ -1118,6 +1252,7 @@ async def get_detail(
         slides=[slide_item(slide, project_id, min_score=settings.coverage_min_score) for slide in slides],
         versions=[version_item(version) for version in versions],
         latest_job=job_state(job),
+        parse=parse_state(project, parse_job, slides),
         script_ai=script_ai_state(project, slides),
         page_images=page_images_state(project),
         script_runtime=await script_runtime_state(session, project, settings, user_id),
@@ -1559,13 +1694,44 @@ async def slide_regions(
     )
 
 
-async def preview_slide(
+async def request_slide_preview(
     session: AsyncSession,
     project_id: uuid.UUID,
     slide_uid: str,
     settings: PptVideoSettings,
-) -> tuple[int, str, int, str]:
-    """单页试听：命中缓存直接返回，否则合成 wav 并落 MinIO。"""
+    requested_by_name: str | None = None,
+) -> PptVideoJob:
+    """试听受理：校验讲稿非空后入队（Kokoro 推理在 worker 里跑，不在请求内）。"""
+    project = await get_project(session, project_id)
+    slide = await get_slide_by_uid(session, project_id, slide_uid)
+    engine_name, engine_version = current_engine(settings)
+    effective = resolve_effective(
+        slide, project, engine_name, engine_version, build_lexicon(settings, project).fingerprint
+    )
+    if not effective.script:
+        raise ServiceError("本页讲稿为空，请先填写后再试听")
+    job = await queue.enqueue(
+        session,
+        project_id,
+        requested_by_name=requested_by_name,
+        max_attempts=settings.max_attempts,
+        kind=JOB_KIND_AUDIO,
+        payload={"slide_uid": slide.slide_uid.hex},
+    )
+    await session.flush()
+    return job
+
+
+async def render_slide_audio(
+    session: AsyncSession,
+    project_id: uuid.UUID,
+    slide_uid: str,
+    settings: PptVideoSettings,
+) -> dict[str, Any]:
+    """worker 端合成单页试听音频；返回写入 `job.result` 的产物。
+
+    命中缓存时不重新推理，直接把已有的音频信息返回。
+    """
     project = await get_project(session, project_id)
     slide = await get_slide_by_uid(session, project_id, slide_uid)
 
@@ -1578,12 +1744,12 @@ async def preview_slide(
 
     _segments, _pause_ms, fingerprint = page_audio_plan(slide, effective, settings, project)
     if slide.audio_key == fingerprint and slide.audio_object_key:
-        return (
-            slide.slide_no,
-            audio_url(project_id, slide.slide_no, slide.audio_sha256),
-            slide.duration_ms or 0,
-            slide.audio_sha256 or "",
-        )
+        return {
+            "slide_no": slide.slide_no,
+            "audio_url": audio_url(project_id, slide.slide_no, slide.audio_sha256),
+            "duration_ms": slide.duration_ms or 0,
+            "audio_sha256": slide.audio_sha256 or "",
+        }
 
     work_dir = Path(tempfile.mkdtemp(prefix=f"preview-{project_id.hex[:8]}-"))
     try:
@@ -1593,12 +1759,12 @@ async def preview_slide(
         slide.audio_sha256 = page_audio.sha256
         slide.duration_ms = page_audio.duration_ms
         await session.flush()
-        return (
-            slide.slide_no,
-            audio_url(project_id, slide.slide_no, page_audio.sha256),
-            page_audio.duration_ms,
-            page_audio.sha256,
-        )
+        return {
+            "slide_no": slide.slide_no,
+            "audio_url": audio_url(project_id, slide.slide_no, page_audio.sha256),
+            "duration_ms": page_audio.duration_ms,
+            "audio_sha256": page_audio.sha256,
+        }
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
 
@@ -1618,7 +1784,7 @@ async def request_render(
     if empty_pages:
         raise ServiceError("以下页面还没有讲稿：" + "、".join(empty_pages))
 
-    job = await queue.enqueue(session, project_id, requested_by_name, settings.max_attempts)
+    job = await queue.enqueue(session, project_id, requested_by_name, settings.max_attempts, kind=JOB_KIND_RENDER)
     project.status = PROJECT_STATUS_RENDERING
     await session.flush()
     return job
@@ -1771,6 +1937,54 @@ async def rollback_script_revision(
 
 def _diff_summary(diff: Any) -> SourceDiffSummary:
     return SourceDiffSummary.model_validate(source_replace.diff_payload(diff))
+
+
+def source_preview_pending_key(project_id: uuid.UUID, job_id: uuid.UUID, suffix: str) -> str:
+    """换源预览的临时上传对象：按任务隔离，worker 处理后删除。"""
+    return f"ppt-video/{project_id}/pending/preview-{job_id.hex}{suffix}"
+
+
+async def request_source_preview(
+    session: AsyncSession,
+    project_id: uuid.UUID,
+    file_bytes: bytes,
+    filename: str,
+    requested_by_name: str | None = None,
+) -> PptVideoJob:
+    """换源预览受理：上传临时对象 + 入队，转换与比对在 worker 里跑。"""
+    project = await get_project(session, project_id)
+    suffix = Path(filename).suffix.lower()
+    if suffix not in (".ppt", ".pptx"):
+        raise ServiceError("文件格式不支持：仅支持 .ppt 或 .pptx")
+    if not file_bytes:
+        raise ServiceError("上传的 PPT 文件为空")
+    job = await queue.enqueue(
+        session,
+        project.id,
+        requested_by_name=requested_by_name,
+        max_attempts=DEFAULTS.max_attempts,
+        kind=JOB_KIND_SOURCE_PREVIEW,
+        payload={"filename": filename, "suffix": suffix},
+    )
+    pending_key = source_preview_pending_key(project.id, job.id, suffix)
+    await asyncio.to_thread(
+        storage.upload_object,
+        BUCKET_MODULE,
+        pending_key,
+        file_bytes,
+        len(file_bytes),
+        "application/octet-stream",
+    )
+    job.payload = {**(job.payload or {}), "pending_key": pending_key}
+    await session.flush()
+    return job
+
+
+async def get_job(session: AsyncSession, project_id: uuid.UUID, job_id: uuid.UUID) -> PptVideoJob:
+    job = await session.get(PptVideoJob, job_id)
+    if job is None or job.is_deleted or job.project_id != project_id:
+        raise NotFoundError("任务不存在")
+    return job
 
 
 async def preview_source_replace(

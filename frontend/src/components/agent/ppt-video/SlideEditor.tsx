@@ -36,6 +36,7 @@ import {
   saveSlideScript,
 } from '@/actions/agent/ppt-video'
 import { PermissionGate } from '@/components/auth/PermissionGate'
+import { waitForPptVideoJob } from '@/lib/api/client/agent'
 import { usePptVideoRevisionPolling } from '@/hooks/usePptVideoRevisionPolling'
 import { PERM } from '@/lib/permissions/codes'
 import {
@@ -45,6 +46,7 @@ import {
   voiceLabel,
   type HighlightRegionsPayload,
   type LanguageCode,
+  type PreviewResult,
   type ProjectDetail,
   type SlideItem,
   type VoiceOption,
@@ -145,6 +147,8 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
         clear_speed: speed === undefined,
         clear_highlight_style: !highlightStyle,
         clear_highlight_color: !highlightColor,
+        // 区域整份替换语义：上面已显式传空对象，无需再清
+        clear_highlight_regions: false,
       },
       slide.slide_no,
     )
@@ -237,14 +241,30 @@ export default function SlideEditor({ detail, slide, voices, onDetailChange }: P
 
   const handlePreview = async () => {
     setPreviewing(true)
-    const result = await previewSlide(detail.id, slide.slide_uid)
-    setPreviewing(false)
-    if (!result.success || !result.data) {
-      message.error(result.message)
-      return
+    try {
+      const result = await previewSlide(detail.id, slide.slide_uid)
+      if (!result.success || !result.data) {
+        message.error(result.message)
+        return
+      }
+      // 试听合成在 worker 里跑（202 受理），这里等到终态再放音
+      const job = await waitForPptVideoJob(detail.id, result.data.job_id)
+      if (job.status !== 'succeeded') {
+        message.error(job.error_message || '试听合成失败，请稍后重试')
+        return
+      }
+      const audio = job.result as unknown as PreviewResult | undefined
+      if (!audio?.audio_url) {
+        message.error('试听合成结果缺失，请重试')
+        return
+      }
+      setAudioOverride(audio.audio_url)
+      message.success(`旁白已就绪，时长 ${formatDuration(audio.duration_ms)}，可试听确认`)
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '试听失败，请稍后重试')
+    } finally {
+      setPreviewing(false)
     }
-    setAudioOverride(result.data.audio_url ?? null)
-    message.success(`旁白已就绪，时长 ${formatDuration(result.data.duration_ms)}，可试听确认`)
   }
 
   return (
