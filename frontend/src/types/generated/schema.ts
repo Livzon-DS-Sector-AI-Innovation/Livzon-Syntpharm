@@ -1382,6 +1382,8 @@ export interface paths {
          * @description 停用某用户的全部模块授权（离职/调岗收权）。
          *
          *     系统管理员授权不在此处处理：超管降级受「保底两人」约束，需单独操作。
+         *     模块代表/负责人授权随账号收权一并停用：这是账号级离职处理，不是模块内的
+         *     任命调整，因此不走「只有本模块负责人可移除代表」的委派守卫。
          */
         post: operations["disable_user_access_api_v1_permission_user_access__user_id__disable_post"];
         delete?: never;
