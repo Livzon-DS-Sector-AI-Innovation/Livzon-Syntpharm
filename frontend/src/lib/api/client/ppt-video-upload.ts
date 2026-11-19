@@ -9,7 +9,9 @@
  * 取消语义由后端兜底：请求断开后服务端不落库（见 `modules/agent/api.py` 的断连检测）。
  */
 import { getAuthToken, redirectToLogin } from '@/lib/api/client'
-import type { ProjectDetail } from '@/types/agent/ppt-video'
+import type { components } from '@/types/generated/schema'
+
+type Schemas = components['schemas']
 
 const API = '/api/v1/agent/ppt-videos'
 
@@ -60,7 +62,8 @@ const STATUS_MESSAGE: Record<number, string> = {
 
 function extractMessage(body: unknown): string | null {
   if (!body || typeof body !== 'object') return null
-  const envelope = body as { message?: unknown; detail?: unknown }
+  // message 取自生成契约；detail 是框架层错误字段（不在成功信封里），按 unknown 收窄
+  const envelope = body as Partial<Schemas['ApiResponse']> & { detail?: unknown }
   if (typeof envelope.message === 'string' && envelope.message.trim()) return envelope.message
   if (typeof envelope.detail === 'string' && envelope.detail.trim()) return envelope.detail
   return null
@@ -77,8 +80,8 @@ export function uploadPptVideoProject({
   onUploaded,
   signal,
   timeoutMs = DEFAULT_TIMEOUT_MS,
-}: UploadPptVideoOptions): Promise<ProjectDetail> {
-  return new Promise<ProjectDetail>((resolve, reject) => {
+}: UploadPptVideoOptions): Promise<Schemas['ProjectDetail']> {
+  return new Promise<Schemas['ProjectDetail']>((resolve, reject) => {
     if (signal?.aborted) {
       reject(new UploadCanceledError())
       return
@@ -125,7 +128,7 @@ export function uploadPptVideoProject({
         }
 
         if (xhr.status >= 200 && xhr.status < 300) {
-          const data = (body as { data?: ProjectDetail } | null)?.data
+          const data = (body as Schemas['DataResponse_ProjectDetail_'] | null)?.data
           if (data?.id) {
             resolve(data)
             return

@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { App, Space, Tag, Typography } from 'antd'
 import { ArrowLeftOutlined } from '@ant-design/icons'
 
@@ -16,6 +17,7 @@ import SlideTimeline from './SlideTimeline'
 import SourceReplaceModal from './SourceReplaceModal'
 import VersionPanel from './VersionPanel'
 import { reloadPptVideoProject } from '@/actions/agent/ppt-video'
+import { fetchPptVideoDetail } from '@/lib/api/client/agent'
 import type { ProjectDetail, VoiceOption } from '@/types/agent/ppt-video'
 
 interface Props {
@@ -31,7 +33,22 @@ interface Props {
  */
 export default function PptVideoWorkbench({ initialDetail, voices }: Props) {
   const { message } = App.useApp()
-  const [detail, setDetail] = useState<ProjectDetail>(initialDetail)
+  const queryClient = useQueryClient()
+  const detailKey = useMemo(() => ['ppt-video', initialDetail.id] as const, [initialDetail.id])
+  /**
+   * 详情是这份工作台的唯一数据源：首屏用服务端注入的 initialData，
+   * 之后只由子组件 invalidateQueries 触发重取，避免各栏各自的 useEffect 拉取。
+   */
+  const { data: detail } = useQuery({
+    queryKey: detailKey,
+    queryFn: () => fetchPptVideoDetail(initialDetail.id),
+    initialData: initialDetail,
+    staleTime: Infinity,
+  })
+  const setDetail = useCallback(
+    (next: ProjectDetail) => queryClient.setQueryData(detailKey, next),
+    [queryClient, detailKey],
+  )
   const [aiOpen, setAiOpen] = useState(false)
   const [sourceOpen, setSourceOpen] = useState(false)
   // 选中态跟 slide_uid 走：换源后 slide_no 会整体重排，用序号会选错页
@@ -120,9 +137,9 @@ export default function PptVideoWorkbench({ initialDetail, voices }: Props) {
         </Space>
       </div>
 
-      <ParseProgress detail={detail} onDetailChange={setDetail} />
+      <ParseProgress detail={detail} />
 
-      <RenderProgress detail={detail} onDetailChange={setDetail} />
+      <RenderProgress detail={detail} />
 
       <ScriptDraftBanner detail={detail} onDetailChange={setDetail} />
 
@@ -138,7 +155,7 @@ export default function PptVideoWorkbench({ initialDetail, voices }: Props) {
             </Typography.Text>
           </div>
           {/* 放在滚动区之外：进度条不跟着时间轴一起滚走 */}
-          <PageImagesProgress detail={detail} onDetailChange={setDetail} />
+          <PageImagesProgress detail={detail} />
           <div ref={listRef} className="relative max-h-[calc(100vh-320px)] overflow-y-auto pr-1">
             <SlideTimeline
               slides={slides}

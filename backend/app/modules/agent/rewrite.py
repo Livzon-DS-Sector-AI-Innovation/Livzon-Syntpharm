@@ -230,6 +230,11 @@ async def _update_revision(
         update(PptVideoScriptRevision).where(PptVideoScriptRevision.id == revision_id).values(**values)
     )
     await session.commit()
+    # Core UPDATE 不会同步已在会话里的实例（expire_on_commit=False）：
+    # 显式刷新，避免调用方读到上一次的 status / error_message
+    instance = await session.get(PptVideoScriptRevision, revision_id)
+    if instance is not None:
+        await session.refresh(instance)
 
 
 async def _write_script(
@@ -357,7 +362,12 @@ async def run(
             reason = str(exc) or f"超过 {settings.script_ai_timeout_seconds} 秒未返回"
             result.failed += len(batch)
             result.errors.append(f"第 {'、'.join(str(no) for no in batch_nos)} 页改写失败：{reason}")
-            logger.warning("讲稿改写批次失败: project=%s err=%s", project.id, reason[:MAX_ERROR_CHARS])
+            logger.warning(
+                "讲稿改写批次失败: project=%s err=%s",
+                project.id,
+                reason[:MAX_ERROR_CHARS],
+                exc_info=True,
+            )
             continue
         except Exception as exc:  # noqa: BLE001 — 单批未知异常不能打断整批任务
             logger.exception("讲稿改写批次异常: project=%s", project.id)

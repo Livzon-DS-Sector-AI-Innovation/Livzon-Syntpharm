@@ -79,7 +79,10 @@ def _english_g2p() -> Callable[[str], str] | None:
     try:
         g2p = misaki_en.G2P(trf=False)
     except Exception:  # noqa: BLE001 - 缺 spaCy 模型等运行期问题一律降级
-        logger.warning("英文 G2P 初始化失败（多为缺 en_core_web_sm），中文讲稿中的英文缩写将被跳过")
+        logger.warning(
+            "英文 G2P 初始化失败（多为缺 en_core_web_sm），中文讲稿中的英文缩写将被跳过",
+            exc_info=True,
+        )
         return None
 
     def _phonemes(text: str) -> str:
@@ -113,7 +116,7 @@ class KokoroEngine:
         except ImportError as exc:
             raise TtsError(
                 "当前进程缺少 Kokoro 运行时，无法合成旁白。"
-                "试听由 API 进程同步合成，需让后端容器使用含 TTS 依赖的镜像"
+                "试听与成片均由 worker 容器合成，需让 worker 使用含 TTS 依赖的镜像"
                 "（backend/Dockerfile.worker，依赖见 backend/requirements-tts.txt，"
                 "本机可直接用 docker-compose.dev.yml 覆盖，它会复用 worker 镜像），改后重试。"
             ) from exc

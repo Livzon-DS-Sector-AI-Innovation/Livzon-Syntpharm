@@ -155,6 +155,15 @@ def upload_file(
     return object_key
 
 
+#: 「对象/桶不存在」的 S3 错误码：只有这些才算「没有」，其余一律上抛
+_MISSING_OBJECT_CODES = frozenset({"NoSuchKey", "NoSuchObject", "NoSuchBucket", "ResourceNotFound"})
+
+
+def _is_missing_object(exc: Exception) -> bool:
+    """判定 S3Error 是否只是「对象不存在」，避免把网络/鉴权故障当成空对象。"""
+    return getattr(exc, "code", "") in _MISSING_OBJECT_CODES
+
+
 def stat_object(module: str, object_key: str) -> int | None:
     """对象字节数；不存在返回 None。"""
     client = _get_client()
@@ -165,8 +174,11 @@ def stat_object(module: str, object_key: str) -> int | None:
     try:
         stat = client.stat_object(_module_bucket(module), object_key)
         return int(stat.size or 0)
-    except S3Error:
-        return None
+    except S3Error as exc:
+        if _is_missing_object(exc):
+            return None
+        logger.warning("stat_object 失败: module=%s key=%s code=%s", module, object_key, exc.code, exc_info=True)
+        raise
 
 
 def get_object_range(
@@ -201,8 +213,17 @@ def get_object_range(
             resp.close()
             resp.release_conn()
         return data, content_type, total
-    except S3Error:
-        return None
+    except S3Error as exc:
+        if _is_missing_object(exc):
+            return None
+        logger.warning(
+            "get_object_range 失败: module=%s key=%s code=%s",
+            module,
+            object_key,
+            exc.code,
+            exc_info=True,
+        )
+        raise
 
 
 async def save_upload_file(file: UploadFile, sub_dir: str = "reagent-labels") -> str:

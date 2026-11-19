@@ -332,6 +332,12 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
                 item.prepare_ms,
                 int((time.perf_counter() - page_started) * 1000),
                 segment_hit,
+                extra={
+                    "biz_module": "agent",
+                    "project_id": str(project.id),
+                    "slide_no": slide.slide_no,
+                    "cache_hit": segment_hit,
+                },
             )
 
             progress = PROGRESS_RENDER + int((index + 1) / total * (PROGRESS_TTS_END - PROGRESS_RENDER))
@@ -391,6 +397,13 @@ def _log_fallback_usage(project_id: Any, slide_no: int, plan: highlight.Highligh
         sources.count("guess"),
         sources.count("page"),
         len(plan.steps),
+        extra={
+            "biz_module": "agent",
+            "project_id": str(project_id),
+            "slide_no": slide_no,
+            "fallback_guess": sources.count("guess"),
+            "fallback_page": sources.count("page"),
+        },
     )
 
 
@@ -773,11 +786,21 @@ async def process_once(worker_id: str = WORKER_ID, kinds: list[str] | None = Non
             return False
         await session.commit()
         job_id = job.id
-        logger.info("claimed job %s (project %s, kind %s)", job_id, job.project_id, job.kind)
+        logger.info(
+            "claimed job %s (project %s, kind %s)",
+            job_id,
+            job.project_id,
+            job.kind,
+            extra={"biz_module": "agent", "job_id": str(job_id), "project_id": str(job.project_id)},
+        )
         try:
             await _dispatch(session, job, settings)
         except Exception as exc:  # noqa: BLE001 - 任何异常都要落库并继续消费下一个任务
-            logger.exception("job %s failed", job_id)
+            logger.exception(
+                "job %s failed",
+                job_id,
+                extra={"biz_module": "agent", "job_id": str(job_id)},
+            )
             message = str(exc) or exc.__class__.__name__
             refreshed = await session.get(PptVideoJob, job_id)
             if refreshed is not None and refreshed.status != JOB_STATUS_SUCCEEDED:

@@ -1201,7 +1201,7 @@ async def script_runtime_state(
         source = model.source
         config_id = model.config_id
     except Exception:  # noqa: BLE001 - 回显失败只降级，不影响详情
-        logger.warning("生效模型解析失败，详情页降级展示: project=%s", project.id)
+        logger.warning("生效模型解析失败，详情页降级展示: project=%s", project.id, exc_info=True)
         model_name, provider, source, config_id = "", "", "env", None
 
     guide = await ai_config.resolve_guide(session, project)
@@ -1886,6 +1886,13 @@ async def rewrite_scripts(
         revision_id,
         mode,
         total,
+        extra={
+            "biz_module": "agent",
+            "project_id": str(project_id),
+            "revision_id": str(revision_id),
+            "rewrite_mode": mode,
+            "slide_total": total,
+        },
     )
     return ScriptRewriteResult(status="queued", total=total, revision_id=revision_id)
 
@@ -1928,7 +1935,18 @@ async def rollback_script_revision(
     except ValueError as exc:
         raise ServiceError(str(exc)) from exc
     await session.flush()
-    logger.info("讲稿回滚: project=%s revision=%s 恢复页数=%s", project_id, revision_id, restored)
+    logger.info(
+        "讲稿回滚: project=%s revision=%s 恢复页数=%s",
+        project_id,
+        revision_id,
+        restored,
+        extra={
+            "biz_module": "agent",
+            "project_id": str(project_id),
+            "revision_id": str(revision_id),
+            "slide_total": restored,
+        },
+    )
     return restored
 
 
@@ -2027,7 +2045,16 @@ async def apply_source_replace(
             },
             user_id,
         )
-        logger.info("换源后已提交改写任务: project=%s 页数=%s", project_id, len(result.rewrite_uids))
+        logger.info(
+            "换源后已提交改写任务: project=%s 页数=%s",
+            project_id,
+            len(result.rewrite_uids),
+            extra={
+                "biz_module": "agent",
+                "project_id": str(project_id),
+                "slide_total": len(result.rewrite_uids),
+            },
+        )
 
     # 换源/页内编辑后立刻刷新页图：编辑器里的画面必须跟着新源走。
     # 带上期望版本号，任务会等到主事务提交、新版本可见后再出图，不会按旧源白转一次。

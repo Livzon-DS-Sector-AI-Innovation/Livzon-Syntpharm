@@ -203,9 +203,9 @@ DEFAULT_SETTINGS = [
     (
         "agent",
         "AGENT_PPT_VIDEO_RENDER_DPI",
-        "120",
+        "150",
         "int",
-        "PDF 转图片的 DPI（影响清晰度与耗时）",
+        "PDF 转图片的 DPI（影响清晰度与耗时，与 agent/config.py DEFAULTS 保持一致）",
     ),
     (
         "agent",

@@ -324,15 +324,14 @@ export async function fetchEditableShapes(projectId: string, slideUid: string): 
 export async function editSlideTextRequest(
   projectId: string,
   slideUid: string,
-  shapeIndex: number,
-  text: string,
+  payload: Schemas['SlideEditTextRequest'],
 ): Promise<Schemas['DataResponse_SlideEditResult_']> {
   return apiFetch<Schemas['DataResponse_SlideEditResult_']>(
     `${getApiBaseUrl()}${API}/ppt-videos/${projectId}/slides/${slideUid}/edit-text`,
     {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ shape_index: shapeIndex, text }),
+      body: JSON.stringify(payload),
     },
   )
 }

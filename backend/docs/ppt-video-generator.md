@@ -75,12 +75,29 @@ API 与渲染彻底分离：API 侧不做 ffmpeg/LibreOffice，任何请求都�
 | `ppt_video_version` | 成片版本：version_no、head_key、body_key、manifest JSON、文件 sha256 |
 | `ppt_video_job` | 渲染任务：status、attempt、progress、error、version_id |
 
-迁移：
+迁移（agent schema 链，`0134` 起为当前编号；早期分支上的 `0118`–`0124` 已因与 main 注册申报链撞号整体后移）：
 
-- `alembic/versions/0118_create_agent_schema_and_ppt_video_tables.py`（down_revision = `0117_hr_org_sync_running_unique`）
-- `alembic/versions/0119_agent_ppt_video_script_ai.py`：`ppt_video_project` 加 `script_ai_status` /
-  `script_ai_error` / `script_ai_progress`，`ppt_video_slide` 加 `script_source`（upload/ai/manual）。
-  历史项目取默认值（idle / 空来源），旧数据与渲染链路不受影响。
+| 迁移 | 作用 |
+|---|---|
+| `0134_create_agent_schema_and_ppt_video_tables.py` | 建 `agent` schema 与五张表（down_revision = `0117_hr_org_sync_running_unique`） |
+| `0135_agent_ppt_video_script_ai.py` | 项目加 `script_ai_status` / `script_ai_error` / `script_ai_progress`，页加 `script_source` |
+| `0137_agent_ppt_video_slide_identity.py` | 页加 `slide_uid` / `source_index`，`(project_id, slide_no)` 唯一约束改为延迟约束 |
+| `0138_agent_ppt_video_script_revision.py` | 讲稿修订快照表 `ppt_video_script_revision` |
+| `0139` / `0140_agent_ppt_video_page_images*.py` | 页图 key 与页图生成状态（version / status / progress / renderer） |
+| `0141_merge_main_and_agent_ppt_video_heads.py` | 合并 main 与 agent 两条 head（无 DDL） |
+| `0142_agent_ppt_video_column_comments_and_audit_fk.py` | 列注释对齐 + 审计列外键（见下「跨模块外键」） |
+| `0143_agent_ppt_video_job_kind.py` | 任务表加 `kind` / `result` |
+| `0125`–`0133_agent_ppt_video_*.py` | 分段脚本、高亮样式/区域/覆盖、覆盖度与韵律词典等增量列（`0125` 接在 `0140` 之后） |
+
+### 跨模块外键（需架构负责人审核）
+
+`0134` 与 `0142` 为 agent 五张表 + `ppt_video_script_revision` 的 `created_by` / `updated_by`
+建立指向 `identity.users` 的外键（`referent_schema="identity"`，无 `ON DELETE CASCADE`）。
+沿用 `app/shared/base_model.py` 的全局约定（`safety`、`energy` 等模块的审计列同样指向
+`identity.users`），不构成循环外键；删除一律走 `is_deleted` 软删，不从 identity 侧级联。
+
+`0128_core_llm_config_available_models.py` 与 `0136_llm_config_owner_scope.py` 修改的是
+`core.llm_configs`（平台 schema），属跨 schema 变更，需架构负责人批准后生效。
 
 ### 对象存储布局（全部服务端生成，禁止拼用户输入）
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Alert, App, Button, Input, Progress, Segmented, Select, Space, Tag, Typography } from 'antd'
 import { HistoryOutlined, ReloadOutlined, ThunderboltOutlined } from '@ant-design/icons'
 
@@ -61,29 +61,20 @@ export default function ScriptDraftBanner({ detail, onDetailChange }: Props) {
   const [revisionId, setRevisionId] = useState<string | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [revisionsOpen, setRevisionsOpen] = useState(false)
-  // 详情轮询由 React Query 负责；推到父层时按内容指纹去重，避免重复 setState
-  const pushedRef = useRef<string | null>(null)
-  const onDetailChangeRef = useRef(onDetailChange)
+  const queryClient = useQueryClient()
   const startedAtRef = useRef(0)
 
-  useEffect(() => {
-    onDetailChangeRef.current = onDetailChange
-  })
-
-  const { data: freshDetail } = useQuery({
+  // 生成期间轮询详情；拿到的新详情直接写进工作台的共享缓存，父层无需 effect 回推
+  useQuery({
     queryKey: ['ppt-video', detail.id, 'draft-progress'],
     enabled: active,
-    queryFn: () => fetchPptVideoDetail(detail.id),
+    queryFn: async () => {
+      const fresh = await fetchPptVideoDetail(detail.id)
+      queryClient.setQueryData(['ppt-video', detail.id], fresh)
+      return fresh
+    },
     refetchInterval: (query) => (ACTIVE.has(query.state.data?.script_ai?.status ?? '') ? 3000 : false),
   })
-
-  useEffect(() => {
-    if (!freshDetail) return
-    const key = `${freshDetail.id}:${freshDetail.script_ai?.status ?? ''}:${freshDetail.script_ai?.progress ?? 0}`
-    if (pushedRef.current === key) return
-    pushedRef.current = key
-    onDetailChangeRef.current(freshDetail)
-  }, [freshDetail])
 
   // 计时只影响按钮文案：本地 UI 状态，用 interval 更新
   useEffect(() => {
@@ -99,7 +90,7 @@ export default function ScriptDraftBanner({ detail, onDetailChange }: Props) {
   usePptVideoRevisionPolling(detail.id, revisionId, (next, revision) => {
     setRewriting(false)
     setRevisionId(null)
-    if (next) onDetailChangeRef.current(next)
+    if (next) onDetailChange(next)
     if (revision.status === 'failed') {
       message.error(revision.error_message || '改写失败，可在修订记录里查看')
     } else {

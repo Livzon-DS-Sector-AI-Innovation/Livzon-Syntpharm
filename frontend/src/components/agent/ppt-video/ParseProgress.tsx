@@ -1,13 +1,13 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useRef, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { App, Button, Progress, Typography } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 
 import { requestParse } from '@/actions/agent/ppt-video'
 import { PermissionGate } from '@/components/auth/PermissionGate'
-import { fetchPptVideoDetail, fetchPptVideoParseState } from '@/lib/api/client/agent'
+import { fetchPptVideoParseState } from '@/lib/api/client/agent'
 import { PERM } from '@/lib/permissions/codes'
 import type { ParseState, ProjectDetail } from '@/types/agent/ppt-video'
 
@@ -27,7 +27,6 @@ const NONE_STATE: ParseState = {
 
 interface Props {
   detail: ProjectDetail
-  onDetailChange: (detail: ProjectDetail) => void
 }
 
 /**
@@ -37,16 +36,12 @@ interface Props {
  * 这里轮 `/parse`（主键单行查询），解析成功后回拉一次详情，时间轴与讲稿自动出现。
  * 空闲/已解析完成的历史项目不占位。
  */
-export default function ParseProgress({ detail, onDetailChange }: Props) {
+export default function ParseProgress({ detail }: Props) {
   const { message } = App.useApp()
+  const queryClient = useQueryClient()
   const [retrying, setRetrying] = useState(false)
   const notifiedRef = useRef<string | null>(null)
   const lastStatusRef = useRef<string | null>(null)
-
-  const refreshDetail = useCallback(async () => {
-    const fresh = await fetchPptVideoDetail(detail.id)
-    onDetailChange(fresh)
-  }, [detail.id, onDetailChange])
 
   const { data: polled, refetch } = useQuery({
     queryKey: ['ppt-video', detail.id, 'parse'],
@@ -70,11 +65,12 @@ export default function ParseProgress({ detail, onDetailChange }: Props) {
     if (notifiedRef.current === key) return
     notifiedRef.current = key
     if (state.status === 'succeeded') {
-      void refreshDetail()
+      // 详情由工作台的 React Query 缓存持有：失效即重取，不在 effect 里自己 fetch + setState
+      void queryClient.invalidateQueries({ queryKey: ['ppt-video', detail.id] })
       return
     }
     message.error(state.error_message || 'PPT 解析失败')
-  }, [state, refreshDetail, message])
+  }, [state, queryClient, detail.id, message])
 
   const handleRetry = async () => {
     setRetrying(true)

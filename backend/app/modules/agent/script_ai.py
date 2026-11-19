@@ -465,7 +465,12 @@ async def generate_for_project(
         except (LLMError, TimeoutError) as exc:
             reason = str(exc) or f"超过 {settings.script_ai_timeout_seconds} 秒未返回"
             message = f"第 {'、'.join(str(no) for no in batch_nos)} 页生成失败：{reason}"
-            logger.warning("AI 讲稿批次失败: project=%s err=%s", project_id, reason[:MAX_ERROR_CHARS])
+            logger.warning(
+                "AI 讲稿批次失败: project=%s err=%s",
+                project_id,
+                reason[:MAX_ERROR_CHARS],
+                exc_info=True,
+            )
             result.failed += len(batch)
             result.errors.append(message)
             continue

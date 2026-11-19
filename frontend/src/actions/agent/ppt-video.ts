@@ -412,7 +412,7 @@ export async function editSlideText(
   text: string,
 ): Promise<ActionResult<ProjectDetail>> {
   try {
-    await editSlideTextRequest(projectId, slideUid, shapeIndex, text)
+    await editSlideTextRequest(projectId, slideUid, { shape_index: shapeIndex, text })
     const detail = await fetchPptVideoProject(projectId)
     revalidatePath(`${LIST_PATH}/${projectId}`)
     return { success: true, message: '页面文字已修改，重渲后生效', data: detail }

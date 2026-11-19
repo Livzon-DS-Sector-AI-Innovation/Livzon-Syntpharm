@@ -2,7 +2,6 @@
 
 import json
 import logging
-import os
 import uuid
 from dataclasses import dataclass, field
 
@@ -10,6 +9,7 @@ from sqlalchemy import JSON, Boolean, Float, Index, Integer, String, Text, selec
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.config import get_llm_env_fallback
 from app.core.database import async_session_factory
 from app.shared.base_model import BaseModel
 
@@ -244,9 +244,7 @@ def get_env_config() -> LLMConfigData | None:
     Returns:
         LLMConfigData or None if not configured
     """
-    api_key = os.getenv("LLM_API_KEY")
-    base_url = os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1")
-    model = os.getenv("LLM_MODEL", "deepseek-chat")
+    api_key, base_url, model = get_llm_env_fallback()
 
     if not api_key:
         return None

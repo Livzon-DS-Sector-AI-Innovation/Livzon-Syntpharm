@@ -1,13 +1,13 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useRef, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { App, Button, Progress, Typography } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 
 import { regeneratePageImages } from '@/actions/agent/ppt-video'
 import { PermissionGate } from '@/components/auth/PermissionGate'
-import { fetchPageImagesStatus, fetchPptVideoDetail } from '@/lib/api/client/agent'
+import { fetchPageImagesStatus } from '@/lib/api/client/agent'
 import { PERM } from '@/lib/permissions/codes'
 import {
   pageImagesStageLabel,
@@ -24,7 +24,6 @@ const IDLE_STATE: PageImagesState = { status: 'idle', progress: 0, done: 0, tota
 
 interface Props {
   detail: ProjectDetail
-  onDetailChange: (detail: ProjectDetail) => void
 }
 
 /**
@@ -34,17 +33,13 @@ interface Props {
  * 页图编好码后时间轴缩略图会自己冒出来，用户不用手动刷新。
  * 状态为空闲或已完成时不占位——生成中或失败时才出现。
  */
-export default function PageImagesProgress({ detail, onDetailChange }: Props) {
+export default function PageImagesProgress({ detail }: Props) {
   const { message } = App.useApp()
+  const queryClient = useQueryClient()
   const [optimistic, setOptimistic] = useState<PageImagesState | null>(null)
   const [retrying, setRetrying] = useState(false)
   const notifiedRef = useRef<string | null>(null)
   const lastStatusRef = useRef<string | null>(null)
-
-  const refreshDetail = useCallback(async () => {
-    const fresh = await fetchPptVideoDetail(detail.id)
-    onDetailChange(fresh)
-  }, [detail.id, onDetailChange])
 
   /**
    * 轮询规则：
@@ -76,10 +71,11 @@ export default function PageImagesProgress({ detail, onDetailChange }: Props) {
     const key = `${state.job_id ?? 'none'}:${state.status}`
     if (notifiedRef.current === key) return
     notifiedRef.current = key
-    void refreshDetail().then(() => {
+    // 详情由工作台的 React Query 缓存持有：失效即重取，不在 effect 里自己 fetch + setState
+    void queryClient.invalidateQueries({ queryKey: ['ppt-video', detail.id] }).then(() => {
       if (state.status === 'failed') message.error(state.error || '页面图生成失败')
     })
-  }, [state, refreshDetail, message])
+  }, [state, queryClient, detail.id, message])
 
   const handleRetry = async () => {
     setRetrying(true)

@@ -1,19 +1,18 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useRef, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Alert, App, Button, Progress, Space, Tag, Typography } from 'antd'
 import { PlayCircleOutlined, ReloadOutlined } from '@ant-design/icons'
 
 import { requestRender } from '@/actions/agent/ppt-video'
-import { fetchPptVideoDetail, fetchPptVideoJob } from '@/lib/api/client/agent'
+import { fetchPptVideoJob } from '@/lib/api/client/agent'
 import { STAGE_LABEL, type JobState, type ProjectDetail } from '@/types/agent/ppt-video'
 
 const TERMINAL = new Set(['succeeded', 'failed', 'canceled'])
 
 interface Props {
   detail: ProjectDetail
-  onDetailChange: (detail: ProjectDetail) => void
 }
 
 /**
@@ -22,18 +21,14 @@ interface Props {
  * 轮询 2 秒一次，只打 `/job`（单行查询）；终态时回拉一次详情，
  * 让版本列表与 body_stale 同步，避免前端自己猜状态。
  */
-export default function RenderProgress({ detail, onDetailChange }: Props) {
+export default function RenderProgress({ detail }: Props) {
   const { message } = App.useApp()
+  const queryClient = useQueryClient()
   const [submitting, setSubmitting] = useState(false)
   // 刚提交时的乐观态：轮询一旦返回同一个 job_id 就交给服务端数据
   const [optimisticJob, setOptimisticJob] = useState<JobState | null>(null)
   const notifiedRef = useRef<string | null>(null)
   const lastStatusRef = useRef<string | null>(null)
-
-  const refreshDetail = useCallback(async () => {
-    const fresh = await fetchPptVideoDetail(detail.id)
-    onDetailChange(fresh)
-  }, [detail.id, onDetailChange])
 
   // 轮询等价于「任务未终态」：refetchInterval 返回 false 即停
   const { data: polledJob, refetch: refetchJob } = useQuery({
@@ -61,11 +56,12 @@ export default function RenderProgress({ detail, onDetailChange }: Props) {
     const key = `${job.job_id}:${job.status}`
     if (notifiedRef.current === key) return
     notifiedRef.current = key
-    void refreshDetail().then(() => {
+    // 详情由工作台的 React Query 缓存持有：失效即重取，不在 effect 里自己 fetch + setState
+    void queryClient.invalidateQueries({ queryKey: ['ppt-video', detail.id] }).then(() => {
       if (job.status === 'succeeded') message.success('视频已生成，可在右侧版本列表下载')
       if (job.status === 'failed') message.error(job.error_message || '生成失败')
     })
-  }, [job, refreshDetail, message])
+  }, [job, queryClient, detail.id, message])
 
   const handleRender = async () => {
     setSubmitting(true)
