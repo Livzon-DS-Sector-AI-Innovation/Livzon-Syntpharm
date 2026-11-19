@@ -202,7 +202,7 @@ async def test_batch_delete_skips_last_superuser(monkeypatch: pytest.MonkeyPatch
     )
 
     assert resp.data["succeeded"] == []
-    assert resp.data["failed"][0]["reason"] == "不能删除最后一个超级管理员账号"
+    assert "至少保留 2 名" in resp.data["failed"][0]["reason"]
     assert repo.deleted == []
 
 

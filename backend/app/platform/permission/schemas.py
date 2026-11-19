@@ -113,6 +113,11 @@ class GrantResponse(BaseModel):
     user_name: str | None = None
     username: str | None = None
     avatar_url: str | None = None
+    # 部门 / 职务实时取自 HR 员工档案（identity.users 自 #219 起不再维护这两个字段）；
+    # 无档案的账号（本地账号等）为空，前端显示「—」。
+    department_name: str | None = None
+    department_path_text: str | None = None
+    position_name: str | None = None
 
 
 class GrantListResponse(BaseModel):
@@ -313,7 +318,11 @@ class ModuleAdminListResponse(BaseModel):
 
 class ModuleAdminAssignRequest(BaseModel):
     module_code: str = Field(..., max_length=64)
-    role_type: str = Field(..., pattern="^(head|manager)$", description="head=模块负责人 / manager=模块管理员")
+    role_type: str = Field(
+        ...,
+        pattern="^owner$",
+        description="owner=模块负责人（本入口只指派负责人；模块代表由负责人在模块配置页指派）",
+    )
     user_id: UUID = Field(..., description="identity.users.id 或 hr.employee_profiles.id")
 
 

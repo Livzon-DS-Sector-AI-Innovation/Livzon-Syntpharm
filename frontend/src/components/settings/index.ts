@@ -18,4 +18,4 @@ export type { SettingsOverviewEntry, SettingsOverviewGroup } from './SettingsOve
 export { BatchResultModal } from './BatchOperations'
 export type { BatchResult } from './BatchOperations'
 export { default as PermissionTreePanel } from './PermissionTreePanel'
-export { READONLY_ROLE_TYPES, ROLE_TYPE_META } from './roleMeta'
+export { READONLY_ROLE_TYPES, ROLE_TYPE_META, isDelegateRoleType, isOwnerRoleType } from './roleMeta'

@@ -28,6 +28,7 @@ from app.core.response import ApiResponse, build_response
 from app.platform.audit.service import record_audit_log
 from app.platform.identity.models import User
 from app.platform.permission.cache import evict_user_permission_cache
+from app.platform.permission.constants import RETIRED_ROLE_TYPES, ROLE_TYPE_OWNER
 from app.platform.permission.models import (
     GRANT_ACTIVE,
     Permission,
@@ -662,10 +663,14 @@ async def list_grants(
             User.username,
             User.avatar_thumb,
             User.avatar_url,
+            User.feishu_open_id,
         )
         .join(Role, Role.id == UserRoleGrant.role_id)
         .outerjoin(User, User.id == UserRoleGrant.user_id)
         .where(UserRoleGrant.is_deleted == False)  # noqa: E712
+        # 已退役的历史角色类型（head/manager）不再出现在授权列表；
+        # 只按类型过滤，不按状态过滤（人工停用的授权仍需展示）。
+        .where(Role.role_type.notin_(RETIRED_ROLE_TYPES))
         .order_by(UserRoleGrant.created_at.desc())
     )
     if not scope.is_system_admin:
@@ -676,25 +681,50 @@ async def list_grants(
         stmt = stmt.where(Role.module_code == module_code)
     rows = (await db.execute(stmt)).all()
 
-    data = [
-        GrantResponse(
-            id=g.id,
-            user_id=g.user_id,
-            role_id=g.role_id,
-            scope_type=g.scope_type,
-            scope_dept_codes=g.scope_dept_codes,
-            status=g.status,
-            granted_by=g.granted_by,
-            version=g.version,
-            created_at=g.created_at.isoformat() if g.created_at else None,
-            role_code=role_code,
-            role_name=role_name,
-            user_name=user_name,
-            username=username,
-            avatar_url=avatar_thumb or avatar_url,
+    # 部门 / 职务实时取自 HR 员工档案（#219：identity.users 不再维护这两个字段）。
+    # 一次批量查询，无 N+1；include_inactive=True 让已离职人员也能显示历史部门。
+    from app.modules.hr.public_api import get_profiles_by_open_ids
+
+    profiles = await get_profiles_by_open_ids(
+        db,
+        sorted({open_id for row in rows if (open_id := row[7])}),
+        include_inactive=True,
+    )
+
+    def _display_fields(open_id: str | None) -> tuple[str | None, str | None, str | None]:
+        profile = profiles.get(open_id or "")
+        if not profile:
+            return None, None, None
+        path_names = [entry["name"] for entry in profile.get("department_path") or [] if entry.get("name")]
+        names = [name for name in profile.get("department_names") or [] if name]
+        department_name = path_names[-1] if path_names else (names[-1] if names else None)
+        path_text = " / ".join(path_names) if path_names else (" / ".join(names) if names else None)
+        return department_name, path_text, (profile.get("job_title_name") or None)
+
+    data: list[GrantResponse] = []
+    for g, role_code, role_name, user_name, username, avatar_thumb, avatar_url, open_id in rows:
+        department_name, department_path_text, position_name = _display_fields(open_id)
+        data.append(
+            GrantResponse(
+                id=g.id,
+                user_id=g.user_id,
+                role_id=g.role_id,
+                scope_type=g.scope_type,
+                scope_dept_codes=g.scope_dept_codes,
+                status=g.status,
+                granted_by=g.granted_by,
+                version=g.version,
+                created_at=g.created_at.isoformat() if g.created_at else None,
+                role_code=role_code,
+                role_name=role_name,
+                user_name=user_name,
+                username=username,
+                avatar_url=avatar_thumb or avatar_url,
+                department_name=department_name,
+                department_path_text=department_path_text,
+                position_name=position_name,
+            )
         )
-        for g, role_code, role_name, user_name, username, avatar_thumb, avatar_url in rows
-    ]
     return build_response(data=data)
 
 
@@ -1206,7 +1236,7 @@ async def preview_user_access(
     return build_response(data=MyPermissionsData(permissions=sorted(codes), is_superuser=is_super))
 
 
-# ── 模块负责人 / 模块管理员（系统管理员侧）─────────────────────────────
+# ── 模块负责人（系统管理员侧；模块代表由负责人在模块配置页指派）──────────
 
 _MODULE_NAME_BY_CODE = {module.code: module.name for module in BUSINESS_MODULES}
 
@@ -1216,18 +1246,21 @@ async def list_module_admins(
     ctx: PermissionContext = Depends(require_assignment_admin()),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    """按模块列出负责人与管理人（含"未指派"空态所需的全部模块）。"""
+    """按模块列出负责人（含"未指派"空态所需的全部模块）。
+
+    模块代表不在本入口展示，由模块负责人在模块配置页维护。
+    """
     stmt = (
         select(UserRoleGrant, Role, User.name, User.username)
         .join(Role, Role.id == UserRoleGrant.role_id)
         .outerjoin(User, User.id == UserRoleGrant.user_id)
         .where(
-            Role.role_type.in_(("head", "manager")),
+            Role.role_type == ROLE_TYPE_OWNER,
             Role.is_deleted == False,  # noqa: E712
             UserRoleGrant.status == GRANT_ACTIVE,
             UserRoleGrant.is_deleted == False,  # noqa: E712
         )
-        .order_by(Role.module_code, Role.role_type)
+        .order_by(Role.module_code)
     )
     rows = (await db.execute(stmt)).all()
 
@@ -1238,24 +1271,22 @@ async def list_module_admins(
         group = groups.get(role.module_code or "")
         if group is None:
             continue
-        item = ModuleAdminUser(
-            grant_id=grant.id,
-            user_id=grant.user_id,
-            name=name,
-            username=username,
-            role_code=role.code,
-            role_type=role.role_type,
+        group.heads.append(
+            ModuleAdminUser(
+                grant_id=grant.id,
+                user_id=grant.user_id,
+                name=name,
+                username=username,
+                role_code=role.code,
+                role_type=role.role_type,
+            )
         )
-        if role.role_type == "head":
-            group.heads.append(item)
-        elif role.role_type == "manager":
-            group.managers.append(item)
 
     return build_response(data=list(groups.values()))
 
 
 async def _resolve_assignment_role(db: AsyncSession, payload: ModuleAdminAssignRequest) -> Role:
-    role_code = f"{payload.module_code}:{'head' if payload.role_type == 'head' else 'manager'}"
+    role_code = f"{payload.module_code}:{ROLE_TYPE_OWNER}"
     role = await RoleRepository().get_role_by_code(db, role_code)
     if role is None:
         raise NotFoundException("模块内置角色")

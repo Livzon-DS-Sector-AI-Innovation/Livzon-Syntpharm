@@ -1108,7 +1108,7 @@ async def batch_delete_users(
     from app.platform.identity.service import SYSTEM_ADMIN_USERNAME
     from app.platform.identity.session import revoke_all_user_sessions
     from app.platform.permission.public_api import (
-        list_superuser_user_ids,
+        assert_superadmin_removal_allowed,
         revoke_all_user_grants,
         user_is_superuser,
     )
@@ -1134,11 +1134,10 @@ async def batch_delete_users(
             failed.append(UserBatchFailure(id=user.id, username=user.username, reason="系统内置账号不允许删除"))
             continue
 
-        super_ids = await list_superuser_user_ids(db)
-        if user.id in super_ids and len(super_ids) <= 1:
-            failed.append(
-                UserBatchFailure(id=user.id, username=user.username, reason="不能删除最后一个超级管理员账号"),
-            )
+        try:
+            await assert_superadmin_removal_allowed(db, user.id)
+        except ForbiddenException as exc:
+            failed.append(UserBatchFailure(id=user.id, username=user.username, reason=str(exc)))
             continue
 
         old_value = {
@@ -1205,7 +1204,7 @@ async def delete_user_management(
     from app.platform.identity.service import SYSTEM_ADMIN_USERNAME
     from app.platform.identity.session import revoke_all_user_sessions
     from app.platform.permission.public_api import (
-        list_superuser_user_ids,
+        assert_superadmin_removal_allowed,
         revoke_all_user_grants,
         user_is_superuser,
     )
@@ -1223,9 +1222,7 @@ async def delete_user_management(
     if (user.username or "").strip().lower() == SYSTEM_ADMIN_USERNAME.lower():
         raise ForbiddenException("系统内置账号不允许删除")
 
-    super_ids = await list_superuser_user_ids(db)
-    if user.id in super_ids and len(super_ids) <= 1:
-        raise ForbiddenException("不能删除最后一个超级管理员账号")
+    await assert_superadmin_removal_allowed(db, user.id)
 
     old_value = {
         "username": user.username,
@@ -1507,11 +1504,9 @@ async def unbind_user_feishu(
 
     delete_account = user.auth_source == "feishu"
     if delete_account:
-        from app.platform.permission.public_api import list_superuser_user_ids
+        from app.platform.permission.public_api import assert_superadmin_removal_allowed
 
-        super_ids = await list_superuser_user_ids(db)
-        if user.id in super_ids and len(super_ids) <= 1:
-            raise ForbiddenException("不能删除最后一个超级管理员账号")
+        await assert_superadmin_removal_allowed(db, user.id)
 
     await unbind_feishu_user(
         db,

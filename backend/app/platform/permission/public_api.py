@@ -10,8 +10,10 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import ForbiddenException
 from app.platform.identity.models import User
 from app.platform.permission.cache import evict_user_permission_cache
+from app.platform.permission.constants import MIN_ACTIVE_SUPERADMINS
 from app.platform.permission.repository import GrantRepository
 from app.platform.permission.service.authorization import (
     PermissionContext,
@@ -27,8 +29,28 @@ async def user_is_superuser(db: AsyncSession, user: User) -> bool:
 
 
 async def list_superuser_user_ids(db: AsyncSession) -> list[uuid.UUID]:
-    """所有超管用户 id（用户管理列表对非超管隐藏这些账号时使用）。"""
+    """所有生效超管用户 id（已删除 / 已停用账号不计入）。
+
+    用户管理列表对非超管隐藏这些账号；identity 侧删除账号也用它判断
+    「移除后是否仍有足够超管」。
+    """
     return await GrantRepository().list_superuser_user_ids(db)
+
+
+async def count_active_superusers(db: AsyncSession) -> int:
+    """生效超管数量（口径与 list_superuser_user_ids 一致）。"""
+    return await GrantRepository().count_active_superusers(db)
+
+
+async def assert_superadmin_removal_allowed(db: AsyncSession, target_user_id: uuid.UUID) -> None:
+    """删除超管账号前校验：移除后仍须保留 `MIN_ACTIVE_SUPERADMINS` 名生效超管。
+
+    与撤销超管授权（`guard_last_superadmin`）同一口径。此前 identity 侧只判断
+    「是否最后一名」，导致 2 名超管时能删掉 1 名、把系统降到 1 名（TC-007）。
+    """
+    super_ids = await list_superuser_user_ids(db)
+    if target_user_id in super_ids and len(super_ids) <= MIN_ACTIVE_SUPERADMINS:
+        raise ForbiddenException(f"系统管理员至少保留 {MIN_ACTIVE_SUPERADMINS} 名，无法删除该账号")
 
 
 async def get_role_names_by_user_ids(
@@ -166,7 +188,9 @@ async def revoke_all_user_grants(db: AsyncSession, user_id: uuid.UUID) -> int:
 
 __all__ = [
     "PermissionContext",
+    "assert_superadmin_removal_allowed",
     "build_permission_context",
+    "count_active_superusers",
     "ensure_superadmin",
     "get_role_names_by_user_ids",
     "guard_manage_target",

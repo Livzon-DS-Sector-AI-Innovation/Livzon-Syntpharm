@@ -1314,7 +1314,9 @@ export interface paths {
         };
         /**
          * List Module Admins
-         * @description 按模块列出负责人与管理人（含"未指派"空态所需的全部模块）。
+         * @description 按模块列出负责人（含"未指派"空态所需的全部模块）。
+         *
+         *     模块代表不在本入口展示，由模块负责人在模块配置页维护。
          */
         get: operations["list_module_admins_api_v1_permission_module_admins_get"];
         put?: never;
@@ -35406,6 +35408,12 @@ export interface components {
             username?: string | null;
             /** Avatar Url */
             avatar_url?: string | null;
+            /** Department Name */
+            department_name?: string | null;
+            /** Department Path Text */
+            department_path_text?: string | null;
+            /** Position Name */
+            position_name?: string | null;
         };
         /** GrantUpdate */
         GrantUpdate: {
@@ -42398,7 +42406,7 @@ export interface components {
             module_code: string;
             /**
              * Role Type
-             * @description head=模块负责人 / manager=模块管理员
+             * @description owner=模块负责人（本入口只指派负责人；模块代表由负责人在模块配置页指派）
              */
             role_type: string;
             /**

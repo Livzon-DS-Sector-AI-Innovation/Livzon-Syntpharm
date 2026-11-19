@@ -32,7 +32,7 @@ def _role(role_type: str, module_code: str | None = "quality", *, builtin: bool 
 
 
 def _sysadmin() -> ModuleScope:
-    return ModuleScope(user_id=uuid.uuid4(), is_system_admin=True, modules=frozenset(), head_modules=frozenset())
+    return ModuleScope(user_id=uuid.uuid4(), is_system_admin=True, modules=frozenset(), owner_modules=frozenset())
 
 
 def _head_scope() -> ModuleScope:
@@ -40,25 +40,25 @@ def _head_scope() -> ModuleScope:
         user_id=uuid.uuid4(),
         is_system_admin=False,
         modules=frozenset({"quality"}),
-        head_modules=frozenset({"quality"}),
+        owner_modules=frozenset({"quality"}),
     )
 
 
 def test_sysadmin_can_edit_builtin_role_content() -> None:
     """系统管理员编辑内置角色权限时显式声明 allow_builtin=True → 放行。"""
-    assert_can_edit_role(_sysadmin(), _role("head"), allow_builtin=True)
-    assert_can_edit_role(_sysadmin(), _role("manager"), allow_builtin=True)
+    assert_can_edit_role(_sysadmin(), _role("owner"), allow_builtin=True)
+    assert_can_edit_role(_sysadmin(), _role("delegate"), allow_builtin=True)
 
 
 def test_sysadmin_cannot_delete_builtin_role() -> None:
     """删除路径不传 allow_builtin → 内置角色仍不可删。"""
     with pytest.raises(ForbiddenException):
-        assert_can_edit_role(_sysadmin(), _role("head"))
+        assert_can_edit_role(_sysadmin(), _role("owner"))
 
 
 def test_module_head_cannot_edit_builtin_even_with_flag() -> None:
     with pytest.raises(ForbiddenException):
-        assert_can_edit_role(_head_scope(), _role("head"), allow_builtin=True)
+        assert_can_edit_role(_head_scope(), _role("owner"), allow_builtin=True)
 
 
 def test_super_admin_role_never_editable() -> None:
@@ -70,7 +70,7 @@ def test_job_role_still_scoped_by_module() -> None:
     job = _role("job", builtin=False)
     assert_can_edit_role(_head_scope(), job)
     other = ModuleScope(
-        user_id=uuid.uuid4(), is_system_admin=False, modules=frozenset({"safety"}), head_modules=frozenset()
+        user_id=uuid.uuid4(), is_system_admin=False, modules=frozenset({"safety"}), owner_modules=frozenset()
     )
     with pytest.raises(ForbiddenException):
         assert_can_edit_role(other, job)
@@ -102,13 +102,13 @@ class _EmptyResult:
 
 
 async def test_reset_role_to_default_restores_registry_codes() -> None:
-    role = _role("head")
+    role = _role("owner")
     role.sync_locked = True
     db = _FakeSession()
 
     count = await management.reset_role_to_default(cast(Any, db), role)
 
-    expected = BUILTIN_ROLE_PERMISSIONS["quality:head"]
+    expected = BUILTIN_ROLE_PERMISSIONS["quality:owner"]
     added_codes = [obj.permission_code for obj in db.added]
     assert sorted(added_codes) == sorted(expected)
     assert count == len(expected)
