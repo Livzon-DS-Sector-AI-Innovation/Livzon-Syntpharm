@@ -4,6 +4,7 @@
 模型配置读取与 HTTP 探测全部替换，不连真实服务。
 """
 
+import os
 import uuid
 from collections.abc import Awaitable, Callable
 from types import SimpleNamespace
@@ -11,10 +12,18 @@ from typing import Any
 
 import httpx
 import pytest
+from cryptography.fernet import Fernet
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.llm.config import LLMConfigModel, parse_available_models
+
+# 写入 API key 是 fail-closed：没有 ENCRYPTION_KEY 会直接报错，CI 不会提供部署密钥。
+# 这里给测试进程补一个一次性 Fernet key（只在 pytest 进程内生效，不落任何文件），
+# 并清掉 get_settings 的 lru_cache —— conftest 可能在补 key 之前已经缓存过一份空配置。
+if not os.environ.get("ENCRYPTION_KEY"):
+    os.environ["ENCRYPTION_KEY"] = Fernet.generate_key().decode()
+    get_settings.cache_clear()
 from app.core.llm.encryption import encrypt_api_key
 from app.core.llm.exceptions import LLMConfigError
 from app.modules.agent import ai_config

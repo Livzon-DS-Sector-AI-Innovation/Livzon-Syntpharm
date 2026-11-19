@@ -135,10 +135,13 @@ def normalize_models(models: Iterable[str] | None, default: str = "") -> list[st
     return cleaned[:MAX_AVAILABLE_MODELS]
 
 
-def pick_model(selected: str | None, models: Iterable[str], default: str) -> str:
-    """选中模型落在清单内才用，否则回落默认模型（脏数据不让调用失败）。"""
+def pick_model(selected: str | None, models: Iterable[str] | None, default: str) -> str:
+    """选中模型落在清单内才用，否则回落默认模型（脏数据不让调用失败）。
+
+    `available_models` 是可空列（老系统配置只有一个 model_name），这里按空清单处理。
+    """
     choice = (selected or "").strip()
-    if choice and choice in set(models):
+    if choice and choice in set(models or ()):
         return choice
     return (default or "").strip()
 
