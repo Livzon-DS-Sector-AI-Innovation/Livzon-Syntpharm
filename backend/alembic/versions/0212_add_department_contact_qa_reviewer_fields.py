@@ -1,7 +1,7 @@
 """add department contact qa reviewer fields
 
-Revision ID: 0122_add_department_contact_qa_reviewer_fields
-Revises: 0121_deprecate_deviation_settings_permissions
+Revision ID: 0212_add_department_contact_qa_reviewer_fields
+Revises: 0211_deprecate_deviation_settings_permissions
 Create Date: 2026-11-11
 
 部门联系人把「QA 人员」文本数组按位置约定（[0]=所属QA、[1]=QA负责人）拆成两个
@@ -22,8 +22,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0122_add_department_contact_qa_reviewer_fields"
-down_revision: str = "0121_deprecate_deviation_settings_permissions"
+revision: str = "0212_add_department_contact_qa_reviewer_fields"
+down_revision: str = "0211_deprecate_deviation_settings_permissions"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

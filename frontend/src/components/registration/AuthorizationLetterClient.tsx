@@ -23,7 +23,7 @@ import { generateAuthorizationLetter, deleteAuthorizationLetter } from '@/action
 import { RegistrationPageHeader } from './RegistrationPageHeader'
 import ui from './registration-ui.module.css'
 import styles from './authorization-letter.module.css'
-import { IconFile, IconPlus, IconTrash, RegSvg } from './registration-icons'
+import { IconFile, IconPlus, IconTrash, RegSvg } from './RegistrationIcons'
 import dayjs from 'dayjs'
 
 const IconLock = (

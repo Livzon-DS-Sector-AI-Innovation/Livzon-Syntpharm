@@ -24,6 +24,11 @@ _TABLE = "registration_projects"
 
 
 def upgrade() -> None:
+    # 双轨合并守卫：main 链（0124）与 uat 链（0185）是同一条逻辑迁移的两份副本，
+    # 合并后二者都在图里，谁先执行取决于拓扑序，故做成幂等（列/FK/索引同批创建）。
+    existing = {c["name"] for c in sa.inspect(op.get_bind()).get_columns(_TABLE, schema=_SCHEMA)}
+    if "drug_id" in existing:
+        return
     op.add_column(
         _TABLE,
         sa.Column("drug_id", sa.Uuid(), nullable=True, comment="关联审评品种ID"),

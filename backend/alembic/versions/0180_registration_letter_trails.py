@@ -27,6 +27,9 @@ _SCHEMA = "registration"
 
 
 def upgrade() -> None:
+    # 双轨合并守卫：main 链与 uat 链各有一份同构迁移，先应用者建表，后者跳过。
+    if sa.inspect(op.get_bind()).has_table("authorization_letter_trails", schema=_SCHEMA):
+        return
     op.create_table(
         "authorization_letter_trails",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),

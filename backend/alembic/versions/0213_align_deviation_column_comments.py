@@ -1,7 +1,7 @@
 """align deviation column comments
 
-Revision ID: 0123_align_deviation_column_comments
-Revises: 0122_add_department_contact_qa_reviewer_fields
+Revision ID: 0213_align_deviation_column_comments
+Revises: 0212_add_department_contact_qa_reviewer_fields
 Create Date: 2026-11-11
 
 偏差台账与部门联系人表的若干 JSONB / 数组列，模型里的 ``comment`` 在迁移
@@ -19,8 +19,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0123_align_deviation_column_comments"
-down_revision: str = "0122_add_department_contact_qa_reviewer_fields"
+revision: str = "0213_align_deviation_column_comments"
+down_revision: str = "0212_add_department_contact_qa_reviewer_fields"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -16,7 +16,7 @@ import type { ProductDossier, ProductDossierCreate } from '@/types/dossier-write
 import type { UploadResponse } from '@/types/dossier-writer'
 import { RegistrationPageHeader } from './RegistrationPageHeader'
 import ui from './registration-ui.module.css'
-import { IconEdit, IconPlus, IconTrash } from './registration-icons'
+import { IconEdit, IconPlus, IconTrash } from './RegistrationIcons'
 
 const STERILE_OPTIONS = [
   { label: '无菌', value: '无菌' },

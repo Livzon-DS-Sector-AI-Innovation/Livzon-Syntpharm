@@ -28,10 +28,10 @@ import {
   fetchRegistrationProjectsServer,
 } from '@/actions/registration'
 import type { PreStage, ProjectCreatePayload, RegistrationProject } from '@/types/registration'
-import PersonSelect from '@/components/common/PersonSelect'
+import { RemoteUserSelect } from '@/components/common/RemoteUserSelect'
 import { DataUnavailable } from '@/components/common/DataUnavailable'
 import { RegistrationPageHeader } from './RegistrationPageHeader'
-import { RegSvg } from './registration-icons'
+import { RegSvg } from './RegistrationIcons'
 import ui from './registration-ui.module.css'
 import styles from './projects.module.css'
 import {
@@ -43,7 +43,7 @@ import {
   IconRefresh,
   IconTrash,
   IconWarn,
-} from './registration-icons'
+} from './RegistrationIcons'
 
 // ── 常量（与后端状态机一致） ──
 
@@ -791,7 +791,7 @@ export function ProjectsPageClient() {
                 // 后端 owner 存姓名快照（str），这里从选中人员取 name 写入表单
                 getValueFromEvent={(person: { id: string; name: string } | null) => person?.name ?? null}
               >
-                <PersonSelect placeholder="选择负责人" allowClear feishuBoundOnly={false} />
+                <RemoteUserSelect placeholder="选择负责人" allowClear feishuBoundOnly={false} />
               </Form.Item>
             </div>
 

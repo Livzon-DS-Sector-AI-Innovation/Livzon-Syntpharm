@@ -25,6 +25,11 @@ _SCHEMA = "registration"
 
 
 def upgrade() -> None:
+    # 双轨合并守卫：main 链（0123）与 uat 链（0184）是同一条逻辑迁移的两份副本，
+    # 合并后二者都在图里，谁先执行取决于拓扑序，故做成幂等。
+    existing = {c["name"] for c in sa.inspect(op.get_bind()).get_columns(_TABLE, schema=_SCHEMA)}
+    if "skipped" in existing:
+        return
     op.add_column(
         _TABLE,
         sa.Column(

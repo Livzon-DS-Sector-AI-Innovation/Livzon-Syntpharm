@@ -11,7 +11,7 @@ import { parseCOA } from '@/actions/registration'
 import { generateReferenceStandard, deleteReferenceStandardAction } from '@/actions/registration'
 import { RegistrationPageHeader } from './RegistrationPageHeader'
 import ui from './registration-ui.module.css'
-import { IconBook, IconPlus, IconTrash } from './registration-icons'
+import { IconBook, IconPlus, IconTrash } from './RegistrationIcons'
 import dayjs from 'dayjs'
 
 interface ReferenceStandardClientProps {

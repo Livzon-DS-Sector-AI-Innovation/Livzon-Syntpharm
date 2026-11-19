@@ -10,9 +10,9 @@ import {
 } from '@/types/validation-audit'
 import { deleteValidationAuditTask } from '@/actions/validation-audit'
 import { RegistrationPageHeader } from '../RegistrationPageHeader'
-import { tagClassOf } from '../registration-ui'
+import { tagClassOf } from '../registrationUi'
 import ui from '../registration-ui.module.css'
-import { IconCheckSquare, IconPlus, IconTrash } from '../registration-icons'
+import { IconCheckSquare, IconPlus, IconTrash } from '../RegistrationIcons'
 
 interface Props {
   initialTasks: ValidationAuditTaskListItem[]

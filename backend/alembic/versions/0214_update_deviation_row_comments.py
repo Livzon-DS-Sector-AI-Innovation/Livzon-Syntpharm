@@ -5,8 +5,8 @@ JSONB 列本身无 schema 变更：``cross_dept_reviewers`` 行元素扩展逐�
 ``investigation_records`` 元素改为结构化四区 + CAPA + 紧急措施 + 记录级附件引用。
 本迁移仅同步列注释，防止 autogenerate 误报列注释漂移。
 
-Revision ID: 0124_update_deviation_row_comments
-Revises: 0123_align_deviation_column_comments
+Revision ID: 0214_update_deviation_row_comments
+Revises: 0213_align_deviation_column_comments
 Create Date: 2026-11-12
 """
 
@@ -17,8 +17,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "0124_update_deviation_row_comments"
-down_revision: str | None = "0123_align_deviation_column_comments"
+revision: str = "0214_update_deviation_row_comments"
+down_revision: str | None = "0213_align_deviation_column_comments"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

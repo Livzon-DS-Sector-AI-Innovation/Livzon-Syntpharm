@@ -101,6 +101,9 @@ select = ["E", "F", "I", "N", "W", "UP"]
 "scripts/regulatory_poc/nmpa_search_test.py" = ["E501", "E722"]
 
 "app/modules/procurement/contract_generator.py" = ["E501", "E722"]
+"app/modules/registration/docx_translator/translator.py" = ["E501"]
+"app/modules/registration/docx_translator/extractor.py" = ["N806"]
+"app/modules/registration/docx_translator/writer.py" = ["N806"]
 "app/modules/hr/api.py" = ["E501", "E722"]
 [tool.mypy]
 python_version = "3.12"
@@ -159,6 +162,17 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["tests.*"]
 disable_error_code = ["no-untyped-def", "no-untyped-call"]
+
+# 文档翻译引擎（extractor/writer）是既有 docx-translator 脚本的 1:1 移植：
+# 内部大量依赖 python-docx 的 lxml 元素动态属性（python-docx 不提供完整类型存根），
+# 逐行补注解会破坏与原实现的对应关系。对外签名（__init__/extract/write）已显式标注，
+# 调用方仍按 strict 检查；引擎内部的松散类型后续可逐步收紧。
+[[tool.mypy.overrides]]
+module = [
+    "app.modules.registration.docx_translator.extractor",
+    "app.modules.registration.docx_translator.writer",
+]
+ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = ["pandas.*"]

@@ -40,5 +40,7 @@ fix-any.log
 lint-output.txt
 .env.local
 
-# AI files
-.codebuddy/
+# ai files
+# .codebuddy 下的计划与截图属本地数据，不进仓库；skills 需随仓库共享（团队项目级技能）
+.codebuddy/*
+!.codebuddy/skills/
