@@ -53,6 +53,17 @@ async def assert_superadmin_removal_allowed(db: AsyncSession, target_user_id: uu
         raise ForbiddenException(f"系统管理员至少保留 {MIN_ACTIVE_SUPERADMINS} 名，无法删除该账号")
 
 
+async def assert_superadmin_disable_allowed(db: AsyncSession, target_user_id: uuid.UUID) -> None:
+    """停用超管账号前校验：停用后仍须保留 `MIN_ACTIVE_SUPERADMINS` 名生效超管。
+
+    计数口径已排除已停用账号，因此停用与删除共用同一套判定；按钮上的「禁用」
+    此前绕过保底，导致 2 名超管时禁用 1 名即可把系统降到 1 名（TC-007）。
+    """
+    super_ids = await list_superuser_user_ids(db)
+    if target_user_id in super_ids and len(super_ids) <= MIN_ACTIVE_SUPERADMINS:
+        raise ForbiddenException(f"系统管理员至少保留 {MIN_ACTIVE_SUPERADMINS} 名，无法停用该账号")
+
+
 async def get_role_names_by_user_ids(
     db: AsyncSession,
     user_ids: list[uuid.UUID],
@@ -188,10 +199,12 @@ async def revoke_all_user_grants(db: AsyncSession, user_id: uuid.UUID) -> int:
 
 __all__ = [
     "PermissionContext",
+    "assert_superadmin_disable_allowed",
     "assert_superadmin_removal_allowed",
     "build_permission_context",
     "count_active_superusers",
     "ensure_superadmin",
+    "evict_user_permission_cache",
     "get_role_names_by_user_ids",
     "guard_manage_target",
     "has_permission",

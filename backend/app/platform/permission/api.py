@@ -854,6 +854,7 @@ async def batch_create_grants(
     failed: list[BatchFailure] = []
 
     # 1) 角色预取 + 授出权限校验（同一角色与目标用户无关，只判一次）
+    scope = await resolve_module_scope(db, ctx.user)
     roles: dict[uuid.UUID, Role] = {}
     role_errors: dict[uuid.UUID, tuple[str, str | None]] = {}
     for role_id in dict.fromkeys(payload.role_ids):
@@ -863,6 +864,11 @@ async def batch_create_grants(
             continue
         try:
             await assert_actor_can_grant_role(db, actor=ctx.user, role=role)
+            # 与单条 create_grant 同构：模块代表只有本模块负责人可指派（超管不豁免），
+            # 并禁止跨模块授予（TC-014：批量授权是「系统页仍能指定 delegate」的旁路）。
+            assert_target_role_operable(scope, role)
+            if not role.is_superuser:
+                assert_module_manageable(scope, role.module_code)
         except ForbiddenException as exc:
             role_errors[role_id] = (exc.message or "无权授予该角色", role.name)
             continue
@@ -991,6 +997,10 @@ async def update_grant(
         if target_user is not None:
             await guard_manage_target(db, actor=ctx.user, target=target_user, resource_label="授权")
 
+    # 停用超管授权同样受「至少保留 2 名生效超管」约束（TC-007：此前只有删除入口有守卫）
+    if payload.status is not None and payload.status != GRANT_ACTIVE:
+        await guard_last_superadmin(db, grant)
+
     if payload.scope_type is not None:
         _validate_scope(payload.scope_type, payload.scope_dept_codes)
         await _validate_department_codes(db, payload.scope_dept_codes)
@@ -1103,6 +1113,7 @@ async def batch_grant_status(
     succeeded: list[str] = []
     failed: list[BatchFailure] = []
     affected_users: set[uuid.UUID] = set()
+    scope = await resolve_module_scope(db, ctx.user)
 
     for grant_id in dict.fromkeys(payload.ids):
         grant = await grant_repo.get_grant(db, grant_id)
@@ -1115,6 +1126,11 @@ async def batch_grant_status(
             target_user = (await db.execute(select(User).where(User.id == grant.user_id))).scalar_one_or_none()
             if target_user is not None:
                 await guard_manage_target(db, actor=ctx.user, target=target_user, resource_label="授权")
+            role = await get_role(db, grant.role_id)
+            if role is not None:
+                assert_target_role_operable(scope, role)
+                if not role.is_superuser:
+                    assert_module_manageable(scope, role.module_code)
             if payload.status != GRANT_ACTIVE:
                 await guard_last_superadmin(db, grant)
         except ForbiddenException as exc:
@@ -1161,6 +1177,7 @@ async def batch_delete_grants(
     succeeded: list[str] = []
     failed: list[BatchFailure] = []
     affected_users: set[uuid.UUID] = set()
+    scope = await resolve_module_scope(db, ctx.user)
 
     for grant_id in dict.fromkeys(payload.ids):
         grant = await grant_repo.get_grant(db, grant_id)
@@ -1173,12 +1190,16 @@ async def batch_delete_grants(
             target_user = (await db.execute(select(User).where(User.id == grant.user_id))).scalar_one_or_none()
             if target_user is not None:
                 await guard_manage_target(db, actor=ctx.user, target=target_user, resource_label="授权")
+            role = await get_role(db, grant.role_id)
+            if role is not None:
+                assert_target_role_operable(scope, role)
+                if not role.is_superuser:
+                    assert_module_manageable(scope, role.module_code)
             await guard_last_superadmin(db, grant)
         except ForbiddenException as exc:
             failed.append(BatchFailure(key=str(grant.id), reason=exc.message))
             continue
 
-        role = await get_role(db, grant.role_id)
         await record_audit_log(
             db,
             user=ctx.user,
@@ -1437,6 +1458,8 @@ async def disable_user_access(
     """停用某用户的全部模块授权（离职/调岗收权）。
 
     系统管理员授权不在此处处理：超管降级受「保底两人」约束，需单独操作。
+    模块代表/负责人授权随账号收权一并停用：这是账号级离职处理，不是模块内的
+    任命调整，因此不走「只有本模块负责人可移除代表」的委派守卫。
     """
     from app.platform.identity.public_api import resolve_person_user_id
 

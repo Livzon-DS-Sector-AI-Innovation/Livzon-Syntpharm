@@ -1352,6 +1352,8 @@ async def _apply_contact_profile(db: AsyncSession, user: User, detail: dict[str,
 
     # 飞书侧已冻结（离职/停用）→ 单向禁用平台账号。
     # 注意只做单向：飞书恢复正常时不自动启用，避免覆盖管理员在平台上的手工禁用。
+    # 这是人事事件路径，不属于「管理员手工移除超管」；TC-007 的保底守卫只覆盖
+    # 删除/停用/撤权接口，不阻断飞书离职同步（否则离职人员会一直保留平台权限）。
     if detail.get("is_frozen"):
         user.status = "disabled"
 

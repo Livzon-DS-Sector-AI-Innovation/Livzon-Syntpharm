@@ -1002,6 +1002,14 @@ async def update_user_management(
         user.department = payload.department
     if payload.position is not None:
         user.position = payload.position
+
+    # 停用超管账号受「至少保留 2 名生效超管」约束（与删除、撤销授权同口径）
+    status_changed = payload.status is not None and payload.status != user.status
+    if status_changed and payload.status == "disabled":
+        from app.platform.permission.public_api import assert_superadmin_disable_allowed
+
+        await assert_superadmin_disable_allowed(db, user.id)
+
     if payload.status is not None:
         user.status = payload.status
 
@@ -1019,6 +1027,20 @@ async def update_user_management(
         },
     )
     await db.commit()
+
+    # 状态变更后立即失效权限缓存；停用还要吊销现有会话，避免旧 token 继续按原权限放行。
+    if status_changed:
+        from app.platform.permission.public_api import evict_user_permission_cache
+
+        if payload.status == "disabled":
+            from app.platform.identity.session import revoke_all_user_sessions
+
+            try:
+                await revoke_all_user_sessions(user.id)
+            except Exception:
+                logger.warning("停用账号后吊销会话失败 user_id=%s", user.id, exc_info=True)
+        await evict_user_permission_cache(user.id)
+
     return build_response(data=UserManagementItem.model_validate(user).model_dump())
 
 
@@ -1039,11 +1061,17 @@ async def batch_update_user_status(
     状态与目标一致的条目按幂等处理（计入成功，不写审计）。
     """
     from app.platform.identity.service import SYSTEM_ADMIN_USERNAME
-    from app.platform.permission.public_api import guard_manage_target
+    from app.platform.permission.public_api import (
+        assert_superadmin_disable_allowed,
+        evict_user_permission_cache,
+        guard_manage_target,
+    )
 
     repo = UserRepository()
     succeeded: list[uuid.UUID] = []
     failed: list[UserBatchFailure] = []
+    changed_user_ids: set[uuid.UUID] = set()
+    disabled_user_ids: set[uuid.UUID] = set()
 
     # dict.fromkeys 去重且保持顺序：前端重复选同一条不应重复处理
     for user_id in dict.fromkeys(payload.user_ids):
@@ -1070,9 +1098,24 @@ async def batch_update_user_status(
             succeeded.append(user.id)
             continue
 
+        # 批量停用同样受「至少保留 2 名生效超管」约束
+        if payload.status == "disabled" and user.status != "disabled":
+            try:
+                await assert_superadmin_disable_allowed(db, user.id)
+            except ForbiddenException as exc:
+                failed.append(
+                    UserBatchFailure(id=user.id, username=user.username, reason=exc.message or "无法停用该账号"),
+                )
+                continue
+
         old_status = user.status
         user.status = payload.status
         user.updated_by = ctx.user.id
+        # flush 让同批后续的「至少保留 2 名超管」判断能看到本次停用
+        await db.flush()
+        changed_user_ids.add(user.id)
+        if payload.status == "disabled":
+            disabled_user_ids.add(user.id)
         await record_audit_log(
             db,
             user=ctx.user,
@@ -1085,6 +1128,18 @@ async def batch_update_user_status(
         succeeded.append(user.id)
 
     await db.commit()
+
+    # 状态变更后立即失效权限缓存；停用还要吊销现有会话，避免旧 token 继续按原权限放行。
+    for user_id in changed_user_ids:
+        if user_id in disabled_user_ids:
+            from app.platform.identity.session import revoke_all_user_sessions
+
+            try:
+                await revoke_all_user_sessions(user_id)
+            except Exception:
+                logger.warning("批量停用账号后吊销会话失败 user_id=%s", user_id, exc_info=True)
+        await evict_user_permission_cache(user_id)
+
     return build_response(data=UserBatchStatusData(succeeded=succeeded, failed=failed).model_dump())
 
 
