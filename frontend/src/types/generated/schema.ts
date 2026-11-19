@@ -18388,6 +18388,230 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/registration/docx-translator/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 提交文档翻译任务 */
+        post: operations["post_api_v1_registration_docx_translator_jobs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/docx-translator/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询翻译任务状态 */
+        get: operations["get_api_v1_registration_docx_translator_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/docx-translator/jobs/{job_id}/files/{file_index}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 下载翻译结果 */
+        get: operations["download_api_v1_registration_docx_translator_jobs__job_id__files__file_index__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/docx-translator/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 任务级翻译历史 */
+        get: operations["list_tasks_api_v1_registration_docx_translator_tasks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/docx-translator/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 翻译任务详情 */
+        get: operations["get_task_detail_api_v1_registration_docx_translator_tasks__task_id__get"];
+        put?: never;
+        post?: never;
+        /** 删除翻译任务 */
+        delete: operations["delete_task_api_v1_registration_docx_translator_tasks__task_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/docx-translator/tasks/{task_id}/retranslate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 按原件再次翻译 */
+        post: operations["retranslate_task_api_v1_registration_docx_translator_tasks__task_id__retranslate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/docx-translator/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 历史翻译文件列表 */
+        get: operations["list_files_api_v1_registration_docx_translator_files_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/docx-translator/files/{file_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 下载历史翻译文件 */
+        get: operations["download_file_api_v1_registration_docx_translator_files__file_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/docx-translator/files/{file_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 删除历史翻译文件 */
+        delete: operations["delete_file_api_v1_registration_docx_translator_files__file_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/docx-translator/glossary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 术语表列表 */
+        get: operations["list_terms_api_v1_registration_docx_translator_glossary_get"];
+        put?: never;
+        /** 新增术语 */
+        post: operations["create_term_api_v1_registration_docx_translator_glossary_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/docx-translator/glossary/{term_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 更新术语 */
+        put: operations["update_term_api_v1_registration_docx_translator_glossary__term_id__put"];
+        post?: never;
+        /** 删除术语 */
+        delete: operations["delete_term_api_v1_registration_docx_translator_glossary__term_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/docx-translator/glossary/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 导入术语表 xlsx */
+        post: operations["import_terms_api_v1_registration_docx_translator_glossary_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/docx-translator/glossary/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 导出术语表 xlsx */
+        get: operations["export_terms_api_v1_registration_docx_translator_glossary_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/llm/configs": {
         parameters: {
             query?: never;
@@ -21886,6 +22110,14 @@ export interface components {
              */
             file: string;
         };
+        /** Body_import_terms_api_v1_registration_docx_translator_glossary_import_post */
+        Body_import_terms_api_v1_registration_docx_translator_glossary_import_post: {
+            /**
+             * File
+             * @description xlsx，列名须为「英文」「中文」
+             */
+            file: string;
+        };
         /** Body_post_api_v1_hr_ai_exam_generate_post */
         Body_post_api_v1_hr_ai_exam_generate_post: {
             /** File */
@@ -22030,6 +22262,37 @@ export interface components {
              * @description Quantity change (positive or negative)
              */
             quantity: number;
+        };
+        /** Body_post_api_v1_registration_docx_translator_jobs_post */
+        Body_post_api_v1_registration_docx_translator_jobs_post: {
+            /**
+             * Files
+             * @description 待翻译的 Word 文档，可多选
+             */
+            files: string[];
+            /**
+             * Source Lang
+             * @description 源语言: en / zh
+             * @default en
+             */
+            source_lang: string;
+            /**
+             * Target Lang
+             * @description 目标语言: en / zh
+             * @default zh
+             */
+            target_lang: string;
+            /**
+             * Mode
+             * @description 输出模式: bilingual / replace / both
+             * @default bilingual
+             */
+            mode: string;
+            /**
+             * Batch Size
+             * @description 每批段落数，留空取运行时配置
+             */
+            batch_size?: number | null;
         };
         /** Body_post_api_v1_registration_ledger_copp_certificates_import_post */
         Body_post_api_v1_registration_ledger_copp_certificates_import_post: {
@@ -26536,6 +26799,126 @@ export interface components {
             data?: components["schemas"]["app__modules__hr__schemas__DepartmentResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[DocxGlossaryImportData] */
+        DataResponse_DocxGlossaryImportData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DocxGlossaryImportData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[DocxGlossaryTermListData] */
+        DataResponse_DocxGlossaryTermListData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DocxGlossaryTermListData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[DocxGlossaryTermResponse] */
+        DataResponse_DocxGlossaryTermResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DocxGlossaryTermResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[DocxTranslationFileListData] */
+        DataResponse_DocxTranslationFileListData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DocxTranslationFileListData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[DocxTranslationJobAccepted] */
+        DataResponse_DocxTranslationJobAccepted_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DocxTranslationJobAccepted"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[DocxTranslationJobState] */
+        DataResponse_DocxTranslationJobState_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DocxTranslationJobState"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[DocxTranslationTaskDetailData] */
+        DataResponse_DocxTranslationTaskDetailData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DocxTranslationTaskDetailData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[DocxTranslationTaskListData] */
+        DataResponse_DocxTranslationTaskListData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DocxTranslationTaskListData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[DownloadUrlResponse] */
         DataResponse_DownloadUrlResponse_: {
             /**
@@ -29873,6 +30256,339 @@ export interface components {
             file_size: number;
             /** Content Type */
             content_type: string;
+        };
+        /** DocxGlossaryImportData */
+        DocxGlossaryImportData: {
+            /**
+             * Imported
+             * @default 0
+             */
+            imported: number;
+            /**
+             * Updated
+             * @default 0
+             */
+            updated: number;
+            /**
+             * Skipped
+             * @default 0
+             */
+            skipped: number;
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+        };
+        /** DocxGlossaryTermCreate */
+        DocxGlossaryTermCreate: {
+            /** Term En */
+            term_en: string;
+            /** Term Zh */
+            term_zh: string;
+            /**
+             * Is Enabled
+             * @default true
+             */
+            is_enabled: boolean;
+        };
+        /** DocxGlossaryTermListData */
+        DocxGlossaryTermListData: {
+            /** Items */
+            items: components["schemas"]["DocxGlossaryTermResponse"][];
+            /** Total */
+            total: number;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DocxGlossaryTermResponse */
+        DocxGlossaryTermResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Term En */
+            term_en: string;
+            /** Term Zh */
+            term_zh: string;
+            /** Is Enabled */
+            is_enabled: boolean;
+            /** Source */
+            source: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /** DocxGlossaryTermUpdate */
+        DocxGlossaryTermUpdate: {
+            /** Term En */
+            term_en?: string | null;
+            /** Term Zh */
+            term_zh?: string | null;
+            /** Is Enabled */
+            is_enabled?: boolean | null;
+        };
+        /** DocxTranslationFileListData */
+        DocxTranslationFileListData: {
+            /** Items */
+            items: components["schemas"]["DocxTranslationFileRecord"][];
+            /** Total */
+            total: number;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /**
+         * DocxTranslationFileRecord
+         * @description 历史译文记录（一行 = 一份可下载文件）。
+         */
+        DocxTranslationFileRecord: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Job Ref */
+            job_ref: string;
+            /** Source Filename */
+            source_filename: string;
+            /** Output Filename */
+            output_filename: string;
+            /**
+             * Output Kind
+             * @enum {string}
+             */
+            output_kind: "bilingual" | "translated";
+            /** Source Lang */
+            source_lang: string;
+            /** Target Lang */
+            target_lang: string;
+            /** Mode */
+            mode: string;
+            /** Success Rate */
+            success_rate: number;
+            /** Translated Units */
+            translated_units: number;
+            /** Total Units */
+            total_units: number;
+            /** File Size */
+            file_size: number;
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
+            /** Created At */
+            created_at?: string | null;
+            /** Created By Name */
+            created_by_name?: string | null;
+            /**
+             * Can Delete
+             * @default false
+             */
+            can_delete: boolean;
+        };
+        /** DocxTranslationFileResult */
+        DocxTranslationFileResult: {
+            /** Filename */
+            filename: string;
+            /** Success */
+            success: boolean;
+            /**
+             * Outputs
+             * @default []
+             */
+            outputs: components["schemas"]["DocxTranslationOutput"][];
+            /**
+             * Translated Units
+             * @default 0
+             */
+            translated_units: number;
+            /**
+             * Total Units
+             * @default 0
+             */
+            total_units: number;
+            /**
+             * Success Rate
+             * @default 0
+             */
+            success_rate: number;
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
+            /** Error */
+            error?: string | null;
+        };
+        /** DocxTranslationJobAccepted */
+        DocxTranslationJobAccepted: {
+            /** Job Id */
+            job_id: string;
+            /**
+             * Status
+             * @default running
+             * @constant
+             */
+            status: "running";
+        };
+        /** DocxTranslationJobState */
+        DocxTranslationJobState: {
+            /** Job Id */
+            job_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "done" | "failed";
+            /**
+             * Files Done
+             * @default 0
+             */
+            files_done: number;
+            /**
+             * Files Total
+             * @default 0
+             */
+            files_total: number;
+            /** Current File */
+            current_file?: string | null;
+            /**
+             * Files
+             * @default []
+             */
+            files: components["schemas"]["DocxTranslationFileResult"][];
+            /** Error */
+            error?: string | null;
+        };
+        /** DocxTranslationOutput */
+        DocxTranslationOutput: {
+            /**
+             * Kind
+             * @description bilingual=双语对照版，translated=纯译文版
+             * @enum {string}
+             */
+            kind: "bilingual" | "translated";
+            /** Filename */
+            filename: string;
+            /**
+             * File Index
+             * @description 下载用的文件索引（按任务内顺序）
+             */
+            file_index: number;
+        };
+        /** DocxTranslationSubmitResponse */
+        DocxTranslationSubmitResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DocxTranslationJobAccepted"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DocxTranslationTaskDetailData */
+        DocxTranslationTaskDetailData: {
+            task: components["schemas"]["DocxTranslationTaskRecord"];
+            /** Files */
+            files: components["schemas"]["DocxTranslationTaskFile"][];
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
+        };
+        /**
+         * DocxTranslationTaskFile
+         * @description 任务下的单个文件结果（成功带下载信息，失败带原因）。
+         */
+        DocxTranslationTaskFile: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Source Filename */
+            source_filename: string;
+            /** Output Filename */
+            output_filename: string;
+            /** Output Kind */
+            output_kind: string;
+            /** Success */
+            success: boolean;
+            /** Success Rate */
+            success_rate: number;
+            /** Translated Units */
+            translated_units: number;
+            /** Total Units */
+            total_units: number;
+            /** File Size */
+            file_size: number;
+            /** Error */
+            error?: string | null;
+        };
+        /** DocxTranslationTaskListData */
+        DocxTranslationTaskListData: {
+            /** Items */
+            items: components["schemas"]["DocxTranslationTaskRecord"][];
+            /** Total */
+            total: number;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /**
+         * DocxTranslationTaskRecord
+         * @description 任务级历史（一行 = 一次翻译提交）。
+         */
+        DocxTranslationTaskRecord: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Job Ref */
+            job_ref: string;
+            /** Status */
+            status: string;
+            /** Source Count */
+            source_count: number;
+            /** Success Count */
+            success_count: number;
+            /** Fail Count */
+            fail_count: number;
+            /** First Source Filename */
+            first_source_filename: string;
+            /** Source Lang */
+            source_lang: string;
+            /** Target Lang */
+            target_lang: string;
+            /** Mode */
+            mode: string;
+            /** Elapsed Seconds */
+            elapsed_seconds: number;
+            /**
+             * Total File Size
+             * @default 0
+             */
+            total_file_size: number;
+            /** Created At */
+            created_at?: string | null;
+            /** Created By Name */
+            created_by_name?: string | null;
+            /**
+             * Can Delete
+             * @default false
+             */
+            can_delete: boolean;
+            /**
+             * Can Retranslate
+             * @default false
+             */
+            can_retranslate: boolean;
         };
         /** DomesticApprovalCreate */
         DomesticApprovalCreate: {
@@ -105632,6 +106348,554 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["AssetListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_api_v1_registration_docx_translator_jobs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_post_api_v1_registration_docx_translator_jobs_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DocxTranslationSubmitResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_v1_registration_docx_translator_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DocxTranslationJobState_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_api_v1_registration_docx_translator_jobs__job_id__files__file_index__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+                file_index: number;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tasks_api_v1_registration_docx_translator_tasks_get: {
+        parameters: {
+            query?: {
+                /** @description 按文件名模糊搜索 */
+                keyword?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DocxTranslationTaskListData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_task_detail_api_v1_registration_docx_translator_tasks__task_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DocxTranslationTaskDetailData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_task_api_v1_registration_docx_translator_tasks__task_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["app__shared__schemas__MessageApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retranslate_task_api_v1_registration_docx_translator_tasks__task_id__retranslate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DocxTranslationJobAccepted_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_files_api_v1_registration_docx_translator_files_get: {
+        parameters: {
+            query?: {
+                /** @description 按原文件名或产出文件名模糊搜索 */
+                keyword?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DocxTranslationFileListData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_file_api_v1_registration_docx_translator_files__file_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_file_api_v1_registration_docx_translator_files__file_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["app__shared__schemas__MessageApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_terms_api_v1_registration_docx_translator_glossary_get: {
+        parameters: {
+            query?: {
+                /** @description 按英文或中文模糊搜索 */
+                keyword?: string | null;
+                /** @description 仅看启用/停用 */
+                enabled?: boolean | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DocxGlossaryTermListData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_term_api_v1_registration_docx_translator_glossary_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocxGlossaryTermCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DocxGlossaryTermResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_term_api_v1_registration_docx_translator_glossary__term_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocxGlossaryTermUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DocxGlossaryTermResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_term_api_v1_registration_docx_translator_glossary__term_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["app__shared__schemas__MessageApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_terms_api_v1_registration_docx_translator_glossary_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_terms_api_v1_registration_docx_translator_glossary_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DocxGlossaryImportData_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_terms_api_v1_registration_docx_translator_glossary_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
