@@ -67,10 +67,19 @@ function InspectorField({
 }) {
   const form = Form.useFormInstance()
   const name = Form.useWatch('discovered_by_name', form) as string | undefined
+  // 自动填入的登录用户通常不在首屏 options 里：PersonSelect 会走回退项，
+  // 头像只能由 avatarSrc 提供（TC-001②）。复用页面同一个 ['identity','me'] 缓存。
+  const { data: me } = useQuery({
+    queryKey: ['identity', 'me'],
+    queryFn: () => getCurrentUser(),
+    staleTime: 5 * 60 * 1000,
+  })
+  const avatarSrc = value && me?.id === value ? me.avatar_url : undefined
   return (
     <PersonnelSelect
       value={value}
       label={name}
+      avatarSrc={avatarSrc}
       placeholder="搜索姓名/账号选择审批人"
       onChange={(person) => {
         onChange?.(person?.id)

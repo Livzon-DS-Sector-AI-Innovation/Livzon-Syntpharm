@@ -482,7 +482,7 @@ export const dynamic = 'force-dynamic'
 
 ## 人员与部门选择
 
-**人员**统一使用 `components/common/PersonSelect.tsx`（默认导出 `PersonSelect`，多选具名导出 `PersonMultiSelect`）；**部门**统一使用 `components/common/DepartmentTreeSelect.tsx`。两者数据源都是 HR 主数据（`/api/v1/hr/directory/*`，见 issue #219），返回值分别是 `hr.employee_profiles.id` 与 `hr.departments.id`。
+**人员**统一使用 `components/common/PersonSelect.tsx`（默认导出 `PersonSelect`，多选具名导出 `PersonMultiSelect`），数据源是**系统用户名单**（`identity.users` 中的启用账号，由 HR 名单同步而来，接口 `identity/users/lookup`），返回值是 `identity.users.id`；**部门**统一使用 `components/common/DepartmentTreeSelect.tsx`，数据源是 **HR 组织树**（`/api/v1/hr/directory/departments`），返回值是 `hr.departments.id`。
 
 - `PersonSelect`：展开即取首批（50 条/页）、300ms 防抖的服务端姓名搜索、请求序号防竞态、滚动续载、选项「头像 + 姓名 + 部门 · 职务」、已选标签小头像。
 - `DepartmentTreeSelect`：下拉内顶部搜索框 + **始终全展开**的组织树（无折叠），任意层级（公司 / 一级 / 二级）可选，输入即过滤并自动展开命中路径，行内显示完整层级路径。
@@ -490,13 +490,14 @@ export const dynamic = 'force-dynamic'
 **禁止**：
 
 - 再写页面级 `options={userOptions}` 的全量人员 `Select`
-- 在 Client 组件里自己 `fetch` 人员 / 部门接口（走 `lib/api/client/hr.ts` 的 `fetchDirectoryPeople` / `fetchDirectoryDepartments`）
-- 直接把 `identity.users` 或 `hr.employees` 当作选人数据源（人员主数据是 `hr.employee_profiles`）
+- 在 Client 组件里自己 `fetch` 人员 / 部门接口（人员走 `PersonSelect`；部门走 `lib/api/client/hr.ts` 的 `fetchDirectoryDepartments`）
+- 在页面里自己拼 `identity.users` / `hr.employees` 的全量下拉，或在 Client 组件直连人员表；人员选择必须走 `PersonSelect`（内部已封装系统用户名单的搜索与分页）
 
 **必须**：
 
 - 人员值只存 UUID（单选 `string`，多选 `string[]`），姓名 / 头像通过 `label` / `labels` 快照回显，保证未展开下拉时不显示 UUID
 - 部门值存 `hr.departments.id`；权限数据范围使用的部门编码单独取 `code`
+- 历史表以**部门名称**为业务键的字段（安全台账、质量偏差、部门联系人等）使用 `DepartmentTreeSelect valueField="name"`：UI 走组织树，写回值仍是部门名；树中缺失的历史部门名原样保留，不做迁移、不强制清空
 - 多选场景使用 `PersonMultiSelect`
 
 ```tsx

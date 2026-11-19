@@ -170,7 +170,10 @@ export default function DepartmentTreeSelect({
       allowClear={allowClear}
       placeholder={placeholder}
       style={{ width: '100%' }}
-      value={selectedRow?.id ?? (valueField === 'id' ? value || undefined : undefined)}
+      // valueField='name' 且旧值不在组织树时，selectedRow 为 null：
+      // 仍把原字符串作为 Select 的 value，交给 labelRender 原样显示，
+      // 避免「表单里有旧值、界面却显示占位符」，也保证不会被被动清空。
+      value={selectedRow?.id ?? value ?? undefined}
       labelRender={() => displayLabel ?? value ?? placeholder}
       onOpenChange={(next) => {
         setOpen(next)

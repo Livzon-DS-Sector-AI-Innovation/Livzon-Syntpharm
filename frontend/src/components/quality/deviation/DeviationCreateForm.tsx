@@ -36,6 +36,8 @@ interface DeviationCreateFormProps {
   /** 发现人默认为当前登录人，可改选实际发现人 */
   currentUserId: string
   currentUserName: string
+  /** 当前登录人头像快照，默认发现人回显用（缺省走姓名首字兜底） */
+  currentUserAvatar?: string | null
 }
 
 interface FormValues {
@@ -57,6 +59,7 @@ export function DeviationCreateForm({
   departmentOptions,
   currentUserId,
   currentUserName,
+  currentUserAvatar,
 }: DeviationCreateFormProps) {
   const router = useRouter()
   const [form] = Form.useForm<FormValues>()
@@ -64,8 +67,10 @@ export function DeviationCreateForm({
   const [, startTransition] = useTransition()
   const crossReview = Form.useWatch('needs_cross_dept_review', form)
   const discovererId = Form.useWatch('discoverer_id', form)
-  // 发现人默认是当前登录人：仅在选中人仍是登录人时传姓名快照，改选他人后交给下拉自身快照回显，避免姓名错位
-  const discovererLabel = discovererId && discovererId === currentUserId ? currentUserName : undefined
+  // 发现人默认是当前登录人：仅在选中人仍是登录人时传姓名/头像快照，改选他人后交给下拉自身快照回显，避免错位
+  const isSelfDiscoverer = Boolean(discovererId) && discovererId === currentUserId
+  const discovererLabel = isSelfDiscoverer ? currentUserName : undefined
+  const discovererAvatar = isSelfDiscoverer ? currentUserAvatar || undefined : undefined
 
   const handleFinish = async (values: FormValues) => {
     const crossDeptRows = values.needs_cross_dept_review
@@ -211,6 +216,7 @@ export function DeviationCreateForm({
                 <PersonSelect
                   placeholder={currentUserName || '搜索姓名选择发现人'}
                   label={discovererLabel}
+                  avatarSrc={discovererAvatar}
                   feishuBoundOnly={false}
                 />
               </Form.Item>

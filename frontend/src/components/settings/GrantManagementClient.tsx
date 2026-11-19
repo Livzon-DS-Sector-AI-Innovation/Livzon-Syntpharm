@@ -96,7 +96,13 @@ export default function GrantManagementClient() {
 
   const departmentOptions = departments.map((d) => ({ value: d.code, label: `${d.name}（${d.code}）` }))
 
-  const roleOptions = roles.map((r) => ({ value: r.id, label: `${r.name}（${r.code}）` }))
+  // 模块代表只能由本模块负责人在「模块配置 → 权限管理」指派；
+  // 系统权限管理页只读展示，不允许在这里新增/移除（TC-014）。
+  const roleOptions = roles.map((r) => ({
+    value: r.id,
+    label: r.role_type === 'delegate' ? `${r.name}（${r.code}，由模块负责人指派）` : `${r.name}（${r.code}）`,
+    disabled: r.role_type === 'delegate',
+  }))
 
   // 生效预览：选定用户后拉其权限，算出可见模块/页面
   const { data: previewData } = useQuery({
@@ -170,8 +176,13 @@ export default function GrantManagementClient() {
         const currentRoleIds = new Set(userGrants.map((g) => g.role_id))
         const picked = new Set(values.role_ids ?? [])
 
+        const isDelegateRole = (roleId: string) => roles.find((r) => r.id === roleId)?.role_type === 'delegate'
         const toAdd = [...picked].filter((id) => !currentRoleIds.has(id))
-        const toRemove = userGrants.filter((g) => !picked.has(g.role_id))
+        // 模块代表不在本页移除：取消勾选时保持原授权，由模块负责人在模块配置页处理
+        const toRemove = userGrants.filter((g) => !picked.has(g.role_id) && !isDelegateRole(g.role_id))
+        if (userGrants.some((g) => !picked.has(g.role_id) && isDelegateRole(g.role_id))) {
+          message.warning('模块代表不在本页移除，请到对应模块的「模块配置 → 权限管理」由负责人处理')
+        }
         const toKeep = userGrants.filter((g) => picked.has(g.role_id))
 
         const roleNameOf = (id: string) => roles.find((r) => r.id === id)?.name ?? id
@@ -513,6 +524,9 @@ export default function GrantManagementClient() {
               placeholder="可一次选择多个角色"
             />
           </Form.Item>
+          <Text type="secondary" className="block -mt-2 mb-4 text-[12px]">
+            模块代表由模块配置页的模块负责人指派；本页只读展示，不能新增或移除。
+          </Text>
           <Form.Item
             label="可见数据"
             extra="默认不限制（能看全部数据）。该限制会在各业务模块接入数据权限后生效。"

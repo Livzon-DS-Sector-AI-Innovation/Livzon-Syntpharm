@@ -28,6 +28,7 @@ export default async function DeviationCreatePage() {
       departmentOptions={departmentResult}
       currentUserId={user?.id ?? ''}
       currentUserName={user?.name ?? ''}
+      currentUserAvatar={user?.avatar_url ?? ''}
     />
   )
 }
