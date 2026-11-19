@@ -72,6 +72,14 @@ class TranslationJobRegistry:
             old_id, _ = self._progress.popitem(last=False)
             self._store._jobs.pop(old_id, None)  # noqa: SLF001 - 与 JobStore 同步释放内存
 
+    def exists(self, job_id: str) -> bool:
+        """进程内是否还持有该任务状态。
+
+        服务重启后 registry 为空，但数据库里的任务行可能仍是 running，
+        据此识别“僵尸任务”。
+        """
+        return self._store.get(job_id) is not None
+
     def state(self, job_id: str) -> DocxTranslationJobState:
         job = self._store.get(job_id)
         if job is None:
