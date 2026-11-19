@@ -273,6 +273,7 @@ async def auth_callback(
     """
     from app.platform.identity.repository import LoginLogRepository
     from app.platform.identity.service import (
+        AccountDeletedError,
         handle_oauth_callback,
         validate_state_token,
     )
@@ -301,7 +302,20 @@ async def auth_callback(
     try:
         user, token = await handle_oauth_callback(db, code)
     except Exception as exc:
-        logger.exception("OAuth callback failed")
+        # 区分可解释的拒绝原因，避免一律显示「登录失败，请重试」让用户反复试
+        if isinstance(exc, AccountDeletedError):
+            error_code = "account_deleted"
+            error_message = "账号已被删除，请联系管理员处理"
+            logger.warning("OAuth callback rejected: account deleted")
+        elif isinstance(exc, PermissionError):
+            error_code = "account_disabled"
+            error_message = f"账号已被禁用: {exc}"
+            logger.warning("OAuth callback rejected: account disabled")
+        else:
+            error_code = "callback_failed"
+            error_message = f"OAuth回调失败: {exc}"
+            logger.exception("OAuth callback failed")
+
         # Rollback any pending transaction before logging the failure
         await db.rollback()
         try:
@@ -311,13 +325,13 @@ async def auth_callback(
                 login_type="feishu_sso",
                 ip_address=ip_address,
                 user_agent=user_agent,
-                error_message=f"OAuth回调失败: {exc}",
+                error_message=error_message,
             )
             await db.commit()
         except Exception as log_exc:
             logger.error("Failed to record login failure: %s", log_exc)
         return RedirectResponse(
-            url="/login?error=callback_failed",
+            url=f"/login?error={error_code}",
             status_code=302,
         )
 
@@ -1182,6 +1196,10 @@ async def delete_user_management(
 
     账号名不会被释放——`uq_identity_users_username` 不区分 `is_deleted`，删除后同名
     账号无法重建；如需复用名称，请另建新名（或后续做改名迁移）。
+
+    软删行仍占用飞书身份唯一约束，因此本人再次飞书登录时会**原地复活该行**
+    （`auth_source=feishu` 时）：复活后零权限，需管理员重新授予角色。要彻底阻断
+    登录请改用「禁用」，不要用「删除」。
     """
     from app.core.exceptions import NotFoundException
     from app.platform.identity.service import SYSTEM_ADMIN_USERNAME

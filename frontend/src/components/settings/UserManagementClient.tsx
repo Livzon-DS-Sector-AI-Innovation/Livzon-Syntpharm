@@ -1158,7 +1158,7 @@ export default function UserManagementClient() {
         onConfirm={handleBatchDelete}
       />
 
-      {/* 删除账号：仅超级管理员；软删除不可恢复，需输入用户名确认 */}
+      {/* 删除账号：仅超级管理员；软删除且本人飞书登录可自动恢复，需输入用户名确认 */}
       <Modal
         title="删除账号"
         open={!!deleteTarget}
@@ -1177,8 +1177,8 @@ export default function UserManagementClient() {
         <Alert
           type="error"
           showIcon
-          title="删除后该账号无法登录，且不可恢复"
-          description="该账号的角色授权会被清空、在线会话会被强制下线；历史单据仍保留其姓名。账号名将被永久占用，不能再创建同名账号。"
+          title="删除后该账号的角色授权会被清空、在线会话被强制下线"
+          description="该账号本人再次用飞书登录时，系统会自动恢复这个账号，但不再有任何权限，需管理员重新授予角色。如需彻底禁止登录，请改用「禁用」。历史单据仍保留其姓名，账号名不会被释放。"
           className="mb-4"
         />
         <div className="text-[13px]">
