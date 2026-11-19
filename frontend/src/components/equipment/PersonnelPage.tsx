@@ -142,22 +142,34 @@ export function PersonnelPage({ embedded = false }: { embedded?: boolean } = {})
         </div>
       )}
 
-      {/* Tab 内容包进白色卡片 */}
-      <div style={{
-        background: '#ffffff',
-        borderRadius: 12,
-        border: '1px solid #e5e3df',
-        padding: '4px 24px 24px',
-      }}>
+      {/* Tab 内容包进区域卡：嵌入模块配置页签时用统一区域样式，旧页面保持原样 */}
+      <div
+        className={embedded ? 'settings-region' : undefined}
+        style={
+          embedded
+            ? undefined
+            : {
+                background: '#ffffff',
+                borderRadius: 12,
+                border: '1px solid #e5e3df',
+                padding: '4px 24px 24px',
+              }
+        }
+      >
         <Tabs
           activeKey={activeTab}
           onChange={key => setActiveTab(key as 'personnel' | 'roles')}
           items={tabItems}
-          tabBarStyle={{
-            borderBottom: '1px solid #ede9e4',
-            marginBottom: 20,
-            paddingLeft: 0,
-          }}
+          className={embedded ? 'settings-region-tabs' : undefined}
+          tabBarStyle={
+            embedded
+              ? undefined
+              : {
+                  borderBottom: '1px solid #ede9e4',
+                  marginBottom: 20,
+                  paddingLeft: 0,
+                }
+          }
           tabBarGutter={32}
         />
       </div>

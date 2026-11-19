@@ -207,7 +207,7 @@ export default function ReminderSettingsPage({ embedded = false }: { embedded?: 
             </div>
           </div>
 
-          <Divider style={{ margin: '8px 0' }} />
+          
 
           {/* 接收者配置 */}
           <div className="settings-section">
@@ -280,7 +280,7 @@ export default function ReminderSettingsPage({ embedded = false }: { embedded?: 
             </div>
           </div>
 
-          <Divider style={{ margin: '8px 0' }} />
+          
 
           {/* 提醒时机 */}
           <div className="settings-section">
@@ -334,7 +334,7 @@ export default function ReminderSettingsPage({ embedded = false }: { embedded?: 
             </div>
           </div>
 
-          <Divider style={{ margin: '8px 0' }} />
+          
 
           {/* 基本设置 */}
           <div className="settings-section" style={{ marginBottom: 0 }}>

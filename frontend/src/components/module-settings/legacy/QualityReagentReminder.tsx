@@ -153,7 +153,7 @@ export default function ReagentReminderPage({ embedded = false }: { embedded?: b
   ]
 
   return (
-    <div className="reminder-page">
+    <div className="reminder-page" style={embedded ? { padding: 0 } : undefined}>
       {/* 页面标题：嵌入「模块配置」页签时由外层页头承担，不再重复 */}
       {embedded ? null : (
         <div className="reminder-header">
@@ -166,10 +166,10 @@ export default function ReagentReminderPage({ embedded = false }: { embedded?: b
       )}
 
       <Spin spinning={loading}>
-        <Row gutter={[16, 16]}>
+        <Row gutter={[20, 20]}>
           {/* 配置区 */}
           <Col xs={24} lg={12}>
-            <Card className="reminder-card" styles={{ body: { padding: isMobile ? 16 : 20 } }}>
+            <Card className="reminder-card settings-region-card" styles={{ body: { padding: isMobile ? 16 : 20 } }}>
               <div className="card-title-area">
                 <SettingOutlined className="card-icon" />
                 <span>提醒配置</span>
@@ -183,7 +183,7 @@ export default function ReagentReminderPage({ embedded = false }: { embedded?: b
               />
 
               <Form form={form} layout="vertical">
-                <Divider>飞书机器人配置</Divider>
+                <div className="settings-subregion-head">飞书机器人配置</div>
 
                 <Form.Item name="feishu_app_id" label="App ID" rules={[{ required: true }]}>
                   <Input placeholder="请输入飞书应用的 App ID" />
@@ -202,7 +202,7 @@ export default function ReagentReminderPage({ embedded = false }: { embedded?: b
                   <Input placeholder="请输入飞书群 ID" />
                 </Form.Item>
 
-                <Divider>提醒规则</Divider>
+                <div className="settings-subregion-head">提醒规则</div>
 
                 <Form.Item
                   name="low_stock_threshold"
@@ -233,7 +233,7 @@ export default function ReagentReminderPage({ embedded = false }: { embedded?: b
           {/* 预览区 */}
           <Col xs={24} lg={12}>
             <Card
-              className="reminder-card"
+              className="reminder-card settings-region-card"
               styles={{ body: { padding: isMobile ? 16 : 20 } }}
               title={
                 <div className="card-title-area">
@@ -242,8 +242,12 @@ export default function ReagentReminderPage({ embedded = false }: { embedded?: b
                   {lowStockList.length > 0 && <Tag color="orange">{lowStockList.length}</Tag>}
                 </div>
               }
-              extra={<Button size="small" icon={<SyncOutlined spin={lowStockLoading} />} onClick={() => refetchLowStock()}>刷新</Button>}
             >
+              <div className="mb-3 flex items-center justify-end">
+                <Button size="small" icon={<SyncOutlined spin={lowStockLoading} />} onClick={() => refetchLowStock()}>
+                  刷新
+                </Button>
+              </div>
               <Table
                 columns={columns}
                 dataSource={lowStockList}

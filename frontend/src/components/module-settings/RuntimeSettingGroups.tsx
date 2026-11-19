@@ -42,7 +42,7 @@ export default function RuntimeSettingGroups({
       key: group.name,
       label: (
         <Space size={8} wrap>
-          <span className="text-[14px] font-semibold text-[var(--color-charcoal)]">{group.name}</span>
+          <span className="text-[14px] font-semibold text-[var(--color-primary-deep)]">{group.name}</span>
           <Tag className="!mr-0">{group.items.length} 项</Tag>
           {adjusted > 0 && (
             <Tooltip title="本组有配置项被人工修改过">
@@ -53,30 +53,30 @@ export default function RuntimeSettingGroups({
           )}
         </Space>
       ),
-      extra:
-        canManage && switches.length > 0 ? (
-          <Space size={4} onClick={(event) => event.stopPropagation()}>
-            <button
-              type="button"
-              className="cursor-pointer border-0 bg-transparent px-1 text-[12px] text-[var(--color-primary)] hover:underline disabled:cursor-not-allowed disabled:text-[var(--color-muted)]"
-              disabled={batchLoading}
-              onClick={() => onGroupBatch(switches, 'true')}
-            >
-              全部启用
-            </button>
-            <span className="text-[var(--color-hairline-strong)]">|</span>
-            <button
-              type="button"
-              className="cursor-pointer border-0 bg-transparent px-1 text-[12px] text-[var(--color-primary)] hover:underline disabled:cursor-not-allowed disabled:text-[var(--color-muted)]"
-              disabled={batchLoading}
-              onClick={() => onGroupBatch(switches, 'false')}
-            >
-              全部停用
-            </button>
-          </Space>
-        ) : null,
       children: (
         <div className="flex flex-col">
+          {/* 组操作放在区域标题栏下方，不进标题栏 */}
+          {canManage && switches.length > 0 && (
+            <div className="mb-2 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                className="cursor-pointer border-0 bg-transparent px-1 text-[12px] text-[var(--color-primary)] hover:underline disabled:cursor-not-allowed disabled:text-[var(--color-muted)]"
+                disabled={batchLoading}
+                onClick={() => onGroupBatch(switches, 'true')}
+              >
+                全部启用
+              </button>
+              <span className="text-[var(--color-hairline-strong)]">|</span>
+              <button
+                type="button"
+                className="cursor-pointer border-0 bg-transparent px-1 text-[12px] text-[var(--color-primary)] hover:underline disabled:cursor-not-allowed disabled:text-[var(--color-muted)]"
+                disabled={batchLoading}
+                onClick={() => onGroupBatch(switches, 'false')}
+              >
+                全部停用
+              </button>
+            </div>
+          )}
           {group.items.map((setting) => (
             <div
               key={setting.id}
@@ -137,7 +137,7 @@ export default function RuntimeSettingGroups({
       size="small"
       items={items}
       defaultActiveKey={defaultActiveKey}
-      className="[&_.ant-collapse-header]:!items-center"
+      className="settings-region-collapse"
     />
   )
 }

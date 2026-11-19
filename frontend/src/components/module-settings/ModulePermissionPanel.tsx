@@ -29,12 +29,12 @@ const GRANT_STATUS_OPTIONS = [
 ]
 
 /**
- * 三个区块（模块代表 / 岗位角色 / 授权）统一的标题样式：
- * 浅灰底 + 左侧 3px 主色竖条 + 分隔线，让不同区域一眼可分。
- * 只作用于本页卡片的 className，不改共享的 SettingsListCard。
+ * 三个区块（模块代表 / 岗位角色 / 授权）统一的区域样式：
+ * 标题栏浅灰底 + 左侧 3px 主色竖条 + 分隔线，区块之间 20px 间隔。
+ * 样式定义在 globals.css 的 .settings-region-card，只在 .settings-scope 内生效，
+ * 不改共享的 SettingsListCard 默认外观。
  */
-const SECTION_CARD_CLASS =
-  '[&_.ant-card-head]:bg-[var(--color-surface-soft)]! [&_.ant-card-head]:border-l-[3px]! [&_.ant-card-head]:border-l-[var(--color-primary)]! [&_.ant-card-head]:border-b-[var(--color-hairline)]!'
+const SECTION_CARD_CLASS = 'settings-region-card'
 
 interface ModulePermissionPanelProps {
   moduleCode: string
@@ -510,7 +510,7 @@ export default function ModulePermissionPanel({
   ]
 
   return (
-    <div className="space-y-5">
+    <div className="settings-region-stack">
       <Alert
         type="info"
         showIcon
@@ -567,25 +567,25 @@ export default function ModulePermissionPanel({
 
       <SettingsListCard
         title="岗位角色"
-        extra={
-          <Space size={8} wrap>
-            <span className="text-[12px] text-[var(--color-steel)]">共 {jobRoles.length} 个</span>
-            <Button type="primary" icon={<PlusOutlined />} disabled={!canManage} onClick={openCreateRole}>
-              新建角色
-            </Button>
-          </Space>
-        }
+        extra={<span className="text-[12px] text-[var(--color-steel)]">共 {jobRoles.length} 个</span>}
         toolbar={
-          <div className="flex w-full flex-wrap items-center gap-2">
-            <Input
-              allowClear
-              prefix={<SearchOutlined className="text-[var(--color-stone)]" />}
-              placeholder="搜索角色名称或编码"
-              value={roleKeyword}
-              onChange={(event) => setRoleKeyword(event.target.value)}
-              style={{ width: 240 }}
-            />
-            <span className="text-[12px] text-[var(--color-steel)]">筛选出 {visibleRoles.length} 个</span>
+          <div className="flex w-full flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                allowClear
+                prefix={<SearchOutlined className="text-[var(--color-stone)]" />}
+                placeholder="搜索角色名称或编码"
+                value={roleKeyword}
+                onChange={(event) => setRoleKeyword(event.target.value)}
+                style={{ width: 240 }}
+              />
+              <span className="text-[12px] text-[var(--color-steel)]">筛选出 {visibleRoles.length} 个</span>
+            </div>
+            <div className="ml-auto">
+              <Button type="primary" icon={<PlusOutlined />} disabled={!canManage} onClick={openCreateRole}>
+                新建角色
+              </Button>
+            </div>
           </div>
         }
         className={SECTION_CARD_CLASS}
@@ -618,36 +618,36 @@ export default function ModulePermissionPanel({
 
       <SettingsListCard
         title="授权"
-        extra={
-          <Space size={8} wrap>
-            <span className="text-[12px] text-[var(--color-steel)]">共 {grants.length} 条</span>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              disabled={!canManage || grantableRoles.length === 0}
-              onClick={() => setGrantModalOpen(true)}
-            >
-              新建授权
-            </Button>
-          </Space>
-        }
+        extra={<span className="text-[12px] text-[var(--color-steel)]">共 {grants.length} 条</span>}
         toolbar={
-          <div className="flex w-full flex-wrap items-center gap-2">
-            <Input
-              allowClear
-              prefix={<SearchOutlined className="text-[var(--color-stone)]" />}
-              placeholder="搜索用户或角色"
-              value={grantKeyword}
-              onChange={(event) => setGrantKeyword(event.target.value)}
-              style={{ width: 240 }}
-            />
-            <Select
-              value={grantStatus}
-              options={GRANT_STATUS_OPTIONS}
-              onChange={setGrantStatus}
-              style={{ width: 140 }}
-            />
-            <span className="text-[12px] text-[var(--color-steel)]">筛选出 {visibleGrants.length} 条</span>
+          <div className="flex w-full flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                allowClear
+                prefix={<SearchOutlined className="text-[var(--color-stone)]" />}
+                placeholder="搜索用户或角色"
+                value={grantKeyword}
+                onChange={(event) => setGrantKeyword(event.target.value)}
+                style={{ width: 240 }}
+              />
+              <Select
+                value={grantStatus}
+                options={GRANT_STATUS_OPTIONS}
+                onChange={setGrantStatus}
+                style={{ width: 140 }}
+              />
+              <span className="text-[12px] text-[var(--color-steel)]">筛选出 {visibleGrants.length} 条</span>
+            </div>
+            <div className="ml-auto">
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                disabled={!canManage || grantableRoles.length === 0}
+                onClick={() => setGrantModalOpen(true)}
+              >
+                新建授权
+              </Button>
+            </div>
           </div>
         }
         className={SECTION_CARD_CLASS}

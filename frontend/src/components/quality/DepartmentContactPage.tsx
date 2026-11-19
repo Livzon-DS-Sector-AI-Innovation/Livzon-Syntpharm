@@ -343,7 +343,7 @@ export function DepartmentContactPage({
   ]
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           {!embedded && (
@@ -353,9 +353,11 @@ export function DepartmentContactPage({
             偏差流转按部门取处理人：部门负责人、生产负责人、质量负责人（本部门优先、缺省回退质量保证部），以及所属 QA、QA 负责人
           </p>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()} className="shrink-0 self-start sm:self-auto">
-          添加部门
-        </Button>
+        {!embedded && (
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()} className="shrink-0 self-start sm:self-auto">
+            添加部门
+          </Button>
+        )}
       </header>
 
       {loadError && <Alert type="warning" showIcon title="联系人数据加载失败" description={loadError} />}
@@ -374,7 +376,19 @@ export function DepartmentContactPage({
         />
       )}
 
-      <Card size="small" className="shadow-sm" styles={{ body: { padding: 0 } }}>
+      <Card
+        size="small"
+        className={embedded ? 'settings-region-card' : 'shadow-sm'}
+        title={embedded ? '部门联系人' : undefined}
+        styles={{ body: { padding: 0 } }}
+      >
+        {embedded && (
+          <div className="flex items-center justify-end px-4 pb-3 pt-4">
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()}>
+              添加部门
+            </Button>
+          </div>
+        )}
         <Table<DepartmentContact>
           rowKey="id"
           size="middle"
