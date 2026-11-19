@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import time
+import uuid
 from typing import Any
 
 import httpx
@@ -115,6 +116,9 @@ class FeishuClient:
             "receive_id": receive_id,
             "msg_type": msg_type,
             "content": content,  # 必须是字符串
+            # 飞书按 uuid 去重（1 小时内相同 uuid 只投递一次）：一次逻辑发送共用此值，
+            # 让 _request 的重试与失效自愈重发都保持幂等，避免服务端已收到却重复投递。
+            "uuid": str(uuid.uuid4()),
         }
 
         # 首次发送与自愈重发共享同一份总时长预算，避免最坏耗时翻倍

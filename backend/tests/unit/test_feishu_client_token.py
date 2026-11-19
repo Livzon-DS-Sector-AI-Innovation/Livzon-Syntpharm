@@ -10,7 +10,9 @@
 - 发送返回失效码（HTTP 200 或 400）→ 丢弃缓存、重取、只重发一次并成功；
 - 重发仍失效 → 抛 ``ValueError``，且只重发一次；
 - 一次 ``send_message`` 受总时长预算约束 → 自愈重发与首次发送共享同一份预算，
-  预算耗尽时不再发起新请求；正常路径与 5xx 三次重试不受影响。
+  预算耗尽时不再发起新请求；正常路径与 5xx 三次重试不受影响；
+- 一次 ``send_message`` 的所有外部请求共用同一 ``uuid`` → 飞书按 uuid 去重，
+  重试与自愈重发不会造成重复投递。
 
 飞书 HTTP 一律 mock，不发起真实请求；预算相关用例用假时钟推进，不做真实等待。
 """
@@ -104,12 +106,16 @@ def _patch_http(
     gateway: _FakeGateway,
     *,
     timeouts: list[float] | None = None,
+    bodies: list[dict[str, Any]] | None = None,
 ) -> None:
     async def fake_request(_self: httpx.AsyncClient, method: str, url: str, **_kwargs: Any) -> httpx.Response:
         if timeouts is not None:
             connect = _self.timeout.connect
             assert connect is not None  # 被测代码始终显式传 float
             timeouts.append(connect)
+        if bodies is not None:
+            # 存副本：若每次尝试重建 payload，副本之间会出现差异（uuid 复用靠这个断言）
+            bodies.append(dict(_kwargs.get("json") or {}))
         return await gateway.request(method, url)
 
     monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
@@ -263,3 +269,35 @@ async def test_retry_stops_when_budget_exhausted(client: Any, module: Any, monke
 
     assert gateway.token_calls == 0
     assert gateway.send_calls == 1
+
+
+async def test_one_send_reuses_one_uuid_across_retry_and_self_heal(
+    client: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """幂等：同一次 send_message 的 5xx 重试与失效自愈重发必须共用同一 uuid。"""
+    gateway = _FakeGateway([(500, {}), (200, _INVALID_TOKEN), (200, _OK)])
+    bodies: list[dict[str, Any]] = []
+    _patch_http(monkeypatch, gateway, bodies=bodies)
+
+    result = await client.send_message("open_id", "ou_test", "text", '{"text":"hi"}')
+
+    assert result["code"] == 0
+    # 1 次 5xx 重试 + 首次发送 + 自愈重发，共 3 次外呼
+    assert gateway.send_calls == 3
+    sent = [body for body in bodies if "uuid" in body]
+    assert len(sent) == 3
+    assert len({body["uuid"] for body in sent}) == 1
+
+
+async def test_separate_sends_use_different_uuids(client: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    """两次独立发送各用新 uuid：一天多次的提醒不会被飞书误去重。"""
+    gateway = _FakeGateway([(200, _OK)])
+    bodies: list[dict[str, Any]] = []
+    _patch_http(monkeypatch, gateway, bodies=bodies)
+
+    await client.send_message("open_id", "ou_test", "text", '{"text":"hi"}')
+    await client.send_message("open_id", "ou_test", "text", '{"text":"hi"}')
+
+    uuids = [body["uuid"] for body in bodies if "uuid" in body]
+    assert len(uuids) == 2
+    assert len(set(uuids)) == 2

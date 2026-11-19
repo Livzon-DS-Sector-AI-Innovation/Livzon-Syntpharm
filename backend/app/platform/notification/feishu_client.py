@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import time
+import uuid
 from typing import Any
 
 import httpx
@@ -203,6 +204,9 @@ class FeishuClient:
             "msg_type": msg_type,
             # 飞书要求 content 为 JSON 字符串；直接传 dict 会被拒（9499 invalid content）
             "content": content if isinstance(content, str) else json.dumps(content, ensure_ascii=False),
+            # 飞书按 uuid 去重（1 小时内相同 uuid 只投递一次）：一次逻辑发送共用此值，
+            # 让 _request 的重试与失效自愈重发都保持幂等，避免服务端已收到却重复投递。
+            "uuid": str(uuid.uuid4()),
         }
 
         # 首次发送与自愈重发共享同一份总时长预算，避免最坏耗时翻倍
