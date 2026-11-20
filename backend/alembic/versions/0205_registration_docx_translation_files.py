@@ -1,7 +1,7 @@
 """registration docx translation output files
 
-Revision ID: 0127_registration_docx_translation_files
-Revises: 0126_merge_docx_translator_and_hr_heads
+Revision ID: 0205_registration_docx_translation_files
+Revises: 0204_merge_docx_translator_and_hr_heads
 Create Date: 2026-11-18
 
 文档翻译产出文件的历史记录（一行 = 一份可下载译文），
@@ -15,8 +15,8 @@ from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
-revision: str = "0127_registration_docx_translation_files"
-down_revision: str = "0126_merge_docx_translator_and_hr_heads"
+revision: str = "0205_registration_docx_translation_files"
+down_revision: str = "0204_merge_docx_translator_and_hr_heads"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

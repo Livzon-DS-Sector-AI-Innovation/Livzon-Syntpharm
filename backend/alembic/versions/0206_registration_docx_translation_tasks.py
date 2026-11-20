@@ -1,7 +1,7 @@
 """registration docx translation tasks
 
-Revision ID: 0128_registration_docx_translation_tasks
-Revises: 0127_registration_docx_translation_files
+Revision ID: 0206_registration_docx_translation_tasks
+Revises: 0205_registration_docx_translation_files
 Create Date: 2026-11-18
 
 历史从「文件级」升级为「任务级」：新增 docx_translation_tasks（一次提交一行），
@@ -16,8 +16,8 @@ from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
-revision: str = "0128_registration_docx_translation_tasks"
-down_revision: str = "0127_registration_docx_translation_files"
+revision: str = "0206_registration_docx_translation_tasks"
+down_revision: str = "0205_registration_docx_translation_files"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
