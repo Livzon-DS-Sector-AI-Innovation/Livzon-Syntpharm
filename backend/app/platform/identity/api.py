@@ -329,7 +329,7 @@ async def auth_callback(
             )
             await db.commit()
         except Exception as log_exc:
-            logger.error("Failed to record login failure: %s", log_exc)
+            logger.exception("Failed to record login failure: %s", log_exc)
         return RedirectResponse(
             url=f"/login?error={error_code}",
             status_code=302,
