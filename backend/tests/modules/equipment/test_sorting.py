@@ -15,7 +15,7 @@ import pytest
 
 from app.modules.equipment.models.equipment import Equipment
 from app.modules.equipment.repository.equipment import get_equipments
-from app.platform.identity.models import Department
+from app.modules.hr.models import HrDepartment
 
 _KEYWORD = "排序集成测试"
 
@@ -27,8 +27,14 @@ async def _create_equipment(db, *, asset_no: str, name: str, **fields) -> Equipm
     return row
 
 
-async def _create_department(db, *, name: str) -> Department:
-    row = Department(feishu_department_id=f"test_{uuid.uuid4().hex}", name=f"{_KEYWORD}{name}")
+async def _create_department(db, *, name: str) -> HrDepartment:
+    # #219 起设备部门的唯一真理来源是 hr.departments（identity.departments 已下线）
+    uid = uuid.uuid4().hex[:8]
+    row = HrDepartment(
+        feishu_department_id=f"test_{uid}",
+        code=f"DEPT-TEST-{uid}",
+        name=f"{_KEYWORD}{name}",
+    )
     db.add(row)
     await db.flush()
     return row

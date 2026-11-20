@@ -18,6 +18,7 @@ from app.platform.permission import api as permission_api
 from app.platform.permission.api import batch_create_grants
 from app.platform.permission.models import Role
 from app.platform.permission.public_api import PermissionContext
+from app.platform.permission.service.delegation import ModuleScope
 
 
 class StubResult:
@@ -99,6 +100,7 @@ def _patch(
     grant_repo: StubGrantRepo | None = None,
     blocked_users: set[Any] | None = None,
     forbidden_roles: set[Any] | None = None,
+    scope: ModuleScope | None = None,
 ):
     """接管角色查询 / 人员映射 / 护栏 / 审计 / 缓存失效。"""
     audits: list[dict[str, Any]] = []
@@ -107,12 +109,21 @@ def _patch(
     role_map = {role.id: role for role in roles}
     blocked = blocked_users or set()
     forbidden = forbidden_roles or set()
+    the_scope = scope or ModuleScope(
+        user_id=uuid.uuid4(),
+        is_system_admin=True,
+        modules=frozenset(),
+        owner_modules=frozenset(),
+    )
 
     async def fake_get_role(db: Any, role_id: Any) -> Role | None:
         return role_map.get(role_id)
 
     async def fake_resolve(db: Any, person_id: Any) -> Any:
         return resolve_map.get(person_id)
+
+    async def fake_resolve_scope(db: Any, user: Any) -> ModuleScope:
+        return the_scope
 
     async def fake_guard_role(db: Any, *, actor: Any, role: Role) -> None:
         if role.id in forbidden:
@@ -136,6 +147,7 @@ def _patch(
     monkeypatch.setattr(permission_api, "assert_actor_can_grant_role", fake_guard_role)
     monkeypatch.setattr(permission_api, "assert_actor_can_grant_scope", allow_scope)
     monkeypatch.setattr(permission_api, "guard_manage_target", fake_guard_target)
+    monkeypatch.setattr(permission_api, "resolve_module_scope", fake_resolve_scope)
     monkeypatch.setattr(permission_api, "record_audit_log", fake_audit)
     monkeypatch.setattr(permission_api, "_evict_user_cache", fake_evict)
     monkeypatch.setattr("app.platform.identity.public_api.resolve_person_user_id", fake_resolve)
@@ -307,3 +319,83 @@ async def test_batch_create_rejects_too_many_roles() -> None:
 
     with pytest.raises(ValidationError):
         permission_api.GrantBatchCreate(user_ids=[uuid.uuid4()], role_ids=[uuid.uuid4() for _ in range(21)])
+
+
+# ── 模块代表：只有本模块负责人可指派（TC-014）────────────────────────
+
+
+def _delegate_role(module_code: str = "quality") -> Role:
+    role = Role(
+        code=f"{module_code}:delegate",
+        name=f"{module_code}代表",
+        status="active",
+        role_type="delegate",
+        module_code=module_code,
+        is_builtin=True,
+    )
+    role.id = uuid.uuid4()
+    role.is_superuser = False
+    return role
+
+
+async def test_batch_create_rejects_delegate_for_superadmin(monkeypatch: pytest.MonkeyPatch) -> None:
+    operator = _user(name="root")
+    target = _user(name="张三")
+    role = _delegate_role("quality")
+    holder = _patch(monkeypatch, roles=[role], resolve_map={target.id: target.id})
+
+    resp = await batch_create_grants(
+        permission_api.GrantBatchCreate(user_ids=[target.id], role_ids=[role.id]),
+        ctx=_ctx(operator),
+        db=StubSession([target]),
+    )
+
+    assert resp.data["succeeded"] == []
+    assert len(resp.data["failed"]) == 1
+    assert "只有本模块负责人可以指派或移除模块代表" in resp.data["failed"][0]["reason"]
+    assert holder["repo"].created == []
+
+
+async def test_batch_create_allows_delegate_for_own_module_owner(monkeypatch: pytest.MonkeyPatch) -> None:
+    operator = _user(name="quality-owner")
+    target = _user(name="张三")
+    role = _delegate_role("quality")
+    scope = ModuleScope(
+        user_id=operator.id,
+        is_system_admin=False,
+        modules=frozenset({"quality"}),
+        owner_modules=frozenset({"quality"}),
+    )
+    holder = _patch(monkeypatch, roles=[role], resolve_map={target.id: target.id}, scope=scope)
+
+    resp = await batch_create_grants(
+        permission_api.GrantBatchCreate(user_ids=[target.id], role_ids=[role.id]),
+        ctx=_ctx(operator),
+        db=StubSession([target]),
+    )
+
+    assert resp.data["failed"] == []
+    assert holder["repo"].created == [(target.id, role.id)]
+
+
+async def test_batch_create_rejects_delegate_for_other_module_owner(monkeypatch: pytest.MonkeyPatch) -> None:
+    operator = _user(name="safety-owner")
+    target = _user(name="张三")
+    role = _delegate_role("quality")
+    scope = ModuleScope(
+        user_id=operator.id,
+        is_system_admin=False,
+        modules=frozenset({"safety"}),
+        owner_modules=frozenset({"safety"}),
+    )
+    holder = _patch(monkeypatch, roles=[role], resolve_map={target.id: target.id}, scope=scope)
+
+    resp = await batch_create_grants(
+        permission_api.GrantBatchCreate(user_ids=[target.id], role_ids=[role.id]),
+        ctx=_ctx(operator),
+        db=StubSession([target]),
+    )
+
+    assert resp.data["succeeded"] == []
+    assert "只有本模块负责人可以指派或移除模块代表" in resp.data["failed"][0]["reason"]
+    assert holder["repo"].created == []

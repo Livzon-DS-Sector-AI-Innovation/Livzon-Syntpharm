@@ -23,7 +23,7 @@ const PAGE_SIZE = 50
 const SCROLL_BOTTOM_THRESHOLD = 32
 
 export interface PickedPerson {
-  /** identity.users.id */
+  /** hr.employee_profiles.id */
   id: string
   name: string
 }
@@ -182,7 +182,7 @@ function ListLoadingFooter({ loading, hasOptions }: { loading: boolean; hasOptio
 }
 
 export interface PersonSelectProps {
-  /** 已选人员 UUID（identity.users.id） */
+  /** 已选人员 UUID（hr.employee_profiles.id） */
   value?: string | null
   /** 已保存的姓名快照：未出现在当前列表时用于回显，避免显示 UUID */
   label?: string | null
@@ -191,9 +191,9 @@ export interface PersonSelectProps {
   allowClear?: boolean
   placeholder?: string
   disabled?: boolean
-  /** @deprecated 当前账号 lookup 不按飞书绑定状态过滤，保留仅为兼容旧调用点 */
+  /** @deprecated HR 目录不区分账号绑定状态，保留仅为兼容旧调用点 */
   feishuBoundOnly?: boolean
-  /** @deprecated 当前选择器不单独切换登录账号展示，保留仅为兼容旧调用点 */
+  /** @deprecated HR 目录不展示登录账号，保留仅为兼容旧调用点 */
   showUsername?: boolean
   /** Form.Item 会代为注入 onChange；裸用时必填 */
   onChange?: (person: PickedPerson | null) => void
@@ -285,7 +285,7 @@ export default function PersonSelect({
 }
 
 export interface PersonMultiSelectProps {
-  /** 已选人员 UUID 列表（identity.users.id） */
+  /** 已选人员 UUID 列表（hr.employee_profiles.id） */
   value?: string[]
   /** 已保存的姓名快照（与 value 顺序一致），未搜索时用于回显 */
   labels?: string[]
@@ -294,9 +294,9 @@ export interface PersonMultiSelectProps {
   allowClear?: boolean
   placeholder?: string
   disabled?: boolean
-  /** @deprecated 当前账号 lookup 不按飞书绑定状态过滤，保留仅为兼容旧调用点 */
+  /** @deprecated HR 目录不区分账号绑定状态，保留仅为兼容旧调用点 */
   feishuBoundOnly?: boolean
-  /** @deprecated 当前选择器不单独切换登录账号展示，保留仅为兼容旧调用点 */
+  /** @deprecated HR 目录不展示登录账号，保留仅为兼容旧调用点 */
   showUsername?: boolean
   onChange?: (persons: PickedPerson[]) => void
   onSelectionChange?: (persons: DirectoryPersonItem[]) => void

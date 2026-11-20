@@ -50,8 +50,8 @@ async def _resolve(user: User) -> PermissionContext:
 
 async def test_module_head_permissions_lack_platform_role_read() -> None:
     """根因回归：负责人 / 管理人不持有 platform:role:read，不能靠单码判定。"""
-    assert "platform:role:read" not in BUILTIN_ROLE_PERMISSIONS["quality:head"]
-    assert "platform:role:read" not in BUILTIN_ROLE_PERMISSIONS["quality:manager"]
+    assert "platform:role:read" not in BUILTIN_ROLE_PERMISSIONS["quality:owner"]
+    assert "platform:role:read" not in BUILTIN_ROLE_PERMISSIONS["quality:delegate"]
 
 
 async def test_module_entry_can_read_catalog(access) -> None:

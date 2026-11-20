@@ -227,7 +227,7 @@ export default function ReportGenSettingsClient({ settings, llmConfigs, canManag
     try {
       for (const change of changes) {
         const result = await updateModuleSetting(MODULE, change.key, { value: change.value })
-        if (!result?.data) throw new Error(`保存 ${change.key} 失败`)
+        if (!result) throw new Error(`保存 ${change.key} 失败`)
       }
       setBaseline(current)
       message.success('配置已保存，之后新建的任务生效')

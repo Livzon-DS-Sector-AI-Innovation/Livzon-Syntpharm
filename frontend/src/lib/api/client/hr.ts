@@ -1,4 +1,4 @@
-import type { components } from '@/types/generated/schema'
+import type { components, operations } from '@/types/generated/schema'
 import { apiGet, apiGetWithMeta } from '../client'
 
 import {
@@ -649,16 +649,18 @@ export interface DirectoryPeoplePage {
   total: number
 }
 
+/** 公共目录人员查询参数：直接取生成契约，避免手写 query 类型。 */
+export type DirectoryPeopleQuery = NonNullable<
+  operations['list_directory_people_api_v1_hr_directory_people_get']['parameters']['query']
+>
+
 /**
  * 分页获取在任员工（仅 is_current=true）。
  * 关键参数走服务端，用于选择器的防抖搜索与滚动续载。
  */
-export async function fetchDirectoryPeople(params?: {
-  keyword?: string
-  department_id?: string
-  offset?: number
-  limit?: number
-}): Promise<DirectoryPeoplePage> {
+export async function fetchDirectoryPeople(
+  params?: DirectoryPeopleQuery,
+): Promise<DirectoryPeoplePage> {
   const searchParams = new URLSearchParams()
   if (params?.keyword) searchParams.set('keyword', params.keyword)
   if (params?.department_id) searchParams.set('department_id', params.department_id)

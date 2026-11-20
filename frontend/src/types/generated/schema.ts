@@ -127,6 +127,10 @@ export interface paths {
          *
          *     账号名不会被释放——`uq_identity_users_username` 不区分 `is_deleted`，删除后同名
          *     账号无法重建；如需复用名称，请另建新名（或后续做改名迁移）。
+         *
+         *     软删行仍占用飞书身份唯一约束，因此本人再次飞书登录时会**原地复活该行**
+         *     （`auth_source=feishu` 时）：复活后零权限，需管理员重新授予角色。要彻底阻断
+         *     登录请改用「禁用」，不要用「删除」。
          */
         delete: operations["delete_user_management_api_v1_identity_users__user_id__delete"];
         options?: never;
@@ -1310,7 +1314,9 @@ export interface paths {
         };
         /**
          * List Module Admins
-         * @description 按模块列出负责人与管理人（含"未指派"空态所需的全部模块）。
+         * @description 按模块列出负责人（含"未指派"空态所需的全部模块）。
+         *
+         *     模块代表不在本入口展示，由模块负责人在模块配置页维护。
          */
         get: operations["list_module_admins_api_v1_permission_module_admins_get"];
         put?: never;
@@ -1376,6 +1382,8 @@ export interface paths {
          * @description 停用某用户的全部模块授权（离职/调岗收权）。
          *
          *     系统管理员授权不在此处处理：超管降级受「保底两人」约束，需单独操作。
+         *     模块代表/负责人授权随账号收权一并停用：这是账号级离职处理，不是模块内的
+         *     任命调整，因此不走「只有本模块负责人可移除代表」的委派守卫。
          */
         post: operations["disable_user_access_api_v1_permission_user_access__user_id__disable_post"];
         delete?: never;
@@ -20279,7 +20287,7 @@ export interface paths {
          * Get
          * @description List all module settings, optionally filtered by module.
          *
-         *     修改人姓名用一次 LEFT JOIN 带出，避免逐行回查（N+1）。
+         *     修改人姓名用一次批量回查带出，避免逐行回查（N+1）。
          */
         get: operations["get_api_v1_module_settings_get"];
         put?: never;
@@ -38495,6 +38503,12 @@ export interface components {
             username?: string | null;
             /** Avatar Url */
             avatar_url?: string | null;
+            /** Department Name */
+            department_name?: string | null;
+            /** Department Path Text */
+            department_path_text?: string | null;
+            /** Position Name */
+            position_name?: string | null;
         };
         /** GrantUpdate */
         GrantUpdate: {
@@ -46032,7 +46046,7 @@ export interface components {
             module_code: string;
             /**
              * Role Type
-             * @description head=模块负责人 / manager=模块管理员
+             * @description owner=模块负责人（本入口只指派负责人；模块代表由负责人在模块配置页指派）
              */
             role_type: string;
             /**

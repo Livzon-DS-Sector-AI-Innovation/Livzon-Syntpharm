@@ -2,8 +2,8 @@
 
 设计要点（对照《权限体系设计对比报告》第六节）：
 - 权限目录 permissions：代码注册表为唯一权威，DB 只做只读镜像 + 生命周期登记（发布后不可删、只能退役）。
-- 角色 roles：系统管理员 super_admin + 每模块两个内置角色（{module}:head 模块负责人 /
-  {module}:manager 模块管理员）+ 管理员自建的岗位角色（role_type=job）。
+- 角色 roles：系统管理员 super_admin + 每模块两个内置角色（{module}:owner 模块负责人 /
+  {module}:delegate 模块代表）+ 管理员自建的岗位角色（role_type=job）。
 - role_permissions：角色→权限码（纯动作授权，不含数据范围）。
 - user_role_grants：用户角色授权，是「单条授权判定」的最小单元——动作权限与数据范围必须落在同一条授权内。
 - api_bindings：接口精确绑定登记簿（方法 + 路由模板），未登记受保护接口一律 403。

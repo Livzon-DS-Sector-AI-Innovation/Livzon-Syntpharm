@@ -33,6 +33,7 @@ class EquipmentPersonnel(BaseModel):
     __tablename__ = "equipment_personnel"
     __table_args__ = (
         Index("ix_equipment_personnel_user_id", "user_id"),
+        Index("ix_equipment_personnel_profile_id", "profile_id"),
         Index("ix_equipment_personnel_feishu_user_id", "feishu_user_id"),
         Index("ix_equipment_personnel_name", "name"),
         {"schema": "equipment"},
@@ -42,7 +43,9 @@ class EquipmentPersonnel(BaseModel):
         UUID(as_uuid=True), nullable=True, comment="legacy：逻辑引用 identity.users.id"
     )
     profile_id: Mapped[_uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), nullable=True, comment="人员主数据 hr.employee_profiles.id"
+        UUID(as_uuid=True),
+        nullable=True,
+        comment="人员主数据 hr.employee_profiles.id；user_id 为 legacy 兼容列",
     )
     name: Mapped[str] = mapped_column(String(100), comment="冗余，人员姓名")
     employee_no: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="冗余，工号")

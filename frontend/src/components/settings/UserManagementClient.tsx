@@ -88,8 +88,13 @@ type UserListPage = {
  * 复制到剪贴板。
  *
  * `navigator.clipboard` 只在安全上下文（https / localhost）可用；本系统常以
- * `http://<内网IP>:3000` 访问，此时它是 undefined，必须回退到 textarea + execCommand，
- * 否则「复制密码」按钮在真实环境下直接失效（而随机密码只显示一次，抄错就没了）。
+ * `http://<内网IP>:3000` 访问，此时它是 undefined，必须回退到 textarea + execCommand。
+ *
+ * 兜底分支的两个关键动作（TC-008 修复点）：
+ * - `focus()`：不聚焦的 textarea 在部分浏览器里选区不生效，`execCommand` 返回 true
+ *   但剪贴板里没有内容；
+ * - `setSelectionRange`：`select()` 在 iOS/Safari 上对 readonly 文本域不稳定。
+ * 复制结束后把焦点还给原来的元素，避免弹窗里焦点丢失。
  */
 async function copyToClipboard(text: string): Promise<boolean> {
   if (typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext) {
@@ -101,20 +106,31 @@ async function copyToClipboard(text: string): Promise<boolean> {
     }
   }
 
+  if (typeof document === 'undefined' || typeof document.execCommand !== 'function') {
+    return false
+  }
+
+  const activeElement = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  let textarea: HTMLTextAreaElement | null = null
   try {
-    const textarea = document.createElement('textarea')
+    textarea = document.createElement('textarea')
     textarea.value = text
     textarea.setAttribute('readonly', '')
+    textarea.setAttribute('aria-hidden', 'true')
     textarea.style.position = 'fixed'
-    textarea.style.top = '-1000px'
+    textarea.style.top = '0'
+    textarea.style.left = '-9999px'
     textarea.style.opacity = '0'
     document.body.appendChild(textarea)
+    textarea.focus({ preventScroll: true })
     textarea.select()
-    const ok = document.execCommand('copy')
-    document.body.removeChild(textarea)
-    return ok
+    textarea.setSelectionRange(0, textarea.value.length)
+    return document.execCommand('copy')
   } catch {
     return false
+  } finally {
+    textarea?.remove()
+    activeElement?.focus({ preventScroll: true })
   }
 }
 
@@ -1158,7 +1174,7 @@ export default function UserManagementClient() {
         onConfirm={handleBatchDelete}
       />
 
-      {/* 删除账号：仅超级管理员；软删除不可恢复，需输入用户名确认 */}
+      {/* 删除账号：仅超级管理员；软删除且本人飞书登录可自动恢复，需输入用户名确认 */}
       <Modal
         title="删除账号"
         open={!!deleteTarget}
@@ -1177,8 +1193,8 @@ export default function UserManagementClient() {
         <Alert
           type="error"
           showIcon
-          title="删除后该账号无法登录，且不可恢复"
-          description="该账号的角色授权会被清空、在线会话会被强制下线；历史单据仍保留其姓名。账号名将被永久占用，不能再创建同名账号。"
+          title="删除后该账号的角色授权会被清空、在线会话被强制下线"
+          description="该账号本人再次用飞书登录时，系统会自动恢复这个账号，但不再有任何权限，需管理员重新授予角色。如需彻底禁止登录，请改用「禁用」。历史单据仍保留其姓名，账号名不会被释放。"
           className="mb-4"
         />
         <div className="text-[13px]">

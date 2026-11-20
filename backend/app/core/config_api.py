@@ -15,7 +15,7 @@ from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import BadRequestException
 from app.core.response import ApiResponse
-from app.platform.identity.models import User
+from app.platform.identity.public_api import resolve_user_names
 from app.shared.schemas import PaginationMeta
 
 logger = logging.getLogger(__name__)
@@ -198,11 +198,14 @@ def _to_response(setting: ModuleSetting, updated_by_name: str | None = None) -> 
 
 
 async def _resolve_user_name(db: AsyncSession, user_id: Any) -> str | None:
-    """回查修改人姓名（单条响应场景）。"""
+    """回查修改人姓名（单条响应场景）。
+
+    走 ``identity.public_api.resolve_user_names``，不直接引用 identity 的 ORM 模型。
+    """
     if user_id is None:
         return None
-    result = await db.execute(select(User.name).where(User.id == user_id))
-    return result.scalar_one_or_none()
+    names = await resolve_user_names(db, [user_id])
+    return names.get(user_id)
 
 
 # ── Endpoints ─────────────────────────────────────────────────
@@ -217,13 +220,9 @@ async def get(
 ) -> Any:
     """List all module settings, optionally filtered by module.
 
-    修改人姓名用一次 LEFT JOIN 带出，避免逐行回查（N+1）。
+    修改人姓名用一次批量回查带出，避免逐行回查（N+1）。
     """
-    query = (
-        select(ModuleSetting, User.name)
-        .outerjoin(User, User.id == ModuleSetting.updated_by)
-        .where(~ModuleSetting.is_deleted)
-    )
+    query = select(ModuleSetting).where(~ModuleSetting.is_deleted)
 
     if module:
         query = query.where(ModuleSetting.module == module)
@@ -231,9 +230,12 @@ async def get(
     query = query.order_by(ModuleSetting.module, ModuleSetting.key)
 
     result = await db.execute(query)
-    rows = result.all()
+    rows = list(result.scalars().all())
+    user_names = await resolve_user_names(db, {row.updated_by for row in rows if row.updated_by})
 
-    return ApiResponse(data=[_to_response(setting, updated_by_name) for setting, updated_by_name in rows])
+    return ApiResponse(
+        data=[_to_response(row, user_names.get(row.updated_by) if row.updated_by else None) for row in rows]
+    )
 
 
 @router.put("/batch", response_model=ModuleSettingBatchApiResponse)

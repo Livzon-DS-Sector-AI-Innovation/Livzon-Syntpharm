@@ -42,14 +42,14 @@ export default function BatchToggleModal({ settings, onClose, onSaved }: BatchTo
     }
     setSaving(true)
     try {
-      const response = await batchUpdateModuleSettings({
+      const result = await batchUpdateModuleSettings({
         items: changed.map((setting) => ({
           module: setting.module,
           key: setting.key,
           value: draft[setting.key] ? 'true' : 'false',
         })),
       })
-      setResult(response.data)
+      setResult(result)
       onSaved()
     } catch (error) {
       message.error(error instanceof Error ? error.message : '批量保存失败')

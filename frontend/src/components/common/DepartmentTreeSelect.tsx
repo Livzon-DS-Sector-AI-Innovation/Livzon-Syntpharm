@@ -13,8 +13,9 @@ import { fetchDirectoryDepartments, type DirectoryDepartmentNode } from '@/lib/a
  * 公司 / 一级 / 二级任意节点都可选；输入关键词实时过滤，并展开命中路径；
  * 每行显示部门名 + 完整层级路径。
  *
- * 值恒为 `hr.departments.id`（部门主数据 UUID），飞书部门 ID 只作同步匹配键。
- * 表单里直接当受控组件用（value 是 UUID 字符串）。
+ * 默认值恒为 `hr.departments.id`（部门主数据 UUID），飞书部门 ID 只作同步匹配键。
+ * 历史表把「部门名称」当业务关联键（安全台账、质量偏差、采购申请等），
+ * 这类字段用 `valueField="name"`：UI 仍是组织树，写回值保持部门名，不改变存储口径。
  */
 
 export interface PickedDepartment {
@@ -32,9 +33,15 @@ export interface DepartmentTreeSelectProps {
   allowClear?: boolean
   placeholder?: string
   disabled?: boolean
-  /** 表单友好：只回写 UUID */
-  onChange?: (departmentId: string | null) => void
-  /** 需要名称/编码时使用（例如写入部门名称快照） */
+  /**
+   * 写回值：`id`（默认，hr.departments.id）或 `name`（部门名称）。
+   *
+   * 仅用于「存储口径本来就是部门名」的历史字段；新字段一律用默认 id。
+   */
+  valueField?: 'id' | 'name'
+  /** 表单友好：回写 valueField 指定的值 */
+  onChange?: (departmentValue: string | null) => void
+  /** 需要名称/编码时使用（例如同时写入部门名称快照） */
   onSelect?: (department: PickedDepartment | null) => void
 }
 
@@ -100,12 +107,22 @@ function findRow(rows: TreeRow[], id: string): TreeRow | null {
   return null
 }
 
+function findRowByName(rows: TreeRow[], name: string): TreeRow | null {
+  for (const row of rows) {
+    if (row.name === name) return row
+    const hit = findRowByName(row.children, name)
+    if (hit) return hit
+  }
+  return null
+}
+
 export default function DepartmentTreeSelect({
   value,
   label,
   allowClear = false,
   placeholder = '选择部门（可搜索）',
   disabled,
+  valueField = 'id',
   onChange,
   onSelect,
 }: DepartmentTreeSelectProps) {
@@ -125,7 +142,10 @@ export default function DepartmentTreeSelect({
   // 全展开：搜索时命中路径必须可见，所以直接用全部 key 作为展开集合。
   const expandedKeys = useMemo(() => collectKeys(visibleRows), [visibleRows])
 
-  const selectedRow = useMemo(() => (value ? findRow(rows, value) : null), [rows, value])
+  const selectedRow = useMemo(
+    () => (value ? (valueField === 'name' ? findRowByName(rows, value) : findRow(rows, value)) : null),
+    [rows, value, valueField],
+  )
   const displayLabel = selectedRow?.name ?? label ?? null
 
   const handleSelect = useCallback(
@@ -135,12 +155,12 @@ export default function DepartmentTreeSelect({
       const row = findRow(rows, key)
       if (!row) return
       const picked: PickedDepartment = { id: row.id, name: row.name, code: row.code }
-      onChange?.(row.id)
+      onChange?.(valueField === 'name' ? row.name : row.id)
       onSelect?.(picked)
       setOpen(false)
       setKeyword('')
     },
-    [onChange, onSelect, rows],
+    [onChange, onSelect, rows, valueField],
   )
 
   return (
@@ -150,7 +170,10 @@ export default function DepartmentTreeSelect({
       allowClear={allowClear}
       placeholder={placeholder}
       style={{ width: '100%' }}
-      value={value || undefined}
+      // valueField='name' 且旧值不在组织树时，selectedRow 为 null：
+      // 仍把原字符串作为 Select 的 value，交给 labelRender 原样显示，
+      // 避免「表单里有旧值、界面却显示占位符」，也保证不会被被动清空。
+      value={selectedRow?.id ?? value ?? undefined}
       labelRender={() => displayLabel ?? value ?? placeholder}
       onOpenChange={(next) => {
         setOpen(next)
@@ -193,7 +216,7 @@ export default function DepartmentTreeSelect({
                 selectable
                 treeData={treeData}
                 expandedKeys={expandedKeys}
-                selectedKeys={value ? [value] : []}
+                selectedKeys={selectedRow ? [selectedRow.id] : []}
                 onSelect={handleSelect}
               />
             </div>

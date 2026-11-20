@@ -42,6 +42,7 @@ export const moduleMenus: ModuleMenu[] = [
           { key: "pressure-records", label: "压差记录", path: "/production/pressure/records" },
         ]
       },
+      { key: "production-settings", label: "模块配置", path: "/production/settings" },
     ],
   },
   {
@@ -56,7 +57,7 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "maintenance", label: "维护保养", path: "/equipment/maintenance" },
       { key: "equipment-inspection", label: "设备巡检", path: "/equipment/inspection" },
       { key: "spare-parts", label: "备件管理", path: "/equipment/spare-parts" },
-      { key: "personnel", label: "人员配置", path: "/equipment/personnel" },
+      { key: "equipment-settings", label: "模块配置", path: "/equipment/settings" },
     ],
   },
   {
@@ -72,6 +73,7 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "alerts", label: "预警管理", path: "/energy/alerts" },
       { key: "collect-logs", label: "采集日志", path: "/energy/collect-logs" },
       { key: "ai-analysis", label: "AI 分析", path: "/energy/ai-analysis" },
+      { key: "energy-settings", label: "模块配置", path: "/energy/settings" },
     ],
   },
 
@@ -84,7 +86,6 @@ export const moduleMenus: ModuleMenu[] = [
     icon: "shield",
     path: "/safety",
     children: [
-      { key: "safety-settings", label: "模块配置", path: "/safety/settings" },
       // ── 作业安全 ──
       {
         key: "ops-safety",
@@ -190,6 +191,7 @@ export const moduleMenus: ModuleMenu[] = [
           { key: "knowledge-graph", label: "知识图谱", path: "/safety/knowledge-base/graph" },
         ],
       },
+      { key: "safety-settings", label: "模块配置", path: "/safety/settings" },
     ],
   },
 
@@ -311,7 +313,7 @@ export const moduleMenus: ModuleMenu[] = [
       // ── 其他 ──
       { key: "calculator", label: "计算器", path: "/quality/calculator" },
       { key: "cpv", label: "持续工艺验证", path: "/quality/cpv" },
-      { key: "department-contacts", label: "部门联系人配置", path: "/quality/department-contacts" },
+      { key: "quality-settings", label: "模块配置", path: "/quality/settings" },
     ],
   },
 
@@ -339,6 +341,7 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "bayesian", label: "贝叶斯优化", path: "/research/bayesian" },
       { key: "ich-analysis", label: "ICH分析", path: "/research/ich-analysis" },
       { key: "reports", label: "研发报告", path: "/research/reports" },
+      { key: "research-settings", label: "模块配置", path: "/research/settings" },
     ],
   },
 
@@ -371,6 +374,7 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "validation-audit", label: "验证审计", path: "/registration/validation-audit" },
       { key: "docx-translator", label: "文档翻译", path: "/registration/docx-translator" },
       { key: "ledger", label: "注册台账", path: "/registration/ledger" },
+      { key: "registration-settings", label: "模块配置", path: "/registration/settings" },
     ],
   },
 
@@ -413,6 +417,7 @@ export const moduleMenus: ModuleMenu[] = [
           { key: "training-specialists", label: "培训专员管理", path: "/hr/training/specialists" },
         ],
       },
+      { key: "hr-settings", label: "模块配置", path: "/hr/settings" },
     ],
   },
 
@@ -441,6 +446,7 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "it-tickets", label: "IT工单", path: "/administration/it-tickets" },
       { key: "vehicle-requests", label: "用车数据", path: "/administration/vehicle-requests" },
       { key: "vehicles", label: "车辆管理（开发中）", path: "/administration/vehicles", disabled: true },
+      { key: "administration-settings", label: "模块配置", path: "/administration/settings" },
     ],
   },
 
@@ -462,6 +468,7 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "contract-summary", label: "合同汇总", path: "/procurement/contract-summary" },
       { key: "contract-generation", label: "合同生成", path: "/procurement/contract-generation" },
       { key: "procurement-approval", label: "审批流程", path: "/procurement/approval" },
+      { key: "procurement-settings", label: "模块配置", path: "/procurement/settings" },
     ],
   },
 
@@ -483,6 +490,7 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "packaging", label: "包装管理", path: "/warehouse/packaging" },
       { key: "product", label: "成品管理", path: "/warehouse/product" },
       { key: "raw-material", label: "原料管理", path: "/warehouse/raw-material" },
+      { key: "warehouse-settings", label: "模块配置", path: "/warehouse/settings" },
     ],
   },
 
@@ -497,6 +505,7 @@ export const moduleMenus: ModuleMenu[] = [
     children: [
       { key: "environment-settings", label: "模块配置", path: "/environment/settings" },
       { key: "environment-overview", label: "环保概览", path: "/environment" },
+      { key: "environment-settings", label: "模块配置", path: "/environment/settings" },
     ],
   },
 

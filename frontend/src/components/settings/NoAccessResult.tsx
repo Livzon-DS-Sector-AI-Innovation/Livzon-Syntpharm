@@ -38,7 +38,7 @@ export function NoAccessResult({
   if (requiredPermission) details.push(`缺少权限：${requiredPermission}`)
   if (moduleLabel) {
     details.push(
-      `可联系「${moduleLabel}」的模块负责人或模块管理员申请；无人管理时联系系统管理员。`,
+      `可联系「${moduleLabel}」的模块负责人或模块代表申请；无人管理时联系系统管理员。`,
     )
   }
 

@@ -174,8 +174,39 @@ async def test_delete_rejects_last_superuser(monkeypatch: pytest.MonkeyPatch) ->
     with pytest.raises(ForbiddenException) as exc:
         await delete_user_management(target.id, ctx=_ctx(operator), db=StubSession())
 
-    assert "最后一个超级管理员" in str(exc.value)
+    assert "至少保留 2 名" in str(exc.value)
     assert repo.deleted == []
+
+
+async def test_delete_rejects_when_only_two_superusers(monkeypatch: pytest.MonkeyPatch) -> None:
+    """TC-007 回归：2 名超管时删掉 1 名会让系统只剩 1 名，必须在删除前拦住。"""
+    operator = _make_user(username="root")
+    target = _make_user(username="root2")
+    repo = StubRepo(target)
+    _patch(monkeypatch, repo=repo, actor_is_superuser=True, super_ids=[operator.id, target.id])
+
+    with pytest.raises(ForbiddenException) as exc:
+        await delete_user_management(target.id, ctx=_ctx(operator), db=StubSession())
+
+    assert "至少保留 2 名" in str(exc.value)
+    assert repo.deleted == []
+
+
+async def test_delete_allows_when_more_than_minimum_superusers(monkeypatch: pytest.MonkeyPatch) -> None:
+    """3 名超管删 1 名后仍剩 2 名 → 允许。"""
+    operator = _make_user(username="root")
+    target = _make_user(username="root2")
+    repo = StubRepo(target)
+    _patch(
+        monkeypatch,
+        repo=repo,
+        actor_is_superuser=True,
+        super_ids=[operator.id, target.id, uuid.uuid4()],
+    )
+
+    await delete_user_management(target.id, ctx=_ctx(operator), db=StubSession())
+
+    assert repo.deleted == [(target.id, operator.id)]
 
 
 async def test_delete_rejects_system_admin_account(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -3,7 +3,7 @@ import { NoAccessResult, SettingsPageHeader } from '@/components/settings'
 import { ADMIN_ENTRY_PERM } from '@/lib/permissions/codes'
 import { getPermissionView, hasPermission } from '@/lib/permissions/server'
 import ModuleSettingsTabs from './ModuleSettingsTabs'
-import { getModuleSettings } from './settings-registry'
+import { getModuleSettings } from './settingsRegistry'
 
 interface ModuleSettingsPageProps {
   moduleCode: string

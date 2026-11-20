@@ -501,11 +501,30 @@
   border-top: 1px solid var(--ins-border);
 }
 
-/* ---- 设置页面 ---- */
+/* ---- 设置页面（嵌在模块配置页签内）：与模块配置区域标题栏统一 ---- */
 .settings-section {
   margin-bottom: 20px;
 }
 
+.settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.settings-scope .settings-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  background: var(--color-region-head);
+  border-left: 3px solid var(--color-primary);
+  border-bottom: 1px solid var(--color-hairline);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary-deep);
+}
+
+/* 未嵌入模块配置页时（旧地址）保持原样式 */
 .settings-section-title {
   display: flex;
   align-items: center;
@@ -520,6 +539,10 @@
 
 .settings-section-title .anticon {
   color: var(--ins-primary);
+}
+
+.settings-scope .settings-section-title .anticon {
+  color: var(--color-primary);
 }
 
 /* ---- 抽屉 ---- */

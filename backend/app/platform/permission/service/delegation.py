@@ -1,11 +1,12 @@
 """委派式权限管理守卫（R1–R11）。
 
-设计口径（Issue #221，2026-11 用户确认版）：
+设计口径（2026-11-19 用户确认版）：
 
-- 系统管理员（super_admin）只负责任命/移除模块负责人与模块管理员；
-- 模块负责人（{module}:head）拥有本模块全部业务权限，可进入模块配置页；
-- 模块管理员（{module}:manager）可进入模块配置页，管岗位角色与授权，
-  但不自动带业务权限；
+- 系统管理员（super_admin）只负责任命/移除**模块负责人**；
+- 模块负责人（{module}:owner）拥有本模块全部业务权限，可进入模块配置页，
+  也是唯一能指派/移除**模块代表**的角色；
+- 模块代表（{module}:delegate）权限集合与负责人一致（本模块全部业务权限 +
+  模块配置入口），差异只在任命关系；
 - 岗位角色（role_type=job，{module}:{name}）只能含本模块业务码，
   不能含模块管理入口码，也不能跨模块。
 
@@ -23,8 +24,8 @@ from app.core.exceptions import ForbiddenException
 from app.platform.identity.models import User
 from app.platform.permission.constants import (
     RESERVED_ROLE_NAMES,
-    ROLE_TYPE_HEAD,
-    ROLE_TYPE_MANAGER,
+    ROLE_TYPE_DELEGATE,
+    ROLE_TYPE_OWNER,
     ROLE_TYPE_SYSTEM,
 )
 from app.platform.permission.models import GRANT_ACTIVE, Role, RolePermission, UserRoleGrant
@@ -44,7 +45,7 @@ class ModuleScope:
     user_id: uuid.UUID
     is_system_admin: bool
     modules: frozenset[str]  # 可管理的模块编码集合（系统管理员不依赖此集合）
-    head_modules: frozenset[str] = frozenset()  # 持有「模块负责人」的模块（可指定模块管理员）
+    owner_modules: frozenset[str] = frozenset()  # 持有「模块负责人」的模块（可指派模块代表）
 
     def can_manage(self, module_code: str | None) -> bool:
         if self.is_system_admin:
@@ -53,43 +54,50 @@ class ModuleScope:
             return False
         return module_code in self.modules
 
-    def can_assign_managers(self, module_code: str | None) -> bool:
-        """模块内只有**负责人**能指定模块管理员（系统管理员不受限）。"""
-        if self.is_system_admin:
-            return True
+    def can_assign_delegates(self, module_code: str | None) -> bool:
+        """模块代表只能由**本模块负责人**指派。
+
+        系统管理员身份本身不构成豁免（超管不代劳），但本人持有该模块的 owner
+        授权时按负责人放行——超管兼任模块负责人是合法场景。
+        """
         if not module_code:
             return False
-        return module_code in self.head_modules
+        return module_code in self.owner_modules
 
 
 async def resolve_module_scope(db: AsyncSession, user: User) -> ModuleScope:
     """一次查询得出操作者可管理的模块集合 + 作为「模块负责人」的模块集合。
 
-    系统管理员直接放行；其余账号取「持有 {module}:admin:read 的模块」，
-    并额外标记哪些模块是自己当负责人的（负责人才能任命管理人）。
-    """
-    if await is_superuser_with_cache(db, user):
-        return ModuleScope(user_id=user.id, is_system_admin=True, modules=frozenset(), head_modules=frozenset())
+    - 系统管理员：`can_manage` 对任意模块放行（管理范围由 `is_system_admin` 短路）；
+    - 其余账号：取「持有 {module}:admin:read 的模块」作为可管理范围。
 
-    codes = await effective_permission_codes(db, user)
-    modules = frozenset(code.split(":", 1)[0] for code in codes if code.endswith(MANAGE_ENTRY_SUFFIX))
-    head_rows = await db.execute(
+    两种身份都要算 `owner_modules`：超管身份不赋予「指派模块代表」的权力，但超管
+    本人若挂着某模块的 owner 授权，他就是该模块负责人，必须能指派（2026-11-19 修正）。
+    """
+    is_system_admin = await is_superuser_with_cache(db, user)
+    if is_system_admin:
+        modules: frozenset[str] = frozenset()
+    else:
+        codes = await effective_permission_codes(db, user)
+        modules = frozenset(code.split(":", 1)[0] for code in codes if code.endswith(MANAGE_ENTRY_SUFFIX))
+
+    owner_rows = await db.execute(
         select(Role.module_code)
         .join(UserRoleGrant, UserRoleGrant.role_id == Role.id)
         .where(
             UserRoleGrant.user_id == user.id,
             UserRoleGrant.status == GRANT_ACTIVE,
             UserRoleGrant.is_deleted == False,  # noqa: E712
-            Role.role_type == ROLE_TYPE_HEAD,
+            Role.role_type == ROLE_TYPE_OWNER,
             Role.is_deleted == False,  # noqa: E712
         )
     )
-    head_modules = frozenset(code for code in head_rows.scalars().all() if code)
+    owner_modules = frozenset(code for code in owner_rows.scalars().all() if code)
     return ModuleScope(
         user_id=user.id,
-        is_system_admin=False,
+        is_system_admin=is_system_admin,
         modules=modules,
-        head_modules=head_modules,
+        owner_modules=owner_modules,
     )
 
 
@@ -107,10 +115,20 @@ def assert_module_manageable(scope: ModuleScope, module_code: str | None) -> Non
 def assert_target_role_operable(scope: ModuleScope, role: Role) -> None:
     """R2：内置管理角色的授权行，按身份分级。
 
+    - 模块代表：只有**本模块负责人**能任命/移除（系统管理员不豁免：
+      超管负责换负责人，代表由新负责人在模块配置页指派）；
     - 模块负责人：只有系统管理员能任命/移除；
-    - 模块管理员：本模块负责人或系统管理员能任命/移除；
     - 平台级内置角色（系统管理员本身）：只有系统管理员。
     """
+    # 代表判定必须放在超管短路之前：超管也不能直接动 delegate
+    if role.role_type == ROLE_TYPE_DELEGATE:
+        if scope.can_assign_delegates(role.module_code):
+            return
+        logger.warning(
+            "委派守卫拒绝：非负责人操作模块代表",
+            extra={"actor_id": str(scope.user_id), "role_code": role.code},
+        )
+        raise ForbiddenException("只有本模块负责人可以指派或移除模块代表")
     if scope.is_system_admin:
         return
     if role.is_superuser or role.role_type == ROLE_TYPE_SYSTEM:
@@ -119,15 +137,7 @@ def assert_target_role_operable(scope: ModuleScope, role: Role) -> None:
             extra={"actor_id": str(scope.user_id), "role_code": role.code},
         )
         raise ForbiddenException("系统管理员角色只能由系统管理员指派或移除")
-    if role.role_type == ROLE_TYPE_MANAGER:
-        if scope.can_assign_managers(role.module_code):
-            return
-        logger.warning(
-            "委派守卫拒绝：非负责人指派模块管理员",
-            extra={"actor_id": str(scope.user_id), "role_code": role.code},
-        )
-        raise ForbiddenException("只有本模块负责人（或系统管理员）可以指定模块管理员")
-    if role.role_type == ROLE_TYPE_HEAD:
+    if role.role_type == ROLE_TYPE_OWNER:
         logger.warning(
             "委派守卫拒绝：操作模块负责人",
             extra={"actor_id": str(scope.user_id), "role_code": role.code},

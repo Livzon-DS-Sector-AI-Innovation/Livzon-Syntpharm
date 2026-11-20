@@ -318,7 +318,7 @@ export default function RoleManagementClient() {
       <div>
         <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">角色管理</h2>
         <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
-          新建角色只填名称与权限，<b>编码由系统自动生成</b>；内置角色（模块负责人 / 模块管理员）可由系统管理员手工调整权限，调整后将不再自动同步，可随时「恢复默认」。
+          新建角色只填名称与权限，<b>编码由系统自动生成</b>；内置角色（模块负责人 / 模块代表）可由系统管理员手工调整权限，调整后将不再自动同步，可随时「恢复默认」。
         </p>
       </div>
 

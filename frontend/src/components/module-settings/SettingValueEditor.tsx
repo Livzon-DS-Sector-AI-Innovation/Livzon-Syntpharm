@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { App, Button, ColorPicker, Drawer, Input, InputNumber, Modal, Space, Switch, Tooltip, Typography } from 'antd'
+import { App, Button, Drawer, Input, InputNumber, Modal, Space, Switch, Tooltip, Typography } from 'antd'
 import { CheckOutlined, CloseOutlined, EditOutlined, FormatPainterOutlined, KeyOutlined } from '@ant-design/icons'
 import { updateModuleSetting } from '@/actions/module-settings'
 import type { ModuleSetting } from '@/types/module-settings'
@@ -42,7 +42,6 @@ export default function SettingValueEditor({ setting, canManage, onSaved }: Sett
 
   const isSecret = setting.is_secret === true
   const isBool = setting.value_type === 'bool'
-  const isColor = setting.value_type === 'string' && setting.key.endsWith('_COLOR')
   const enabled = isBoolEnabled(setting)
 
   const save = async (value: string) => {
@@ -170,14 +169,6 @@ export default function SettingValueEditor({ setting, canManage, onSaved }: Sett
               onChange={(value) => setDraft(value === null || value === undefined ? '' : String(value))}
               onPressEnter={() => void save(draft)}
             />
-          ) : isColor ? (
-            <ColorPicker
-              size="small"
-              format="hex"
-              showText
-              value={draft || '#FF3B30'}
-              onChange={(color) => setDraft(color.toHexString().toUpperCase())}
-            />
           ) : (
             <Input
               size="small"
@@ -208,15 +199,7 @@ export default function SettingValueEditor({ setting, canManage, onSaved }: Sett
   }
 
   // ── 其余（数字 / 文本 / JSON / 长文本）：展示值 + 编辑入口 ──
-  const display = isColor ? (
-    <Space size={6}>
-      <span
-        className="inline-block h-4 w-4 rounded align-middle"
-        style={{ background: setting.value || '#FF3B30', border: '1px solid #d9d9d9' }}
-      />
-      <Text code className="text-[12px]">{setting.value || '#FF3B30'}</Text>
-    </Space>
-  ) : (
+  const display = (
     <Text code className="text-[12px] break-all">
       {setting.value?.trim() ? setting.value : <span className="text-[var(--color-steel)]">未设置</span>}
     </Text>
