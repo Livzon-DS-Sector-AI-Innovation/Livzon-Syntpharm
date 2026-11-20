@@ -14,6 +14,7 @@ import shutil
 import tempfile
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -27,7 +28,7 @@ from app.core.database import async_session_factory
 from app.core.exceptions import BadRequestException, NotFoundException
 from app.shared.config_reader import get_module_setting_int
 
-from .config import MODE_BILINGUAL, MODE_BOTH, MODE_REPLACE, TranslateConfig
+from .config import MODE_BILINGUAL, MODE_BOTH, MODE_REPLACE, UNIT_WHITELIST, TranslateConfig
 from .engine_models import TranslationResult
 from .extractor import DocxExtractor
 from .glossary import Glossary
@@ -53,12 +54,18 @@ SETTING_MAX_FILES = "DOCX_TRANSLATOR_MAX_FILES"
 SETTING_BATCH_SIZE = "DOCX_TRANSLATOR_DEFAULT_BATCH_SIZE"
 SETTING_MIN_SUCCESS_RATE = "DOCX_TRANSLATOR_MIN_SUCCESS_RATE"
 SETTING_RETENTION_DAYS = "DOCX_TRANSLATOR_RETENTION_DAYS"
+SETTING_FILE_TIMEOUT_MINUTES = "DOCX_TRANSLATOR_FILE_TIMEOUT_MINUTES"
 
 DEFAULT_MAX_FILE_MB = 50
 DEFAULT_MAX_FILES = 10
 DEFAULT_BATCH_SIZE = 30
 DEFAULT_MIN_SUCCESS_RATE = 90
 DEFAULT_RETENTION_DAYS = 30
+DEFAULT_FILE_TIMEOUT_MINUTES = 30
+
+# 纯数字/符号/单位不需要送模型；只要含字母或汉字就必须翻译
+_TRANSLATABLE_PATTERN = re.compile(r"[A-Za-z\u4e00-\u9fff]")
+_UNITS_BY_LENGTH = sorted(UNIT_WHITELIST, key=len, reverse=True)
 
 SUPPORTED_SUFFIXES = (".docx", ".doc", ".wps")
 
@@ -153,6 +160,18 @@ def _write_output(
     return Validator().validate_post_save(out_path, units, results, mode=mode)
 
 
+def is_translatable(text: str) -> bool:
+    """是否包含可译字符：纯数字、单位、编号、符号一律跳过。
+
+    先按单位白名单剔除单位（长单位优先，避免 mg 被 g 拆掉），
+    剩下只要还有字母或汉字就必须翻译（如 "3 batches"）。
+    """
+    cleaned = text or ""
+    for unit in _UNITS_BY_LENGTH:
+        cleaned = cleaned.replace(unit, "")
+    return bool(_TRANSLATABLE_PATTERN.search(cleaned))
+
+
 async def translate_one(
     item: UploadedDoc,
     config: TranslateConfig,
@@ -161,6 +180,7 @@ async def translate_one(
     job_id: str,
     file_index: int,
     min_success_rate: float,
+    on_batch_done: Callable[[int, int], None] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """翻译单个文件，返回 (文件结果, 输出文件描述列表)。"""
     filename = sanitize_filename(item.filename)
@@ -175,9 +195,22 @@ async def translate_one(
         if not units:
             raise RuntimeError("文档中没有可翻译的文本段落")
 
+        translatable = [unit for unit in units if is_translatable(unit.text)]
+        skipped_units = len(units) - len(translatable)
+        if skipped_units:
+            logger.info(
+                "跳过无需翻译的段落: skipped=%d total=%d",
+                skipped_units,
+                len(units),
+                extra={"job_id": job_id, "biz_module": "registration"},
+            )
+        if not translatable:
+            # 整篇都是数字/符号：没有可译内容，直接按失败处理，避免产出空文件
+            raise RuntimeError("文档中没有可翻译的文本段落")
+
         translator = Translator(config=config, glossary=glossary)
-        results = await translator.translate_all(units)
-        stats = Validator().validate(units, results)
+        results = await translator.translate_all(translatable, on_batch_done=on_batch_done)
+        stats = Validator().validate(translatable, results)
 
         outputs: list[dict[str, Any]] = []
         warnings: list[str] = []
@@ -222,6 +255,7 @@ async def translate_one(
             "success_rate": round(float(stats.get("success_rate", 0.0)), 1),
             "warnings": warnings,
             "error": None,
+            "skipped_units": skipped_units,
         }
         return result, outputs
     finally:
@@ -248,6 +282,7 @@ async def run_job(
     """
     registry = get_registry()
     started = time.monotonic()
+    file_timeout = await resolve_file_timeout_seconds()
     source_keys = await upload_sources(job_id, files)
     task_id = await create_task(
         job_id=job_id,
@@ -265,17 +300,49 @@ async def run_job(
     task_error: str | None = None
     try:
         for done, item in enumerate(files, start=1):
-            registry.update(job_id, current_file=sanitize_filename(item.filename))
+            current_name = sanitize_filename(item.filename)
+            registry.update(job_id, current_file=current_name, batch_done=0, batch_total=0)
+
+            def _on_batch(batch_index: int, batch_total: int) -> None:
+                registry.update(job_id, batch_done=batch_index, batch_total=batch_total)
+                logger.info(
+                    "docx translation batch done: %d/%d",
+                    batch_index,
+                    batch_total,
+                    extra={"job_id": job_id, "source_file": current_name, "biz_module": "registration"},
+                )
+
             try:
-                file_result, outputs = await translate_one(
+                call = translate_one(
                     item,
                     config,
                     glossary,
                     job_id=job_id,
                     file_index=next_index,
                     min_success_rate=min_success_rate,
+                    on_batch_done=_on_batch,
                 )
+                if file_timeout > 0:
+                    file_result, outputs = await asyncio.wait_for(call, timeout=file_timeout)
+                else:
+                    file_result, outputs = await call
                 next_index += len(outputs)
+            except TimeoutError:
+                logger.warning(
+                    "docx translation file timeout",
+                    extra={"job_id": job_id, "source_file": current_name, "biz_module": "registration"},
+                )
+                file_result = {
+                    "filename": current_name,
+                    "success": False,
+                    "outputs": [],
+                    "translated_units": 0,
+                    "total_units": 0,
+                    "success_rate": 0.0,
+                    "warnings": [],
+                    "error": f"处理超时（>{int(file_timeout // 60)} 分钟），已终止",
+                    "skipped_units": 0,
+                }
             except Exception as e:  # noqa: BLE001 - 单文件失败写入结果，不中断任务
                 logger.exception("docx translation failed for file", extra={"job_id": job_id})
                 file_result = {
@@ -287,6 +354,7 @@ async def run_job(
                     "success_rate": 0.0,
                     "warnings": [],
                     "error": str(e) or "翻译失败",
+                    "skipped_units": 0,
                 }
             results.append(file_result)
             if file_result.get("success"):
@@ -309,7 +377,7 @@ async def run_job(
         task_error = str(e) or "翻译任务异常"
         raise
     finally:
-        registry.update(job_id, current_file=None)
+        registry.update(job_id, current_file=None, batch_done=0, batch_total=0)
         await finish_task(
             task_id,
             status=status,
@@ -365,7 +433,9 @@ __all__ = [
     "read_file_object",
     "reconcile_interrupted_tasks",
     "resolve_batch_size",
+    "resolve_file_timeout_seconds",
     "resolve_retention_days",
+    "is_translatable",
     "run_job",
     "sanitize_filename",
     "validate_uploads",
@@ -429,13 +499,25 @@ async def reconcile_interrupted_tasks(session: AsyncSession, tasks: list[DocxTra
     """
     registry = get_registry()
     changed = 0
+    now = datetime.now(UTC)
+    stale_after_seconds = 40 * 60
     for task in tasks:
         if task.status == "running":
-            # 进程内还有该任务 → 仍在跑，交给逐文件回写
-            if registry.exists(task.job_ref):
+            updated_at = task.updated_at or task.created_at
+            if updated_at is not None and updated_at.tzinfo is None:
+                updated_at = updated_at.replace(tzinfo=UTC)
+            stalled = bool(updated_at) and (now - updated_at).total_seconds() > stale_after_seconds
+
+            if not stalled and registry.exists(task.job_ref):
+                # 进程内还有该任务且近期有更新 → 仍在跑，交给逐文件回写
                 continue
+
             task.status = "failed"
-            task.error = "服务重启导致任务中断，请重新提交或再次翻译"
+            if stalled:
+                task.error = "任务超过 40 分钟无进展，已自动终止"
+                registry.mark_failed(task.job_ref, task.error)
+            else:
+                task.error = "服务重启导致任务中断，请重新提交或再次翻译"
             changed += 1
 
         # 不论中断还是收尾异常，计数都以文件行为准，未完成的文件计入失败
@@ -695,6 +777,14 @@ async def delete_file_record(session: AsyncSession, record: DocxTranslationFile)
             extra={"object_key": record.object_key, "biz_module": "registration"},
             exc_info=True,
         )
+
+
+async def resolve_file_timeout_seconds() -> float:
+    """单文件超时秒数；<=0 表示不限制。"""
+    minutes = await get_module_setting_int(
+        MODULE, SETTING_FILE_TIMEOUT_MINUTES, DEFAULT_FILE_TIMEOUT_MINUTES
+    )
+    return float(minutes) * 60 if minutes and minutes > 0 else 0.0
 
 
 async def resolve_retention_days() -> int:

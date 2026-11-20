@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from collections import OrderedDict
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
@@ -26,9 +27,13 @@ _MAX_TRACKED_JOBS = 200
 
 @dataclass
 class _Progress:
+    started_at: float = 0.0
+    finished_at: float | None = None
     files_total: int = 0
     files_done: int = 0
     current_file: str | None = None
+    batch_done: int = 0
+    batch_total: int = 0
 
 
 class TranslationJobRegistry:
@@ -45,7 +50,7 @@ class TranslationJobRegistry:
         runner: Callable[[str], Awaitable[dict[str, Any] | None]],
     ) -> str:
         job_id = self._store.create()
-        self._progress[job_id] = _Progress(files_total=files_total)
+        self._progress[job_id] = _Progress(files_total=files_total, started_at=time.monotonic())
         self._prune()
         spawn_task(self._run(job_id, runner), name=f"{name}-{job_id[:8]}")
         return job_id
@@ -57,8 +62,20 @@ class TranslationJobRegistry:
         except Exception as e:  # noqa: BLE001 - 后台任务兜底，异常写入任务状态
             logger.exception("docx translation job %s failed", job_id[:8], extra={"job_id": job_id})
             self._store.fail(job_id, str(e))
+        finally:
+            progress = self._progress.get(job_id)
+            if progress is not None:
+                progress.finished_at = time.monotonic()
 
-    def update(self, job_id: str, *, files_done: int | None = None, current_file: str | None = None) -> None:
+    def update(
+        self,
+        job_id: str,
+        *,
+        files_done: int | None = None,
+        current_file: str | None = None,
+        batch_done: int | None = None,
+        batch_total: int | None = None,
+    ) -> None:
         progress = self._progress.get(job_id)
         if progress is None:
             return
@@ -66,6 +83,10 @@ class TranslationJobRegistry:
             progress.files_done = files_done
         if current_file is not None:
             progress.current_file = current_file
+        if batch_done is not None:
+            progress.batch_done = batch_done
+        if batch_total is not None:
+            progress.batch_total = batch_total
 
     def _prune(self) -> None:
         while len(self._progress) > _MAX_TRACKED_JOBS:
@@ -97,7 +118,30 @@ class TranslationJobRegistry:
             current_file=progress.current_file,
             files=files,
             error=job.error,
+            batch_done=progress.batch_done,
+            batch_total=progress.batch_total,
+            elapsed_seconds=(
+                int((progress.finished_at or time.monotonic()) - progress.started_at)
+                if progress.started_at
+                else 0
+            ),
         )
+
+    def states(self, job_ids: list[str]) -> list[DocxTranslationJobState]:
+        """批量取状态：不存在的 id 直接跳过，避免单个过期任务拖垮整页。"""
+        result: list[DocxTranslationJobState] = []
+        for job_id in job_ids:
+            if not self.exists(job_id):
+                continue
+            result.append(self.state(job_id))
+        return result
+
+    def mark_failed(self, job_id: str, message: str) -> None:
+        """把挂死的任务在进程内标失败，让前端轮询立刻看到失败态。"""
+        job = self._store.get(job_id)
+        if job is None or job.status != "running":
+            return
+        self._store.fail(job_id, message)
 
     def result(self, job_id: str) -> dict[str, Any] | None:
         job = self._store.get(job_id)
