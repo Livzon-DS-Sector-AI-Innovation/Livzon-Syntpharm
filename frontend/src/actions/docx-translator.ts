@@ -1,6 +1,8 @@
 'use server'
 
 import { cookies } from 'next/headers'
+
+import type { components } from '@/types/generated/schema'
 import {
   createGlossaryTermApi,
   deleteGlossaryTermApi,
@@ -9,19 +11,18 @@ import {
   updateGlossaryTermApi,
 } from '@/lib/api/server/docx-translator'
 
+type Schemas = components['schemas']
+
 async function getAuthToken() {
   const cookieStore = await cookies()
   return cookieStore.get('auth_token')?.value
 }
 
-export async function createGlossaryTerm(payload: { term_en: string; term_zh: string; is_enabled: boolean }) {
+export async function createGlossaryTerm(payload: Schemas['DocxGlossaryTermCreate']) {
   return createGlossaryTermApi(await getAuthToken(), payload)
 }
 
-export async function updateGlossaryTerm(
-  termId: string,
-  payload: { term_en?: string; term_zh?: string; is_enabled?: boolean }
-) {
+export async function updateGlossaryTerm(termId: string, payload: Schemas['DocxGlossaryTermUpdate']) {
   return updateGlossaryTermApi(await getAuthToken(), termId, payload)
 }
 

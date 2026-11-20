@@ -1,69 +1,36 @@
-/** 文档翻译（/registration/docx-translator）接口类型，对齐后端 docx_translator/schemas.py */
+/**
+ * 文档翻译（/registration/docx-translator）类型。
+ *
+ * 契约模型一律从 OpenAPI 生成类型派生（AGENTS.md：API 类型只能来自 spec）；
+ * 仅「表单入参」与「UI 枚举标签」属前端专属，保留手写。
+ */
 
+import type { components } from '@/types/generated/schema'
+
+type Schemas = components['schemas']
+
+export type DocxTranslationOutput = Schemas['DocxTranslationOutput']
+export type DocxTranslationOutputKind = DocxTranslationOutput['kind']
+export type DocxTranslationFileResult = Schemas['DocxTranslationFileResult']
+export type DocxTranslationJobState = Schemas['DocxTranslationJobState']
+export type DocxTranslationJobStatus = DocxTranslationJobState['status']
+export type DocxTranslationSubmitResult = Schemas['DocxTranslationJobAccepted']
+
+export type DocxTranslationFileRecord = Schemas['DocxTranslationFileRecord']
+export type DocxTranslationTaskRecord = Schemas['DocxTranslationTaskRecord']
+export type DocxTranslationTaskFile = Schemas['DocxTranslationTaskFile']
+export type DocxTranslationTaskDetail = Schemas['DocxTranslationTaskDetailData']
+
+export type DocxGlossaryTerm = Schemas['DocxGlossaryTermResponse']
+export type DocxGlossaryImportResult = Schemas['DocxGlossaryImportData']
+
+/** 输出模式（后端 Literal，前端下拉用） */
 export type DocxTranslationMode = 'bilingual' | 'replace' | 'both'
-export type DocxTranslationOutputKind = 'bilingual' | 'translated'
-export type DocxTranslationJobStatus = 'running' | 'done' | 'failed'
 
-export interface DocxTranslationOutput {
-  kind: DocxTranslationOutputKind
-  filename: string
-  file_index: number
-}
-
-export interface DocxTranslationFileResult {
-  filename: string
-  success: boolean
-  outputs: DocxTranslationOutput[]
-  translated_units: number
-  total_units: number
-  success_rate: number
-  warnings: string[]
-  error: string | null
-  skipped_units?: number
-}
-
-export interface DocxTranslationJobState {
-  job_id: string
-  status: DocxTranslationJobStatus
-  files_done: number
-  files_total: number
-  current_file: string | null
-  files: DocxTranslationFileResult[]
-  error: string | null
-  batch_done?: number
-  batch_total?: number
-  elapsed_seconds?: number
-}
-
-export interface DocxTranslationSubmitResult {
-  job_id: string
-  status: 'running'
-}
-
+/** 术语来源（后端返回 str，前端做标签映射） */
 export type DocxGlossaryTermSource = 'builtin' | 'manual' | 'import'
 
-export interface DocxGlossaryTerm {
-  id: string
-  term_en: string
-  term_zh: string
-  is_enabled: boolean
-  source: DocxGlossaryTermSource
-  created_at?: string | null
-  updated_at?: string | null
-}
-
-export interface DocxGlossaryTermPage {
-  items: DocxGlossaryTerm[]
-  total: number
-}
-
-export interface DocxGlossaryImportResult {
-  imported: number
-  updated: number
-  skipped: number
-  total: number
-}
-
+/** 提交入参（表单模型，非 API 契约） */
 export interface DocxTranslationSubmitPayload {
   files: File[]
   sourceLang: 'en' | 'zh'
@@ -72,69 +39,15 @@ export interface DocxTranslationSubmitPayload {
   batchSize?: number
 }
 
-export interface DocxTranslationFileRecord {
-  id: string
-  job_ref: string
-  source_filename: string
-  output_filename: string
-  output_kind: DocxTranslationOutputKind
-  source_lang: string
-  target_lang: string
-  mode: string
-  success_rate: number
-  translated_units: number
-  total_units: number
-  file_size: number
-  warnings: string[]
-  created_at?: string | null
-  created_by_name?: string | null
-  can_delete: boolean
+/** 分页查询参数（表单模型） */
+export interface DocxPageQuery {
+  keyword?: string
+  page: number
+  pageSize: number
 }
 
-export interface DocxTranslationFilePage {
-  items: DocxTranslationFileRecord[]
-  total: number
-}
-
-export interface DocxTranslationTaskRecord {
-  id: string
-  job_ref: string
-  status: 'running' | 'done' | 'failed'
-  source_count: number
-  success_count: number
-  fail_count: number
-  first_source_filename: string
-  source_lang: string
-  target_lang: string
-  mode: string
-  elapsed_seconds: number
-  total_file_size: number
-  created_at?: string | null
-  created_by_name?: string | null
-  can_delete: boolean
-  can_retranslate: boolean
-}
-
-export interface DocxTranslationTaskFile {
-  id: string
-  source_filename: string
-  output_filename: string
-  output_kind: string
-  success: boolean
-  success_rate: number
-  translated_units: number
-  total_units: number
-  file_size: number
-  error: string | null
-}
-
-export interface DocxTranslationTaskPage {
-  items: DocxTranslationTaskRecord[]
-  total: number
-}
-
-export interface DocxTranslationTaskDetail {
-  task: DocxTranslationTaskRecord
-  files: DocxTranslationTaskFile[]
-  warnings: string[]
+/** 任务列表查询参数（表单模型） */
+export interface DocxTaskQuery extends DocxPageQuery {
+  status?: DocxTranslationJobStatus
+  mine?: boolean
 }

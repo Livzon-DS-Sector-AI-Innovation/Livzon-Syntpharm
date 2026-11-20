@@ -180,6 +180,51 @@ export async function apiGetWithMeta<
   return { data: json.data, meta: (json.meta ?? {}) as M }
 }
 
+/**
+ * 统一的上传入口（multipart/form-data）。
+ *
+ * 不能复用 fetchApi：它会强制 `Content-Type: application/json`，
+ * 覆盖掉浏览器为 FormData 自动生成的 boundary，导致后端解析失败。
+ * 401 与会话过期跳转逻辑与 fetchApi 保持一致。
+ */
+export async function apiUpload<T>(url: string, formData: FormData): Promise<T> {
+  const authToken = getAuthToken()
+  let response: Response
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+      cache: 'no-store',
+      headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
+    })
+  } catch (error) {
+    console.error('[API] Upload network error:', url, error)
+    throw new ApiError(0, 'Network Error', '网络连接失败，请检查网络')
+  }
+
+  if (!response.ok) {
+    if (response.status === 401) redirectToLogin()
+    let errorData: unknown = null
+    try {
+      errorData = await response.json()
+    } catch {
+      // 非 JSON 错误体：保留状态码兜底文案
+    }
+    const serverMessage = (() => {
+      if (!errorData || typeof errorData !== 'object') return undefined
+      const detail = (errorData as { detail?: unknown }).detail
+      if (typeof detail === 'string' && detail.trim()) return detail
+      const msg = (errorData as { message?: unknown }).message
+      if (typeof msg === 'string' && msg.trim()) return msg
+      return undefined
+    })()
+    throw new ApiError(response.status, response.statusText, serverMessage || `上传失败: ${response.status}`, errorData)
+  }
+
+  const body = (await response.json()) as { data?: T }
+  return (body.data ?? ({} as T)) as T
+}
+
 export async function apiFetchPaginated<T>(
   url: string,
   options?: RequestInit,

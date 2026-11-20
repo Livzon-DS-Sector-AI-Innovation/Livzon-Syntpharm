@@ -9,7 +9,7 @@ import {
   fetchTranslationJobState,
   fetchTranslationJobStates,
   fetchTranslationTasks,
-  submitTranslationJob,
+  fetchSubmitTranslationJob,
 } from '@/lib/api/client/docx-translator'
 import { usePollingJob } from '@/hooks/usePollingJob'
 import type {
@@ -131,6 +131,31 @@ function formatElapsed(seconds: number): string {
   return `${mm}:${ss}`
 }
 
+/** 读取 sessionStorage 里记录的任务（纯读取，不取数）。 */
+function readStoredJobs(): TrackedJob[] {
+  try {
+    const rawArr = window.sessionStorage.getItem(JOBS_KEY)
+    const rawOne = window.sessionStorage.getItem(RESUME_KEY)
+    if (rawArr) return JSON.parse(rawArr) as TrackedJob[]
+    if (!rawOne) return []
+    const one = JSON.parse(rawOne) as { jobId?: string; startedAt?: number }
+    if (!one.jobId) return []
+    return [
+      {
+        jobId: one.jobId,
+        startedAt: one.startedAt ?? Date.now(),
+        filenames: [],
+        sourceCount: 0,
+        sourceLang: 'en',
+        targetLang: 'zh',
+        mode: 'bilingual',
+      },
+    ]
+  } catch {
+    return []
+  }
+}
+
 export function DocxTranslatorPageClient() {
   const { message } = App.useApp()
   const queryClient = useQueryClient()
@@ -141,8 +166,10 @@ export function DocxTranslatorPageClient() {
   const [advOpen, setAdvOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [jobId, setJobId] = useState<string | null>(null)
-  // 任务状态页签同时跟踪多个任务：新提交不再覆盖旧任务
-  const [tracked, setTracked] = useState<TrackedJob[]>([])
+  // 任务状态页签同时跟踪多个任务：新提交不再覆盖旧任务。
+  // 初始值取自 sessionStorage（纯读取）；服务端「我的进行中任务」由 React Query 取回后
+  // 在 useMemo 里合并，避免用 useEffect 取数 + setState。
+  const [trackedState, setTracked] = useState<TrackedJob[]>(() => readStoredJobs())
   // 已提交任务的原件：左栏清空后仍可「重试此文件」；File 不可持久化，刷新后重试引导去历史页
   const [now, setNow] = useState(() => Date.now())
   const [startedAt, setStartedAt] = useState<number | null>(null)
@@ -161,6 +188,39 @@ export function DocxTranslatorPageClient() {
     staleTime: 10_000,
   })
   const taskTotal = taskBadgeQuery.data?.total ?? 0
+
+  // 刷新恢复：服务端「我的进行中任务」（取数走 React Query，不在 effect 里取数）
+  const runningTasksQuery = useQuery({
+    queryKey: ['docx-tasks', 'my-running'],
+    queryFn: () => fetchTranslationTasks({ page: 1, pageSize: 20, status: 'running', mine: true }),
+    staleTime: 5_000,
+  })
+  const serverRunning = useMemo<TrackedJob[]>(() => {
+    const page = runningTasksQuery.data
+    if (!page) return []
+    return page.items.map(task => ({
+      jobId: task.job_ref,
+      startedAt: task.created_at ? Date.parse(task.created_at) : Date.now(),
+      filenames: [task.first_source_filename],
+      sourceCount: task.source_count,
+      sourceLang: task.source_lang,
+      targetLang: task.target_lang,
+      mode: task.mode as DocxTranslationMode,
+    }))
+  }, [runningTasksQuery.data])
+
+  // 本地快照 + 服务端运行中任务合并（用户手动清除过的不再恢复）
+  const tracked = useMemo<TrackedJob[]>(() => {
+    const dismissed = readDismissed()
+    const merged = new Map(trackedState.map(item => [item.jobId, item]))
+    serverRunning.forEach(item => {
+      if (!merged.has(item.jobId)) merged.set(item.jobId, item)
+    })
+    return Array.from(merged.values())
+      .filter(item => !dismissed.has(item.jobId))
+      .sort((a, b) => b.startedAt - a.startedAt)
+      .slice(0, 20)
+  }, [trackedState, serverRunning])
 
   // 多任务：一次请求拿回所有任务的进度（2 秒一轮，全部结束自动停）
   const trackedIds = tracked.map(item => item.jobId)
@@ -254,13 +314,17 @@ export function DocxTranslatorPageClient() {
       job_id: state.job_id,
       status: state.status,
       result: state,
-      error: state.error,
+      // 生成类型里 error 是可选字段，JobState 要求 string | null，这里统一收敛
+      error: state.error ?? null,
     }
   }, [])
 
+  const activeJobId = jobId ?? tracked[0]?.jobId ?? null
+  const activeStartedAt = startedAt ?? tracked[0]?.startedAt ?? null
+
   const { phase, result, errorMessage } = usePollingJob<DocxTranslationJobState>({
-    jobId,
-    startedAt,
+    jobId: activeJobId,
+    startedAt: activeStartedAt,
     queryKey: ['docx-translator-job', jobId],
     fetchJob,
     pollIntervalMs: 1500,
@@ -275,76 +339,6 @@ export function DocxTranslatorPageClient() {
     // 详情抽屉若仍打开，立即补上最后一个文件，不用等下一次轮询
     void queryClient.invalidateQueries({ queryKey: ['docx-task-detail'] })
   }, [phase, queryClient])
-
-  // 刷新恢复：本地数组优先，再与服务端「我的进行中任务」合并（都能恢复，不只最新一条）
-  useEffect(() => {
-    let cancelled = false
-    let stored: TrackedJob[] = []
-    try {
-      const rawArr = window.sessionStorage.getItem(JOBS_KEY)
-      const rawOne = window.sessionStorage.getItem(RESUME_KEY)
-      if (rawArr) {
-        stored = JSON.parse(rawArr) as TrackedJob[]
-      } else if (rawOne) {
-        const one = JSON.parse(rawOne) as { jobId?: string; startedAt?: number }
-        if (one.jobId) {
-          stored = [
-            {
-              jobId: one.jobId,
-              startedAt: one.startedAt ?? Date.now(),
-              filenames: [],
-              sourceCount: 0,
-              sourceLang: 'en',
-              targetLang: 'zh',
-              mode: 'bilingual',
-            },
-          ]
-        }
-      }
-    } catch {
-      stored = []
-    }
-
-    void (async () => {
-      let running: TrackedJob[] = []
-      try {
-        const page = await fetchTranslationTasks({ page: 1, pageSize: 20, status: 'running', mine: true })
-        running = page.items.map(task => ({
-          jobId: task.job_ref,
-          startedAt: task.created_at ? Date.parse(task.created_at) : Date.now(),
-          filenames: [task.first_source_filename],
-          sourceCount: task.source_count,
-          sourceLang: task.source_lang,
-          targetLang: task.target_lang,
-          mode: task.mode as DocxTranslationMode,
-        }))
-      } catch {
-        running = []
-      }
-      if (cancelled) return
-      const dismissed = readDismissed()
-      const merged = new Map(stored.map(item => [item.jobId, item]))
-      running.forEach(item => {
-        if (!merged.has(item.jobId)) merged.set(item.jobId, item)
-      })
-      // 用户手动清除过的任务不再恢复（服务端可能仍显示 running）
-      const jobs = Array.from(merged.values())
-        .filter(item => !dismissed.has(item.jobId))
-        .sort((a, b) => b.startedAt - a.startedAt)
-        .slice(0, 20)
-      window.setTimeout(() => {
-        if (cancelled || !jobs.length) return
-        setTracked(jobs)
-        const latest = jobs[jobs.length - 1]
-        setJobId(latest.jobId)
-        setStartedAt(latest.startedAt)
-      }, 0)
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   // 变更即持久化，刷新后可恢复所有任务卡片
   useEffect(() => {
@@ -406,7 +400,7 @@ export function DocxTranslatorPageClient() {
 
     setSubmitting(true)
     try {
-      const accepted = await submitTranslationJob({
+      const accepted = await fetchSubmitTranslationJob({
         files: originFiles,
         sourceLang,
         targetLang,
@@ -443,7 +437,7 @@ export function DocxTranslatorPageClient() {
     // 先保留已完成的结果，新任务完成后再按文件名覆盖失败那一行
     setCarriedRows(displayRows)
     try {
-      const accepted = await submitTranslationJob({
+      const accepted = await fetchSubmitTranslationJob({
         files: [target],
         sourceLang,
         targetLang,

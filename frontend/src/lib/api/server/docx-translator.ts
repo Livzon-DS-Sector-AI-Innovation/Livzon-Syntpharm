@@ -1,7 +1,9 @@
 /** 文档翻译 —— 服务端请求（Server Action 用） */
 
-import type { DocxGlossaryTerm } from '@/types/docx-translator'
+import type { components } from '@/types/generated/schema'
 import { apiFetch, getApiBaseUrl, unwrapResponse } from './base'
+
+type Schemas = components['schemas']
 
 const A = (path: string) => `${getApiBaseUrl()}/api/v1/registration/docx-translator${path}`
 
@@ -11,10 +13,10 @@ const auth = (token?: string) => (token ? { headers: { Authorization: `Bearer ${
 
 export async function createGlossaryTermApi(
   token: string | undefined,
-  payload: { term_en: string; term_zh: string; is_enabled: boolean }
+  payload: Schemas['DocxGlossaryTermCreate']
 ) {
   return unwrapResponse(
-    await apiFetch<Envelope<DocxGlossaryTerm>>(A('/glossary'), {
+    await apiFetch<Envelope<Schemas['DocxGlossaryTermResponse']>>(A('/glossary'), {
       method: 'POST',
       body: JSON.stringify(payload),
       ...auth(token),
@@ -25,10 +27,10 @@ export async function createGlossaryTermApi(
 export async function updateGlossaryTermApi(
   token: string | undefined,
   termId: string,
-  payload: { term_en?: string; term_zh?: string; is_enabled?: boolean }
+  payload: Schemas['DocxGlossaryTermUpdate']
 ) {
   return unwrapResponse(
-    await apiFetch<Envelope<DocxGlossaryTerm>>(A(`/glossary/${termId}`), {
+    await apiFetch<Envelope<Schemas['DocxGlossaryTermResponse']>>(A(`/glossary/${termId}`), {
       method: 'PUT',
       body: JSON.stringify(payload),
       ...auth(token),
@@ -57,7 +59,7 @@ export async function deleteTranslationFileApi(token: string | undefined, fileId
 
 export async function retranslateTaskApi(token: string | undefined, taskId: string) {
   return unwrapResponse(
-    await apiFetch<Envelope<{ job_id: string; status: 'running' }>>(A(`/tasks/${taskId}/retranslate`), {
+    await apiFetch<Envelope<Schemas['DocxTranslationJobAccepted']>>(A(`/tasks/${taskId}/retranslate`), {
       method: 'POST',
       ...auth(token),
     })

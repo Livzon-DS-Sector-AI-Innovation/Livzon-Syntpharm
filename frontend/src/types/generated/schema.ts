@@ -27677,21 +27677,6 @@ export interface components {
             data?: components["schemas"]["DocxGlossaryImportData"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
-        /** DataResponse[DocxGlossaryTermListData] */
-        DataResponse_DocxGlossaryTermListData_: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["DocxGlossaryTermListData"] | null;
-            meta?: components["schemas"]["PaginationMeta"] | null;
-        };
         /** DataResponse[DocxGlossaryTermResponse] */
         DataResponse_DocxGlossaryTermResponse_: {
             /**
@@ -27705,21 +27690,6 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["DocxGlossaryTermResponse"] | null;
-            meta?: components["schemas"]["PaginationMeta"] | null;
-        };
-        /** DataResponse[DocxTranslationFileListData] */
-        DataResponse_DocxTranslationFileListData_: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["DocxTranslationFileListData"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[DocxTranslationJobAccepted] */
@@ -27780,21 +27750,6 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["DocxTranslationTaskDetailData"] | null;
-            meta?: components["schemas"]["PaginationMeta"] | null;
-        };
-        /** DataResponse[DocxTranslationTaskListData] */
-        DataResponse_DocxTranslationTaskListData_: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["DocxTranslationTaskListData"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[DownloadUrlResponse] */
@@ -29290,6 +29245,54 @@ export interface components {
             message: string;
             /** Data */
             data?: components["schemas"]["app__modules__hr__schemas__DepartmentResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[DocxGlossaryTermResponse]] */
+        DataResponse_list_DocxGlossaryTermResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["DocxGlossaryTermResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[DocxTranslationFileRecord]] */
+        DataResponse_list_DocxTranslationFileRecord__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["DocxTranslationFileRecord"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[DocxTranslationTaskRecord]] */
+        DataResponse_list_DocxTranslationTaskRecord__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["DocxTranslationTaskRecord"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[list[DomesticApprovalResponse]] */
@@ -31532,14 +31535,6 @@ export interface components {
              */
             is_enabled: boolean;
         };
-        /** DocxGlossaryTermListData */
-        DocxGlossaryTermListData: {
-            /** Items */
-            items: components["schemas"]["DocxGlossaryTermResponse"][];
-            /** Total */
-            total: number;
-            meta?: components["schemas"]["PaginationMeta"] | null;
-        };
         /** DocxGlossaryTermResponse */
         DocxGlossaryTermResponse: {
             /**
@@ -31568,14 +31563,6 @@ export interface components {
             term_zh?: string | null;
             /** Is Enabled */
             is_enabled?: boolean | null;
-        };
-        /** DocxTranslationFileListData */
-        DocxTranslationFileListData: {
-            /** Items */
-            items: components["schemas"]["DocxTranslationFileRecord"][];
-            /** Total */
-            total: number;
-            meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /**
          * DocxTranslationFileRecord
@@ -31742,21 +31729,6 @@ export interface components {
              */
             file_index: number;
         };
-        /** DocxTranslationSubmitResponse */
-        DocxTranslationSubmitResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["DocxTranslationJobAccepted"] | null;
-            meta?: components["schemas"]["PaginationMeta"] | null;
-        };
         /** DocxTranslationTaskDetailData */
         DocxTranslationTaskDetailData: {
             task: components["schemas"]["DocxTranslationTaskRecord"];
@@ -31796,14 +31768,6 @@ export interface components {
             file_size: number;
             /** Error */
             error?: string | null;
-        };
-        /** DocxTranslationTaskListData */
-        DocxTranslationTaskListData: {
-            /** Items */
-            items: components["schemas"]["DocxTranslationTaskRecord"][];
-            /** Total */
-            total: number;
-            meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /**
          * DocxTranslationTaskRecord
@@ -108836,7 +108800,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocxTranslationSubmitResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DocxTranslationJobAccepted_"];
                 };
             };
             /** @description Validation Error */
@@ -108922,6 +108886,10 @@ export interface operations {
             query?: {
                 /** @description 按文件名模糊搜索 */
                 keyword?: string | null;
+                /** @description 按状态过滤：running / done / failed */
+                status?: string | null;
+                /** @description 仅看自己创建的任务 */
+                mine?: boolean;
                 page?: number;
                 page_size?: number;
             };
@@ -108939,7 +108907,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DocxTranslationTaskListData_"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_DocxTranslationTaskRecord__"];
                 };
             };
             /** @description Validation Error */
@@ -109074,7 +109042,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DocxTranslationFileListData_"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_DocxTranslationFileRecord__"];
                 };
             };
             /** @description Validation Error */
@@ -109178,7 +109146,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DocxGlossaryTermListData_"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_DocxGlossaryTermResponse__"];
                 };
             };
             /** @description Validation Error */

@@ -7,7 +7,7 @@ import type { ColumnsType } from 'antd/es/table'
 import {
   fetchGlossaryTerms,
   glossaryExportUrl,
-  importGlossaryFile,
+  fetchGlossaryImport,
 } from '@/lib/api/client/docx-translator'
 import { createGlossaryTerm, deleteGlossaryTerm, updateGlossaryTerm } from '@/actions/docx-translator'
 import type { DocxGlossaryTerm, DocxGlossaryTermSource } from '@/types/docx-translator'
@@ -137,7 +137,7 @@ export function DocxTranslatorGlossaryDrawer({ open, onClose }: { open: boolean;
 
   const handleImport = async (file: File) => {
     try {
-      const result = await importGlossaryFile(file)
+      const result = await fetchGlossaryImport(file)
       message.success(`导入完成：新增 ${result.imported}、更新 ${result.updated}、跳过 ${result.skipped}`)
       await refresh()
     } catch (error) {
