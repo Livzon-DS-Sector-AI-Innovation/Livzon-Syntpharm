@@ -3482,6 +3482,11 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef(
         "registration:docx-translator:read",
         "GET",
+        "/api/v1/registration/docx-translator/jobs",
+    ),
+    ApiBindingDef(
+        "registration:docx-translator:read",
+        "GET",
         "/api/v1/registration/docx-translator/jobs/{job_id}",
     ),
     ApiBindingDef(

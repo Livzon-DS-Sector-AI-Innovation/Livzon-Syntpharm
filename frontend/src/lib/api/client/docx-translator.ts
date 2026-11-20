@@ -126,3 +126,13 @@ export async function fetchTranslationTaskDetail(taskId: string): Promise<DocxTr
   const res = await fetch(`${BASE}/tasks/${taskId}`, { cache: 'no-store' })
   return readJson<DocxTranslationTaskDetail>(res, '获取任务详情失败')
 }
+
+
+export async function fetchTranslationJobStates(ids: string[]): Promise<DocxTranslationJobState[]> {
+  if (!ids.length) return []
+  const search = new URLSearchParams()
+  ids.forEach(id => search.append('ids', id))
+  const res = await fetch(`${BASE}/jobs?${search.toString()}`, { cache: 'no-store' })
+  const data = await readJson<{ items: DocxTranslationJobState[] }>(res, '获取任务状态失败')
+  return data.items ?? []
+}

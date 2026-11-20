@@ -46,6 +46,8 @@ from .schemas import (
     DocxTranslationFileListResponse,
     DocxTranslationFileRecord,
     DocxTranslationJobAccepted,
+    DocxTranslationJobListData,
+    DocxTranslationJobListResponse,
     DocxTranslationJobStateResponse,
     DocxTranslationTaskDetailData,
     DocxTranslationTaskDetailResponse,
@@ -131,6 +133,15 @@ async def post(
         extra={"job_id": job_id, "biz_module": "registration"},
     )
     return DocxTranslationSubmitResponse(data=DocxTranslationJobAccepted(job_id=job_id))
+
+
+@router.get("/jobs", response_model=DocxTranslationJobListResponse, summary="批量查询翻译任务状态")
+async def list_job_states(
+    current_user: RequiredUser,
+    ids: list[str] = Query(..., min_length=1, max_length=20, description="任务ID列表"),
+    ctx: PermissionContext = Depends(require_permission(PERM_READ)),
+) -> Any:
+    return DocxTranslationJobListResponse(data=DocxTranslationJobListData(items=get_registry().states(ids)))
 
 
 @router.get("/jobs/{job_id}", response_model=DocxTranslationJobStateResponse, summary="查询翻译任务状态")

@@ -93667,6 +93667,69 @@
             }
           }
         }
+      },
+      "get": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u6279\u91cf\u67e5\u8be2\u7ffb\u8bd1\u4efb\u52a1\u72b6\u6001",
+        "operationId": "list_job_states_api_v1_registration_docx_translator_jobs_get",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "maxItems": 20,
+              "description": "\u4efb\u52a1ID\u5217\u8868",
+              "title": "Ids"
+            },
+            "description": "\u4efb\u52a1ID\u5217\u8868"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_DocxTranslationJobListData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/registration/docx-translator/jobs/{job_id}": {
@@ -116438,6 +116501,42 @@
         "type": "object",
         "title": "DataResponse[DocxTranslationJobAccepted]"
       },
+      "DataResponse_DocxTranslationJobListData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocxTranslationJobListData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[DocxTranslationJobListData]"
+      },
       "DataResponse_DocxTranslationJobState_": {
         "properties": {
           "code": {
@@ -126575,6 +126674,11 @@
               }
             ],
             "title": "Error"
+          },
+          "skipped_units": {
+            "type": "integer",
+            "title": "Skipped Units",
+            "default": 0
           }
         },
         "type": "object",
@@ -126602,6 +126706,22 @@
           "job_id"
         ],
         "title": "DocxTranslationJobAccepted"
+      },
+      "DocxTranslationJobListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DocxTranslationJobState"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "DocxTranslationJobListData"
       },
       "DocxTranslationJobState": {
         "properties": {
@@ -126657,6 +126777,21 @@
               }
             ],
             "title": "Error"
+          },
+          "batch_done": {
+            "type": "integer",
+            "title": "Batch Done",
+            "default": 0
+          },
+          "batch_total": {
+            "type": "integer",
+            "title": "Batch Total",
+            "default": 0
+          },
+          "elapsed_seconds": {
+            "type": "integer",
+            "title": "Elapsed Seconds",
+            "default": 0
           }
         },
         "type": "object",
