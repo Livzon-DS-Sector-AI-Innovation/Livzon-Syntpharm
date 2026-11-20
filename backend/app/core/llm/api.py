@@ -1,8 +1,6 @@
-# mypy: ignore-errors
 """LLM configuration API endpoints."""
 
 import uuid
-from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
@@ -12,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException
+from app.core.response import DataResponse
 
 from .config import LLMConfigModel
 from .encryption import encrypt_api_key, mask_api_key
@@ -64,15 +63,47 @@ class LLMConfigResponse(BaseModel):
     updated_at: str
 
 
-@router.get("", response_model=list[LLMConfigResponse])
-async def list_configs(  # type: ignore[no-untyped-def]
+class LLMHealthResult(BaseModel):
+    """LLM 连通性探测结果（`llm_client.health_check()` 的显式模型）。"""
+
+    status: str
+    detail: str | None = None
+
+
+def _to_response(config: LLMConfigModel) -> LLMConfigResponse:
+    """把 ORM 行转成响应模型（API key 只返回脱敏值）。"""
+    return LLMConfigResponse(
+        id=str(config.id),
+        config_name=config.config_name,
+        config_type=config.config_type,
+        api_base_url=config.api_base_url,
+        api_key_masked=mask_api_key(config.encrypted_api_key),
+        model_name=config.model_name,
+        temperature=config.temperature,
+        timeout_seconds=config.timeout_seconds,
+        is_active=config.is_active,
+        notes=config.notes,
+        created_at=config.created_at.isoformat(),
+        updated_at=config.updated_at.isoformat(),
+    )
+
+
+@router.get("", response_model=DataResponse[list[LLMConfigResponse]])
+async def list_configs(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("platform:llm-config:read")),
     config_type: str | None = Query(None, pattern="^(text|vision)$"),
     db: AsyncSession = Depends(get_db),
-) -> Any:
-    """List all LLM configurations."""
-    query = select(LLMConfigModel).where(~LLMConfigModel.is_deleted)
+) -> DataResponse[list[LLMConfigResponse]]:
+    """List all LLM configurations.
+
+    平台管理页只关心系统预置配置；个人私有 Key 由各业务模块自己的入口管理，
+    避免管理员的列表被他人私钥淹没，也避免私钥配置被误删。
+    """
+    query = select(LLMConfigModel).where(
+        LLMConfigModel.is_deleted.is_(False),
+        LLMConfigModel.visibility == "system",
+    )
 
     if config_type:
         query = query.where(LLMConfigModel.config_type == config_type)
@@ -82,32 +113,16 @@ async def list_configs(  # type: ignore[no-untyped-def]
     result = await db.execute(query)
     configs = result.scalars().all()
 
-    return [
-        LLMConfigResponse(
-            id=str(config.id),
-            config_name=config.config_name,
-            config_type=config.config_type,
-            api_base_url=config.api_base_url,
-            api_key_masked=mask_api_key(config.encrypted_api_key),
-            model_name=config.model_name,
-            temperature=config.temperature,
-            timeout_seconds=config.timeout_seconds,
-            is_active=config.is_active,
-            notes=config.notes,
-            created_at=config.created_at.isoformat(),
-            updated_at=config.updated_at.isoformat(),
-        )
-        for config in configs
-    ]
+    return DataResponse[list[LLMConfigResponse]](data=[_to_response(config) for config in configs])
 
 
-@router.post("", response_model=LLMConfigResponse, status_code=201)
-async def post(  # type: ignore[no-untyped-def]
+@router.post("", response_model=DataResponse[LLMConfigResponse], status_code=201)
+async def post(
     data: LLMConfigCreate,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("platform:llm-config:manage")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[LLMConfigResponse]:
     """Create a new LLM configuration (admin only)."""
     # If this config is marked as active, deactivate others of same type
     if data.is_active:
@@ -115,7 +130,8 @@ async def post(  # type: ignore[no-untyped-def]
             update(LLMConfigModel)
             .where(
                 LLMConfigModel.config_type == data.config_type,
-                ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
+                LLMConfigModel.visibility == "system",
+                LLMConfigModel.is_deleted.is_(False),
             )
             .values(is_active=False)
         )
@@ -130,6 +146,7 @@ async def post(  # type: ignore[no-untyped-def]
         timeout_seconds=data.timeout_seconds,
         is_active=data.is_active,
         notes=data.notes,
+        visibility="system",
         created_by=current_user.id,
         updated_by=current_user.id,
     )
@@ -138,34 +155,22 @@ async def post(  # type: ignore[no-untyped-def]
     await db.commit()
     await db.refresh(config)
 
-    return LLMConfigResponse(
-        id=str(config.id),
-        config_name=config.config_name,
-        config_type=config.config_type,
-        api_base_url=config.api_base_url,
-        api_key_masked=mask_api_key(config.encrypted_api_key),
-        model_name=config.model_name,
-        temperature=config.temperature,
-        timeout_seconds=config.timeout_seconds,
-        is_active=config.is_active,
-        notes=config.notes,
-        created_at=config.created_at.isoformat(),
-        updated_at=config.updated_at.isoformat(),
-    )
+    return DataResponse[LLMConfigResponse](data=_to_response(config))
 
 
-@router.get("/{config_id}", response_model=LLMConfigResponse)
-async def get(  # type: ignore[no-untyped-def]
+@router.get("/{config_id}", response_model=DataResponse[LLMConfigResponse])
+async def get(
     config_id: str,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("platform:llm-config:read")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[LLMConfigResponse]:
     """Get a specific LLM configuration."""
     result = await db.execute(
         select(LLMConfigModel).where(
             LLMConfigModel.id == uuid.UUID(config_id),
-            ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
+            LLMConfigModel.visibility == "system",
+            LLMConfigModel.is_deleted.is_(False),
         )
     )
     config = result.scalar_one_or_none()
@@ -173,35 +178,23 @@ async def get(  # type: ignore[no-untyped-def]
     if not config:
         raise AppException(status_code=404, message="Config not found")
 
-    return LLMConfigResponse(
-        id=str(config.id),
-        config_name=config.config_name,
-        config_type=config.config_type,
-        api_base_url=config.api_base_url,
-        api_key_masked=mask_api_key(config.encrypted_api_key),
-        model_name=config.model_name,
-        temperature=config.temperature,
-        timeout_seconds=config.timeout_seconds,
-        is_active=config.is_active,
-        notes=config.notes,
-        created_at=config.created_at.isoformat(),
-        updated_at=config.updated_at.isoformat(),
-    )
+    return DataResponse[LLMConfigResponse](data=_to_response(config))
 
 
-@router.put("/{config_id}", response_model=LLMConfigResponse)
-async def put(  # type: ignore[no-untyped-def]
+@router.put("/{config_id}", response_model=DataResponse[LLMConfigResponse])
+async def put(
     config_id: str,
     data: LLMConfigUpdate,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("platform:llm-config:manage")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> DataResponse[LLMConfigResponse]:
     """Update an LLM configuration (admin only)."""
     result = await db.execute(
         select(LLMConfigModel).where(
             LLMConfigModel.id == uuid.UUID(config_id),
-            ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
+            LLMConfigModel.visibility == "system",
+            LLMConfigModel.is_deleted.is_(False),
         )
     )
     config = result.scalar_one_or_none()
@@ -215,8 +208,9 @@ async def put(  # type: ignore[no-untyped-def]
             update(LLMConfigModel)
             .where(
                 LLMConfigModel.config_type == config.config_type,
+                LLMConfigModel.visibility == "system",
                 LLMConfigModel.id != config.id,
-                ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
+                LLMConfigModel.is_deleted.is_(False),
             )
             .values(is_active=False)
         )
@@ -236,24 +230,11 @@ async def put(  # type: ignore[no-untyped-def]
     await db.commit()
     await db.refresh(config)
 
-    return LLMConfigResponse(
-        id=str(config.id),
-        config_name=config.config_name,
-        config_type=config.config_type,
-        api_base_url=config.api_base_url,
-        api_key_masked=mask_api_key(config.encrypted_api_key),
-        model_name=config.model_name,
-        temperature=config.temperature,
-        timeout_seconds=config.timeout_seconds,
-        is_active=config.is_active,
-        notes=config.notes,
-        created_at=config.created_at.isoformat(),
-        updated_at=config.updated_at.isoformat(),
-    )
+    return DataResponse[LLMConfigResponse](data=_to_response(config))
 
 
 @router.delete("/{config_id}", status_code=204)
-async def delete(  # type: ignore[no-untyped-def]
+async def delete(
     config_id: str,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("platform:llm-config:manage")),
@@ -263,7 +244,8 @@ async def delete(  # type: ignore[no-untyped-def]
     result = await db.execute(
         select(LLMConfigModel).where(
             LLMConfigModel.id == uuid.UUID(config_id),
-            ~LLMConfigModel.is_deleted,  # type: ignore[arg-type]
+            LLMConfigModel.visibility == "system",
+            LLMConfigModel.is_deleted.is_(False),
         )
     )
     config = result.scalar_one_or_none()
@@ -277,13 +259,13 @@ async def delete(  # type: ignore[no-untyped-def]
     await db.commit()
 
 
-@router.post("/test", summary="Test LLM connection")  # type: ignore[no-redef]
-async def post(  # noqa: F811  # type: ignore[no-untyped-def]
+@router.post("/test", response_model=DataResponse[LLMHealthResult], summary="Test LLM connection")
+async def test_connection(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("platform:llm-config:manage")),
-) -> Any:
+) -> DataResponse[LLMHealthResult]:
     """Test LLM connectivity using active config."""
     from .client import llm_client
 
     result = await llm_client.health_check()
-    return result
+    return DataResponse[LLMHealthResult](data=LLMHealthResult(**result))

@@ -6,8 +6,8 @@ from typing import Any
 
 import httpx
 
-from .config import LLMConfigData, get_config
-from .exceptions import LLMOutputError, LLMProviderError, LLMRateLimitError
+from .config import LLMConfigData, get_config, get_config_by_id
+from .exceptions import LLMConfigError, LLMOutputError, LLMProviderError, LLMRateLimitError
 
 
 class LLMClient:
@@ -19,9 +19,24 @@ class LLMClient:
         result = await llm_client.chat([{"role": "user", "content": "Hello"}])
     """
 
-    async def _get_client_and_config(self, config_type: str = "text") -> tuple[httpx.AsyncClient, LLMConfigData]:
-        """Get HTTP client and config."""
-        config = await get_config(config_type)
+    async def _get_client_and_config(
+        self,
+        config_type: str = "text",
+        config_id: str | None = None,
+        owner_user_id: str | None = None,
+    ) -> tuple[httpx.AsyncClient, LLMConfigData]:
+        """Get HTTP client and config.
+
+        传入 config_id 时优先使用该配置（项目级覆盖），否则沿用全局活跃配置 + 环境变量兜底。
+        指定配置不可用（已删除/越权/类型不符）时直接报错，避免静默用错模型。
+        """
+        config: LLMConfigData | None
+        if config_id:
+            config = await get_config_by_id(config_id, config_type, owner_user_id)
+            if config is None:
+                raise LLMConfigError(f"指定的模型配置不可用：{config_id}")
+        else:
+            config = await get_config(config_type)
 
         client = httpx.AsyncClient(
             base_url=config.api_base_url.rstrip("/"),
@@ -40,6 +55,8 @@ class LLMClient:
         temperature: float | None = None,
         max_tokens: int = 16384,
         config_type: str = "text",
+        config_id: str | None = None,
+        owner_user_id: str | None = None,
     ) -> str:
         """Send a chat completion request and return the response text.
 
@@ -49,6 +66,8 @@ class LLMClient:
             temperature: Override config temperature
             max_tokens: Max tokens in response
             config_type: "text" or "vision"
+            config_id: 指定配置 id（项目级模型覆盖）；空=全局活跃配置
+            owner_user_id: 调用方用户 id，用于校验个人私有配置
 
         Returns:
             Response text from LLM
@@ -57,7 +76,7 @@ class LLMClient:
             LLMProviderError: If provider returns error
             LLMRateLimitError: If rate limit exceeded
         """
-        client, config = await self._get_client_and_config(config_type)
+        client, config = await self._get_client_and_config(config_type, config_id, owner_user_id)
 
         try:
             # Use config temperature if not overridden
@@ -121,6 +140,8 @@ class LLMClient:
         expected_keys: list[str] | None = None,
         temperature: float | None = None,
         config_type: str = "text",
+        config_id: str | None = None,
+        owner_user_id: str | None = None,
     ) -> dict[str, Any]:
         """Chat + parse JSON response.
 
@@ -129,6 +150,8 @@ class LLMClient:
             expected_keys: Optional list of keys to validate
             temperature: Override config temperature
             config_type: "text" or "vision"
+            config_id: 指定配置 id（项目级模型覆盖）
+            owner_user_id: 调用方用户 id，用于校验个人私有配置
 
         Returns:
             Parsed JSON dict
@@ -141,6 +164,8 @@ class LLMClient:
             response_format="json_object",
             temperature=temperature,
             config_type=config_type,
+            config_id=config_id,
+            owner_user_id=owner_user_id,
         )
 
         # Strip markdown code fences if present
