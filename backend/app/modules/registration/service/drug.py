@@ -4,7 +4,7 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import NotFoundException
+from app.core.exceptions import BadRequestException, NotFoundException
 from app.modules.registration import repository as repo
 from app.modules.registration.models.drug import Drug
 from app.modules.registration.schemas.drug import DrugCreate, DrugUpdate
@@ -47,13 +47,22 @@ async def update_drug(
         for node_update in data.nodes:
             existing_nodes = await repo.get_drug_nodes(db, drug_id)
             existing = any(n.node_index == node_update.node_index for n in existing_nodes)
+            node_data = node_update.model_dump(exclude_unset=True)
+            # 同一次请求显式同时设置完成日期和跳过 → 拒绝
+            if (
+                "actual_date" in node_update.model_fields_set
+                and "skipped" in node_update.model_fields_set
+                and node_update.actual_date is not None
+                and node_update.skipped
+            ):
+                raise BadRequestException(f"节点 {node_update.node_index} 不能同时设置完成日期和跳过标记")
+            # 只设置一方时自动清除另一方，保持互斥
+            if node_data.get("skipped"):
+                node_data["actual_date"] = None
+            if node_data.get("actual_date") is not None:
+                node_data["skipped"] = False
             if existing:
-                await repo.update_drug_node(
-                    db,
-                    drug_id,
-                    node_update.node_index,
-                    node_update.model_dump(exclude_unset=True),
-                )
+                await repo.update_drug_node(db, drug_id, node_update.node_index, node_data)
             else:
                 await repo.create_drug_node(
                     db,
@@ -61,8 +70,15 @@ async def update_drug(
                         "drug_id": drug_id,
                         "node_index": node_update.node_index,
                         "actual_date": node_update.actual_date,
+                        "skipped": node_update.skipped or False,
                     },
                 )
+
+    # 节点变化后回写关联注册项目（全部节点完成 → 项目置已获批）
+    # 延迟导入避免与 project 服务循环依赖
+    from app.modules.registration.service.project import sync_from_drug
+
+    await sync_from_drug(db, drug_id)
 
     # 返回更新后的药品
     return await get_drug(db, drug_id)

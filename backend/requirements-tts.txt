@@ -1,0 +1,19 @@
+# 智能体模块 —— 本地 TTS 运行时（仅 ppt-video-worker 镜像需要）
+#
+# 为什么不放进 pyproject 的 [project.optional-dependencies]：
+# uv.lock 会对所有 extras 做全平台求解，Kokoro 依赖 torch，会把 torch 及其
+# 平台相关依赖（含 nvidia-*）写进 1MB 的锁文件，进而拖慢 API 镜像构建与 CI
+# 的 `uv sync --frozen`。TTS 只在 worker 容器里跑，因此单独用一份固定版本的
+# requirements 文件安装，既不污染主锁文件，也保证镜像可复现。
+#
+# 选型与许可依据见 backend/docs/ppt-video-generator.md：
+# - Kokoro-82M  Apache-2.0  https://huggingface.co/hexgrad/Kokoro-82M
+# - MeloTTS    MIT         https://github.com/myshell-ai/MeloTTS
+
+# 主引擎：Kokoro-82M（中英双语，CPU 可跑）
+kokoro==0.9.4
+soundfile==0.13.1
+misaki[zh]==0.9.4
+
+# torch 不锁版本：kokoro 只会接受与自己兼容的 CPU 轮子，
+# 锁死版本反而会在换机时解不出依赖。镜像内固定 `--index-url` 使用 PyPI 官方 CPU 源。

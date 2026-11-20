@@ -64,15 +64,23 @@ export interface WcCertificate {
   updated_at: string
 }
 
-export interface LedgerSummary {
-  domestic_count: number
-  overseas_count: number
-  overseas_countries: number
-  international_review_count: number
-  copp_count: number
-  wc_count: number
-  reviewing_count: number
-  planned_count: number
+/**
+ * 即将到期/已过期的证书条目（概览页"需要关注"预警）
+ *
+ * 契约模型来自后端 OpenAPI；仅把 `ledger_type` 从 `string` 收敛为字面量联合，
+ * 以便前端做标签映射与台账定位链接。
+ */
+export type ExpiringCertificateItem = Omit<
+  components['schemas']['ExpiringCertificateItem'],
+  'ledger_type'
+> & {
+  /** 来源子表；certificate = 主证书表（registration_certificates） */
+  ledger_type: 'domestic' | 'overseas' | 'copp' | 'wc' | 'certificate'
+}
+
+/** 契约模型，来自后端 OpenAPI（`expiring_certificates` 后端恒返回数组，故收紧为非可选） */
+export type LedgerSummary = components['schemas']['LedgerSummary'] & {
+  expiring_certificates: ExpiringCertificateItem[]
 }
 
 export interface ReviewingDrug {

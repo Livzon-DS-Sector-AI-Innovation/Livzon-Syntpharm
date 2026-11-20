@@ -120,6 +120,10 @@ module = [
     "paddleocr.*",
     "pdf2image.*",
     "ordered_set.*",
+    # TTS 运行时按需安装（backend/requirements-tts.txt），本地/CI 不装，导入由代码兜底
+    "kokoro.*",
+    "melo.*",
+    "misaki.*",
 ]
 ignore_missing_imports = true
 
