@@ -25,7 +25,13 @@ class DocxTranslationTerm(BaseModel):
 
     __tablename__ = "docx_translation_terms"
     __table_args__ = (
-        UniqueConstraint("term_en_lower", name="uq_docx_translation_terms_term_en_lower"),
+        # 仅对未软删行唯一：软删后可重建同名词条，否则会撞唯一约束抛 500。
+        Index(
+            "uq_docx_translation_terms_term_en_lower",
+            "term_en_lower",
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
+        ),
         Index("ix_docx_translation_terms_enabled", "is_enabled"),
         {"schema": "registration"},
     )

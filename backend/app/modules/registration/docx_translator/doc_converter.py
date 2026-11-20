@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import shutil
 import subprocess
 import tempfile
@@ -15,6 +16,9 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 CONVERT_SUFFIXES = (".doc", ".wps")
+
+
+SOFFICE_ENV = "DOCX_TRANSLATOR_SOFFICE_BIN"
 
 
 class ConversionUnavailableError(RuntimeError):
@@ -33,14 +37,24 @@ class DocConverter:
 
     @staticmethod
     def _find_soffice() -> str:
-        candidates = ["soffice", "/usr/bin/soffice", "/usr/lib/libreoffice/program/soffice"]
+        """定位 soffice：优先取配置项，其次按命令名在 PATH 中查找。
+
+        不写死 Linux 绝对路径——容器/宿主/Windows 开发机的安装位置不同，
+        由 `DOCX_TRANSLATOR_SOFFICE_BIN` 覆盖，缺省交给 `shutil.which`。
+        """
+        configured = os.environ.get(SOFFICE_ENV, "").strip()
+        candidates = [configured] if configured else []
+        candidates.append("soffice")
         for cmd in candidates:
+            resolved = cmd if os.path.isabs(cmd) else shutil.which(cmd)
+            if not resolved:
+                continue
             try:
-                result = subprocess.run([cmd, "--version"], capture_output=True, text=True, timeout=5)
+                result = subprocess.run([resolved, "--version"], capture_output=True, text=True, timeout=5)
             except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
                 continue
             if result.returncode == 0:
-                return cmd
+                return resolved
         return ""
 
     def is_available(self) -> bool:

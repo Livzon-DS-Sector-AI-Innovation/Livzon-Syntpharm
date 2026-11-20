@@ -89871,7 +89871,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/DocxTranslationSubmitResponse"
+                  "$ref": "#/components/schemas/DataResponse_DocxTranslationJobAccepted_"
                 }
               }
             }
@@ -90102,6 +90102,36 @@
             "description": "\u6309\u6587\u4ef6\u540d\u6a21\u7cca\u641c\u7d22"
           },
           {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6309\u72b6\u6001\u8fc7\u6ee4\uff1arunning / done / failed",
+              "title": "Status"
+            },
+            "description": "\u6309\u72b6\u6001\u8fc7\u6ee4\uff1arunning / done / failed"
+          },
+          {
+            "name": "mine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "\u4ec5\u770b\u81ea\u5df1\u521b\u5efa\u7684\u4efb\u52a1",
+              "default": false,
+              "title": "Mine"
+            },
+            "description": "\u4ec5\u770b\u81ea\u5df1\u521b\u5efa\u7684\u4efb\u52a1"
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -90147,7 +90177,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/DataResponse_DocxTranslationTaskListData_"
+                  "$ref": "#/components/schemas/DataResponse_list_DocxTranslationTaskRecord__"
                 }
               }
             }
@@ -90412,7 +90442,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/DataResponse_DocxTranslationFileListData_"
+                  "$ref": "#/components/schemas/DataResponse_list_DocxTranslationFileRecord__"
                 }
               }
             }
@@ -90636,7 +90666,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/DataResponse_DocxGlossaryTermListData_"
+                  "$ref": "#/components/schemas/DataResponse_list_DocxGlossaryTermResponse__"
                 }
               }
             }
@@ -112628,42 +112658,6 @@
         "type": "object",
         "title": "DataResponse[DocxGlossaryImportData]"
       },
-      "DataResponse_DocxGlossaryTermListData_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/DocxGlossaryTermListData"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "meta": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMeta"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "title": "DataResponse[DocxGlossaryTermListData]"
-      },
       "DataResponse_DocxGlossaryTermResponse_": {
         "properties": {
           "code": {
@@ -112699,42 +112693,6 @@
         },
         "type": "object",
         "title": "DataResponse[DocxGlossaryTermResponse]"
-      },
-      "DataResponse_DocxTranslationFileListData_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/DocxTranslationFileListData"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "meta": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMeta"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "title": "DataResponse[DocxTranslationFileListData]"
       },
       "DataResponse_DocxTranslationJobAccepted_": {
         "properties": {
@@ -112879,42 +112837,6 @@
         },
         "type": "object",
         "title": "DataResponse[DocxTranslationTaskDetailData]"
-      },
-      "DataResponse_DocxTranslationTaskListData_": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/DocxTranslationTaskListData"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "meta": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMeta"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "title": "DataResponse[DocxTranslationTaskListData]"
       },
       "DataResponse_DownloadUrlResponse_": {
         "properties": {
@@ -116509,6 +116431,126 @@
         },
         "type": "object",
         "title": "DataResponse[list[DepartmentResponse]]"
+      },
+      "DataResponse_list_DocxGlossaryTermResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DocxGlossaryTermResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[DocxGlossaryTermResponse]]"
+      },
+      "DataResponse_list_DocxTranslationFileRecord__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DocxTranslationFileRecord"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[DocxTranslationFileRecord]]"
+      },
+      "DataResponse_list_DocxTranslationTaskRecord__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DocxTranslationTaskRecord"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[DocxTranslationTaskRecord]]"
       },
       "DataResponse_list_DomesticApprovalResponse__": {
         "properties": {
@@ -121581,37 +121623,6 @@
         ],
         "title": "DocxGlossaryTermCreate"
       },
-      "DocxGlossaryTermListData": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/DocxGlossaryTermResponse"
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "meta": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMeta"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "items",
-          "total"
-        ],
-        "title": "DocxGlossaryTermListData"
-      },
       "DocxGlossaryTermResponse": {
         "properties": {
           "id": {
@@ -121712,37 +121723,6 @@
         },
         "type": "object",
         "title": "DocxGlossaryTermUpdate"
-      },
-      "DocxTranslationFileListData": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/DocxTranslationFileRecord"
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "meta": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMeta"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "items",
-          "total"
-        ],
-        "title": "DocxTranslationFileListData"
       },
       "DocxTranslationFileRecord": {
         "properties": {
@@ -122061,42 +122041,6 @@
         ],
         "title": "DocxTranslationOutput"
       },
-      "DocxTranslationSubmitResponse": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/DocxTranslationJobAccepted"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "meta": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMeta"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "title": "DocxTranslationSubmitResponse"
-      },
       "DocxTranslationTaskDetailData": {
         "properties": {
           "task": {
@@ -122190,37 +122134,6 @@
         ],
         "title": "DocxTranslationTaskFile",
         "description": "\u4efb\u52a1\u4e0b\u7684\u5355\u4e2a\u6587\u4ef6\u7ed3\u679c\uff08\u6210\u529f\u5e26\u4e0b\u8f7d\u4fe1\u606f\uff0c\u5931\u8d25\u5e26\u539f\u56e0\uff09\u3002"
-      },
-      "DocxTranslationTaskListData": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/DocxTranslationTaskRecord"
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "meta": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMeta"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "items",
-          "total"
-        ],
-        "title": "DocxTranslationTaskListData"
       },
       "DocxTranslationTaskRecord": {
         "properties": {

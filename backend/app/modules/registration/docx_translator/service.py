@@ -515,7 +515,7 @@ async def reconcile_interrupted_tasks(session: AsyncSession, tasks: list[DocxTra
             task.status = "failed"
             if stalled:
                 task.error = "任务超过 40 分钟无进展，已自动终止"
-                registry.mark_failed(task.job_ref, task.error)
+                await registry.mark_failed(task.job_ref, task.error)
             else:
                 task.error = "服务重启导致任务中断，请重新提交或再次翻译"
             changed += 1

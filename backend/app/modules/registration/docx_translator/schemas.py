@@ -8,7 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.shared.schemas import DataResponse, PaginationMeta
+from app.shared.schemas import DataResponse
 
 DocxTranslationMode = Literal["bilingual", "replace", "both"]
 OutputKind = Literal["bilingual", "translated"]
@@ -89,12 +89,6 @@ class DocxGlossaryTermUpdate(BaseModel):
     is_enabled: bool | None = None
 
 
-class DocxGlossaryTermListData(BaseModel):
-    items: list[DocxGlossaryTermResponse]
-    total: int
-    meta: PaginationMeta | None = None
-
-
 class DocxGlossaryImportData(BaseModel):
     imported: int = 0
     updated: int = 0
@@ -103,7 +97,7 @@ class DocxGlossaryImportData(BaseModel):
 
 
 DocxGlossaryTermItemResponse = DataResponse[DocxGlossaryTermResponse]
-DocxGlossaryTermListResponse = DataResponse[DocxGlossaryTermListData]
+DocxGlossaryTermListResponse = DataResponse[list[DocxGlossaryTermResponse]]
 DocxGlossaryImportResponse = DataResponse[DocxGlossaryImportData]
 
 
@@ -133,13 +127,7 @@ class DocxTranslationFileRecord(BaseModel):
     can_delete: bool = False
 
 
-class DocxTranslationFileListData(BaseModel):
-    items: list[DocxTranslationFileRecord]
-    total: int
-    meta: PaginationMeta | None = None
-
-
-DocxTranslationFileListResponse = DataResponse[DocxTranslationFileListData]
+DocxTranslationFileListResponse = DataResponse[list[DocxTranslationFileRecord]]
 
 
 # ── 任务级历史 ────────────────────────────────────────────
@@ -181,18 +169,13 @@ class DocxTranslationTaskFile(BaseModel):
     error: str | None = None
 
 
-class DocxTranslationTaskListData(BaseModel):
-    items: list[DocxTranslationTaskRecord]
-    total: int
-    meta: PaginationMeta | None = None
-
-
 class DocxTranslationTaskDetailData(BaseModel):
     task: DocxTranslationTaskRecord
     files: list[DocxTranslationTaskFile]
     warnings: list[str] = []
 
 
-DocxTranslationTaskListResponse = DataResponse[DocxTranslationTaskListData]
+DocxTranslationTaskListResponse = DataResponse[list[DocxTranslationTaskRecord]]
 DocxTranslationTaskDetailResponse = DataResponse[DocxTranslationTaskDetailData]
-DocsTranslationRetranslateResponse = DataResponse[DocxTranslationJobAccepted]
+DocxTranslationSubmitResponse = DataResponse[DocxTranslationJobAccepted]
+DocxTranslationRetranslateResponse = DataResponse[DocxTranslationJobAccepted]

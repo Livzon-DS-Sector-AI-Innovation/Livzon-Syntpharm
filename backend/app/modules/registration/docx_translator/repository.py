@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import delete, func, or_, select, update
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -136,12 +136,17 @@ class DocxTranslationFileRepository:
         return list(rows.scalars().all()), total
 
     async def delete_by_source(self, job_ref: str, source_filename: str) -> None:
-        """重放幂等：同一任务下同一源文件的旧记录先物理删除（含失败行）。"""
+        """重放幂等：同一任务下同一源文件的旧记录先软删（含失败行）。
+
+        软删而非物理删除：保留历史上传/失败留痕，符合「业务数据默认软删除」约定。
+        """
         await self.session.execute(
-            delete(DocxTranslationFile).where(
+            update(DocxTranslationFile)
+            .where(
                 DocxTranslationFile.job_ref == job_ref,
                 DocxTranslationFile.source_filename == source_filename,
             )
+            .values(is_deleted=True)
         )
         await self.session.commit()
 

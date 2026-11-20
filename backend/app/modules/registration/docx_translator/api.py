@@ -17,12 +17,13 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import storage
-from app.core.database import get_db
+from app.core.database import async_session_factory, get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
+from app.core.response import build_response
 from app.platform.identity.public_api import resolve_user_names
 from app.platform.permission.public_api import has_permission
-from app.shared.schemas import DataResponse, MessageApiResponse
+from app.shared.schemas import MessageApiResponse
 
 from .glossary import GlossaryError, build_excel_terms, parse_excel_terms
 from .jobs import get_registry
@@ -33,26 +34,24 @@ from .repository import (
     DocxTranslationTermRepository,
 )
 from .schemas import (
-    DocsTranslationRetranslateResponse,
     DocxGlossaryImportData,
     DocxGlossaryImportResponse,
     DocxGlossaryTermCreate,
     DocxGlossaryTermItemResponse,
-    DocxGlossaryTermListData,
     DocxGlossaryTermListResponse,
     DocxGlossaryTermResponse,
     DocxGlossaryTermUpdate,
-    DocxTranslationFileListData,
     DocxTranslationFileListResponse,
     DocxTranslationFileRecord,
     DocxTranslationJobAccepted,
     DocxTranslationJobListData,
     DocxTranslationJobListResponse,
     DocxTranslationJobStateResponse,
+    DocxTranslationRetranslateResponse,
+    DocxTranslationSubmitResponse,
     DocxTranslationTaskDetailData,
     DocxTranslationTaskDetailResponse,
     DocxTranslationTaskFile,
-    DocxTranslationTaskListData,
     DocxTranslationTaskListResponse,
     DocxTranslationTaskRecord,
 )
@@ -90,10 +89,7 @@ PERM_UPDATE = "registration:docx-translator:update"
 PERM_DELETE = "registration:docx-translator:delete"
 
 XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-
-
-class DocxTranslationSubmitResponse(DataResponse[DocxTranslationJobAccepted]):
-    pass
+DOWNLOAD_TIMEOUT_SECONDS = 60.0
 
 
 # ── 翻译任务 ──────────────────────────────────────────────
@@ -121,7 +117,7 @@ async def post(
     glossary = await load_glossary(db)
 
     registry = get_registry()
-    job_id = registry.start(
+    job_id = await registry.start(
         "docx-translation",
         len(uploads),
         lambda jid: run_job(jid, uploads, config, glossary, min_rate, current_user.id),
@@ -141,7 +137,7 @@ async def list_job_states(
     ids: list[str] = Query(..., min_length=1, max_length=20, description="任务ID列表"),
     ctx: PermissionContext = Depends(require_permission(PERM_READ)),
 ) -> Any:
-    return DocxTranslationJobListResponse(data=DocxTranslationJobListData(items=get_registry().states(ids)))
+    return DocxTranslationJobListResponse(data=DocxTranslationJobListData(items=await get_registry().states(ids)))
 
 
 @router.get("/jobs/{job_id}", response_model=DocxTranslationJobStateResponse, summary="查询翻译任务状态")
@@ -150,7 +146,7 @@ async def get(
     job_id: str,
     ctx: PermissionContext = Depends(require_permission(PERM_READ)),
 ) -> Any:
-    return DocxTranslationJobStateResponse(data=get_registry().state(job_id))
+    return DocxTranslationJobStateResponse(data=await get_registry().state(job_id))
 
 
 @router.get("/jobs/{job_id}/files/{file_index}", summary="下载翻译结果")
@@ -160,11 +156,14 @@ async def download(
     file_index: int,
     ctx: PermissionContext = Depends(require_permission(PERM_READ)),
 ) -> StreamingResponse:
-    output = find_output(get_registry().result(job_id), file_index)
+    output = find_output(await get_registry().result(job_id), file_index)
     if output is None:
         raise NotFoundException("翻译结果不存在或任务状态已过期，请重新提交")
 
-    stored = storage.get_object(STORAGE_MODULE, str(output["object_key"]))
+    stored = await asyncio.wait_for(
+        asyncio.to_thread(storage.get_object, STORAGE_MODULE, str(output["object_key"])),
+        timeout=DOWNLOAD_TIMEOUT_SECONDS,
+    )
     if stored is None:
         raise NotFoundException("翻译结果文件已不可用，请重新提交任务")
     data, _content_type = stored
@@ -197,24 +196,26 @@ def _task_to_record(
 async def list_tasks(
     current_user: RequiredUser,
     keyword: str | None = Query(None, description="按文件名模糊搜索"),
+    status: str | None = Query(None, description="按状态过滤：running / done / failed"),
+    mine: bool = Query(False, description="仅看自己创建的任务"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     ctx: PermissionContext = Depends(require_permission(PERM_READ)),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    rows, total = await DocxTranslationTaskRepository(db).list_tasks(keyword=keyword, page=page, page_size=page_size)
+    rows, total = await DocxTranslationTaskRepository(db).list_tasks(
+        keyword=keyword,
+        status=status,
+        created_by=current_user.id if mine else None,
+        page=page,
+        page_size=page_size,
+    )
     names = await resolve_user_names(db, {row.created_by for row in rows if row.created_by})
     allow_delete_all = ctx.is_superuser or await has_permission(db, current_user, PERM_DELETE)
     items = [
         _task_to_record(row, names=names, allow_delete_all=allow_delete_all, user_id=current_user.id) for row in rows
     ]
-    return DocxTranslationTaskListResponse(
-        data=DocxTranslationTaskListData(
-            items=items,
-            total=total,
-            meta={"page": page, "page_size": page_size, "total": total},
-        )
-    )
+    return build_response(data=items, meta={"page": page, "page_size": page_size, "total": total})
 
 
 @router.get("/tasks/{task_id}", response_model=DocxTranslationTaskDetailResponse, summary="翻译任务详情")
@@ -251,7 +252,7 @@ async def get_task_detail(
 
 @router.post(
     "/tasks/{task_id}/retranslate",
-    response_model=DocsTranslationRetranslateResponse,
+    response_model=DocxTranslationRetranslateResponse,
     summary="按原件再次翻译",
 )
 async def retranslate_task(
@@ -261,24 +262,31 @@ async def retranslate_task(
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     task = await get_task(db, task_id)
-    files = await sources_for_retranslate(task)
+    source_count = len(task.source_keys or []) or 1
     config = build_job_config(task.source_lang, task.target_lang, task.mode, task.batch_size)
     glossary = await load_glossary(db)
     _max_mb, _max_files, min_rate = await load_limits()
+    user_id = current_user.id
+    snapshot_id = task.id
+
+    async def _runner(jid: str) -> dict[str, Any]:
+        # 原件下载（最多 10 × 50MB）放到后台任务里，避免阻塞请求线程。
+        async with async_session_factory() as job_session:
+            fresh = await DocxTranslationTaskRepository(job_session).get(snapshot_id)
+            if fresh is None:
+                raise NotFoundException("翻译任务不存在或已被删除")
+            files = await sources_for_retranslate(fresh)
+        return await run_translation_job(jid, files, config, glossary, min_rate, user_id)
 
     registry = get_registry()
-    job_id = registry.start(
-        "docx-translation",
-        len(files),
-        lambda jid: run_translation_job(jid, files, config, glossary, min_rate, current_user.id),
-    )
+    job_id = await registry.start("docx-translation", source_count, _runner)
     logger.info(
         "docx translation retranslate submitted: from=%s files=%d",
         str(task_id),
-        len(files),
+        source_count,
         extra={"job_id": job_id, "biz_module": "registration"},
     )
-    return DocsTranslationRetranslateResponse(data=DocxTranslationJobAccepted(job_id=job_id))
+    return DocxTranslationRetranslateResponse(data=DocxTranslationJobAccepted(job_id=job_id))
 
 
 @router.delete("/tasks/{task_id}", response_model=MessageApiResponse, summary="删除翻译任务")
@@ -320,13 +328,7 @@ async def list_files(
         item.created_by_name = names.get(row.created_by) if row.created_by else None
         item.can_delete = allow_delete_all or row.created_by == current_user.id
         items.append(item)
-    return DocxTranslationFileListResponse(
-        data=DocxTranslationFileListData(
-            items=items,
-            total=total,
-            meta={"page": page, "page_size": page_size, "total": total},
-        )
-    )
+    return build_response(data=items, meta={"page": page, "page_size": page_size, "total": total})
 
 
 @router.get("/files/{file_id}/download", summary="下载历史翻译文件")
@@ -381,12 +383,9 @@ async def list_terms(
 ) -> Any:
     repo = DocxTranslationTermRepository(db)
     rows, total = await repo.list_terms(keyword=keyword, enabled=enabled, page=page, page_size=page_size)
-    return DocxGlossaryTermListResponse(
-        data=DocxGlossaryTermListData(
-            items=[DocxGlossaryTermResponse.model_validate(row) for row in rows],
-            total=total,
-            meta={"page": page, "page_size": page_size, "total": total},
-        )
+    return build_response(
+        data=[DocxGlossaryTermResponse.model_validate(row) for row in rows],
+        meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
