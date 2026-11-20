@@ -22,7 +22,6 @@ export const moduleMenus: ModuleMenu[] = [
     icon: "factory",
     path: "/production",
     children: [
-      { key: "production-settings", label: "模块配置", path: "/production/settings" },
       { key: "batches", label: "批次管理", path: "/production/batches" },
       { key: "plan", label: "生产计划（开发中）", path: "/production/plan" },
       { key: "process", label: "工艺规程（开发中）", path: "/production/process" },
@@ -51,7 +50,6 @@ export const moduleMenus: ModuleMenu[] = [
     icon: "cog",
     path: "/equipment",
     children: [
-      { key: "equipment-settings", label: "模块配置", path: "/equipment/settings" },
       { key: "stats", label: "设备仪表盘", path: "/equipment/stats" },
       { key: "assets", label: "设备台账", path: "/equipment/assets" },
       { key: "maintenance", label: "维护保养", path: "/equipment/maintenance" },
@@ -66,7 +64,6 @@ export const moduleMenus: ModuleMenu[] = [
     icon: "bolt",
     path: "/energy",
     children: [
-      { key: "energy-settings", label: "模块配置", path: "/energy/settings" },
       { key: "overview", label: "能源总览", path: "/energy" },
       { key: "monthly", label: "月度记录", path: "/energy/monthly" },
       { key: "devices", label: "数据源配置", path: "/energy/devices" },
@@ -204,7 +201,6 @@ export const moduleMenus: ModuleMenu[] = [
     icon: "check-circle",
     path: "/quality",
     children: [
-      { key: "quality-settings", label: "模块配置", path: "/quality/settings" },
       // ── AI工具 ──
       {
         key: "ai-tools",
@@ -326,7 +322,6 @@ export const moduleMenus: ModuleMenu[] = [
     icon: "experiment",
     path: "/research",
     children: [
-      { key: "research-settings", label: "模块配置", path: "/research/settings" },
       { key: "research-overview", label: "研发概览", path: "/research" },
       { key: "research-projects", label: "研发项目", path: "/research/projects" },
       { key: "initiations", label: "立项管理", path: "/research/initiations" },
@@ -354,7 +349,6 @@ export const moduleMenus: ModuleMenu[] = [
     icon: "file-text",
     path: "/registration",
     children: [
-      { key: "registration-settings", label: "模块配置", path: "/registration/settings" },
       { key: "registration-overview", label: "注册概览", path: "/registration" },
       { key: "registration-projects", label: "注册项目", path: "/registration/projects" },
       {
@@ -387,7 +381,6 @@ export const moduleMenus: ModuleMenu[] = [
     icon: "team",
     path: "/hr",
     children: [
-      { key: "hr-settings", label: "模块配置", path: "/hr/settings" },
       { key: "hr-overview", label: "人事概览", path: "/hr" },
       { key: "departments", label: "部门管理", path: "/hr/departments" },
       { key: "profile", label: "员工档案", path: "/hr/profile" },
@@ -430,7 +423,6 @@ export const moduleMenus: ModuleMenu[] = [
     icon: "setting",
     path: "/administration",
     children: [
-      { key: "administration-settings", label: "模块配置", path: "/administration/settings" },
       { key: "administration-overview", label: "行政概览", path: "/administration" },
       { key: "notice", label: "公告通知（开发中）", path: "/administration/notice", disabled: true },
       { key: "meeting", label: "会议管理", path: "/administration/meeting" },
@@ -459,7 +451,6 @@ export const moduleMenus: ModuleMenu[] = [
     icon: "shopping-cart",
     path: "/procurement",
     children: [
-      { key: "procurement-settings", label: "模块配置", path: "/procurement/settings" },
       { key: "procurement-overview", label: "采购概览", path: "/procurement" },
       { key: "request", label: "采购申请", path: "/procurement/request" },
       { key: "supplier", label: "供应商管理", path: "/procurement/supplier" },
@@ -481,7 +472,6 @@ export const moduleMenus: ModuleMenu[] = [
     icon: "database",
     path: "/warehouse",
     children: [
-      { key: "warehouse-settings", label: "模块配置", path: "/warehouse/settings" },
       { key: "warehouse-overview", label: "仓储概览", path: "/warehouse" },
       { key: "inventory", label: "库存管理", path: "/warehouse/inventory" },
       { key: "inout", label: "出入库记录", path: "/warehouse/inout" },
@@ -503,7 +493,6 @@ export const moduleMenus: ModuleMenu[] = [
     icon: "global",
     path: "/environment",
     children: [
-      { key: "environment-settings", label: "模块配置", path: "/environment/settings" },
       { key: "environment-overview", label: "环保概览", path: "/environment" },
       { key: "environment-settings", label: "模块配置", path: "/environment/settings" },
     ],
