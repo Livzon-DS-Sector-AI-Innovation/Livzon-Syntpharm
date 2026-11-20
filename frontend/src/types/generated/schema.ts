@@ -19412,7 +19412,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** 批量查询翻译任务状态 */
+        get: operations["list_job_states_api_v1_registration_docx_translator_jobs_get"];
         put?: never;
         /** 提交文档翻译任务 */
         post: operations["post_api_v1_registration_docx_translator_jobs_post"];
@@ -28787,6 +28788,21 @@ export interface components {
             data?: components["schemas"]["DocxTranslationJobAccepted"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[DocxTranslationJobListData] */
+        DataResponse_DocxTranslationJobListData_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DocxTranslationJobListData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[DocxTranslationJobState] */
         DataResponse_DocxTranslationJobState_: {
             /**
@@ -33186,6 +33202,11 @@ export interface components {
             warnings: string[];
             /** Error */
             error?: string | null;
+            /**
+             * Skipped Units
+             * @default 0
+             */
+            skipped_units: number;
         };
         /** DocxTranslationJobAccepted */
         DocxTranslationJobAccepted: {
@@ -33197,6 +33218,11 @@ export interface components {
              * @constant
              */
             status: "running";
+        };
+        /** DocxTranslationJobListData */
+        DocxTranslationJobListData: {
+            /** Items */
+            items: components["schemas"]["DocxTranslationJobState"][];
         };
         /** DocxTranslationJobState */
         DocxTranslationJobState: {
@@ -33226,6 +33252,21 @@ export interface components {
             files: components["schemas"]["DocxTranslationFileResult"][];
             /** Error */
             error?: string | null;
+            /**
+             * Batch Done
+             * @default 0
+             */
+            batch_done: number;
+            /**
+             * Batch Total
+             * @default 0
+             */
+            batch_total: number;
+            /**
+             * Elapsed Seconds
+             * @default 0
+             */
+            elapsed_seconds: number;
         };
         /** DocxTranslationOutput */
         DocxTranslationOutput: {
@@ -114663,6 +114704,40 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["AssetListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_job_states_api_v1_registration_docx_translator_jobs_get: {
+        parameters: {
+            query: {
+                /** @description 任务ID列表 */
+                ids: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DocxTranslationJobListData_"];
                 };
             };
             /** @description Validation Error */

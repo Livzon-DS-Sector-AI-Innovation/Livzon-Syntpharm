@@ -139,3 +139,23 @@ async def test_run_job_produces_two_outputs(monkeypatch, tmp_path) -> None:
     assert uploaded[0][0] == "registration"
     assert uploaded[0][1].startswith("docx_translations/")
     assert job_id in uploaded[0][1]
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("98.5%", False),
+        ("mg", False),  # 单位白名单直接跳过
+        ("3.2.1", False),
+        ("—", False),
+        ("/", False),
+        ("3 batches", True),
+        ("批生产记录", True),
+        ("Specifications", True),
+        ("   ", False),
+    ],
+)
+def test_is_translatable(text: str, expected: bool) -> None:
+    from app.modules.registration.docx_translator.service import is_translatable
+
+    assert is_translatable(text) is expected

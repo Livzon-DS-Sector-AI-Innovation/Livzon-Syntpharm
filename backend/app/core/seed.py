@@ -56,6 +56,7 @@ _DEFAULT_SETTINGS = [
     ("docx_translator", "DOCX_TRANSLATOR_DEFAULT_BATCH_SIZE", "30", "int", "文档翻译每批段落数默认值"),
     ("docx_translator", "DOCX_TRANSLATOR_MIN_SUCCESS_RATE", "90", "int", "文档翻译成功率告警阈值(%)"),
     ("docx_translator", "DOCX_TRANSLATOR_RETENTION_DAYS", "30", "int", "文档翻译结果保留天数（<=0 不自动清理）"),
+    ("docx_translator", "DOCX_TRANSLATOR_FILE_TIMEOUT_MINUTES", "30", "int", "单文件翻译超时时间（分钟，<=0 关闭）"),
 ]
 
 

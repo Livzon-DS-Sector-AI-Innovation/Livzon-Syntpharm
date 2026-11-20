@@ -1,12 +1,13 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { App, Alert, InputNumber, Progress, Segmented, Upload } from 'antd'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { UploadFile } from 'antd'
 import { ApiError } from '@/lib/api/client'
 import {
   fetchTranslationJobState,
+  fetchTranslationJobStates,
   fetchTranslationTasks,
   submitTranslationJob,
 } from '@/lib/api/client/docx-translator'
@@ -52,6 +53,51 @@ const MAX_FILE_MB = 50
 const MAX_FILES = 10
 const ACCEPT = '.docx,.doc,.wps'
 const RESUME_KEY = 'docx-translator:job'
+const JOBS_KEY = 'docx-translator:jobs'
+const DISMISSED_KEY = 'docx-translator:dismissed'
+
+/** 用户手动清除过的任务：即使服务端仍把它算作 running，刷新也不再恢复 */
+function readDismissed(): Set<string> {
+  try {
+    const raw = window.sessionStorage.getItem(DISMISSED_KEY)
+    return new Set<string>(raw ? (JSON.parse(raw) as string[]) : [])
+  } catch {
+    return new Set<string>()
+  }
+}
+
+function addDismissed(ids: string[]): void {
+  if (!ids.length) return
+  try {
+    const merged = Array.from(new Set([...readDismissed(), ...ids])).slice(-100)
+    window.sessionStorage.setItem(DISMISSED_KEY, JSON.stringify(merged))
+  } catch {
+    // 会话存储不可用时忽略：下次刷新可能恢复，不影响主流程
+  }
+}
+
+const MAX_FINISHED_CARDS = 5
+
+/** 运行中/未知状态全部保留；已结束只留最近 5 个，避免卡片无限堆积 */
+function capFinishedCards(jobs: TrackedJob[], finishedIds: Set<string>): TrackedJob[] {
+  const alive = jobs.filter(job => !finishedIds.has(job.jobId))
+  const finished = jobs
+    .filter(job => finishedIds.has(job.jobId))
+    .sort((a, b) => b.startedAt - a.startedAt)
+    .slice(0, MAX_FINISHED_CARDS)
+  // 最新提交的任务排最上面，最多保留 20 张卡
+  return [...alive, ...finished].sort((a, b) => b.startedAt - a.startedAt).slice(0, 20)
+}
+
+interface TrackedJob {
+  jobId: string
+  startedAt: number
+  filenames: string[]
+  sourceCount: number
+  sourceLang: string
+  targetLang: string
+  mode: DocxTranslationMode
+}
 
 /** 记住当前任务，刷新后可恢复进度轮询（sessionStorage：仅本标签页、关页即清） */
 function rememberJob(jobId: string, startedAt: number): void {
@@ -92,6 +138,12 @@ export function DocxTranslatorPageClient() {
   const [advOpen, setAdvOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [jobId, setJobId] = useState<string | null>(null)
+  // 任务状态页签同时跟踪多个任务：新提交不再覆盖旧任务
+  const [tracked, setTracked] = useState<TrackedJob[]>([])
+  const [expandedIds, setExpandedIds] = useState<string[]>([])
+  // 已提交任务的原件：左栏清空后仍可「重试此文件」；File 不可持久化，刷新后重试引导去历史页
+  const sourceFilesRef = useRef<Map<string, Map<string, File>>>(new Map())
+  const [now, setNow] = useState(() => Date.now())
   const [startedAt, setStartedAt] = useState<number | null>(null)
   const [elapsed, setElapsed] = useState(0)
   // 多任务结果累积：单文件重试会新建任务，旧结果必须先落到这里再与当前任务合并
@@ -108,6 +160,92 @@ export function DocxTranslatorPageClient() {
     staleTime: 10_000,
   })
   const taskTotal = taskBadgeQuery.data?.total ?? 0
+
+  // 多任务：一次请求拿回所有任务的进度（2 秒一轮，全部结束自动停）
+  const trackedIds = tracked.map(item => item.jobId)
+  const statesQuery = useQuery({
+    queryKey: ['docx-jobs', trackedIds.join(',')],
+    queryFn: () => fetchTranslationJobStates(trackedIds),
+    enabled: trackedIds.length > 0,
+    refetchInterval: query =>
+      query.state.data?.some(item => item.status === 'running') ? 2000 : false,
+  })
+  const stateMap = useMemo(
+    () => new Map((statesQuery.data ?? []).map(item => [item.job_id, item])),
+    [statesQuery.data],
+  )
+  // 只有真的还有任务在跑时才每秒刷新；全部结束必须停表
+  const anyRunning = (statesQuery.data ?? []).some(item => item.status === 'running')
+
+  useEffect(() => {
+    if (!anyRunning) return
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [anyRunning])
+
+  // 任一任务结束时刷新历史列表与徽标（多任务下不再依赖单任务 phase）
+  const statusSignature = (statesQuery.data ?? []).map(item => `${item.job_id}:${item.status}`).join(',')
+  useEffect(() => {
+    if (!statusSignature.includes(':done') && !statusSignature.includes(':failed')) return
+    void queryClient.invalidateQueries({ queryKey: ['docx-tasks'] })
+  }, [statusSignature, queryClient])
+
+  // 已结束任务只留最近 5 个；后端重启后查不到的任务不再展示（只在顶部提示）
+  const finishedIds = useMemo(
+    () => new Set((statesQuery.data ?? []).filter(item => item.status !== 'running').map(item => item.job_id)),
+    [statesQuery.data],
+  )
+  // 后端重启后查不到状态的任务：保留卡片并标记「已中断」，不再让它凭空消失
+  const missingIds = useMemo(() => {
+    if (!statesQuery.isSuccess || statesQuery.data === undefined) return new Set<string>()
+    const returned = new Set(statesQuery.data.map(item => item.job_id))
+    return new Set(
+      tracked
+        .filter(job => !returned.has(job.jobId) && Date.now() - job.startedAt > 15_000)
+        .map(job => job.jobId),
+    )
+  }, [statesQuery.isSuccess, statesQuery.data, tracked])
+
+  // 失败/部分失败的任务自动归档：历史里已有记录，任务状态不再占位
+  const archivedFailedIds = useMemo(() => {
+    const ids = new Set<string>()
+    tracked.forEach(job => {
+      const state = stateMap.get(job.jobId)
+      if (!state) return
+      const hasFailedFile = state.files.some(item => !item.success)
+      if (state.status === 'failed' || (state.status === 'done' && hasFailedFile)) {
+        ids.add(job.jobId)
+      }
+    })
+    return ids
+  }, [tracked, stateMap])
+  const visibleJobs = useMemo(
+    () =>
+      capFinishedCards(
+        tracked.filter(job => !archivedFailedIds.has(job.jobId)),
+        finishedIds,
+      ),
+    [tracked, finishedIds, archivedFailedIds],
+  )
+
+  const trackJob = useCallback(
+    (nextJobId: string, names: string[], started: number) => {
+      setTracked(prev => {
+        const rest = prev.filter(item => item.jobId !== nextJobId)
+        const next: TrackedJob = {
+          jobId: nextJobId,
+          startedAt: started,
+          filenames: names,
+          sourceCount: names.length,
+          sourceLang,
+          targetLang,
+          mode,
+        }
+        return [...rest, next].slice(-20)
+      })
+    },
+    [sourceLang, targetLang, mode],
+  )
 
   const fetchJob = useCallback(async (id: string) => {
     const state = await fetchTranslationJobState(id)
@@ -137,61 +275,84 @@ export function DocxTranslatorPageClient() {
     void queryClient.invalidateQueries({ queryKey: ['docx-task-detail'] })
   }, [phase, queryClient])
 
-  // 刷新恢复：读回上次未结束的任务，继续轮询进度与计时
+  // 刷新恢复：本地数组优先，再与服务端「我的进行中任务」合并（都能恢复，不只最新一条）
   useEffect(() => {
-    let raw: string | null = null
+    let cancelled = false
+    let stored: TrackedJob[] = []
     try {
-      raw = window.sessionStorage.getItem(RESUME_KEY)
-    } catch {
-      raw = null
-    }
-    if (!raw) {
-      // 本地无记录（换标签页/清缓存/首次加载）：向服务端接回我自己最新的进行中任务
-      let cancelled = false
-      void (async () => {
-        try {
-          const page = await fetchTranslationTasks({ page: 1, pageSize: 1, status: 'running', mine: true })
-          const task = page.items[0]
-          if (!task || cancelled) return
-          const started = task.created_at ? Date.parse(task.created_at) : Date.now()
-          window.setTimeout(() => {
-            if (cancelled) return
-            setJobId(task.job_ref)
-            setStartedAt(started)
-          }, 0)
-        } catch {
-          // 没有进行中任务或接口不可用时保持空闲态
+      const rawArr = window.sessionStorage.getItem(JOBS_KEY)
+      const rawOne = window.sessionStorage.getItem(RESUME_KEY)
+      if (rawArr) {
+        stored = JSON.parse(rawArr) as TrackedJob[]
+      } else if (rawOne) {
+        const one = JSON.parse(rawOne) as { jobId?: string; startedAt?: number }
+        if (one.jobId) {
+          stored = [
+            {
+              jobId: one.jobId,
+              startedAt: one.startedAt ?? Date.now(),
+              filenames: [],
+              sourceCount: 0,
+              sourceLang: 'en',
+              targetLang: 'zh',
+              mode: 'bilingual',
+            },
+          ]
         }
-      })()
-      return () => {
-        cancelled = true
       }
-    }
-    let saved: { jobId?: string; startedAt?: number } = {}
-    try {
-      saved = JSON.parse(raw) as { jobId?: string; startedAt?: number }
     } catch {
-      forgetJob()
-      return
+      stored = []
     }
-    if (!saved.jobId || !saved.startedAt) {
-      forgetJob()
-      return
+
+    void (async () => {
+      let running: TrackedJob[] = []
+      try {
+        const page = await fetchTranslationTasks({ page: 1, pageSize: 20, status: 'running', mine: true })
+        running = page.items.map(task => ({
+          jobId: task.job_ref,
+          startedAt: task.created_at ? Date.parse(task.created_at) : Date.now(),
+          filenames: [task.first_source_filename],
+          sourceCount: task.source_count,
+          sourceLang: task.source_lang,
+          targetLang: task.target_lang,
+          mode: task.mode as DocxTranslationMode,
+        }))
+      } catch {
+        running = []
+      }
+      if (cancelled) return
+      const dismissed = readDismissed()
+      const merged = new Map(stored.map(item => [item.jobId, item]))
+      running.forEach(item => {
+        if (!merged.has(item.jobId)) merged.set(item.jobId, item)
+      })
+      // 用户手动清除过的任务不再恢复（服务端可能仍显示 running）
+      const jobs = Array.from(merged.values())
+        .filter(item => !dismissed.has(item.jobId))
+        .sort((a, b) => b.startedAt - a.startedAt)
+        .slice(0, 20)
+      window.setTimeout(() => {
+        if (cancelled || !jobs.length) return
+        setTracked(jobs)
+        const latest = jobs[jobs.length - 1]
+        setJobId(latest.jobId)
+        setStartedAt(latest.startedAt)
+      }, 0)
+    })()
+
+    return () => {
+      cancelled = true
     }
-    // 超过 1 小时视为过期（与轮询 timeout 一致）
-    if (Date.now() - saved.startedAt > 3_600_000) {
-      forgetJob()
-      return
-    }
-    const job = saved.jobId
-    const started = saved.startedAt
-    // 放到宏任务里恢复，避免在 effect 同步 setState 触发级联渲染
-    const timer = window.setTimeout(() => {
-      setJobId(job)
-      setStartedAt(started)
-    }, 0)
-    return () => window.clearTimeout(timer)
   }, [])
+
+  // 变更即持久化，刷新后可恢复所有任务卡片
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem(JOBS_KEY, JSON.stringify(tracked))
+    } catch {
+      // 隐私模式等场景不可写：忽略
+    }
+  }, [tracked])
 
   useEffect(() => {
     if (phase !== 'running' || startedAt === null) return
@@ -255,11 +416,14 @@ export function DocxTranslatorPageClient() {
       setCarriedRows([])
       setElapsed(0)
       setStartedAt(now)
-      setJobId(accepted.job_id)
       setActiveTab('live')
+      sourceFilesRef.current.set(accepted.job_id, new Map(originFiles.map(file => [file.name, file])))
       rememberJob(accepted.job_id, now)
+      trackJob(accepted.job_id, originFiles.map(file => file.name), now)
       void queryClient.invalidateQueries({ queryKey: ['docx-tasks'] })
-      message.success('翻译已提交，可在右侧查看进度')
+      // 提交成功才清空左栏：失败时保留，方便用户直接重试
+      setFileList([])
+      message.success('翻译已提交，左栏已清空，可在右侧查看进度')
     } catch (error) {
       const text = error instanceof ApiError ? error.message : error instanceof Error ? error.message : '提交失败'
       message.error(text)
@@ -268,10 +432,10 @@ export function DocxTranslatorPageClient() {
     }
   }
 
-  const handleRetryFile = async (fileName: string) => {
-    const target = fileList.find(item => item.name === fileName)?.originFileObj
+  const handleRetryFile = async (jobId: string, fileName: string) => {
+    const target = sourceFilesRef.current.get(jobId)?.get(fileName)
     if (!target) {
-      message.warning('原始文件已不在列表中，请重新上传后翻译')
+      message.warning('原始文件已不在本页（刷新后失效），请到「历史翻译」用「再次翻译」')
       return
     }
     setSubmitting(true)
@@ -289,8 +453,9 @@ export function DocxTranslatorPageClient() {
       setStartedAt(Date.now())
       const now = Date.now()
       setStartedAt(now)
-      setJobId(accepted.job_id)
+      sourceFilesRef.current.set(accepted.job_id, new Map([[fileName, target]]))
       rememberJob(accepted.job_id, now)
+      trackJob(accepted.job_id, [fileName], now)
       void queryClient.invalidateQueries({ queryKey: ['docx-tasks'] })
       message.success(`已重新提交：${fileName}`)
     } catch (error) {
@@ -298,6 +463,164 @@ export function DocxTranslatorPageClient() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const toggleExpanded = (id: string) => {
+    setExpandedIds(prev => (prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]))
+  }
+
+  const renderTaskList = () => {
+    const runningCount = visibleJobs.filter(
+      job => (stateMap.get(job.jobId)?.status ?? 'running') === 'running',
+    ).length
+    const endedCount = tracked.filter(
+      job => finishedIds.has(job.jobId) || missingIds.has(job.jobId),
+    ).length
+    return (
+      <>
+        {missingIds.size > 0 && (
+          <div className={styles.taskNotice}>
+            有 {missingIds.size} 个任务状态已丢失（服务重启），卡片保留供查看，结果请到「历史翻译」
+          </div>
+        )}
+        <div className={styles.taskToolbar}>
+          <span>
+            共 {visibleJobs.length} 个任务（进行中 {runningCount}）
+            {archivedFailedIds.size > 0 ? ` · 已归档失败 ${archivedFailedIds.size}` : ''}
+          </span>
+          <button
+            type="button"
+            className={styles.taskLink}
+            disabled={endedCount === 0}
+            onClick={() => {
+              const removable = new Set<string>([...finishedIds, ...missingIds])
+              addDismissed(Array.from(removable))
+              setTracked(prev => {
+                prev.forEach(job => {
+                  if (removable.has(job.jobId)) sourceFilesRef.current.delete(job.jobId)
+                })
+                return prev.filter(job => !removable.has(job.jobId))
+              })
+              setExpandedIds(prev => prev.filter(id => !removable.has(id)))
+            }}
+          >
+            清除已结束{endedCount > 0 ? `（${endedCount}）` : ''}
+          </button>
+        </div>
+        <div className={styles.taskList}>
+          {visibleJobs.map(job => {
+        const state = stateMap.get(job.jobId)
+        // 查不到状态 = 服务重启或进程内任务被清理，保留卡片并明确提示
+        const interrupted = !state
+        const expired = false
+        const status = state?.status ?? 'failed'
+        const done = state?.files_done ?? 0
+        const total = state?.files_total || job.sourceCount || 0
+        const percent = total ? Math.round((done / total) * 100) : 0
+        // 运行中走本地秒表；结束/失败用后端冻结的耗时，避免继续跳动
+        const seconds =
+          status === 'running' && !expired
+            ? Math.max(0, Math.floor((now - job.startedAt) / 1000))
+            : (state?.elapsed_seconds ?? null)
+        const name = job.filenames[0] || '历史任务'
+        const more = job.filenames.length > 1 ? ` +${job.filenames.length - 1}` : ''
+        const rows = (state?.files ?? []).map(item => ({ ...item, job_id: job.jobId }))
+        const successCount = rows.filter(item => item.success).length
+        const failCount = rows.filter(item => !item.success).length
+        // 只要有一个文件失败（或任务级失败），状态必须是「失败」，不能显示「已完成」
+        const hasFailure = status === 'failed' || failCount > 0
+        const statusClass =
+          expired || interrupted || hasFailure
+            ? styles.pillRisk
+            : status === 'done'
+              ? styles.pillOk
+              : styles.pillInfo
+        const statusText = interrupted
+          ? '已中断'
+          : expired
+            ? '已过期'
+          : hasFailure
+            ? successCount > 0
+              ? '部分失败'
+              : '失败'
+            : status === 'done'
+              ? '已完成'
+              : '翻译中'
+        const expanded = expandedIds.includes(job.jobId)
+
+        return (
+          <div key={job.jobId} className={styles.taskCard}>
+            <div className={styles.taskCardHead}>
+              <span className={styles.taskName} title={`${name}${more}`}>
+                {name}
+                {more}
+              </span>
+              <span className={`${styles.pill} ${statusClass}`}>{statusText}</span>
+            </div>
+            <div className={styles.taskMeta}>
+              <span className={styles.numCell}>{seconds === null ? '—' : formatElapsed(seconds)}</span>
+              <span>
+                {done} / {total} 个文件
+                {state?.batch_total ? ` · 第 ${state.batch_done}/${state.batch_total} 批` : ''}
+              </span>
+            </div>
+
+            {status === 'running' && !expired && (
+              <div className={styles.taskBody}>
+                <Progress percent={percent} showInfo={false} strokeLinecap="round" />
+                <div className={styles.taskLine}>
+                  正在翻译：<b>{state?.current_file || '准备中'}</b>
+                </div>
+              </div>
+            )}
+
+            {(expired || interrupted) && (
+              <div className={styles.taskBody}>
+                {interrupted
+                  ? '服务重启导致任务中断，进度已丢失；结果请到「历史翻译」查看或重新提交。'
+                  : '任务状态已过期（服务重启），结果请到「历史翻译」查看。'}
+                <button
+                  type="button"
+                  className={styles.taskLink}
+                  onClick={() => {
+                    addDismissed([job.jobId])
+                    sourceFilesRef.current.delete(job.jobId)
+                    setTracked(prev => prev.filter(item => item.jobId !== job.jobId))
+                  }}
+                >
+                  移除这张卡
+                </button>
+              </div>
+            )}
+
+            {(status === 'done' || status === 'failed') && !expired && (
+              <div className={styles.taskBody}>
+                <div className={styles.taskLine}>
+                  成功 {successCount} / 失败 {failCount}
+                  {state?.error ? ` · ${state.error}` : ''}
+                </div>
+                {rows.length > 0 && (
+                  <>
+                    <button type="button" className={styles.taskLink} onClick={() => toggleExpanded(job.jobId)}>
+                      {expanded ? '收起结果' : '查看结果'}
+                    </button>
+                    {expanded && (
+                      <DocxTranslatorResultTable
+                        rows={rows}
+                        onRetry={fileName => handleRetryFile(job.jobId, fileName)}
+                        retrying={submitting}
+                      />
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+            )
+          })}
+        </div>
+      </>
+    )
   }
 
   const renderState = () => {
@@ -399,7 +722,7 @@ export function DocxTranslatorPageClient() {
         </div>
         <DocxTranslatorResultTable
           rows={displayRows}
-          onRetry={handleRetryFile}
+          onRetry={fileName => handleRetryFile(jobId ?? '', fileName)}
           retrying={submitting}
         />
       </div>
@@ -560,15 +883,18 @@ export function DocxTranslatorPageClient() {
             </div>
           </div>
           {activeTab === 'live' ? (
-            <div className={`${styles.statePane} ${styles[`statePane_${paneTone}`]}`}>{stateNode}</div>
+            <div className={`${styles.statePane} ${styles[`statePane_${paneTone}`]}`}>
+              {tracked.length > 0 ? renderTaskList() : stateNode}
+            </div>
           ) : (
             <DocxTranslatorHistory
               active={activeTab === 'history'}
               onOpenLive={nextJobId => {
+                const started = Date.now()
                 setCarriedRows([])
                 setElapsed(0)
-                setStartedAt(Date.now())
-                setJobId(nextJobId)
+                setStartedAt(started)
+                trackJob(nextJobId, [], started)
                 setActiveTab('live')
               }}
             />

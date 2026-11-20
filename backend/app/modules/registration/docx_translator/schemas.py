@@ -33,6 +33,7 @@ class DocxTranslationFileResult(BaseModel):
     success_rate: float = 0.0
     warnings: list[str] = []
     error: str | None = None
+    skipped_units: int = 0
 
 
 class DocxTranslationJobAccepted(BaseModel):
@@ -48,9 +49,17 @@ class DocxTranslationJobState(BaseModel):
     current_file: str | None = None
     files: list[DocxTranslationFileResult] = []
     error: str | None = None
+    batch_done: int = 0
+    batch_total: int = 0
+    elapsed_seconds: int = 0
+
+
+class DocxTranslationJobListData(BaseModel):
+    items: list[DocxTranslationJobState]
 
 
 DocxTranslationJobStateResponse = DataResponse[DocxTranslationJobState]
+DocxTranslationJobListResponse = DataResponse[DocxTranslationJobListData]
 
 
 # ── 术语表 ────────────────────────────────────────────────

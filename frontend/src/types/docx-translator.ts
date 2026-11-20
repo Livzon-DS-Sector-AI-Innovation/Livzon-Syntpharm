@@ -19,6 +19,7 @@ export interface DocxTranslationFileResult {
   success_rate: number
   warnings: string[]
   error: string | null
+  skipped_units?: number
 }
 
 export interface DocxTranslationJobState {
@@ -29,6 +30,9 @@ export interface DocxTranslationJobState {
   current_file: string | null
   files: DocxTranslationFileResult[]
   error: string | null
+  batch_done?: number
+  batch_total?: number
+  elapsed_seconds?: number
 }
 
 export interface DocxTranslationSubmitResult {
