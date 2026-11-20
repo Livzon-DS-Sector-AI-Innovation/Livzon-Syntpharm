@@ -61,7 +61,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 20px 24px;
+  /* 与右卡页签头部同高：让两条分隔线落在同一水平线 */
+  height: 84px;
+  padding: 0 24px;
   border-bottom: 1px solid var(--line);
   background: linear-gradient(180deg, color-mix(in srgb, var(--brand-500) 6%, #fff), #fff 88%);
 }
@@ -954,7 +956,9 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 20px 24px;
+  /* 与左卡标题头部同高：两条分隔线对齐 */
+  height: 84px;
+  padding: 0 24px;
   border-bottom: 1px solid var(--line);
 }
 .paneTabs {
@@ -2053,4 +2057,53 @@
   background: var(--warn-50);
   font-size: 16px;
   color: var(--warn-600);
+}
+
+/* ============ 任务卡内联下载区 ============ */
+.taskResultScroll {
+  max-height: 340px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+/* 滚动时表头保持可见 */
+.taskResultScroll :global(.ant-table-thead > tr > th) {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.docCellText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.docMeta {
+  font-size: 17px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.docMetaRate {
+  font-variant-numeric: tabular-nums;
+}
+.docMetaWarn {
+  color: var(--warn-600);
+}
+.docMetaRisk {
+  font-size: 17px;
+  color: var(--risk-600);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 窄屏：两侧头部同步降高，保持分隔线对齐 */
+@media (max-width: 767px) {
+  .cardHead,
+  .paneHead {
+    height: 68px;
+  }
 }
