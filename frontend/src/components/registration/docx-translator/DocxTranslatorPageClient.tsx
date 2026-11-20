@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { App, Alert, InputNumber, Progress, Segmented, Upload } from 'antd'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { UploadFile } from 'antd'
@@ -55,6 +55,9 @@ const ACCEPT = '.docx,.doc,.wps'
 const RESUME_KEY = 'docx-translator:job'
 const JOBS_KEY = 'docx-translator:jobs'
 const DISMISSED_KEY = 'docx-translator:dismissed'
+
+/** 已提交任务的原件：File 不能持久化，只在当前页面会话内有效 */
+const sourceFilesByJob = new Map<string, Map<string, File>>()
 
 /** 用户手动清除过的任务：即使服务端仍把它算作 running，刷新也不再恢复 */
 function readDismissed(): Set<string> {
@@ -140,9 +143,7 @@ export function DocxTranslatorPageClient() {
   const [jobId, setJobId] = useState<string | null>(null)
   // 任务状态页签同时跟踪多个任务：新提交不再覆盖旧任务
   const [tracked, setTracked] = useState<TrackedJob[]>([])
-  const [expandedIds, setExpandedIds] = useState<string[]>([])
   // 已提交任务的原件：左栏清空后仍可「重试此文件」；File 不可持久化，刷新后重试引导去历史页
-  const sourceFilesRef = useRef<Map<string, Map<string, File>>>(new Map())
   const [now, setNow] = useState(() => Date.now())
   const [startedAt, setStartedAt] = useState<number | null>(null)
   const [elapsed, setElapsed] = useState(0)
@@ -417,7 +418,7 @@ export function DocxTranslatorPageClient() {
       setElapsed(0)
       setStartedAt(now)
       setActiveTab('live')
-      sourceFilesRef.current.set(accepted.job_id, new Map(originFiles.map(file => [file.name, file])))
+      sourceFilesByJob.set(accepted.job_id, new Map(originFiles.map(file => [file.name, file])))
       rememberJob(accepted.job_id, now)
       trackJob(accepted.job_id, originFiles.map(file => file.name), now)
       void queryClient.invalidateQueries({ queryKey: ['docx-tasks'] })
@@ -433,7 +434,7 @@ export function DocxTranslatorPageClient() {
   }
 
   const handleRetryFile = async (jobId: string, fileName: string) => {
-    const target = sourceFilesRef.current.get(jobId)?.get(fileName)
+    const target = sourceFilesByJob.get(jobId)?.get(fileName)
     if (!target) {
       message.warning('原始文件已不在本页（刷新后失效），请到「历史翻译」用「再次翻译」')
       return
@@ -453,7 +454,7 @@ export function DocxTranslatorPageClient() {
       setStartedAt(Date.now())
       const now = Date.now()
       setStartedAt(now)
-      sourceFilesRef.current.set(accepted.job_id, new Map([[fileName, target]]))
+      sourceFilesByJob.set(accepted.job_id, new Map([[fileName, target]]))
       rememberJob(accepted.job_id, now)
       trackJob(accepted.job_id, [fileName], now)
       void queryClient.invalidateQueries({ queryKey: ['docx-tasks'] })
@@ -465,8 +466,16 @@ export function DocxTranslatorPageClient() {
     }
   }
 
-  const toggleExpanded = (id: string) => {
-    setExpandedIds(prev => (prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]))
+  /** 下载即归档：任务卡移除 + 记入已清除名单，历史仍可查 */
+  const archivateJob = (targetJobId: string) => {
+    addDismissed([targetJobId])
+    sourceFilesByJob.delete(targetJobId)
+    setTracked(prev => prev.filter(item => item.jobId !== targetJobId))
+    message.success('已下载，任务已归档到「历史翻译」')
+    // 最后一张卡移除后复位单任务视图，避免残留旧结果表占位
+    if (tracked.filter(item => item.jobId !== targetJobId).length === 0) {
+      resetJob()
+    }
   }
 
   const renderTaskList = () => {
@@ -495,13 +504,17 @@ export function DocxTranslatorPageClient() {
             onClick={() => {
               const removable = new Set<string>([...finishedIds, ...missingIds])
               addDismissed(Array.from(removable))
+              const clearAll = removable.size >= tracked.length
               setTracked(prev => {
                 prev.forEach(job => {
-                  if (removable.has(job.jobId)) sourceFilesRef.current.delete(job.jobId)
+                  if (removable.has(job.jobId)) sourceFilesByJob.delete(job.jobId)
                 })
                 return prev.filter(job => !removable.has(job.jobId))
               })
-              setExpandedIds(prev => prev.filter(id => !removable.has(id)))
+              // 自动刷新历史列表与条数徽标，无需手动 F5
+              void queryClient.invalidateQueries({ queryKey: ['docx-tasks'] })
+              void queryClient.invalidateQueries({ queryKey: ['docx-task-detail'] })
+              if (clearAll) resetJob()
             }}
           >
             清除已结束{endedCount > 0 ? `（${endedCount}）` : ''}
@@ -546,7 +559,6 @@ export function DocxTranslatorPageClient() {
             : status === 'done'
               ? '已完成'
               : '翻译中'
-        const expanded = expandedIds.includes(job.jobId)
 
         return (
           <div key={job.jobId} className={styles.taskCard}>
@@ -584,7 +596,7 @@ export function DocxTranslatorPageClient() {
                   className={styles.taskLink}
                   onClick={() => {
                     addDismissed([job.jobId])
-                    sourceFilesRef.current.delete(job.jobId)
+                    sourceFilesByJob.delete(job.jobId)
                     setTracked(prev => prev.filter(item => item.jobId !== job.jobId))
                   }}
                 >
@@ -600,18 +612,14 @@ export function DocxTranslatorPageClient() {
                   {state?.error ? ` · ${state.error}` : ''}
                 </div>
                 {rows.length > 0 && (
-                  <>
-                    <button type="button" className={styles.taskLink} onClick={() => toggleExpanded(job.jobId)}>
-                      {expanded ? '收起结果' : '查看结果'}
-                    </button>
-                    {expanded && (
-                      <DocxTranslatorResultTable
-                        rows={rows}
-                        onRetry={fileName => handleRetryFile(job.jobId, fileName)}
-                        retrying={submitting}
-                      />
-                    )}
-                  </>
+                  <div className={styles.taskResultScroll}>
+                    <DocxTranslatorResultTable
+                      rows={rows}
+                      onRetry={fileName => handleRetryFile(job.jobId, fileName)}
+                      retrying={submitting}
+                      onDownloaded={() => archivateJob(job.jobId)}
+                    />
+                  </div>
                 )}
               </div>
             )}
@@ -724,6 +732,11 @@ export function DocxTranslatorPageClient() {
           rows={displayRows}
           onRetry={fileName => handleRetryFile(jobId ?? '', fileName)}
           retrying={submitting}
+          onDownloaded={() => {
+            if (!jobId) return
+            archivateJob(jobId)
+            resetJob()
+          }}
         />
       </div>
     )

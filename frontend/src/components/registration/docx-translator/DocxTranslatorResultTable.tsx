@@ -15,6 +15,8 @@ interface Props {
   rows: ResultRow[]
   onRetry: (fileName: string) => void
   retrying: boolean
+  /** 点击下载后回调：任务状态页签据此把已取走的任务归档 */
+  onDownloaded?: () => void
 }
 
 function rateTone(rate: number): 'ok' | 'warn' | 'risk' {
@@ -28,60 +30,59 @@ const RATE_CLASS = {
   warn: styles.rateWarn,
   risk: styles.rateRisk,
 }
-const BAR_CLASS = {
-  ok: styles.rateBarOk,
-  warn: styles.rateBarWarn,
-  risk: styles.rateBarRisk,
-}
 
-export function DocxTranslatorResultTable({ rows, onRetry, retrying }: Props) {
+/**
+ * 任务完成后的下载区：三列（文件 / 状态 / 下载），成功率与失败原因收进文件名副行，
+ * 让下载按钮直接可见，不需要再点「查看结果」。
+ */
+export function DocxTranslatorResultTable({ rows, onRetry, retrying, onDownloaded }: Props) {
   const columns: ColumnsType<ResultRow> = [
     {
-      title: '文件名',
+      title: '文件',
       dataIndex: 'filename',
-      width: '30%',
+      width: '44%',
       align: 'left',
       render: (value: string, record) => (
         <div className={styles.docCell}>
-          <span className={`${styles.docIco} ${styles.docIcoSm} ${record.success ? styles.docIcoOk : styles.docIcoRisk}`}>
+          <span
+            className={`${styles.docIco} ${styles.docIcoSm} ${
+              record.success ? styles.docIcoOk : styles.docIcoRisk
+            }`}
+          >
             {IconFile}
           </span>
-          <span className={styles.docName} title={value}>
-            {value}
+          <span className={styles.docCellText}>
+            <span className={styles.docName} title={value}>
+              {value}
+            </span>
+            {record.success ? (
+              <span className={styles.docMeta}>
+                <span className={`${RATE_CLASS[rateTone(record.success_rate)]} ${styles.docMetaRate}`}>
+                  成功率 {record.success_rate.toFixed(1)}%
+                </span>
+                {record.total_units > 0 && (
+                  <span>
+                    {' · '}
+                    {record.translated_units}/{record.total_units} 段
+                  </span>
+                )}
+                {record.success_rate < 90 && (
+                  <span className={styles.docMetaWarn}> · 成功率偏低，请人工复核</span>
+                )}
+              </span>
+            ) : (
+              <span className={styles.docMetaRisk} title={record.error ?? ''}>
+                失败原因：{record.error || '未知错误'}
+              </span>
+            )}
           </span>
         </div>
       ),
     },
     {
-      title: '段落成功率',
-      dataIndex: 'success_rate',
-      width: '26%',
-      align: 'center',
-      render: (value: number, record) => {
-        if (!record.success) {
-          return <span className={`${styles.rateValue} ${styles.numCell} ${styles.rateNone}`}>—</span>
-        }
-        const tone = rateTone(value)
-        return (
-          <div className={styles.rateCell}>
-            <span className={`${styles.rateValue} ${styles.numCell} ${RATE_CLASS[tone]}`}>
-              {value.toFixed(1)}%
-            </span>
-            <span className={styles.rateBar}>
-              <span
-                className={`${styles.rateBarFill} ${BAR_CLASS[tone]}`}
-                style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
-              />
-            </span>
-            {value < 90 && <span className={styles.warnLine}>成功率偏低，请人工复核</span>}
-          </div>
-        )
-      },
-    },
-    {
       title: '状态',
       dataIndex: 'success',
-      width: '18%',
+      width: '16%',
       align: 'center',
       render: (success: boolean) =>
         success ? (
@@ -91,9 +92,9 @@ export function DocxTranslatorResultTable({ rows, onRetry, retrying }: Props) {
         ),
     },
     {
-      title: '操作',
+      title: '下载',
       key: 'actions',
-      width: '26%',
+      width: '40%',
       align: 'center',
       render: (_, record) => {
         if (!record.success) {
@@ -114,9 +115,12 @@ export function DocxTranslatorResultTable({ rows, onRetry, retrying }: Props) {
             {outputs.map(output => (
               <a
                 key={output.file_index}
-                className={`${styles.dlBtn} ${output.kind === 'bilingual' ? styles.dlBtnBrand : styles.dlBtnInfo}`}
+                className={`${styles.dlBtn} ${
+                  output.kind === 'bilingual' ? styles.dlBtnBrand : styles.dlBtnInfo
+                }`}
                 href={translationDownloadUrl(record.job_id, output.file_index)}
                 download={output.filename}
+                onClick={onDownloaded}
               >
                 {IconDownload}
                 {output.kind === 'bilingual' ? '双语版' : '译文版'}
@@ -137,25 +141,6 @@ export function DocxTranslatorResultTable({ rows, onRetry, retrying }: Props) {
       dataSource={rows}
       tableLayout="fixed"
       rowClassName={record => (!record.success ? styles.failRow : '')}
-      expandable={{
-        // 失败行常显原因：受控展开，不显示展开箭头
-        expandedRowKeys: rows.filter(item => !item.success && item.error).map(item => item.filename),
-        showExpandColumn: false,
-        rowExpandable: record => !record.success && Boolean(record.error),
-        expandedRowRender: record => (
-          <div className={styles.failReason}>
-            <span>失败原因：{record.error}</span>
-            <button
-              type="button"
-              className={styles.retryLink}
-              disabled={retrying}
-              onClick={() => onRetry(record.filename)}
-            >
-              重试此文件
-            </button>
-          </div>
-        ),
-      }}
     />
   )
 }
