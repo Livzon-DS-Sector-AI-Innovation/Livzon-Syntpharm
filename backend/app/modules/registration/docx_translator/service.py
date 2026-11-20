@@ -781,9 +781,7 @@ async def delete_file_record(session: AsyncSession, record: DocxTranslationFile)
 
 async def resolve_file_timeout_seconds() -> float:
     """单文件超时秒数；<=0 表示不限制。"""
-    minutes = await get_module_setting_int(
-        MODULE, SETTING_FILE_TIMEOUT_MINUTES, DEFAULT_FILE_TIMEOUT_MINUTES
-    )
+    minutes = await get_module_setting_int(MODULE, SETTING_FILE_TIMEOUT_MINUTES, DEFAULT_FILE_TIMEOUT_MINUTES)
     return float(minutes) * 60 if minutes and minutes > 0 else 0.0
 
 

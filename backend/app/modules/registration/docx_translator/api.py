@@ -141,9 +141,7 @@ async def list_job_states(
     ids: list[str] = Query(..., min_length=1, max_length=20, description="任务ID列表"),
     ctx: PermissionContext = Depends(require_permission(PERM_READ)),
 ) -> Any:
-    return DocxTranslationJobListResponse(
-        data=DocxTranslationJobListData(items=get_registry().states(ids))
-    )
+    return DocxTranslationJobListResponse(data=DocxTranslationJobListData(items=get_registry().states(ids)))
 
 
 @router.get("/jobs/{job_id}", response_model=DocxTranslationJobStateResponse, summary="查询翻译任务状态")

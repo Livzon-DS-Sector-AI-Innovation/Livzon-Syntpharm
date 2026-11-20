@@ -121,9 +121,7 @@ class TranslationJobRegistry:
             batch_done=progress.batch_done,
             batch_total=progress.batch_total,
             elapsed_seconds=(
-                int((progress.finished_at or time.monotonic()) - progress.started_at)
-                if progress.started_at
-                else 0
+                int((progress.finished_at or time.monotonic()) - progress.started_at) if progress.started_at else 0
             ),
         )
 
