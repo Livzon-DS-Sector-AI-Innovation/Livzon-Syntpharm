@@ -30,7 +30,7 @@ class WorkbenchTodoRead(BaseModel):
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("identity.users.id", ondelete="CASCADE"),
+        ForeignKey("identity.users.id"),
         nullable=False,
         comment="已读用户",
     )

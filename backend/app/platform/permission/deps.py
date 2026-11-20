@@ -167,7 +167,6 @@ __all__ = [
     "PermissionContext",
     "require_any_permission",
     "require_assignment_admin",
-    "require_current_user",
     "require_module_management",
     "require_permission",
     "require_role_catalog_read",

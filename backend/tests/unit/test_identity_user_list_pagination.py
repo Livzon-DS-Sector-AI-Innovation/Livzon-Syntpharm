@@ -72,7 +72,20 @@ def _patch(
     async def fake_list_super_ids(db: Any) -> list[Any]:
         return super_ids or []
 
+    async def fake_role_briefs(db: Any, user_ids: list[Any]) -> dict[Any, list[Any]]:
+        return {}
+
+    async def fake_profiles(db: Any, open_ids: list[str], *, include_inactive: bool = False) -> dict[str, Any]:
+        return {}
+
+    async def fake_search_open_ids(db: Any, keyword: str, *, limit: int = 500) -> list[str]:
+        return []
+
     monkeypatch.setattr(identity_api, "UserRepository", lambda: repo)
+    monkeypatch.setattr(identity_api, "get_role_briefs_by_user_ids", fake_role_briefs)
+    # #219 起列表展示值与搜索都以 HR 档案为准，端点内是局部 import，patch 模块属性生效
+    monkeypatch.setattr("app.modules.hr.public_api.get_profiles_by_open_ids", fake_profiles)
+    monkeypatch.setattr("app.modules.hr.public_api.search_profile_open_ids", fake_search_open_ids)
     monkeypatch.setattr("app.platform.permission.public_api.user_is_superuser", fake_is_superuser)
     monkeypatch.setattr("app.platform.permission.public_api.list_superuser_user_ids", fake_list_super_ids)
 

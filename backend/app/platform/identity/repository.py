@@ -125,6 +125,52 @@ class UserRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_by_feishu_open_id_including_deleted(
+        self,
+        session: AsyncSession,
+        open_id: str,
+    ) -> User | None:
+        """按 open_id 查账号，**含软删行**（登录复活 / 预授权用）。
+
+        `feishu_open_id` 没有唯一约束，历史解绑会留下同 open_id 的软删行，
+        因此不能 `scalar_one_or_none`；按「未删优先、最近创建优先」取第一条。
+        """
+        result = await session.execute(
+            select(User)
+            .where(User.feishu_open_id == open_id)
+            .order_by(User.is_deleted.asc(), User.created_at.desc())
+            .limit(1),
+        )
+        return result.scalars().first()
+
+    async def get_by_feishu_user_id_including_deleted(
+        self,
+        session: AsyncSession,
+        user_id: str,
+    ) -> User | None:
+        """按飞书 user_id 查账号，含软删行（口径同上）。"""
+        result = await session.execute(
+            select(User)
+            .where(User.feishu_user_id == user_id)
+            .order_by(User.is_deleted.asc(), User.created_at.desc())
+            .limit(1),
+        )
+        return result.scalars().first()
+
+    async def employee_no_taken(
+        self,
+        session: AsyncSession,
+        employee_no: str,
+        *,
+        exclude_user_id: UUID | None = None,
+    ) -> bool:
+        """工号是否已被占用（**含软删行**，因为唯一约束不过滤 is_deleted）。"""
+        stmt = select(User.id).where(User.employee_no == employee_no)
+        if exclude_user_id is not None:
+            stmt = stmt.where(User.id != exclude_user_id)
+        result = await session.execute(stmt.limit(1))
+        return result.scalar_one_or_none() is not None
+
     async def create(
         self,
         session: AsyncSession,

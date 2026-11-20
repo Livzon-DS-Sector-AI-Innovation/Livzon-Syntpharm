@@ -2,10 +2,11 @@
 
 import uuid
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.platform.identity.models import User
+from app.platform.permission.constants import RETIRED_ROLE_TYPES
 from app.platform.permission.models import (
     GRANT_ACTIVE,
     GRANT_DISABLED,
@@ -39,25 +40,51 @@ class GrantRepository:
         return result.scalar_one_or_none() is not None
 
     async def list_superuser_user_ids(self, db: AsyncSession) -> list[uuid.UUID]:
-        """所有持有 active 超级管理员角色的用户 id。
+        """所有持有 active 超级管理员角色、且账号仍生效的用户 id。
 
         用户管理列表用它把超管账号对非超管隐藏：即使对方有
         `platform:user:read`，也不应该看到超管的资料与角色。
+
+        同时 join `identity.users` 过滤已删除 / 已停用账号：这两类账号已经无法登录，
+        若继续计入「生效超管」，会让「至少保留 N 名超管」的守卫被空账号占位而失效
+        （TC-007：删掉一名超管后，守卫仍以为还有足够名额）。
         """
         stmt = (
             select(UserRoleGrant.user_id)
             .join(Role, Role.id == UserRoleGrant.role_id)
+            .join(User, User.id == UserRoleGrant.user_id)
             .where(
                 UserRoleGrant.status == GRANT_ACTIVE,
                 UserRoleGrant.is_deleted == False,  # noqa: E712
                 Role.is_superuser.is_(True),
                 Role.status == GRANT_ACTIVE,
                 Role.is_deleted == False,  # noqa: E712
+                User.is_deleted == False,  # noqa: E712
+                User.status != "disabled",
             )
             .distinct()
         )
         result = await db.execute(stmt)
         return list(result.scalars().all())
+
+    async def count_active_superusers(self, db: AsyncSession) -> int:
+        """生效超管数量（口径与 list_superuser_user_ids 完全一致）。"""
+        stmt = (
+            select(func.count(func.distinct(UserRoleGrant.user_id)))
+            .select_from(UserRoleGrant)
+            .join(Role, Role.id == UserRoleGrant.role_id)
+            .join(User, User.id == UserRoleGrant.user_id)
+            .where(
+                UserRoleGrant.status == GRANT_ACTIVE,
+                UserRoleGrant.is_deleted == False,  # noqa: E712
+                Role.is_superuser.is_(True),
+                Role.status == GRANT_ACTIVE,
+                Role.is_deleted == False,  # noqa: E712
+                User.is_deleted == False,  # noqa: E712
+                User.status != "disabled",
+            )
+        )
+        return int((await db.execute(stmt)).scalar_one())
 
     async def get_grants_for_permission(
         self,
@@ -90,7 +117,13 @@ class GrantRepository:
         *,
         user_id: uuid.UUID | None = None,
     ) -> list[UserRoleGrant]:
-        """查询授权列表，join 角色与用户以填充展示字段。"""
+        """查询授权列表，join 角色与用户以填充展示字段。
+
+        注意：**不要**在这里过滤退役角色类型（`RETIRED_ROLE_TYPES`）。
+        本方法唯一调用方是「不能修改自己所属角色的权限」防自提权校验
+        （`api.update_role`），过滤会削弱该校验的覆盖面。
+        展示层的退役过滤在 `api.list_grants` 的查询里。
+        """
         stmt = (
             select(UserRoleGrant)
             .join(Role, Role.id == UserRoleGrant.role_id)
@@ -170,9 +203,17 @@ class RoleRepository:
     """角色仓储。"""
 
     async def list_roles(self, db: AsyncSession) -> list[Role]:
+        """列出角色（已退役的历史角色类型不返回）。
+
+        只按 `role_type` 过滤，**不按** `status` 过滤：人工禁用的岗位角色仍要
+        出现在列表里（前端按禁用态展示并允许恢复）。
+        """
         result = await db.execute(
             select(Role)
-            .where(Role.is_deleted == False)  # noqa: E712
+            .where(
+                Role.is_deleted == False,  # noqa: E712
+                Role.role_type.notin_(RETIRED_ROLE_TYPES),
+            )
             .order_by(Role.category, Role.code)
         )
         return list(result.scalars().all())

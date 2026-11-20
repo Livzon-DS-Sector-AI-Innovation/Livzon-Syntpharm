@@ -550,7 +550,7 @@ class EmployeeProfile(BaseModel):
         {"schema": "hr"},
     )
 
-    open_id: Mapped[str] = mapped_column(String(128), nullable=False, comment="飞书 open_id（在任记录唯一）")
+    open_id: Mapped[str] = mapped_column(String(128), nullable=False, comment="飞书 open_id（唯一键）")
     is_current: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,

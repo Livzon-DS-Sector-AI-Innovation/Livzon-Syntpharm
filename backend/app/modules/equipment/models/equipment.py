@@ -181,7 +181,7 @@ class Equipment(BaseModel):
     depreciation_years: Mapped[int | None] = mapped_column(nullable=True, comment="折旧年限")
     technical_params: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="技术参数（JSON）")
     department_id: Mapped[uuid.UUID | None] = mapped_column(
-        nullable=True, comment="归属部门ID，逻辑引用 identity.departments.id"
+        nullable=True, comment="归属部门ID，逻辑引用 hr.departments.id（#219）"
     )
     responsible_person_id: Mapped[uuid.UUID | None] = mapped_column(
         nullable=True, comment="负责人ID，逻辑引用 identity.users.id；未设置时由部门负责人推导"

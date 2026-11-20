@@ -6,7 +6,8 @@ import { useSearchParams } from 'next/navigation'
 import { Skeleton, Tabs } from 'antd'
 import ModulePermissionPanel from './ModulePermissionPanel'
 import ModuleSettingsClient from './ModuleSettingsClient'
-import type { ModuleSettingsCustomComponent, ModuleSettingsDefinition } from './settings-registry'
+import type { ModuleSettingsCustomComponent, ModuleSettingsDefinition } from './settingsRegistry'
+import './module-settings.css'
 
 /**
  * 迁移进来的既有设置页（仪器 / 试剂提醒各约 400 行）按页签懒加载：
@@ -23,6 +24,12 @@ const CUSTOM_COMPONENTS: Record<ModuleSettingsCustomComponent, React.ComponentTy
   'quality-instrument': dynamic(() => import('./legacy/QualityInstrumentSettings'), { loading: TAB_FALLBACK }),
   'quality-stability': dynamic(() => import('./legacy/QualityStabilitySettings'), { loading: TAB_FALLBACK }),
   'quality-reagent': dynamic(() => import('./legacy/QualityReagentReminder'), { loading: TAB_FALLBACK }),
+  'quality-department-contacts': dynamic(() => import('./legacy/QualityDepartmentContactsSettings'), {
+    loading: TAB_FALLBACK,
+  }),
+  'equipment-personnel': dynamic(() => import('@/components/equipment').then((mod) => mod.PersonnelPage), {
+    loading: TAB_FALLBACK,
+  }),
   'hr-system': dynamic(() => import('./legacy/HrSystemSettings'), { loading: TAB_FALLBACK }),
 }
 

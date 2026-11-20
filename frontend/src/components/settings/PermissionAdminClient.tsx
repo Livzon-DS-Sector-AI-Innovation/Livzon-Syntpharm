@@ -44,7 +44,7 @@ export default function PermissionAdminClient({ initialTab }: { initialTab?: str
         },
         {
           key: 'module-admins',
-          label: '模块负责人与模块管理员',
+          label: '模块负责人',
           children: <ModuleAdminPanel />,
           // 指派权在系统管理员手里：与「授权管理」同一口径（grant:manage）
           visible: can(PERM.grantManage),

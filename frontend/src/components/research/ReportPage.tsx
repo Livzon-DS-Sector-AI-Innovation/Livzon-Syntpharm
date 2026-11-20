@@ -93,7 +93,7 @@ export function ReportPage({ projectId }: Props) {
   /** 当前生效模型：来自模块配置，新建任务的弹窗里如实提示用哪一档。 */
   const { data: settings = [] } = useQuery({
     queryKey: ['module-settings', 'research', 'report-gen'],
-    queryFn: async () => (await getModuleSettings('research')).data ?? [],
+    queryFn: async () => (await getModuleSettings('research')) ?? [],
     staleTime: 60_000,
   })
   const models = useMemo(() => pickReportGenModels(settings), [settings])

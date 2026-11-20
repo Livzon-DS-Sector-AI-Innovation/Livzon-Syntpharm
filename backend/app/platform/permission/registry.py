@@ -14,13 +14,25 @@ from dataclasses import dataclass
 from app.platform.permission.constants import (
     ADMIN_ENTRY_ACTION,
     ADMIN_ENTRY_RESOURCE,
-    ROLE_TYPE_HEAD,
+    ROLE_TYPE_DELEGATE,
     ROLE_TYPE_JOB,
-    ROLE_TYPE_MANAGER,
+    ROLE_TYPE_OWNER,
     ROLE_TYPE_SYSTEM,
     admin_entry_code,
 )
 from app.shared.module_registry import BUSINESS_MODULES
+
+# 已下线模块：其内置角色随模块下线一起退役。
+#
+# 只登记「确认不再存在于 BUSINESS_MODULES 的模块」，启动同步会把它们的
+# 内置角色及授权置为 disabled。不采用「注册表里没有就停用」的一刀切口径：
+# 多分支并行时，别的分支新增的模块在本分支看不到，一刀切会把它们误停。
+# 下线新模块时在这里追加编码，并配一条清理迁移。
+#
+# 合入 uat 时置空：``agent`` 模块在 uat 分支仍在线（PPT 配音视频在测），
+# 停用它会让该模块的内置角色与授权失效。等 uat 也下线该模块后再登记。
+RETIRED_MODULE_CODES: frozenset[str] = frozenset()
+
 
 # ── 动作集合 ──────────────────────────────────────────────────────
 
@@ -1255,11 +1267,11 @@ ALL_PERMISSIONS: tuple[PermissionDef, ...] = (
 
 # ── 内置角色 ──────────────────────────────────────────────────────
 # 三类内置角色（2026-11 委派式权限管理）：
-# 1. 系统管理员 super_admin —— 全部权限，唯一能任命/移除模块负责人与模块管理员。
-# 2. 模块负责人 {module}:head —— 该模块全部业务权限 + 模块管理入口，可进入模块配置页。
-# 3. 模块管理员 {module}:manager —— 只持有模块管理入口，管岗位角色与授权。
+# 1. 系统管理员 super_admin —— 全部权限，唯一能任命/移除模块负责人。
+# 2. 模块负责人 {module}:owner —— 该模块全部业务权限 + 模块管理入口，可进入模块配置页并指派模块代表。
+# 3. 模块代表 {module}:delegate —— 权限集合与负责人一致，由本模块负责人在模块配置页指派。
 # 三类均不可删除；模块负责人随注册表新增权限码自动扩量（只增不删）。
-# 岗位角色（{module}:{name}）仍由模块负责人/管理人在权限树上自建。
+# 岗位角色（{module}:{name}）仍由模块负责人/代表在权限树上自建。
 
 PLATFORM_ROLES: tuple[RoleDef, ...] = (
     RoleDef(
@@ -1284,20 +1296,20 @@ MODULE_BUILTIN_ROLES: tuple[RoleDef, ...] = tuple(
     for module in BUSINESS_MODULES
     for role in (
         RoleDef(
-            code=f"{module.code}:head",
+            code=f"{module.code}:owner",
             name=f"{module.name}负责人",
             category="module",
             module_code=module.code,
-            description="模块负责人：拥有本模块全部业务权限，可进入模块配置页管理岗位角色与授权",
-            role_type=ROLE_TYPE_HEAD,
+            description="模块负责人：拥有本模块全部业务权限，可进入模块配置页管理岗位角色、授权并指派模块代表",
+            role_type=ROLE_TYPE_OWNER,
         ),
         RoleDef(
-            code=f"{module.code}:manager",
-            name=f"{module.name}管理员",
+            code=f"{module.code}:delegate",
+            name=f"{module.name}代表",
             category="module",
             module_code=module.code,
-            description="模块管理员：拥有本模块全部业务权限，可进入模块配置页管理岗位角色与授权",
-            role_type=ROLE_TYPE_MANAGER,
+            description="模块代表：权限集合与模块负责人一致，由本模块负责人在模块配置页指派",
+            role_type=ROLE_TYPE_DELEGATE,
         ),
     )
 )
@@ -1307,21 +1319,21 @@ ALL_BUILTIN_ROLES: tuple[RoleDef, ...] = PLATFORM_ROLES + MODULE_BUILTIN_ROLES
 
 # ── 内置角色 → 权限码映射 ──────────────────────────────────────────
 # super_admin 通过 is_superuser 直接放行，不在此绑定权限码。
-# 模块负责人与模块管理员**权限一致**（2026-11-18 用户口径）：都是本模块全部业务码
+# 模块负责人与模块代表**权限一致**（2026-11-18 用户口径）：都是本模块全部业务码
 # + 模块管理入口码，启动同步时只增不删、随注册表自动扩量。
 # 两者的区别不在权限集合，而在**任命关系**：负责人由系统管理员任命，
-# 管理人由本模块负责人任命；模块负责人不能被本模块其他人移除。
+# 代表由本模块负责人任命；模块负责人不能被本模块其他人移除。
 BUILTIN_ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
     role_code: codes
     for module in BUSINESS_MODULES
     for role_code, codes in (
         (
-            f"{module.code}:head",
-            # 人员查询：负责人/管理员都要能在角色与授权页选人（选人数据源已改为系统账号）
+            f"{module.code}:owner",
+            # 人员查询：负责人/代表都要能在角色与授权页选人（选人数据源已改为系统账号）
             _business_codes_of(module.code) + (admin_entry_code(module.code), PERSON_LOOKUP_CODE),
         ),
         (
-            f"{module.code}:manager",
+            f"{module.code}:delegate",
             _business_codes_of(module.code) + (admin_entry_code(module.code), PERSON_LOOKUP_CODE),
         ),
     )
@@ -1342,6 +1354,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:user:manage", "POST", "/api/v1/identity/users/{id}/reset-password"),
     ApiBindingDef("platform:user:manage", "POST", "/api/v1/identity/users/{id}/bind-feishu"),
     ApiBindingDef("platform:user:manage", "DELETE", "/api/v1/identity/users/{id}/bind-feishu"),
+    # 登录前按 HR 档案预建/复用账号（授权挂在未登录用户上）
+    ApiBindingDef("platform:user:manage", "POST", "/api/v1/identity/ensure-by-profile"),
     # 会话管理（在线会话 / 踢下线）
     ApiBindingDef("platform:user:read", "GET", "/api/v1/identity/sessions"),
     ApiBindingDef("platform:user:manage", "DELETE", "/api/v1/identity/sessions/{jti}"),
@@ -3573,11 +3587,6 @@ EXEMPT_ROUTES: tuple[tuple[str, str], ...] = (
     # 飞书审批完成回调：由飞书服务器发起，不可能携带用户 JWT，
     # 鉴权改为「verification token + 签名校验」（见 hr/api.py 的回调校验）。
     ("POST", "/api/v1/hr/webhook/feishu-approval"),
-    # 公共目录（#219）：全系统选择器共用的选人 / 选部门数据源。装备、质量、
-    # 安全模块的操作人通常没有 hr:* 模块权限码，若绑定 HR 读权限会 403，
-    # 因此只要求登录（路由自身 require_user），不挂权限码。
-    ("GET", "/api/v1/hr/directory/departments"),
-    ("GET", "/api/v1/hr/directory/people"),
     # 首页工作台：登录用户只读自己的待办 / 流程，不挂模块权限码；
     # 内部按 effective_permission_codes 逐数据源门控（无权限的源不返回数据）。
     ("GET", "/api/v1/workbench/overview"),

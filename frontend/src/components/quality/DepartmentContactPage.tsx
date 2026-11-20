@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import {
   Alert,
   App,
-  AutoComplete,
   Button,
   Card,
   Empty,
@@ -25,23 +24,19 @@ import {
   updateDepartmentContact,
 } from '@/actions/quality'
 import { PersonMultiSelect, PersonSelect } from '@/components/common/PersonSelect'
+import DepartmentTreeSelect from '@/components/common/DepartmentTreeSelect'
 import { toPersonId, toPersonIds } from '@/lib/utils/form-person'
 import { PeopleNamesInline, PersonInline } from './deviation/PersonInline'
 import type { PersonSnapshot } from './deviation/CrossDeptReviewerFields'
 import { NotifySettingsCard } from '@/components/quality/deviation'
-import type {
-  DepartmentContact,
-  DepartmentMemberOption,
-  DeviationNotifySettings,
-} from '@/types/quality'
+import type { DepartmentContact, DeviationNotifySettings } from '@/types/quality'
 
 interface DepartmentContactPageProps {
+  /** 嵌入模块配置页签：隐藏页内 h1（外层已有页头） */
+  embedded?: boolean
   contacts: DepartmentContact[]
-  memberOptions: DepartmentMemberOption[]
   notifySettings: DeviationNotifySettings | null
   loadError?: string | null
-  /** 部门名称建议值（组织部门，与台账部门名同源） */
-  departmentSuggestions?: string[]
   /** 台账里已有、但尚无联系人配置的部门（这些单子节点负责人无法自动指派） */
   unconfiguredDepartments?: string[]
 }
@@ -76,11 +71,10 @@ interface ContactFormValues {
 
 /** 部门联系人配置：调查/审核环节的处理人来源，配错会直接影响流转指派 */
 export function DepartmentContactPage({
+  embedded = false,
   contacts,
-  memberOptions,
   notifySettings,
   loadError = null,
-  departmentSuggestions = [],
   unconfiguredDepartments = [],
 }: DepartmentContactPageProps) {
   const router = useRouter()
@@ -130,17 +124,6 @@ export function DepartmentContactPage({
     const snapshot = id ? personById.get(id) : undefined
     return { label: snapshot?.name, avatarSrc: snapshot?.avatar ?? null }
   }
-
-  // 部门名是关联键：优先从组织部门里选，避免手输出偏差导致节点负责人解析不到
-  const departmentNameCandidates =
-    departmentSuggestions.length > 0
-      ? departmentSuggestions
-      : memberOptions
-          .map((item) => item.description?.trim())
-          .filter((name): name is string => Boolean(name))
-  const departmentOptions = [...new Set(departmentNameCandidates)]
-    .sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'))
-    .map((name) => ({ value: name }))
 
   const openModal = (contact?: DepartmentContact) => {
     if (contact) {
@@ -340,17 +323,21 @@ export function DepartmentContactPage({
   ]
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-[22px] font-semibold text-[var(--color-ink)]">部门联系人配置</h1>
+          {!embedded && (
+            <h1 className="text-[22px] font-semibold text-[var(--color-ink)]">部门联系人配置</h1>
+          )}
           <p className="mt-1 text-[13px] text-[var(--color-slate)]">
             偏差流转按部门取处理人：部门负责人、生产负责人、质量负责人（本部门优先、缺省回退质量保证部），以及所属 QA、QA 负责人
           </p>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()} className="shrink-0 self-start sm:self-auto">
-          添加部门
-        </Button>
+        {!embedded && (
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()} className="shrink-0 self-start sm:self-auto">
+            添加部门
+          </Button>
+        )}
       </header>
 
       {loadError && <Alert type="warning" showIcon title="联系人数据加载失败" description={loadError} />}
@@ -369,7 +356,19 @@ export function DepartmentContactPage({
         />
       )}
 
-      <Card size="small" className="shadow-sm" styles={{ body: { padding: 0 } }}>
+      <Card
+        size="small"
+        className={embedded ? 'settings-region-card' : 'shadow-sm'}
+        title={embedded ? '部门联系人' : undefined}
+        styles={{ body: { padding: 0 } }}
+      >
+        {embedded && (
+          <div className="flex items-center justify-end px-4 pb-3 pt-4">
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()}>
+              添加部门
+            </Button>
+          </div>
+        )}
         <Table<DepartmentContact>
           rowKey="id"
           size="middle"
@@ -399,17 +398,14 @@ export function DepartmentContactPage({
           <Form.Item
             name="department"
             label="部门名称"
-            rules={[{ required: true, message: '请输入部门名称' }]}
-            extra="部门名称是唯一键，创建后不可修改；必须与偏差台账里的部门名完全一致，否则节点负责人无法自动指派"
+            rules={[{ required: true, message: '请选择部门' }]}
+            extra="部门名称是唯一键，创建后不可修改；必须与偏差台账里的部门名完全一致，否则节点负责人无法自动指派。从组织树选择，历史部门名保留原值、不做迁移。"
           >
-            <AutoComplete
-              placeholder="如 101车间"
+            <DepartmentTreeSelect
+              valueField="name"
+              allowClear={false}
               disabled={Boolean(editing)}
-              maxLength={255}
-              options={departmentOptions}
-              filterOption={(inputValue, option) =>
-                (option?.value ?? '').toLowerCase().includes(inputValue.toLowerCase())
-              }
+              placeholder="选择部门（可搜索，可任选层级）"
             />
           </Form.Item>
           <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-3">

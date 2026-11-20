@@ -274,6 +274,7 @@ async def auth_callback(
     """
     from app.platform.identity.repository import LoginLogRepository
     from app.platform.identity.service import (
+        AccountDeletedError,
         handle_oauth_callback,
         validate_state_token,
     )
@@ -303,7 +304,20 @@ async def auth_callback(
     try:
         user, token = await handle_oauth_callback(db, code)
     except Exception as exc:
-        logger.exception("OAuth callback failed")
+        # 区分可解释的拒绝原因，避免一律显示「登录失败，请重试」让用户反复试
+        if isinstance(exc, AccountDeletedError):
+            error_code = "account_deleted"
+            error_message = "账号已被删除，请联系管理员处理"
+            logger.warning("OAuth callback rejected: account deleted")
+        elif isinstance(exc, PermissionError):
+            error_code = "account_disabled"
+            error_message = f"账号已被禁用: {exc}"
+            logger.warning("OAuth callback rejected: account disabled")
+        else:
+            error_code = "callback_failed"
+            error_message = f"OAuth回调失败: {exc}"
+            logger.exception("OAuth callback failed")
+
         # Rollback any pending transaction before logging the failure
         await db.rollback()
         try:
@@ -313,13 +327,13 @@ async def auth_callback(
                 login_type="feishu_sso",
                 ip_address=ip_address,
                 user_agent=user_agent,
-                error_message=f"OAuth回调失败: {exc}",
+                error_message=error_message,
             )
             await db.commit()
         except Exception as log_exc:
             logger.error("Failed to record login failure: %s", log_exc)
         return RedirectResponse(
-            url=f"{frontend_url}/login?error=callback_failed",
+            url=f"/login?error={error_code}",
             status_code=302,
         )
 
@@ -990,6 +1004,14 @@ async def update_user_management(
         user.department = payload.department
     if payload.position is not None:
         user.position = payload.position
+
+    # 停用超管账号受「至少保留 2 名生效超管」约束（与删除、撤销授权同口径）
+    status_changed = payload.status is not None and payload.status != user.status
+    if status_changed and payload.status == "disabled":
+        from app.platform.permission.public_api import assert_superadmin_disable_allowed
+
+        await assert_superadmin_disable_allowed(db, user.id)
+
     if payload.status is not None:
         user.status = payload.status
 
@@ -1007,6 +1029,20 @@ async def update_user_management(
         },
     )
     await db.commit()
+
+    # 状态变更后立即失效权限缓存；停用还要吊销现有会话，避免旧 token 继续按原权限放行。
+    if status_changed:
+        from app.platform.permission.public_api import evict_user_permission_cache
+
+        if payload.status == "disabled":
+            from app.platform.identity.session import revoke_all_user_sessions
+
+            try:
+                await revoke_all_user_sessions(user.id)
+            except Exception:
+                logger.warning("停用账号后吊销会话失败 user_id=%s", user.id, exc_info=True)
+        await evict_user_permission_cache(user.id)
+
     return build_response(data=UserManagementItem.model_validate(user).model_dump())
 
 
@@ -1027,11 +1063,17 @@ async def batch_update_user_status(
     状态与目标一致的条目按幂等处理（计入成功，不写审计）。
     """
     from app.platform.identity.service import SYSTEM_ADMIN_USERNAME
-    from app.platform.permission.public_api import guard_manage_target
+    from app.platform.permission.public_api import (
+        assert_superadmin_disable_allowed,
+        evict_user_permission_cache,
+        guard_manage_target,
+    )
 
     repo = UserRepository()
     succeeded: list[uuid.UUID] = []
     failed: list[UserBatchFailure] = []
+    changed_user_ids: set[uuid.UUID] = set()
+    disabled_user_ids: set[uuid.UUID] = set()
 
     # dict.fromkeys 去重且保持顺序：前端重复选同一条不应重复处理
     for user_id in dict.fromkeys(payload.user_ids):
@@ -1058,9 +1100,24 @@ async def batch_update_user_status(
             succeeded.append(user.id)
             continue
 
+        # 批量停用同样受「至少保留 2 名生效超管」约束
+        if payload.status == "disabled" and user.status != "disabled":
+            try:
+                await assert_superadmin_disable_allowed(db, user.id)
+            except ForbiddenException as exc:
+                failed.append(
+                    UserBatchFailure(id=user.id, username=user.username, reason=exc.message or "无法停用该账号"),
+                )
+                continue
+
         old_status = user.status
         user.status = payload.status
         user.updated_by = ctx.user.id
+        # flush 让同批后续的「至少保留 2 名超管」判断能看到本次停用
+        await db.flush()
+        changed_user_ids.add(user.id)
+        if payload.status == "disabled":
+            disabled_user_ids.add(user.id)
         await record_audit_log(
             db,
             user=ctx.user,
@@ -1073,6 +1130,18 @@ async def batch_update_user_status(
         succeeded.append(user.id)
 
     await db.commit()
+
+    # 状态变更后立即失效权限缓存；停用还要吊销现有会话，避免旧 token 继续按原权限放行。
+    for user_id in changed_user_ids:
+        if user_id in disabled_user_ids:
+            from app.platform.identity.session import revoke_all_user_sessions
+
+            try:
+                await revoke_all_user_sessions(user_id)
+            except Exception:
+                logger.warning("批量停用账号后吊销会话失败 user_id=%s", user_id, exc_info=True)
+        await evict_user_permission_cache(user_id)
+
     return build_response(data=UserBatchStatusData(succeeded=succeeded, failed=failed).model_dump())
 
 
@@ -1096,7 +1165,7 @@ async def batch_delete_users(
     from app.platform.identity.service import SYSTEM_ADMIN_USERNAME
     from app.platform.identity.session import revoke_all_user_sessions
     from app.platform.permission.public_api import (
-        list_superuser_user_ids,
+        assert_superadmin_removal_allowed,
         revoke_all_user_grants,
         user_is_superuser,
     )
@@ -1122,11 +1191,10 @@ async def batch_delete_users(
             failed.append(UserBatchFailure(id=user.id, username=user.username, reason="系统内置账号不允许删除"))
             continue
 
-        super_ids = await list_superuser_user_ids(db)
-        if user.id in super_ids and len(super_ids) <= 1:
-            failed.append(
-                UserBatchFailure(id=user.id, username=user.username, reason="不能删除最后一个超级管理员账号"),
-            )
+        try:
+            await assert_superadmin_removal_allowed(db, user.id)
+        except ForbiddenException as exc:
+            failed.append(UserBatchFailure(id=user.id, username=user.username, reason=str(exc)))
             continue
 
         old_value = {
@@ -1184,12 +1252,16 @@ async def delete_user_management(
 
     账号名不会被释放——`uq_identity_users_username` 不区分 `is_deleted`，删除后同名
     账号无法重建；如需复用名称，请另建新名（或后续做改名迁移）。
+
+    软删行仍占用飞书身份唯一约束，因此本人再次飞书登录时会**原地复活该行**
+    （`auth_source=feishu` 时）：复活后零权限，需管理员重新授予角色。要彻底阻断
+    登录请改用「禁用」，不要用「删除」。
     """
     from app.core.exceptions import NotFoundException
     from app.platform.identity.service import SYSTEM_ADMIN_USERNAME
     from app.platform.identity.session import revoke_all_user_sessions
     from app.platform.permission.public_api import (
-        list_superuser_user_ids,
+        assert_superadmin_removal_allowed,
         revoke_all_user_grants,
         user_is_superuser,
     )
@@ -1207,9 +1279,7 @@ async def delete_user_management(
     if (user.username or "").strip().lower() == SYSTEM_ADMIN_USERNAME.lower():
         raise ForbiddenException("系统内置账号不允许删除")
 
-    super_ids = await list_superuser_user_ids(db)
-    if user.id in super_ids and len(super_ids) <= 1:
-        raise ForbiddenException("不能删除最后一个超级管理员账号")
+    await assert_superadmin_removal_allowed(db, user.id)
 
     old_value = {
         "username": user.username,
@@ -1491,11 +1561,9 @@ async def unbind_user_feishu(
 
     delete_account = user.auth_source == "feishu"
     if delete_account:
-        from app.platform.permission.public_api import list_superuser_user_ids
+        from app.platform.permission.public_api import assert_superadmin_removal_allowed
 
-        super_ids = await list_superuser_user_ids(db)
-        if user.id in super_ids and len(super_ids) <= 1:
-            raise ForbiddenException("不能删除最后一个超级管理员账号")
+        await assert_superadmin_removal_allowed(db, user.id)
 
     await unbind_feishu_user(
         db,

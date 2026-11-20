@@ -419,7 +419,15 @@ const qualityRoutes: RouteCase[] = [
   { path: '/quality/deviation/new', module: 'quality', kind: 'normal', expected: heading('新建偏差') },
   { path: '/quality/calculator', module: 'quality', kind: 'normal', expected: heading('计算器') },
   { path: '/quality/cpv', module: 'quality', kind: 'normal', expected: heading('CPV') },
-  { path: '/quality/department-contacts', module: 'quality', kind: 'normal', expected: heading('部门联系人配置') },
+  // 部门联系人已并入「质量管理 · 模块配置」页签，旧地址只做重定向（页签内容由 /quality/settings 断言覆盖）
+  {
+    path: '/quality/department-contacts',
+    module: 'quality',
+    kind: 'redirect',
+    expectedPath: '/quality/settings',
+    expected: heading('模块配置 · 质量管理'),
+    skipContentCheck: true,
+  },
   { path: '/quality/doc-check', module: 'quality', kind: 'normal', expected: heading('审核管理') },
   { path: '/quality/fqc', module: 'quality', kind: 'normal', expected: heading('FQC'), expectData: antdTableData, expectFetch: 'server-action' },
   {

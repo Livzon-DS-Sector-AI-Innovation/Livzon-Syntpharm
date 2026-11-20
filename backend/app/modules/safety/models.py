@@ -1343,6 +1343,7 @@ class SpecialOperationPersonnel(BaseModel):
             unique=True,
             postgresql_where=text("is_deleted = false"),
         ),
+        Index("ix_safety_special_op_personnel_profile_id", "profile_id"),
         {"schema": "safety"},
     )
 

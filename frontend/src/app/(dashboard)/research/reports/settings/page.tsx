@@ -28,7 +28,7 @@ export default async function ReportGenSettingsPage() {
   let settings: ModuleSetting[] = []
   let llmConfigs: LLMConfig[] = []
   try {
-    settings = (await getModuleSettings('research')).data ?? []
+    settings = (await getModuleSettings('research')) ?? []
   } catch {
     settings = []
   }

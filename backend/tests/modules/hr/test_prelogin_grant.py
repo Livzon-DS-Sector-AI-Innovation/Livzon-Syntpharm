@@ -76,3 +76,38 @@ async def test_ensure_identity_user_rejects_unknown_profile(db_session: AsyncSes
 
     with pytest.raises(AppException):
         await ensure_identity_user(db_session, uuid.uuid4())
+
+
+async def test_ensure_identity_user_revives_soft_deleted_account(
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """软删行仍占用唯一约束：预授权时必须复活原账号，而不是新建（会撞 employee_no）。"""
+
+    async def _fake_revoke(db: AsyncSession, user_id: object) -> int:
+        return 0
+
+    monkeypatch.setattr("app.platform.permission.public_api.revoke_all_user_grants", _fake_revoke)
+
+    deleted = User(
+        name="被删员工",
+        username="YTH9PRELOGIN",
+        feishu_open_id="ou-grant-revive",
+        employee_no="E-PRELOGIN-1",
+        status="disabled",
+        auth_source="feishu",
+        is_deleted=True,
+    )
+    db_session.add(deleted)
+    profile = _profile("ou-grant-revive", "HR 姓名")
+    db_session.add(profile)
+    await db_session.flush()
+
+    user = await ensure_identity_user(db_session, profile.id)
+    await db_session.flush()
+
+    assert user.id == deleted.id
+    assert user.is_deleted is False
+    assert user.status == "active"
+    assert user.employee_no == "E-PRELOGIN-1"
+    assert len(await _users_for(db_session, "ou-grant-revive")) == 1

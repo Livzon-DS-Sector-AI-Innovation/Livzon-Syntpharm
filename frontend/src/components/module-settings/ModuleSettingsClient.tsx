@@ -13,9 +13,7 @@ import { batchUpdateModuleSettings, getModuleSettings } from '@/actions/module-s
 import type { ModuleSetting } from '@/types/module-settings'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
-import { SettingsListCard } from '@/components/settings/SettingsListCard'
-import { SettingsPageHeader } from '@/components/settings/SettingsPageHeader'
-import { BatchResultModal, type BatchResult } from '@/components/settings/BatchOperations'
+import { BatchResultModal, SettingsListCard, SettingsPageHeader, type BatchResult } from '@/components/settings'
 import BatchToggleModal from './BatchToggleModal'
 import RuntimeSettingGroups from './RuntimeSettingGroups'
 import {
@@ -81,7 +79,7 @@ export default function ModuleSettingsClient({
     queryKey: ['module-settings', moduleCode],
     queryFn: async () => {
       const res = await getModuleSettings(moduleCode)
-      return res.data || []
+      return res || []
     },
   })
 
@@ -105,8 +103,7 @@ export default function ModuleSettingsClient({
     if (targets.length === 0) return
     setBatchLoading(true)
     try {
-      const response = await batchUpdateModuleSettings(buildBatchPayload(targets, value))
-      const data = response.data
+      const data = await batchUpdateModuleSettings(buildBatchPayload(targets, value))
       setResult({
         succeeded: data.succeeded,
         failed: data.failed.map((item) => ({
@@ -140,6 +137,7 @@ export default function ModuleSettingsClient({
 
       <SettingsListCard
         title="运行时配置"
+        className="settings-region-card"
         extra={
           <span className="text-[12px] text-[var(--color-steel)]">
             共 {settings.length} 项
@@ -244,7 +242,7 @@ export default function ModuleSettingsClient({
         )}
       </SettingsListCard>
 
-      <div className="mt-2 flex items-center gap-2 text-[12px] text-[var(--color-steel)]">
+      <div className="mt-4 flex items-center gap-2 text-[12px] text-[var(--color-steel)]">
         <Tag className="!mr-0">提示</Tag>
         开关类配置保存后立即生效；密钥类配置只显示掩码，修改时填写新值即可整体替换。
       </div>

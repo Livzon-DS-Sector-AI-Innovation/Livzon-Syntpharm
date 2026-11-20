@@ -12,7 +12,7 @@ import { PersonnelDrawer } from './PersonnelDrawer'
 import { PersonnelCategoryDrawer } from './PersonnelCategoryDrawer'
 import type { Personnel } from '@/types/equipment-personnel'
 
-export function PersonnelPage() {
+export function PersonnelPage({ embedded = false }: { embedded?: boolean } = {}) {
   const { message } = App.useApp()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<'personnel' | 'roles'>('personnel')
@@ -127,35 +127,49 @@ export function PersonnelPage() {
 
   return (
     <div style={{ paddingBottom: 40 }}>
-      {/* 页面头部 */}
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{
-          fontSize: 22, fontWeight: 600, color: '#1a1a1a',
-          margin: 0, marginBottom: 4, lineHeight: 1.3,
-        }}>
-          人员配置
-        </h2>
-        <p style={{ fontSize: 14, color: '#787671', margin: 0, lineHeight: 1.5 }}>
-          角色权限管理 · 人员分配 · 分类约束 · 飞书同步
-        </p>
-      </div>
+      {/* 页面头部：嵌入模块配置页签时隐藏（外层已有页头） */}
+      {!embedded && (
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{
+            fontSize: 22, fontWeight: 600, color: '#1a1a1a',
+            margin: 0, marginBottom: 4, lineHeight: 1.3,
+          }}>
+            人员配置
+          </h2>
+          <p style={{ fontSize: 14, color: '#787671', margin: 0, lineHeight: 1.5 }}>
+            角色权限管理 · 人员分配 · 分类约束 · 飞书同步
+          </p>
+        </div>
+      )}
 
-      {/* Tab 内容包进白色卡片 */}
-      <div style={{
-        background: '#ffffff',
-        borderRadius: 12,
-        border: '1px solid #e5e3df',
-        padding: '4px 24px 24px',
-      }}>
+      {/* Tab 内容包进区域卡：嵌入模块配置页签时用统一区域样式，旧页面保持原样 */}
+      <div
+        className={embedded ? 'settings-region' : undefined}
+        style={
+          embedded
+            ? undefined
+            : {
+                background: '#ffffff',
+                borderRadius: 12,
+                border: '1px solid #e5e3df',
+                padding: '4px 24px 24px',
+              }
+        }
+      >
         <Tabs
           activeKey={activeTab}
           onChange={key => setActiveTab(key as 'personnel' | 'roles')}
           items={tabItems}
-          tabBarStyle={{
-            borderBottom: '1px solid #ede9e4',
-            marginBottom: 20,
-            paddingLeft: 0,
-          }}
+          className={embedded ? 'settings-region-tabs' : undefined}
+          tabBarStyle={
+            embedded
+              ? undefined
+              : {
+                  borderBottom: '1px solid #ede9e4',
+                  marginBottom: 20,
+                  paddingLeft: 0,
+                }
+          }
           tabBarGutter={32}
         />
       </div>
