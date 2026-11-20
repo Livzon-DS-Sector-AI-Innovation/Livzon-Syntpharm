@@ -22,6 +22,7 @@ import { useSidebarStore } from "@/stores/sidebar"
 import { MenuLockLabel } from "./MenuLockLabel"
 import { TopNavSearch } from "./TopNavSearch"
 import { TopNavNotifications } from "./TopNavNotifications"
+import { TopNavModuleTabs } from "./TopNavModuleTabs"
 
 interface TopNavProps {
   onMenuClick?: () => void
@@ -109,49 +110,7 @@ export function TopNav({ onMenuClick, menus, userName, avatarUrl }: TopNavProps)
       </Dropdown>
 
       {/* Module Tabs（仅桌面显示；移动端模块切换走导航抽屉） */}
-      <nav className="hidden md:flex items-center gap-0.5 flex-1 overflow-x-auto scrollbar-hide h-full ml-8">
-        <Link
-          href="/home"
-          className={`
-            flex items-center gap-1.5 px-3 h-full text-[14px] font-medium transition-colors whitespace-nowrap relative
-            ${activeModule === "home"
-              ? "text-[var(--color-ink)]"
-              : "text-[var(--color-steel)] hover:text-[var(--color-charcoal)]"
-            }
-          `}
-        >
-          <HomeOutlined className="w-4 h-4" />
-          首页
-          {activeModule === "home" && (
-            <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-[var(--color-primary)] rounded-full" />
-          )}
-        </Link>
-        {menus.map((mod) => {
-          const isActive = activeModule === mod.key
-          // 无权限模块：灰显 + 锁，但仍可点击（模块 layout 守卫渲染无权限页）
-          const tone = mod.noAccess
-            ? "text-[var(--color-steel)] opacity-55 hover:opacity-70"
-            : isActive
-              ? "text-[var(--color-ink)]"
-              : "text-[var(--color-steel)] hover:text-[var(--color-charcoal)]"
-          return (
-            <Link
-              key={mod.key}
-              href={mod.path}
-              className={`
-                flex items-center gap-1.5 px-3 h-full text-[14px] font-medium transition-colors whitespace-nowrap relative
-                ${tone}
-              `}
-            >
-              <ModuleIcon name={mod.icon} className="w-4 h-4" />
-              {mod.noAccess ? <MenuLockLabel label={mod.label} /> : mod.label}
-              {isActive && !mod.noAccess && (
-                <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-[var(--color-primary)] rounded-full" />
-              )}
-            </Link>
-          )
-        })}
-      </nav>
+      <TopNavModuleTabs menus={menus} activeModule={activeModule} />
 
       {/* Right Section：移动端导航条隐藏后没有 flex-1 撑开，用 ml-auto 把图标推到最右，
           否则铃铛/头像会停在中间，下拉弹层也右对齐不了视口 */}
