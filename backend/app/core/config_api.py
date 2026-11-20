@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config_model import ModuleSetting
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
-from app.core.exceptions import BadRequestException
+from app.core.exceptions import BadRequestException, NotFoundException
 from app.core.response import ApiResponse
 from app.platform.identity.public_api import resolve_user_names
 from app.shared.schemas import PaginationMeta
@@ -327,7 +327,7 @@ async def get_one(
     setting = result.scalar_one_or_none()
 
     if not setting:
-        return ApiResponse(code=404, message="Setting not found")
+        raise NotFoundException("配置项")
 
     return ApiResponse(data=_to_response(setting, await _resolve_user_name(db, setting.updated_by)))
 
@@ -356,7 +356,7 @@ async def put(
     setting = result.scalar_one_or_none()
 
     if not setting:
-        return ApiResponse(code=404, message="Setting not found")
+        raise NotFoundException("配置项")
 
     if setting.is_secret and not data.value.strip():
         # 密钥项留空 = 不修改，避免前端因掩码回填而误清空凭证
@@ -431,7 +431,7 @@ async def delete(
     setting = result.scalar_one_or_none()
 
     if not setting:
-        return ApiResponse(code=404, message="Setting not found")
+        raise NotFoundException("配置项")
 
     setting.is_deleted = True
     setting.updated_by = current_user.id
