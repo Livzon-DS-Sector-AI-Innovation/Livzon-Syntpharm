@@ -104,6 +104,7 @@ async def update_calibration_plan(
     plan_id: uuid.UUID,
     data: CalibrationPlanUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:calibration:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     plan = await service.update_calibration_plan(db, plan_id, data)

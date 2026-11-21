@@ -1,4 +1,4 @@
-import type { components } from '@/types/generated/schema'
+import type { components, operations } from '@/types/generated/schema'
 import type {
   MaintenancePlan as GeneratedMaintenancePlan,
   MaintenancePlanListResponse as GeneratedMaintenancePlanListResponse,
@@ -20,11 +20,7 @@ export type MaintenancePlanStatus = '启用' | '停用' | '已完成'
 /** 表单下拉用的取值集合（UI 类型，不是接口契约） */
 export type FrequencyUnit = '天' | '周' | '月' | '年'
 
-export interface MaintenancePlanFilters {
-  equipment_id?: string
-  category_id?: string
-  status?: MaintenancePlanStatus
-  keyword?: string
-  page?: number
-  page_size?: number
-}
+/** 列表查询参数：直接取生成契约，避免手写字段与后端漂移。 */
+export type MaintenancePlanFilters = NonNullable<
+  operations['list_maintenance_plans_api_v1_equipment_maintenance_plans__get']['parameters']['query']
+>

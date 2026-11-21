@@ -1,5 +1,5 @@
 import type { components, operations } from '@/types/generated/schema'
-import { apiGet, apiGetWithMeta } from '../client'
+import { apiGet, apiGetWithMeta, fetchApi } from '../client'
 
 import {
   Employee,
@@ -53,19 +53,11 @@ export async function fetchEmployees(
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
 
-  const res = await fetch(`${API_BASE}/hr/employees?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取员工列表失败')
-  return res.json()
+  return fetchApi<EmployeeListResponse>(`${API_BASE}/hr/employees?${searchParams.toString()}`, { cache: 'no-store' })
 }
 
 export async function fetchEmployeeById(id: string): Promise<EmployeeResponse> {
-  const res = await fetch(`${API_BASE}/hr/employees/${id}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取员工详情失败')
-  return res.json()
+  return fetchApi<EmployeeResponse>(`${API_BASE}/hr/employees/${id}`, { cache: 'no-store' })
 }
 
 export async function fetchEmployeeByNumber(employeeNumber: string): Promise<Employee> {
@@ -101,11 +93,7 @@ export async function fetchDepartments(
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 100))
 
-  const res = await fetch(`${API_BASE}/hr/departments?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取部门列表失败')
-  return res.json()
+  return fetchApi<DepartmentListResponse>(`${API_BASE}/hr/departments?${searchParams.toString()}`, { cache: 'no-store' })
 }
 
 export async function fetchOnboardingRecords(
@@ -153,11 +141,7 @@ export async function fetchDepartureRecords(
 // ─── Feishu Sync APIs ───
 
 export async function fetchSyncStatus(): Promise<SyncStatusResponse> {
-  const res = await fetch(`${API_BASE}/hr/employees/sync-status`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取同步状态失败')
-  return res.json()
+  return fetchApi<SyncStatusResponse>(`${API_BASE}/hr/employees/sync-status`, { cache: 'no-store' })
 }
 
 export async function fetchTrainingPlans(
@@ -172,19 +156,11 @@ export async function fetchTrainingPlans(
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
 
-  const res = await fetch(`${API_BASE}/hr/training-plans?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取培训计划列表失败')
-  return res.json()
+  return fetchApi<TrainingPlanListResponse>(`${API_BASE}/hr/training-plans?${searchParams.toString()}`, { cache: 'no-store' })
 }
 
 export async function fetchTrainingPlanById(id: string): Promise<TrainingPlanResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-plans/${id}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取培训计划详情失败')
-  return res.json()
+  return fetchApi<TrainingPlanResponse>(`${API_BASE}/hr/training-plans/${id}`, { cache: 'no-store' })
 }
 
 export async function fetchTrainingPlanSops(
@@ -201,19 +177,11 @@ export async function fetchTrainingPlanSops(
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
 
-  const res = await fetch(`${API_BASE}/hr/training-plan-sops?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取培训计划SOP列表失败')
-  return res.json()
+  return fetchApi<TrainingPlanSopListResponse>(`${API_BASE}/hr/training-plan-sops?${searchParams.toString()}`, { cache: 'no-store' })
 }
 
 export async function fetchTrainingPlanSopById(id: string): Promise<TrainingPlanSopResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-plan-sops/${id}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取培训计划SOP详情失败')
-  return res.json()
+  return fetchApi<TrainingPlanSopResponse>(`${API_BASE}/hr/training-plan-sops/${id}`, { cache: 'no-store' })
 }
 
 export async function fetchTrainingRecords(
@@ -232,19 +200,11 @@ export async function fetchTrainingRecords(
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
 
-  const res = await fetch(`${API_BASE}/hr/training-records?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取培训记录列表失败')
-  return res.json()
+  return fetchApi<TrainingRecordListResponse>(`${API_BASE}/hr/training-records?${searchParams.toString()}`, { cache: 'no-store' })
 }
 
 export async function fetchTrainingRecordById(id: string): Promise<TrainingRecordResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-records/${id}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取培训记录详情失败')
-  return res.json()
+  return fetchApi<TrainingRecordResponse>(`${API_BASE}/hr/training-records/${id}`, { cache: 'no-store' })
 }
 
 export async function fetchTrainingAssessments(
@@ -261,19 +221,11 @@ export async function fetchTrainingAssessments(
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
 
-  const res = await fetch(`${API_BASE}/hr/training-assessments?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取培训考核列表失败')
-  return res.json()
+  return fetchApi<TrainingAssessmentListResponse>(`${API_BASE}/hr/training-assessments?${searchParams.toString()}`, { cache: 'no-store' })
 }
 
 export async function fetchTrainingAssessmentById(id: string): Promise<TrainingAssessmentResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-assessments/${id}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取培训考核详情失败')
-  return res.json()
+  return fetchApi<TrainingAssessmentResponse>(`${API_BASE}/hr/training-assessments/${id}`, { cache: 'no-store' })
 }
 
 export async function fetchTrainingApprovals(
@@ -291,11 +243,7 @@ export async function fetchTrainingApprovals(
   searchParams.set('page_size', String(params?.page_size || 20))
 
   try {
-    const res = await fetch(`${API_BASE}/hr/training-approvals?${searchParams.toString()}`, {
-      cache: 'no-store',
-    })
-    if (!res.ok) throw new Error('获取培训审批列表失败')
-    return res.json()
+    return fetchApi<TrainingApprovalListResponse>(`${API_BASE}/hr/training-approvals?${searchParams.toString()}`, { cache: 'no-store' })
   } catch {
     return {
       code: 500,
@@ -307,11 +255,7 @@ export async function fetchTrainingApprovals(
 }
 
 export async function fetchTrainingApprovalById(id: string): Promise<TrainingApprovalResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-approvals/${id}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取培训审批详情失败')
-  return res.json()
+  return fetchApi<TrainingApprovalResponse>(`${API_BASE}/hr/training-approvals/${id}`, { cache: 'no-store' })
 }
 
 export { fetchTrainingPlanSops as fetchTrainingSops }
@@ -324,13 +268,9 @@ export interface HrJobState {
 
 /** 轮询 HR 后台任务状态（简历解析/出题/流动分析共用 GET /hr/jobs/{job_id}）。 */
 export async function fetchHrJob(jobId: string): Promise<HrJobState> {
-  const res = await fetch(`${API_BASE}/hr/jobs/${jobId}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('查询后台任务失败')
-  const json = (await res.json()) as { data?: HrJobState }
-  if (!json.data) throw new Error('查询后台任务失败：响应缺少 data')
-  return json.data
+  const data = await apiGet<HrJobState | undefined>(`${API_BASE}/hr/jobs/${jobId}`, { cache: 'no-store' })
+  if (!data) throw new Error('查询后台任务失败：响应缺少 data')
+  return data
 }
 
 export async function fetchOnboardingTrainingRecord(
@@ -411,21 +351,13 @@ export async function fetchTrainingLedgers(
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 100))
 
-  const res = await fetch(`${API_BASE}/hr/training-ledgers?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取培训台账列表失败')
-  return res.json()
+  return fetchApi<TrainingLedgerListResponse>(`${API_BASE}/hr/training-ledgers?${searchParams.toString()}`, { cache: 'no-store' })
 }
 
 // ─── TrainingLedgerPage APIs ───
 
 export async function fetchTrainingLedgerPages(): Promise<TrainingLedgerPageListResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-ledgers/pages`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取培训台账页面列表失败')
-  return res.json()
+  return fetchApi<TrainingLedgerPageListResponse>(`${API_BASE}/hr/training-ledgers/pages`, { cache: 'no-store' })
 }
 
 export async function exportTrainingLedger(employeeNumber: string): Promise<void> {
@@ -463,27 +395,15 @@ export async function fetchAnnualTrainingPlans(
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 100))
 
-  const res = await fetch(`${API_BASE}/hr/annual-training-plans?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取年度培训计划列表失败')
-  return res.json()
+  return fetchApi<AnnualTrainingPlanListResponse>(`${API_BASE}/hr/annual-training-plans?${searchParams.toString()}`, { cache: 'no-store' })
 }
 
 export async function fetchAnnualTrainingPlanById(id: string): Promise<TrainingPlanResponse> {
-  const res = await fetch(`${API_BASE}/hr/annual-training-plans/${id}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取年度培训计划详情失败')
-  return res.json()
+  return fetchApi<TrainingPlanResponse>(`${API_BASE}/hr/annual-training-plans/${id}`, { cache: 'no-store' })
 }
 
 export async function fetchPlanItems(id: string): Promise<AnnualTrainingPlanItemListResponse> {
-  const res = await fetch(`${API_BASE}/hr/annual-training-plans/${id}/items`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取年度计划明细失败')
-  return res.json()
+  return fetchApi<AnnualTrainingPlanItemListResponse>(`${API_BASE}/hr/annual-training-plans/${id}/items`, { cache: 'no-store' })
 }
 
 // ─── 招聘候选人 ───
@@ -498,11 +418,7 @@ export async function fetchCandidates(params?: CandidateListParams): Promise<Can
   searchParams.set('page', String(params?.page || 1))
   searchParams.set('page_size', String(params?.page_size || 20))
 
-  const res = await fetch(`${API_BASE}/hr/candidates?${searchParams.toString()}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取候选人列表失败')
-  return res.json()
+  return fetchApi<CandidateListResponse>(`${API_BASE}/hr/candidates?${searchParams.toString()}`, { cache: 'no-store' })
 }
 
 // ─── SOP Catalog APIs ───
@@ -516,9 +432,7 @@ export async function fetchSopCatalog(params?: {
   if (params?.keyword) sp.set('keyword', params.keyword)
   sp.set('page', String(params?.page || 1))
   sp.set('page_size', String(params?.page_size || 50))
-  const res = await fetch(`${API_BASE}/hr/sop-catalog?${sp.toString()}`, { cache: 'no-store' })
-  if (!res.ok) throw new Error('获取SOP目录失败')
-  return res.json()
+  return fetchApi<SopCatalogListResponse>(`${API_BASE}/hr/sop-catalog?${sp.toString()}`, { cache: 'no-store' })
 }
 
 export async function fetchCandidateById(_id: string): Promise<GenericDataResponse> {
@@ -529,19 +443,11 @@ export async function fetchCandidateById(_id: string): Promise<GenericDataRespon
 // ─── Training Select Task APIs ───
 
 export async function fetchTrainingSelectTaskResult(token: string): Promise<GenericDataResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-select-tasks/${token}/result`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取选择结果失败')
-  return res.json()
+  return fetchApi<GenericDataResponse>(`${API_BASE}/hr/training-select-tasks/${token}/result`, { cache: 'no-store' })
 }
 
 export async function fetchTrainingSelectTasks(_sessionId?: string): Promise<GenericDataListResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-select-tasks`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取选择任务列表失败')
-  return res.json()
+  return fetchApi<GenericDataListResponse>(`${API_BASE}/hr/training-select-tasks`, { cache: 'no-store' })
 }
 
 // ─── Prejob Template APIs ───
@@ -551,48 +457,27 @@ export async function fetchPrejobTemplate(
   factory: 'old' | 'new' = 'old'
 ): Promise<PrejobTemplateResponse> {
   const params = new URLSearchParams({ department, factory })
-  const res = await fetch(
-    `${API_BASE}/hr/prejob-training-templates?${params.toString()}`,
-    { cache: 'no-store' }
-  )
-  if (!res.ok) throw new Error('获取岗前培训计划模板失败')
-  return res.json()
+  return fetchApi<PrejobTemplateResponse>(`${API_BASE}/hr/prejob-training-templates?${params.toString()}`, { cache: 'no-store' })
 }
 
 // ─── Additional Training Select Task APIs ───
 
 export async function fetchTrainingSelectTask(token: string): Promise<GenericDataResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-select-tasks/${token}`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取选择任务失败')
-  return res.json()
+  return fetchApi<GenericDataResponse>(`${API_BASE}/hr/training-select-tasks/${token}`, { cache: 'no-store' })
 }
 
 export async function fetchTrainingSessionSelectTasks(sessionId: string): Promise<GenericDataListResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-sessions/${sessionId}/select-tasks`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取培训会话选择任务失败')
-  return res.json()
+  return fetchApi<GenericDataListResponse>(`${API_BASE}/hr/training-sessions/${sessionId}/select-tasks`, { cache: 'no-store' })
 }
 
 // ─── Training Team & Specialist APIs ───
 
 export async function fetchTrainingTeams(_factory?: string): Promise<GenericDataListResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-teams`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取培训团队列表失败')
-  return res.json()
+  return fetchApi<GenericDataListResponse>(`${API_BASE}/hr/training-teams`, { cache: 'no-store' })
 }
 
 export async function fetchTrainingSpecialists(_factory?: string): Promise<GenericDataListResponse> {
-  const res = await fetch(`${API_BASE}/hr/training-specialists`, {
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error('获取培训专家列表失败')
-  return res.json()
+  return fetchApi<GenericDataListResponse>(`${API_BASE}/hr/training-specialists`, { cache: 'no-store' })
 }
 
 // ── 员工档案（飞书通讯录只读镜像，ticket #198）──

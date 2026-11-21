@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers'
 import type { LLMConfig, LLMConfigFormData, LLMConfigUpdate, FeishuConfigUpsert } from '@/types/settings'
 import type { ApiResponse } from '@/types/common'
+import type { components } from '@/types/generated/schema'
 import {
   getLLMConfigs as getLLMConfigsServer,
   getLLMConfig as getLLMConfigServer,
@@ -55,7 +56,7 @@ export async function deleteLLMConfig(id: string) {
 
 export async function testLLMConnection() {
   const token = await getAuthToken()
-  return wrap<{ status: string; detail: string }>(await testLLMConnectionServer(token))
+  return wrap<components['schemas']['LLMHealthResult']>(await testLLMConnectionServer(token))
 }
 
 export async function getLivzonFeishuConfig() {

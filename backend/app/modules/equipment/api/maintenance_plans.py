@@ -104,6 +104,7 @@ async def update_maintenance_plan(
     plan_id: uuid.UUID,
     data: MaintenancePlanUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:maintenance-plan:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     plan = await service.update_maintenance_plan(db, plan_id, data)

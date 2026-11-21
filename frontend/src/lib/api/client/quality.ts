@@ -1,6 +1,7 @@
 import type { ModuleInfo } from '@/types'
 import type { components } from '@/types/generated/schema'
 import type {
+  CapaListQuery,
   DepartmentContactListData,
   DepartmentLeaderData,
   DepartmentMemberOption,
@@ -27,13 +28,10 @@ export async function fetchCapa(id: string): Promise<CapaApiResponse> {
   return apiGet<CapaApiResponse>(`/api/v1/quality/capas/${id}`)
 }
 
-export async function fetchCapas(params?: {
-  source?: string
-  category?: string
-  keyword?: string
-  page?: number
-  page_size?: number
-}): Promise<{ items: CapaResponse[]; total: number; page: number; page_size: number }> {
+/** CAPA 分页结果：形状由 apiFetchPaginated 统一决定，不在这里手写字段。 */
+export type CapaListPage = Awaited<ReturnType<typeof apiFetchPaginated<CapaResponse>>>
+
+export async function fetchCapas(params?: CapaListQuery): Promise<CapaListPage> {
   const query = params
     ? Object.entries(params)
         .filter(([_, v]) => v !== undefined && v !== null && v !== '')

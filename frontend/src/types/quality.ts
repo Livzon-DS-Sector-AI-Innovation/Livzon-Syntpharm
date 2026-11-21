@@ -569,6 +569,9 @@ export type DeviationCapaProposalInput = components['schemas']['CapaProposalItem
 export type DeviationLedgerOptionResult = components['schemas']['OptionListData']
 export type DeviationBatchResult =
   components['schemas']['app__modules__quality__qms__deviation_ledger_schemas__BatchResultData']
+/** CAPA 列表查询参数：直接取生成契约，避免手写 query 类型与后端漂移。 */
+export type CapaListQuery = NonNullable<operations['list_capas_api_v1_quality_capas_get']['parameters']['query']>
+
 export type DeviationDeleteResult = components['schemas']['DeleteResultData']
 export type DeviationMemberOptionResult = components['schemas']['MemberOptionListData']
 export type DeviationJobState = components['schemas']['AsyncJobState']

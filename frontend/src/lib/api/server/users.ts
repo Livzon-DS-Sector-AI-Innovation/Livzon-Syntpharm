@@ -1,5 +1,5 @@
 import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
-import type { components } from '@/types/generated/schema'
+import type { components, operations } from '@/types/generated/schema'
 import type {
   ChangePasswordRequest,
   LocalUserCreate,
@@ -17,16 +17,13 @@ function auth(token?: string): Record<string, string> | undefined {
   return token ? { Authorization: `Bearer ${token}` } : undefined
 }
 
-export interface UserListQuery {
-  keyword?: string
-  status?: string
-  auth_source?: string
-  unbound_only?: boolean
-  must_change_password?: boolean
-  // 分页沿用后端既有的 offset/limit 契约（不是 page/page_size）
-  offset?: number
-  limit?: number
-}
+/**
+ * 用户列表查询参数：直接取生成契约，避免手写字段与后端漂移。
+ * 分页沿用后端既有的 offset/limit 契约（不是 page/page_size）。
+ */
+export type UserListQuery = NonNullable<
+  operations['list_users_management_api_v1_identity_users_get']['parameters']['query']
+>
 
 export async function getUsers(params?: UserListQuery, token?: string) {
   const search = new URLSearchParams()
