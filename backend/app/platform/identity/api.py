@@ -1160,11 +1160,15 @@ async def batch_delete_users(
     """批量删除账号（单次最多 100 个）。
 
     逐条复用单条删除的全部护栏：仅超级管理员、不能删自己、不能删系统内置账号、
-    不能删最后一个超级管理员。失败条目不影响其他条目，结果里返回失败原因。
+    不能删引导账号、不能删最后一个超级管理员。失败条目不影响其他条目，结果里返回失败原因。
     删除动作与单条删除一致：软删除 + 清空角色授权 + 审计；会话在提交后吊销，
     Redis 不可用时只降级为「会话未吊销」，不回滚已完成的删除。
     """
-    from app.platform.identity.service import SYSTEM_ADMIN_USERNAME
+    from app.platform.identity.service import (
+        BOOTSTRAP_ACCOUNT_DELETE_FORBIDDEN,
+        SYSTEM_ADMIN_USERNAME,
+        is_bootstrap_username,
+    )
     from app.platform.identity.session import revoke_all_user_sessions
     from app.platform.permission.public_api import (
         assert_superadmin_removal_allowed,
@@ -1191,6 +1195,15 @@ async def batch_delete_users(
             continue
         if (user.username or "").strip().lower() == SYSTEM_ADMIN_USERNAME.lower():
             failed.append(UserBatchFailure(id=user.id, username=user.username, reason="系统内置账号不允许删除"))
+            continue
+        if is_bootstrap_username(user.username):
+            failed.append(
+                UserBatchFailure(
+                    id=user.id,
+                    username=user.username,
+                    reason=BOOTSTRAP_ACCOUNT_DELETE_FORBIDDEN,
+                )
+            )
             continue
 
         try:
@@ -1260,7 +1273,11 @@ async def delete_user_management(
     登录请改用「禁用」，不要用「删除」。
     """
     from app.core.exceptions import NotFoundException
-    from app.platform.identity.service import SYSTEM_ADMIN_USERNAME
+    from app.platform.identity.service import (
+        BOOTSTRAP_ACCOUNT_DELETE_FORBIDDEN,
+        SYSTEM_ADMIN_USERNAME,
+        is_bootstrap_username,
+    )
     from app.platform.identity.session import revoke_all_user_sessions
     from app.platform.permission.public_api import (
         assert_superadmin_removal_allowed,
@@ -1280,6 +1297,9 @@ async def delete_user_management(
         raise ForbiddenException("不能删除当前登录账号")
     if (user.username or "").strip().lower() == SYSTEM_ADMIN_USERNAME.lower():
         raise ForbiddenException("系统内置账号不允许删除")
+    if is_bootstrap_username(user.username):
+        # 软删不释放用户名：删掉引导账号会让下次启动撞 uq_identity_users_username。
+        raise ForbiddenException(BOOTSTRAP_ACCOUNT_DELETE_FORBIDDEN)
 
     await assert_superadmin_removal_allowed(db, user.id)
 

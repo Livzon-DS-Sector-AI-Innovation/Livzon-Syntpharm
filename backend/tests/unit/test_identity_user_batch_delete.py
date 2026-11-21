@@ -9,12 +9,14 @@
 """
 
 import uuid
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
 from app.core.exceptions import ForbiddenException
 from app.platform.identity import api as identity_api
+from app.platform.identity import service as identity_service
 from app.platform.identity.api import batch_delete_users
 from app.platform.identity.models import User
 from app.platform.permission.public_api import PermissionContext
@@ -63,6 +65,7 @@ def _patch(
     actor_is_superuser: bool = True,
     super_ids: list[Any] | None = None,
     session_error: bool = False,
+    bootstrap_admin: str = "",
 ) -> dict[str, Any]:
     """接管权限判定、审计、授权清理与会话吊销（端点内部为局部 import，patch 模块属性生效）。"""
     audits: list[dict[str, Any]] = []
@@ -94,6 +97,11 @@ def _patch(
     monkeypatch.setattr("app.platform.permission.public_api.list_superuser_user_ids", fake_list_super_ids)
     monkeypatch.setattr("app.platform.permission.public_api.revoke_all_user_grants", fake_revoke_grants)
     monkeypatch.setattr("app.platform.identity.session.revoke_all_user_sessions", fake_revoke_sessions)
+    monkeypatch.setattr(
+        identity_service,
+        "get_settings",
+        lambda: SimpleNamespace(BOOTSTRAP_ADMIN_USERNAME=bootstrap_admin, BOOTSTRAP_USER_USERNAME=""),
+    )
 
     calls["audits"] = audits
     return calls
@@ -251,3 +259,27 @@ async def test_batch_delete_rejects_too_many_ids() -> None:
 
     with pytest.raises(ValidationError):
         identity_api.UserBatchDeleteRequest(user_ids=[uuid.uuid4() for _ in range(101)])
+
+
+# ── 端点：引导账号不可删（单条 403 的旁路） ───────────────────────────
+
+
+async def test_batch_delete_reports_bootstrap_account_as_failed(monkeypatch: pytest.MonkeyPatch) -> None:
+    """批量接口不能成为单条 403 的旁路：引导账号进 failed，其余条目照常删除。"""
+    operator = _user(username="root")
+    target = _user(username="admin")
+    other = _user(username="zhangsan")
+    repo = StubRepo([target, other])
+    _patch(monkeypatch, repo=repo, super_ids=[operator.id], bootstrap_admin="admin")
+
+    resp = await batch_delete_users(
+        identity_api.UserBatchDeleteRequest(user_ids=[target.id, other.id]),
+        ctx=_ctx(operator),
+        db=StubSession(),
+    )
+
+    assert resp.data["succeeded"] == [other.id]
+    assert len(resp.data["failed"]) == 1
+    assert resp.data["failed"][0]["reason"] == "引导账号不允许删除，请在部署配置中调整 BOOTSTRAP_* 后再操作"
+    assert not target.is_deleted
+    assert repo.deleted == [(other.id, operator.id)]

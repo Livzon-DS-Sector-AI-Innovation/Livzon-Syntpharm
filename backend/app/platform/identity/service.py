@@ -15,6 +15,7 @@ from uuid import UUID, uuid4
 
 import jwt
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -1878,6 +1879,26 @@ async def change_own_password(
     await db.commit()
 
 
+BOOTSTRAP_ACCOUNT_DELETE_FORBIDDEN = "引导账号不允许删除，请在部署配置中调整 BOOTSTRAP_* 后再操作"
+
+
+def is_bootstrap_username(username: str | None) -> bool:
+    """账号名是否命中 `.env` 配置的引导账号（大小写、首尾空白不敏感）。
+
+    `BOOTSTRAP_*` 默认空串，未配置的项不参与比较，避免空账号名互相命中。
+    """
+    normalized = (username or "").strip().lower()
+    if not normalized:
+        return False
+    settings = get_settings()
+    configured = {
+        (settings.BOOTSTRAP_ADMIN_USERNAME or "").strip().lower(),
+        (settings.BOOTSTRAP_USER_USERNAME or "").strip().lower(),
+    }
+    configured.discard("")
+    return normalized in configured
+
+
 async def bootstrap_local_users() -> None:
     """创建引导账号（幂等）。
 
@@ -1885,6 +1906,9 @@ async def bootstrap_local_users() -> None:
     状态 —— 否则用户自己改过的密码会在容器重启后被 `.env` 里的初始值打回，
     「密码只有本人能改」形同虚设；运维在界面上的改名、禁用也会被静默还原。
     确实需要按 `.env` 强制回灌时，显式打开 `BOOTSTRAP_ADMIN_FORCE_RESET=true`。
+
+    已软删的引导账号不会被复活（软删是运营的明确意图），也不会再 INSERT 撞
+    `uq_identity_users_username` 导致启动失败；恢复需人工把 is_deleted 置回 false。
     """
     settings = get_settings()
     force_reset = settings.BOOTSTRAP_ADMIN_FORCE_RESET
@@ -1907,25 +1931,61 @@ async def bootstrap_local_users() -> None:
         for username, password, name, email in entries:
             if not username or not password:
                 continue
-            existing = await _repo.get_by_username(session, username)
-            if existing is None:
-                await _repo.create(
-                    session,
-                    username=username,
-                    password_hash=hash_password(password),
-                    name=name or username,
-                    email=email or None,
-                    status="active",
-                    auth_source="local",
-                    # 引导密码是公开的初始值 → 首次登录必须改密
-                    must_change_password=True,
+            # `uq_identity_users_username` 不区分 is_deleted，查重必须含软删行，
+            # 否则软删账号会被判为「不存在」→ INSERT 撞唯一键 → 启动失败。
+            existing = await _repo.get_by_username_including_deleted(session, username)
+            if existing is not None and existing.is_deleted:
+                # 软删是运营的明确意图：不复活、不改密码、不发授权，只跳过创建。
+                logger.warning(
+                    "引导账号 %s 的库内行已被软删除：跳过创建（不复活）。恢复方式："
+                    "UPDATE identity.users SET is_deleted=false, status='active' WHERE username='%s' 后重启；"
+                    "如密码未知，恢复行后临时设 BOOTSTRAP_ADMIN_FORCE_RESET=true 重启一次并立即关闭。",
+                    username,
+                    username,
+                    extra={"bootstrap_username": username},
                 )
+                continue
+
+            if existing is None:
+                try:
+                    # SAVEPOINT：单条冲突只回滚本条，不丢弃同批已 flush 的其它账号。
+                    async with session.begin_nested():
+                        await _repo.create(
+                            session,
+                            username=username,
+                            password_hash=hash_password(password),
+                            name=name or username,
+                            email=email or None,
+                            status="active",
+                            auth_source="local",
+                            # 引导密码是公开的初始值 → 首次登录必须改密
+                            must_change_password=True,
+                        )
+                except IntegrityError:
+                    logger.warning(
+                        "引导账号 %s 创建失败（唯一约束冲突），跳过该条",
+                        username,
+                        extra={"bootstrap_username": username},
+                    )
+                    logger.exception(
+                        "Bootstrap user create failed, rolled back to savepoint: %s",
+                        username,
+                        extra={"bootstrap_username": username},
+                    )
+                    continue
                 logger.info("Bootstrapped local user: %s", username)
                 continue
 
             if not force_reset:
                 # 只补建、不覆盖：账号一旦存在，姓名 / 邮箱 / 状态 / 密码都以库内为准，
                 # 避免每次重启把运维在界面上的改动（改名、禁用）静默打回。
+                if existing.status != "active":
+                    logger.info(
+                        "引导账号 %s 已存在但状态为 %s（force_reset=false，保持不变）",
+                        username,
+                        existing.status,
+                        extra={"bootstrap_username": username},
+                    )
                 continue
 
             if not verify_password(password, existing.password_hash):
