@@ -6,15 +6,20 @@
 
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import update
 
 from app.modules.safety.risk_grading import derive_equipment_evaluation_grade
 
 BASE_URL = "/api/v1/safety/equipment-facility-hazards"
 WORK_ACTIVITY_URL = "/api/v1/safety/work-activity-hazards"
+
+# 组织目录里已被飞书移除的部门：不进选项，也不能作为新值提交
+REMOVED_DEPARTMENT = "已撤销车间"
 
 
 def payload(**overrides: Any) -> dict[str, Any]:
@@ -299,7 +304,6 @@ class TestOptionEnforcement:
             {"improvement_measures": ["engineering", "bogus"]},
             {"residual_risk": "level_4"},
             {"residual_risk": "4级重大风险"},
-            {"control_level": "不存在的部门"},
             {"execution_level": "department"},
         ],
     )
@@ -317,6 +321,31 @@ class TestOptionEnforcement:
 
         assert data["current_control_measures"] == keys
         assert data["improvement_measures"] == keys
+
+    @pytest.mark.parametrize("department", ["不存在的部门", REMOVED_DEPARTMENT])
+    async def test_unknown_control_level_is_rejected_with_400(self, auth_client: AsyncClient, department: str) -> None:
+        """管控层级必须是组织目录现存部门：不存在或已被移除都拒绝。"""
+        response = await auth_client.post(BASE_URL, json=payload(control_level=department))
+
+        assert response.status_code == 400, response.text
+        assert "不在组织部门列表中" in response.text
+
+    async def test_historical_control_level_survives_unchanged_update(
+        self, auth_client: AsyncClient, db_session: Any
+    ) -> None:
+        """部门被撤销后，老记录只要不改该字段仍可保存其他修改。"""
+        created = await create(auth_client)
+        await db_session.execute(
+            update(EquipmentFacilityHazard)
+            .where(EquipmentFacilityHazard.id == uuid.UUID(created["id"]))
+            .values(control_level=REMOVED_DEPARTMENT)
+        )
+        await db_session.flush()
+
+        response = await auth_client.put(f"{BASE_URL}/{created['id']}", json=payload(control_level=REMOVED_DEPARTMENT))
+
+        assert response.status_code == 200, response.text
+        assert response.json()["data"]["control_level"] == REMOVED_DEPARTMENT
 
     @pytest.mark.parametrize(
         ("key", "label"),

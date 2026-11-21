@@ -52,6 +52,8 @@ class MaintenancePlanResponse(BaseModel):
     last_maintenance_date: date | None
     next_maintenance_date: date | None
     responsible_person_id: uuid.UUID | None
+    # 运行时由 API 层批量解析，用于前端编辑态回显姓名（非持久化列）
+    responsible_person_name: str | None = None
     maintenance_content: str | None
     status: MaintenancePlanStatus
     remark: str | None

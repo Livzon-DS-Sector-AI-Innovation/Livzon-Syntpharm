@@ -395,7 +395,11 @@ export function EquipmentPage({
         <LocationDrawer onRefresh={() => { refreshTaxonomy(); refreshStatistics(); }} />
         <RepairDrawer
           equipments={equipments.map(e => ({
-            id: e.id, asset_no: e.asset_no, name: e.name,
+            id: e.id,
+            asset_no: e.asset_no,
+            name: e.name,
+            responsible_person_id: e.responsible_person_id,
+            responsible_person_name: e.responsible_person_name,
           }))}
           symptoms={failureCodes.symptoms}
           onRefresh={refreshList}

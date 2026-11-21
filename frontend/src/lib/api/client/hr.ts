@@ -644,10 +644,8 @@ export type DirectoryPersonItem = components['schemas']['DirectoryPersonItem']
 /** 公共目录部门节点：`id` 是 hr.departments.id，任意层级都可选。 */
 export type DirectoryDepartmentNode = components['schemas']['DirectoryDepartmentNode']
 
-export interface DirectoryPeoplePage {
-  items: DirectoryPersonItem[]
-  total: number
-}
+/** 公共目录人员分页结果：直接取生成契约，禁止手写字段。 */
+export type DirectoryPeoplePage = components['schemas']['DirectoryPeopleListData']
 
 /** 公共目录人员查询参数：直接取生成契约，避免手写 query 类型。 */
 export type DirectoryPeopleQuery = NonNullable<

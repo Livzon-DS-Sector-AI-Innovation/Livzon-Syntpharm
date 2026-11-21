@@ -13,6 +13,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import BadRequestException, NotFoundException
+from app.modules.hr.public_api import list_pickable_department_names
 from app.modules.safety.models import EquipmentFacilityHazard, WorkActivityHazard
 from app.modules.safety.repository import SafetyRepository
 from app.modules.safety.risk_grading import (
@@ -33,6 +34,26 @@ from app.modules.safety.schemas.risk_grading import (
 from app.modules.safety.service._helpers import audit_log
 
 CONTROL_MEASURE_LABELS: dict[str, str] = {item["key"]: item["label"] for item in CONTROL_MEASURE_OPTIONS}
+
+
+async def ensure_control_level_exists(
+    session: AsyncSession,
+    value: str,
+    *,
+    current: str | None = None,
+) -> None:
+    """校验管控层级是组织目录现存部门。
+
+    Pydantic 校验器无法查库，存在性校验下沉到这里；编辑时若提交值与库中
+    原值一致则放行，保证已撤销部门的历史记录仍可保存其他字段。
+    """
+    normalized = value.strip()
+    if current is not None and normalized == current.strip():
+        return
+    names = await list_pickable_department_names(session)
+    if normalized not in names:
+        raise BadRequestException(f"管控层级「{normalized}」不在组织部门列表中")
+
 
 EXPORT_HEADERS: tuple[str, ...] = (
     "序号",
@@ -107,6 +128,7 @@ class WorkActivityHazardService:
         return payload
 
     async def create_hazard(self, data: WorkActivityHazardCreate) -> WorkActivityHazard:
+        await ensure_control_level_exists(self.session, data.control_level)
         payload = self._compute_payload(data)
         item = await self.repo.create_work_activity_hazard(payload)
         await audit_log(self.session, "create", "work_activity_hazard", resource_id=item.id)
@@ -114,6 +136,8 @@ class WorkActivityHazardService:
 
     async def update_hazard(self, hazard_id: uuid.UUID, data: WorkActivityHazardCreate) -> WorkActivityHazard:
         """完整更新（PUT）：重新套用全部创建规则并重算 D / 评价级别。"""
+        current = await self.get_hazard(hazard_id)
+        await ensure_control_level_exists(self.session, data.control_level, current=current.control_level)
         payload = self._compute_payload(data)
 
         item = await self.repo.update_work_activity_hazard(hazard_id, payload)
@@ -265,6 +289,7 @@ class EquipmentFacilityHazardService:
         return payload
 
     async def create_hazard(self, data: EquipmentFacilityHazardCreate) -> EquipmentFacilityHazard:
+        await ensure_control_level_exists(self.session, data.control_level)
         payload = self._compute_payload(data)
         item = await self.repo.create_equipment_facility_hazard(payload)
         await audit_log(self.session, "create", "equipment_facility_hazard", resource_id=item.id)
@@ -272,6 +297,8 @@ class EquipmentFacilityHazardService:
 
     async def update_hazard(self, hazard_id: uuid.UUID, data: EquipmentFacilityHazardCreate) -> EquipmentFacilityHazard:
         """完整更新（PUT）：重新套用全部创建规则并按 L/S 重算 R。"""
+        current = await self.get_hazard(hazard_id)
+        await ensure_control_level_exists(self.session, data.control_level, current=current.control_level)
         payload = self._compute_payload(data)
 
         item = await self.repo.update_equipment_facility_hazard(hazard_id, payload)

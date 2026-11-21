@@ -177,6 +177,7 @@ export interface CapaDetail {
 // ============ Department Contact Types ============
 export type DepartmentContact = components['schemas']['DepartmentContactItem']
 export type DepartmentContactListData = components['schemas']['DepartmentContactListData']
+export type DepartmentLeaderData = components['schemas']['DepartmentContactLeaderData']
 export type CreateDepartmentContactRequest = components['schemas']['DepartmentContactCreateRequest']
 export type UpdateDepartmentContactRequest = components['schemas']['DepartmentContactUpdateRequest']
 export type DepartmentMemberOption = components['schemas']['MemberOption']

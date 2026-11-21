@@ -58,6 +58,7 @@ export const ADMIN_ENTRY_PERM = {
   agentAdmin: 'agent:admin:read',
 } as const
 
+
 /** 研发管理（research）接口级权限码，与后端 RESEARCH_PERMISSIONS 一一对应 */
 export const RESEARCH_PERM = {
   researchProjectRead: 'research:project:read',

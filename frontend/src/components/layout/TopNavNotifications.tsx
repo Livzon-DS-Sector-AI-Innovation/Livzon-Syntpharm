@@ -7,13 +7,14 @@ import { App, Dropdown, Empty, Skeleton } from 'antd'
 import { CheckOutlined, ReloadOutlined } from '@ant-design/icons'
 import { BellIcon } from '@/components/Icons'
 import { WorkbenchItemRow } from '@/components/home'
-import { markAllTodosRead, markTodoRead, type TodoReadMark } from '@/actions/workbench'
+import { markAllTodosRead, markTodoRead } from '@/actions/workbench'
 import {
   fetchWorkbenchTodos,
   flattenTodoItems,
   type FlatTodoItem,
   type WorkbenchTodoSnapshot,
 } from '@/lib/api/client/workbench'
+import type { TodoReadMark } from '@/types/workbench'
 
 /** 角标数字上限：超过后统一「99+」，避免挤占顶栏 */
 const BADGE_MAX = 99

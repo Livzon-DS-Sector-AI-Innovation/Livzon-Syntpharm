@@ -1,20 +1,25 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { App, Drawer, Form, Input, Select, Button, Space, Upload } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import type { UploadFile } from 'antd/es/upload'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createWorkOrder, uploadWorkOrderImages } from '@/actions/equipment'
+import PersonSelect from '@/components/common/PersonSelect'
 import { FailureCode } from '@/types/equipment/generated-bridge'
 import { CreateWorkOrderInput, } from '@/types/equipment/generated-bridge'
-import { fetchAllUsersClient } from '@/lib/api/client/equipment'
 
 const { TextArea } = Input
 
 interface RepairDrawerProps {
-  equipments: { id: string; asset_no: string; name: string; responsible_person_id?: string | null }[]
+  equipments: {
+    id: string
+    asset_no: string
+    name: string
+    responsible_person_id?: string | null
+    responsible_person_name?: string | null
+  }[]
   symptoms?: FailureCode[]
   onRefresh?: () => void
 }
@@ -27,12 +32,6 @@ export function RepairDrawer({ equipments, symptoms, onRefresh }: RepairDrawerPr
   const { repairDrawerOpen, repairEquipmentId, closeRepairDrawer } = useEquipmentStore()
 
   const selectedEquipment = equipments.find(e => e.id === repairEquipmentId)
-
-  const { data: maintainers = [] } = useQuery({
-    queryKey: ['all-users'],
-    queryFn: fetchAllUsersClient,
-    enabled: repairDrawerOpen,
-  })
 
   useEffect(() => {
     if (repairDrawerOpen) {
@@ -139,16 +138,15 @@ export function RepairDrawer({ equipments, symptoms, onRefresh }: RepairDrawerPr
         <Form.Item name="fault_description" label="故障描述">
           <TextArea placeholder="请描述故障情况" rows={4} maxLength={500} showCount />
         </Form.Item>
-        <Form.Item name="responsible_person_id" label="责任人" rules={[{ required: true, message: '请选择责任人' }]}>
-          <Select
-            placeholder="选择责任人"
-            showSearch
-            optionFilterProp="label"
-            options={maintainers.map((m) => ({
-              // 统一「姓名（账号）」；没有账号时退回工号
-              label: `${m.name}${m.username ? `（${m.username}）` : m.employee_no ? ` (${m.employee_no})` : ''}`,
-              value: m.user_id,
-            }))}
+        <Form.Item
+          name="responsible_person_id"
+          label="责任人"
+          rules={[{ required: true, message: '请选择责任人' }]}
+          getValueFromEvent={(person: { id: string } | null) => person?.id}
+        >
+          <PersonSelect
+            label={selectedEquipment?.responsible_person_name}
+            placeholder="搜索姓名选择责任人"
           />
         </Form.Item>
         <Form.Item label="故障图片">

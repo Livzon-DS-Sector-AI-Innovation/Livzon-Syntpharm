@@ -9,14 +9,34 @@ from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
+from app.modules.equipment.models import MaintenancePlan
 from app.modules.equipment.schemas import (
     MaintenancePlanCreate,
     MaintenancePlanResponse,
     MaintenancePlanUpdate,
 )
+from app.platform.identity.public_api import resolve_user_names
 from app.shared.schemas import ApiResponse
 
 router = APIRouter()
+
+
+async def _to_responses(db: AsyncSession, plans: list[MaintenancePlan]) -> list[MaintenancePlanResponse]:
+    """批量补责任人姓名；一页只多查一次 identity.users。
+
+    姓名不是持久化列，写入通道仍只认 ``responsible_person_id``。
+    """
+    user_ids = {plan.responsible_person_id for plan in plans if plan.responsible_person_id}
+    names = await resolve_user_names(db, user_ids) if user_ids else {}
+    responses = [MaintenancePlanResponse.model_validate(plan) for plan in plans]
+    for response in responses:
+        person_id = response.responsible_person_id
+        response.responsible_person_name = names.get(person_id) if person_id else None
+    return responses
+
+
+async def _to_response(db: AsyncSession, plan: MaintenancePlan) -> MaintenancePlanResponse:
+    return (await _to_responses(db, [plan]))[0]
 
 
 @router.post("/", summary="新增维护计划")
@@ -27,7 +47,7 @@ async def create_maintenance_plan(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     plan = await service.create_maintenance_plan(db, data)
-    return build_response(data=MaintenancePlanResponse.model_validate(plan))
+    return build_response(data=await _to_response(db, plan))
 
 
 @router.get("/", summary="维护计划列表")
@@ -50,7 +70,7 @@ async def list_maintenance_plans(
         page_size=page_size,
     )
     return paginated_response(
-        data=[MaintenancePlanResponse.model_validate(p) for p in plans],
+        data=await _to_responses(db, plans),
         page=page,
         page_size=page_size,
         total=total,
@@ -65,7 +85,7 @@ async def get_overdue_plans(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     plans = await service.get_overdue_maintenance_plans(db, days)
-    return build_response(data=[MaintenancePlanResponse.model_validate(p) for p in plans])
+    return build_response(data=await _to_responses(db, plans))
 
 
 @router.get("/{plan_id}", summary="维护计划详情")
@@ -76,7 +96,7 @@ async def get_maintenance_plan(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     plan = await service.get_maintenance_plan_by_id(db, plan_id)
-    return build_response(data=MaintenancePlanResponse.model_validate(plan))
+    return build_response(data=await _to_response(db, plan))
 
 
 @router.put("/{plan_id}", summary="修改维护计划")
@@ -87,7 +107,7 @@ async def update_maintenance_plan(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     plan = await service.update_maintenance_plan(db, plan_id, data)
-    return build_response(data=MaintenancePlanResponse.model_validate(plan))
+    return build_response(data=await _to_response(db, plan))
 
 
 @router.delete("/{plan_id}", summary="删除维护计划")

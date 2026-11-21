@@ -1,13 +1,12 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { App, Drawer, Form, Input, Select, InputNumber, DatePicker, Button, Space } from 'antd'
 import dayjs from 'dayjs'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createMaintenancePlan, updateMaintenancePlan } from '@/actions/equipment'
-import { CreateMaintenancePlanInput, UpdateMaintenancePlanInput, Maintainer } from '@/types/equipment/generated-bridge'
-import { fetchAllUsersClient } from '@/lib/api/client/equipment'
+import PersonSelect from '@/components/common/PersonSelect'
+import { CreateMaintenancePlanInput, UpdateMaintenancePlanInput } from '@/types/equipment/generated-bridge'
 
 const { TextArea } = Input
 
@@ -27,21 +26,6 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const { maintenancePlanDrawerOpen, editingMaintenancePlan, closeMaintenancePlanDrawer } = useEquipmentStore()
-  // 责任人下拉的候选用户：抽屉打开时才拉，交给 React Query 缓存
-  const { data: allUsersData } = useQuery({
-    queryKey: ['equipment-all-users'],
-    queryFn: () => fetchAllUsersClient(),
-    enabled: maintenancePlanDrawerOpen,
-  })
-  const allUsers: Maintainer[] = allUsersData ?? []
-
-  // 选项到位后补一次 executor_id：antd Select 需要 options 就绪才能把值渲染成姓名
-  useEffect(() => {
-    if (!maintenancePlanDrawerOpen || !allUsersData) return
-    if (editingMaintenancePlan?.responsible_person_id) {
-      form.setFieldsValue({ executor_id: editingMaintenancePlan.executor_id })
-    }
-  }, [allUsersData, maintenancePlanDrawerOpen, editingMaintenancePlan, form])
 
   useEffect(() => {
     if (!maintenancePlanDrawerOpen) return
@@ -56,7 +40,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
           frequency: editingMaintenancePlan.frequency,
           frequency_unit: editingMaintenancePlan.frequency_unit,
           last_maintenance_date: editingMaintenancePlan.last_maintenance_date ? dayjs(editingMaintenancePlan.last_maintenance_date) : undefined,
-          executor_id: editingMaintenancePlan.executor_id,
+          responsible_person_id: editingMaintenancePlan.responsible_person_id ?? undefined,
           maintenance_content: editingMaintenancePlan.maintenance_content,
           remark: editingMaintenancePlan.remark,
           status: editingMaintenancePlan.status,
@@ -79,7 +63,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
           frequency: values.frequency,
           frequency_unit: values.frequency_unit,
           last_maintenance_date: values.last_maintenance_date ? values.last_maintenance_date.format('YYYY-MM-DD') : undefined,
-          responsible_person_id: values.executor_id,
+          responsible_person_id: values.responsible_person_id,
           maintenance_content: values.maintenance_content || undefined,
           remark: values.remark || undefined,
           status: values.status,
@@ -94,7 +78,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
           frequency: values.frequency,
           frequency_unit: values.frequency_unit,
           last_maintenance_date: values.last_maintenance_date ? values.last_maintenance_date.format('YYYY-MM-DD') : undefined,
-          responsible_person_id: values.executor_id,
+          responsible_person_id: values.responsible_person_id,
           maintenance_content: values.maintenance_content || undefined,
           remark: values.remark || undefined,
         }
@@ -158,16 +142,15 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
         <Form.Item name="last_maintenance_date" label="上次维护日期">
           <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" placeholder="选择日期" />
         </Form.Item>
-        <Form.Item name="executor_id" label="责任人" rules={[{ required: true, message: '请选择责任人' }]}>
-          <Select
-            placeholder="选择责任人"
-            showSearch
-            optionFilterProp="label"
-            options={allUsers.map((m) => ({
-              // 统一「姓名（账号）」；没有账号时退回工号
-              label: `${m.name}${m.username ? `（${m.username}）` : m.employee_no ? ` (${m.employee_no})` : ''}`,
-              value: m.user_id,
-            }))}
+        <Form.Item
+          name="responsible_person_id"
+          label="责任人"
+          rules={[{ required: true, message: '请选择责任人' }]}
+          getValueFromEvent={(person: { id: string } | null) => person?.id}
+        >
+          <PersonSelect
+            label={editingMaintenancePlan?.responsible_person_name}
+            placeholder="搜索姓名选择责任人"
           />
         </Form.Item>
         {editingMaintenancePlan && (

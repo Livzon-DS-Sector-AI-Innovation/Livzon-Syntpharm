@@ -33,12 +33,13 @@ import {
   exportWorkActivityHazardsAction,
   updateWorkActivityHazardAction,
 } from '@/actions/risk-grading'
+import DepartmentTreeSelect from '@/components/common/DepartmentTreeSelect'
+import { useDepartmentOptions } from '@/components/safety/useDepartmentOptions'
 import { fetchRiskGradingOptions, fetchWorkActivityHazards } from '@/lib/api/client/risk-grading'
 import {
   STANDARD_LINKS,
   computeRiskValue,
   deriveEvaluationGrade,
-  toValueLabelOptions,
   type WorkActivityHazard,
   type WorkActivityHazardCreate,
   type WorkActivityHazardExportParams,
@@ -113,7 +114,6 @@ export default function WorkActivityLedgerClient() {
     staleTime: Infinity,
   })
 
-  const departmentOptions = useMemo(() => toValueLabelOptions(options?.departments ?? []), [options])
   const controlMeasureOptions = useMemo(() => options?.control_measures ?? [], [options])
   const residualRiskOptions = useMemo(() => options?.residual_risks ?? [], [options])
   const executionLevelOptions = useMemo(() => options?.execution_levels ?? [], [options])
@@ -155,6 +155,9 @@ export default function WorkActivityLedgerClient() {
 
   const rows = data?.data ?? []
   const total = data?.meta.total ?? 0
+
+  // 历史记录里的部门名可能已被组织撤销：补进筛选选项，保证老数据仍可筛出来
+  const { options: departmentOptions } = useDepartmentOptions(rows.map((row) => row.control_level))
 
   const watchedL = Form.useWatch('likelihood_l', form)
   const watchedE = Form.useWatch('exposure_e', form)
@@ -578,13 +581,9 @@ export default function WorkActivityLedgerClient() {
             name="control_level"
             label="管控层级"
             rules={[{ required: true, message: '请选择管控层级' }]}
+            tooltip="可选组织架构中的任意部门"
           >
-            <Select
-              showSearch
-              optionFilterProp="label"
-              options={departmentOptions}
-              placeholder="选择部门"
-            />
+            <DepartmentTreeSelect valueField="name" placeholder="请选择部门（可搜索）" />
           </Form.Item>
           <Form.Item
             name="execution_level"

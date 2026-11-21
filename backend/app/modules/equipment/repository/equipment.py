@@ -15,7 +15,7 @@ from app.modules.equipment.models import (
     EquipmentCategoryLink,
     Location,
 )
-from app.platform.identity.models import User
+from app.platform.identity.public_api import resolve_user_names
 
 
 def _escape_like(value: str) -> str:
@@ -768,9 +768,12 @@ async def get_department_leader_user_id(db: AsyncSession, department_id: uuid.UU
 
 
 async def get_user_name_by_id(db: AsyncSession, user_id: uuid.UUID) -> str | None:
-    """根据 User.id 获取用户姓名"""
-    result = await db.execute(select(User.name).where(User.id == user_id))
-    return result.scalar_one_or_none()
+    """根据 User.id 获取用户姓名。
+
+    走 ``identity.public_api``，不直接查 identity 的 ORM 模型（AGENTS.md 模块所有权）。
+    """
+    names = await resolve_user_names(db, [user_id])
+    return names.get(user_id)
 
 
 async def get_sync_context(
