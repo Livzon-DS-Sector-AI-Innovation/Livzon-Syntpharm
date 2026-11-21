@@ -258,9 +258,7 @@ export async function fetchMaintainersClient(): Promise<Maintainer[]> {
   return await apiGet(`${API_BASE}/equipment/maintenance/staff/maintainers`) || []
 }
 
-export async function fetchAllUsersClient(): Promise<Maintainer[]> {
-  return await apiGet(`${API_BASE}/equipment/maintenance/staff/all-users`) || []
-}
+
 
 export async function fetchWorkOrderImagesClient(workOrderId: string): Promise<WorkOrderImage[]> {
   return await apiGet(`${API_BASE}/equipment/maintenance/work-orders/${workOrderId}/images`) || []

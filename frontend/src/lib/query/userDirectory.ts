@@ -5,7 +5,6 @@ import type { QueryClient } from '@tanstack/react-query'
  *
  * 选人下拉散落在设备、安全、授权等多个模块，各自用了不同的 key：
  * - `['users', ...]`              用户管理表格
- * - `['all-users']`               设备工单/维修负责人
  * - `['identity-users-search', ...]` 设备/安全人员选择
  * - `['permission-user-options']` 授权管理选人（已废弃：授权选人改用 RemoteUserSelect，
  *   每次展开重新拉首页，不再产生该键；保留在集合里只为兼容历史缓存）
@@ -20,7 +19,6 @@ import type { QueryClient } from '@tanstack/react-query'
  */
 const USER_DIRECTORY_KEY_HEADS = new Set([
   'users',
-  'all-users',
   'identity-users-search',
   'permission-user-options',
 ])
