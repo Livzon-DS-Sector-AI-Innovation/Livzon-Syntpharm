@@ -29,9 +29,7 @@ async def seed_risk_grading_departments(db_session: AsyncSession):
             for index, name in enumerate(RISK_GRADING_DEPARTMENTS)
         ]
     )
-    db_session.add(
-        HrDepartment(name=REMOVED_DEPARTMENT_NAME, code=f"RISK-{suffix}-X", status_is_deleted=True)
-    )
+    db_session.add(HrDepartment(name=REMOVED_DEPARTMENT_NAME, code=f"RISK-{suffix}-X", status_is_deleted=True))
     await db_session.flush()
     yield
 

@@ -373,9 +373,7 @@ class TestOptionEnforcement:
             assert response.status_code == 200, f"{department}: {response.text}"
 
     @pytest.mark.parametrize("department", ["不存在的部门", REMOVED_DEPARTMENT])
-    async def test_unknown_control_level_is_rejected_with_400(
-        self, auth_client: AsyncClient, department: str
-    ) -> None:
+    async def test_unknown_control_level_is_rejected_with_400(self, auth_client: AsyncClient, department: str) -> None:
         """管控层级必须是组织目录现存部门：不存在或已被移除都拒绝。"""
         response = await auth_client.post(BASE_URL, json=payload(control_level=department))
 
@@ -394,9 +392,7 @@ class TestOptionEnforcement:
         )
         await db_session.flush()
 
-        response = await auth_client.put(
-            f"{BASE_URL}/{created['id']}", json=payload(control_level=REMOVED_DEPARTMENT)
-        )
+        response = await auth_client.put(f"{BASE_URL}/{created['id']}", json=payload(control_level=REMOVED_DEPARTMENT))
 
         assert response.status_code == 200, response.text
         assert response.json()["data"]["control_level"] == REMOVED_DEPARTMENT

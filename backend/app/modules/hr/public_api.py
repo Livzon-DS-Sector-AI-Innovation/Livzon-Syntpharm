@@ -221,9 +221,9 @@ async def list_all_departments(session: AsyncSession) -> list[HrDepartment]:
 async def list_pickable_department_names(session: AsyncSession) -> set[str]:
     """Return names of departments that pickers may offer.
 
-    Same filter as the public directory tree (``list_directory_departments``):
-    neither soft-deleted nor removed from Feishu / out of sync scope. Keeping one
-   口径 avoids "backend accepts a name the org tree cannot show" drift.
+     Same filter as the public directory tree (``list_directory_departments``):
+     neither soft-deleted nor removed from Feishu / out of sync scope. Keeping one
+    口径 avoids "backend accepts a name the org tree cannot show" drift.
     """
     result = await session.execute(
         select(HrDepartment.name).where(
