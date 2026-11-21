@@ -1,6 +1,6 @@
 """permission: 退役「人员查询」权限码（platform:person:lookup）
 
-Revision ID: 0205_permission_retire_person_lookup
+Revision ID: 0218_permission_retire_person_lookup
 Revises: 0204_permission_retire_agent_roles
 Create Date: 2026-11-20
 
@@ -33,8 +33,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0205_permission_retire_person_lookup"
-down_revision: str | None = "0204_permission_retire_agent_roles"
+revision: str = "0218_permission_retire_person_lookup"
+down_revision: str | None = "0217_permission_role_owner_delegate"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

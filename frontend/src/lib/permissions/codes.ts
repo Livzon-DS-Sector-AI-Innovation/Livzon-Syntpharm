@@ -55,6 +55,7 @@ export const ADMIN_ENTRY_PERM = {
   researchAdmin: 'research:admin:read',
   registrationAdmin: 'registration:admin:read',
   qualityAdmin: 'quality:admin:read',
+  agentAdmin: 'agent:admin:read',
 } as const
 
 /** 研发管理（research）接口级权限码，与后端 RESEARCH_PERMISSIONS 一一对应 */

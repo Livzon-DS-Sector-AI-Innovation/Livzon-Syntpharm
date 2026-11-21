@@ -1,7 +1,7 @@
 """core: workbench_todo_reads（顶栏待办已读登记）
 
-Revision ID: 0133_core_workbench_todo_reads
-Revises: 0132_core_module_setting_metadata
+Revision ID: 0215_core_workbench_todo_reads
+Revises: 0214_core_module_setting_metadata
 Create Date: 2026-11-18
 
 顶栏「消息提醒」原来只有待办总数，没有已读概念。本次新增按用户登记的已读表：
@@ -20,8 +20,8 @@ from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "0133_core_workbench_todo_reads"
-down_revision: str | None = "0132_core_module_setting_metadata"
+revision: str = "0215_core_workbench_todo_reads"
+down_revision: str | None = "0214_core_module_setting_metadata"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

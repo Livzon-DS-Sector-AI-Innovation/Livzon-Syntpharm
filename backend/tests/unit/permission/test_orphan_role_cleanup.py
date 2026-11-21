@@ -1,4 +1,4 @@
-"""下线模块的内置角色退役（TC-010：agent 残留角色）。
+"""下线模块的内置角色退役机制（当前退役名单为空）。
 
 口径（2026-11-19）：
 - 只退役 `RETIRED_MODULE_CODES` 显式登记的模块，不按「注册表里没有」一刀切；
@@ -8,6 +8,8 @@
 
 import uuid
 from typing import Any, cast
+
+import pytest
 
 from app.platform.permission.models import GRANT_DISABLED, Role
 from app.platform.permission.registry import RETIRED_MODULE_CODES
@@ -53,17 +55,22 @@ def _builtin_role(code: str, module_code: str) -> Role:
     return role
 
 
-def test_retired_modules_cover_agent_only_for_now() -> None:
-    assert "agent" in RETIRED_MODULE_CODES
-    # 已注册业务模块不得出现在退役名单里，否则会被启动同步误停
+def test_retired_modules_do_not_overlap_registered_modules() -> None:
+    """退役名单只能登记确认下线的模块。
+
+    2026-11-21：agent 已由 main 的 #224 重新上线（PPT 配音视频），因此从名单移除；
+    这里只守「退役名单与在册业务模块不相交」这一条不变量，不锁定具体内容。
+    """
     from app.shared.module_registry import BUSINESS_MODULES
 
     assert not (RETIRED_MODULE_CODES & {m.code for m in BUSINESS_MODULES})
 
 
-async def test_orphan_roles_are_disabled_with_their_grants() -> None:
-    agent_head = _builtin_role("agent:head", "agent")
-    agent_manager = _builtin_role("agent:manager", "agent")
+async def test_orphan_roles_are_disabled_with_their_grants(monkeypatch: pytest.MonkeyPatch) -> None:
+    # 机制保留备用：当前名单为空，用测试专用模块码覆盖后再验证退役行为
+    monkeypatch.setattr(management, "RETIRED_MODULE_CODES", frozenset({"legacy_demo"}))
+    agent_head = _builtin_role("legacy_demo:head", "legacy_demo")
+    agent_manager = _builtin_role("legacy_demo:manager", "legacy_demo")
     session = _FakeSession([agent_head, agent_manager])
 
     count = await management._retire_orphan_builtin_roles(cast(Any, session))

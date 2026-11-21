@@ -1,7 +1,7 @@
 """identity users: per-user preferences
 
-Revision ID: 0126_identity_users_preferences
-Revises: 0125_hr_employee_profiles_employment
+Revision ID: 0208_identity_users_preferences
+Revises: 0207_hr_employee_profiles_employment
 Create Date: 2026-11-17
 
 Ticket #219 turns ``identity.users`` into an authentication + preferences store.
@@ -17,8 +17,8 @@ from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
-revision: str = "0126_identity_users_preferences"
-down_revision: str | None = "0125_hr_employee_profiles_employment"
+revision: str = "0208_identity_users_preferences"
+down_revision: str | None = "0207_hr_employee_profiles_employment"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

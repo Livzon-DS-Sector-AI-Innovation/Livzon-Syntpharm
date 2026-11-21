@@ -1,7 +1,7 @@
 """core: 去掉 workbench_todo_reads 的跨模块 ON DELETE CASCADE
 
-Revision ID: 0134_core_workbench_todo_reads_fk
-Revises: 0133_core_workbench_todo_reads
+Revision ID: 0216_core_workbench_todo_reads_fk
+Revises: 0215_core_workbench_todo_reads
 Create Date: 2026-11-19
 
 ``0133`` 建表时把 ``user_id`` 外键写成了 ``REFERENCES identity.users(id) ON DELETE CASCADE``。
@@ -18,8 +18,8 @@ from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "0134_core_workbench_todo_reads_fk"
-down_revision: str | None = "0133_core_workbench_todo_reads"
+revision: str = "0216_core_workbench_todo_reads_fk"
+down_revision: str | None = "0215_core_workbench_todo_reads"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

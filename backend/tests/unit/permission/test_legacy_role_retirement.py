@@ -3,7 +3,7 @@
 口径（2026-11-19）：
 - 只退役 `is_builtin` 的历史角色，保留人工创建的岗位角色；
 - 角色与其 active 授权一起置 disabled，并驱逐受影响用户的权限缓存；
-- 迁移 0203 复用同一判据，LIKE 后缀必须走绑定参数（否则 sa.text 会把 `%:head`
+- 迁移 0217 复用同一判据，LIKE 后缀必须走绑定参数（否则 sa.text 会把 `%:head`
   里的 `head` 登记成 bindparam）。
 """
 
@@ -23,7 +23,7 @@ from app.platform.permission.repository import GrantRepository
 from app.platform.permission.service import management
 
 _MIGRATION_PATH = (
-    pathlib.Path(__file__).resolve().parents[3] / "alembic" / "versions" / "0203_permission_role_owner_delegate.py"
+    pathlib.Path(__file__).resolve().parents[3] / "alembic" / "versions" / "0217_permission_role_owner_delegate.py"
 )
 
 

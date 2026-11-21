@@ -1,7 +1,7 @@
 """quality department contacts: HR department reference
 
-Revision ID: 0128_quality_contacts_department_ref
-Revises: 0127_equipment_personnel_profile_ref
+Revision ID: 0210_quality_contacts_department_ref
+Revises: 0209_equipment_personnel_profile_ref
 Create Date: 2026-11-17
 
 Ticket #219: department references move to ``hr.departments.id``. The contact
@@ -16,8 +16,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0128_quality_contacts_department_ref"
-down_revision: str | None = "0127_equipment_personnel_profile_ref"
+revision: str = "0210_quality_contacts_department_ref"
+down_revision: str | None = "0209_equipment_personnel_profile_ref"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

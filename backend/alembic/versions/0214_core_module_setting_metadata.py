@@ -1,7 +1,7 @@
 """core: module_settings 增加展示元数据（中文名 / 功能域 / 密钥类 / 取值提示）
 
-Revision ID: 0132_core_module_setting_metadata
-Revises: 0131_permission_role_sync_lock
+Revision ID: 0214_core_module_setting_metadata
+Revises: 0213_permission_role_sync_lock
 Create Date: 2026-11-18
 
 模块配置页要从「英文 key 表格」升级成「可检索、可分组、可就地编辑的配置清单」，
@@ -23,8 +23,8 @@ from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "0132_core_module_setting_metadata"
-down_revision: str | None = "0131_permission_role_sync_lock"
+revision: str = "0214_core_module_setting_metadata"
+down_revision: str | None = "0213_permission_role_sync_lock"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -1,7 +1,7 @@
 """permission: roles.sync_locked（内置角色手工接管）
 
-Revision ID: 0131_permission_role_sync_lock
-Revises: 0130_permission_role_type
+Revision ID: 0213_permission_role_sync_lock
+Revises: 0212_permission_role_type
 Create Date: 2026-11-18
 
 系统管理员可以手工编辑内置角色（模块负责人 / 模块管理员）的权限。一旦手工编辑，
@@ -17,8 +17,8 @@ from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "0131_permission_role_sync_lock"
-down_revision: str | None = "0130_permission_role_type"
+revision: str = "0213_permission_role_sync_lock"
+down_revision: str | None = "0212_permission_role_type"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

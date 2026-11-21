@@ -28,7 +28,12 @@ from app.shared.module_registry import BUSINESS_MODULES
 # 内置角色及授权置为 disabled。不采用「注册表里没有就停用」的一刀切口径：
 # 多分支并行时，别的分支新增的模块在本分支看不到，一刀切会把它们误停。
 # 下线新模块时在这里追加编码，并配一条清理迁移。
-RETIRED_MODULE_CODES: frozenset[str] = frozenset({"agent"})
+#
+# 2026-11-21：agent 从本集合移除。原判断基于「智能体模块已随 0035 下线」，
+# 但 main 的 #224 已把 agent 重新作为 PPT 配音视频模块上线（注册进
+# BUSINESS_MODULES，权限码 agent:ppt-video:*），继续退役会把新模块的权限码
+# 与角色从权限目录里过滤掉，导致模块不可授权。
+RETIRED_MODULE_CODES: frozenset[str] = frozenset()
 
 
 # ── 动作集合 ──────────────────────────────────────────────────────

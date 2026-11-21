@@ -1,7 +1,7 @@
 """permission: role_type + 活跃授权唯一约束
 
-Revision ID: 0130_permission_role_type
-Revises: 0129_safety_cert_personnel_profile_ref
+Revision ID: 0212_permission_role_type
+Revises: 0211_safety_cert_personnel_profile_ref
 Create Date: 2026-11-18
 
 委派式权限管理（Issue #221）第 1 步：
@@ -23,8 +23,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0130_permission_role_type"
-down_revision: str | None = "0129_safety_cert_personnel_profile_ref"
+revision: str = "0212_permission_role_type"
+down_revision: str | None = "0211_safety_cert_personnel_profile_ref"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
