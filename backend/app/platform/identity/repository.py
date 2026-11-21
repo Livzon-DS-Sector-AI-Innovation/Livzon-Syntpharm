@@ -258,6 +258,7 @@ class UserRepository:
         unbound_only: bool = False,
         must_change_password: bool | None = None,
         exclude_user_ids: list[UUID] | None = None,
+        hr_in_service_only: bool = False,
         offset: int = 0,
         limit: int = 100,
     ) -> tuple[list[User], int]:
@@ -269,6 +270,16 @@ class UserRepository:
                 User.is_deleted == False  # noqa: E712
             )
         )
+
+        # 选人下拉口径：只保留在 HR 在册档案里有对应 open_id 的账号。
+        # 子查询由 hr.public_api 提供（跨模块只走公共入口），过滤与计数同一条 SQL；
+        # 无 feishu_open_id 的本地账号会因 `NULL IN (...)` 结果为 NULL 被天然排除。
+        if hr_in_service_only:
+            from app.modules.hr.public_api import in_service_profile_open_id_select
+
+            profile_open_ids = in_service_profile_open_id_select()
+            base = base.where(User.feishu_open_id.in_(profile_open_ids))
+            count_stmt = count_stmt.where(User.feishu_open_id.in_(profile_open_ids))
 
         # 对非超管隐藏超管账号（调用方传入超管 id 列表）
         if exclude_user_ids:

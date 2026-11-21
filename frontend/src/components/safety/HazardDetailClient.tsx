@@ -44,9 +44,9 @@ import {
   LEGACY_HAZARD_CATEGORY_LABELS,
   INSPECTION_CATEGORY_OPTIONS,
   RECTIFICATION_STATUS_OPTIONS,
-  INSPECTOR_DEPARTMENT_OPTIONS,
 } from '@/types/safety'
 import dayjs from 'dayjs'
+import DepartmentTreeSelect from '@/components/common/DepartmentTreeSelect'
 import PersonnelSelect, { PersonnelMultiSelect } from '@/components/safety/PersonnelSelect'
 import { PersonNameWithBadge } from '@/components/safety/PersonMatchBadge'
 
@@ -883,17 +883,12 @@ export default function HazardDetailClient() {
                 </Col>
                 <Col span={8}>
                   <FieldEditor label="责任部门">
-                    <Select
-                      showSearch
+                    <DepartmentTreeSelect
+                      valueField="name"
                       allowClear
-                      style={{ width: '100%' }}
-                      placeholder="请选择责任部门"
-                      value={fieldVal('department') || undefined}
+                      placeholder="请选择责任部门（可搜索）"
+                      value={fieldVal('department') || null}
                       onChange={(v) => handleDepartmentChange(v || '')}
-                      options={INSPECTOR_DEPARTMENT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-                      filterOption={(input, option) =>
-                        (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
-                      }
                     />
                   </FieldEditor>
                 </Col>

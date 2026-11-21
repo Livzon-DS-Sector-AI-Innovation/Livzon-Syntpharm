@@ -1,13 +1,7 @@
 'use server'
 
 import { apiFetchData } from '@/lib/api/server/base'
-import type { components } from '@/types/generated/schema'
-
-/** 已读标记：source + item_id + 内容指纹（指纹来自 /workbench/overview） */
-export type TodoReadMark = components['schemas']['TodoReadMark']
-
-/** 已读写入结果（业务数据来自生成契约 TodoReadResultData） */
-export type TodoReadResult = components['schemas']['TodoReadResultData']
+import type { TodoReadMark, TodoReadResult } from '@/types/workbench'
 
 /**
  * 标记单条待办已读（幂等）。

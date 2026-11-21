@@ -7,7 +7,6 @@ from app.platform.permission.registry import (
     ALL_PERMISSIONS,
     BUILTIN_ROLE_PERMISSIONS,
     MODULE_ADMIN_PERMISSIONS,
-    PERSON_LOOKUP_CODE,
 )
 from app.shared.module_registry import BUSINESS_MODULES
 
@@ -52,10 +51,9 @@ def test_owner_has_all_module_business_codes_and_admin_entry() -> None:
 
         assert module_codes <= codes, f"{code}:owner 缺少本模块业务权限码"
         assert f"{code}:admin:read" in codes, "模块负责人应能进入模块配置页"
-        # 人员查询是唯一的平台级单点能力：负责人在角色/授权页选人需要它，
-        # 其余权限码必须限定在本模块内。
-        assert PERSON_LOOKUP_CODE in codes, "模块负责人需要在授权页选人"
-        assert all(item.startswith(f"{code}:") for item in codes - {PERSON_LOOKUP_CODE})
+        # 2026-11-20 口径：选人下拉只要求登录，负责人/代表不再持有任何平台级码，
+        # 权限集合必须严格限定在本模块内。
+        assert all(item.startswith(f"{code}:") for item in codes), "模块负责人不应持有平台级权限码"
 
 
 def test_delegate_has_same_permissions_as_owner() -> None:

@@ -58,6 +58,7 @@ export const ADMIN_ENTRY_PERM = {
   agentAdmin: 'agent:admin:read',
 } as const
 
+
 /** 研发管理（research）接口级权限码，与后端 RESEARCH_PERMISSIONS 一一对应 */
 export const RESEARCH_PERM = {
   researchProjectRead: 'research:project:read',
@@ -601,8 +602,8 @@ export const PERM = {
   llmConfigManage: 'platform:llm-config:manage',
   moduleSettingRead: 'platform:module-setting:read',
   moduleSettingManage: 'platform:module-setting:manage',
-  /** 人员下拉（选人组件）：只查启用账号的展示字段 */
-  personLookup: 'platform:person:lookup',
+  // 人员下拉（选人组件）不设权限码：`GET /identity/users/lookup` 只要求登录
+  // （原 `platform:person:lookup` 已于迁移 0217 退役）
   ...MODULE_PERM,
   ...ADMIN_ENTRY_PERM,
   ...RESEARCH_PERM,

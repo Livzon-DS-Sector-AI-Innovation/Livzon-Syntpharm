@@ -5,6 +5,7 @@ import { App, Drawer, Form, Input, Select, InputNumber, DatePicker, Button, Spac
 import dayjs from 'dayjs'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createCalibrationPlan, updateCalibrationPlan } from '@/actions/equipment'
+import PersonSelect from '@/components/common/PersonSelect'
 import { CreateCalibrationPlanInput, UpdateCalibrationPlanInput } from '@/types/equipment/generated-bridge'
 import { Equipment } from '@/types/equipment/generated-bridge'
 
@@ -29,7 +30,7 @@ export function CalibrationPlanDrawer({ equipments, onRefresh }: CalibrationPlan
           calibration_type: editingCalibrationPlan.calibration_type,
           cycle_months: editingCalibrationPlan.cycle_months,
           last_calibration_date: editingCalibrationPlan.last_calibration_date ? dayjs(editingCalibrationPlan.last_calibration_date) : undefined,
-          responsible_person_id: editingCalibrationPlan.responsible_person_id,
+          responsible_person_id: editingCalibrationPlan.responsible_person_id ?? undefined,
           remark: editingCalibrationPlan.remark,
           status: editingCalibrationPlan.status,
         })
@@ -49,7 +50,7 @@ export function CalibrationPlanDrawer({ equipments, onRefresh }: CalibrationPlan
           calibration_type: values.calibration_type,
           cycle_months: values.cycle_months,
           last_calibration_date: values.last_calibration_date ? values.last_calibration_date.format('YYYY-MM-DD') : undefined,
-          responsible_person_id: values.responsible_person_id || undefined,
+          responsible_person_id: values.responsible_person_id ?? null,
           remark: values.remark || undefined,
           status: values.status,
         }
@@ -104,8 +105,16 @@ export function CalibrationPlanDrawer({ equipments, onRefresh }: CalibrationPlan
         <Form.Item name="last_calibration_date" label="上次校准日期">
           <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" placeholder="选择日期" />
         </Form.Item>
-        <Form.Item name="responsible_person_id" label="责任人">
-          <Input placeholder="责任人 ID（可选）" />
+        <Form.Item
+          name="responsible_person_id"
+          label="责任人"
+          getValueFromEvent={(person: { id: string } | null) => person?.id ?? null}
+        >
+          <PersonSelect
+            label={editingCalibrationPlan?.responsible_person_name}
+            placeholder="搜索姓名选择责任人（可选）"
+            allowClear
+          />
         </Form.Item>
         {editingCalibrationPlan && (
           <Form.Item name="status" label="状态">

@@ -18,6 +18,8 @@ import {
   exportEquipmentFacilityHazardsAction,
   updateEquipmentFacilityHazardAction,
 } from '@/actions/risk-grading'
+import DepartmentTreeSelect from '@/components/common/DepartmentTreeSelect'
+import { useDepartmentOptions } from '@/components/safety/useDepartmentOptions'
 import { fetchEquipmentFacilityHazards, fetchRiskGradingOptions } from '@/lib/api/client/risk-grading'
 import {
   deriveEquipmentEvaluationGrade,
@@ -77,7 +79,6 @@ export default function EquipmentLedgerClient() {
     staleTime: Infinity,
   })
 
-  const departmentOptions = useMemo(() => toValueLabelOptions(options?.departments ?? []), [options])
   const equipmentMeasureOptions = useMemo(() => options?.equipment_measures ?? [], [options])
   const residualRiskOptions = useMemo(() => options?.residual_risks ?? [], [options])
   const executionLevelOptions = useMemo(() => options?.execution_levels ?? [], [options])
@@ -113,6 +114,9 @@ export default function EquipmentLedgerClient() {
 
   const rows = data?.data ?? []
   const total = data?.meta.total ?? 0
+
+  // 历史记录里的部门名可能已被组织撤销：补进筛选选项，保证老数据仍可筛出来
+  const { options: departmentOptions } = useDepartmentOptions(rows.map((row) => row.control_level))
 
   const watchedL = Form.useWatch('likelihood_l', form)
   const watchedS = Form.useWatch('severity_s', form)
@@ -469,13 +473,13 @@ export default function EquipmentLedgerClient() {
           <Form.Item name="residual_risk" label="残余风险" rules={[{ required: true, message: '请选择残余风险' }]}>
             <Select options={residualRiskOptions} placeholder="仅 1–3 级" />
           </Form.Item>
-          <Form.Item name="control_level" label="管控层级" rules={[{ required: true, message: '请选择管控层级' }]}>
-            <Select
-              showSearch
-              optionFilterProp="label"
-              options={departmentOptions}
-              placeholder="选择部门"
-            />
+          <Form.Item
+            name="control_level"
+            label="管控层级"
+            rules={[{ required: true, message: '请选择管控层级' }]}
+            tooltip="可选组织架构中的任意部门"
+          >
+            <DepartmentTreeSelect valueField="name" placeholder="请选择部门（可搜索）" />
           </Form.Item>
           <Form.Item name="execution_level" label="执行层级" rules={[{ required: true, message: '请选择执行层级' }]}>
             <Select options={executionLevelOptions} placeholder="车间 / 班组长" />

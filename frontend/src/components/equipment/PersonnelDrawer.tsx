@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import {App, Button, Drawer, Select, Typography} from 'antd'
+import {App, Button, Drawer, Typography} from 'antd'
 import { UserOutlined, SearchOutlined } from '@ant-design/icons'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { addPersonnel } from '@/actions/equipment-personnel'
 import type { EquipmentRole } from '@/types/equipment-personnel'
-import { UserAvatar } from '@/components/common/UserAvatar'
+import { PersonMultiSelect } from '@/components/common/PersonSelect'
 
 const { Text } = Typography
 
@@ -16,49 +16,11 @@ interface Props {
   roles: EquipmentRole[]
 }
 
-interface UserOption {
-  value: string
-  label: string
-  name: string
-  account: string
-  dept: string
-  eno: string
-  avatar: string | null
-}
-
 export function PersonnelDrawer({ open, onClose, roles: _roles }: Props) {
   const { message } = App.useApp()
   const queryClient = useQueryClient()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
-  const [keyword, setKeyword] = useState('')
-
-  const { data: users = [], isLoading } = useQuery({
-    queryKey: ['identity-users-search', keyword],
-    queryFn: async () => {
-      const params = new URLSearchParams({ limit: '500' })
-      if (keyword) params.set('keyword', keyword)
-      const resp = await fetch(`/api/v1/identity/personnel?${params}`)
-      if (!resp.ok) return []
-      const json = await resp.json()
-      const items = json.data?.items ?? []
-      return items.map((u: Record<string, unknown>) => {
-        const name = String(u.name ?? '')
-        const account = String(u.username ?? '')
-        return {
-          value: String(u.id),
-          // 统一「姓名（账号）」：重名时能区分
-          label: account ? `${name}（${account}）` : name,
-          name,
-          account,
-          dept: String(u.department ?? ''),
-          eno: String(u.employee_no ?? ''),
-          avatar: u.avatar_url ? String(u.avatar_url) : null,
-        }
-      }) as UserOption[]
-    },
-    enabled: open,
-  })
 
   const handleSubmit = async () => {
     if (selectedIds.length === 0) {
@@ -71,7 +33,6 @@ export function PersonnelDrawer({ open, onClose, roles: _roles }: Props) {
       message.success('人员添加成功')
       queryClient.invalidateQueries({ queryKey: ['equipment-personnel'] })
       setSelectedIds([])
-      setKeyword('')
       onClose()
     } catch {
       message.error('添加失败')
@@ -82,7 +43,6 @@ export function PersonnelDrawer({ open, onClose, roles: _roles }: Props) {
 
   const handleClose = () => {
     setSelectedIds([])
-    setKeyword('')
     onClose()
   }
 
@@ -118,7 +78,7 @@ export function PersonnelDrawer({ open, onClose, roles: _roles }: Props) {
               添加人员
             </Text>
             <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
-              从身份系统中搜索并添加人员
+              从 HR 在册人员中搜索并添加
             </Text>
           </div>
         </div>
@@ -148,37 +108,14 @@ export function PersonnelDrawer({ open, onClose, roles: _roles }: Props) {
         }}>
           <SearchOutlined style={{ fontSize: 15, color: '#5667a3', flexShrink: 0 }} />
           <Text style={{ fontSize: 13, color: '#5a6380', lineHeight: 1.5 }}>
-            输入姓名搜索人员，支持多选添加。已存在于设备人员池中的人员将被跳过。
+            搜索 HR 在册的系统用户，支持多选添加。已存在于设备人员池中的人员将被跳过。
           </Text>
         </div>
 
-        <Select
-          mode="multiple"
+        <PersonMultiSelect
           value={selectedIds}
-          onChange={(v) => setSelectedIds(v)}
-          onSearch={(v) => setKeyword(v)}
-          onClear={() => setKeyword('')}
-          filterOption={false}
-          notFoundContent={
-            isLoading ? '搜索中...' : keyword ? '无匹配人员' : '请输入姓名搜索'
-          }
+          onChange={(persons) => setSelectedIds(persons.map((person) => person.id))}
           placeholder="输入姓名搜索人员"
-          style={{ width: '100%' }}
-          options={users}
-          loading={isLoading}
-          optionRender={(option) => (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
-              <UserAvatar size={32} name={option.data.name} src={option.data.avatar} />
-              <div style={{ lineHeight: 1.3 }}>
-                <Text style={{ fontSize: 14, fontWeight: 500, color: '#1a1a1a', display: 'block' }}>
-                  {option.data.label}
-                </Text>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  {option.data.eno} · {option.data.dept}
-                </Text>
-              </div>
-            </div>
-          )}
         />
       </div>
 

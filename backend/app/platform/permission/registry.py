@@ -87,10 +87,6 @@ class ApiBindingDef:
 
 # ── 平台权限码 ────────────────────────────────────────────────────
 
-# 选人组件（人员下拉）专用码：只查启用账号的展示字段。
-# 模块负责人 / 模块管理员内置角色默认持有，用于在角色与授权页选人。
-PERSON_LOOKUP_CODE = "platform:person:lookup"
-
 PLATFORM_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("platform:user:read", "查看用户", "platform", "user", "read"),
     PermissionDef("platform:user:manage", "管理用户", "platform", "user", "manage"),
@@ -109,16 +105,9 @@ PLATFORM_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("platform:llm-config:manage", "管理模型配置", "platform", "llm-config", "manage"),
     PermissionDef("platform:module-setting:read", "查看模块配置", "platform", "module-setting", "read"),
     PermissionDef("platform:module-setting:manage", "管理模块配置", "platform", "module-setting", "manage"),
-    # 人员下拉专用（选人组件）：只返回启用账号的姓名/账号/部门/职务，不含联系方式等敏感字段。
-    # 与 platform:user:read 分开，避免「能查人员下拉」被误解为「能进用户管理页」。
-    PermissionDef(
-        PERSON_LOOKUP_CODE,
-        "人员查询",
-        "platform",
-        "person",
-        "lookup",
-        description="授权/角色等管理页的人员下拉（仅启用账号，只含展示字段）",
-    ),
+    # 选人下拉（`GET /identity/users/lookup`）不设权限码：只要求登录。
+    # 它是业务模块表单与模块负责人授权页的基础能力，挂平台级码会逼负责人
+    # 额外持有一枚与本职无关的平台权限（原 `platform:person:lookup` 已于 0217 退役）。
 )
 
 
@@ -1323,19 +1312,13 @@ ALL_BUILTIN_ROLES: tuple[RoleDef, ...] = PLATFORM_ROLES + MODULE_BUILTIN_ROLES
 # + 模块管理入口码，启动同步时只增不删、随注册表自动扩量。
 # 两者的区别不在权限集合，而在**任命关系**：负责人由系统管理员任命，
 # 代表由本模块负责人任命；模块负责人不能被本模块其他人移除。
+# 权限集合严格限定在本模块内，不夹带任何平台级码：授权页的选人下拉只要求登录。
 BUILTIN_ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
     role_code: codes
     for module in BUSINESS_MODULES
     for role_code, codes in (
-        (
-            f"{module.code}:owner",
-            # 人员查询：负责人/代表都要能在角色与授权页选人（选人数据源已改为系统账号）
-            _business_codes_of(module.code) + (admin_entry_code(module.code), PERSON_LOOKUP_CODE),
-        ),
-        (
-            f"{module.code}:delegate",
-            _business_codes_of(module.code) + (admin_entry_code(module.code), PERSON_LOOKUP_CODE),
-        ),
+        (f"{module.code}:owner", _business_codes_of(module.code) + (admin_entry_code(module.code),)),
+        (f"{module.code}:delegate", _business_codes_of(module.code) + (admin_entry_code(module.code),)),
     )
 }
 
@@ -1360,8 +1343,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:user:read", "GET", "/api/v1/identity/sessions"),
     ApiBindingDef("platform:user:manage", "DELETE", "/api/v1/identity/sessions/{jti}"),
     ApiBindingDef("platform:user:manage", "DELETE", "/api/v1/identity/users/{id}/sessions"),
-    # 选人组件的人员下拉（系统用户管理口径：只返回启用账号的展示字段）
-    ApiBindingDef("platform:person:lookup", "GET", "/api/v1/identity/users/lookup"),
+    # 选人组件的人员下拉不登记绑定，改列 EXEMPT_ROUTES：只要求登录（见下方豁免清单）
     # 组织架构 / 人员名单（平台用户读权限即可）
     ApiBindingDef("platform:user:read", "GET", "/api/v1/identity/departments"),
     ApiBindingDef("platform:user:read", "GET", "/api/v1/identity/departments/{dept_id}"),
@@ -2771,6 +2753,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     # 偏差组织配置：部门联系人 / 通知设置 / 部门周确认
     ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/department-contacts"),
     ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/department-contacts/member-options"),
+    ApiBindingDef("quality:deviation:read", "GET", "/api/v1/quality/department-contacts/department-leader"),
     ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/department-contacts"),
     ApiBindingDef("quality:deviation:update", "PUT", "/api/v1/quality/department-contacts/{contact_id}"),
     ApiBindingDef("quality:deviation:update", "DELETE", "/api/v1/quality/department-contacts/{contact_id}"),
@@ -3575,7 +3558,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
 # `PERMISSION_ENFORCE_ENABLED` 后登录会整体挂掉：
 # - 登录入口（auth/*）：调用方还没登录，不可能持有权限码；
 # - 当前用户自取（me）：只要求「已登录」，权限判定交给路由自身的 require_user；
-# - 外部系统回调（webhook）：飞书服务器无用户登录态，改用回调签名/token 校验。
+# - 外部系统回调（webhook）：飞书服务器无用户登录态，改用回调签名/token 校验；
+# - 登录即可的公共能力（选人下拉）：内容已按最小面收口，不设独立权限码。
 # 因此它们只做豁免登记，不参与权限绑定。
 EXEMPT_ROUTES: tuple[tuple[str, str], ...] = (
     ("GET", "/api/v1/identity/auth/login"),
@@ -3587,6 +3571,10 @@ EXEMPT_ROUTES: tuple[tuple[str, str], ...] = (
     # 自助改密：任何登录用户都可能需要（尤其被标记「首登强制改密」时），
     # 不挂权限码，判定交给路由自身的 require_user
     ("POST", "/api/v1/identity/me/password"),
+    # 选人下拉（人员查询）：各业务模块表单、模块负责人授权页都要用，
+    # 只要求登录，不挂权限码 —— 否则模块负责人必须先持有一枚平台级权限才能选人。
+    # 返回内容已收口为「HR 在册 + 启用账号」的姓名/账号/部门/职务/头像，不含联系方式。
+    ("GET", "/api/v1/identity/users/lookup"),
     # 菜单栏配置读取：每个登录用户的导航渲染都要读，只要求已登录（写操作用 ops:manage）
     ("GET", "/api/v1/system/menus/config"),
     # 飞书审批完成回调：由飞书服务器发起，不可能携带用户 JWT，

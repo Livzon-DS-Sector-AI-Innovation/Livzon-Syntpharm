@@ -2,7 +2,7 @@
 
 import uuid
 
-from sqlalchemy import func, select, update
+from sqlalchemy import func, not_, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.platform.identity.models import User
@@ -16,6 +16,7 @@ from app.platform.permission.models import (
     RolePermission,
     UserRoleGrant,
 )
+from app.platform.permission.registry import RETIRED_MODULE_CODES
 
 
 class GrantRepository:
@@ -203,16 +204,20 @@ class RoleRepository:
     """角色仓储。"""
 
     async def list_roles(self, db: AsyncSession) -> list[Role]:
-        """列出角色（已退役的历史角色类型不返回）。
+        """列出角色（已退役的历史角色类型 / 下线模块的内置角色不返回）。
 
-        只按 `role_type` 过滤，**不按** `status` 过滤：人工禁用的岗位角色仍要
-        出现在列表里（前端按禁用态展示并允许恢复）。
+        只按 `role_type` 与所属模块过滤，**不按** `status` 过滤：人工禁用的
+        岗位角色仍要出现在列表里（前端按禁用态展示并允许恢复）。
+        下线模块（如 agent）的角色即便库里还有行，也不再出现在任何管理界面。
         """
         result = await db.execute(
             select(Role)
             .where(
                 Role.is_deleted == False,  # noqa: E712
                 Role.role_type.notin_(RETIRED_ROLE_TYPES),
+                # 平台级角色的 module_code 为 NULL，不能被 NOT IN 误伤
+                # （uat 侧 RETIRED_MODULE_CODES 为空集，filter 等价于恒真，保留以对齐分支口径）
+                or_(Role.module_code.is_(None), Role.module_code.notin_(RETIRED_MODULE_CODES)),
             )
             .order_by(Role.category, Role.code)
         )
@@ -297,9 +302,13 @@ class PermissionRepository:
     """权限目录仓储。"""
 
     async def list_permissions(self, db: AsyncSession) -> list[Permission]:
+        """列出权限码；已下线模块（如 agent）的权限码不展示。"""
         result = await db.execute(
             select(Permission)
-            .where(Permission.is_deleted == False)  # noqa: E712
+            .where(
+                Permission.is_deleted == False,  # noqa: E712
+                Permission.module.notin_(RETIRED_MODULE_CODES),
+            )
             .order_by(Permission.module, Permission.resource, Permission.action)
         )
         return list(result.scalars().all())
@@ -309,9 +318,13 @@ class ApiBindingRepository:
     """接口绑定登记簿仓储。"""
 
     async def list_bindings(self, db: AsyncSession) -> list[ApiBinding]:
-        result = await db.execute(
+        """列出接口绑定；已下线模块（如 agent）的历史绑定不展示。"""
+        stmt = (
             select(ApiBinding)
             .where(ApiBinding.is_deleted == False)  # noqa: E712
             .order_by(ApiBinding.method, ApiBinding.route_template)
         )
+        for module_code in RETIRED_MODULE_CODES:
+            stmt = stmt.where(not_(ApiBinding.permission_code.startswith(f"{module_code}:")))
+        result = await db.execute(stmt)
         return list(result.scalars().all())

@@ -2,6 +2,7 @@ import type { ModuleInfo } from '@/types'
 import type { components } from '@/types/generated/schema'
 import type {
   DepartmentContactListData,
+  DepartmentLeaderData,
   DepartmentMemberOption,
   DeviationAttachmentCommentList,
   DeviationAttachmentCommentSummary,
@@ -45,6 +46,20 @@ export async function fetchCapas(params?: {
 export async function fetchDepartmentContacts(keyword?: string): Promise<DepartmentContactListData> {
   const query = keyword ? `?keyword=${encodeURIComponent(keyword)}` : ''
   return apiGet<DepartmentContactListData>(`/api/v1/quality/department-contacts${query}`)
+}
+
+/**
+ * 部门联系人配置：按部门名解析 HR 组织里的部门负责人（新增部门时自动带出）。
+ *
+ * 返回的 `dept_head_profile_id` 是 `hr.employee_profiles.id`，与
+ * `DepartmentContact.dept_head_id`（`identity.users.id`）不是同一套 ID：
+ * 提交时后端会统一归一，前端只管原样回填。
+ */
+export async function fetchDepartmentLeader(department: string): Promise<DepartmentLeaderData> {
+  return apiGet<DepartmentLeaderData>(
+    `/api/v1/quality/department-contacts/department-leader?department=${encodeURIComponent(department)}`,
+    { cache: 'no-store' },
+  )
 }
 
 /** 部门联系人配置：人员候选（客户端版，供模块配置页签使用） */

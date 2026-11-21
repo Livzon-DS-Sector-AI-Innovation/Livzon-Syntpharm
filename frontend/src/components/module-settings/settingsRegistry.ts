@@ -53,6 +53,13 @@ export const MODULE_SETTINGS: Record<string, ModuleSettingsDefinition> = {
     tabs: [
       PERMISSION_TAB,
       {
+        key: 'department-contacts',
+        label: '部门联系人配置',
+        kind: 'custom',
+        component: 'quality-department-contacts',
+        legacyPath: '/quality/department-contacts',
+      },
+      {
         key: 'instrument',
         label: '仪器提醒',
         kind: 'custom',
@@ -72,13 +79,6 @@ export const MODULE_SETTINGS: Record<string, ModuleSettingsDefinition> = {
         kind: 'custom',
         component: 'quality-reagent',
         legacyPath: '/quality/reagent/reminder',
-      },
-      {
-        key: 'department-contacts',
-        label: '部门联系人配置',
-        kind: 'custom',
-        component: 'quality-department-contacts',
-        legacyPath: '/quality/department-contacts',
       },
       RUNTIME(),
     ],

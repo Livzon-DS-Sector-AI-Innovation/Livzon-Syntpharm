@@ -434,9 +434,8 @@ export interface MaintenancePlanResponse {
   frequency_unit: string
   last_maintenance_date: string | null
   next_maintenance_date: string | null
-  executor_id: string | null
-  executor_name?: string | null
   responsible_person_id: string | null
+  responsible_person_name?: string | null
   maintenance_content: string | null
   status: string
   remark: string | null
