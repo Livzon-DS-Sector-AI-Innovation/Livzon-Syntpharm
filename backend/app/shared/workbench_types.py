@@ -8,34 +8,14 @@
 - ``platform/workbench`` 只 import 各模块 ``public_api``，不碰 service/repository/models；
 - 各模块取数函数返回 ``WorkbenchSourceResult``，失败由平台层统一降级；
 - 前端路由由模块自己拼好后放进 ``path``，平台层不做路由拼接。
+
+本文件只放 DTO 字段定义；判定码、中文文案与取数上限属工作台业务规则，
+见 ``app/platform/workbench/constants.py``。
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-
-# ── 判定依据 ─────────────────────────────────────────────────────
-#: 精确：当前环节处理人（或可操作人）就是我
-MATCH_PERSON = "person"
-#: 兜底：单据处于待审状态且我具备对应审批权限码（判不出具体人时使用）
-MATCH_ROLE = "role"
-
-MATCH_KIND_LABELS: dict[str, str] = {
-    MATCH_PERSON: "待我审批",
-    MATCH_ROLE: "同角色待办",
-}
-
-# ── 模块 key / 名称（与 app/shared/module_registry.py 的模块码一致）──
-MODULE_QUALITY = "quality"
-MODULE_SAFETY = "safety"
-
-# ── 取数上限 ─────────────────────────────────────────────────────
-#: 单数据源返回条数上限（首页只展示前几条，更详细的内容去模块列表页看）
-SOURCE_ITEM_LIMIT = 5
-#: 单数据源候选扫描上限：内存匹配型数据源（偏差 / 隐患）一次最多载入的行数
-CANDIDATE_SCAN_LIMIT = 300
-#: 接口查询参数上限
-OVERVIEW_ITEM_LIMIT_MAX = 20
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,15 +36,12 @@ class WorkbenchItem:
     status: str = ""
     status_label: str = ""
     step_label: str | None = None
-    match_kind: str = MATCH_ROLE
+    #: 判定依据，取值见 ``app/platform/workbench/constants.py``（person / role）
+    match_kind: str = ""
     age_days: int | None = None
     overdue: bool = False
     path: str | None = None
     my_roles: tuple[str, ...] = field(default_factory=tuple)
-
-    @property
-    def match_kind_label(self) -> str:
-        return MATCH_KIND_LABELS.get(self.match_kind, self.match_kind)
 
 
 @dataclass(slots=True)

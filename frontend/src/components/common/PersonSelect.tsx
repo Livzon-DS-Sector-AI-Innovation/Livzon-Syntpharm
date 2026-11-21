@@ -23,7 +23,7 @@ const PAGE_SIZE = 50
 const SCROLL_BOTTOM_THRESHOLD = 32
 
 export interface PickedPerson {
-  /** hr.employee_profiles.id */
+  /** identity.users.id（业务表存这个账号 UUID） */
   id: string
   name: string
 }
@@ -86,7 +86,7 @@ function mergeById(prev: DirectoryPersonItem[], next: DirectoryPersonItem[]): Di
 /**
  * 远端人员搜索：展开即取首批、关键字 300ms 防抖、滚动到底续载、请求序号防竞态。
  */
-function useDirectorySearch() {
+function useDirectorySearch(feishuBoundOnly: boolean) {
   const [options, setOptions] = useState<DirectoryPersonItem[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -109,7 +109,12 @@ function useDirectorySearch() {
     loadingRef.current = true
     setLoading(true)
     try {
-      const page = await fetchUserLookup({ keyword: keyword || undefined, offset, limit: PAGE_SIZE })
+      const page = await fetchUserLookup({
+        keyword: keyword || undefined,
+        feishu_bound_only: feishuBoundOnly || undefined,
+        offset,
+        limit: PAGE_SIZE,
+      })
       if (seq !== requestSeq.current) return
       const items = page.items.map(toDirectoryPerson)
       setOptions((prev) => (offset === 0 ? items : mergeById(prev, items)))
@@ -126,7 +131,7 @@ function useDirectorySearch() {
         setLoading(false)
       }
     }
-  }, [])
+  }, [feishuBoundOnly])
 
   const reload = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
@@ -182,7 +187,7 @@ function ListLoadingFooter({ loading, hasOptions }: { loading: boolean; hasOptio
 }
 
 export interface PersonSelectProps {
-  /** 已选人员 UUID（hr.employee_profiles.id） */
+  /** 已选人员 UUID（identity.users.id，与业务表存储口径一致） */
   value?: string | null
   /** 已保存的姓名快照：未出现在当前列表时用于回显，避免显示 UUID */
   label?: string | null
@@ -191,9 +196,12 @@ export interface PersonSelectProps {
   allowClear?: boolean
   placeholder?: string
   disabled?: boolean
-  /** @deprecated HR 目录不区分账号绑定状态，保留仅为兼容旧调用点 */
+  /**
+   * 仅列出已绑定飞书身份的账号：审批人 / 整改负责人等需要收飞书通知的场景必须开启。
+   * 后端走 `feishu_bound_only`，与 `identity/personnel` 同口径。
+   */
   feishuBoundOnly?: boolean
-  /** @deprecated HR 目录不展示登录账号，保留仅为兼容旧调用点 */
+  /** @deprecated 用户下拉不展示登录账号，保留仅为兼容旧调用点 */
   showUsername?: boolean
   /** Form.Item 会代为注入 onChange；裸用时必填 */
   onChange?: (person: PickedPerson | null) => void
@@ -209,11 +217,12 @@ export default function PersonSelect({
   allowClear = false,
   placeholder = '搜索姓名选择人员',
   disabled,
+  feishuBoundOnly = false,
   onChange,
   onSelect,
 }: PersonSelectProps) {
   const { options, loading, searchValue, reload, handleSearch, handlePopupScroll, clearSearchValue } =
-    useDirectorySearch()
+    useDirectorySearch(feishuBoundOnly)
   const [picked, setPicked] = useState<PickedPerson | null>(null)
   const snapshotName = label ?? (picked && picked.id === value ? picked.name : null)
 
@@ -285,7 +294,7 @@ export default function PersonSelect({
 }
 
 export interface PersonMultiSelectProps {
-  /** 已选人员 UUID 列表（hr.employee_profiles.id） */
+  /** 已选人员 UUID 列表（identity.users.id） */
   value?: string[]
   /** 已保存的姓名快照（与 value 顺序一致），未搜索时用于回显 */
   labels?: string[]
@@ -294,9 +303,9 @@ export interface PersonMultiSelectProps {
   allowClear?: boolean
   placeholder?: string
   disabled?: boolean
-  /** @deprecated HR 目录不区分账号绑定状态，保留仅为兼容旧调用点 */
+  /** 仅列出已绑定飞书身份的账号（后端 `feishu_bound_only`），需要发飞书通知的场景必须开启 */
   feishuBoundOnly?: boolean
-  /** @deprecated HR 目录不展示登录账号，保留仅为兼容旧调用点 */
+  /** @deprecated 用户下拉不展示登录账号，保留仅为兼容旧调用点 */
   showUsername?: boolean
   onChange?: (persons: PickedPerson[]) => void
   onSelectionChange?: (persons: DirectoryPersonItem[]) => void
@@ -310,11 +319,12 @@ export function PersonMultiSelect({
   allowClear = true,
   placeholder = '搜索姓名，可多选',
   disabled,
+  feishuBoundOnly = false,
   onChange,
   onSelectionChange,
 }: PersonMultiSelectProps) {
   const { options, loading, searchValue, reload, handleSearch, handlePopupScroll, clearSearchValue } =
-    useDirectorySearch()
+    useDirectorySearch(feishuBoundOnly)
   const [pickedList, setPickedList] = useState<PickedPerson[]>([])
   const selectedIds = useMemo(() => value ?? [], [value])
   const pickedNameMap = useMemo(() => new Map(pickedList.map((p) => [p.id, p.name])), [pickedList])

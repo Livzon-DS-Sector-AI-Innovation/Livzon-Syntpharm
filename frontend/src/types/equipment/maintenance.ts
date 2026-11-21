@@ -1,37 +1,24 @@
 import type { components } from '@/types/generated/schema'
+import type {
+  MaintenancePlan as GeneratedMaintenancePlan,
+  MaintenancePlanListResponse as GeneratedMaintenancePlanListResponse,
+} from './generated-bridge'
+
 export type CreateMaintenancePlanInput = components['schemas']['MaintenancePlanCreate']
 export type UpdateMaintenancePlanInput = components['schemas']['MaintenancePlanUpdate']
 
 // ==================== 维护计划 ====================
+// 契约字段统一由 generated-bridge（OpenAPI 派生）维护，本文件只做别名，
+// 避免同一个响应结构在两处并行加字段（如 responsible_person_name）。
+export type MaintenancePlan = GeneratedMaintenancePlan
+export type MaintenancePlanListResponse = GeneratedMaintenancePlanListResponse
+
+/** 表单下拉用的取值集合（UI 类型，不是接口契约） */
 export type MaintenancePlanType = '预防性维护' | '预测性维护'
+/** 表单下拉用的取值集合（UI 类型，不是接口契约） */
 export type MaintenancePlanStatus = '启用' | '停用' | '已完成'
+/** 表单下拉用的取值集合（UI 类型，不是接口契约） */
 export type FrequencyUnit = '天' | '周' | '月' | '年'
-
-export interface MaintenancePlan {
-  id: string
-  equipment_id: string | null
-  category_id: string | null
-  category_name?: string | null
-  plan_name: string
-  plan_type: MaintenancePlanType
-  frequency: number
-  frequency_unit: FrequencyUnit
-  last_maintenance_date: string | null
-  next_maintenance_date: string | null
-  responsible_person_id: string | null
-  responsible_person_name?: string | null
-  maintenance_content: string | null
-  status: MaintenancePlanStatus
-  remark: string | null
-  created_at: string
-  updated_at: string
-  created_by: string | null
-  updated_by: string | null
-  equipment_name?: string
-  asset_no?: string
-}
-
-
 
 export interface MaintenancePlanFilters {
   equipment_id?: string
@@ -40,11 +27,4 @@ export interface MaintenancePlanFilters {
   keyword?: string
   page?: number
   page_size?: number
-}
-
-export interface MaintenancePlanListResponse {
-  items: MaintenancePlan[]
-  total: number
-  page: number
-  page_size: number
 }

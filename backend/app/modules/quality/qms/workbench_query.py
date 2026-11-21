@@ -45,15 +45,14 @@ from app.modules.quality.qms.ipqc_models import IPQCApprovalRecord, IPQCInspecti
 from app.modules.quality.qms.iqc_models import IQCApprovalRecord, IQCInspection
 from app.modules.quality.qms.sampling_models import SamplingApprovalRecord, SamplingOrder
 from app.modules.quality.qms.stability_models import StabilityApprovalRecord, StabilityStudy
-from app.shared.module_registry import MODULES_BY_CODE
-from app.shared.workbench_types import (
+from app.platform.workbench.constants import (
     CANDIDATE_SCAN_LIMIT,
     MATCH_PERSON,
     MATCH_ROLE,
     MODULE_QUALITY,
-    WorkbenchItem,
-    WorkbenchSourceResult,
 )
+from app.shared.module_registry import MODULES_BY_CODE
+from app.shared.workbench_types import WorkbenchItem, WorkbenchSourceResult
 
 logger = logging.getLogger(__name__)
 

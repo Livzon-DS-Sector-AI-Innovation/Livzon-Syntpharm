@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.core.response import ApiResponse, build_response
+from app.platform.workbench.constants import OVERVIEW_ITEM_LIMIT_MAX, SOURCE_ITEM_LIMIT
 from app.platform.workbench.read_marks import mark_reads
 from app.platform.workbench.schemas import (
     TodoReadBatchRequest,
@@ -25,7 +26,6 @@ from app.platform.workbench.schemas import (
     WorkbenchOverviewResponse,
 )
 from app.platform.workbench.service import build_overview
-from app.shared.workbench_types import OVERVIEW_ITEM_LIMIT_MAX, SOURCE_ITEM_LIMIT
 
 router = APIRouter()
 

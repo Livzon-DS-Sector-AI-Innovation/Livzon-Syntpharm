@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import pytest
 
+from app.platform.workbench.constants import MATCH_PERSON, MATCH_ROLE
 from app.platform.workbench.read_marks import (
     item_key,
     normalize_marks,
@@ -19,7 +20,7 @@ from app.platform.workbench.read_marks import (
 )
 from app.platform.workbench.schemas import TodoReadMark
 from app.platform.workbench.service import _to_model
-from app.shared.workbench_types import MATCH_PERSON, MATCH_ROLE, WorkbenchItem
+from app.shared.workbench_types import WorkbenchItem
 
 
 def _item(**overrides: object) -> WorkbenchItem:

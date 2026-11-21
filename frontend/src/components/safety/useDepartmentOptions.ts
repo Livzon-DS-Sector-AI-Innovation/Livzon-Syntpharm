@@ -39,21 +39,26 @@ export function useDepartmentOptions(extra: Array<string | null | undefined> = [
     staleTime: 5 * 60 * 1000,
   })
 
-  const extraKey = extra.filter(Boolean).join('\u0000')
+  // extra 是调用方每次渲染新建的数组，直接进依赖会让 memo 失效；
+  // 先归一化成字符串键（去空、去重交给下游 seen），memo 里只依赖这个键。
+  const extraKey = Array.from(
+    new Set(
+      extra
+        .map((raw) => raw?.trim() ?? '')
+        .filter(Boolean),
+    ),
+  ).join('\u0000')
 
   const options = useMemo(() => {
     const names: string[] = []
     const seen = new Set<string>()
     collectNames(nodes, names, seen)
-    for (const raw of extra) {
-      const name = raw?.trim()
-      if (!name || seen.has(name)) continue
+    for (const name of extraKey ? extraKey.split('\u0000') : []) {
+      if (seen.has(name)) continue
       seen.add(name)
       names.push(name)
     }
     return names.map((name) => ({ value: name, label: name }))
-    // extraKey 已覆盖 extra 的内容，避免调用方传入新数组导致重复计算
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, extraKey])
 
   return { options, isLoading }

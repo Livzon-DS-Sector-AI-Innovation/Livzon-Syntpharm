@@ -18,7 +18,8 @@ from app.modules.safety.models import HazardReport
 from app.modules.safety.service.hazard_workbench import _pending_review_level
 from app.platform.identity.models import User
 from app.platform.workbench import service as workbench_service
-from app.shared.workbench_types import MATCH_PERSON, MATCH_ROLE, WorkbenchItem, WorkbenchSourceResult
+from app.platform.workbench.constants import MATCH_PERSON, MATCH_ROLE
+from app.shared.workbench_types import WorkbenchItem, WorkbenchSourceResult
 
 _UID = uuid.uuid4()
 

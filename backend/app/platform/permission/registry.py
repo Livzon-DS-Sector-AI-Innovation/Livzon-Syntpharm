@@ -1341,9 +1341,9 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     # 登录记录（审计类）
     ApiBindingDef("platform:audit:read", "GET", "/api/v1/identity/login-logs"),
     # HR 人员/部门目录（统一人员选择器 PersonSelect / DepartmentTreeSelect 的数据源）
-    # 与 identity/personnel 同口径：只返回姓名、部门、职务等展示信息，不含敏感字段
-    ApiBindingDef("platform:user:read", "GET", "/api/v1/hr/directory/departments"),
-    ApiBindingDef("platform:user:read", "GET", "/api/v1/hr/directory/people"),
+    # 与 identity/users/lookup 同口径：只要求登录，不挂权限码 —— 端点实现（
+    # modules/hr/directory_api.py）只有 RequiredUser，这里若登记绑定，
+    # 权限目录会向管理员宣称一个端点并未校验的权限码。改列 EXEMPT_ROUTES。
     # 模型配置（含 API key，仅平台管理员）
     ApiBindingDef("platform:llm-config:read", "GET", "/api/v1/llm/configs"),
     ApiBindingDef("platform:llm-config:read", "GET", "/api/v1/llm/configs/{config_id}"),
@@ -1355,6 +1355,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:module-setting:read", "GET", "/api/v1/module-settings"),
     ApiBindingDef("platform:module-setting:read", "GET", "/api/v1/module-settings/{module}/{key}"),
     ApiBindingDef("platform:module-setting:manage", "POST", "/api/v1/module-settings"),
+    ApiBindingDef("platform:module-setting:manage", "PUT", "/api/v1/module-settings/batch"),
     ApiBindingDef("platform:module-setting:manage", "PUT", "/api/v1/module-settings/{module}/{key}"),
     ApiBindingDef("platform:module-setting:manage", "DELETE", "/api/v1/module-settings/{module}/{key}"),
     # 操作记录
@@ -1392,11 +1393,11 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:grant:manage", "POST", "/api/v1/permission/grants/batch-status"),
     ApiBindingDef("platform:grant:manage", "POST", "/api/v1/permission/grants/batch-delete"),
     # 模块负责人 / 模块管理员（系统管理员侧）
-    ApiBindingDef("platform:grant:read", "GET", "/api/v1/permission/module-admins"),
+    ApiBindingDef("platform:grant:manage", "GET", "/api/v1/permission/module-admins"),
     ApiBindingDef("platform:grant:manage", "POST", "/api/v1/permission/module-admins"),
     ApiBindingDef("platform:grant:manage", "POST", "/api/v1/permission/module-admins/remove"),
     # 按人查权限（离职/调岗收权兜底）
-    ApiBindingDef("platform:grant:read", "GET", "/api/v1/permission/user-access/{user_id}"),
+    ApiBindingDef("platform:grant:manage", "GET", "/api/v1/permission/user-access/{user_id}"),
     ApiBindingDef("platform:grant:manage", "POST", "/api/v1/permission/user-access/{user_id}/disable"),
     # 当前用户权限（登录用户自取）
     ApiBindingDef("platform:permission:read", "GET", "/api/v1/permission/my-permissions"),
@@ -3382,6 +3383,10 @@ EXEMPT_ROUTES: tuple[tuple[str, str], ...] = (
     # 只要求登录，不挂权限码 —— 否则模块负责人必须先持有一枚平台级权限才能选人。
     # 返回内容已收口为「HR 在册 + 启用账号」的姓名/账号/部门/职务/头像，不含联系方式。
     ("GET", "/api/v1/identity/users/lookup"),
+    # 选人下拉（HR 主数据）：PersonSelect / DepartmentTreeSelect 的数据源，
+    # 端点只有 RequiredUser（modules/hr/directory_api.py），不挂权限码。
+    ("GET", "/api/v1/hr/directory/departments"),
+    ("GET", "/api/v1/hr/directory/people"),
     # 菜单栏配置读取：每个登录用户的导航渲染都要读，只要求已登录（写操作用 ops:manage）
     ("GET", "/api/v1/system/menus/config"),
     # 飞书审批完成回调：由飞书服务器发起，不可能携带用户 JWT，

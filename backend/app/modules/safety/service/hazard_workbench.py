@@ -19,14 +19,9 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.safety.models import HazardReport
+from app.platform.workbench.constants import MATCH_PERSON, MATCH_ROLE, MODULE_SAFETY
 from app.shared.module_registry import MODULES_BY_CODE
-from app.shared.workbench_types import (
-    MATCH_PERSON,
-    MATCH_ROLE,
-    MODULE_SAFETY,
-    WorkbenchItem,
-    WorkbenchSourceResult,
-)
+from app.shared.workbench_types import WorkbenchItem, WorkbenchSourceResult
 
 logger = logging.getLogger(__name__)
 

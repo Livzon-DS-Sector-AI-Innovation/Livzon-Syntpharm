@@ -788,6 +788,7 @@ async def list_users_management(
 async def lookup_users(
     current_user: RequiredUser,
     keyword: str | None = Query(None, description="按姓名/账号/工号/手机号搜索"),
+    feishu_bound_only: bool = Query(False, description="仅返回已绑定飞书身份的账号"),
     offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -799,7 +800,9 @@ async def lookup_users(
     - 只列 HR 在册档案（``hr.employee_profiles.is_current=true``）对应的账号：
       已离职/调出、以及没有 HR 档案的本地账号（如 admin、测试账号）都不参与选人；
     - 只返回展示字段（姓名 / 账号 / 部门 / 职务 / 头像），不含联系方式与角色；
-    - 沿用同一条保护规则：非超管调用时看不到超管账号。
+    - 沿用同一条保护规则：非超管调用时看不到超管账号；
+    - ``feishu_bound_only=true`` 时只返回已绑定飞书身份的账号（审批人、整改负责人
+      等需要收飞书通知的场景用），口径与 ``identity/personnel`` 一致。
 
     准入只要求登录（不再挂 ``platform:person:lookup``）：选人下拉是各业务模块、
     模块负责人授权页的基础能力，挂平台级权限码会让负责人必须先持有一枚与本事
@@ -822,6 +825,7 @@ async def lookup_users(
         keyword_open_ids=keyword_open_ids,
         status="active",
         exclude_user_ids=exclude_user_ids,
+        feishu_bound_only=feishu_bound_only,
         hr_in_service_only=True,
         offset=offset,
         limit=limit,

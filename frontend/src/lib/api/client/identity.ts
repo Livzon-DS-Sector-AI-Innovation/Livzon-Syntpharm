@@ -65,6 +65,7 @@ export type UserLookupQuery = NonNullable<
 export async function fetchUserLookup(params?: UserLookupQuery): Promise<UserLookupPage> {
   const searchParams = new URLSearchParams()
   if (params?.keyword) searchParams.set('keyword', params.keyword)
+  if (params?.feishu_bound_only) searchParams.set('feishu_bound_only', 'true')
   searchParams.set('offset', String(params?.offset ?? 0))
   searchParams.set('limit', String(params?.limit ?? 50))
   const data = await apiGet<components['schemas']['UserLookupListApiResponse']['data']>(

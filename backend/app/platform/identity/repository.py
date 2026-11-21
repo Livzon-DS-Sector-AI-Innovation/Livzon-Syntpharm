@@ -256,6 +256,7 @@ class UserRepository:
         status: str | None = None,
         auth_source: str | None = None,
         unbound_only: bool = False,
+        feishu_bound_only: bool = False,
         must_change_password: bool | None = None,
         exclude_user_ids: list[UUID] | None = None,
         hr_in_service_only: bool = False,
@@ -313,6 +314,15 @@ class UserRepository:
             # 仅返回尚未绑定飞书身份的账号（供「绑定飞书」选择器使用）
             base = base.where(User.feishu_user_id.is_(None), User.feishu_open_id.is_(None))
             count_stmt = count_stmt.where(User.feishu_user_id.is_(None), User.feishu_open_id.is_(None))
+        if feishu_bound_only:
+            # 仅返回已绑定飞书身份的账号：审批人 / 整改负责人要能收到飞书通知，
+            # 判定口径与 list_all 一致（两个飞书 ID 任一存在即视为已绑定）
+            bound_filter = or_(
+                User.feishu_user_id.isnot(None),
+                User.feishu_open_id.isnot(None),
+            )
+            base = base.where(bound_filter)
+            count_stmt = count_stmt.where(bound_filter)
         if must_change_password is not None:
             base = base.where(User.must_change_password == must_change_password)
             count_stmt = count_stmt.where(User.must_change_password == must_change_password)

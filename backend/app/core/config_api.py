@@ -13,8 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config_model import ModuleSetting
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
-from app.core.exceptions import BadRequestException, NotFoundException
-from app.core.response import ApiResponse
+from app.core.exceptions import BadRequestException, DuplicateException, NotFoundException
+from app.core.response import build_response
+from app.core.secrets import decrypt_secret, encrypt_secret
 from app.platform.identity.public_api import resolve_user_names
 from app.shared.schemas import PaginationMeta
 
@@ -174,9 +175,34 @@ def _normalize_value(value_type: str, value: str) -> str:
     return value
 
 
+def _stored_value(is_secret: bool, value_type: str, value: str) -> str:
+    """校验后落库的字符串；密钥类配置必须加密存储。
+
+    ``is_secret`` 只在写入侧加密，读取侧由 :func:`_plain_value` 统一解密，
+    历史明文行（无 ``fernet:v1:`` 前缀）原样返回，无需一次性回填。
+    """
+    normalized = _normalize_value(value_type, value)
+    return encrypt_secret(normalized) if is_secret else normalized
+
+
+def _plain_value(setting: ModuleSetting) -> str:
+    """取配置明文值；密钥类解密失败时降级为空，避免整个列表 500。"""
+    if not setting.is_secret:
+        return setting.value
+    try:
+        return decrypt_secret(setting.value)
+    except RuntimeError:
+        logger.warning(
+            "module setting decrypt failed",
+            extra={"biz_module": "core", "setting_key": setting.key},
+        )
+        return ""
+
+
 def _to_response(setting: ModuleSetting, updated_by_name: str | None = None) -> ModuleSettingResponse:
     """ORM → 响应模型；密钥类只回掩码，不回明文。"""
     secret = bool(setting.is_secret)
+    plain = _plain_value(setting)
     return ModuleSettingResponse(
         id=str(setting.id),
         module=setting.module,
@@ -184,8 +210,8 @@ def _to_response(setting: ModuleSetting, updated_by_name: str | None = None) -> 
         label=setting.label,
         group_name=setting.group_name,
         value="" if secret else setting.value,
-        value_masked=_mask_secret(setting.value) if secret else None,
-        has_value=bool(setting.value),
+        value_masked=_mask_secret(plain) if secret else None,
+        has_value=bool(plain),
         value_type=setting.value_type,
         value_hint=setting.value_hint,
         description=setting.description,
@@ -233,7 +259,7 @@ async def get(
     rows = list(result.scalars().all())
     user_names = await resolve_user_names(db, {row.updated_by for row in rows if row.updated_by})
 
-    return ApiResponse(
+    return build_response(
         data=[_to_response(row, user_names.get(row.updated_by) if row.updated_by else None) for row in rows]
     )
 
@@ -278,7 +304,7 @@ async def put_batch(
             )
             continue
         try:
-            setting.value = _normalize_value(setting.value_type, item.value)
+            setting.value = _stored_value(setting.is_secret, setting.value_type, item.value)
         except BadRequestException as exc:
             failed.append(
                 ModuleSettingBatchFailure(
@@ -305,7 +331,7 @@ async def put_batch(
         },
     )
 
-    return ApiResponse(data=ModuleSettingBatchResult(succeeded=succeeded, failed=failed))
+    return build_response(data=ModuleSettingBatchResult(succeeded=succeeded, failed=failed))
 
 
 @router.get("/{module}/{key}", response_model=ModuleSettingApiResponse)
@@ -329,7 +355,7 @@ async def get_one(
     if not setting:
         raise NotFoundException("配置项")
 
-    return ApiResponse(data=_to_response(setting, await _resolve_user_name(db, setting.updated_by)))
+    return build_response(data=_to_response(setting, await _resolve_user_name(db, setting.updated_by)))
 
 
 @router.put("/{module}/{key}", response_model=ModuleSettingApiResponse)
@@ -360,15 +386,15 @@ async def put(
 
     if setting.is_secret and not data.value.strip():
         # 密钥项留空 = 不修改，避免前端因掩码回填而误清空凭证
-        return ApiResponse(data=_to_response(setting, current_user.name))
+        return build_response(data=_to_response(setting, current_user.name))
 
-    setting.value = _normalize_value(setting.value_type, data.value)
+    setting.value = _stored_value(setting.is_secret, setting.value_type, data.value)
     setting.updated_by = current_user.id
 
     await db.commit()
     await db.refresh(setting)
 
-    return ApiResponse(data=_to_response(setting, current_user.name))
+    return build_response(data=_to_response(setting, current_user.name))
 
 
 @router.post("", response_model=ModuleSettingApiResponse, status_code=201)
@@ -389,12 +415,12 @@ async def post(
     )
     existing = result.scalar_one_or_none()
     if existing:
-        return ApiResponse(code=409, message="Setting already exists")
+        raise DuplicateException("配置项", f"{data.module}:{data.key}")
 
     setting = ModuleSetting(
         module=data.module,
         key=data.key,
-        value=_normalize_value(data.value_type, data.value),
+        value=_stored_value(data.is_secret, data.value_type, data.value),
         value_type=data.value_type,
         description=data.description,
         label=data.label,
@@ -409,7 +435,7 @@ async def post(
     await db.commit()
     await db.refresh(setting)
 
-    return ApiResponse(data=_to_response(setting, current_user.name))
+    return build_response(data=_to_response(setting, current_user.name))
 
 
 @router.delete("/{module}/{key}", response_model=ModuleSettingApiResponse)
@@ -437,4 +463,4 @@ async def delete(
     setting.updated_by = current_user.id
 
     await db.commit()
-    return ApiResponse(message="Setting deleted")
+    return build_response(message="Setting deleted")

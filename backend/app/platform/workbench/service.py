@@ -26,6 +26,12 @@ from app.modules.quality.public_api import (
 from app.modules.safety.public_api import list_hazard_processes, list_hazard_review_todos
 from app.platform.identity.models import User
 from app.platform.permission.service.management import effective_permission_codes
+from app.platform.workbench.constants import (
+    MATCH_PERSON,
+    MODULE_QUALITY,
+    MODULE_SAFETY,
+    match_kind_label,
+)
 from app.platform.workbench.read_marks import (
     item_key,
     load_read_fingerprints,
@@ -40,13 +46,7 @@ from app.platform.workbench.schemas import (
     WorkbenchOverviewData,
 )
 from app.shared.module_registry import MODULES_BY_CODE
-from app.shared.workbench_types import (
-    MATCH_PERSON,
-    MODULE_QUALITY,
-    MODULE_SAFETY,
-    WorkbenchItem,
-    WorkbenchSourceResult,
-)
+from app.shared.workbench_types import WorkbenchItem, WorkbenchSourceResult
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ def _to_model(item: WorkbenchItem, read_keys: set[tuple[str, str]] | None = None
         status_label=item.status_label,
         step_label=item.step_label,
         match_kind=item.match_kind,
-        match_kind_label=item.match_kind_label,
+        match_kind_label=match_kind_label(item.match_kind),
         age_days=item.age_days,
         overdue=item.overdue,
         path=item.path,
