@@ -9,7 +9,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -35,7 +35,7 @@ from app.platform.permission.models import (
     Role,
     UserRoleGrant,
 )
-from app.platform.permission.registry import PERMISSIONS_BY_CODE
+from app.platform.permission.registry import PERMISSIONS_BY_CODE, RETIRED_MODULE_CODES
 from app.platform.permission.repository import (
     ApiBindingRepository,
     GrantRepository,
@@ -668,9 +668,11 @@ async def list_grants(
         .join(Role, Role.id == UserRoleGrant.role_id)
         .outerjoin(User, User.id == UserRoleGrant.user_id)
         .where(UserRoleGrant.is_deleted == False)  # noqa: E712
-        # 已退役的历史角色类型（head/manager）不再出现在授权列表；
-        # 只按类型过滤，不按状态过滤（人工停用的授权仍需展示）。
+        # 已退役的历史角色类型（head/manager）与下线模块（agent）的角色
+        # 不再出现在授权列表；只按类型/模块过滤，不按状态过滤
+        # （人工停用的授权仍需展示）。
         .where(Role.role_type.notin_(RETIRED_ROLE_TYPES))
+        .where(or_(Role.module_code.is_(None), Role.module_code.notin_(RETIRED_MODULE_CODES)))
         .order_by(UserRoleGrant.created_at.desc())
     )
     if not scope.is_system_admin:

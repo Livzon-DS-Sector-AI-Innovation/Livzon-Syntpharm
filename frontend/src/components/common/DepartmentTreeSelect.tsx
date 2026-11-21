@@ -11,7 +11,7 @@ import { fetchDirectoryDepartments, type DirectoryDepartmentNode } from '@/lib/a
  *
  * 形态：下拉字段 = 顶部搜索框 + 下方**始终展开**的组织树（无折叠交互），
  * 公司 / 一级 / 二级任意节点都可选；输入关键词实时过滤，并展开命中路径；
- * 每行显示部门名 + 完整层级路径。
+ * 每行只显示部门名，层级关系由树的缩进体现（不显示「A / B / C」路径提示）。
  *
  * 默认值恒为 `hr.departments.id`（部门主数据 UUID），飞书部门 ID 只作同步匹配键。
  * 历史表把「部门名称」当业务关联键（安全台账、质量偏差、采购申请等），
@@ -49,7 +49,6 @@ interface TreeRow {
   id: string
   name: string
   code: string
-  pathNames: string[]
   children: TreeRow[]
 }
 
@@ -58,7 +57,6 @@ function toRows(nodes: DirectoryDepartmentNode[]): TreeRow[] {
     id: node.id,
     name: node.name,
     code: node.code ?? '',
-    pathNames: node.path_names ?? [node.name],
     children: toRows(node.children ?? []),
   }))
 }
@@ -81,15 +79,8 @@ function filterRows(rows: TreeRow[], keyword: string): TreeRow[] {
 function toTreeData(rows: TreeRow[]): DataNode[] {
   return rows.map((row) => ({
     key: row.id,
-    // 行内展示「部门名 + 完整层级路径」，让人一眼看出属于哪个上级。
-    title: (
-      <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 8, maxWidth: '100%' }}>
-        <span>{row.name}</span>
-        <span style={{ color: 'var(--ant-color-text-tertiary, #999)', fontSize: 12 }}>
-          {row.pathNames.join(' / ')}
-        </span>
-      </span>
-    ),
+    // 行内只显示部门名；上下级关系由树的缩进体现，不再附「A / B / C」路径提示。
+    title: row.name,
     children: toTreeData(row.children),
   }))
 }
