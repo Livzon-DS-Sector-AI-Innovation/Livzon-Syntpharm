@@ -1,7 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { App, Button, Drawer, Input, InputNumber, Modal, Space, Switch, Tooltip, Typography } from 'antd'
+import {
+  App,
+  Button,
+  ColorPicker,
+  Drawer,
+  Input,
+  InputNumber,
+  Modal,
+  Space,
+  Switch,
+  Tooltip,
+  Typography,
+} from 'antd'
 import { CheckOutlined, CloseOutlined, EditOutlined, FormatPainterOutlined, KeyOutlined } from '@ant-design/icons'
 import { updateModuleSetting } from '@/actions/module-settings'
 import type { ModuleSetting } from '@/types/module-settings'
@@ -14,6 +26,13 @@ interface SettingValueEditorProps {
   setting: ModuleSetting
   canManage: boolean
   onSaved: () => void
+}
+
+/** 颜色类配置（如 * _COLOR）：直接给取色器 + 色块，比让人手敲 #RRGGBB 靠谱 */
+const DEFAULT_COLOR = '#FF3B30'
+
+function isColorSetting(setting: ModuleSetting): boolean {
+  return setting.value_type === 'string' && setting.key.endsWith('_COLOR')
 }
 
 /** 长文本类配置（Prompt / 指南）不适合行内输入，统一走抽屉 */
@@ -150,6 +169,37 @@ export default function SettingValueEditor({ setting, canManage, onSaved }: Sett
           unCheckedChildren="已停用"
           onChange={toggleBool}
         />
+        {metaLine}
+      </div>
+    )
+  }
+
+  // ── 颜色类（*_COLOR）：取色器直选，避免手敲 #RRGGBB ──
+  if (isColorSetting(setting)) {
+    const color = setting.value || DEFAULT_COLOR
+    return (
+      <div className="flex flex-col items-start gap-1 md:items-end">
+        <Space size={6}>
+          <span
+            className="inline-block h-4 w-4 rounded align-middle"
+            style={{ background: color, border: '1px solid #d9d9d9' }}
+          />
+          <Text code className="text-[12px]">
+            {setting.value || '未设置'}
+          </Text>
+          {canManage && (
+            <ColorPicker
+              size="small"
+              format="hex"
+              disabledAlpha
+              value={color}
+              onChangeComplete={(picked) => void save(picked.toHexString().toUpperCase())}
+            />
+          )}
+        </Space>
+        {setting.value_hint && (
+          <span className="text-[11px] text-[var(--color-steel)]">{setting.value_hint}</span>
+        )}
         {metaLine}
       </div>
     )

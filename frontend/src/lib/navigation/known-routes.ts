@@ -22,6 +22,8 @@ export const KNOWN_STATIC_ROUTES: readonly string[] = [
   '/administration/settings',
   '/administration/vehicle-requests',
   '/administration/vehicles',
+  '/agent',
+  '/agent/ppt-videos',
   '/change-password',
   '/energy',
   '/energy/ai-analysis',
@@ -210,6 +212,7 @@ export const KNOWN_STATIC_ROUTES: readonly string[] = [
 /** 动态路径模板（参数段已转成正则片段，按正则匹配） */
 export const KNOWN_DYNAMIC_ROUTE_PATTERNS: readonly string[] = [
   '/[^/]+',
+  '/agent/ppt-videos/[^/]+',
   '/hr/recruitment/[^/]+',
   '/procurement/approval/[^/]+/[^/]+',
   '/procurement/contract-generation/[^/]+',

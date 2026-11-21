@@ -1,31 +1,42 @@
 import { apiFetch, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
 import type { components } from '@/types/generated/schema'
 
+// LLM 配置接口统一返回 `{code, data, message, meta}` 信封，这里按生成 schema
+// 标注信封类型并统一解包，避免把信封当数据用。
+
 export async function getLLMConfigs(configType?: string, token?: string) {
   const searchParams = new URLSearchParams()
   if (configType) searchParams.set('config_type', configType)
   const queryString = searchParams.toString()
   const endpoint = `/llm/configs${queryString ? `?${queryString}` : ''}`
-  return apiFetch(`${getApiBaseUrl()}/api/v1${endpoint}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  })
+  const envelope = await apiFetch<components['schemas']['DataResponse_list_LLMConfigResponse__']>(
+    `${getApiBaseUrl()}/api/v1${endpoint}`,
+    { headers: token ? { Authorization: `Bearer ${token}` } : undefined },
+  )
+  return unwrapResponse(envelope) ?? []
 }
 
 export async function getLLMConfig(id: string, token?: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/llm/configs/${id}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  })
+  const envelope = await apiFetch<components['schemas']['DataResponse_LLMConfigResponse_']>(
+    `${getApiBaseUrl()}/api/v1/llm/configs/${id}`,
+    { headers: token ? { Authorization: `Bearer ${token}` } : undefined },
+  )
+  return unwrapResponse(envelope)
 }
 
 export async function createLLMConfig(
   data: components['schemas']['LLMConfigCreate'],
   token?: string,
 ) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/llm/configs`, {
-    method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    body: JSON.stringify(data),
-  })
+  const envelope = await apiFetch<components['schemas']['DataResponse_LLMConfigResponse_']>(
+    `${getApiBaseUrl()}/api/v1/llm/configs`,
+    {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: JSON.stringify(data),
+    },
+  )
+  return unwrapResponse(envelope)
 }
 
 export async function updateLLMConfig(
@@ -33,25 +44,33 @@ export async function updateLLMConfig(
   data: components['schemas']['LLMConfigUpdate'],
   token?: string,
 ) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/llm/configs/${id}`, {
-    method: 'PUT',
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    body: JSON.stringify(data),
-  })
+  const envelope = await apiFetch<components['schemas']['DataResponse_LLMConfigResponse_']>(
+    `${getApiBaseUrl()}/api/v1/llm/configs/${id}`,
+    {
+      method: 'PUT',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: JSON.stringify(data),
+    },
+  )
+  return unwrapResponse(envelope)
 }
 
 export async function deleteLLMConfig(id: string, token?: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/llm/configs/${id}`, {
+  return apiFetch<void>(`${getApiBaseUrl()}/api/v1/llm/configs/${id}`, {
     method: 'DELETE',
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   })
 }
 
 export async function testLLMConnection(token?: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/llm/configs/test`, {
-    method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  })
+  const envelope = await apiFetch<components['schemas']['DataResponse_LLMHealthResult_']>(
+    `${getApiBaseUrl()}/api/v1/llm/configs/test`,
+    {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    },
+  )
+  return unwrapResponse(envelope)
 }
 
 // 飞书（Livzon 助手）配置：接口返回 `{code, message, data}` 信封，这里按生成 schema

@@ -18,7 +18,7 @@ export class ApiError extends Error {
 /**
  * Get auth token from cookies (client-side)
  */
-function getAuthToken(): string | null {
+export function getAuthToken(): string | null {
   if (typeof document === 'undefined') return null
   const cookies = document.cookie.split(';')
   for (const cookie of cookies) {
@@ -28,6 +28,20 @@ function getAuthToken(): string | null {
     }
   }
   return null
+}
+
+/**
+ * 会话过期统一处理：记住当前地址再跳登录页，登录成功后由落地页跳回。
+ * 抽出来给 XHR 上传通道复用（fetchApi 与上传必须共用一套跳转逻辑，避免两处漂移）。
+ */
+export function redirectToLogin(): void {
+  if (typeof window === 'undefined') return
+  const target = `${window.location.pathname}${window.location.search}`
+  if (target.startsWith('/login')) return
+  // SameSite=Lax 防跨站携带；Secure 只在 https 下加，避免本地 http 开发时 cookie 写不进去
+  const secure = window.location.protocol === 'https:' ? '; Secure' : ''
+  document.cookie = `login_redirect=${encodeURIComponent(target)}; path=/; max-age=600; SameSite=Lax${secure}`
+  window.location.href = '/login'
 }
 
 /**
@@ -79,16 +93,7 @@ export async function fetchApi<T>(
     const message = errorMessages[response.status] || `请求失败: ${response.status}`
 
     // 401：会话过期 → 记住当前地址并带去登录页，登录成功后由落地页跳回
-    // （以前只弹「未授权」文案，用户得自己重新找页面）
-    if (response.status === 401 && typeof window !== 'undefined') {
-      const target = `${window.location.pathname}${window.location.search}`
-      if (!target.startsWith('/login')) {
-        // SameSite=Lax 防跨站携带；Secure 只在 https 下加，避免本地 http 开发时 cookie 写不进去
-        const secure = window.location.protocol === 'https:' ? '; Secure' : ''
-        document.cookie = `login_redirect=${encodeURIComponent(target)}; path=/; max-age=600; SameSite=Lax${secure}`
-      }
-      window.location.href = '/login'
-    }
+    if (response.status === 401) redirectToLogin()
 
     // 尝试解析错误响应（可能是 JSON 格式的错误信息）
     let errorData: unknown = null

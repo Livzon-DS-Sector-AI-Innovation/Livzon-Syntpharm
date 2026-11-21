@@ -335,3 +335,18 @@ def get_settings() -> Settings:
     settings = Settings()
     settings.check()
     return settings
+
+
+def get_llm_env_fallback() -> tuple[str | None, str, str]:
+    """本地开发兜底：从环境变量读取 LLM 连接信息。
+
+    只在 `app/core/config.py` 读取环境变量，`app/core/llm/config.py` 通过本函数获取，
+    避免业务层直接 `os.getenv()` 读取运行时配置。
+
+    模型名属可在 Web UI 调整的运行时参数，DB 中无 `core/LLM_MODEL` 时才用这里的兜底值。
+    """
+    return (
+        os.getenv("LLM_API_KEY"),
+        os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1"),
+        os.getenv("LLM_MODEL", "deepseek-chat"),
+    )
