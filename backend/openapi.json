@@ -280,7 +280,7 @@
           "\u7528\u6237\u4fe1\u606f"
         ],
         "summary": "\u4eba\u5458\u4e0b\u62c9\uff08\u4ec5\u542f\u7528\u8d26\u53f7\uff09",
-        "description": "\u9009\u4eba\u7ec4\u4ef6\u7684\u6570\u636e\u6e90\uff1a\u7cfb\u7edf\u7528\u6237\u7ba1\u7406\u53e3\u5f84\uff0c\u53ea\u8fd4\u56de\u542f\u7528\u8d26\u53f7\u3002\n\n\u4e0e\u300c\u7528\u6237\u7ba1\u7406\u300d\u5217\u8868\u7684\u533a\u522b\uff1a\n- \u56fa\u5b9a ``status=active``\uff1a\u505c\u7528\u8d26\u53f7\u4e0d\u53c2\u4e0e\u4efb\u4f55\u9009\u4eba\uff1b\n- \u53ea\u8fd4\u56de\u5c55\u793a\u5b57\u6bb5\uff08\u59d3\u540d / \u8d26\u53f7 / \u90e8\u95e8 / \u804c\u52a1 / \u5934\u50cf\uff09\uff0c\u4e0d\u542b\u8054\u7cfb\u65b9\u5f0f\u4e0e\u89d2\u8272\uff1b\n- \u6cbf\u7528\u540c\u4e00\u6761\u4fdd\u62a4\u89c4\u5219\uff1a\u975e\u8d85\u7ba1\u8c03\u7528\u65f6\u770b\u4e0d\u5230\u8d85\u7ba1\u8d26\u53f7\u3002\n\n\u8d1f\u8d23 / \u7ba1\u7406\u5458\u5185\u7f6e\u89d2\u8272\u9ed8\u8ba4\u6301\u6709 ``platform:person:lookup``\uff0c\n\u56e0\u6b64\u6a21\u5757\u8d1f\u8d23\u4eba\u4e0e\u6a21\u5757\u7ba1\u7406\u5458\u90fd\u80fd\u5728\u89d2\u8272\u3001\u6388\u6743\u9875\u9009\u4eba\u3002",
+        "description": "\u9009\u4eba\u7ec4\u4ef6\u7684\u6570\u636e\u6e90\uff1a\u53ea\u8fd4\u56de\u300cHR \u5728\u518c\u4e14\u5df2\u6709\u7cfb\u7edf\u8d26\u53f7\u300d\u7684\u542f\u7528\u4eba\u5458\u3002\n\n\u4e0e\u300c\u7528\u6237\u7ba1\u7406\u300d\u5217\u8868\u7684\u533a\u522b\uff1a\n- \u56fa\u5b9a ``status=active``\uff1a\u505c\u7528\u8d26\u53f7\u4e0d\u53c2\u4e0e\u4efb\u4f55\u9009\u4eba\uff1b\n- \u53ea\u5217 HR \u5728\u518c\u6863\u6848\uff08``hr.employee_profiles.is_current=true``\uff09\u5bf9\u5e94\u7684\u8d26\u53f7\uff1a\n  \u5df2\u79bb\u804c/\u8c03\u51fa\u3001\u4ee5\u53ca\u6ca1\u6709 HR \u6863\u6848\u7684\u672c\u5730\u8d26\u53f7\uff08\u5982 admin\u3001\u6d4b\u8bd5\u8d26\u53f7\uff09\u90fd\u4e0d\u53c2\u4e0e\u9009\u4eba\uff1b\n- \u53ea\u8fd4\u56de\u5c55\u793a\u5b57\u6bb5\uff08\u59d3\u540d / \u8d26\u53f7 / \u90e8\u95e8 / \u804c\u52a1 / \u5934\u50cf\uff09\uff0c\u4e0d\u542b\u8054\u7cfb\u65b9\u5f0f\u4e0e\u89d2\u8272\uff1b\n- \u6cbf\u7528\u540c\u4e00\u6761\u4fdd\u62a4\u89c4\u5219\uff1a\u975e\u8d85\u7ba1\u8c03\u7528\u65f6\u770b\u4e0d\u5230\u8d85\u7ba1\u8d26\u53f7\u3002\n\n\u51c6\u5165\u53ea\u8981\u6c42\u767b\u5f55\uff08\u4e0d\u518d\u6302 ``platform:person:lookup``\uff09\uff1a\u9009\u4eba\u4e0b\u62c9\u662f\u5404\u4e1a\u52a1\u6a21\u5757\u3001\n\u6a21\u5757\u8d1f\u8d23\u4eba\u6388\u6743\u9875\u7684\u57fa\u7840\u80fd\u529b\uff0c\u6302\u5e73\u53f0\u7ea7\u6743\u9650\u7801\u4f1a\u8ba9\u8d1f\u8d23\u4eba\u5fc5\u987b\u5148\u6301\u6709\u4e00\u679a\u4e0e\u672c\u4e8b\n\u65e0\u5173\u7684\u5e73\u53f0\u6743\u9650\u624d\u80fd\u7ef4\u62a4\u672c\u6a21\u5757\u89d2\u8272\u4e0e\u6388\u6743\u3002",
         "operationId": "lookup_users_api_v1_identity_users_lookup_get",
         "parameters": [
           {
@@ -24703,7 +24703,7 @@
           "\u5b89\u5168\u7ba1\u7406"
         ],
         "summary": "\u83b7\u53d6\u98ce\u9669\u5206\u7ea7\u7ba1\u63a7\u53f0\u8d26\u7684\u9009\u9879\u3001\u77e9\u9635\u4e0e\u5206\u7ea7\u9608\u503c",
-        "description": "\u98ce\u9669\u5206\u7ea7\u7ba1\u63a7\u53f0\u8d26\u7684\u6743\u5a01\u9009\u9879\u5b57\u5178\uff1b\u524d\u7aef\u4e0d\u5f97\u518d\u624b\u5199\u8fd9\u4e9b\u5e38\u91cf\u3002",
+        "description": "\u98ce\u9669\u5206\u7ea7\u7ba1\u63a7\u53f0\u8d26\u7684\u6743\u5a01\u9009\u9879\u5b57\u5178\uff1b\u524d\u7aef\u4e0d\u5f97\u518d\u624b\u5199\u8fd9\u4e9b\u5e38\u91cf\u3002\n\n\u7ba1\u63a7\u5c42\u7ea7\u5019\u9009\u6765\u81ea\u7ec4\u7ec7\u76ee\u5f55\uff08\u4e0e\u90e8\u95e8\u9009\u62e9\u5668\u540c\u6e90\uff09\uff1b\u67e5\u5e93\u5931\u8d25\u65f6\u56de\u9000\u5e38\u91cf\uff0c\n\u4ec5\u4fdd\u8bc1\u8bfb\u63a5\u53e3\u53ef\u7528\uff0c\u5199\u63a5\u53e3\u6b64\u65f6\u4ecd\u4f1a\u56e0\u540c\u6837\u7684\u67e5\u8be2\u5931\u8d25\u800c\u62d2\u7edd\u3002",
         "operationId": "get_risk_grading_options_api_v1_safety_enums_risk_grading_get",
         "parameters": [
           {
@@ -71353,6 +71353,70 @@
         }
       }
     },
+    "/api/v1/quality/department-contacts/department-leader": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u914d\u7f6e",
+          "\u8d28\u91cf\u7ba1\u7406 - \u504f\u5dee\u914d\u7f6e"
+        ],
+        "summary": "\u6309\u90e8\u95e8\u540d\u89e3\u6790 HR \u90e8\u95e8\u8d1f\u8d23\u4eba\uff08\u65b0\u589e\u90e8\u95e8\u65f6\u81ea\u52a8\u5e26\u51fa\uff09",
+        "description": "\u53ea\u8bfb\u89e3\u6790\uff1a\u4e0d\u5199\u5e93\u3001\u4e0d\u5efa\u53f7\uff1bHR \u672a\u7ef4\u62a4\u8d1f\u8d23\u4eba\u65f6\u8fd4\u56de resolved=false\u3002\n\n\u9759\u6001\u6bb5 ``department-leader`` \u4e0e ``member-options`` \u540c\u7ea7\uff0c\u4e0d\u4f1a\u88ab\n``/department-contacts/{contact_id}``\uff08\u53ea\u6709 PUT/DELETE\uff09\u906e\u6321\u3002",
+        "operationId": "get_department_leader_api_v1_quality_department_contacts_department_leader_get",
+        "parameters": [
+          {
+            "name": "department",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "description": "\u90e8\u95e8\u540d\u79f0\uff08\u7ec4\u7ec7\u6811\u5199\u56de\u7684\u90e8\u95e8\u540d\uff09",
+              "title": "Department"
+            },
+            "description": "\u90e8\u95e8\u540d\u79f0\uff08\u7ec4\u7ec7\u6811\u5199\u56de\u7684\u90e8\u95e8\u540d\uff09"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentContactLeaderApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/quality/department-contacts/{contact_id}": {
       "put": {
         "tags": [
@@ -114534,6 +114598,94 @@
         "title": "DepartmentContactItem",
         "description": "\u90e8\u95e8\u8054\u7cfb\u4eba\u884c\u3002"
       },
+      "DepartmentContactLeaderApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DepartmentContactLeaderData"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DepartmentContactLeaderApiResponse"
+      },
+      "DepartmentContactLeaderData": {
+        "properties": {
+          "department": {
+            "type": "string",
+            "title": "Department"
+          },
+          "resolved": {
+            "type": "boolean",
+            "title": "Resolved",
+            "description": "\u662f\u5426\u89e3\u6790\u5230\u8d1f\u8d23\u4eba\uff08HR \u672a\u7ef4\u62a4\u65f6\u4e3a false\uff09",
+            "default": false
+          },
+          "dept_head_profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dept Head Profile Id",
+            "description": "hr.employee_profiles.id"
+          },
+          "dept_head_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dept Head Name"
+          },
+          "dept_head_avatar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dept Head Avatar"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department"
+        ],
+        "title": "DepartmentContactLeaderData",
+        "description": "\u6309\u90e8\u95e8\u540d\u89e3\u6790\u51fa\u7684 HR \u90e8\u95e8\u8d1f\u8d23\u4eba\uff08\u65b0\u589e\u90e8\u95e8\u65f6\u81ea\u52a8\u5e26\u51fa\uff09\u3002\n\n``dept_head_profile_id`` \u662f ``hr.employee_profiles.id``\uff0c\u4e0e\n:class:`DepartmentContactItem` \u7684 ``dept_head_id``\uff08``identity.users.id``\uff09\n\u4e0d\u662f\u540c\u4e00\u5957 ID\uff1a\u5199\u5e93\u65f6\u7531 ``DeviationConfigService._normalize_person_ids`` \u5f52\u4e00\u3002"
+      },
       "DepartmentContactListApiResponse": {
         "properties": {
           "code": {
@@ -124403,7 +124555,7 @@
           "control_level": {
             "type": "string",
             "title": "Control Level",
-            "description": "\u7ba1\u63a7\u5c42\u7ea7\uff0828 \u4e2a\u90e8\u95e8\u4e4b\u4e00\uff09"
+            "description": "\u7ba1\u63a7\u5c42\u7ea7\uff08\u7ec4\u7ec7\u90e8\u95e8\u540d\uff0c\u987b\u4e3a hr.departments \u73b0\u5b58\u90e8\u95e8\uff09"
           },
           "execution_level": {
             "type": "string",
@@ -166480,7 +166632,8 @@
               "type": "string"
             },
             "type": "array",
-            "title": "Departments"
+            "title": "Departments",
+            "description": "\u7ba1\u63a7\u5c42\u7ea7\u5019\u9009\uff1a\u7ec4\u7ec7\u76ee\u5f55\u73b0\u5b58\u90e8\u95e8\u540d"
           },
           "control_measures": {
             "items": {
@@ -188547,7 +188700,7 @@
           "control_level": {
             "type": "string",
             "title": "Control Level",
-            "description": "\u7ba1\u63a7\u5c42\u7ea7\uff0828 \u4e2a\u90e8\u95e8\u4e4b\u4e00\uff09"
+            "description": "\u7ba1\u63a7\u5c42\u7ea7\uff08\u7ec4\u7ec7\u90e8\u95e8\u540d\uff0c\u987b\u4e3a hr.departments \u73b0\u5b58\u90e8\u95e8\uff09"
           },
           "execution_level": {
             "type": "string",

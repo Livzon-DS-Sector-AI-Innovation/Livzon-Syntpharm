@@ -20,7 +20,6 @@ from app.modules.safety.risk_grading import (
     LIKELIHOOD_MAX,
     LIKELIHOOD_MIN,
     RESIDUAL_RISK_KEYS,
-    RISK_GRADING_DEPARTMENTS,
     SEVERITY_LEVELS,
     quantize_decimal,
 )
@@ -45,9 +44,13 @@ def _validate_residual_risk_value(value: str) -> str:
 
 
 def _validate_control_level_value(value: str) -> str:
-    if value not in RISK_GRADING_DEPARTMENTS:
-        raise ValueError("管控层级不在允许的部门列表中")
-    return value
+    """只做归一化：是否存在性依赖数据库，放到 service 层校验。"""
+    normalized = value.strip()
+    if not normalized:
+        raise ValueError("管控层级不能为空")
+    if len(normalized) > 100:
+        raise ValueError("管控层级最多 100 个字符")
+    return normalized
 
 
 def _validate_execution_level_value(value: str) -> str:
@@ -74,7 +77,7 @@ class WorkActivityHazardCreate(BaseModel):
 
     control_measures: list[str] = Field(..., min_length=1, description="控制措施（有序的稳定 key 数组）")
     residual_risk: str = Field(..., description="残余风险 key")
-    control_level: str = Field(..., description="管控层级（28 个部门之一）")
+    control_level: str = Field(..., description="管控层级（组织部门名，须为 hr.departments 现存部门）")
     execution_level: str = Field(..., description="执行层级 key（车间/班组长）")
 
     @field_validator("likelihood_l", "exposure_e", "consequence_c")
@@ -182,7 +185,7 @@ class EquipmentFacilityHazardCreate(BaseModel):
     current_control_measures: list[str] = Field(..., min_length=1, description="现有管控措施（有序 key 数组）")
     improvement_measures: list[str] = Field(..., min_length=1, description="建议改进（新增）措施（有序 key 数组）")
     residual_risk: str = Field(..., description="残余风险 key")
-    control_level: str = Field(..., description="管控层级（28 个部门之一）")
+    control_level: str = Field(..., description="管控层级（组织部门名，须为 hr.departments 现存部门）")
     execution_level: str = Field(..., description="执行层级 key（车间/班组长）")
     remarks: RequiredLongText = Field(..., description="备注")
 
@@ -296,7 +299,7 @@ class EquipmentGradeBand(BaseModel):
 class RiskGradingOptions(BaseModel):
     """两张危险源台账前端所需的权威选项、矩阵与阈值。"""
 
-    departments: list[str]
+    departments: list[str] = Field(..., description="管控层级候选：组织目录现存部门名")
     control_measures: list[RiskGradingValueLabel]
     equipment_measures: list[RiskGradingValueLabel]
     residual_risks: list[RiskGradingValueLabel]

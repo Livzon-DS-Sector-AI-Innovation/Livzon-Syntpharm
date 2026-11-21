@@ -24,6 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.config_model import ModuleSetting
 from app.core.exceptions import BadRequestException, NotFoundException
+from app.modules.hr import public_api as hr_public_api
 from app.platform.identity.models import User
 from app.platform.identity.public_api import resolve_person_user_id
 
@@ -31,6 +32,7 @@ from . import deviation_notify as notify
 from .deviation_config_schemas import (
     DepartmentContactCreateRequest,
     DepartmentContactItem,
+    DepartmentContactLeaderData,
     DepartmentContactUpdateRequest,
     MemberOption,
     NotifyEvents,
@@ -106,16 +108,57 @@ class DeviationConfigService:
         names = await self._load_people(rows)
         return [self._to_item(row, names) for row in rows]
 
+    async def resolve_department_leader(self, department: str) -> DepartmentContactLeaderData:
+        """按部门名解析 HR 组织里的部门负责人（只读，不建号）。
+
+        - 只接受部门**全名精确命中**：``find_department_row_by_name`` 还会做
+          后缀/包含匹配，模糊命中会把别的部门的负责人串过来，这里一律当作未解析；
+        - ``hr.departments.leader_ids`` 是飞书 open_id 数组，未维护时是 ``[""]``，
+          必须先过滤空串；
+        - 返回的 ``dept_head_profile_id`` 是 ``hr.employee_profiles.id``，写库时由
+          :meth:`_normalize_person_ids` 归一为 ``identity.users.id``，本方法不建号。
+
+        这里只用 GET 侧的只读接缝，避免读接口产生账号副作用。
+        """
+        name = (department or "").strip()
+        empty = DepartmentContactLeaderData(department=name)
+        if not name:
+            return empty
+        row = await hr_public_api.find_department_row_by_name(self.db, name)
+        if row is None or str(row.get("name") or "").strip() != name:
+            return empty
+        leader_ids = _normalize_tokens(row.get("leader_ids") or [])
+        if not leader_ids:
+            return empty
+        profile = await hr_public_api.get_profile_by_open_id(self.db, leader_ids[0])
+        if profile is None:
+            return empty
+        profile_id = str(profile.get("id") or "").strip()
+        if not profile_id:
+            return empty
+        return DepartmentContactLeaderData(
+            department=name,
+            resolved=True,
+            dept_head_profile_id=profile_id,
+            dept_head_name=str(profile.get("name") or "") or None,
+            dept_head_avatar=str(profile.get("avatar_url") or "") or None,
+        )
+
     async def create_contact(
         self,
         payload: DepartmentContactCreateRequest,
         *,
         actor_id: uuid.UUID | None = None,
     ) -> DepartmentContactItem:
-        """新增部门联系人；同名软删除行直接复用，避免唯一约束冲突。"""
+        """新增部门联系人；同名软删除行直接复用，避免唯一约束冲突。
+
+        部门负责人以 HR 组织里的部门负责人为准（前端同名字段是只读的），
+        HR 未维护负责人时保留调用方传值（前端降级为可手选）。
+        """
         department = payload.department.strip()
         if not department:
             raise BadRequestException("请填写部门名称")
+        payload = self._apply_department_leader(payload, await self.resolve_department_leader(department))
         resolved = await self._normalize_person_ids(self._person_ids(payload))
 
         existing = (
@@ -531,6 +574,20 @@ class DeviationConfigService:
                 raise BadRequestException("所选人员不存在或已停用")
             mapping[person_id] = user_id
         return mapping
+
+    @staticmethod
+    def _apply_department_leader(
+        payload: DepartmentContactCreateRequest,
+        leader: DepartmentContactLeaderData,
+    ) -> DepartmentContactCreateRequest:
+        """新增时把部门负责人换成 HR 解析结果。
+
+        HR 里维护了负责人 → 以 HR 为准，客户端传什么都被覆盖（前端该字段只读）；
+        HR 未维护（``resolved=False``）→ 保留客户端传值，前端此时已降级为可手选。
+        """
+        if not leader.resolved or not leader.dept_head_profile_id:
+            return payload
+        return payload.model_copy(update={"dept_head_id": uuid.UUID(leader.dept_head_profile_id)})
 
     @staticmethod
     def _apply_payload(

@@ -584,8 +584,6 @@ export const PERM = {
   llmConfigManage: 'platform:llm-config:manage',
   moduleSettingRead: 'platform:module-setting:read',
   moduleSettingManage: 'platform:module-setting:manage',
-  /** 人员下拉（选人组件）：只查启用账号的展示字段 */
-  personLookup: 'platform:person:lookup',
   ...MODULE_PERM,
   ...ADMIN_ENTRY_PERM,
   ...RESEARCH_PERM,

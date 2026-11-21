@@ -21,6 +21,7 @@ from .deviation_config_schemas import (
     ConfigDeleteResultData,
     DepartmentContactApiResponse,
     DepartmentContactCreateRequest,
+    DepartmentContactLeaderApiResponse,
     DepartmentContactListApiResponse,
     DepartmentContactListData,
     DepartmentContactUpdateRequest,
@@ -85,6 +86,26 @@ async def list_member_options(
     """配置页下拉的人员候选。"""
     items = await DeviationConfigService(db).member_options(keyword=keyword, limit=limit)
     return build_response(data=MemberOptionListData(items=items))
+
+
+@router.get(
+    "/department-contacts/department-leader",
+    response_model=DepartmentContactLeaderApiResponse,
+    summary="按部门名解析 HR 部门负责人（新增部门时自动带出）",
+)
+async def get_department_leader(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission(_READ)),
+    db: AsyncSession = Depends(get_db),
+    department: str = Query(..., min_length=1, max_length=255, description="部门名称（组织树写回的部门名）"),
+) -> ApiResponse:
+    """只读解析：不写库、不建号；HR 未维护负责人时返回 resolved=false。
+
+    静态段 ``department-leader`` 与 ``member-options`` 同级，不会被
+    ``/department-contacts/{contact_id}``（只有 PUT/DELETE）遮挡。
+    """
+    data = await DeviationConfigService(db).resolve_department_leader(department)
+    return build_response(data=data)
 
 
 @router.post(

@@ -66,15 +66,18 @@ export interface paths {
         };
         /**
          * 人员下拉（仅启用账号）
-         * @description 选人组件的数据源：系统用户管理口径，只返回启用账号。
+         * @description 选人组件的数据源：只返回「HR 在册且已有系统账号」的启用人员。
          *
          *     与「用户管理」列表的区别：
          *     - 固定 ``status=active``：停用账号不参与任何选人；
+         *     - 只列 HR 在册档案（``hr.employee_profiles.is_current=true``）对应的账号：
+         *       已离职/调出、以及没有 HR 档案的本地账号（如 admin、测试账号）都不参与选人；
          *     - 只返回展示字段（姓名 / 账号 / 部门 / 职务 / 头像），不含联系方式与角色；
          *     - 沿用同一条保护规则：非超管调用时看不到超管账号。
          *
-         *     负责 / 管理员内置角色默认持有 ``platform:person:lookup``，
-         *     因此模块负责人与模块管理员都能在角色、授权页选人。
+         *     准入只要求登录（不再挂 ``platform:person:lookup``）：选人下拉是各业务模块、
+         *     模块负责人授权页的基础能力，挂平台级权限码会让负责人必须先持有一枚与本事
+         *     无关的平台权限才能维护本模块角色与授权。
          */
         get: operations["lookup_users_api_v1_identity_users_lookup_get"];
         put?: never;
@@ -5089,6 +5092,9 @@ export interface paths {
         /**
          * 获取风险分级管控台账的选项、矩阵与分级阈值
          * @description 风险分级管控台账的权威选项字典；前端不得再手写这些常量。
+         *
+         *     管控层级候选来自组织目录（与部门选择器同源）；查库失败时回退常量，
+         *     仅保证读接口可用，写接口此时仍会因同样的查询失败而拒绝。
          */
         get: operations["get_risk_grading_options_api_v1_safety_enums_risk_grading_get"];
         put?: never;
@@ -14571,6 +14577,29 @@ export interface paths {
          * @description 配置页下拉的人员候选。
          */
         get: operations["list_member_options_api_v1_quality_department_contacts_member_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/department-contacts/department-leader": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 按部门名解析 HR 部门负责人（新增部门时自动带出）
+         * @description 只读解析：不写库、不建号；HR 未维护负责人时返回 resolved=false。
+         *
+         *     静态段 ``department-leader`` 与 ``member-options`` 同级，不会被
+         *     ``/department-contacts/{contact_id}``（只有 PUT/DELETE）遮挡。
+         */
+        get: operations["get_department_leader_api_v1_quality_department_contacts_department_leader_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -29150,6 +29179,51 @@ export interface components {
             /** Updated At */
             updated_at?: string | null;
         };
+        /** DepartmentContactLeaderApiResponse */
+        DepartmentContactLeaderApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DepartmentContactLeaderData"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * DepartmentContactLeaderData
+         * @description 按部门名解析出的 HR 部门负责人（新增部门时自动带出）。
+         *
+         *     ``dept_head_profile_id`` 是 ``hr.employee_profiles.id``，与
+         *     :class:`DepartmentContactItem` 的 ``dept_head_id``（``identity.users.id``）
+         *     不是同一套 ID：写库时由 ``DeviationConfigService._normalize_person_ids`` 归一。
+         */
+        DepartmentContactLeaderData: {
+            /** Department */
+            department: string;
+            /**
+             * Resolved
+             * @description 是否解析到负责人（HR 未维护时为 false）
+             * @default false
+             */
+            resolved: boolean;
+            /**
+             * Dept Head Profile Id
+             * @description hr.employee_profiles.id
+             */
+            dept_head_profile_id?: string | null;
+            /** Dept Head Name */
+            dept_head_name?: string | null;
+            /** Dept Head Avatar */
+            dept_head_avatar?: string | null;
+        };
         /** DepartmentContactListApiResponse */
         DepartmentContactListApiResponse: {
             /**
@@ -33379,7 +33453,7 @@ export interface components {
             residual_risk: string;
             /**
              * Control Level
-             * @description 管控层级（28 个部门之一）
+             * @description 管控层级（组织部门名，须为 hr.departments 现存部门）
              */
             control_level: string;
             /**
@@ -51410,7 +51484,10 @@ export interface components {
          * @description 两张危险源台账前端所需的权威选项、矩阵与阈值。
          */
         RiskGradingOptions: {
-            /** Departments */
+            /**
+             * Departments
+             * @description 管控层级候选：组织目录现存部门名
+             */
             departments: string[];
             /** Control Measures */
             control_measures: components["schemas"]["RiskGradingValueLabel"][];
@@ -60898,7 +60975,7 @@ export interface components {
             residual_risk: string;
             /**
              * Control Level
-             * @description 管控层级（28 个部门之一）
+             * @description 管控层级（组织部门名，须为 hr.departments 现存部门）
              */
             control_level: string;
             /**
@@ -97852,6 +97929,40 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["MemberOptionListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_department_leader_api_v1_quality_department_contacts_department_leader_get: {
+        parameters: {
+            query: {
+                /** @description 部门名称（组织树写回的部门名） */
+                department: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DepartmentContactLeaderApiResponse"];
                 };
             };
             /** @description Validation Error */

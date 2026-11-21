@@ -786,27 +786,30 @@ async def list_users_management(
     response_model=UserLookupListApiResponse,
 )
 async def lookup_users(
-    ctx: PermissionContext = Depends(require_permission("platform:person:lookup")),
+    current_user: RequiredUser,
     keyword: str | None = Query(None, description="按姓名/账号/工号/手机号搜索"),
     offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """选人组件的数据源：系统用户管理口径，只返回启用账号。
+    """选人组件的数据源：只返回「HR 在册且已有系统账号」的启用人员。
 
     与「用户管理」列表的区别：
     - 固定 ``status=active``：停用账号不参与任何选人；
+    - 只列 HR 在册档案（``hr.employee_profiles.is_current=true``）对应的账号：
+      已离职/调出、以及没有 HR 档案的本地账号（如 admin、测试账号）都不参与选人；
     - 只返回展示字段（姓名 / 账号 / 部门 / 职务 / 头像），不含联系方式与角色；
     - 沿用同一条保护规则：非超管调用时看不到超管账号。
 
-    负责 / 管理员内置角色默认持有 ``platform:person:lookup``，
-    因此模块负责人与模块管理员都能在角色、授权页选人。
+    准入只要求登录（不再挂 ``platform:person:lookup``）：选人下拉是各业务模块、
+    模块负责人授权页的基础能力，挂平台级权限码会让负责人必须先持有一枚与本事
+    无关的平台权限才能维护本模块角色与授权。
     """
     from app.platform.permission.public_api import list_superuser_user_ids, user_is_superuser
 
     repo = UserRepository()
     super_ids = set(await list_superuser_user_ids(db))
-    exclude_user_ids = None if await user_is_superuser(db, ctx.user) else list(super_ids)
+    exclude_user_ids = None if await user_is_superuser(db, current_user) else list(super_ids)
 
     # 展示值与搜索口径都以 HR 档案为准（与用户管理列表一致）：
     # 否则会出现「列表显示 HR 新姓名，按新姓名却搜不到」。
@@ -819,6 +822,7 @@ async def lookup_users(
         keyword_open_ids=keyword_open_ids,
         status="active",
         exclude_user_ids=exclude_user_ids,
+        hr_in_service_only=True,
         offset=offset,
         limit=limit,
     )

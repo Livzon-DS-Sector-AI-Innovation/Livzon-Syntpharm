@@ -3,7 +3,7 @@
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import or_, select
+from sqlalchemy import Select, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.hr.models import EmployeeProfile, HrDepartment
@@ -216,6 +216,22 @@ async def list_all_departments(session: AsyncSession) -> list[HrDepartment]:
     repo = DepartmentRepository(session)
     departments, _ = await repo.list_departments(page=1, page_size=10000)
     return departments
+
+
+async def list_pickable_department_names(session: AsyncSession) -> set[str]:
+    """Return names of departments that pickers may offer.
+
+    Same filter as the public directory tree (``list_directory_departments``):
+    neither soft-deleted nor removed from Feishu / out of sync scope. Keeping one
+   口径 avoids "backend accepts a name the org tree cannot show" drift.
+    """
+    result = await session.execute(
+        select(HrDepartment.name).where(
+            HrDepartment.is_deleted.is_(False),
+            HrDepartment.status_is_deleted.is_(False),
+        )
+    )
+    return {name for name in result.scalars().all() if name}
 
 
 def _profile_payload(profile: EmployeeProfile) -> dict[str, Any]:
@@ -436,6 +452,21 @@ async def get_department_row_by_feishu_id(session: AsyncSession, feishu_departme
     )
     row = result.scalars().first()
     return _department_row(row) if row is not None else None
+
+
+def in_service_profile_open_id_select() -> Select[tuple[str]]:
+    """HR 在册档案的 ``open_id`` 子查询，供跨模块按「人是否还在册」过滤。
+
+    典型用途：选人下拉（``identity/users/lookup``）只列在册人员，离职/调出
+    的历史档案（``is_current=false``）不参与任何选人。
+
+    返回的是子查询而不是结果集：调用方把它嵌进 ``IN (...)``，让过滤与分页、
+    计数发生在同一条 SQL 里，不需要先把上千个 open_id 拉到应用层再比对。
+    """
+    return select(EmployeeProfile.open_id).where(
+        EmployeeProfile.is_deleted.is_(False),
+        EmployeeProfile.is_current.is_(True),
+    )
 
 
 async def get_profiles_by_open_ids(
