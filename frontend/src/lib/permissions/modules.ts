@@ -53,6 +53,27 @@ export const MODULE_ACCESS_PERMS: Partial<Record<string, readonly PermissionCode
 }
 
 /**
+ * 模块「模块配置」入口的准入权限（每模块 1 个管理入口码）。
+ *
+ * 与后端 `{module}:admin:read` 对齐：只由「模块负责人」「模块管理员」两个内置角色持有，
+ * 所以普通员工看到的是灰显加锁的菜单项（可点击，进无权限页说明找谁申请）。
+ */
+export const MODULE_SETTINGS_PERMS: Partial<Record<string, PermissionCode>> = {
+  production: PERM.productionAdmin,
+  equipment: PERM.equipmentAdmin,
+  safety: PERM.safetyAdmin,
+  environment: PERM.environmentAdmin,
+  energy: PERM.energyAdmin,
+  warehouse: PERM.warehouseAdmin,
+  procurement: PERM.procurementAdmin,
+  administration: PERM.administrationAdmin,
+  hr: PERM.hrAdmin,
+  research: PERM.researchAdmin,
+  registration: PERM.registrationAdmin,
+  quality: PERM.qualityAdmin,
+}
+
+/**
  * 模块内子菜单的准入权限（未登记的菜单项不受影响）。
  *
  * 口径必须与对应页面的 RSC 守卫**严格一致**，否则会出现「看得到入口、点进去被拦」：
@@ -73,6 +94,24 @@ export const SUBMENU_ACCESS_PERMS: Record<string, readonly PermissionCode[]> = {
   platform: [PERM.configRead],
   ops: [PERM.opsRead],
   'settings-menus': [PERM.opsRead],
+  // 各模块「模块配置」入口（{module}-settings）由管理入口码守卫
+  'production-settings': [PERM.productionAdmin],
+  'equipment-settings': [PERM.equipmentAdmin],
+  'safety-settings': [PERM.safetyAdmin],
+  'environment-settings': [PERM.environmentAdmin],
+  'energy-settings': [PERM.energyAdmin],
+  'warehouse-settings': [PERM.warehouseAdmin],
+  'procurement-settings': [PERM.procurementAdmin],
+  'administration-settings': [PERM.administrationAdmin],
+  'hr-settings': [PERM.hrAdmin],
+  'research-settings': [PERM.researchAdmin],
+  'registration-settings': [PERM.registrationAdmin],
+  'quality-settings': [PERM.qualityAdmin],
+  // 迁移期的历史入口（旧页面迁移到 {module}-settings 后一并下线）
+  'module-settings': [PERM.safetyAdmin],
+  'system-settings': [PERM.hrAdmin],
+  'instrument-settings': [PERM.qualityAdmin],
+  'stability-settings': [PERM.qualityAdmin],
 }
 
 /** 服务端（RSC layout）下发给客户端导航的权限视图。 */

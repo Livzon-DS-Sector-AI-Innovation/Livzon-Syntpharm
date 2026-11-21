@@ -1,7 +1,8 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
+import { useIsMobile } from '@/hooks/useMediaQuery'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table,
@@ -506,8 +507,10 @@ export default function InstrumentListPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([])
-  const [isMobile, setIsMobile] = useState(false)
-  const [viewMode, setViewMode] = useState<'table' | 'card'>('table')
+  const isMobile = useIsMobile()
+  // 视图模式：用户手动切换后以手动选择为准；未手动切换时按断点默认（移动端卡片 / 桌面表格）
+  const [viewModeOverride, setViewModeOverride] = useState<'table' | 'card' | null>(null)
+  const viewMode = viewModeOverride ?? (isMobile ? 'card' : 'table')
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
 
   const [createDrawerVisible, setCreateDrawerVisible] = useState(false)
@@ -528,17 +531,6 @@ export default function InstrumentListPage() {
     category?: string
   }>({})
   const queryClient = useQueryClient()
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)')
-    const update = () => {
-      setIsMobile(mq.matches)
-      setViewMode(mq.matches ? 'card' : 'table')
-    }
-    update()
-    mq.addEventListener('change', update)
-    return () => mq.removeEventListener('change', update)
-  }, [])
 
   const { data: queryResult, isLoading: loading, refetch: loadData } = useQuery({
     queryKey: ['instruments-list', page, pageSize, filters],
@@ -900,7 +892,7 @@ export default function InstrumentListPage() {
               <Button
                 type={viewMode === 'table' ? 'primary' : 'default'}
                 icon={<TableOutlined />}
-                onClick={() => setViewMode('table')}
+                onClick={() => setViewModeOverride('table')}
                 size="small"
               >
                 表格
@@ -908,7 +900,7 @@ export default function InstrumentListPage() {
               <Button
                 type={viewMode === 'card' ? 'primary' : 'default'}
                 icon={<AppstoreOutlined />}
-                onClick={() => setViewMode('card')}
+                onClick={() => setViewModeOverride('card')}
                 size="small"
               >
                 卡片

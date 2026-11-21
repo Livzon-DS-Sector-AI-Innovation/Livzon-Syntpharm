@@ -9,6 +9,8 @@ const errorMessages: Record<string, string> = {
   callback_failed: "登录失败，请重试",
   access_denied: "您拒绝了授权",
   auth_failed: "登录失败，请重试",
+  account_deleted: "账号已被删除，请联系管理员处理",
+  account_disabled: "账号已被禁用，请联系管理员",
 }
 
 /**

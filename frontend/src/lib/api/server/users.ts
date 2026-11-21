@@ -1,9 +1,10 @@
 import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
-import type { components } from '@/types/generated/schema'
+import type { components, operations } from '@/types/generated/schema'
 import type {
   ChangePasswordRequest,
   LocalUserCreate,
   PasswordResetRequest,
+  UserBatchDeleteRequest,
   UserBatchStatusRequest,
   UserManagementUpdate,
 } from '@/types/users'
@@ -16,16 +17,13 @@ function auth(token?: string): Record<string, string> | undefined {
   return token ? { Authorization: `Bearer ${token}` } : undefined
 }
 
-export interface UserListQuery {
-  keyword?: string
-  status?: string
-  auth_source?: string
-  unbound_only?: boolean
-  must_change_password?: boolean
-  // 分页沿用后端既有的 offset/limit 契约（不是 page/page_size）
-  offset?: number
-  limit?: number
-}
+/**
+ * 用户列表查询参数：直接取生成契约，避免手写字段与后端漂移。
+ * 分页沿用后端既有的 offset/limit 契约（不是 page/page_size）。
+ */
+export type UserListQuery = NonNullable<
+  operations['list_users_management_api_v1_identity_users_get']['parameters']['query']
+>
 
 export async function getUsers(params?: UserListQuery, token?: string) {
   const search = new URLSearchParams()
@@ -63,6 +61,15 @@ export async function updateUser(id: string, data: UserManagementUpdate, token?:
 
 export async function batchUpdateUserStatus(data: UserBatchStatusRequest, token?: string) {
   return apiFetch<Schemas['UserBatchStatusApiResponse']>(U('/users/batch-status'), {
+    method: 'POST',
+    headers: auth(token),
+    body: JSON.stringify(data),
+  })
+}
+
+/** 批量删除账号（后端限定仅超级管理员可调用）。 */
+export async function batchDeleteUsers(data: UserBatchDeleteRequest, token?: string) {
+  return apiFetch<Schemas['UserBatchDeleteApiResponse']>(U('/users/batch-delete'), {
     method: 'POST',
     headers: auth(token),
     body: JSON.stringify(data),

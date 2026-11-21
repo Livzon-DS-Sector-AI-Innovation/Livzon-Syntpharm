@@ -60,6 +60,21 @@ class DepartmentContactListData(BaseModel):
     total: int
 
 
+class DepartmentContactLeaderData(BaseModel):
+    """按部门名解析出的 HR 部门负责人（新增部门时自动带出）。
+
+    ``dept_head_profile_id`` 是 ``hr.employee_profiles.id``，与
+    :class:`DepartmentContactItem` 的 ``dept_head_id``（``identity.users.id``）
+    不是同一套 ID：写库时由 ``DeviationConfigService._normalize_person_ids`` 归一。
+    """
+
+    department: str
+    resolved: bool = Field(False, description="是否解析到负责人（HR 未维护时为 false）")
+    dept_head_profile_id: str | None = Field(None, description="hr.employee_profiles.id")
+    dept_head_name: str | None = None
+    dept_head_avatar: str | None = None
+
+
 class DepartmentContactCreateRequest(BaseModel):
     """新增部门联系人。"""
 
@@ -182,6 +197,13 @@ class MemberOptionListApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: MemberOptionListData
+    meta: dict[str, Any] | None = None
+
+
+class DepartmentContactLeaderApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: DepartmentContactLeaderData
     meta: dict[str, Any] | None = None
 
 

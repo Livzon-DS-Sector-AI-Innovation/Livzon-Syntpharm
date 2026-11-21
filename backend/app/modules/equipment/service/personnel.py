@@ -29,6 +29,7 @@ from app.modules.equipment.schemas.personnel import (
     RoleUpdate,
 )
 from app.platform.identity.models import User
+from app.platform.identity.public_api import resolve_person_user_id
 
 # ── 角色 Service ──
 
@@ -117,9 +118,14 @@ async def add_personnel(db: AsyncSession, data: PersonnelAddRequest) -> Personne
     """从 identity.users 中添加人员到设备人员池"""
     result = PersonnelAddResult(added=[], skipped=[], errors=[])
 
-    for user_id in data.user_ids:
+    for requested_id in data.user_ids:
         try:
-            # 查 identity.users
+            # #219：统一选择器返回 hr.employee_profiles.id，而本表外键仍是
+            # identity.users.id，这里先归一化（查不到则按 HR 档案按需建号）。
+            user_id = await resolve_person_user_id(db, requested_id)
+            if user_id is None:
+                result.errors.append({"user_id": str(requested_id), "reason": "人员不存在"})
+                continue
             user_result = await db.execute(
                 select(User).where(
                     User.id == user_id,
@@ -128,7 +134,7 @@ async def add_personnel(db: AsyncSession, data: PersonnelAddRequest) -> Personne
             )
             user = user_result.scalar_one_or_none()
             if not user:
-                result.errors.append({"user_id": str(user_id), "reason": "identity.users 中未找到"})
+                result.errors.append({"user_id": str(requested_id), "reason": "人员不存在"})
                 continue
 
             # 去重
@@ -150,8 +156,10 @@ async def add_personnel(db: AsyncSession, data: PersonnelAddRequest) -> Personne
             db.add(personnel)
             await db.flush()
             result.added.append(personnel.id)
-        except Exception as e:
-            result.errors.append({"user_id": str(user_id), "reason": str(e)})
+        except Exception as e:  # noqa: BLE001 — 逐条报错，单条失败不影响整批
+            # 用循环变量而不是 try 内赋值的 user_id：首条请求在归一化阶段抛错时
+            # user_id 尚未绑定，否则此处会二次抛 UnboundLocalError，整批退化成 500。
+            result.errors.append({"user_id": str(requested_id), "reason": str(e)})
 
     return result
 

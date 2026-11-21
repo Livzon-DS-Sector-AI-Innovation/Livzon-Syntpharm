@@ -52,6 +52,8 @@ async def list_maintainers(
     return DataResponse[list[MaintainerBrief]](data=maintainers)
 
 
+# 已弃用：责任人选人统一走 `/api/v1/identity/users/lookup`（TC-001，active + HR 在册）。
+# 保留端点仅为兼容可能存在的旧客户端；前端已删除 `fetchAllUsersClient`，不要再接入。
 @router.get("/all-users", summary="获取全体员工列表")
 async def list_all_users(
     current_user: RequiredUser,

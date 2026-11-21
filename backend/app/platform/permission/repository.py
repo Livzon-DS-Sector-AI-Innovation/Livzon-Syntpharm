@@ -2,10 +2,11 @@
 
 import uuid
 
-from sqlalchemy import select, update
+from sqlalchemy import func, not_, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.platform.identity.models import User
+from app.platform.permission.constants import RETIRED_ROLE_TYPES
 from app.platform.permission.models import (
     GRANT_ACTIVE,
     GRANT_DISABLED,
@@ -15,6 +16,7 @@ from app.platform.permission.models import (
     RolePermission,
     UserRoleGrant,
 )
+from app.platform.permission.registry import RETIRED_MODULE_CODES
 
 
 class GrantRepository:
@@ -39,25 +41,51 @@ class GrantRepository:
         return result.scalar_one_or_none() is not None
 
     async def list_superuser_user_ids(self, db: AsyncSession) -> list[uuid.UUID]:
-        """所有持有 active 超级管理员角色的用户 id。
+        """所有持有 active 超级管理员角色、且账号仍生效的用户 id。
 
         用户管理列表用它把超管账号对非超管隐藏：即使对方有
         `platform:user:read`，也不应该看到超管的资料与角色。
+
+        同时 join `identity.users` 过滤已删除 / 已停用账号：这两类账号已经无法登录，
+        若继续计入「生效超管」，会让「至少保留 N 名超管」的守卫被空账号占位而失效
+        （TC-007：删掉一名超管后，守卫仍以为还有足够名额）。
         """
         stmt = (
             select(UserRoleGrant.user_id)
             .join(Role, Role.id == UserRoleGrant.role_id)
+            .join(User, User.id == UserRoleGrant.user_id)
             .where(
                 UserRoleGrant.status == GRANT_ACTIVE,
                 UserRoleGrant.is_deleted == False,  # noqa: E712
                 Role.is_superuser.is_(True),
                 Role.status == GRANT_ACTIVE,
                 Role.is_deleted == False,  # noqa: E712
+                User.is_deleted == False,  # noqa: E712
+                User.status != "disabled",
             )
             .distinct()
         )
         result = await db.execute(stmt)
         return list(result.scalars().all())
+
+    async def count_active_superusers(self, db: AsyncSession) -> int:
+        """生效超管数量（口径与 list_superuser_user_ids 完全一致）。"""
+        stmt = (
+            select(func.count(func.distinct(UserRoleGrant.user_id)))
+            .select_from(UserRoleGrant)
+            .join(Role, Role.id == UserRoleGrant.role_id)
+            .join(User, User.id == UserRoleGrant.user_id)
+            .where(
+                UserRoleGrant.status == GRANT_ACTIVE,
+                UserRoleGrant.is_deleted == False,  # noqa: E712
+                Role.is_superuser.is_(True),
+                Role.status == GRANT_ACTIVE,
+                Role.is_deleted == False,  # noqa: E712
+                User.is_deleted == False,  # noqa: E712
+                User.status != "disabled",
+            )
+        )
+        return int((await db.execute(stmt)).scalar_one())
 
     async def get_grants_for_permission(
         self,
@@ -90,7 +118,13 @@ class GrantRepository:
         *,
         user_id: uuid.UUID | None = None,
     ) -> list[UserRoleGrant]:
-        """查询授权列表，join 角色与用户以填充展示字段。"""
+        """查询授权列表，join 角色与用户以填充展示字段。
+
+        注意：**不要**在这里过滤退役角色类型（`RETIRED_ROLE_TYPES`）。
+        本方法唯一调用方是「不能修改自己所属角色的权限」防自提权校验
+        （`api.update_role`），过滤会削弱该校验的覆盖面。
+        展示层的退役过滤在 `api.list_grants` 的查询里。
+        """
         stmt = (
             select(UserRoleGrant)
             .join(Role, Role.id == UserRoleGrant.role_id)
@@ -170,9 +204,20 @@ class RoleRepository:
     """角色仓储。"""
 
     async def list_roles(self, db: AsyncSession) -> list[Role]:
+        """列出角色（已退役的历史角色类型 / 下线模块的内置角色不返回）。
+
+        只按 `role_type` 与所属模块过滤，**不按** `status` 过滤：人工禁用的
+        岗位角色仍要出现在列表里（前端按禁用态展示并允许恢复）。
+        下线模块（如 agent）的角色即便库里还有行，也不再出现在任何管理界面。
+        """
         result = await db.execute(
             select(Role)
-            .where(Role.is_deleted == False)  # noqa: E712
+            .where(
+                Role.is_deleted == False,  # noqa: E712
+                Role.role_type.notin_(RETIRED_ROLE_TYPES),
+                # 平台级角色的 module_code 为 NULL，不能被 NOT IN 误伤
+                or_(Role.module_code.is_(None), Role.module_code.notin_(RETIRED_MODULE_CODES)),
+            )
             .order_by(Role.category, Role.code)
         )
         return list(result.scalars().all())
@@ -210,21 +255,20 @@ class RoleRepository:
         role_id: uuid.UUID,
         permission_codes: list[str],
     ) -> None:
-        """全量设置角色权限码（软删旧关联 + 新增缺失项）。"""
+        """全量设置角色权限码（复用/复活已有行 + 软删多余 + 新增缺失）。
+
+        注意 `(role_id, permission_code)` 有唯一约束，所以**不能**先软删再插入同一权限码：
+        必须把历史行复活复用，否则会撞唯一键（`重置内置角色权限` 时必然触发）。
+        """
         wanted = set(permission_codes)
 
-        # 删除不再需要的
-        result = await db.execute(
-            select(RolePermission).where(
-                RolePermission.role_id == role_id,
-                RolePermission.is_deleted == False,  # noqa: E712
-            )
-        )
+        result = await db.execute(select(RolePermission).where(RolePermission.role_id == role_id))
         for rp in result.scalars().all():
-            if rp.permission_code not in wanted:
-                rp.is_deleted = True
-            else:
+            if rp.permission_code in wanted:
+                rp.is_deleted = False  # 复活历史行
                 wanted.discard(rp.permission_code)
+            elif not rp.is_deleted:
+                rp.is_deleted = True
 
         # 新增缺失的
         for code in wanted:
@@ -234,14 +278,36 @@ class RoleRepository:
         role.is_deleted = True
         role.status = "disabled"
 
+    async def disable_grants_for_role(self, db: AsyncSession, role_id: uuid.UUID) -> int:
+        """停用某角色的全部活跃授权（删除角色时调用，返回受影响行数）。
+
+        停用而不是软删：授权列表里仍能看到"已停用"的行，判错时可一键恢复。
+        """
+        result = await db.execute(
+            select(UserRoleGrant).where(
+                UserRoleGrant.role_id == role_id,
+                UserRoleGrant.status == "active",
+                UserRoleGrant.is_deleted == False,  # noqa: E712
+            )
+        )
+        grants = list(result.scalars().all())
+        for grant in grants:
+            grant.status = "disabled"
+        await db.flush()
+        return len(grants)
+
 
 class PermissionRepository:
     """权限目录仓储。"""
 
     async def list_permissions(self, db: AsyncSession) -> list[Permission]:
+        """列出权限码；已下线模块（如 agent）的权限码不展示。"""
         result = await db.execute(
             select(Permission)
-            .where(Permission.is_deleted == False)  # noqa: E712
+            .where(
+                Permission.is_deleted == False,  # noqa: E712
+                Permission.module.notin_(RETIRED_MODULE_CODES),
+            )
             .order_by(Permission.module, Permission.resource, Permission.action)
         )
         return list(result.scalars().all())
@@ -251,9 +317,13 @@ class ApiBindingRepository:
     """接口绑定登记簿仓储。"""
 
     async def list_bindings(self, db: AsyncSession) -> list[ApiBinding]:
-        result = await db.execute(
+        """列出接口绑定；已下线模块（如 agent）的历史绑定不展示。"""
+        stmt = (
             select(ApiBinding)
             .where(ApiBinding.is_deleted == False)  # noqa: E712
             .order_by(ApiBinding.method, ApiBinding.route_template)
         )
+        for module_code in RETIRED_MODULE_CODES:
+            stmt = stmt.where(not_(ApiBinding.permission_code.startswith(f"{module_code}:")))
+        result = await db.execute(stmt)
         return list(result.scalars().all())

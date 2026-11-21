@@ -1,4 +1,4 @@
-"""Personnel mirror sync seam (ticket #198 / filter-based sync).
+"""Personnel mirror sync seam (ticket #198 / #219 faithful mirror).
 
 Seam: ``sync_employee_profiles(store, fetcher)`` with an in-memory store and a
 fake employee-filter fetcher. Catches:
@@ -6,7 +6,9 @@ fake employee-filter fetcher. Catches:
 - duplicate people deduped by open id;
 - omitted Feishu keys stored as empty values;
 - resigned fields captured;
-- no deletion or disabling of known people missing from the response.
+- people missing from a successful run flagged as not current;
+- fail-closed guardrails: empty fetch aborts, removal ratio/floor refuse removals;
+- a rejoining employee opening a new current row.
 """
 
 from __future__ import annotations
@@ -14,8 +16,14 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 from typing import Any
 
+import pytest
+
 from app.modules.hr.people_domain import EmployeeProfileRecord
-from app.modules.hr.people_sync import PeopleSyncStats, sync_employee_profiles
+from app.modules.hr.people_sync import (
+    PeopleSyncStats,
+    ProfilesFetchEmptyError,
+    sync_employee_profiles,
+)
 
 
 class FakeFetcher:
@@ -33,10 +41,13 @@ class FakeStore:
         self,
         department_ids: list[str],
         existing: list[EmployeeProfileRecord] | None = None,
+        current_open_ids: set[str] | None = None,
     ) -> None:
         self.department_ids = department_ids
         self.profiles: dict[str, EmployeeProfileRecord] = {p.open_id: p for p in existing or []}
+        self.current: set[str] = set(current_open_ids if current_open_ids is not None else self.profiles)
         self.department_ids_by_open_id: dict[str, list[str]] = {}
+        self.removed: list[str] = []
 
     async def list_scope_department_ids(self) -> list[str]:
         return list(self.department_ids)
@@ -47,10 +58,21 @@ class FakeStore:
         *,
         department_ids: list[str],
     ) -> bool:
-        created = record.open_id not in self.profiles
+        created = record.open_id not in self.current
         self.department_ids_by_open_id[record.open_id] = list(department_ids)
         self.profiles[record.open_id] = record
+        self.current.add(record.open_id)
         return created
+
+    async def list_current_open_ids(self) -> set[str]:
+        return set(self.current)
+
+    async def mark_removed(self, open_ids: list[str], *, removed_at: datetime) -> int:
+        changed = [open_id for open_id in open_ids if open_id in self.current]
+        for open_id in changed:
+            self.current.discard(open_id)
+        self.removed.extend(changed)
+        return len(changed)
 
 
 def _payload(open_id: str, name: str, **extra: Any) -> dict[str, Any]:
@@ -131,16 +153,79 @@ async def test_sync_captures_resigned_fields() -> None:
     assert record.resign_remark == "已交接"
 
 
-async def test_sync_never_deletes_people_missing_from_the_response() -> None:
-    existing = EmployeeProfileRecord(open_id="ou-gone", name="已离开")
-    fetcher = FakeFetcher([_payload("ou-1", "张三")])
-    store = FakeStore(department_ids=["od-101"], existing=[existing])
+async def test_sync_marks_people_missing_from_the_response_as_not_current() -> None:
+    existing = [EmployeeProfileRecord(open_id=f"ou-{index}", name=f"员工{index}") for index in range(1, 6)]
+    payloads = [_payload(f"ou-{index}", f"员工{index}") for index in range(2, 6)]
+    fetcher = FakeFetcher(payloads)
+    store = FakeStore(department_ids=["od-101"], existing=existing)
 
     stats = await sync_employee_profiles(store, fetcher)
 
-    assert stats.total == 1
-    assert "ou-gone" in store.profiles
-    assert store.profiles["ou-gone"].name == "已离开"
+    assert stats.removed == 1
+    assert stats.removal_skipped is False
+    assert store.removed == ["ou-1"]
+    assert "ou-1" not in store.current
+    # Historical row keeps its payload for ledger lookups.
+    assert store.profiles["ou-1"].name == "员工1"
+
+
+async def test_sync_aborts_when_the_directory_returns_no_records() -> None:
+    existing = [EmployeeProfileRecord(open_id="ou-1", name="张三")]
+    fetcher = FakeFetcher([])
+    store = FakeStore(department_ids=["od-101"], existing=existing)
+
+    with pytest.raises(ProfilesFetchEmptyError):
+        await sync_employee_profiles(store, fetcher)
+
+    assert store.current == {"ou-1"}
+    assert store.removed == []
+
+
+async def test_sync_refuses_removal_above_the_ratio_threshold() -> None:
+    existing = [EmployeeProfileRecord(open_id=f"ou-{index}", name=f"员工{index}") for index in range(1, 6)]
+    payloads = [_payload(f"ou-{index}", f"员工{index}") for index in range(1, 4)]
+    fetcher = FakeFetcher(payloads)
+    store = FakeStore(department_ids=["od-101"], existing=existing)
+
+    stats = await sync_employee_profiles(store, fetcher)
+
+    assert stats.removal_skipped is True
+    assert stats.removed == 0
+    assert store.current == {"ou-1", "ou-2", "ou-3", "ou-4", "ou-5"}
+    assert store.removed == []
+
+
+async def test_sync_refuses_removal_below_the_retained_floor() -> None:
+    existing = [
+        EmployeeProfileRecord(open_id="ou-1", name="员工1"),
+        EmployeeProfileRecord(open_id="ou-2", name="员工2"),
+    ]
+    fetcher = FakeFetcher([_payload("ou-1", "员工1")])
+    store = FakeStore(department_ids=["od-101"], existing=existing)
+
+    stats = await sync_employee_profiles(
+        store,
+        fetcher,
+        removal_ratio_threshold=1.0,
+        min_retained_profiles=2,
+    )
+
+    assert stats.removal_skipped is True
+    assert stats.removed == 0
+    assert store.current == {"ou-1", "ou-2"}
+
+
+async def test_sync_opens_a_new_current_row_for_a_rejoining_employee() -> None:
+    # The historical row is no longer current; the sync must create a new row.
+    historical = EmployeeProfileRecord(open_id="ou-rejoin", name="老员工")
+    fetcher = FakeFetcher([_payload("ou-rejoin", "老员工")])
+    store = FakeStore(department_ids=["od-101"], existing=[historical], current_open_ids=set())
+
+    stats = await sync_employee_profiles(store, fetcher)
+
+    assert stats.created == 1
+    assert store.current == {"ou-rejoin"}
+    assert store.removed == []
 
 
 async def test_sync_skips_fetch_without_scope_departments() -> None:

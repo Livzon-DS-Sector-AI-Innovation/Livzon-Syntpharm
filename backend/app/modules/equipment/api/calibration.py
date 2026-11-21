@@ -9,6 +9,7 @@ from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
+from app.modules.equipment.models import CalibrationPlan
 from app.modules.equipment.schemas import (
     CalibrationPlanCreate,
     CalibrationPlanResponse,
@@ -16,9 +17,28 @@ from app.modules.equipment.schemas import (
     CalibrationRecordCreate,
     CalibrationRecordResponse,
 )
+from app.platform.identity.public_api import resolve_user_names
 from app.shared.schemas import ApiResponse
 
 router = APIRouter()
+
+
+async def _to_responses(db: AsyncSession, plans: list[CalibrationPlan]) -> list[CalibrationPlanResponse]:
+    """批量补责任人姓名；一页只多查一次 identity.users。
+
+    姓名不是持久化列，写入通道仍只认 ``responsible_person_id``。
+    """
+    user_ids = {plan.responsible_person_id for plan in plans if plan.responsible_person_id}
+    names = await resolve_user_names(db, user_ids) if user_ids else {}
+    responses = [CalibrationPlanResponse.model_validate(plan) for plan in plans]
+    for response in responses:
+        person_id = response.responsible_person_id
+        response.responsible_person_name = names.get(person_id) if person_id else None
+    return responses
+
+
+async def _to_response(db: AsyncSession, plan: CalibrationPlan) -> CalibrationPlanResponse:
+    return (await _to_responses(db, [plan]))[0]
 
 
 # ---------- 校准计划 ----------
@@ -30,7 +50,7 @@ async def create_calibration_plan(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     plan = await service.create_calibration_plan(db, data)
-    return build_response(data=CalibrationPlanResponse.model_validate(plan))
+    return build_response(data=await _to_response(db, plan))
 
 
 @router.get("/plans", summary="校准计划列表")
@@ -51,7 +71,7 @@ async def list_calibration_plans(
         page_size=page_size,
     )
     return paginated_response(
-        data=[CalibrationPlanResponse.model_validate(p) for p in plans],
+        data=await _to_responses(db, plans),
         page=page,
         page_size=page_size,
         total=total,
@@ -65,7 +85,7 @@ async def get_overdue_plans(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     plans = await service.get_overdue_calibration_plans(db, days)
-    return build_response(data=[CalibrationPlanResponse.model_validate(p) for p in plans])
+    return build_response(data=await _to_responses(db, plans))
 
 
 @router.get("/plans/{plan_id}", summary="校准计划详情")
@@ -76,7 +96,7 @@ async def get_calibration_plan(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     plan = await service.get_calibration_plan_by_id(db, plan_id)
-    return build_response(data=CalibrationPlanResponse.model_validate(plan))
+    return build_response(data=await _to_response(db, plan))
 
 
 @router.put("/plans/{plan_id}", summary="修改校准计划")
@@ -84,10 +104,11 @@ async def update_calibration_plan(
     plan_id: uuid.UUID,
     data: CalibrationPlanUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:calibration:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     plan = await service.update_calibration_plan(db, plan_id, data)
-    return build_response(data=CalibrationPlanResponse.model_validate(plan))
+    return build_response(data=await _to_response(db, plan))
 
 
 @router.delete("/plans/{plan_id}", summary="删除校准计划")

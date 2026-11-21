@@ -16,6 +16,11 @@ export interface paths {
          * @description Return the currently authenticated user's profile.
          *
          *     Authentication via Bearer header or auth_token cookie.
+         *
+         *     #219：姓名 / 手机 / 邮箱 / 部门 / 职务 / 工号 / 头像以 HR 员工档案为准，
+         *     账号表只提供认证字段。逐字段「HR 有值才覆盖」——HR 档案存在但某字段尚未
+         *     同步（如部门为空、last_synced_at 为空）时必须回退登录快照，否则个人中心
+         *     会被空值清空，与用户管理列表的口径也不一致。
          */
         get: operations["get_me_api_v1_identity_me_get"];
         put?: never;
@@ -52,6 +57,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/identity/users/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 人员下拉（仅启用账号）
+         * @description 选人组件的数据源：只返回「HR 在册且已有系统账号」的启用人员。
+         *
+         *     与「用户管理」列表的区别：
+         *     - 固定 ``status=active``：停用账号不参与任何选人；
+         *     - 只列 HR 在册档案（``hr.employee_profiles.is_current=true``）对应的账号：
+         *       已离职/调出、以及没有 HR 档案的本地账号（如 admin、测试账号）都不参与选人；
+         *     - 只返回展示字段（姓名 / 账号 / 部门 / 职务 / 头像），不含联系方式与角色；
+         *     - 沿用同一条保护规则：非超管调用时看不到超管账号；
+         *     - ``feishu_bound_only=true`` 时只返回已绑定飞书身份的账号（审批人、整改负责人
+         *       等需要收飞书通知的场景用），口径与 ``identity/personnel`` 一致。
+         *
+         *     准入只要求登录（不再挂 ``platform:person:lookup``）：选人下拉是各业务模块、
+         *     模块负责人授权页的基础能力，挂平台级权限码会让负责人必须先持有一枚与本事
+         *     无关的平台权限才能维护本模块角色与授权。
+         */
+        get: operations["lookup_users_api_v1_identity_users_lookup_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/ensure-by-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 按 HR 员工档案预建/复用平台账号（登录前授权用）
+         * @description 幂等地把 HR 员工物化成平台账号，返回 ``user_id`` 供授权挂载。
+         *
+         *     被授权人可能从未登录过；首次飞书登录会按 ``feishu_open_id`` 认领同一行。
+         */
+        post: operations["ensure_user_by_employee_profile_api_v1_identity_ensure_by_profile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/identity/users/{user_id}": {
         parameters: {
             query?: never;
@@ -72,6 +132,10 @@ export interface paths {
          *
          *     账号名不会被释放——`uq_identity_users_username` 不区分 `is_deleted`，删除后同名
          *     账号无法重建；如需复用名称，请另建新名（或后续做改名迁移）。
+         *
+         *     软删行仍占用飞书身份唯一约束，因此本人再次飞书登录时会**原地复活该行**
+         *     （`auth_source=feishu` 时）：复活后零权限，需管理员重新授予角色。要彻底阻断
+         *     登录请改用「禁用」，不要用「删除」。
          */
         delete: operations["delete_user_management_api_v1_identity_users__user_id__delete"];
         options?: never;
@@ -97,6 +161,31 @@ export interface paths {
          *     状态与目标一致的条目按幂等处理（计入成功，不写审计）。
          */
         post: operations["batch_update_user_status_api_v1_identity_users_batch_status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/users/batch-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量删除账号（仅超级管理员，软删除）
+         * @description 批量删除账号（单次最多 100 个）。
+         *
+         *     逐条复用单条删除的全部护栏：仅超级管理员、不能删自己、不能删系统内置账号、
+         *     不能删引导账号、不能删最后一个超级管理员。失败条目不影响其他条目，结果里返回失败原因。
+         *     删除动作与单条删除一致：软删除 + 清空角色授权 + 审计；会话在提交后吊销，
+         *     Redis 不可用时只降级为「会话未吊销」，不回滚已完成的删除。
+         */
+        post: operations["batch_delete_users_api_v1_identity_users_batch_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -465,30 +554,6 @@ export interface paths {
          *     结果写入飞书配置的 last_sync_status / last_sync_message / last_synced_at。
          */
         post: operations["trigger_sync_all_api_v1_identity_sync_all_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/identity/sync/user-info": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 同步飞书用户信息（资料 + 头像 + 部门，后台执行）
-         * @description 用户管理页「同步飞书用户信息」入口。
-         *
-         *     与 `/sync/all` 复用同一后台任务（部门 + 成员全量同步），区别只在权限：
-         *     这里额外允许仅持有「用户管理」权限的账号触发，方便管理员自行补齐头像与部门。
-         *     本次不分配账号（飞书 user_id / 工号权限未开通），只回填资料。
-         */
-        post: operations["trigger_sync_user_info_api_v1_identity_sync_user_info_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -910,6 +975,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/permission/roles/{role_id}/reset-default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset Role Permissions
+         * @description 把内置角色的权限恢复为代码注册表的装配值，并重新纳入启动自动扩量。
+         */
+        post: operations["reset_role_permissions_api_v1_permission_roles__role_id__reset_default_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/permission/roles/{role_id}": {
         parameters: {
             query?: never;
@@ -1000,10 +1085,11 @@ export interface paths {
          * Get Permission Tree
          * @description 权限目录树（模块 → 资源 → 权限码），供角色管理按模块 / 功能勾选权限。
          *
-         *     权限码口径取 `platform:role:read` 而非 `platform:permission:read`：
-         *     该树只服务于「角色管理」勾选权限，跟随角色读权限，避免出现
-         *     「有角色管理权、却因缺权限目录读权而整个角色页报错」的口径不一致。
+         *     准入取 `require_role_catalog_read()`：除 `platform:role:read` / `platform:role:manage`
+         *     外，也放行模块负责人与模块管理员（他们只持有本模块业务码 + `{module}:admin:read`，
+         *     缺少 `platform:role:read`；否则模块配置页「新建角色」的权限树会 403 成空树）。
          *
+         *     按模块管理入口进入的操作者只返回其可管理模块的子树；平台级角色管理员返回全量。
          *     纯注册表数据、不查库，因此权限表未迁移时也可正常返回。
          */
         get: operations["get_permission_tree_api_v1_permission_tree_get"];
@@ -1026,8 +1112,9 @@ export interface paths {
          * List Permission Api Bindings
          * @description 单个权限码绑定的接口清单，供角色管理勾选权限时按需展开。
          *
-         *     权限口径与 `/tree` 一致取 `platform:role:read`：这份清单只服务于「勾这个权限会放开哪些接口」，
-         *     角色管理员通常没有 `platform:api-binding:read`，复用登记簿端点会 403。
+         *     准入与 `/tree` 一致取 `require_role_catalog_read()`：这份清单只服务于
+         *     「勾这个权限会放开哪些接口」，角色管理员通常没有 `platform:api-binding:read`，
+         *     复用登记簿端点会 403。按模块管理入口进入的操作者只能查本模块的权限码。
          *
          *     纯注册表数据、不查库，因此权限表未迁移时也可正常返回。
          */
@@ -1092,6 +1179,32 @@ export interface paths {
         put?: never;
         /** Create Grant */
         post: operations["create_grant_api_v1_permission_grants_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/grants/batch-create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量授权（多用户 × 多角色）
+         * @description 一次给多个用户授予多个角色，统一套用同一个数据范围。
+         *
+         *     逐对 (用户, 角色) 复用单条授权护栏：不能给自己授权、目标账号层级校验、
+         *     授出角色不能超出操作者权限范围；数据范围在入口处统一校验一次。
+         *
+         *     - 已存在同用户同角色的有效授权按幂等处理：计入 succeeded、不重复插入、不写审计。
+         *     - 真正的拒绝项（用户不可用 / 角色不可用 / 越级）逐条返回原因，不影响其他组合。
+         */
+        post: operations["batch_create_grants_api_v1_permission_grants_batch_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1197,6 +1310,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/permission/module-admins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Module Admins
+         * @description 按模块列出负责人（含"未指派"空态所需的全部模块）。
+         *
+         *     模块代表不在本入口展示，由模块负责人在模块配置页维护。
+         */
+        get: operations["list_module_admins_api_v1_permission_module_admins_get"];
+        put?: never;
+        /**
+         * Assign Module Admin
+         * @description 指派模块负责人 / 模块管理员（仅系统管理员）。
+         */
+        post: operations["assign_module_admin_api_v1_permission_module_admins_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/module-admins/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remove Module Admin
+         * @description 移除模块负责人 / 模块管理员（仅系统管理员）。
+         */
+        post: operations["remove_module_admin_api_v1_permission_module_admins_remove_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/user-access/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Access */
+        get: operations["get_user_access_api_v1_permission_user_access__user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/user-access/{user_id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disable User Access
+         * @description 停用某用户的全部模块授权（离职/调岗收权）。
+         *
+         *     系统管理员授权不在此处处理：超管降级受「保底两人」约束，需单独操作。
+         *     模块代表/负责人授权随账号收权一并停用：这是账号级离职处理，不是模块内的
+         *     任命调整，因此不走「只有本模块负责人可移除代表」的委派守卫。
+         */
+        post: operations["disable_user_access_api_v1_permission_user_access__user_id__disable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit/logs": {
         parameters: {
             query?: never;
@@ -1231,6 +1431,68 @@ export interface paths {
         get: operations["export_audit_logs_api_v1_audit_logs_export_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbench/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Workbench Overview
+         * @description 首页工作台数据：审核待办 + 我参与的流程（含按模块分组的计数）。
+         */
+        get: operations["workbench_overview_api_v1_workbench_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbench/todos/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark Todo Read
+         * @description 标记单条待办已读（幂等）。
+         *
+         *     只影响当前用户自己的铃铛计数，不改业务单据状态。
+         */
+        post: operations["mark_todo_read_api_v1_workbench_todos_read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workbench/todos/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark All Todos Read
+         * @description 一键已读：批量写入客户端当前看到的未读项（空列表直接返回 0）。
+         */
+        post: operations["mark_all_todos_read_api_v1_workbench_todos_read_all_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4832,6 +5094,9 @@ export interface paths {
         /**
          * 获取风险分级管控台账的选项、矩阵与分级阈值
          * @description 风险分级管控台账的权威选项字典；前端不得再手写这些常量。
+         *
+         *     管控层级候选来自组织目录（与部门选择器同源）；查库失败时回退常量，
+         *     仅保证读接口可用，写接口此时仍会因同样的查询失败而拒绝。
          */
         get: operations["get_risk_grading_options_api_v1_safety_enums_risk_grading_get"];
         put?: never;
@@ -9666,6 +9931,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/hr/directory/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 公共部门树（全量展开，任意层级可选）
+         * @description Return the whole org tree with ``hr.departments.id`` as the reference key.
+         */
+        get: operations["get_directory_departments_api_v1_hr_directory_departments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hr/directory/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 公共人员列表（在任员工，支持关键词与部门筛选）
+         * @description Return current employees; historical (removed) rows stay out of pickers.
+         */
+        get: operations["list_directory_people_api_v1_hr_directory_people_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/hr/candidates": {
         parameters: {
             query?: never;
@@ -14274,6 +14579,29 @@ export interface paths {
          * @description 配置页下拉的人员候选。
          */
         get: operations["list_member_options_api_v1_quality_department_contacts_member_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/department-contacts/department-leader": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 按部门名解析 HR 部门负责人（新增部门时自动带出）
+         * @description 只读解析：不写库、不建号；HR 未维护负责人时返回 resolved=false。
+         *
+         *     静态段 ``department-leader`` 与 ``member-options`` 同级，不会被
+         *     ``/department-contacts/{contact_id}``（只有 PUT/DELETE）遮挡。
+         */
+        get: operations["get_department_leader_api_v1_quality_department_contacts_department_leader_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -19080,6 +19408,8 @@ export interface paths {
         /**
          * Get
          * @description List all module settings, optionally filtered by module.
+         *
+         *     修改人姓名用一次批量回查带出，避免逐行回查（N+1）。
          */
         get: operations["get_api_v1_module_settings_get"];
         put?: never;
@@ -19094,6 +19424,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/module-settings/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Put Batch
+         * @description 批量更新配置值（布尔项批量启停复用此接口）。
+         *
+         *     逐条独立校验：成功项统一提交，失败项单独返回原因，互不影响。
+         */
+        put: operations["put_batch_api_v1_module_settings_batch_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/module-settings/{module}/{key}": {
         parameters: {
             query?: never;
@@ -19102,13 +19454,16 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get
+         * Get One
          * @description Get a specific setting by module and key.
          */
-        get: operations["get_api_v1_module_settings__module___key__get"];
+        get: operations["get_one_api_v1_module_settings__module___key__get"];
         /**
          * Put
          * @description Update a setting value.
+         *
+         *     - 按 ``value_type`` 做服务端校验，非法值直接 400；
+         *     - 密钥类配置传空串表示「保持不变」（界面不回填明文，无法区分「清空」）。
          */
         put: operations["put_api_v1_module_settings__module___key__put"];
         post?: never;
@@ -30050,6 +30405,51 @@ export interface components {
             /** Updated At */
             updated_at?: string | null;
         };
+        /** DepartmentContactLeaderApiResponse */
+        DepartmentContactLeaderApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DepartmentContactLeaderData"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * DepartmentContactLeaderData
+         * @description 按部门名解析出的 HR 部门负责人（新增部门时自动带出）。
+         *
+         *     ``dept_head_profile_id`` 是 ``hr.employee_profiles.id``，与
+         *     :class:`DepartmentContactItem` 的 ``dept_head_id``（``identity.users.id``）
+         *     不是同一套 ID：写库时由 ``DeviationConfigService._normalize_person_ids`` 归一。
+         */
+        DepartmentContactLeaderData: {
+            /** Department */
+            department: string;
+            /**
+             * Resolved
+             * @description 是否解析到负责人（HR 未维护时为 false）
+             * @default false
+             */
+            resolved: boolean;
+            /**
+             * Dept Head Profile Id
+             * @description hr.employee_profiles.id
+             */
+            dept_head_profile_id?: string | null;
+            /** Dept Head Name */
+            dept_head_name?: string | null;
+            /** Dept Head Avatar */
+            dept_head_avatar?: string | null;
+        };
         /** DepartmentContactListApiResponse */
         DepartmentContactListApiResponse: {
             /**
@@ -30552,6 +30952,127 @@ export interface components {
              * @description 操作人
              */
             operator?: string | null;
+        };
+        /** DirectoryDepartmentNode */
+        DirectoryDepartmentNode: {
+            /**
+             * Id
+             * @description hr.departments.id（业务引用键）
+             */
+            id: string;
+            /**
+             * Code
+             * @description 部门编码；供权限数据范围使用
+             * @default
+             */
+            code: string;
+            /** Name */
+            name: string;
+            /**
+             * Parent Id
+             * @description 父部门 hr.departments.id
+             */
+            parent_id?: string | null;
+            /**
+             * Level
+             * @description 0 = 公司，N = 第 N 级部门
+             * @default 0
+             */
+            level: number;
+            /**
+             * Path Names
+             * @description 根 → 自身的部门名称路径
+             */
+            path_names?: string[];
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /** Children */
+            children?: components["schemas"]["DirectoryDepartmentNode"][];
+        };
+        /** DirectoryDepartmentTreeApiResponse */
+        DirectoryDepartmentTreeApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DirectoryDepartmentTreeData"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** DirectoryDepartmentTreeData */
+        DirectoryDepartmentTreeData: {
+            /** Items */
+            items?: components["schemas"]["DirectoryDepartmentNode"][];
+        };
+        /** DirectoryPeopleListApiResponse */
+        DirectoryPeopleListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DirectoryPeopleListData"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** DirectoryPeopleListData */
+        DirectoryPeopleListData: {
+            /** Items */
+            items?: components["schemas"]["DirectoryPersonItem"][];
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+        };
+        /** DirectoryPersonItem */
+        DirectoryPersonItem: {
+            /**
+             * Id
+             * @description hr.employee_profiles.id（业务引用键）
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Employee No
+             * @default
+             */
+            employee_no: string;
+            /**
+             * Job Title Name
+             * @default
+             */
+            job_title_name: string;
+            /** Department Names */
+            department_names?: string[];
+            /** Department Path */
+            department_path?: {
+                [key: string]: string;
+            }[];
+            /**
+             * Avatar Url
+             * @default
+             */
+            avatar_url: string;
         };
         /** DiskUsage */
         DiskUsage: {
@@ -32226,6 +32747,13 @@ export interface components {
             /** Name */
             name: string;
             /**
+             * Is Current
+             * @default true
+             */
+            is_current: boolean;
+            /** Removed At */
+            removed_at?: string | null;
+            /**
              * Mobile
              * @default
              */
@@ -32494,6 +33022,11 @@ export interface components {
             open_id: string;
             /** Name */
             name: string;
+            /**
+             * Is Current
+             * @default true
+             */
+            is_current: boolean;
             /**
              * Avatar Url
              * @default
@@ -33860,6 +34393,40 @@ export interface components {
              */
             excluded_energy_types?: ("electricity" | "water" | "steam" | "natural_gas")[] | null;
         };
+        /** EnsureIdentityUserApiResponse */
+        EnsureIdentityUserApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["EnsureIdentityUserData"];
+        };
+        /** EnsureIdentityUserData */
+        EnsureIdentityUserData: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /**
+         * EnsureIdentityUserRequest
+         * @description 按 HR 员工档案预建（或复用）平台账号。
+         */
+        EnsureIdentityUserRequest: {
+            /**
+             * Employee Profile Id
+             * Format: uuid
+             * @description hr.employee_profiles.id
+             */
+            employee_profile_id: string;
+        };
         /**
          * EquipmentCategoryCreate
          * @description 创建设备分类请求
@@ -34146,7 +34713,7 @@ export interface components {
             residual_risk: string;
             /**
              * Control Level
-             * @description 管控层级（28 个部门之一）
+             * @description 管控层级（组织部门名，须为 hr.departments 现存部门）
              */
             control_level: string;
             /**
@@ -36079,6 +36646,32 @@ export interface components {
              */
             clear_global_guide: boolean;
         };
+        /**
+         * GrantBatchCreate
+         * @description 批量授权：多用户 × 多角色，统一套用同一个数据范围。
+         *
+         *     `user_ids` 可以是统一人员选择器返回的 `hr.employee_profiles.id`，也可以是
+         *     `identity.users.id`；端点内部统一经 `resolve_person_user_id` 转换。
+         */
+        GrantBatchCreate: {
+            /**
+             * User Ids
+             * @description 单次最多 100 个用户
+             */
+            user_ids: string[];
+            /**
+             * Role Ids
+             * @description 单次最多 20 个角色
+             */
+            role_ids: string[];
+            /**
+             * Scope Type
+             * @default all
+             */
+            scope_type: string;
+            /** Scope Dept Codes */
+            scope_dept_codes?: string[] | null;
+        };
         /** GrantCreate */
         GrantCreate: {
             /**
@@ -36161,6 +36754,8 @@ export interface components {
              * @default 1
              */
             version: number;
+            /** Created At */
+            created_at?: string | null;
             /** Role Code */
             role_code?: string | null;
             /** Role Name */
@@ -36171,6 +36766,12 @@ export interface components {
             username?: string | null;
             /** Avatar Url */
             avatar_url?: string | null;
+            /** Department Name */
+            department_name?: string | null;
+            /** Department Path Text */
+            department_path_text?: string | null;
+            /** Position Name */
+            position_name?: string | null;
         };
         /** GrantUpdate */
         GrantUpdate: {
@@ -43326,6 +43927,75 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** ModuleAdminAssignRequest */
+        ModuleAdminAssignRequest: {
+            /** Module Code */
+            module_code: string;
+            /**
+             * Role Type
+             * @description owner=模块负责人（本入口只指派负责人；模块代表由负责人在模块配置页指派）
+             */
+            role_type: string;
+            /**
+             * User Id
+             * Format: uuid
+             * @description identity.users.id 或 hr.employee_profiles.id
+             */
+            user_id: string;
+        };
+        /**
+         * ModuleAdminGroup
+         * @description 一个模块的负责人与管理人清单。
+         */
+        ModuleAdminGroup: {
+            /** Module Code */
+            module_code: string;
+            /** Module Name */
+            module_name: string;
+            /** Heads */
+            heads?: components["schemas"]["ModuleAdminUser"][];
+            /** Managers */
+            managers?: components["schemas"]["ModuleAdminUser"][];
+        };
+        /** ModuleAdminListResponse */
+        ModuleAdminListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["ModuleAdminGroup"][];
+        };
+        /**
+         * ModuleAdminUser
+         * @description 某个模块下的一名负责人/管理人。
+         */
+        ModuleAdminUser: {
+            /**
+             * Grant Id
+             * Format: uuid
+             */
+            grant_id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Name */
+            name?: string | null;
+            /** Username */
+            username?: string | null;
+            /** Role Code */
+            role_code: string;
+            /** Role Type */
+            role_type: string;
+        };
         /**
          * ModuleSettingApiResponse
          * @description Single-item envelope (404 returns data=None).
@@ -43343,6 +44013,68 @@ export interface components {
             message: string;
             data?: components["schemas"]["ModuleSettingResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /**
+         * ModuleSettingBatchApiResponse
+         * @description Batch envelope.
+         */
+        ModuleSettingBatchApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["ModuleSettingBatchResult"];
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /**
+         * ModuleSettingBatchFailure
+         * @description 批量更新中失败的一条。
+         */
+        ModuleSettingBatchFailure: {
+            /** Module */
+            module: string;
+            /** Key */
+            key: string;
+            /** Label */
+            label?: string | null;
+            /** Reason */
+            reason: string;
+        };
+        /**
+         * ModuleSettingBatchItem
+         * @description 单条批量更新项。
+         */
+        ModuleSettingBatchItem: {
+            /** Module */
+            module: string;
+            /** Key */
+            key: string;
+            /** Value */
+            value: string;
+        };
+        /**
+         * ModuleSettingBatchResult
+         * @description 批量更新结果：成功的用 ``module:key`` 表示，失败项带原因。
+         */
+        ModuleSettingBatchResult: {
+            /** Succeeded */
+            succeeded: string[];
+            /** Failed */
+            failed: components["schemas"]["ModuleSettingBatchFailure"][];
+        };
+        /**
+         * ModuleSettingBatchUpdate
+         * @description 批量更新请求（布尔项批量启停为主，也接受其他类型）。
+         */
+        ModuleSettingBatchUpdate: {
+            /** Items */
+            items: components["schemas"]["ModuleSettingBatchItem"][];
         };
         /**
          * ModuleSettingCreate
@@ -43371,6 +44103,27 @@ export interface components {
             value_type: string;
             /** Description */
             description?: string | null;
+            /**
+             * Label
+             * @description 配置项中文名
+             */
+            label?: string | null;
+            /**
+             * Group Name
+             * @description 功能域分组名
+             */
+            group_name?: string | null;
+            /**
+             * Is Secret
+             * @description 是否密钥类配置
+             * @default false
+             */
+            is_secret: boolean;
+            /**
+             * Value Hint
+             * @description 取值提示
+             */
+            value_hint?: string | null;
         };
         /**
          * ModuleSettingListApiResponse
@@ -43394,6 +44147,9 @@ export interface components {
         /**
          * ModuleSettingResponse
          * @description Response schema for a module setting.
+         *
+         *     ``value`` 对密钥类配置返回空串，真实值只以掩码形式出现在 ``value_masked``；
+         *     前端编辑密钥项时留空即表示「保持不变」。
          */
         ModuleSettingResponse: {
             /** Id */
@@ -43402,12 +44158,37 @@ export interface components {
             module: string;
             /** Key */
             key: string;
+            /** Label */
+            label?: string | null;
+            /** Group Name */
+            group_name?: string | null;
             /** Value */
             value: string;
+            /** Value Masked */
+            value_masked?: string | null;
+            /**
+             * Has Value
+             * @default true
+             */
+            has_value: boolean;
             /** Value Type */
             value_type: string;
+            /** Value Hint */
+            value_hint?: string | null;
             /** Description */
             description?: string | null;
+            /**
+             * Is Secret
+             * @default false
+             */
+            is_secret: boolean;
+            /** Updated By Name */
+            updated_by_name?: string | null;
+            /**
+             * Manually Adjusted
+             * @default false
+             */
+            manually_adjusted: boolean;
             /** Created At */
             created_at?: string | null;
             /** Updated At */
@@ -46816,6 +47597,24 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /**
+         * ProcessSectionModel
+         * @description 我参与的流程区块。
+         */
+        ProcessSectionModel: {
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Has More
+             * @default false
+             */
+            has_more: boolean;
+            /** Groups */
+            groups?: components["schemas"]["WorkbenchGroupModel"][];
         };
         /**
          * ProcessSpecApiResponse
@@ -52543,7 +53342,10 @@ export interface components {
          * @description 两张危险源台账前端所需的权威选项、矩阵与阈值。
          */
         RiskGradingOptions: {
-            /** Departments */
+            /**
+             * Departments
+             * @description 管控层级候选：组织目录现存部门名
+             */
             departments: string[];
             /** Control Measures */
             control_measures: components["schemas"]["RiskGradingValueLabel"][];
@@ -52595,6 +53397,23 @@ export interface components {
             /** Label */
             label: string;
         };
+        /**
+         * RoleBrief
+         * @description 用户列表「角色」列用：角色名 + 所属模块。
+         */
+        RoleBrief: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Module Code */
+            module_code?: string | null;
+            /** Module Name */
+            module_name?: string | null;
+        };
         /** RoleDetailApiResponse */
         RoleDetailApiResponse: {
             /**
@@ -52622,6 +53441,11 @@ export interface components {
             name: string;
             /** Category */
             category: string;
+            /**
+             * Role Type
+             * @default job
+             */
+            role_type: string;
             /** Module Code */
             module_code?: string | null;
             /** Description */
@@ -52641,6 +53465,11 @@ export interface components {
              * @default active
              */
             status: string;
+            /**
+             * Sync Locked
+             * @default false
+             */
+            sync_locked: boolean;
             /** Permission Codes */
             permission_codes?: string[];
         };
@@ -58721,30 +59550,6 @@ export interface components {
              */
             autoAnalyze: boolean;
         };
-        /** SyncUserInfoTriggerApiResponse */
-        SyncUserInfoTriggerApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data: components["schemas"]["SyncUserInfoTriggerData"];
-        };
-        /**
-         * SyncUserInfoTriggerData
-         * @description 「同步飞书用户信息」触发结果（后台执行，留意 later 到用户列表刷新）。
-         */
-        SyncUserInfoTriggerData: {
-            /** Status */
-            status: string;
-            /** Message */
-            message: string;
-        };
         /** SystemInfoData */
         SystemInfoData: {
             /** App Name */
@@ -58904,6 +59709,91 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+        };
+        /**
+         * TodoReadBatchRequest
+         * @description 一键已读：客户端传当前看到的全部未读项（受 todo_limit 影响，与用户所见一致）。
+         */
+        TodoReadBatchRequest: {
+            /** Items */
+            items?: components["schemas"]["TodoReadMark"][];
+        };
+        /**
+         * TodoReadMark
+         * @description 一条待办已读标记（客户端把 ``/overview`` 返回的指纹原样回传）。
+         */
+        TodoReadMark: {
+            /**
+             * Source
+             * @description 数据源标识，如 quality.deviation.todos
+             */
+            source: string;
+            /**
+             * Item Id
+             * @description 待办条目 ID
+             */
+            item_id: string;
+            /**
+             * Fingerprint
+             * @description 内容指纹，来自 /overview
+             */
+            fingerprint: string;
+        };
+        /** TodoReadResultData */
+        TodoReadResultData: {
+            /**
+             * Marked
+             * @description 本次写入（含更新）的已读记录数
+             * @default 0
+             */
+            marked: number;
+        };
+        /** TodoReadResultResponse */
+        TodoReadResultResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["TodoReadResultData"];
+        };
+        /**
+         * TodoSectionModel
+         * @description 审核待办区块。
+         */
+        TodoSectionModel: {
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Unread Total
+             * @default 0
+             */
+            unread_total: number;
+            /**
+             * Has More
+             * @default false
+             */
+            has_more: boolean;
+            /**
+             * Person Total
+             * @default 0
+             */
+            person_total: number;
+            /**
+             * Role Total
+             * @default 0
+             */
+            role_total: number;
+            /** Groups */
+            groups?: components["schemas"]["WorkbenchGroupModel"][];
         };
         /** TokenResponse */
         TokenResponse: {
@@ -60601,6 +61491,119 @@ export interface components {
              */
             status?: string | null;
         };
+        /** UserAccessData */
+        UserAccessData: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Name */
+            name?: string | null;
+            /** Username */
+            username?: string | null;
+            /**
+             * Is Superuser
+             * @default false
+             */
+            is_superuser: boolean;
+            /** Items */
+            items?: components["schemas"]["UserAccessItem"][];
+        };
+        /** UserAccessDisableData */
+        UserAccessDisableData: {
+            /**
+             * Disabled
+             * @default 0
+             */
+            disabled: number;
+        };
+        /** UserAccessDisableResponse */
+        UserAccessDisableResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserAccessDisableData"];
+        };
+        /**
+         * UserAccessItem
+         * @description 某用户的一条模块权限（离职/调岗收权兜底视图）。
+         */
+        UserAccessItem: {
+            /**
+             * Grant Id
+             * Format: uuid
+             */
+            grant_id: string;
+            /**
+             * Role Id
+             * Format: uuid
+             */
+            role_id: string;
+            /** Role Code */
+            role_code: string;
+            /** Role Name */
+            role_name: string;
+            /** Role Type */
+            role_type: string;
+            /** Module Code */
+            module_code?: string | null;
+            /** Status */
+            status: string;
+        };
+        /** UserAccessResponse */
+        UserAccessResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserAccessData"];
+        };
+        /** UserBatchDeleteApiResponse */
+        UserBatchDeleteApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserBatchDeleteData"];
+        };
+        /** UserBatchDeleteData */
+        UserBatchDeleteData: {
+            /** Succeeded */
+            succeeded?: string[];
+            /** Failed */
+            failed?: components["schemas"]["UserBatchFailure"][];
+        };
+        /**
+         * UserBatchDeleteRequest
+         * @description 批量删除账号（仅超级管理员可用）。
+         */
+        UserBatchDeleteRequest: {
+            /**
+             * User Ids
+             * @description 单次最多 100 个账号
+             */
+            user_ids: string[];
+        };
         /** UserBatchFailure */
         UserBatchFailure: {
             /**
@@ -60732,11 +61735,25 @@ export interface components {
             created_at?: string | null;
             /** Roles */
             roles?: string[];
+            /** Role Details */
+            role_details?: components["schemas"]["RoleBrief"][];
             /**
              * Is Superuser
              * @default false
              */
             is_superuser: boolean;
+            /**
+             * Has Profile
+             * @default false
+             */
+            has_profile: boolean;
+            /** Employment Status */
+            employment_status?: ("active" | "left") | null;
+            /**
+             * Employment Label
+             * @default
+             */
+            employment_label: string;
             /** Bind Result */
             bind_result?: {
                 [key: string]: number;
@@ -60844,11 +61861,25 @@ export interface components {
             created_at?: string | null;
             /** Roles */
             roles?: string[];
+            /** Role Details */
+            role_details?: components["schemas"]["RoleBrief"][];
             /**
              * Is Superuser
              * @default false
              */
             is_superuser: boolean;
+            /**
+             * Has Profile
+             * @default false
+             */
+            has_profile: boolean;
+            /** Employment Status */
+            employment_status?: ("active" | "left") | null;
+            /**
+             * Employment Label
+             * @default
+             */
+            employment_label: string;
             /** Initial Password */
             initial_password?: string | null;
         };
@@ -60888,6 +61919,51 @@ export interface components {
              * @default 0
              */
             revoked_sessions: number;
+        };
+        /**
+         * UserLookupItem
+         * @description 选人组件的一行：只含展示字段，不含手机号/邮箱等敏感信息。
+         */
+        UserLookupItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Username */
+            username?: string | null;
+            /** Department */
+            department?: string | null;
+            /** Position */
+            position?: string | null;
+            /** Avatar Url */
+            avatar_url?: string | null;
+        };
+        /** UserLookupListApiResponse */
+        UserLookupListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserLookupListResponse"];
+        };
+        /** UserLookupListResponse */
+        UserLookupListResponse: {
+            /** Items */
+            items?: components["schemas"]["UserLookupItem"][];
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
         };
         /** UserManagementApiResponse */
         UserManagementApiResponse: {
@@ -60968,11 +62044,25 @@ export interface components {
             created_at?: string | null;
             /** Roles */
             roles?: string[];
+            /** Role Details */
+            role_details?: components["schemas"]["RoleBrief"][];
             /**
              * Is Superuser
              * @default false
              */
             is_superuser: boolean;
+            /**
+             * Has Profile
+             * @default false
+             */
+            has_profile: boolean;
+            /** Employment Status */
+            employment_status?: ("active" | "left") | null;
+            /**
+             * Employment Label
+             * @default
+             */
+            employment_label: string;
         };
         /** UserManagementListApiResponse */
         UserManagementListApiResponse: {
@@ -61156,11 +62246,25 @@ export interface components {
             created_at?: string | null;
             /** Roles */
             roles?: string[];
+            /** Role Details */
+            role_details?: components["schemas"]["RoleBrief"][];
             /**
              * Is Superuser
              * @default false
              */
             is_superuser: boolean;
+            /**
+             * Has Profile
+             * @default false
+             */
+            has_profile: boolean;
+            /** Employment Status */
+            employment_status?: ("active" | "left") | null;
+            /**
+             * Employment Label
+             * @default
+             */
+            employment_label: string;
             /**
              * Account Deleted
              * @default false
@@ -62252,7 +63356,7 @@ export interface components {
             residual_risk: string;
             /**
              * Control Level
-             * @description 管控层级（28 个部门之一）
+             * @description 管控层级（组织部门名，须为 hr.departments 现存部门）
              */
             control_level: string;
             /**
@@ -62690,6 +63794,143 @@ export interface components {
          * @enum {string}
          */
         WorkRecordStatusEnum: "in_progress" | "completed" | "evaluated";
+        /**
+         * WorkbenchGroupModel
+         * @description 按模块分组后的条目集合。
+         */
+        WorkbenchGroupModel: {
+            /** Module Key */
+            module_key: string;
+            /** Module Label */
+            module_label: string;
+            /**
+             * Count
+             * @default 0
+             */
+            count: number;
+            /**
+             * Has More
+             * @default false
+             */
+            has_more: boolean;
+            /** Items */
+            items?: components["schemas"]["WorkbenchItemModel"][];
+        };
+        /**
+         * WorkbenchItemModel
+         * @description 一条待办 / 流程事项。
+         */
+        WorkbenchItemModel: {
+            /** Id */
+            id: string;
+            /**
+             * Source
+             * @description 数据源标识，如 deviation / iqc / hazard
+             */
+            source: string;
+            /**
+             * Module Key
+             * @description 模块码：quality / safety
+             */
+            module_key: string;
+            /** Module Label */
+            module_label: string;
+            /**
+             * Doc Type Label
+             * @description 单据类型中文名，如「偏差台账」
+             */
+            doc_type_label: string;
+            /** Title */
+            title: string;
+            /** Doc No */
+            doc_no?: string | null;
+            /**
+             * Status
+             * @default
+             */
+            status: string;
+            /**
+             * Status Label
+             * @default
+             */
+            status_label: string;
+            /**
+             * Step Label
+             * @description 当前环节中文
+             */
+            step_label?: string | null;
+            /**
+             * Match Kind
+             * @description 判定依据：person=待我审批 / role=同角色待办
+             */
+            match_kind: string;
+            /**
+             * Match Kind Label
+             * @default
+             */
+            match_kind_label: string;
+            /**
+             * Age Days
+             * @description 停留天数
+             */
+            age_days?: number | null;
+            /**
+             * Overdue
+             * @default false
+             */
+            overdue: boolean;
+            /**
+             * Path
+             * @description 前端跳转路径；空表示暂无页面
+             */
+            path?: string | null;
+            /**
+             * My Roles
+             * @description 我在该流程中的角色
+             */
+            my_roles?: string[];
+            /**
+             * Is Read
+             * @description 当前用户是否已读（按内容指纹判定，仅待办有效）
+             * @default false
+             */
+            is_read: boolean;
+            /**
+             * Fingerprint
+             * @description 内容指纹；标记已读时原样回传，内容变化后自动失效
+             * @default
+             */
+            fingerprint: string;
+        };
+        /** WorkbenchOverviewData */
+        WorkbenchOverviewData: {
+            todos?: components["schemas"]["TodoSectionModel"];
+            processes?: components["schemas"]["ProcessSectionModel"];
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /**
+             * Degraded Sources
+             * @description 取数失败被降级的数据源（前端可提示「部分数据暂不可用」）
+             */
+            degraded_sources?: string[];
+        };
+        /** WorkbenchOverviewResponse */
+        WorkbenchOverviewResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["WorkbenchOverviewData"];
+        };
         /**
          * WorkshopRanking
          * @description 车间排名
@@ -63251,8 +64492,11 @@ export interface components {
         };
         /** RoleCreate */
         app__platform__permission__schemas__RoleCreate: {
-            /** Code */
-            code: string;
+            /**
+             * Code
+             * @description 留空时由后端自动生成（模块角色为 {module}:role-NNN，平台角色为 platform:role-NNN）
+             */
+            code?: string | null;
             /** Name */
             name: string;
             /**
@@ -63454,6 +64698,79 @@ export interface operations {
             };
         };
     };
+    lookup_users_api_v1_identity_users_lookup_get: {
+        parameters: {
+            query?: {
+                /** @description 按姓名/账号/工号/手机号搜索 */
+                keyword?: string | null;
+                /** @description 仅返回已绑定飞书身份的账号 */
+                feishu_bound_only?: boolean;
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserLookupListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ensure_user_by_employee_profile_api_v1_identity_ensure_by_profile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnsureIdentityUserRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["EnsureIdentityUserApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_user_management_api_v1_identity_users__user_id__put: {
         parameters: {
             query?: never;
@@ -63546,6 +64863,41 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["UserBatchStatusApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_delete_users_api_v1_identity_users_batch_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserBatchDeleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserBatchDeleteApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64132,37 +65484,6 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["SyncAllTriggerApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    trigger_sync_user_info_api_v1_identity_sync_user_info_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["SyncUserInfoTriggerApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64935,7 +66256,10 @@ export interface operations {
     };
     list_roles_api_v1_permission_roles_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description 按模块过滤（模块负责人/管理人只能查本模块） */
+                module_code?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: {
@@ -64978,6 +66302,39 @@ export interface operations {
                 "application/json": components["schemas"]["app__platform__permission__schemas__RoleCreate"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["RoleDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_role_permissions_api_v1_permission_roles__role_id__reset_default_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -65300,6 +66657,8 @@ export interface operations {
         parameters: {
             query?: {
                 user_id?: string | null;
+                /** @description 按模块过滤（模块负责人/管理人只能查本模块） */
+                module_code?: string | null;
             };
             header?: never;
             path?: never;
@@ -65351,6 +66710,41 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["GrantDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_create_grants_api_v1_permission_grants_batch_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GrantBatchCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["app__platform__permission__schemas__BatchResultApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -65568,6 +66962,173 @@ export interface operations {
             };
         };
     };
+    list_module_admins_api_v1_permission_module_admins_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["ModuleAdminListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_module_admin_api_v1_permission_module_admins_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModuleAdminAssignRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["app__platform__permission__schemas__MessageApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_module_admin_api_v1_permission_module_admins_remove_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModuleAdminAssignRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["app__platform__permission__schemas__MessageApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_access_api_v1_permission_user_access__user_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserAccessResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disable_user_access_api_v1_permission_user_access__user_id__disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserAccessDisableResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_audit_logs_api_v1_audit_logs_get: {
         parameters: {
             query?: {
@@ -65637,6 +67198,110 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    workbench_overview_api_v1_workbench_overview_get: {
+        parameters: {
+            query?: {
+                todo_limit?: number;
+                process_limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["WorkbenchOverviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_todo_read_api_v1_workbench_todos_read_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TodoReadMark"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["TodoReadResultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_all_todos_read_api_v1_workbench_todos_read_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TodoReadBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["TodoReadResultResponse"];
                 };
             };
             /** @description Validation Error */
@@ -86611,6 +88276,75 @@ export interface operations {
             };
         };
     };
+    get_directory_departments_api_v1_hr_directory_departments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DirectoryDepartmentTreeApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_directory_people_api_v1_hr_directory_people_get: {
+        parameters: {
+            query?: {
+                /** @description 姓名 / 工号 / 手机号关键词 */
+                keyword?: string | null;
+                /** @description 部门 hr.departments.id；含下级部门 */
+                department_id?: string | null;
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DirectoryPeopleListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_candidates_api_v1_hr_candidates_get: {
         parameters: {
             query?: {
@@ -98591,6 +100325,40 @@ export interface operations {
             };
         };
     };
+    get_department_leader_api_v1_quality_department_contacts_department_leader_get: {
+        parameters: {
+            query: {
+                /** @description 部门名称（组织树写回的部门名） */
+                department: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DepartmentContactLeaderApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_department_contact_api_v1_quality_department_contacts__contact_id__put: {
         parameters: {
             query?: never;
@@ -109717,7 +111485,42 @@ export interface operations {
             };
         };
     };
-    get_api_v1_module_settings__module___key__get: {
+    put_batch_api_v1_module_settings_batch_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModuleSettingBatchUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["ModuleSettingBatchApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_one_api_v1_module_settings__module___key__get: {
         parameters: {
             query?: never;
             header?: never;

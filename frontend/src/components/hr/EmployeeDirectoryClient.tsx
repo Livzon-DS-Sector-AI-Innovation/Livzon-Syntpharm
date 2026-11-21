@@ -20,6 +20,11 @@ interface EmployeeDirectoryClientProps {
   initialTotal: number
   initialLastSyncedAt: string | null
   initialStatus: OrgSyncStatusData
+  /**
+   * 从其他页面跳转定位（如用户管理「查看档案」）：传 HR 档案的 open_id。
+   * 详情接口按 UUID 或 open_id 均可查，这里直接用 open_id 免去二次换 id。
+   */
+  initialOpenId?: string | null
 }
 
 function display(value: string | number | null | undefined): string {
@@ -69,10 +74,11 @@ function PersonDrawer({
   identifier: string | null
   onClose: () => void
 }) {
-  const { data, isFetching } = useQuery<EmployeeProfileDetail>({
+  const { data, isFetching, isError } = useQuery<EmployeeProfileDetail>({
     queryKey: ['hr-person', identifier],
     queryFn: () => fetchEmployeeProfileDetail(identifier as string),
     enabled: Boolean(identifier),
+    retry: false,
   })
 
   return (
@@ -161,6 +167,10 @@ function PersonDrawer({
             ]}
           />
         </>
+      ) : isError ? (
+        // 从用户管理跳转过来但档案取不到：可能是没有 hr:personnel:read 权限，
+        // 也可能是已移出目录 / open_id 不匹配，文案不替用户下结论
+        <Empty description="档案加载失败（可能无查看权限，或该员工已移出目录）" />
       ) : (
         <Empty description="员工详情暂时不可用" />
       )}
@@ -184,6 +194,7 @@ export default function EmployeeDirectoryClient({
   initialTotal,
   initialLastSyncedAt,
   initialStatus,
+  initialOpenId,
 }: EmployeeDirectoryClientProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -192,7 +203,8 @@ export default function EmployeeDirectoryClient({
   const deferredKeyword = useDeferredValue(keyword)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const [selectedPerson, setSelectedPerson] = useState<string | null>(null)
+  // 带 open_id 进入时直接打开对应员工详情（来自用户管理页「查看档案」）
+  const [selectedPerson, setSelectedPerson] = useState<string | null>(initialOpenId ?? null)
   const [submitting, setSubmitting] = useState(false)
 
   const statusQuery = useQuery({

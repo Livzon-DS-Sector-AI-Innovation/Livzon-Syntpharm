@@ -1,14 +1,8 @@
-'use client'
+import { redirect } from 'next/navigation'
 
-import { Card, Typography } from 'antd'
+export const dynamic = 'force-dynamic'
 
-const { Title, Text } = Typography
-
-export default function StabilitySettingsPage() {
-  return (
-    <Card>
-      <Title level={4}>稳定性实验管理 - 提醒设置</Title>
-      <Text type="secondary">功能开发中...</Text>
-    </Card>
-  )
+/** 稳定性提醒设置已迁移到「模块配置」页签，旧地址重定向。 */
+export default function StabilitySettingsRedirect() {
+  redirect('/quality/settings?tab=stability')
 }
