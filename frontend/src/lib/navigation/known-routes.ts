@@ -136,6 +136,7 @@ export const KNOWN_STATIC_ROUTES: readonly string[] = [
   '/quality/static-data/storage-condition',
   '/registration',
   '/registration/authorization-letter',
+  '/registration/docx-translator',
   '/registration/dossier-writer',
   '/registration/ledger',
   '/registration/projects',
