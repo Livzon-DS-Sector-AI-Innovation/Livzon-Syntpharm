@@ -28,6 +28,36 @@ _Avoid_: 内部接口, 跨模块导入
 记录模块与其数据库 schema 对应关系的注册表 `app/shared/module_registry.py`；新增模块时必须同步更新。
 _Avoid_: 模块清单, 模块列表
 
+### 权限体系 (Permission System)
+
+**权限码** (Permission Code):
+三段式字符串 `模块:资源:动作`（如 `quality:deviation:approve`），代码注册表（`backend/app/platform/permission/registry.py`）是唯一权威，数据库只作只读镜像。权限码一经发布不可删除，只能标记 deprecated。
+_Avoid_: 权限点, 权限字符串
+
+**角色** (Role):
+一组权限码的命名集合（`permission.roles`），授权的最小单位。用户不直接持有权限码，而是通过角色授权间接获得。
+_Avoid_: 权限组, 用户组
+
+**授权** (Grant):
+把角色指派给用户的记录（`permission.user_role_grants`），是「单条授权判定」的最小单元——动作权限与数据范围必须落在同一条授权内。
+_Avoid_: 赋权, 权限分配
+
+**超级管理员** (Super Admin):
+持有 `super_admin` 角色的用户；权限判定时直接放行（`is_superuser` 标志），拥有全部权限码。
+_Avoid_: 超管账号（作为角色名以外的泛指）, 系统管理员
+
+**模块负责人** (Module Owner):
+某模块的受托管理员（角色 `{module}:owner`，级别 2），拥有该模块全部权限并可在模块内创建角色、授权用户、指派模块代表。由超级管理员指派；仅超级管理员能移除。
+_Avoid_: 模块管理员（旧称，已废弃）, 模块 owner（中英混用）
+
+**模块代表** (Module Delegate):
+某模块的次级受托管理员（角色 `{module}:delegate`，级别 1），拥有该模块全部权限并可创建模块角色、授权普通用户，但不能指派、编辑或移除其他模块代表。
+_Avoid_: errant（旧称，已废弃）, 模块代理人
+
+**角色级别** (Role Level):
+角色上的整数等级（`roles.level`）：模块负责人 = 2，模块代表 = 1，普通角色 = 0。授权守卫规则：授予/修改/移除某级别角色的授权，操作者必须持有同模块更高级别的角色（或超管）。
+_Avoid_: 角色层级, 角色档位（旧称，已废弃——原「角色档位」只是角色编码后缀，无任何语义）
+
 ### 数据与认证 (Data and Auth)
 
 **软删除** (Soft Delete):
