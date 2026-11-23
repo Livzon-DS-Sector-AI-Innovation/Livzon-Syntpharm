@@ -1,0 +1,15 @@
+# Dependabot keeps GitHub Action pins current (issue #241).
+# Runtime upgrades (e.g. node20 → node24) ship in new action majors; without
+# this config someone must notice deprecation warnings and bump pins by hand.
+# Weekly + grouped: at most one review per week; CI validates the whole set.
+# Manual review only — no auto-merge.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns:
+          - "*"

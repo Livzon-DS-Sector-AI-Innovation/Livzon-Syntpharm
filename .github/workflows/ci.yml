@@ -217,9 +217,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v5
-    - uses: docker/setup-buildx-action@v3
+    - uses: docker/setup-buildx-action@v4
     - name: Build backend image
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       with:
         context: ./backend
         load: true
@@ -278,7 +278,7 @@ jobs:
         echo "version=$version" >> "$GITHUB_OUTPUT"
     - name: Cache Playwright browsers
       id: pw-cache
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ~/.cache/ms-playwright
         key: playwright-ubuntu-24.04-${{ steps.playwright.outputs.version }}
