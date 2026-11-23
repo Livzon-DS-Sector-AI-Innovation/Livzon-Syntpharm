@@ -7,18 +7,16 @@
 from __future__ import annotations
 
 import logging
-import os
 import shutil
 import subprocess
 import tempfile
 from pathlib import Path
 
+from app.core.config import get_settings
+
 logger = logging.getLogger(__name__)
 
 CONVERT_SUFFIXES = (".doc", ".wps")
-
-
-SOFFICE_ENV = "DOCX_TRANSLATOR_SOFFICE_BIN"
 
 
 class ConversionUnavailableError(RuntimeError):
@@ -37,16 +35,21 @@ class DocConverter:
 
     @staticmethod
     def _find_soffice() -> str:
-        """定位 soffice：优先取配置项，其次按命令名在 PATH 中查找。
+        """定位 soffice：优先取 Settings 里的配置，其次按命令名在 PATH 中查找。
 
         不写死 Linux 绝对路径——容器/宿主/Windows 开发机的安装位置不同，
-        由 `DOCX_TRANSLATOR_SOFFICE_BIN` 覆盖，缺省交给 `shutil.which`。
+        由 `SOFFICE_PATH` / `SOFFICE_FALLBACK_PATHS`（见 app/core/config.py）配置，
+        缺省交给 `shutil.which`。
         """
-        configured = os.environ.get(SOFFICE_ENV, "").strip()
-        candidates = [configured] if configured else []
+        settings = get_settings()
+        candidates: list[str] = []
+        configured = settings.SOFFICE_PATH.strip()
+        if configured:
+            candidates.append(configured)
+        candidates.extend(path for path in settings.SOFFICE_FALLBACK_PATHS if path and path.strip())
         candidates.append("soffice")
         for cmd in candidates:
-            resolved = cmd if os.path.isabs(cmd) else shutil.which(cmd)
+            resolved = cmd if Path(cmd).is_absolute() else shutil.which(cmd)
             if not resolved:
                 continue
             try:

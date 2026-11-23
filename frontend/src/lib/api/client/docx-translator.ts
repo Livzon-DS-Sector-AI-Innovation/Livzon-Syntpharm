@@ -1,6 +1,7 @@
 /** 文档翻译 —— 浏览器端请求（只读走 apiGet/apiFetchPaginated，上传走 apiUpload）。 */
 
 import { apiFetchPaginated, apiGet, apiUpload } from '@/lib/api/client'
+import type { components } from '@/types/generated/schema'
 import type {
   DocxGlossaryImportResult,
   DocxGlossaryTerm,
@@ -13,6 +14,8 @@ import type {
   DocxTranslationTaskDetail,
   DocxTranslationTaskRecord,
 } from '@/types/docx-translator'
+
+type Schemas = components['schemas']
 
 const BASE = '/api/v1/registration/docx-translator'
 
@@ -44,7 +47,7 @@ export async function fetchTranslationJobStates(ids: string[]): Promise<DocxTran
   if (!ids.length) return []
   const search = new URLSearchParams()
   ids.forEach(id => search.append('ids', id))
-  const data = await apiGet<{ items: DocxTranslationJobState[] }>(`${BASE}/jobs?${search.toString()}`)
+  const data = await apiGet<Schemas['DocxTranslationJobListData']>(`${BASE}/jobs?${search.toString()}`)
   return data.items ?? []
 }
 
