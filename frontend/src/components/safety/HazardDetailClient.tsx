@@ -37,7 +37,7 @@ import {
   InboxOutlined,
 } from '@ant-design/icons'
 import { getHazard, updateHazard, uploadRectificationPhoto, getDepartmentLeader, getDepartmentSafetyOfficer } from '@/actions/safety'
-import type { HazardReport, HazardReportFormData } from '@/types/safety'
+import type { HazardReportFormData } from '@/types/safety'
 import {
   HAZARD_LEVEL_OPTIONS,
   HAZARD_CATEGORY_OPTIONS,
@@ -446,13 +446,7 @@ export default function HazardDetailClient() {
 
   const { data: record, isLoading: loading, refetch: _refetch } = useQuery({
     queryKey: ['safety-hazard', id],
-    queryFn: async () => {
-      const response = await getHazard(id)
-      if (response.code === 200) {
-        return response.data as HazardReport
-      }
-      return null
-    },
+    queryFn: () => getHazard(id),
     enabled: !!id,
   })
 
@@ -462,11 +456,11 @@ export default function HazardDetailClient() {
     queryFn: async () => {
       if (!record?.department) return null
       try {
-        const soRes = await getDepartmentSafetyOfficer(record.department)
-        if (soRes.code === 200 && soRes.data?.safety_officer_name) {
+        const officer = await getDepartmentSafetyOfficer(record.department)
+        if (officer?.safety_officer_name) {
           return {
-            name: soRes.data.safety_officer_name,
-            id: soRes.data.safety_officer_id ?? null,
+            name: officer.safety_officer_name,
+            id: officer.safety_officer_id ?? null,
           }
         }
       } catch {
@@ -488,14 +482,14 @@ export default function HazardDetailClient() {
   }, [loading, record, id, router, message])
 
   const fieldVal = (field: string): string => {
-    const rec = record as Record<string, unknown> | null
+    const rec = (record ?? null) as unknown as Record<string, unknown> | null
     const raw = editSection && field in edits ? (edits[field] ?? rec?.[field]) : rec?.[field]
     return typeof raw === 'string' ? raw : ''
   }
 
   /** 数组字段取值（整改负责人 UUID 列表；旧数据是单个 uuid 字符串时也能兼容） */
   const fieldIds = (field: string): string[] => {
-    const rec = record as Record<string, unknown> | null
+    const rec = (record ?? null) as unknown as Record<string, unknown> | null
     const raw = editSection && field in edits ? (edits[field] ?? rec?.[field]) : rec?.[field]
     if (Array.isArray(raw)) return raw.filter((item): item is string => typeof item === 'string')
     if (typeof raw === 'string' && raw) return [raw]
@@ -558,10 +552,10 @@ export default function HazardDetailClient() {
     if (!dept) return
     setLeaderLoading(true)
     try {
-      const res = await getDepartmentLeader(dept)
-      if (res.code === 200 && res.data?.leader_name) {
-        const name: string = res.data.leader_name
-        const leaderId: string | null = res.data.leader_id || null
+      const leader = await getDepartmentLeader(dept)
+      if (leader?.leader_name) {
+        const name: string = leader.leader_name
+        const leaderId: string | null = leader.leader_id || null
         setEdits((p) => ({
           ...p,
           rectification_responsible_person: leaderId || '',
@@ -570,10 +564,10 @@ export default function HazardDetailClient() {
       }
       // 同步获取安全员
       try {
-        const soRes = await getDepartmentSafetyOfficer(dept)
-        if (soRes.code === 200 && soRes.data?.safety_officer_name) {
-          const officerName = soRes.data.safety_officer_name
-          const officerId = soRes.data.safety_officer_id || null
+        const officer = await getDepartmentSafetyOfficer(dept)
+        if (officer?.safety_officer_name) {
+          const officerName = officer.safety_officer_name
+          const officerId = officer.safety_officer_id || null
           setEdits((p) => ({
             ...p,
             safety_officer_name: officerName,

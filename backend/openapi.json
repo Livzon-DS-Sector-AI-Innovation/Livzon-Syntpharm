@@ -14195,7 +14195,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_CalibrationPlanResponse_"
                 }
               }
             }
@@ -14306,7 +14306,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_CalibrationPlanResponse__"
                 }
               }
             }
@@ -14368,7 +14368,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_CalibrationPlanResponse__"
                 }
               }
             }
@@ -14427,7 +14427,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_CalibrationPlanResponse_"
                 }
               }
             }
@@ -14494,7 +14494,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_CalibrationPlanResponse_"
                 }
               }
             }
@@ -14551,7 +14551,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_NoneType_"
                 }
               }
             }
@@ -14610,7 +14610,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_CalibrationRecordResponse_"
                 }
               }
             }
@@ -14722,7 +14722,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_CalibrationRecordResponse__"
                 }
               }
             }
@@ -14781,7 +14781,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_CalibrationRecordResponse_"
                 }
               }
             }
@@ -14840,7 +14840,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_MaintenancePlanResponse_"
                 }
               }
             }
@@ -14969,7 +14969,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_MaintenancePlanResponse__"
                 }
               }
             }
@@ -15031,7 +15031,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_list_MaintenancePlanResponse__"
                 }
               }
             }
@@ -15090,7 +15090,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_MaintenancePlanResponse_"
                 }
               }
             }
@@ -15157,7 +15157,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_MaintenancePlanResponse_"
                 }
               }
             }
@@ -15214,7 +15214,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DataResponse_NoneType_"
                 }
               }
             }
@@ -102905,6 +102905,150 @@
         "title": "CalibrationPlanCreate",
         "description": "\u521b\u5efa\u6821\u51c6\u8ba1\u5212\u8bf7\u6c42"
       },
+      "CalibrationPlanResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "equipment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Equipment Id"
+          },
+          "calibration_type": {
+            "type": "string",
+            "enum": [
+              "\u5185\u90e8\u6821\u51c6",
+              "\u5916\u90e8\u68c0\u5b9a"
+            ],
+            "title": "Calibration Type"
+          },
+          "cycle_months": {
+            "type": "integer",
+            "title": "Cycle Months"
+          },
+          "last_calibration_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Calibration Date"
+          },
+          "next_calibration_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Calibration Date"
+          },
+          "responsible_person_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsible Person Id"
+          },
+          "responsible_person_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsible Person Name"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "\u542f\u7528",
+              "\u505c\u7528"
+            ],
+            "title": "Status"
+          },
+          "remark": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remark"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "equipment_id",
+          "calibration_type",
+          "cycle_months",
+          "last_calibration_date",
+          "next_calibration_date",
+          "responsible_person_id",
+          "status",
+          "remark",
+          "created_at",
+          "updated_at",
+          "created_by",
+          "updated_by"
+        ],
+        "title": "CalibrationPlanResponse",
+        "description": "\u6821\u51c6\u8ba1\u5212\u54cd\u5e94"
+      },
       "CalibrationPlanUpdate": {
         "properties": {
           "calibration_type": {
@@ -102994,6 +103138,137 @@
         "type": "object",
         "title": "CalibrationPlanUpdate",
         "description": "\u66f4\u65b0\u6821\u51c6\u8ba1\u5212\u8bf7\u6c42"
+      },
+      "CalibrationRecordResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "calibration_plan_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Calibration Plan Id"
+          },
+          "equipment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Equipment Id"
+          },
+          "calibration_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Calibration Date"
+          },
+          "calibration_type": {
+            "type": "string",
+            "enum": [
+              "\u5185\u90e8\u6821\u51c6",
+              "\u5916\u90e8\u68c0\u5b9a"
+            ],
+            "title": "Calibration Type"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "\u5408\u683c",
+              "\u4e0d\u5408\u683c"
+            ],
+            "title": "Result"
+          },
+          "certificate_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate No"
+          },
+          "calibrated_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calibrated By"
+          },
+          "next_due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Next Due Date"
+          },
+          "remark": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remark"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "calibration_plan_id",
+          "equipment_id",
+          "calibration_date",
+          "calibration_type",
+          "result",
+          "certificate_no",
+          "calibrated_by",
+          "next_due_date",
+          "remark",
+          "created_at",
+          "updated_at",
+          "created_by",
+          "updated_by"
+        ],
+        "title": "CalibrationRecordResponse",
+        "description": "\u6821\u51c6\u8bb0\u5f55\u54cd\u5e94"
       },
       "CalibrationRecordUpdate": {
         "properties": {
@@ -112125,6 +112400,78 @@
         "type": "object",
         "title": "DataResponse[BatchCheckResponse]"
       },
+      "DataResponse_CalibrationPlanResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CalibrationPlanResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[CalibrationPlanResponse]"
+      },
+      "DataResponse_CalibrationRecordResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CalibrationRecordResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[CalibrationRecordResponse]"
+      },
       "DataResponse_CandidateResponse_": {
         "properties": {
           "code": {
@@ -113312,6 +113659,42 @@
         },
         "type": "object",
         "title": "DataResponse[LedgerSummary]"
+      },
+      "DataResponse_MaintenancePlanResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MaintenancePlanResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[MaintenancePlanResponse]"
       },
       "DataResponse_ManifestResponse_": {
         "properties": {
@@ -115915,6 +116298,86 @@
         "type": "object",
         "title": "DataResponse[list[AuthorizationLetterTrailItem]]"
       },
+      "DataResponse_list_CalibrationPlanResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CalibrationPlanResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[CalibrationPlanResponse]]"
+      },
+      "DataResponse_list_CalibrationRecordResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CalibrationRecordResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[CalibrationRecordResponse]]"
+      },
       "DataResponse_list_CertificateResponse__": {
         "properties": {
           "code": {
@@ -116474,6 +116937,46 @@
         },
         "type": "object",
         "title": "DataResponse[list[MaintainerBrief]]"
+      },
+      "DataResponse_list_MaintenancePlanResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/MaintenancePlanResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[MaintenancePlanResponse]]"
       },
       "DataResponse_list_OptimizationResponse__": {
         "properties": {
@@ -149034,6 +149537,179 @@
         ],
         "title": "MaintenancePlanCreate",
         "description": "\u521b\u5efa\u7ef4\u62a4\u8ba1\u5212\u8bf7\u6c42"
+      },
+      "MaintenancePlanResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "equipment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Equipment Id"
+          },
+          "plan_name": {
+            "type": "string",
+            "title": "Plan Name"
+          },
+          "plan_type": {
+            "type": "string",
+            "enum": [
+              "\u9884\u9632\u6027\u7ef4\u62a4",
+              "\u9884\u6d4b\u6027\u7ef4\u62a4"
+            ],
+            "title": "Plan Type"
+          },
+          "frequency": {
+            "type": "integer",
+            "title": "Frequency"
+          },
+          "frequency_unit": {
+            "type": "string",
+            "enum": [
+              "\u5929",
+              "\u5468",
+              "\u6708",
+              "\u5e74"
+            ],
+            "title": "Frequency Unit"
+          },
+          "last_maintenance_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Maintenance Date"
+          },
+          "next_maintenance_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Maintenance Date"
+          },
+          "responsible_person_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsible Person Id"
+          },
+          "responsible_person_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsible Person Name"
+          },
+          "maintenance_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maintenance Content"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "\u542f\u7528",
+              "\u505c\u7528",
+              "\u5df2\u5b8c\u6210"
+            ],
+            "title": "Status"
+          },
+          "remark": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remark"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "equipment_id",
+          "plan_name",
+          "plan_type",
+          "frequency",
+          "frequency_unit",
+          "last_maintenance_date",
+          "next_maintenance_date",
+          "responsible_person_id",
+          "maintenance_content",
+          "status",
+          "remark",
+          "created_at",
+          "updated_at",
+          "created_by",
+          "updated_by"
+        ],
+        "title": "MaintenancePlanResponse",
+        "description": "\u7ef4\u62a4\u8ba1\u5212\u54cd\u5e94"
       },
       "MaintenancePlanUpdate": {
         "properties": {

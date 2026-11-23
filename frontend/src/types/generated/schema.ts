@@ -23517,6 +23517,58 @@ export interface components {
             remark?: string | null;
         };
         /**
+         * CalibrationPlanResponse
+         * @description 校准计划响应
+         */
+        CalibrationPlanResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Equipment Id
+             * Format: uuid
+             */
+            equipment_id: string;
+            /**
+             * Calibration Type
+             * @enum {string}
+             */
+            calibration_type: "内部校准" | "外部检定";
+            /** Cycle Months */
+            cycle_months: number;
+            /** Last Calibration Date */
+            last_calibration_date: string | null;
+            /** Next Calibration Date */
+            next_calibration_date: string | null;
+            /** Responsible Person Id */
+            responsible_person_id: string | null;
+            /** Responsible Person Name */
+            responsible_person_name?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "启用" | "停用";
+            /** Remark */
+            remark: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Updated By */
+            updated_by: string | null;
+        };
+        /**
          * CalibrationPlanUpdate
          * @description 更新校准计划请求
          */
@@ -23551,6 +23603,67 @@ export interface components {
              * @description 备注
              */
             remark?: string | null;
+        };
+        /**
+         * CalibrationRecordResponse
+         * @description 校准记录响应
+         */
+        CalibrationRecordResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Calibration Plan Id
+             * Format: uuid
+             */
+            calibration_plan_id: string;
+            /**
+             * Equipment Id
+             * Format: uuid
+             */
+            equipment_id: string;
+            /**
+             * Calibration Date
+             * Format: date
+             */
+            calibration_date: string;
+            /**
+             * Calibration Type
+             * @enum {string}
+             */
+            calibration_type: "内部校准" | "外部检定";
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "合格" | "不合格";
+            /** Certificate No */
+            certificate_no: string | null;
+            /** Calibrated By */
+            calibrated_by: string | null;
+            /**
+             * Next Due Date
+             * Format: date
+             */
+            next_due_date: string;
+            /** Remark */
+            remark: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Updated By */
+            updated_by: string | null;
         };
         /**
          * CalibrationRecordUpdate
@@ -27588,6 +27701,36 @@ export interface components {
             data?: components["schemas"]["BatchCheckResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[CalibrationPlanResponse] */
+        DataResponse_CalibrationPlanResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["CalibrationPlanResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[CalibrationRecordResponse] */
+        DataResponse_CalibrationRecordResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["CalibrationRecordResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[CandidateResponse] */
         DataResponse_CandidateResponse_: {
             /**
@@ -28081,6 +28224,21 @@ export interface components {
              */
             message: string;
             data?: components["schemas"]["LedgerSummary"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[MaintenancePlanResponse] */
+        DataResponse_MaintenancePlanResponse_: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["MaintenancePlanResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[ManifestResponse] */
@@ -29168,6 +29326,38 @@ export interface components {
             data?: components["schemas"]["AuthorizationLetterTrailItem"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
+        /** DataResponse[list[CalibrationPlanResponse]] */
+        DataResponse_list_CalibrationPlanResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["CalibrationPlanResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[CalibrationRecordResponse]] */
+        DataResponse_list_CalibrationRecordResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["CalibrationRecordResponse"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
         /** DataResponse[list[CertificateResponse]] */
         DataResponse_list_CertificateResponse__: {
             /**
@@ -29390,6 +29580,22 @@ export interface components {
             message: string;
             /** Data */
             data?: components["schemas"]["MaintainerBrief"][] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** DataResponse[list[MaintenancePlanResponse]] */
+        DataResponse_list_MaintenancePlanResponse__: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["MaintenancePlanResponse"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[list[OptimizationResponse]] */
@@ -43407,6 +43613,67 @@ export interface components {
              * @description 备注
              */
             remark?: string | null;
+        };
+        /**
+         * MaintenancePlanResponse
+         * @description 维护计划响应
+         */
+        MaintenancePlanResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Equipment Id
+             * Format: uuid
+             */
+            equipment_id: string;
+            /** Plan Name */
+            plan_name: string;
+            /**
+             * Plan Type
+             * @enum {string}
+             */
+            plan_type: "预防性维护" | "预测性维护";
+            /** Frequency */
+            frequency: number;
+            /**
+             * Frequency Unit
+             * @enum {string}
+             */
+            frequency_unit: "天" | "周" | "月" | "年";
+            /** Last Maintenance Date */
+            last_maintenance_date: string | null;
+            /** Next Maintenance Date */
+            next_maintenance_date: string | null;
+            /** Responsible Person Id */
+            responsible_person_id: string | null;
+            /** Responsible Person Name */
+            responsible_person_name?: string | null;
+            /** Maintenance Content */
+            maintenance_content: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "启用" | "停用" | "已完成";
+            /** Remark */
+            remark: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Updated By */
+            updated_by: string | null;
         };
         /**
          * MaintenancePlanUpdate
@@ -71922,7 +72189,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_CalibrationPlanResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -71957,7 +72224,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_CalibrationPlanResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -71991,7 +72258,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_CalibrationPlanResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -72024,7 +72291,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_CalibrationPlanResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -72061,7 +72328,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_CalibrationPlanResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -72094,7 +72361,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_NoneType_"];
                 };
             };
             /** @description Validation Error */
@@ -72134,7 +72401,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_CalibrationRecordResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -72169,7 +72436,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_CalibrationRecordResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -72202,7 +72469,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_CalibrationRecordResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -72244,7 +72511,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_MaintenancePlanResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -72279,7 +72546,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_MaintenancePlanResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -72313,7 +72580,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_MaintenancePlanResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -72346,7 +72613,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_MaintenancePlanResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -72383,7 +72650,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_MaintenancePlanResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -72416,7 +72683,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_NoneType_"];
                 };
             };
             /** @description Validation Error */

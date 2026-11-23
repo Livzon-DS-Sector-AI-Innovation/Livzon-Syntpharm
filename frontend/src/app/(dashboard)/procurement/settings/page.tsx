@@ -1,4 +1,4 @@
-import ModuleSettingsPage from '@/components/module-settings/ModuleSettingsPage'
+import { ModuleSettingsPage } from '@/components/module-settings'
 
 export const dynamic = 'force-dynamic'
 

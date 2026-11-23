@@ -163,26 +163,23 @@ export async function getHazards(params: HazardReportQueryParams = {}): Promise<
   return safetyApi.getHazards(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<HazardReport[]>>
 }
 
-export async function getHazard(id: string): Promise<ApiResponse<HazardReport>> {
+export async function getHazard(id: string): Promise<HazardReport> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHazard(id, authHeaders) as Promise<ApiResponse<HazardReport>>
+  // 后端该端点 response_model 复用了历史命名 EquipmentFacilityHazardResponse：字段与前端领域类型一致，
+  // 但 hazard_type 枚举更宽（多出 inspection 等取值），因此在 action 边界收敛到 HazardReport。
+  return unwrapResponse(await safetyApi.getHazard(id, authHeaders)) as unknown as HazardReport
 }
 
 /** 根据部门名称查询部门负责人 */
-export async function getDepartmentLeader(departmentName: string): Promise<ApiResponse<DepartmentLeaderResponse>> {
+export async function getDepartmentLeader(departmentName: string): Promise<DepartmentLeaderResponse> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getDepartmentLeader(departmentName, authHeaders) as Promise<ApiResponse<DepartmentLeaderResponse>>
+  return unwrapResponse(await safetyApi.getDepartmentLeader(departmentName, authHeaders))
 }
 
 /** 根据部门名称查询分管安全员 */
-export async function getDepartmentSafetyOfficer(
-  departmentName: string,
-): Promise<ApiResponse<DepartmentSafetyOfficerResponse>> {
+export async function getDepartmentSafetyOfficer(departmentName: string): Promise<DepartmentSafetyOfficerResponse> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getDepartmentSafetyOfficer(
-    departmentName,
-    authHeaders,
-  ) as Promise<ApiResponse<DepartmentSafetyOfficerResponse>>
+  return unwrapResponse(await safetyApi.getDepartmentSafetyOfficer(departmentName, authHeaders))
 }
 
 export async function createHazard(data: HazardReportFormData): Promise<ApiResponse<HazardReport>> {

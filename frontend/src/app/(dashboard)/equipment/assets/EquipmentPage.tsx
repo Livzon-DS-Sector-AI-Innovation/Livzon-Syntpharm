@@ -1,7 +1,7 @@
 'use client'
 
 import '../../../../styles/industrial-theme.css';
-import { useEffect, useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { App, ConfigProvider, Tabs, Button, Pagination } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
@@ -52,6 +52,48 @@ const DEFAULT_VISIBLE_COLUMNS = [
   'responsible', 'status', 'commissioning_date',
 ]
 
+/** 列配置的 localStorage 键（沿用历史键名，升级后不丢用户配置）。 */
+const COLUMN_STORAGE_KEY = 'equipment_visible_columns'
+
+/**
+ * 列配置作为外部存储源：读写都走 localStorage，订阅者由写入方与自己标签页的 storage 事件触发。
+ *
+ * 不用 `useEffect + setState` 读 localStorage：React Compiler 规则禁止 effect 内 setState，
+ * 而 `useState` 初始化读存储会与 SSR 输出的默认列不一致（hydration mismatch）。
+ * `useSyncExternalStore` 的第三参让服务端/首帧固定返回默认列，hydration 后再切到真实值。
+ */
+const columnStoreListeners = new Set<() => void>()
+
+function subscribeColumnStore(onStoreChange: () => void) {
+  columnStoreListeners.add(onStoreChange)
+  window.addEventListener('storage', onStoreChange)
+  return () => {
+    columnStoreListeners.delete(onStoreChange)
+    window.removeEventListener('storage', onStoreChange)
+  }
+}
+
+function getColumnSnapshot(): string {
+  try {
+    return localStorage.getItem(COLUMN_STORAGE_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function getColumnServerSnapshot(): string {
+  return ''
+}
+
+function writeColumns(columns: string[]) {
+  try {
+    localStorage.setItem(COLUMN_STORAGE_KEY, JSON.stringify(columns))
+  } catch (e) {
+    console.warn('Failed to save column config:', e)
+  }
+  columnStoreListeners.forEach((listener) => listener())
+}
+
 export function EquipmentPage({
   initialCategories,
   initialLocations,
@@ -67,7 +109,6 @@ export function EquipmentPage({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [columnConfigOpen, setColumnConfigOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
-  const [visibleColumns, setVisibleColumns] = useState<string[]>(DEFAULT_VISIBLE_COLUMNS)
 
   const router = useRouter()
   const pathname = usePathname()
@@ -84,33 +125,21 @@ export function EquipmentPage({
     router.replace(nextQs ? `${pathname}?${nextQs}` : pathname, { scroll: false })
   }, [pathname, router, searchParams, urlState])
 
-  // 列配置：从 localStorage 加载首次挂载时的可见列。EquipmentTable 受控展示。
-  useEffect(() => {
+  // 列配置：以 localStorage 为唯一来源。EquipmentTable 受控展示，写入即持久化。
+  const storedColumnsJson = useSyncExternalStore(subscribeColumnStore, getColumnSnapshot, getColumnServerSnapshot)
+  const visibleColumns = useMemo<string[]>(() => {
+    if (!storedColumnsJson) return DEFAULT_VISIBLE_COLUMNS
     try {
-      const stored = localStorage.getItem('equipment_visible_columns')
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is client-only; reading it in the useState initializer would diverge from the SSR column set (hydration mismatch)
-          setVisibleColumns(parsed)
-          return
-        }
+      const parsed: unknown = JSON.parse(storedColumnsJson)
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed.every((item): item is string => typeof item === 'string')) {
+        return parsed
       }
     } catch (e) {
       console.warn('Failed to load column config:', e)
     }
-  }, [])
-
-  // 持久化列配置变更到 localStorage
-  useEffect(() => {
-    if (visibleColumns.length > 0) {
-      try {
-        localStorage.setItem('equipment_visible_columns', JSON.stringify(visibleColumns))
-      } catch (e) {
-        console.warn('Failed to save column config:', e)
-      }
-    }
-  }, [visibleColumns])
+    return DEFAULT_VISIBLE_COLUMNS
+  }, [storedColumnsJson])
+  const setVisibleColumns = useCallback((columns: string[]) => writeColumns(columns), [])
 
   // 列表与统计的取数参数都从同一份 URL 状态派生，不存在第二个来源
   const listParams = useMemo(() => toEquipmentListQuery(urlState), [urlState])
