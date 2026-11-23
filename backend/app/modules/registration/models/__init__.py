@@ -1,6 +1,10 @@
 """Registration module models."""
 # ruff: noqa: F401
 
+# 文档翻译（docx_translator 子包）的 ORM 模型：必须在此聚合，
+# 否则 Alembic autogenerate 看不到 docx_translation_* 三张表，
+# `alembic check` 会把库里已存在的表误判为“多余表”并生成 DROP。
+from app.modules.registration.docx_translator import models as docx_translation_models
 from app.modules.registration.models.authorization import (
     AuthorizationLetter,
     AuthorizationLetterTrail,

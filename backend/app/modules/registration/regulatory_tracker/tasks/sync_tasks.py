@@ -119,6 +119,7 @@ def start_scheduler() -> Any:
         return
 
     from app.modules.equipment.public_api import get_inspection_schedule_generator
+    from app.modules.registration.docx_translator.tasks import expired_cleanup_task
     from app.platform.scheduler import SchedulerEngine
     from app.platform.scheduler.registry import scheduler_registry, set_global_registry
 
@@ -127,6 +128,9 @@ def start_scheduler() -> Any:
     # Register regulatory_tracker tasks
     registry.register_task(daily_sync_task)
     registry.register_task(daily_ai_analysis_task)
+
+    # Register docx_translator retention cleanup task
+    registry.register_task(expired_cleanup_task)
 
     # Register equipment generators
     registry.register_generator(get_inspection_schedule_generator())
