@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useIsMobile } from '@/hooks/useMediaQuery'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Card,
@@ -87,8 +88,10 @@ const methodColorMap: Record<string, string> = {
 export default function CalibrationRecordsPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('table')
-  const [isMobile, setIsMobile] = useState(false)
+  const isMobile = useIsMobile()
+  // 视图模式：用户手动切换后以手动选择为准；未手动切换时按断点默认（移动端卡片 / 桌面表格）
+  const [viewModeOverride, setViewModeOverride] = useState<'card' | 'table' | null>(null)
+  const viewMode = viewModeOverride ?? (isMobile ? 'card' : 'table')
 
   const [filters, setFilters] = useState<{
     instrument_id?: string
@@ -106,17 +109,6 @@ export default function CalibrationRecordsPage() {
   const [createForm] = Form.useForm()
   const [editForm] = Form.useForm()
   const queryClient = useQueryClient()
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)')
-    const update = () => {
-      setIsMobile(mq.matches)
-      setViewMode(mq.matches ? 'card' : 'table')
-    }
-    update()
-    mq.addEventListener('change', update)
-    return () => mq.removeEventListener('change', update)
-  }, [])
 
   const { data: instruments = [], isLoading: instrumentsLoading } = useQuery({
     queryKey: ['instruments-for-records'],
@@ -352,13 +344,13 @@ export default function CalibrationRecordsPage() {
               <Button
                 type={viewMode === 'table' ? 'primary' : 'default'}
                 icon={<TableOutlined />}
-                onClick={() => setViewMode('table')}
+                onClick={() => setViewModeOverride('table')}
                 size="small"
               >表格</Button>
               <Button
                 type={viewMode === 'card' ? 'primary' : 'default'}
                 icon={<AppstoreOutlined />}
-                onClick={() => setViewMode('card')}
+                onClick={() => setViewModeOverride('card')}
                 size="small"
               >卡片</Button>
             </Space>

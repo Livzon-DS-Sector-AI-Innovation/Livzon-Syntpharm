@@ -7,15 +7,18 @@ sync_registry 是「代码注册表为唯一权威、DB 只读镜像」的落地
 import logging
 import uuid
 
-from sqlalchemy import func, select
+from sqlalchemy import or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.database import async_session_factory
 from app.core.exceptions import ForbiddenException
 from app.platform.identity.models import User
+from app.platform.permission.cache import evict_user_permission_cache
+from app.platform.permission.constants import MIN_ACTIVE_SUPERADMINS, RETIRED_ROLE_TYPES
 from app.platform.permission.models import (
     GRANT_ACTIVE,
+    GRANT_DISABLED,
     PERMISSION_ACTIVE,
     SCOPE_ALL,
     SCOPE_SELF,
@@ -30,6 +33,7 @@ from app.platform.permission.registry import (
     ALL_PERMISSIONS,
     API_BINDINGS,
     BUILTIN_ROLE_PERMISSIONS,
+    RETIRED_MODULE_CODES,
 )
 from app.platform.permission.repository import GrantRepository, RoleRepository
 
@@ -105,6 +109,7 @@ async def _sync_roles(db: AsyncSession) -> None:
                     code=r.code,
                     name=r.name,
                     category=r.category,
+                    role_type=r.role_type,
                     module_code=r.module_code,
                     description=r.description,
                     is_builtin=True,
@@ -115,16 +120,118 @@ async def _sync_roles(db: AsyncSession) -> None:
             continue
         existing.name = r.name
         existing.category = r.category
+        existing.role_type = r.role_type
         existing.module_code = r.module_code
         existing.description = r.description
         existing.is_superuser = r.is_superuser
         existing.is_builtin = True
+
+    await _retire_legacy_role_types(db)
+    await _retire_orphan_builtin_roles(db)
+
+
+async def _retire_legacy_role_types(db: AsyncSession) -> int:
+    """退役历史 role_type（head / manager）的内置角色，并驱逐受影响用户的权限缓存。
+
+    判据与迁移 0203 保持一致：`is_builtin` + 未删除 + active，且
+    `role_type IN RETIRED_ROLE_TYPES` 或 code 以 `:head` / `:manager` 结尾
+    （code 并集只兜底历史脏数据；`is_builtin` 防止误伤人工建的同名岗位角色）。
+
+    与 `_retire_orphan_builtin_roles` 的差异：后者按「模块下线」判据且不做缓存驱逐，
+    本次不扩大范围，仅记录。
+    """
+    result = await db.execute(
+        select(Role).where(
+            Role.is_builtin.is_(True),
+            Role.is_deleted.is_(False),
+            Role.status == GRANT_ACTIVE,
+            or_(
+                Role.role_type.in_(RETIRED_ROLE_TYPES),
+                Role.code.like("%:head"),
+                Role.code.like("%:manager"),
+            ),
+        )
+    )
+    roles = list(result.scalars().all())
+
+    grant_repo = GrantRepository()
+    for role in roles:
+        # 必须先取 user_ids：授权停用后再查会得到空集，缓存将无法驱逐。
+        user_ids = await grant_repo.list_active_user_ids_by_role(db, role.id)
+        role.status = GRANT_DISABLED
+        await db.execute(
+            update(UserRoleGrant)
+            .where(
+                UserRoleGrant.role_id == role.id,
+                UserRoleGrant.status == GRANT_ACTIVE,
+                UserRoleGrant.is_deleted.is_(False),
+            )
+            .values(status=GRANT_DISABLED)
+        )
+        for user_id in user_ids:
+            await evict_user_permission_cache(user_id)
+        logger.warning(
+            "停用历史角色类型的内置角色",
+            extra={
+                "role_code": role.code,
+                "module_code": role.module_code or "",
+                "role_type": role.role_type,
+                "affected_user_count": len(user_ids),
+                "biz_module": "permission",
+            },
+        )
+    return len(roles)
+
+
+async def _retire_orphan_builtin_roles(db: AsyncSession) -> int:
+    """停用已下线模块的内置角色及其授权（TC-010：agent 残留角色）。
+
+    只处理 `RETIRED_MODULE_CODES` 显式登记的下线模块，原因见注册表注释：
+    不能把「本分支注册表里没有」当成下线判据，否则多分支并行时会误伤。
+
+    不物理删除：角色行保留可追溯，生效权限计算本身已过滤 `Role.status`，
+    置 disabled 即断权。
+
+    本函数不做权限缓存驱逐（与 `_retire_legacy_role_types` 的已知差异，本次不扩大范围）。
+    """
+    if not RETIRED_MODULE_CODES:
+        return 0
+
+    result = await db.execute(
+        select(Role).where(
+            Role.is_builtin == True,  # noqa: E712
+            Role.is_deleted == False,  # noqa: E712
+            Role.status == GRANT_ACTIVE,
+            Role.module_code.in_(RETIRED_MODULE_CODES),
+        )
+    )
+    orphans = list(result.scalars().all())
+    for role in orphans:
+        role.status = GRANT_DISABLED
+        await db.execute(
+            update(UserRoleGrant)
+            .where(
+                UserRoleGrant.role_id == role.id,
+                UserRoleGrant.status == GRANT_ACTIVE,
+                UserRoleGrant.is_deleted == False,  # noqa: E712
+            )
+            .values(status=GRANT_DISABLED)
+        )
+        logger.warning(
+            "停用已下线模块的内置角色",
+            extra={"role_code": role.code, "module_code": role.module_code or "", "biz_module": "permission"},
+        )
+    return len(orphans)
 
 
 async def _sync_role_permissions(db: AsyncSession) -> None:
     for role_code, codes in BUILTIN_ROLE_PERMISSIONS.items():
         role = await _get_role_by_code(db, role_code)
         if role is None:
+            continue
+        # 手工接管：系统管理员改过这个内置角色的权限后，同步不再覆盖（可「恢复默认」解除）
+        if role.sync_locked:
+            logger.info("内置角色已被手工接管，跳过自动扩量", extra={"role_code": role_code})
             continue
         for code in codes:
             result = await db.execute(
@@ -136,6 +243,25 @@ async def _sync_role_permissions(db: AsyncSession) -> None:
             )
             if result.scalar_one_or_none() is None:
                 db.add(RolePermission(role_id=role.id, permission_code=code))
+
+
+async def reset_role_to_default(db: AsyncSession, role: Role) -> int:
+    """把内置角色的权限恢复为注册表装配值，并重新纳入自动扩量。
+
+    返回恢复后的权限码数量。非内置角色或注册表里没有该角色时抛 ForbiddenException。
+    """
+    codes = BUILTIN_ROLE_PERMISSIONS.get(role.code)
+    if not role.is_builtin or codes is None:
+        raise ForbiddenException("只能对内置角色执行「恢复默认」")
+
+    # 复用 repository 的全量覆盖逻辑（会复活历史行，避免撞 (role_id, code) 唯一约束）
+    await RoleRepository().set_role_permissions(db, role.id, list(codes))
+    role.sync_locked = False
+    logger.info(
+        "内置角色已恢复默认权限",
+        extra={"role_code": role.code, "permission_count": len(codes)},
+    )
+    return len(codes)
 
 
 async def _sync_api_bindings(db: AsyncSession) -> None:
@@ -221,18 +347,12 @@ async def get_role(db: AsyncSession, role_id: uuid.UUID) -> Role | None:
 
 
 async def count_active_superadmins(db: AsyncSession) -> int:
-    stmt = (
-        select(func.count())
-        .select_from(UserRoleGrant)
-        .join(Role, Role.id == UserRoleGrant.role_id)
-        .where(
-            Role.is_superuser.is_(True),
-            Role.is_deleted == False,  # noqa: E712
-            UserRoleGrant.status == GRANT_ACTIVE,
-            UserRoleGrant.is_deleted == False,  # noqa: E712
-        )
-    )
-    return int((await db.execute(stmt)).scalar_one())
+    """生效超管数量：委托仓储实现，口径与 identity 删除守卫完全一致。
+
+    包含「账号未删除且未停用」过滤，避免停用/删除的超管占位，
+    让守卫以为还有足够名额。
+    """
+    return await GrantRepository().count_active_superusers(db)
 
 
 def guard_self_escalation(actor_id: uuid.UUID | None, grant: UserRoleGrant) -> None:
@@ -242,12 +362,19 @@ def guard_self_escalation(actor_id: uuid.UUID | None, grant: UserRoleGrant) -> N
 
 
 async def guard_last_superadmin(db: AsyncSession, grant: UserRoleGrant) -> None:
-    """删除 super_admin 授权前，确保系统中还有其他超级管理员。"""
+    """移除/停用系统管理员授权前，确保移除后仍有至少 2 名活跃系统管理员。
+
+    阈值从「最后一名」提到「最后两名」：只有系统管理员能授出系统管理员角色，
+    唯一超管账号一旦丢失（离职/锁定），守卫本身会挡住恢复路径，只能改库。
+    """
     role = await get_role(db, grant.role_id)
     if role is None or not role.is_superuser:
         return
-    if await count_active_superadmins(db) <= 1:
-        raise ForbiddenException("不能移除最后一个超级管理员")
+    if grant.status != GRANT_ACTIVE or grant.is_deleted:
+        return
+    # 当前活跃超管数 - 1（本次被移除的这条）必须仍 >= MIN_ACTIVE_SUPERADMINS
+    if await count_active_superadmins(db) <= MIN_ACTIVE_SUPERADMINS:
+        raise ForbiddenException(f"系统管理员至少保留 {MIN_ACTIVE_SUPERADMINS} 名，无法移除或停用")
 
 
 # ── 管理员分级：防越级提权 + 超管账号保护 ─────────────────────────────

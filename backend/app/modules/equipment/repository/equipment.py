@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from typing import Any
 
 import sqlalchemy as sa
-from sqlalchemy import and_, case, func, nulls_last, select, text, update
+from sqlalchemy import and_, case, func, literal, nulls_last, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -15,7 +15,7 @@ from app.modules.equipment.models import (
     EquipmentCategoryLink,
     Location,
 )
-from app.platform.identity.models import Department, User
+from app.platform.identity.public_api import resolve_user_names
 
 
 def _escape_like(value: str) -> str:
@@ -408,14 +408,25 @@ _SORT_COLUMNS = {
 _NULLABLE_SORT_COLUMNS = {"commissioning_date", "current_cost", "book_value", "department_name"}
 
 
-def _build_order_by(sort_by: str, sort_order: str) -> list[Any]:
-    """构造 ORDER BY；末尾追加 Equipment.id 保证 offset 分页稳定（D6）"""
+def _build_order_by(
+    sort_by: str,
+    sort_order: str,
+    *,
+    department_names: dict[uuid.UUID, str] | None = None,
+) -> list[Any]:
+    """构造 ORDER BY；末尾追加 Equipment.id 保证 offset 分页稳定（D6）
+
+    #219：部门名不再 join ``identity.departments``（该表下线），改由调用方经
+    HR ``public_api`` 取 ``{hr.departments.id: name}`` 后用 CASE 映射排序，
+    这样既保持 SQL 分页正确，也不跨模块 join HR 表。
+    """
     is_desc = sort_order == "desc"
     tiebreak = Equipment.id.asc()
     if sort_by == "asset_no":
         return [_ASSET_NO_NATURAL_DESC if is_desc else _ASSET_NO_NATURAL_ASC, tiebreak]
     if sort_by == "department_name":
-        key: Any = Department.name.desc() if is_desc else Department.name.asc()
+        name_expr = case(department_names, value=Equipment.department_id, else_="") if department_names else literal("")
+        key: Any = name_expr.desc() if is_desc else name_expr.asc()
         return [nulls_last(key), tiebreak]
     if sort_by == "status":
         priority = case(
@@ -479,8 +490,12 @@ async def get_equipments(
             | Equipment.name.ilike(f"%{escaped}%", escape="\\")
             | Equipment.equipment_tag.ilike(f"%{escaped}%", escape="\\")
         )
+    department_names: dict[uuid.UUID, str] | None = None
     if sort_by == "department_name":
-        query = query.outerjoin(Department, Equipment.department_id == Department.id)
+        # #219：部门名映射从 HR 主数据取，identity.departments 已下线。
+        from app.modules.hr.public_api import list_all_departments
+
+        department_names = {dept.id: dept.name for dept in await list_all_departments(db)}
 
     # 获取总数
     count_query = select(func.count()).select_from(query.with_only_columns(Equipment.id).subquery())
@@ -488,7 +503,7 @@ async def get_equipments(
     total = total_result.scalar() or 0
 
     # 动态排序：白名单见 _build_order_by，非法字段显式抛错（D12，不做静默兜底）
-    query = query.order_by(*_build_order_by(sort_by, sort_order))
+    query = query.order_by(*_build_order_by(sort_by, sort_order, department_names=department_names))
 
     # 分页查询
     query = query.offset((page - 1) * page_size).limit(page_size)
@@ -753,9 +768,12 @@ async def get_department_leader_user_id(db: AsyncSession, department_id: uuid.UU
 
 
 async def get_user_name_by_id(db: AsyncSession, user_id: uuid.UUID) -> str | None:
-    """根据 User.id 获取用户姓名"""
-    result = await db.execute(select(User.name).where(User.id == user_id))
-    return result.scalar_one_or_none()
+    """根据 User.id 获取用户姓名。
+
+    走 ``identity.public_api``，不直接查 identity 的 ORM 模型（AGENTS.md 模块所有权）。
+    """
+    names = await resolve_user_names(db, [user_id])
+    return names.get(user_id)
 
 
 async def get_sync_context(

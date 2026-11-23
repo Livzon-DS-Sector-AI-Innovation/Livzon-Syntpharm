@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers'
 import type { LLMConfig, LLMConfigFormData, LLMConfigUpdate, FeishuConfigUpsert } from '@/types/settings'
 import type { ApiResponse } from '@/types/common'
+import type { components } from '@/types/generated/schema'
 import {
   getLLMConfigs as getLLMConfigsServer,
   getLLMConfig as getLLMConfigServer,
@@ -14,7 +15,6 @@ import {
   saveLivzonFeishuConfig as saveLivzonFeishuConfigServer,
   testLivzonFeishuConfig as testLivzonFeishuConfigServer,
   syncLivzonFeishuContacts as syncLivzonFeishuContactsServer,
-  triggerFeishuUserInfoSync as triggerFeishuUserInfoSyncServer,
 } from '@/lib/api/server/settings'
 
 async function getAuthToken(): Promise<string | undefined> {
@@ -56,7 +56,7 @@ export async function deleteLLMConfig(id: string) {
 
 export async function testLLMConnection() {
   const token = await getAuthToken()
-  return wrap<{ status: string; detail: string }>(await testLLMConnectionServer(token))
+  return wrap<components['schemas']['LLMHealthResult']>(await testLLMConnectionServer(token))
 }
 
 export async function getLivzonFeishuConfig() {
@@ -77,10 +77,4 @@ export async function testLivzonFeishuConfig(data?: FeishuConfigUpsert) {
 export async function syncLivzonFeishuContacts() {
   const token = await getAuthToken()
   return syncLivzonFeishuContactsServer(token)
-}
-
-/** 用户管理页：同步飞书用户资料（头像、部门、职位等），不分配账号 */
-export async function syncFeishuUserInfo() {
-  const token = await getAuthToken()
-  return triggerFeishuUserInfoSyncServer(token)
 }

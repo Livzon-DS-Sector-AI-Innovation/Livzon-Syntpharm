@@ -25,6 +25,7 @@ from app.core.response import build_response, paginated_response
 from app.core.secrets import decrypt_secret, encrypt_secret, mask_secret
 from app.modules.hr.analysis_api import router as analysis_router
 from app.modules.hr.departure_api import router as departure_router
+from app.modules.hr.directory_api import router as directory_router
 from app.modules.hr.document_generator import generate_onboarding_training_record
 from app.modules.hr.evaluation_document_generator import generate_training_evaluation
 from app.modules.hr.ledger_export_generator import generate_ledger_export
@@ -1794,6 +1795,7 @@ router.include_router(org_router)
 router.include_router(onboarding_router)
 router.include_router(departure_router)
 router.include_router(people_router)
+router.include_router(directory_router)
 if attendance_router is not None:
     router.include_router(attendance_router)
 

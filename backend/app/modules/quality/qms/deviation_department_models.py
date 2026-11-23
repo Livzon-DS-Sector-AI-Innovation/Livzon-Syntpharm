@@ -15,7 +15,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import ARRAY, TEXT
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -29,10 +29,16 @@ class DepartmentContact(BaseModel):
     __tablename__ = "department_contacts"
     __table_args__ = (
         UniqueConstraint("department", name="department_contacts_department_key"),
+        Index("ix_quality_department_contacts_hr_department_id", "hr_department_id"),
         {"schema": "quality"},
     )
 
     department: Mapped[str] = mapped_column(String(255), nullable=False, comment="部门名称")
+    hr_department_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        nullable=True,
+        comment="部门主数据 hr.departments.id（逻辑引用）",
+    )
     dept_head_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("identity.users.id"),

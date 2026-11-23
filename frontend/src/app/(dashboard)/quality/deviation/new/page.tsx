@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: '新建偏差' }
 
 export default async function DeviationCreatePage() {
   // 部门候选取不到时表单仍可打开：下拉为空，用户联系管理员补数据；
-  // 人员候选改由 RemoteUserSelect 展开时远端加载，不再预取全量用户
+  // 人员候选改由 PersonSelect 展开时远端加载，不再预取全量用户
   const [departmentResult, user] = await Promise.all([
     fetchDeviationDepartmentContactOptions().catch((error) => {
       console.error('偏差部门候选加载失败', error)
@@ -28,6 +28,7 @@ export default async function DeviationCreatePage() {
       departmentOptions={departmentResult}
       currentUserId={user?.id ?? ''}
       currentUserName={user?.name ?? ''}
+      currentUserAvatar={user?.avatar_url ?? ''}
     />
   )
 }

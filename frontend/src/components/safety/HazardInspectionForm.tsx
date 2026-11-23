@@ -9,7 +9,6 @@ import {
   HAZARD_LEVEL_FORM_OPTIONS,
   INSPECTION_CATEGORY_OPTIONS,
   INSPECTOR_DEPARTMENT_OPTIONS,
-  DEPARTMENT_OPTIONS,
 } from '@/types/safety'
 import { getCurrentUser } from '@/actions/auth'
 import { createHazardCategory } from '@/actions/safety'
@@ -18,6 +17,7 @@ import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
 import HazardCategoryModal from '@/components/safety/HazardCategoryModal'
 import PersonnelSelect, { PersonnelMultiSelect } from '@/components/safety/PersonnelSelect'
+import DepartmentTreeSelect from '@/components/common/DepartmentTreeSelect'
 import dayjs, { type Dayjs } from 'dayjs'
 
 const { TextArea } = Input
@@ -67,10 +67,19 @@ function InspectorField({
 }) {
   const form = Form.useFormInstance()
   const name = Form.useWatch('discovered_by_name', form) as string | undefined
+  // 自动填入的登录用户通常不在首屏 options 里：PersonSelect 会走回退项，
+  // 头像只能由 avatarSrc 提供（TC-001②）。复用页面同一个 ['identity','me'] 缓存。
+  const { data: me } = useQuery({
+    queryKey: ['identity', 'me'],
+    queryFn: () => getCurrentUser(),
+    staleTime: 5 * 60 * 1000,
+  })
+  const avatarSrc = value && me?.id === value ? me.avatar_url : undefined
   return (
     <PersonnelSelect
       value={value}
       label={name}
+      avatarSrc={avatarSrc}
       placeholder="搜索姓名/账号选择审批人"
       onChange={(person) => {
         onChange?.(person?.id)
@@ -422,12 +431,8 @@ export default function HazardInspectionForm({ initialValues, loading, onSubmit,
         <Row gutter={16}>
           <Col xs={24} md={12}>
             <Form.Item name="department" label="责任部门" rules={required('请选择责任部门')}>
-              <Select
-                showSearch
-                placeholder="请选择责任部门"
-                options={DEPARTMENT_OPTIONS}
-                filterOption={(input, option) => (option?.label as string)?.includes(input)}
-              />
+              {/* 历史表以部门名关联（台账按部门名反查分管安全员），故 valueField="name" */}
+              <DepartmentTreeSelect valueField="name" placeholder="请选择责任部门（可搜索）" />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>

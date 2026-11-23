@@ -1,11 +1,10 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Alert,
   App,
-  AutoComplete,
   Button,
   Card,
   Empty,
@@ -24,24 +23,21 @@ import {
   deleteDepartmentContact,
   updateDepartmentContact,
 } from '@/actions/quality'
-import { RemoteUserMultiSelect, RemoteUserSelect } from '@/components/common/RemoteUserSelect'
+import { PersonMultiSelect, PersonSelect } from '@/components/common/PersonSelect'
+import DepartmentTreeSelect from '@/components/common/DepartmentTreeSelect'
 import { toPersonId, toPersonIds } from '@/lib/utils/form-person'
 import { PeopleNamesInline, PersonInline } from './deviation/PersonInline'
 import type { PersonSnapshot } from './deviation/CrossDeptReviewerFields'
 import { NotifySettingsCard } from '@/components/quality/deviation'
-import type {
-  DepartmentContact,
-  DepartmentMemberOption,
-  DeviationNotifySettings,
-} from '@/types/quality'
+import { fetchDepartmentLeader } from '@/lib/api/client/quality'
+import type { DepartmentContact, DeviationNotifySettings } from '@/types/quality'
 
 interface DepartmentContactPageProps {
+  /** 嵌入模块配置页签：隐藏页内 h1（外层已有页头） */
+  embedded?: boolean
   contacts: DepartmentContact[]
-  memberOptions: DepartmentMemberOption[]
   notifySettings: DeviationNotifySettings | null
   loadError?: string | null
-  /** 部门名称建议值（组织部门，与台账部门名同源） */
-  departmentSuggestions?: string[]
   /** 台账里已有、但尚无联系人配置的部门（这些单子节点负责人无法自动指派） */
   unconfiguredDepartments?: string[]
 }
@@ -76,11 +72,10 @@ interface ContactFormValues {
 
 /** 部门联系人配置：调查/审核环节的处理人来源，配错会直接影响流转指派 */
 export function DepartmentContactPage({
+  embedded = false,
   contacts,
-  memberOptions,
   notifySettings,
   loadError = null,
-  departmentSuggestions = [],
   unconfiguredDepartments = [],
 }: DepartmentContactPageProps) {
   const router = useRouter()
@@ -91,6 +86,21 @@ export function DepartmentContactPage({
   const [editing, setEditing] = useState<DepartmentContact | null>(null)
   const [open, setOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  /**
+   * 新增时按部门自动带出的 HR 部门负责人。
+   * `resolved=false` 表示 HR 组织里没有该部门负责人（本机多数部门如此），
+   * 此时字段降级为可手选，避免「部门负责人审核」环节无人可审。
+   */
+  const [deptLeader, setDeptLeader] = useState<{
+    id: string | null
+    name: string | null
+    avatar: string | null
+    resolved: boolean
+  } | null>(null)
+  const [leaderLoading, setLeaderLoading] = useState(false)
+  const [leaderFailed, setLeaderFailed] = useState(false)
+  /** 快速改选部门时作废旧请求，避免先发后到的响应覆盖当前部门的负责人 */
+  const leaderSeq = useRef(0)
 
   // 质量保证部是「质量负责人 / QA 负责人」的缺省来源：新增部门时默认带出，避免用户不知道要填谁
   const qaDepartment = useMemo(
@@ -107,6 +117,8 @@ export function DepartmentContactPage({
     if (!editing) {
       pushPerson(qaDepartment?.quality_head_id, qaDepartment?.quality_head_name, qaDepartment?.quality_head_avatar)
       pushPerson(qaDepartment?.qa_head_id, qaDepartment?.qa_head_name, qaDepartment?.qa_head_avatar)
+      // 自动带出的部门负责人：值来自 HR 档案，靠快照显示姓名/头像
+      pushPerson(deptLeader?.id, deptLeader?.name, deptLeader?.avatar)
       return map
     }
     pushPerson(editing.dept_head_id, editing.dept_head_name, editing.dept_head_avatar)
@@ -120,7 +132,7 @@ export function DepartmentContactPage({
     pushList(editing.gmp_staff_ids, editing.gmp_staff_names, editing.gmp_staff_avatars)
     pushList(editing.additional_contacts, editing.additional_contact_names, editing.additional_contact_avatars)
     return map
-  }, [editing, qaDepartment])
+  }, [editing, qaDepartment, deptLeader])
 
   // 快照按当前表单值同序取名：换人/删人后不会残留上一次的姓名
   const formValues = Form.useWatch([], form) as ContactFormValues | undefined
@@ -131,18 +143,41 @@ export function DepartmentContactPage({
     return { label: snapshot?.name, avatarSrc: snapshot?.avatar ?? null }
   }
 
-  // 部门名是关联键：优先从组织部门里选，避免手输出偏差导致节点负责人解析不到
-  const departmentNameCandidates =
-    departmentSuggestions.length > 0
-      ? departmentSuggestions
-      : memberOptions
-          .map((item) => item.description?.trim())
-          .filter((name): name is string => Boolean(name))
-  const departmentOptions = [...new Set(departmentNameCandidates)]
-    .sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'))
-    .map((name) => ({ value: name }))
+  /** 选完部门后按 HR 组织带出部门负责人；带不出来时降级为可手选。 */
+  const loadDeptLeader = async (departmentName: string) => {
+    const seq = ++leaderSeq.current
+    setLeaderLoading(true)
+    setLeaderFailed(false)
+    setDeptLeader(null)
+    try {
+      const leader = await fetchDepartmentLeader(departmentName)
+      if (seq !== leaderSeq.current) return
+      const resolved = Boolean(leader.resolved && leader.dept_head_profile_id)
+      setDeptLeader({
+        id: leader.dept_head_profile_id ?? null,
+        name: leader.dept_head_name ?? null,
+        avatar: leader.dept_head_avatar ?? null,
+        resolved,
+      })
+      form.setFieldsValue({ dept_head_id: resolved ? (leader.dept_head_profile_id ?? undefined) : undefined })
+    } catch (error) {
+      if (seq !== leaderSeq.current) return
+      console.error('部门负责人自动带出失败', error)
+      // 读取失败同样降级为可手选，避免用户被卡住
+      setLeaderFailed(true)
+      setDeptLeader({ id: null, name: null, avatar: null, resolved: false })
+      form.setFieldsValue({ dept_head_id: undefined })
+    } finally {
+      if (seq === leaderSeq.current) setLeaderLoading(false)
+    }
+  }
 
   const openModal = (contact?: DepartmentContact) => {
+    // 每次开窗重置自动带出状态，避免上一次的部门负责人残留
+    leaderSeq.current += 1
+    setDeptLeader(null)
+    setLeaderLoading(false)
+    setLeaderFailed(false)
     if (contact) {
       setEditing(contact)
       form.setFieldsValue({
@@ -167,6 +202,38 @@ export function DepartmentContactPage({
     }
     setOpen(true)
   }
+
+  /**
+   * 部门负责人只读规则（仅新增态）：
+   * - 还没选部门 / 正在读取 / HR 有负责人 → 锁死，用户不能改；
+   * - HR 没负责人或读取失败 → 降级为可手选，否则偏差流程「部门负责人审核」会无人可审。
+   */
+  const deptHeadLocked = !editing && (leaderLoading || deptLeader === null || deptLeader.resolved)
+
+  const deptHeadPlaceholder = editing
+    ? '搜索姓名选择人员'
+    : leaderLoading
+      ? '正在读取 HR 负责人…'
+      : deptLeader === null
+        ? '选择部门后自动带出'
+        : deptLeader.resolved
+          ? '按 HR 组织自动带出'
+          : 'HR 未配置该部门负责人，请手动选择'
+
+  const deptHeadHint = (() => {
+    if (editing) return undefined
+    if (leaderLoading) return <span className="text-[12px]">正在读取 HR 组织负责人…</span>
+    if (deptLeader === null) return <span className="text-[12px]">选择部门后自动带出</span>
+    if (deptLeader.resolved) {
+      return <span className="text-[12px]">已按 HR 组织带出「{deptLeader.name ?? ''}」，不可修改</span>
+    }
+    return (
+      <span className="text-[12px] text-[#b45309]">
+        {leaderFailed ? '读取 HR 部门负责人失败' : 'HR 组织未配置该部门负责人'}，已允许手动选择；建议先在 HR
+        补齐负责人，否则「部门负责人审核」环节无人可审。
+      </span>
+    )
+  })()
 
   const handleSubmit = async () => {
     const values = await form.validateFields()
@@ -340,17 +407,21 @@ export function DepartmentContactPage({
   ]
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-[22px] font-semibold text-[var(--color-ink)]">部门联系人配置</h1>
+          {!embedded && (
+            <h1 className="text-[22px] font-semibold text-[var(--color-ink)]">部门联系人配置</h1>
+          )}
           <p className="mt-1 text-[13px] text-[var(--color-slate)]">
             偏差流转按部门取处理人：部门负责人、生产负责人、质量负责人（本部门优先、缺省回退质量保证部），以及所属 QA、QA 负责人
           </p>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()} className="shrink-0 self-start sm:self-auto">
-          添加部门
-        </Button>
+        {!embedded && (
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()} className="shrink-0 self-start sm:self-auto">
+            添加部门
+          </Button>
+        )}
       </header>
 
       {loadError && <Alert type="warning" showIcon title="联系人数据加载失败" description={loadError} />}
@@ -369,7 +440,19 @@ export function DepartmentContactPage({
         />
       )}
 
-      <Card size="small" className="shadow-sm" styles={{ body: { padding: 0 } }}>
+      <Card
+        size="small"
+        className={embedded ? 'settings-region-card' : 'shadow-sm'}
+        title={embedded ? '部门联系人' : undefined}
+        styles={{ body: { padding: 0 } }}
+      >
+        {embedded && (
+          <div className="flex items-center justify-end px-4 pb-3 pt-4">
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()}>
+              添加部门
+            </Button>
+          </div>
+        )}
         <Table<DepartmentContact>
           rowKey="id"
           size="middle"
@@ -399,29 +482,33 @@ export function DepartmentContactPage({
           <Form.Item
             name="department"
             label="部门名称"
-            rules={[{ required: true, message: '请输入部门名称' }]}
-            extra="部门名称是唯一键，创建后不可修改；必须与偏差台账里的部门名完全一致，否则节点负责人无法自动指派"
+            rules={[{ required: true, message: '请选择部门' }]}
+            extra="部门名称是唯一键，创建后不可修改；必须与偏差台账里的部门名完全一致，否则节点负责人无法自动指派。从组织树选择，历史部门名保留原值、不做迁移。"
           >
-            <AutoComplete
-              placeholder="如 101车间"
+            <DepartmentTreeSelect
+              valueField="name"
+              allowClear={false}
               disabled={Boolean(editing)}
-              maxLength={255}
-              options={departmentOptions}
-              filterOption={(inputValue, option) =>
-                (option?.value ?? '').toLowerCase().includes(inputValue.toLowerCase())
-              }
+              placeholder="选择部门（可搜索，可任选层级）"
+              onSelect={(dept) => {
+                // 只在新增时自动带出：编辑时部门不可改，负责人保持可编辑以便修正历史值
+                if (!dept || editing) return
+                void loadDeptLeader(dept.name)
+              }}
             />
           </Form.Item>
           <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-3">
             <Form.Item
               name="dept_head_id"
               label="部门负责人"
-              tooltip="本部门任何偏差都会指派给他审核"
+              tooltip="新增时按 HR 组织自动带出，不允许修改；HR 未配置该部门负责人时可手动选择"
               normalize={toPersonId}
+              extra={deptHeadHint}
             >
-              <RemoteUserSelect
-                placeholder="搜索姓名选择人员"
+              <PersonSelect
+                placeholder={deptHeadPlaceholder}
                 allowClear
+                disabled={deptHeadLocked}
                 feishuBoundOnly={false}
                 {...snapshotOf(formValues?.dept_head_id)}
               />
@@ -432,7 +519,7 @@ export function DepartmentContactPage({
               tooltip="生产车间偏差提级审核时使用"
               normalize={toPersonId}
             >
-              <RemoteUserSelect
+              <PersonSelect
                 placeholder="搜索姓名选择人员"
                 allowClear
                 feishuBoundOnly={false}
@@ -445,7 +532,7 @@ export function DepartmentContactPage({
               tooltip="本部门已配置则优先，未配置回退质量保证部"
               normalize={toPersonId}
             >
-              <RemoteUserSelect
+              <PersonSelect
                 placeholder="搜索姓名选择人员"
                 allowClear
                 feishuBoundOnly={false}
@@ -460,7 +547,7 @@ export function DepartmentContactPage({
               tooltip="「所属QA审核」节点处理人，也是最终编号环节处理人"
               normalize={toPersonId}
             >
-              <RemoteUserSelect
+              <PersonSelect
                 placeholder="搜索姓名选择人员"
                 allowClear
                 feishuBoundOnly={false}
@@ -473,7 +560,7 @@ export function DepartmentContactPage({
               tooltip="「QA负责人审核」节点处理人：本部门已配置则优先，未配置回退质量保证部"
               normalize={toPersonId}
             >
-              <RemoteUserSelect
+              <PersonSelect
                 placeholder="搜索姓名选择人员"
                 allowClear
                 feishuBoundOnly={false}
@@ -482,7 +569,7 @@ export function DepartmentContactPage({
             </Form.Item>
           </div>
           <Form.Item name="gmp_staff_ids" label="GMP 人员" normalize={toPersonIds}>
-            <RemoteUserMultiSelect
+            <PersonMultiSelect
               placeholder="搜索姓名选择人员，可多选"
               labels={labelsOf(formValues?.gmp_staff_ids)}
               avatarSrcs={avatarsOf(formValues?.gmp_staff_ids)}
@@ -490,7 +577,7 @@ export function DepartmentContactPage({
             />
           </Form.Item>
           <Form.Item name="additional_contacts" label="其他联系人" normalize={toPersonIds}>
-            <RemoteUserMultiSelect
+            <PersonMultiSelect
               placeholder="搜索姓名选择人员，可多选"
               labels={labelsOf(formValues?.additional_contacts)}
               avatarSrcs={avatarsOf(formValues?.additional_contacts)}

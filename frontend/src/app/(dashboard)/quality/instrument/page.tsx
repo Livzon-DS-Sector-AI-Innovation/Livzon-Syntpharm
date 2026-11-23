@@ -1,7 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useIsMobile } from '@/hooks/useMediaQuery'
 import { useQuery } from '@tanstack/react-query'
 import {Table, Button, Space, Tag, message, Empty, Spin, Modal, Select, Divider} from 'antd'
 import {
@@ -27,21 +28,12 @@ import './instrument-style.css'
 
 export default function InstrumentDashboardPage() {
   const router = useRouter()
-  const [isMobile, setIsMobile] = useState(false)
+  const isMobile = useIsMobile()
 
   const [remindModalVisible, setRemindModalVisible] = useState(false)
   const [remindLoading, setRemindLoading] = useState(false)
   const [remindDays, setRemindDays] = useState(30)
   const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null)
-
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)')
-    const update = () => setIsMobile(mq.matches)
-    update()
-    mq.addEventListener('change', update)
-    return () => mq.removeEventListener('change', update)
-  }, [])
 
   // 加载仪器数据
   const { data: instrumentsData, isLoading: loading, refetch: loadData } = useQuery({

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { App, Button, Input, Result, Select, Table, Tag } from 'antd'
+import { App, Button, Empty, Input, Result, Select, Table, Tag } from 'antd'
 import { DownloadOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { getAuditLogs } from '@/actions/audit'
 import type { AuditLogItem } from '@/types/audit'
@@ -204,6 +204,14 @@ export default function AuditLogsClient() {
         dataSource={data?.items || []}
         loading={isLoading}
         scroll={{ x: 'max-content' }}
+        locale={{
+          emptyText:
+            action || resourceType || keyword ? (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有符合筛选条件的记录，试试放宽条件" />
+            ) : (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="还没有操作记录" />
+            ),
+        }}
         expandable={{
           expandedRowRender: (record: AuditLogItem) => {
             if (record.action === 'user.reset_password' || record.action === 'user.change_password') {

@@ -321,3 +321,49 @@ async def test_calibration_plan_overdue(auth_client: AsyncClient):
         params={"days": 365},
     )
     assert response.status_code == 200
+
+
+async def test_plan_responses_resolve_responsible_person_name(
+    auth_client: AsyncClient,
+    test_assignee: User,
+):
+    """保养/校准计划响应要带责任人姓名，前端编辑态才能回显。"""
+    equipment_id = await _create_test_equipment(auth_client)
+    person_id = str(test_assignee.id)
+
+    calibration_resp = await auth_client.post(
+        "/api/v1/equipment/maintenance/calibration/plans",
+        json={
+            "equipment_id": equipment_id,
+            "calibration_type": "内部校准",
+            "cycle_months": 6,
+            "responsible_person_id": person_id,
+        },
+    )
+    assert calibration_resp.status_code == 200
+    calibration_plan = calibration_resp.json()["data"]
+    assert calibration_plan["responsible_person_id"] == person_id
+    assert calibration_plan["responsible_person_name"] == test_assignee.name
+
+    calibration_list = await auth_client.get("/api/v1/equipment/maintenance/calibration/plans")
+    listed = {item["id"]: item for item in calibration_list.json()["data"]}
+    assert listed[calibration_plan["id"]]["responsible_person_name"] == test_assignee.name
+
+    maintenance_resp = await auth_client.post(
+        "/api/v1/equipment/maintenance/plans/",
+        json={
+            "equipment_id": equipment_id,
+            "plan_name": f"测试保养计划-{_uid()}",
+            "frequency": 1,
+            "frequency_unit": "月",
+            "responsible_person_id": person_id,
+        },
+    )
+    assert maintenance_resp.status_code == 200
+    maintenance_plan = maintenance_resp.json()["data"]
+    assert maintenance_plan["responsible_person_id"] == person_id
+    assert maintenance_plan["responsible_person_name"] == test_assignee.name
+
+    maintenance_list = await auth_client.get("/api/v1/equipment/maintenance/plans/")
+    listed_plans = {item["id"]: item for item in maintenance_list.json()["data"]}
+    assert listed_plans[maintenance_plan["id"]]["responsible_person_name"] == test_assignee.name

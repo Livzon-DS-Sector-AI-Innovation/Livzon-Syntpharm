@@ -1,0 +1,130 @@
+/* ============================================================
+   模块配置页：区域（区块）统一规范
+   区域 = 一张带标题栏的卡片。标题栏统一浅紫底 + 左 3px 主色竖条 +
+   底部分隔线，区域之间统一 20px 间距；操作按钮一律放在标题栏下方，
+   不进标题栏右侧。
+   本文件只由 ModuleSettingsTabs 引入，样式全部挂在 .settings-scope 下，
+   不进入 globals.css，也不影响其他页面。
+   ============================================================ */
+
+.settings-scope {
+  /* 区域标题：文字主色深紫，标题栏底色主色同色系浅紫（非中性灰） */
+  --color-region-head: #e6e0f5;
+  --color-region-head-soft: #f1edfb;
+  --color-region-head-accent: #c9bff0;
+}
+
+/* 区域纵向堆叠容器 */
+.settings-scope .settings-region-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 自定义结构的区域（div 版） */
+.settings-scope .settings-region {
+  background: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.settings-scope .settings-region-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 16px;
+  background: var(--color-region-head);
+  border-left: 3px solid var(--color-primary);
+  border-bottom: 1px solid var(--color-hairline);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-primary-deep);
+}
+
+.settings-scope .settings-region-body {
+  padding: 16px;
+}
+
+/* antd Card 形态的区域：Card 头即区域标题栏 */
+.settings-scope .settings-region-card {
+  border: 1px solid var(--color-hairline);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.settings-scope .settings-region-card > .ant-card-head {
+  min-height: 44px;
+  padding: 0 16px;
+  background: var(--color-region-head);
+  border-left: 3px solid var(--color-primary);
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.settings-scope .settings-region-card > .ant-card-head .ant-card-head-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-primary-deep);
+}
+
+/* 区域内部的次级分组标题（不单独成卡） */
+.settings-scope .settings-subregion-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 12px;
+  padding: 6px 12px;
+  background: var(--color-region-head-soft);
+  border-left: 3px solid var(--color-region-head-accent);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* antd Collapse 形态的区域（运行配置页签）：每个分组一张卡 */
+.settings-scope .settings-region-collapse.ant-collapse {
+  background: transparent;
+  border: 0;
+}
+
+.settings-scope .settings-region-collapse > .ant-collapse-item {
+  margin-bottom: 20px;
+  background: var(--color-canvas);
+  border: 1px solid var(--color-hairline) !important;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.settings-scope .settings-region-collapse > .ant-collapse-item:last-child {
+  margin-bottom: 0;
+}
+
+.settings-scope .settings-region-collapse > .ant-collapse-item > .ant-collapse-header {
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 16px;
+  background: var(--color-region-head);
+  border-left: 3px solid var(--color-primary);
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.settings-scope .settings-region-collapse > .ant-collapse-item > .ant-collapse-content {
+  border-top: 0;
+}
+
+.settings-scope .settings-region-collapse > .ant-collapse-item > .ant-collapse-content > .ant-collapse-content-box {
+  padding: 12px 16px 16px;
+}
+
+/* antd Tabs 形态的区域（人员配置页签）：页签栏即区域标题栏 */
+.settings-scope .settings-region-tabs > .ant-tabs-nav {
+  margin: 0;
+  padding: 0 16px;
+  background: var(--color-region-head);
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.settings-scope .settings-region-tabs > .ant-tabs-content-holder {
+  padding: 16px;
+}

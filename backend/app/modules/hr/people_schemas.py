@@ -14,6 +14,7 @@ class EmployeeProfileListItem(BaseModel):
     id: str
     open_id: str
     name: str
+    is_current: bool = True
     avatar_url: str = ""
     department_ids: list[str] = Field(default_factory=list)
     department_names: list[str] = Field(default_factory=list)
@@ -43,6 +44,8 @@ class EmployeeProfileDetail(BaseModel):
     id: str
     open_id: str
     name: str
+    is_current: bool = True
+    removed_at: datetime | None = None
     mobile: str = ""
     email: str = ""
     enterprise_email: str = ""

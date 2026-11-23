@@ -81,15 +81,33 @@ class UserResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class RoleBrief(BaseModel):
+    """用户列表「角色」列用：角色名 + 所属模块。"""
+
+    id: UUID
+    name: str
+    module_code: str | None = None
+    module_name: str | None = None
+
+
 class UserManagementItem(UserResponse):
-    status: str = "active"  # 用户状态（active / disabled）；用户管理列表的「状态」列依赖该字段
+    status: str = "active"  # 账号状态（active / disabled）；与「是否在职」是两个概念
     last_login_at: str | None = None
     password_updated_at: str | None = None  # 密码最后修改时间（管理员重置后更新）
-    created_at: str | None = None  # 账号创建时间（用户管理列表的「创建时间」列）
+    created_at: str | None = None  # 账号创建时间（保留在编辑弹窗中展示）
     # 有效角色名列表（来自权限管理的授权，非 User.role 之类的历史字段）
+    # 兼容保留：编辑弹窗等处按名称展示
     roles: list[str] = Field(default_factory=list)
+    # 带模块信息的角色明细（用户管理列表的「角色」列据此渲染标签 + 模块提示）
+    role_details: list[RoleBrief] = Field(default_factory=list)
     # 是否超级管理员：列表多选批量操作时前端据此禁用复选框（后端仍会逐条校验）
     is_superuser: bool = False
+    # ── 以下字段实时取自 HR 员工档案（按 feishu_open_id 匹配，不落库）──
+    # 是否匹配到 HR 档案；未匹配时前端显示「未建档案」，不给在职结论
+    has_profile: bool = False
+    # 在职口径：active = 在册（hr.employee_profiles.is_current=true）；left = 已移出
+    employment_status: Literal["active", "left"] | None = None
+    employment_label: str = ""
 
     @field_validator("last_login_at", "password_updated_at", "created_at", mode="before")
     @classmethod
@@ -130,6 +148,23 @@ class UserBatchStatusApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: UserBatchStatusData
+
+
+class UserBatchDeleteRequest(BaseModel):
+    """批量删除账号（仅超级管理员可用）。"""
+
+    user_ids: list[UUID] = Field(..., min_length=1, max_length=100, description="单次最多 100 个账号")
+
+
+class UserBatchDeleteData(BaseModel):
+    succeeded: list[UUID] = Field(default_factory=list)
+    failed: list[UserBatchFailure] = Field(default_factory=list)
+
+
+class UserBatchDeleteApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: UserBatchDeleteData
 
 
 # 登录用户名字符集：字母开头 + 字母数字。
@@ -563,6 +598,31 @@ class UserManagementListApiResponse(BaseModel):
     data: UserManagementListResponse
 
 
+# ── 人员下拉（选人组件专用，系统用户口径）────────────────────────────
+
+
+class UserLookupItem(BaseModel):
+    """选人组件的一行：只含展示字段，不含手机号/邮箱等敏感信息。"""
+
+    id: UUID
+    name: str
+    username: str | None = None
+    department: str | None = None
+    position: str | None = None
+    avatar_url: str | None = None
+
+
+class UserLookupListResponse(BaseModel):
+    items: list[UserLookupItem] = Field(default_factory=list)
+    total: int = 0
+
+
+class UserLookupListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: UserLookupListResponse
+
+
 class UserBindFeishuData(UserManagementItem):
     """绑定飞书结果：UserManagementItem + 授权迁移计数。"""
 
@@ -650,14 +710,17 @@ class SyncAllTriggerApiResponse(BaseModel):
     data: SyncAllTriggerData
 
 
-class SyncUserInfoTriggerData(BaseModel):
-    """「同步飞书用户信息」触发结果（后台执行，留意 later 到用户列表刷新）。"""
+class EnsureIdentityUserRequest(BaseModel):
+    """按 HR 员工档案预建（或复用）平台账号。"""
 
-    status: str
-    message: str
+    employee_profile_id: UUID = Field(..., description="hr.employee_profiles.id")
 
 
-class SyncUserInfoTriggerApiResponse(BaseModel):
+class EnsureIdentityUserData(BaseModel):
+    user_id: UUID
+
+
+class EnsureIdentityUserApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
-    data: SyncUserInfoTriggerData
+    data: EnsureIdentityUserData

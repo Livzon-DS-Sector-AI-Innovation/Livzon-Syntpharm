@@ -6,6 +6,7 @@ import {
   Alert,
   App,
   Button,
+  Empty,
   Form,
   Input,
   Modal,
@@ -24,6 +25,7 @@ import {
   deleteRole,
   fetchPermissionTree,
   fetchRoles,
+  resetRoleToDefault,
   updateRole,
 } from '@/actions/permission'
 import PermissionTreePanel from './PermissionTreePanel'
@@ -38,21 +40,13 @@ const categoryOptions = [
   { value: 'module', label: '模块角色' },
 ]
 
-// 模块角色的编码档位（与后端 registry 的 MODULE_ROLE_ACTIONS 对齐）
-const suffixOptions = [
-  { value: 'admin', label: '管理员（admin）' },
-  { value: 'operator', label: '操作员（operator）' },
-  { value: 'approver', label: '审批员（approver）' },
-  { value: 'viewer', label: '只读（viewer）' },
-]
-
 export default function RoleManagementClient() {
   const { message } = App.useApp()
 
   // 权限：无「角色管理」权限时隐藏全部写操作入口
   // （前端隐藏只是体验优化，后端 require_permission 仍会拦截绕过前端的调用）
   // 注意：必须放在任何 early return 之前
-  const { can, loading: permissionLoading } = usePermission()
+  const { can, isSuperuser, loading: permissionLoading } = usePermission()
   const canManage = !permissionLoading && can(PERM.roleManage)
   const queryClient = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
@@ -67,12 +61,10 @@ export default function RoleManagementClient() {
   const [form] = Form.useForm()
 
   const category = Form.useWatch('category', form)
-  const moduleCode = Form.useWatch('module_code', form)
-  const suffix = Form.useWatch('code_suffix', form)
 
   const { data: roles = [], isLoading, error: rolesError } = useQuery({
     queryKey: ['permission-roles'],
-    queryFn: fetchRoles,
+    queryFn: () => fetchRoles(),
   })
 
   const { data: treeData, isLoading: treeLoading, error: treeError } = useQuery({
@@ -115,8 +107,8 @@ export default function RoleManagementClient() {
       )
     : roles
 
-  // 内置角色 / 超管：权限由代码注册表决定，界面只读
-  const permissionsReadonly = Boolean(editing && (editing.is_builtin || editing.is_superuser))
+  // 系统管理员角色永远只读；内置角色允许系统管理员编辑（编辑后转为「手工接管」）
+  const permissionsReadonly = Boolean(editing && (editing.is_superuser || (editing.is_builtin && !isSuperuser)))
 
   const handleOpen = (record: RoleDetail | null) => {
     setEditing(record)
@@ -152,8 +144,8 @@ export default function RoleManagementClient() {
         message.success('角色已更新')
       } else {
         const isModuleRole = values.category === 'module'
+        // 角色编码由后端自动生成（{模块}:role-NNN / platform:role-NNN），界面不填
         const payload: RoleCreateInput = {
-          code: isModuleRole ? `${values.module_code}:${values.code_suffix}` : values.code,
           name: values.name,
           category: values.category,
           module_code: isModuleRole ? values.module_code : null,
@@ -172,6 +164,16 @@ export default function RoleManagementClient() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleResetDefault = async (record: RoleDetail) => {
+    const result = await resetRoleToDefault(record.id)
+    if (!result.ok) {
+      message.error(result.message)
+      return
+    }
+    message.success('已恢复为默认权限，并重新纳入自动同步')
+    queryClient.invalidateQueries({ queryKey: ['permission-roles'] })
   }
 
   const handleDelete = async (record: RoleDetail) => {
@@ -286,6 +288,17 @@ export default function RoleManagementClient() {
                 <Button size="small" onClick={() => handleOpen(record)}>
                   编辑
                 </Button>
+                {record.is_builtin && isSuperuser && (
+                  <Popconfirm
+                    title="恢复默认权限？"
+                    description="将按代码注册表重建该角色的权限，并重新纳入自动同步。"
+                    okText="恢复"
+                    cancelText="取消"
+                    onConfirm={() => handleResetDefault(record)}
+                  >
+                    <Button size="small">恢复默认</Button>
+                  </Popconfirm>
+                )}
                 {!record.is_builtin && (
                   <Popconfirm title="确认删除该角色？" onConfirm={() => handleDelete(record)}>
                     <Button size="small" danger>
@@ -305,7 +318,7 @@ export default function RoleManagementClient() {
       <div>
         <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">角色管理</h2>
         <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
-          角色编码由「模块 + 档位」生成（也可手填平台角色编码），权限在目录树上勾选；内置角色只剩超级管理员，不可删除。
+          新建角色只填名称与权限，<b>编码由系统自动生成</b>；内置角色（模块负责人 / 模块代表）可由系统管理员手工调整权限，调整后将不再自动同步，可随时「恢复默认」。
         </p>
       </div>
 
@@ -358,6 +371,14 @@ export default function RoleManagementClient() {
             showSizeChanger: true,
             showTotal: (t) => `共 ${t} 条`,
           }}
+          locale={{
+            emptyText:
+              roles.length > 0 ? (
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="没有匹配的角色，换个关键词试试" />
+              ) : (
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="还没有角色，先新建一个再授权" />
+              ),
+          }}
         />
       </SettingsListCard>
 
@@ -405,7 +426,7 @@ export default function RoleManagementClient() {
                   options={categoryOptions}
                   onChange={(value) => {
                     if (value === 'platform') {
-                      form.setFieldsValue({ module_code: undefined, code_suffix: undefined })
+                      form.setFieldsValue({ module_code: undefined })
                     }
                   }}
                 />
@@ -426,32 +447,8 @@ export default function RoleManagementClient() {
                       optionFilterProp="label"
                     />
                   </Form.Item>
-                  <Form.Item
-                    name="code_suffix"
-                    label="角色档位"
-                    rules={[{ required: true, message: '请选择档位' }]}
-                    style={{ width: '100%', maxWidth: 200 }}
-                  >
-                    <Select options={suffixOptions} placeholder="选择档位" />
-                  </Form.Item>
-                  <Form.Item label="角色编码（自动生成）" style={{ width: '100%', maxWidth: 260 }}>
-                    <Input
-                      value={moduleCode && suffix ? `${moduleCode}:${suffix}` : ''}
-                      disabled
-                      placeholder="选择模块与档位后生成"
-                    />
-                  </Form.Item>
                 </Space>
-              ) : (
-                <Form.Item
-                  name="code"
-                  label="角色编码"
-                  rules={[{ required: true, message: '请输入角色编码' }]}
-                  extra="平台角色编码无固定规律，如 permission_admin"
-                >
-                  <Input placeholder="如 permission_admin" />
-                </Form.Item>
-              )}
+              ) : null}
             </>
           )}
 

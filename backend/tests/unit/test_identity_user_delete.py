@@ -8,12 +8,14 @@
 """
 
 import uuid
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
 from app.core.exceptions import ForbiddenException
 from app.platform.identity import api as identity_api
+from app.platform.identity import service as identity_service
 from app.platform.identity.api import delete_user_management
 from app.platform.identity.models import User
 from app.platform.identity.repository import UserRepository
@@ -60,7 +62,14 @@ def _ctx(operator: User) -> PermissionContext:
     return PermissionContext(user=operator, permission_code="platform:user:manage", is_superuser=True)
 
 
-def _patch(monkeypatch: pytest.MonkeyPatch, *, repo: StubRepo, actor_is_superuser: bool, super_ids: list[Any]):
+def _patch(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    repo: StubRepo,
+    actor_is_superuser: bool,
+    super_ids: list[Any],
+    bootstrap_admin: str = "",
+):
     """接管权限判定、审计、授权清理与会话吊销（删除端点内部为局部 import，patch 模块属性生效）。"""
     audits: list[dict[str, Any]] = []
     calls: dict[str, Any] = {"revoked_grants": 0, "revoked_sessions": 0, "grant_user": None, "session_user": None}
@@ -88,6 +97,11 @@ def _patch(monkeypatch: pytest.MonkeyPatch, *, repo: StubRepo, actor_is_superuse
     monkeypatch.setattr("app.platform.permission.public_api.list_superuser_user_ids", fake_list_super_ids)
     monkeypatch.setattr("app.platform.permission.public_api.revoke_all_user_grants", fake_revoke_grants)
     monkeypatch.setattr("app.platform.identity.session.revoke_all_user_sessions", fake_revoke_sessions)
+    monkeypatch.setattr(
+        identity_service,
+        "get_settings",
+        lambda: SimpleNamespace(BOOTSTRAP_ADMIN_USERNAME=bootstrap_admin, BOOTSTRAP_USER_USERNAME=""),
+    )
 
     calls["audits"] = audits
     return calls
@@ -174,8 +188,39 @@ async def test_delete_rejects_last_superuser(monkeypatch: pytest.MonkeyPatch) ->
     with pytest.raises(ForbiddenException) as exc:
         await delete_user_management(target.id, ctx=_ctx(operator), db=StubSession())
 
-    assert "最后一个超级管理员" in str(exc.value)
+    assert "至少保留 2 名" in str(exc.value)
     assert repo.deleted == []
+
+
+async def test_delete_rejects_when_only_two_superusers(monkeypatch: pytest.MonkeyPatch) -> None:
+    """TC-007 回归：2 名超管时删掉 1 名会让系统只剩 1 名，必须在删除前拦住。"""
+    operator = _make_user(username="root")
+    target = _make_user(username="root2")
+    repo = StubRepo(target)
+    _patch(monkeypatch, repo=repo, actor_is_superuser=True, super_ids=[operator.id, target.id])
+
+    with pytest.raises(ForbiddenException) as exc:
+        await delete_user_management(target.id, ctx=_ctx(operator), db=StubSession())
+
+    assert "至少保留 2 名" in str(exc.value)
+    assert repo.deleted == []
+
+
+async def test_delete_allows_when_more_than_minimum_superusers(monkeypatch: pytest.MonkeyPatch) -> None:
+    """3 名超管删 1 名后仍剩 2 名 → 允许。"""
+    operator = _make_user(username="root")
+    target = _make_user(username="root2")
+    repo = StubRepo(target)
+    _patch(
+        monkeypatch,
+        repo=repo,
+        actor_is_superuser=True,
+        super_ids=[operator.id, target.id, uuid.uuid4()],
+    )
+
+    await delete_user_management(target.id, ctx=_ctx(operator), db=StubSession())
+
+    assert repo.deleted == [(target.id, operator.id)]
 
 
 async def test_delete_rejects_system_admin_account(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -189,3 +234,47 @@ async def test_delete_rejects_system_admin_account(monkeypatch: pytest.MonkeyPat
 
     assert "系统内置账号" in str(exc.value)
     assert repo.deleted == []
+
+
+async def test_delete_rejects_bootstrap_admin_username(monkeypatch: pytest.MonkeyPatch) -> None:
+    """引导账号被软删后用户名不释放，删除会让下次启动撞唯一键 → 必须 403。"""
+    operator = _make_user(username="root")
+    target = _make_user(username="admin")
+    repo = StubRepo(target)
+    _patch(monkeypatch, repo=repo, actor_is_superuser=True, super_ids=[operator.id], bootstrap_admin="admin")
+
+    with pytest.raises(ForbiddenException) as exc:
+        await delete_user_management(target.id, ctx=_ctx(operator), db=StubSession())
+
+    assert "引导账号不允许删除，请在部署配置中调整 BOOTSTRAP_* 后再操作" in str(exc.value)
+    assert repo.deleted == []
+
+
+async def test_delete_rejects_bootstrap_username_case_and_space(monkeypatch: pytest.MonkeyPatch) -> None:
+    operator = _make_user(username="root")
+    target = _make_user(username=" Admin ")
+    repo = StubRepo(target)
+    _patch(monkeypatch, repo=repo, actor_is_superuser=True, super_ids=[operator.id], bootstrap_admin="admin")
+
+    with pytest.raises(ForbiddenException):
+        await delete_user_management(target.id, ctx=_ctx(operator), db=StubSession())
+
+    assert repo.deleted == []
+
+
+async def test_delete_allows_when_bootstrap_config_differs(monkeypatch: pytest.MonkeyPatch) -> None:
+    """护栏读 .env 配置，不是硬编码 admin：配置不同名时 admin 仍可删。"""
+    operator = _make_user(username="root")
+    target = _make_user(username="admin")
+    repo = StubRepo(target)
+    _patch(
+        monkeypatch,
+        repo=repo,
+        actor_is_superuser=True,
+        super_ids=[operator.id, target.id, uuid.uuid4()],
+        bootstrap_admin="newadmin",
+    )
+
+    await delete_user_management(target.id, ctx=_ctx(operator), db=StubSession())
+
+    assert repo.deleted == [(target.id, operator.id)]

@@ -19,6 +19,7 @@ import {
 } from 'antd'
 import { EyeOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import {
+  batchCreateGrants,
   batchDeleteGrants,
   batchUpdateGrantStatus,
   createGrant,
@@ -29,11 +30,11 @@ import {
   fetchUserPreview,
   updateGrant,
 } from '@/actions/permission'
-import type { BatchResult, DepartmentOption, GrantCreateInput, GrantItem, ScopeType } from '@/types/permission'
+import type { BatchResult, DepartmentOption, GrantItem, ScopeType } from '@/types/permission'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
 import { UserLabel } from '@/components/common/UserAvatar'
-import { RemoteUserSelect } from '@/components/common/RemoteUserSelect'
+import { PersonMultiSelect, PersonSelect } from '@/components/common/PersonSelect'
 import { SettingsListCard } from './SettingsListCard'
 import { BatchActionBar, BatchDeleteConfirmModal, BatchResultModal } from './BatchOperations'
 import { moduleMenus } from '@/lib/menu-config'
@@ -82,11 +83,11 @@ export default function GrantManagementClient() {
 
   const { data: roles = [] } = useQuery({
     queryKey: ['permission-roles'],
-    queryFn: fetchRoles,
+    queryFn: () => fetchRoles(),
   })
 
   // 用户下拉不再一次性全量拉取（旧实现写死 limit=100，523 个账号里大半选不到），
-  // 改由 RemoteUserSelect 分页 + 服务端搜索按需取数。
+  // 改由 PersonSelect 分页 + 服务端搜索按需取数。
   const { data: departments = [] } = useQuery<DepartmentOption[]>({
     queryKey: ['permission-department-options'],
     queryFn: fetchDepartmentOptions,
@@ -95,7 +96,13 @@ export default function GrantManagementClient() {
 
   const departmentOptions = departments.map((d) => ({ value: d.code, label: `${d.name}（${d.code}）` }))
 
-  const roleOptions = roles.map((r) => ({ value: r.id, label: `${r.name}（${r.code}）` }))
+  // 模块代表只能由本模块负责人在「模块配置 → 权限管理」指派；
+  // 系统权限管理页只读展示，不允许在这里新增/移除（TC-014）。
+  const roleOptions = roles.map((r) => ({
+    value: r.id,
+    label: r.role_type === 'delegate' ? `${r.name}（${r.code}，由模块负责人指派）` : `${r.name}（${r.code}）`,
+    disabled: r.role_type === 'delegate',
+  }))
 
   // 生效预览：选定用户后拉其权限，算出可见模块/页面
   const { data: previewData } = useQuery({
@@ -126,7 +133,7 @@ export default function GrantManagementClient() {
   const handleCreate = () => {
     setEditing(null)
     form.resetFields()
-    form.setFieldsValue({ scope_type: 'all', scope_dept_codes: [] })
+    form.setFieldsValue({ user_ids: [], scope_type: 'all', scope_dept_codes: [] })
     setLimitScope(false)
     setModalOpen(true)
   }
@@ -151,7 +158,8 @@ export default function GrantManagementClient() {
   const handleSave = async () => {
     try {
       const values = (await form.validateFields()) as {
-        user_id: string
+        user_id?: string
+        user_ids?: string[]
         role_ids: string[]
         scope_type: ScopeType
         scope_dept_codes: string[]
@@ -168,8 +176,13 @@ export default function GrantManagementClient() {
         const currentRoleIds = new Set(userGrants.map((g) => g.role_id))
         const picked = new Set(values.role_ids ?? [])
 
+        const isDelegateRole = (roleId: string) => roles.find((r) => r.id === roleId)?.role_type === 'delegate'
         const toAdd = [...picked].filter((id) => !currentRoleIds.has(id))
-        const toRemove = userGrants.filter((g) => !picked.has(g.role_id))
+        // 模块代表不在本页移除：取消勾选时保持原授权，由模块负责人在模块配置页处理
+        const toRemove = userGrants.filter((g) => !picked.has(g.role_id) && !isDelegateRole(g.role_id))
+        if (userGrants.some((g) => !picked.has(g.role_id) && isDelegateRole(g.role_id))) {
+          message.warning('模块代表不在本页移除，请到对应模块的「模块配置 → 权限管理」由负责人处理')
+        }
         const toKeep = userGrants.filter((g) => picked.has(g.role_id))
 
         const roleNameOf = (id: string) => roles.find((r) => r.id === id)?.name ?? id
@@ -230,43 +243,29 @@ export default function GrantManagementClient() {
           message.success(`已保存（${summary}）`)
         }
       } else {
-        // 一次可授多个角色：逐个创建；该用户已拥有的角色自动跳过
-        const picked = values.role_ids ?? []
-        const ownedRoleIds = new Set(
-          grants.filter((g) => g.user_id === values.user_id && g.status === 'active').map((g) => g.role_id),
-        )
-        const roleIds = picked.filter((id) => !ownedRoleIds.has(id))
-        const skipped = picked.length - roleIds.length
-
-        let created = 0
-        const failures: string[] = []
-        for (const roleId of roleIds) {
-          const payload: GrantCreateInput = {
-            user_id: values.user_id,
-            role_id: roleId,
-            scope_type: scopeTypeValue,
-            scope_dept_codes: scopeCodes,
-          }
-          try {
-            await createGrant(payload)
-            created += 1
-          } catch (error) {
-            const roleName = roles.find((r) => r.id === roleId)?.name ?? roleId
-            failures.push(`${roleName}：${error instanceof Error ? error.message : '创建失败'}`)
-          }
-        }
-
-        if (created === 0 && failures.length > 0) {
-          // 全部失败：保留弹窗方便调整
-          message.error(`授权创建失败：${failures.join('；')}`)
+        // 批量授权：多用户 × 多角色一次提交；已拥有的组合由后端幂等跳过
+        const result = await batchCreateGrants({
+          user_ids: values.user_ids ?? [],
+          role_ids: values.role_ids ?? [],
+          scope_type: scopeTypeValue,
+          scope_dept_codes: scopeCodes,
+        })
+        if (!result.ok) {
+          message.error(result.message)
           return
         }
-        if (failures.length > 0) {
-          message.warning(`已创建 ${created} 个授权；失败 ${failures.length} 个：${failures.join('；')}`)
-        } else if (skipped > 0) {
-          message.success(`已创建 ${created} 个授权（${skipped} 个角色该用户已拥有，已跳过）`)
-        } else {
-          message.success(`已创建 ${created} 个授权`)
+        if (!result.data.succeeded.length && result.data.failed.length) {
+          // 全部失败：保留弹窗方便调整（失败原因逐条列出）
+          message.error(
+            `授权创建失败：${result.data.failed
+              .map((item) => `${item.label || item.key}：${item.reason}`)
+              .join('；')}`,
+          )
+          return
+        }
+        setBatchResult(result.data)
+        if (!result.data.failed.length) {
+          message.success(`已处理 ${result.data.succeeded.length} 条授权（已拥有的角色不重复创建）`)
         }
       }
       setModalOpen(false)
@@ -403,7 +402,7 @@ export default function GrantManagementClient() {
       <div>
         <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">授权管理</h2>
         <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
-          给用户发角色，他就拥有该角色的全部权限；一次可选择多个角色。默认不限制可见数据；需要限制时勾选「限制可见数据」。
+          给用户发角色，他就拥有该角色的全部权限；新建授权可一次选多个用户、多个角色。默认不限制可见数据；需要限制时勾选「限制可见数据」。
         </p>
       </div>
 
@@ -475,7 +474,7 @@ export default function GrantManagementClient() {
       />
 
       <Modal
-        title={editing ? '编辑该用户的角色授权' : '新建授权'}
+        title={editing ? '编辑该用户的角色授权' : '批量授权'}
         open={modalOpen}
         onOk={handleSave}
         onCancel={() => setModalOpen(false)}
@@ -496,18 +495,18 @@ export default function GrantManagementClient() {
             </>
           ) : (
             <Form.Item
-              name="user_id"
-              label="用户"
+              name="user_ids"
+              label="用户（可多选）"
               rules={[{ required: true, message: '请选择用户' }]}
-              style={{ width: '100%', maxWidth: 320 }}
-              // 组件回传 { id, name }，表单里只存 id：授权接口只认 id，姓名由组件内部快照回显
-              getValueFromEvent={(person: { id: string } | null) => person?.id}
+              style={{ width: '100%', maxWidth: 420 }}
+              // 组件回传 { id, name } 数组，表单里只存 id 数组：授权接口只认 id
+              getValueFromEvent={(persons: { id: string }[] | undefined) => (persons ?? []).map((p) => p.id)}
             >
-              <RemoteUserSelect
+              <PersonMultiSelect
                 // 授权要覆盖未绑定飞书的本地账号，故不限制 feishu_bound_only
                 feishuBoundOnly={false}
                 showUsername
-                placeholder="搜索姓名或账号选择用户"
+                placeholder="搜索姓名，可一次选多个用户"
               />
             </Form.Item>
           )}
@@ -525,6 +524,9 @@ export default function GrantManagementClient() {
               placeholder="可一次选择多个角色"
             />
           </Form.Item>
+          <Text type="secondary" className="block -mt-2 mb-4 text-[12px]">
+            模块代表由模块配置页的模块负责人指派；本页只读展示，不能新增或移除。
+          </Text>
           <Form.Item
             label="可见数据"
             extra="默认不限制（能看全部数据）。该限制会在各业务模块接入数据权限后生效。"
@@ -579,7 +581,7 @@ export default function GrantManagementClient() {
         footer={null}
         width="min(560px, calc(100vw - 24px))"
       >
-        <RemoteUserSelect
+        <PersonSelect
           allowClear
           feishuBoundOnly={false}
           showUsername

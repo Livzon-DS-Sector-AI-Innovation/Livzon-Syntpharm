@@ -422,31 +422,11 @@ export type InspectionTemplateItem = InspectionTemplateItemResponse
 
 /**
  * Maintenance plan response
+ *
+ * 契约字段直接取生成类型（后端 `DataResponse[MaintenancePlanResponse]`），不再手写。
+ * 原手写字段 `executor_id` → `responsible_person_id` 的改名曾需要手工同步两处，现已收敛到 OpenAPI。
  */
-export interface MaintenancePlanResponse {
-  id: string
-  equipment_id: string | null
-  category_id: string | null
-  category_name?: string | null
-  plan_name: string
-  plan_type: string
-  frequency: number
-  frequency_unit: string
-  last_maintenance_date: string | null
-  next_maintenance_date: string | null
-  executor_id: string | null
-  executor_name?: string | null
-  responsible_person_id: string | null
-  maintenance_content: string | null
-  status: string
-  remark: string | null
-  created_at: string
-  updated_at: string
-  created_by: string | null
-  updated_by: string | null
-  equipment_name?: string
-  asset_no?: string
-}
+export type MaintenancePlanResponse = components['schemas']['MaintenancePlanResponse']
 
 /**
  * Maintenance plan filters

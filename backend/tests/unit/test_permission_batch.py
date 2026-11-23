@@ -17,6 +17,7 @@ from app.platform.permission import api as permission_api
 from app.platform.permission.api import batch_delete_grants, batch_delete_roles, batch_grant_status, batch_role_status
 from app.platform.permission.models import Role, UserRoleGrant
 from app.platform.permission.public_api import PermissionContext
+from app.platform.permission.service.delegation import ModuleScope
 
 
 class StubResult:
@@ -107,8 +108,17 @@ def _patch(monkeypatch: pytest.MonkeyPatch, *, role_repo: Any = None, grant_repo
     async def fake_get_role(db: Any, role_id: Any) -> None:
         return None
 
+    async def fake_resolve_scope(db: Any, user: Any) -> ModuleScope:
+        return ModuleScope(
+            user_id=user.id,
+            is_system_admin=True,
+            modules=frozenset(),
+            owner_modules=frozenset(),
+        )
+
     monkeypatch.setattr(permission_api, "guard_self_escalation", lambda actor_id, grant: None)
     monkeypatch.setattr(permission_api, "get_role", fake_get_role)
+    monkeypatch.setattr(permission_api, "resolve_module_scope", fake_resolve_scope)
 
     if role_repo is not None:
         monkeypatch.setattr(permission_api, "RoleRepository", lambda: role_repo)
@@ -275,3 +285,44 @@ async def test_grant_batch_delete_marks_deleted(monkeypatch: pytest.MonkeyPatch)
     assert grant.is_deleted is True
     assert holder["audits"][0]["action"] == "grant.delete"
     assert session.flushes == 1
+
+
+# ── 模块代表：批量停用不能绕过「只有负责人可移除」（TC-014）─────────
+
+
+async def test_grant_batch_status_rejects_delegate_for_non_owner(monkeypatch: pytest.MonkeyPatch) -> None:
+    target = type("U", (), {})()
+    target.id = uuid.uuid4()
+    grant = _grant(user_id=target.id)
+    role = Role(
+        code="quality:delegate",
+        name="质量管理代表",
+        status="active",
+        role_type="delegate",
+        module_code="quality",
+        is_builtin=True,
+    )
+    role.id = grant.role_id
+    role.is_superuser = False
+    repo = StubGrantRepo([grant])
+    _patch(monkeypatch, grant_repo=repo)
+
+    async def fake_get_role(db: Any, role_id: Any) -> Role | None:
+        return role if role_id == role.id else None
+
+    async def allow(*args: Any, **kwargs: Any) -> None:
+        return None
+
+    monkeypatch.setattr(permission_api, "get_role", fake_get_role)
+    monkeypatch.setattr(permission_api, "guard_manage_target", allow)
+    monkeypatch.setattr(permission_api, "guard_last_superadmin", allow)
+
+    resp = await batch_grant_status(
+        permission_api.StatusBatchRequest(ids=[grant.id], status="disabled"),
+        ctx=_ctx(),
+        db=StubSession(target_user=target),
+    )
+
+    assert resp.data["succeeded"] == []
+    assert "只有本模块负责人可以指派或移除模块代表" in resp.data["failed"][0]["reason"]
+    assert grant.status == "active"

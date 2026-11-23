@@ -7,7 +7,7 @@
  */
 import type { components } from '@/types/generated/schema'
 import type { BatchResult } from '@/types/batch'
-import type { UserBatchStatusResult } from '@/types/users'
+import type { UserBatchDeleteResult, UserBatchStatusResult } from '@/types/users'
 
 export function normalizeBatchResult(
   data: components['schemas']['app__platform__permission__schemas__BatchResultData'] | null | undefined,
@@ -18,5 +18,11 @@ export function normalizeBatchResult(
 export function normalizeUserBatchStatus(
   data: components['schemas']['UserBatchStatusData'] | null | undefined,
 ): UserBatchStatusResult {
+  return { succeeded: data?.succeeded ?? [], failed: data?.failed ?? [] }
+}
+
+export function normalizeUserBatchDelete(
+  data: components['schemas']['UserBatchDeleteData'] | null | undefined,
+): UserBatchDeleteResult {
   return { succeeded: data?.succeeded ?? [], failed: data?.failed ?? [] }
 }

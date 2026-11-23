@@ -5,12 +5,15 @@
 """
 
 import uuid
+from dataclasses import dataclass
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import ForbiddenException
 from app.platform.identity.models import User
 from app.platform.permission.cache import evict_user_permission_cache
+from app.platform.permission.constants import MIN_ACTIVE_SUPERADMINS
 from app.platform.permission.repository import GrantRepository
 from app.platform.permission.service.authorization import (
     PermissionContext,
@@ -26,8 +29,39 @@ async def user_is_superuser(db: AsyncSession, user: User) -> bool:
 
 
 async def list_superuser_user_ids(db: AsyncSession) -> list[uuid.UUID]:
-    """所有超管用户 id（用户管理列表对非超管隐藏这些账号时使用）。"""
+    """所有生效超管用户 id（已删除 / 已停用账号不计入）。
+
+    用户管理列表对非超管隐藏这些账号；identity 侧删除账号也用它判断
+    「移除后是否仍有足够超管」。
+    """
     return await GrantRepository().list_superuser_user_ids(db)
+
+
+async def count_active_superusers(db: AsyncSession) -> int:
+    """生效超管数量（口径与 list_superuser_user_ids 一致）。"""
+    return await GrantRepository().count_active_superusers(db)
+
+
+async def assert_superadmin_removal_allowed(db: AsyncSession, target_user_id: uuid.UUID) -> None:
+    """删除超管账号前校验：移除后仍须保留 `MIN_ACTIVE_SUPERADMINS` 名生效超管。
+
+    与撤销超管授权（`guard_last_superadmin`）同一口径。此前 identity 侧只判断
+    「是否最后一名」，导致 2 名超管时能删掉 1 名、把系统降到 1 名（TC-007）。
+    """
+    super_ids = await list_superuser_user_ids(db)
+    if target_user_id in super_ids and len(super_ids) <= MIN_ACTIVE_SUPERADMINS:
+        raise ForbiddenException(f"系统管理员至少保留 {MIN_ACTIVE_SUPERADMINS} 名，无法删除该账号")
+
+
+async def assert_superadmin_disable_allowed(db: AsyncSession, target_user_id: uuid.UUID) -> None:
+    """停用超管账号前校验：停用后仍须保留 `MIN_ACTIVE_SUPERADMINS` 名生效超管。
+
+    计数口径已排除已停用账号，因此停用与删除共用同一套判定；按钮上的「禁用」
+    此前绕过保底，导致 2 名超管时禁用 1 名即可把系统降到 1 名（TC-007）。
+    """
+    super_ids = await list_superuser_user_ids(db)
+    if target_user_id in super_ids and len(super_ids) <= MIN_ACTIVE_SUPERADMINS:
+        raise ForbiddenException(f"系统管理员至少保留 {MIN_ACTIVE_SUPERADMINS} 名，无法停用该账号")
 
 
 async def get_role_names_by_user_ids(
@@ -57,6 +91,42 @@ async def get_role_names_by_user_ids(
     result: dict[uuid.UUID, list[str]] = {}
     for user_id, role_name in rows:
         result.setdefault(user_id, []).append(role_name)
+    return result
+
+
+@dataclass(frozen=True)
+class RoleBriefData:
+    """角色简要信息（跨模块消费用，避免暴露 permission 的 ORM 模型）。"""
+
+    id: uuid.UUID
+    name: str
+    module_code: str | None
+
+
+async def get_role_briefs_by_user_ids(
+    db: AsyncSession,
+    user_ids: list[uuid.UUID],
+) -> dict[uuid.UUID, list[RoleBriefData]]:
+    """批量取用户的有效角色（含所属模块编码），供用户管理列表「角色」列展示。"""
+    if not user_ids:
+        return {}
+    from app.platform.permission.models import GRANT_ACTIVE, Role, UserRoleGrant
+
+    stmt = (
+        select(UserRoleGrant.user_id, Role.id, Role.name, Role.module_code)
+        .join(Role, Role.id == UserRoleGrant.role_id)
+        .where(
+            UserRoleGrant.user_id.in_(user_ids),
+            UserRoleGrant.is_deleted == False,  # noqa: E712
+            UserRoleGrant.status == GRANT_ACTIVE,
+            Role.is_deleted == False,  # noqa: E712
+        )
+        .order_by(Role.module_code, Role.name)
+    )
+    rows = (await db.execute(stmt)).all()
+    result: dict[uuid.UUID, list[RoleBriefData]] = {}
+    for user_id, role_id, role_name, module_code in rows:
+        result.setdefault(user_id, []).append(RoleBriefData(id=role_id, name=role_name, module_code=module_code))
     return result
 
 
@@ -129,8 +199,12 @@ async def revoke_all_user_grants(db: AsyncSession, user_id: uuid.UUID) -> int:
 
 __all__ = [
     "PermissionContext",
+    "assert_superadmin_disable_allowed",
+    "assert_superadmin_removal_allowed",
     "build_permission_context",
+    "count_active_superusers",
     "ensure_superadmin",
+    "evict_user_permission_cache",
     "get_role_names_by_user_ids",
     "guard_manage_target",
     "has_permission",

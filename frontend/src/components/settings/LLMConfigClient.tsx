@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import {
   App,
   Button,
+  Empty,
   Form,
   Input,
   InputNumber,
@@ -301,6 +302,14 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
           rowKey="id"
           loading={loading}
           pagination={false}
+          locale={{
+            emptyText: (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="还没有 LLM 模型配置，先新建一条再分配给各模块使用"
+              />
+            ),
+          }}
         />
       </SettingsListCard>
 

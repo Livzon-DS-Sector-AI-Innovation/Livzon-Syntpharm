@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import uuid
-from types import SimpleNamespace
 from typing import Any
 
 from app.modules.safety.feishu import identity_resolver as resolver_module
@@ -20,13 +19,13 @@ _REAL_RESOLVER = IdentityResolver
 
 
 def _user(name: str, department: str | None = None) -> Any:
-    return SimpleNamespace(
-        id=uuid.uuid4(),
-        name=name,
-        department=department,
-        feishu_open_id=f"ou_{name}",
-        feishu_user_id=f"uid_{name}",
-    )
+    """HR 人员档案序列化结果（#219：数据源已从 identity.users 改为 HR）。"""
+    return {
+        "id": uuid.uuid4(),
+        "name": name,
+        "department_names": [department] if department else [],
+        "open_id": f"ou_{name}",
+    }
 
 
 class _StubResolver(IdentityResolver):
@@ -37,7 +36,7 @@ class _StubResolver(IdentityResolver):
         self._users = users
 
     async def _find_users_by_name(self, name: str) -> list[Any]:
-        return [u for u in self._users if u.name == name]
+        return [u for u in self._users if u["name"] == name]
 
 
 class TestResolveByNameStrict:
@@ -51,7 +50,7 @@ class TestResolveByNameStrict:
         match = await _StubResolver([user]).resolve_by_name_strict("张伟")
         assert match.is_matched
         assert match.person is not None
-        assert match.person.id == str(user.id)
+        assert match.person.id == str(user["id"])
 
     async def test_unknown_name_is_not_found(self) -> None:
         match = await _StubResolver([_user("张伟", "生产部")]).resolve_by_name_strict("李雷")

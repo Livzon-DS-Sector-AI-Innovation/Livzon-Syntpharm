@@ -1,14 +1,13 @@
 'use client'
 
 import { useEffect, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { App, Drawer, Form, Input, Select, Button, Space } from 'antd'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createWorkOrder, updateWorkOrder } from '@/actions/equipment'
+import PersonSelect from '@/components/common/PersonSelect'
 import { FailureCode } from '@/types/equipment/generated-bridge'
 import { CreateWorkOrderInput, UpdateWorkOrderInput, WorkOrderStatus } from '@/types/equipment/generated-bridge'
 import { Equipment } from '@/types/equipment/generated-bridge'
-import { fetchAllUsersClient } from '@/lib/api/client/equipment'
 
 const { TextArea } = Input
 
@@ -32,31 +31,6 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
   const { workOrderDrawerOpen, editingWorkOrder, closeWorkOrderDrawer } = useEquipmentStore()
 
   const isEditing = !!editingWorkOrder
-
-  // `AGENTS.md:549` — 数据获取：使用 React Query，禁止 useEffect + setState.
-  // `enabled` replaces the `if (workOrderDrawerOpen)` guard, and the list is cached
-  // across opens instead of refetched on every one. `initialData: []` keeps
-  // `maintainers` a plain array below, so the Select never sees `undefined`.
-  const { data: maintainers = [] } = useQuery({
-    queryKey: ['all-users'],
-    queryFn: fetchAllUsersClient,
-    enabled: workOrderDrawerOpen,
-    initialData: [],
-  })
-
-  // 选项到齐后重新设置责任人，让 Select 能匹配选项显示姓名。
-  //
-  // This is not data fetching — it syncs a form value *after* the options exist.
-  // Without it antd's Select renders the raw id instead of the name, because the
-  // value was set by `initialValues` before any option was available. The previous
-  // code did this inside the fetch's `.then()`; the trigger is now the data arriving,
-  // which is the same moment.
-  useEffect(() => {
-    if (workOrderDrawerOpen && maintainers.length) {
-      const id = editingWorkOrder?.responsible_person_id
-      if (id) form.setFieldsValue({ responsible_person_id: id })
-    }
-  }, [workOrderDrawerOpen, editingWorkOrder, maintainers, form])
 
   // 构建 initialValues：编辑时填充已有数据，新建时给默认值
   const initialValues = useMemo(() => {
@@ -161,16 +135,16 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
         <Form.Item name="priority" label="优先级" rules={[{ required: true, message: '请选择优先级' }]}>
           <Select options={[{ label: '紧急', value: '紧急' }, { label: '高', value: '高' }, { label: '中', value: '中' }, { label: '低', value: '低' }]} />
         </Form.Item>
-        <Form.Item name="responsible_person_id" label="责任人" rules={[{ required: true, message: '请选择责任人' }]}>
-          <Select
-            placeholder="选择责任人"
-            showSearch
-            optionFilterProp="label"
-            options={maintainers.map((m) => ({
-              // 统一「姓名（账号）」；没有账号时退回工号
-              label: `${m.name}${m.username ? `（${m.username}）` : m.employee_no ? ` (${m.employee_no})` : ''}`,
-              value: m.user_id,
-            }))}
+        <Form.Item
+          name="responsible_person_id"
+          label="责任人"
+          rules={[{ required: true, message: '请选择责任人' }]}
+          // PersonSelect 回传 {id,name}，表单只存 UUID
+          getValueFromEvent={(person: { id: string } | null) => person?.id}
+        >
+          <PersonSelect
+            label={editingWorkOrder?.responsible_person_name}
+            placeholder="搜索姓名选择责任人"
           />
         </Form.Item>
         {isEditing && (
