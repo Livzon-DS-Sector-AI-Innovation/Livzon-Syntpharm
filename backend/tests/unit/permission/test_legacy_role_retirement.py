@@ -23,12 +23,12 @@ from app.platform.permission.repository import GrantRepository
 from app.platform.permission.service import management
 
 _MIGRATION_PATH = (
-    pathlib.Path(__file__).resolve().parents[3] / "alembic" / "versions" / "0217_permission_role_owner_delegate.py"
+    pathlib.Path(__file__).resolve().parents[3] / "alembic" / "versions" / "0220_permission_role_owner_delegate.py"
 )
 
 
 def _load_migration() -> Any:
-    spec = importlib.util.spec_from_file_location("migration_0203", _MIGRATION_PATH)
+    spec = importlib.util.spec_from_file_location("migration_0220", _MIGRATION_PATH)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

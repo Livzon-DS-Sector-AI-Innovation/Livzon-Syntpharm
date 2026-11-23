@@ -1,6 +1,6 @@
 """permission: 退役历史内置角色（负责人 head / 管理员 manager）
 
-Revision ID: 0217_permission_role_owner_delegate
+Revision ID: 0220_permission_role_owner_delegate
 Revises: 0216_core_workbench_todo_reads_fk
 Create Date: 2026-11-19
 
@@ -22,7 +22,7 @@ Create Date: 2026-11-19
 
 部署门禁（执行前人工只读检查）：
 1. ``SELECT version_num FROM public.alembic_version``；
-   若已含 ``0217_permission_role_owner_delegate``，说明该环境执行过改名版，
+   若已含 ``0220_permission_role_owner_delegate``，说明该环境执行过改名版，
    head/manager 的授权已挂在 owner 名下，需按清单人工核对后再发布。
 2. 发布说明需附「旧角色活跃授权清单」，迁移后由系统管理员重新指派 owner。
 
@@ -39,7 +39,7 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0217_permission_role_owner_delegate"
+revision: str = "0220_permission_role_owner_delegate"
 down_revision: str | None = "0216_core_workbench_todo_reads_fk"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
