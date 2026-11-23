@@ -36,6 +36,7 @@ from app.modules.quality.label_verification import router as label_verification_
 from app.modules.quality.qms.material_report_api import router as material_report_router
 from app.modules.quality.sop_ai import router as sop_ai_router
 from app.modules.registration import router as registration_router
+from app.modules.registration.docx_translator import router as docx_translator_router
 from app.modules.registration.dossier_writer import router as dossier_writer_router
 from app.modules.registration.regulatory_tracker import (
     router as regulatory_tracker_router,
@@ -136,6 +137,11 @@ api_router.include_router(
     dossier_writer_router,
     prefix="/registration/dossier-writer",
     tags=["申报资料撰写"],
+)
+api_router.include_router(
+    docx_translator_router,
+    prefix="/registration/docx-translator",
+    tags=["文档翻译"],
 )
 
 api_router.include_router(agent_router, prefix="/agent", tags=["智能体"])

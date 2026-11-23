@@ -365,6 +365,7 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "review", label: "申报进度查询", path: "/registration/review" },
       { key: "supplementary-reply", label: "补充回复", path: "/registration/supplementary-reply" },
       { key: "validation-audit", label: "验证审计", path: "/registration/validation-audit" },
+      { key: "docx-translator", label: "文档翻译", path: "/registration/docx-translator" },
       { key: "ledger", label: "注册台账", path: "/registration/ledger" },
       { key: "registration-settings", label: "模块配置", path: "/registration/settings" },
     ],

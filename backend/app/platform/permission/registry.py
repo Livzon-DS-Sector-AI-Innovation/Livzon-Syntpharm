@@ -917,6 +917,11 @@ REGISTRATION_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("registration:dossier:create", "创建申报资料", "registration", "dossier", "create"),
     PermissionDef("registration:dossier:update", "更新申报资料", "registration", "dossier", "update"),
     PermissionDef("registration:dossier:delete", "删除申报资料", "registration", "dossier", "delete"),
+    # docx-translator（文档翻译）
+    PermissionDef("registration:docx-translator:read", "查看文档翻译", "registration", "docx-translator", "read"),
+    PermissionDef("registration:docx-translator:create", "提交文档翻译", "registration", "docx-translator", "create"),
+    PermissionDef("registration:docx-translator:update", "维护翻译术语", "registration", "docx-translator", "update"),
+    PermissionDef("registration:docx-translator:delete", "删除翻译术语", "registration", "docx-translator", "delete"),
     # regulatory-tracker（法规追踪）
     PermissionDef("registration:regulatory-tracker:read", "查看法规追踪", "registration", "regulatory-tracker", "read"),
     PermissionDef(
@@ -3253,6 +3258,84 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "registration:dossier:create",
         "POST",
         "/api/v1/registration/dossier-writer/products/{dossier_id}/templates",
+    ),
+    # ── docx-translator（文档翻译）──────────────────────────────
+    ApiBindingDef("registration:docx-translator:create", "POST", "/api/v1/registration/docx-translator/jobs"),
+    ApiBindingDef(
+        "registration:docx-translator:read",
+        "GET",
+        "/api/v1/registration/docx-translator/jobs",
+    ),
+    ApiBindingDef(
+        "registration:docx-translator:read",
+        "GET",
+        "/api/v1/registration/docx-translator/jobs/{job_id}",
+    ),
+    ApiBindingDef(
+        "registration:docx-translator:read",
+        "GET",
+        "/api/v1/registration/docx-translator/jobs/{job_id}/files/{file_index}",
+    ),
+    ApiBindingDef("registration:docx-translator:read", "GET", "/api/v1/registration/docx-translator/glossary"),
+    ApiBindingDef("registration:docx-translator:create", "POST", "/api/v1/registration/docx-translator/glossary"),
+    ApiBindingDef(
+        "registration:docx-translator:update",
+        "PUT",
+        "/api/v1/registration/docx-translator/glossary/{term_id}",
+    ),
+    ApiBindingDef(
+        "registration:docx-translator:delete",
+        "DELETE",
+        "/api/v1/registration/docx-translator/glossary/{term_id}",
+    ),
+    ApiBindingDef(
+        "registration:docx-translator:create",
+        "POST",
+        "/api/v1/registration/docx-translator/glossary/import",
+    ),
+    ApiBindingDef(
+        "registration:docx-translator:read",
+        "GET",
+        "/api/v1/registration/docx-translator/glossary/export",
+    ),
+    ApiBindingDef(
+        "registration:docx-translator:read",
+        "GET",
+        "/api/v1/registration/docx-translator/files",
+    ),
+    ApiBindingDef(
+        "registration:docx-translator:read",
+        "GET",
+        "/api/v1/registration/docx-translator/files/{file_id}/download",
+    ),
+    # ── 任务级历史 ──
+    ApiBindingDef(
+        "registration:docx-translator:read",
+        "GET",
+        "/api/v1/registration/docx-translator/tasks",
+    ),
+    ApiBindingDef(
+        "registration:docx-translator:read",
+        "GET",
+        "/api/v1/registration/docx-translator/tasks/{task_id}",
+    ),
+    ApiBindingDef(
+        "registration:docx-translator:create",
+        "POST",
+        "/api/v1/registration/docx-translator/tasks/{task_id}/retranslate",
+    ),
+    # 删除任务：同文件删除，端点内判「创建人 or docx-translator:delete」
+    ApiBindingDef(
+        "registration:docx-translator:read",
+        "DELETE",
+        "/api/v1/registration/docx-translator/tasks/{task_id}",
+    ),
+    # 删除历史文件：端点只要求 read，内部再判「创建人 or docx-translator:delete」，
+    # 因此这里绑定 read 才是实际生效的权限码。
+    ApiBindingDef(
+        "registration:docx-translator:read",
+        "DELETE",
+        "/api/v1/registration/docx-translator/files/{file_id}",
     ),
     # 智能体 - PPT 配音视频
     ApiBindingDef("agent:ppt-video:read", "GET", "/api/v1/agent/voices"),

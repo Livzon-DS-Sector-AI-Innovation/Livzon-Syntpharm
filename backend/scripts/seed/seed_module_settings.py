@@ -429,6 +429,19 @@ DEFAULT_SETTINGS = [
         "string",
         "Default model for LLM text tasks",
     ),
+    # 注册申报 - 文档翻译（与 app/core/seed.py 的启动自举保持同一份清单）
+    ("docx_translator", "DOCX_TRANSLATOR_MAX_FILE_MB", "50", "int", "文档翻译单文件大小上限(MB)"),
+    ("docx_translator", "DOCX_TRANSLATOR_MAX_FILES", "10", "int", "文档翻译单次任务文件数上限"),
+    ("docx_translator", "DOCX_TRANSLATOR_DEFAULT_BATCH_SIZE", "30", "int", "文档翻译每批段落数默认值"),
+    ("docx_translator", "DOCX_TRANSLATOR_MIN_SUCCESS_RATE", "90", "int", "文档翻译成功率告警阈值(%)"),
+    ("docx_translator", "DOCX_TRANSLATOR_RETENTION_DAYS", "30", "int", "文档翻译结果保留天数（<=0 不自动清理）"),
+    (
+        "docx_translator",
+        "DOCX_TRANSLATOR_FILE_TIMEOUT_MINUTES",
+        "30",
+        "int",
+        "单文件翻译超时时间（分钟，<=0 关闭）",
+    ),
 ]
 
 #: 展示元数据：(module, key) -> (中文名, 功能域分组, 是否密钥类, 取值提示)

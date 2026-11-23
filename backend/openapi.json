@@ -90874,6 +90874,1149 @@
         }
       }
     },
+    "/api/v1/registration/docx-translator/jobs": {
+      "post": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u63d0\u4ea4\u6587\u6863\u7ffb\u8bd1\u4efb\u52a1",
+        "operationId": "post_api_v1_registration_docx_translator_jobs_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_post_api_v1_registration_docx_translator_jobs_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_DocxTranslationJobAccepted_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u6279\u91cf\u67e5\u8be2\u7ffb\u8bd1\u4efb\u52a1\u72b6\u6001",
+        "operationId": "list_job_states_api_v1_registration_docx_translator_jobs_get",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "maxItems": 20,
+              "description": "\u4efb\u52a1ID\u5217\u8868",
+              "title": "Ids"
+            },
+            "description": "\u4efb\u52a1ID\u5217\u8868"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_DocxTranslationJobListData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/docx-translator/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u67e5\u8be2\u7ffb\u8bd1\u4efb\u52a1\u72b6\u6001",
+        "operationId": "get_api_v1_registration_docx_translator_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_DocxTranslationJobState_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/docx-translator/jobs/{job_id}/files/{file_index}": {
+      "get": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u4e0b\u8f7d\u7ffb\u8bd1\u7ed3\u679c",
+        "operationId": "download_api_v1_registration_docx_translator_jobs__job_id__files__file_index__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "file_index",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "File Index"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/docx-translator/tasks": {
+      "get": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u4efb\u52a1\u7ea7\u7ffb\u8bd1\u5386\u53f2",
+        "operationId": "list_tasks_api_v1_registration_docx_translator_tasks_get",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6309\u6587\u4ef6\u540d\u6a21\u7cca\u641c\u7d22",
+              "title": "Keyword"
+            },
+            "description": "\u6309\u6587\u4ef6\u540d\u6a21\u7cca\u641c\u7d22"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6309\u72b6\u6001\u8fc7\u6ee4\uff1arunning / done / failed",
+              "title": "Status"
+            },
+            "description": "\u6309\u72b6\u6001\u8fc7\u6ee4\uff1arunning / done / failed"
+          },
+          {
+            "name": "mine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "\u4ec5\u770b\u81ea\u5df1\u521b\u5efa\u7684\u4efb\u52a1",
+              "default": false,
+              "title": "Mine"
+            },
+            "description": "\u4ec5\u770b\u81ea\u5df1\u521b\u5efa\u7684\u4efb\u52a1"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_DocxTranslationTaskRecord__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/docx-translator/tasks/{task_id}": {
+      "get": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u7ffb\u8bd1\u4efb\u52a1\u8be6\u60c5",
+        "operationId": "get_task_detail_api_v1_registration_docx_translator_tasks__task_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_DocxTranslationTaskDetailData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u5220\u9664\u7ffb\u8bd1\u4efb\u52a1",
+        "operationId": "delete_task_api_v1_registration_docx_translator_tasks__task_id__delete",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__shared__schemas__MessageApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/docx-translator/tasks/{task_id}/retranslate": {
+      "post": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u6309\u539f\u4ef6\u518d\u6b21\u7ffb\u8bd1",
+        "operationId": "retranslate_task_api_v1_registration_docx_translator_tasks__task_id__retranslate_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_DocxTranslationJobAccepted_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/docx-translator/files": {
+      "get": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u5386\u53f2\u7ffb\u8bd1\u6587\u4ef6\u5217\u8868",
+        "operationId": "list_files_api_v1_registration_docx_translator_files_get",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6309\u539f\u6587\u4ef6\u540d\u6216\u4ea7\u51fa\u6587\u4ef6\u540d\u6a21\u7cca\u641c\u7d22",
+              "title": "Keyword"
+            },
+            "description": "\u6309\u539f\u6587\u4ef6\u540d\u6216\u4ea7\u51fa\u6587\u4ef6\u540d\u6a21\u7cca\u641c\u7d22"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_DocxTranslationFileRecord__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/docx-translator/files/{file_id}/download": {
+      "get": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u4e0b\u8f7d\u5386\u53f2\u7ffb\u8bd1\u6587\u4ef6",
+        "operationId": "download_file_api_v1_registration_docx_translator_files__file_id__download_get",
+        "parameters": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "File Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/docx-translator/files/{file_id}": {
+      "delete": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u5220\u9664\u5386\u53f2\u7ffb\u8bd1\u6587\u4ef6",
+        "operationId": "delete_file_api_v1_registration_docx_translator_files__file_id__delete",
+        "parameters": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "File Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__shared__schemas__MessageApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/docx-translator/glossary": {
+      "get": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u672f\u8bed\u8868\u5217\u8868",
+        "operationId": "list_terms_api_v1_registration_docx_translator_glossary_get",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6309\u82f1\u6587\u6216\u4e2d\u6587\u6a21\u7cca\u641c\u7d22",
+              "title": "Keyword"
+            },
+            "description": "\u6309\u82f1\u6587\u6216\u4e2d\u6587\u6a21\u7cca\u641c\u7d22"
+          },
+          {
+            "name": "enabled",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u4ec5\u770b\u542f\u7528/\u505c\u7528",
+              "title": "Enabled"
+            },
+            "description": "\u4ec5\u770b\u542f\u7528/\u505c\u7528"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_list_DocxGlossaryTermResponse__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u65b0\u589e\u672f\u8bed",
+        "operationId": "create_term_api_v1_registration_docx_translator_glossary_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocxGlossaryTermCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_DocxGlossaryTermResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/docx-translator/glossary/{term_id}": {
+      "put": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u66f4\u65b0\u672f\u8bed",
+        "operationId": "update_term_api_v1_registration_docx_translator_glossary__term_id__put",
+        "parameters": [
+          {
+            "name": "term_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Term Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocxGlossaryTermUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_DocxGlossaryTermResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u5220\u9664\u672f\u8bed",
+        "operationId": "delete_term_api_v1_registration_docx_translator_glossary__term_id__delete",
+        "parameters": [
+          {
+            "name": "term_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Term Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__shared__schemas__MessageApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/docx-translator/glossary/import": {
+      "post": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u5bfc\u5165\u672f\u8bed\u8868 xlsx",
+        "operationId": "import_terms_api_v1_registration_docx_translator_glossary_import_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_terms_api_v1_registration_docx_translator_glossary_import_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse_DocxGlossaryImportData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registration/docx-translator/glossary/export": {
+      "get": {
+        "tags": [
+          "\u6587\u6863\u7ffb\u8bd1"
+        ],
+        "summary": "\u5bfc\u51fa\u672f\u8bed\u8868 xlsx",
+        "operationId": "export_terms_api_v1_registration_docx_translator_glossary_export_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/agent/voices": {
       "get": {
         "tags": [
@@ -101909,6 +103052,21 @@
         ],
         "title": "Body_import_supplier_records_api_v1_procurement_suppliers_import_post"
       },
+      "Body_import_terms_api_v1_registration_docx_translator_glossary_import_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "xlsx\uff0c\u5217\u540d\u987b\u4e3a\u300c\u82f1\u6587\u300d\u300c\u4e2d\u6587\u300d"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_terms_api_v1_registration_docx_translator_glossary_import_post"
+      },
       "Body_post_api_v1_hr_ai_exam_generate_post": {
         "properties": {
           "file": {
@@ -102171,6 +103329,54 @@
           "quantity"
         ],
         "title": "Body_post_api_v1_quality_static_data_standard__id__adjust_quantity_post"
+      },
+      "Body_post_api_v1_registration_docx_translator_jobs_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files",
+            "description": "\u5f85\u7ffb\u8bd1\u7684 Word \u6587\u6863\uff0c\u53ef\u591a\u9009"
+          },
+          "source_lang": {
+            "type": "string",
+            "title": "Source Lang",
+            "description": "\u6e90\u8bed\u8a00: en / zh",
+            "default": "en"
+          },
+          "target_lang": {
+            "type": "string",
+            "title": "Target Lang",
+            "description": "\u76ee\u6807\u8bed\u8a00: en / zh",
+            "default": "zh"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode",
+            "description": "\u8f93\u51fa\u6a21\u5f0f: bilingual / replace / both",
+            "default": "bilingual"
+          },
+          "batch_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Size",
+            "description": "\u6bcf\u6279\u6bb5\u843d\u6570\uff0c\u7559\u7a7a\u53d6\u8fd0\u884c\u65f6\u914d\u7f6e"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_post_api_v1_registration_docx_translator_jobs_post"
       },
       "Body_post_api_v1_registration_ledger_copp_certificates_import_post": {
         "properties": {
@@ -112868,6 +114074,222 @@
         "type": "object",
         "title": "DataResponse[DepartmentResponse]"
       },
+      "DataResponse_DocxGlossaryImportData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocxGlossaryImportData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[DocxGlossaryImportData]"
+      },
+      "DataResponse_DocxGlossaryTermResponse_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocxGlossaryTermResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[DocxGlossaryTermResponse]"
+      },
+      "DataResponse_DocxTranslationJobAccepted_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocxTranslationJobAccepted"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[DocxTranslationJobAccepted]"
+      },
+      "DataResponse_DocxTranslationJobListData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocxTranslationJobListData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[DocxTranslationJobListData]"
+      },
+      "DataResponse_DocxTranslationJobState_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocxTranslationJobState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[DocxTranslationJobState]"
+      },
+      "DataResponse_DocxTranslationTaskDetailData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocxTranslationTaskDetailData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[DocxTranslationTaskDetailData]"
+      },
       "DataResponse_DownloadUrlResponse_": {
         "properties": {
           "code": {
@@ -116577,6 +117999,126 @@
         },
         "type": "object",
         "title": "DataResponse[list[DepartmentResponse]]"
+      },
+      "DataResponse_list_DocxGlossaryTermResponse__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DocxGlossaryTermResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[DocxGlossaryTermResponse]]"
+      },
+      "DataResponse_list_DocxTranslationFileRecord__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DocxTranslationFileRecord"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[DocxTranslationFileRecord]]"
+      },
+      "DataResponse_list_DocxTranslationTaskRecord__": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DocxTranslationTaskRecord"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DataResponse[list[DocxTranslationTaskRecord]]"
       },
       "DataResponse_list_DomesticApprovalResponse__": {
         "properties": {
@@ -121936,6 +123478,674 @@
         ],
         "title": "DocCheckUploadResponse",
         "description": "\u4e0a\u4f20\u7ed3\u679c"
+      },
+      "DocxGlossaryImportData": {
+        "properties": {
+          "imported": {
+            "type": "integer",
+            "title": "Imported",
+            "default": 0
+          },
+          "updated": {
+            "type": "integer",
+            "title": "Updated",
+            "default": 0
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped",
+            "default": 0
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "DocxGlossaryImportData"
+      },
+      "DocxGlossaryTermCreate": {
+        "properties": {
+          "term_en": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Term En"
+          },
+          "term_zh": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Term Zh"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "term_en",
+          "term_zh"
+        ],
+        "title": "DocxGlossaryTermCreate"
+      },
+      "DocxGlossaryTermResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "term_en": {
+            "type": "string",
+            "title": "Term En"
+          },
+          "term_zh": {
+            "type": "string",
+            "title": "Term Zh"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "term_en",
+          "term_zh",
+          "is_enabled",
+          "source"
+        ],
+        "title": "DocxGlossaryTermResponse"
+      },
+      "DocxGlossaryTermUpdate": {
+        "properties": {
+          "term_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Term En"
+          },
+          "term_zh": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Term Zh"
+          },
+          "is_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Enabled"
+          }
+        },
+        "type": "object",
+        "title": "DocxGlossaryTermUpdate"
+      },
+      "DocxTranslationFileRecord": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "job_ref": {
+            "type": "string",
+            "title": "Job Ref"
+          },
+          "source_filename": {
+            "type": "string",
+            "title": "Source Filename"
+          },
+          "output_filename": {
+            "type": "string",
+            "title": "Output Filename"
+          },
+          "output_kind": {
+            "type": "string",
+            "enum": [
+              "bilingual",
+              "translated"
+            ],
+            "title": "Output Kind"
+          },
+          "source_lang": {
+            "type": "string",
+            "title": "Source Lang"
+          },
+          "target_lang": {
+            "type": "string",
+            "title": "Target Lang"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          },
+          "success_rate": {
+            "type": "number",
+            "title": "Success Rate"
+          },
+          "translated_units": {
+            "type": "integer",
+            "title": "Translated Units"
+          },
+          "total_units": {
+            "type": "integer",
+            "title": "Total Units"
+          },
+          "file_size": {
+            "type": "integer",
+            "title": "File Size"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": []
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "job_ref",
+          "source_filename",
+          "output_filename",
+          "output_kind",
+          "source_lang",
+          "target_lang",
+          "mode",
+          "success_rate",
+          "translated_units",
+          "total_units",
+          "file_size"
+        ],
+        "title": "DocxTranslationFileRecord",
+        "description": "\u5386\u53f2\u8bd1\u6587\u8bb0\u5f55\uff08\u4e00\u884c = \u4e00\u4efd\u53ef\u4e0b\u8f7d\u6587\u4ef6\uff09\u3002"
+      },
+      "DocxTranslationFileResult": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "outputs": {
+            "items": {
+              "$ref": "#/components/schemas/DocxTranslationOutput"
+            },
+            "type": "array",
+            "title": "Outputs",
+            "default": []
+          },
+          "translated_units": {
+            "type": "integer",
+            "title": "Translated Units",
+            "default": 0
+          },
+          "total_units": {
+            "type": "integer",
+            "title": "Total Units",
+            "default": 0
+          },
+          "success_rate": {
+            "type": "number",
+            "title": "Success Rate",
+            "default": 0.0
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": []
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "skipped_units": {
+            "type": "integer",
+            "title": "Skipped Units",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "success"
+        ],
+        "title": "DocxTranslationFileResult"
+      },
+      "DocxTranslationJobAccepted": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "const": "running",
+            "title": "Status",
+            "default": "running"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "DocxTranslationJobAccepted"
+      },
+      "DocxTranslationJobListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DocxTranslationJobState"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "DocxTranslationJobListData"
+      },
+      "DocxTranslationJobState": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "running",
+              "done",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "files_done": {
+            "type": "integer",
+            "title": "Files Done",
+            "default": 0
+          },
+          "files_total": {
+            "type": "integer",
+            "title": "Files Total",
+            "default": 0
+          },
+          "current_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current File"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/DocxTranslationFileResult"
+            },
+            "type": "array",
+            "title": "Files",
+            "default": []
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "batch_done": {
+            "type": "integer",
+            "title": "Batch Done",
+            "default": 0
+          },
+          "batch_total": {
+            "type": "integer",
+            "title": "Batch Total",
+            "default": 0
+          },
+          "elapsed_seconds": {
+            "type": "integer",
+            "title": "Elapsed Seconds",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status"
+        ],
+        "title": "DocxTranslationJobState"
+      },
+      "DocxTranslationOutput": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "bilingual",
+              "translated"
+            ],
+            "title": "Kind",
+            "description": "bilingual=\u53cc\u8bed\u5bf9\u7167\u7248\uff0ctranslated=\u7eaf\u8bd1\u6587\u7248"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "file_index": {
+            "type": "integer",
+            "title": "File Index",
+            "description": "\u4e0b\u8f7d\u7528\u7684\u6587\u4ef6\u7d22\u5f15\uff08\u6309\u4efb\u52a1\u5185\u987a\u5e8f\uff09"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "filename",
+          "file_index"
+        ],
+        "title": "DocxTranslationOutput"
+      },
+      "DocxTranslationTaskDetailData": {
+        "properties": {
+          "task": {
+            "$ref": "#/components/schemas/DocxTranslationTaskRecord"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/DocxTranslationTaskFile"
+            },
+            "type": "array",
+            "title": "Files"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "task",
+          "files"
+        ],
+        "title": "DocxTranslationTaskDetailData"
+      },
+      "DocxTranslationTaskFile": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "source_filename": {
+            "type": "string",
+            "title": "Source Filename"
+          },
+          "output_filename": {
+            "type": "string",
+            "title": "Output Filename"
+          },
+          "output_kind": {
+            "type": "string",
+            "title": "Output Kind"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "success_rate": {
+            "type": "number",
+            "title": "Success Rate"
+          },
+          "translated_units": {
+            "type": "integer",
+            "title": "Translated Units"
+          },
+          "total_units": {
+            "type": "integer",
+            "title": "Total Units"
+          },
+          "file_size": {
+            "type": "integer",
+            "title": "File Size"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "source_filename",
+          "output_filename",
+          "output_kind",
+          "success",
+          "success_rate",
+          "translated_units",
+          "total_units",
+          "file_size"
+        ],
+        "title": "DocxTranslationTaskFile",
+        "description": "\u4efb\u52a1\u4e0b\u7684\u5355\u4e2a\u6587\u4ef6\u7ed3\u679c\uff08\u6210\u529f\u5e26\u4e0b\u8f7d\u4fe1\u606f\uff0c\u5931\u8d25\u5e26\u539f\u56e0\uff09\u3002"
+      },
+      "DocxTranslationTaskRecord": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "job_ref": {
+            "type": "string",
+            "title": "Job Ref"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "source_count": {
+            "type": "integer",
+            "title": "Source Count"
+          },
+          "success_count": {
+            "type": "integer",
+            "title": "Success Count"
+          },
+          "fail_count": {
+            "type": "integer",
+            "title": "Fail Count"
+          },
+          "first_source_filename": {
+            "type": "string",
+            "title": "First Source Filename"
+          },
+          "source_lang": {
+            "type": "string",
+            "title": "Source Lang"
+          },
+          "target_lang": {
+            "type": "string",
+            "title": "Target Lang"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          },
+          "elapsed_seconds": {
+            "type": "integer",
+            "title": "Elapsed Seconds"
+          },
+          "total_file_size": {
+            "type": "integer",
+            "title": "Total File Size",
+            "default": 0
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete",
+            "default": false
+          },
+          "can_retranslate": {
+            "type": "boolean",
+            "title": "Can Retranslate",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "job_ref",
+          "status",
+          "source_count",
+          "success_count",
+          "fail_count",
+          "first_source_filename",
+          "source_lang",
+          "target_lang",
+          "mode",
+          "elapsed_seconds"
+        ],
+        "title": "DocxTranslationTaskRecord",
+        "description": "\u4efb\u52a1\u7ea7\u5386\u53f2\uff08\u4e00\u884c = \u4e00\u6b21\u7ffb\u8bd1\u63d0\u4ea4\uff09\u3002"
       },
       "DomesticApprovalCreate": {
         "properties": {
