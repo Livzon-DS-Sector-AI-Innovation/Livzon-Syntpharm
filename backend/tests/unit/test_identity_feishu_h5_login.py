@@ -68,9 +68,7 @@ async def test_h5_login_rejected_when_disabled(monkeypatch: pytest.MonkeyPatch) 
     _patch_settings(monkeypatch, enabled=False)
 
     with pytest.raises(NotFoundException):
-        await identity_api.feishu_h5_login(
-            FeishuH5LoginRequest(code="c-1"), _request(), cast(Any, StubSession())
-        )
+        await identity_api.feishu_h5_login(FeishuH5LoginRequest(code="c-1"), _request(), cast(Any, StubSession()))
 
 
 async def test_h5_login_returns_token_and_records_success(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -102,9 +100,7 @@ async def test_h5_login_returns_token_and_records_success(monkeypatch: pytest.Mo
     monkeypatch.setattr(identity_api, "_record_login_session", fake_record_session)
 
     session = StubSession()
-    result = await identity_api.feishu_h5_login(
-        FeishuH5LoginRequest(code="c-1"), _request(), cast(Any, session)
-    )
+    result = await identity_api.feishu_h5_login(FeishuH5LoginRequest(code="c-1"), _request(), cast(Any, session))
 
     assert result.data.access_token == "jwt-token"
     assert seen == {"code": "c-1", "preauth_code": True, "session_token": "jwt-token"}
