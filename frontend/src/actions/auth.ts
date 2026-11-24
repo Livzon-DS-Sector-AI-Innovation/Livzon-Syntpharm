@@ -139,7 +139,7 @@ export async function loginWithFeishuCode(code: string): Promise<FeishuLoginActi
       return { error: getErrorMessage(json) }
     }
 
-    const accessToken = json?.data?.access_token
+    const accessToken = json?.data.access_token
     if (!accessToken) {
       return { error: '登录响应缺少 token，请检查后端接口' }
     }

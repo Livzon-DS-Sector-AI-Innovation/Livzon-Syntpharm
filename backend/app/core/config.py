@@ -46,9 +46,8 @@ class FeishuPlatformConfig(BaseModel):
     app_secret: str = ""
     scopes: str = "contact:contact.base:readonly contact:user.base:readonly"
     ws_enabled: bool = True
-    # 飞书客户端内网页应用免登（H5 JSSDK 取预授权码 → 后端换 token）。
-    # 关闭后 /auth/h5/config 返回 enabled=false，前端自动退回 OAuth 授权跳转。
-    h5_login_enabled: bool = True
+    # 飞书客户端内网页应用免登（H5 JSSDK）的开关属运行时配置：
+    # core.module_settings → identity.H5_LOGIN_ENABLED（Web UI 可改，缺行默认开启）。
     bot_name: str = ""
     # Org sync
     sync_root_dept_id: str = ""

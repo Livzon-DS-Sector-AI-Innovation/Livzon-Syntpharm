@@ -13,12 +13,20 @@ Ref: https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/authen-v1/l
 
 from __future__ import annotations
 
+import asyncio
+import logging
 from typing import Any
 from urllib.parse import urlencode
 
 import httpx
 
 from app.core.config import get_settings
+
+logger = logging.getLogger(__name__)
+
+# 外部调用重试策略：最多 3 次，指数退避 1/2/4 秒（与 feishu/auth.py 保持一致）
+_MAX_ATTEMPTS = 3
+_RETRY_BACKOFF_SECONDS = (1, 2, 4)
 
 _AUTHORIZE_URL = "https://accounts.feishu.cn/open-apis/authen/v1/authorize"
 _TOKEN_URL = "https://open.feishu.cn/open-apis/authen/v2/oauth/token"
@@ -116,18 +124,40 @@ class FeishuOAuthClient:
 
         app_access_token = await FeishuAuth.get_app_access_token()
         payload = {"grant_type": "authorization_code", "code": code}
-        async with httpx.AsyncClient() as client:
-            resp = await client.post(
-                _PREAUTH_TOKEN_URL,
-                json=payload,
-                headers={
-                    "Authorization": f"Bearer {app_access_token}",
-                    "Content-Type": "application/json; charset=utf-8",
-                },
-                timeout=10.0,
-            )
-            resp.raise_for_status()
-            data = resp.json()
+        data: dict[str, Any] = {}
+        for attempt in range(1, _MAX_ATTEMPTS + 1):
+            try:
+                async with httpx.AsyncClient() as client:
+                    resp = await client.post(
+                        _PREAUTH_TOKEN_URL,
+                        json=payload,
+                        headers={
+                            "Authorization": f"Bearer {app_access_token}",
+                            "Content-Type": "application/json; charset=utf-8",
+                        },
+                        timeout=10.0,
+                    )
+                    resp.raise_for_status()
+                    data = resp.json()
+                break
+            except httpx.HTTPError:
+                # 只重试网络层 / 5xx 这类可恢复错误；飞书业务码错误在下面单独抛，不重试
+                if attempt == _MAX_ATTEMPTS:
+                    logger.exception(
+                        "飞书免登预授权码兑换失败（已尝试 %d 次）",
+                        _MAX_ATTEMPTS,
+                        extra={"biz_module": "platform", "step": "exchange_preauth_code"},
+                    )
+                    raise
+                logger.warning(
+                    "飞书免登预授权码兑换失败，%d 秒后重试（第 %d/%d 次）",
+                    _RETRY_BACKOFF_SECONDS[attempt - 1],
+                    attempt,
+                    _MAX_ATTEMPTS,
+                    extra={"biz_module": "platform", "step": "exchange_preauth_code"},
+                    exc_info=True,
+                )
+                await asyncio.sleep(_RETRY_BACKOFF_SECONDS[attempt - 1])
 
         if data.get("code", 0) != 0:
             raise OAuthError(
