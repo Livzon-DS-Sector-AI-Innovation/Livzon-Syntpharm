@@ -61,3 +61,19 @@ export async function getImpersonationStatusApi(
     return NO_IMPERSONATION
   }
 }
+
+/**
+ * 飞书网页应用免登：把 H5 JSSDK 取到的预授权码交给后端换 token。
+ *
+ * 用原始 fetch（与 loginApi 同理）：登录前没有 token，且需要区分 HTTP 状态码与业务错误。
+ */
+export async function h5LoginApi(code: string): Promise<{ response: Response; json: LoginResponse | null }> {
+  const url = `${getApiBaseUrl()}/api/v1/identity/auth/h5/login`
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+    cache: 'no-store',
+  })
+  return { response, json: await response.json().catch(() => null) }
+}

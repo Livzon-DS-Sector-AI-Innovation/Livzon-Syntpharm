@@ -428,6 +428,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/identity/auth/h5/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 飞书网页应用免登配置（公开）
+         * @description 前端判断是否具备免登条件用。只返回 App ID（可公开），不返回 App Secret。
+         */
+        get: operations["feishu_h5_config_api_v1_identity_auth_h5_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/auth/h5/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 飞书网页应用免登登录
+         * @description 用 H5 JSSDK 取到的登录预授权码完成登录（免账号密码、免授权页跳转）。
+         *
+         *     公开接口：登录前没有 token，身份由飞书下发的 code 证明；code 一次性、5 分钟有效。
+         */
+        post: operations["feishu_h5_login_api_v1_identity_auth_h5_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/identity/auth/login": {
         parameters: {
             query?: never;
@@ -37283,6 +37325,61 @@ export interface components {
             /** Errors */
             errors?: string[];
         };
+        /**
+         * FeishuH5ConfigApiResponse
+         * @description 飞书网页应用免登配置（完整信封）。
+         */
+        FeishuH5ConfigApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["FeishuH5ConfigData"];
+        };
+        /**
+         * FeishuH5ConfigData
+         * @description 前端启动免登所需的最小公开配置。App ID 可公开，App Secret 不返回。
+         */
+        FeishuH5ConfigData: {
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * App Id
+             * @default
+             */
+            app_id: string;
+        };
+        /**
+         * FeishuH5LoginApiResponse
+         * @description 飞书网页应用免登登录响应（完整信封）。
+         */
+        FeishuH5LoginApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["TokenResponse"];
+        };
+        /**
+         * FeishuH5LoginRequest
+         * @description 飞书网页应用免登：前端通过 H5 JSSDK 取到的登录预授权码（5 分钟、一次性）。
+         */
+        FeishuH5LoginRequest: {
+            /** Code */
+            code: string;
+        };
         /** FeishuImportApiResponse */
         FeishuImportApiResponse: {
             /**
@@ -66296,6 +66393,59 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["LocalLoginApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    feishu_h5_config_api_v1_identity_auth_h5_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["FeishuH5ConfigApiResponse"];
+                };
+            };
+        };
+    };
+    feishu_h5_login_api_v1_identity_auth_h5_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeishuH5LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["FeishuH5LoginApiResponse"];
                 };
             };
             /** @description Validation Error */

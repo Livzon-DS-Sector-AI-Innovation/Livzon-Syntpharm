@@ -23,6 +23,9 @@ from app.core.config import get_settings
 _AUTHORIZE_URL = "https://accounts.feishu.cn/open-apis/authen/v1/authorize"
 _TOKEN_URL = "https://open.feishu.cn/open-apis/authen/v2/oauth/token"
 _USER_INFO_URL = "https://open.feishu.cn/open-apis/authen/v1/user_info"
+# 旧版“登录预授权码换 user_access_token”接口：网页应用免登官方示例用它，
+# 作为 v2/oauth/token 不接受免登码时的兜底（Header 走 app_access_token）。
+_PREAUTH_TOKEN_URL = "https://open.feishu.cn/open-apis/authen/v1/access_token"
 
 
 class FeishuOAuthClient:
@@ -65,19 +68,23 @@ class FeishuOAuthClient:
 
     # ── Token operations ────────────────────────────────────────────
 
-    async def exchange_code(self, code: str) -> dict[str, Any]:
+    async def exchange_code(self, code: str, *, include_redirect_uri: bool = True) -> dict[str, Any]:
         """Exchange an authorization code for tokens.
 
         Returns dict with keys: access_token, token_type, expires_in,
         refresh_token, refresh_token_expires_in, scope.
+
+        `include_redirect_uri=False` 用于网页应用免登：预授权码来自 H5 JSSDK
+        （`tt.requestAccess`），没有经过授权页跳转，因此兑换时不能带 redirect_uri。
         """
         payload = {
             "grant_type": "authorization_code",
             "client_id": self.app_id,
             "client_secret": self.app_secret,
             "code": code,
-            "redirect_uri": self.redirect_uri,
         }
+        if include_redirect_uri:
+            payload["redirect_uri"] = self.redirect_uri
         async with httpx.AsyncClient() as client:
             resp = await client.post(
                 _TOKEN_URL,
@@ -95,6 +102,41 @@ class FeishuOAuthClient:
                 f"desc={data.get('error_description', '')}",
             )
         return data  # type: ignore[no-any-return]
+
+    async def exchange_preauth_code(self, code: str) -> dict[str, Any]:
+        """用网页应用免登预授权码换 user_access_token（旧版 authen/v1 接口）。
+
+        v2/oauth/token 不接受 H5 JSSDK 得到的免登码时走这里：
+        Header 用 app_access_token，body 只需 grant_type + code。
+
+        返回值与 `exchange_code` 对齐（access_token / refresh_token / ...），
+        因为 v1 接口把结果放在 `data` 里，这里直接返回 `data`。
+        """
+        from app.platform.integrations.feishu.auth import FeishuAuth
+
+        app_access_token = await FeishuAuth.get_app_access_token()
+        payload = {"grant_type": "authorization_code", "code": code}
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                _PREAUTH_TOKEN_URL,
+                json=payload,
+                headers={
+                    "Authorization": f"Bearer {app_access_token}",
+                    "Content-Type": "application/json; charset=utf-8",
+                },
+                timeout=10.0,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+        if data.get("code", 0) != 0:
+            raise OAuthError(
+                f"Preauth code exchange failed: code={data.get('code')}, msg={data.get('msg')}",
+            )
+        result = data.get("data") or {}
+        if not result.get("access_token"):
+            raise OAuthError("Preauth code exchange returned no access_token")
+        return result
 
     async def refresh_access_token(self, refresh_token: str) -> dict[str, Any]:
         """Refresh a user_access_token using a refresh_token."""

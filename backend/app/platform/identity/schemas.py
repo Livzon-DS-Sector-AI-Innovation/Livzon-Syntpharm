@@ -27,6 +27,35 @@ class LocalLoginApiResponse(BaseModel):
     data: TokenResponse
 
 
+class FeishuH5LoginRequest(BaseModel):
+    """飞书网页应用免登：前端通过 H5 JSSDK 取到的登录预授权码（5 分钟、一次性）。"""
+
+    code: str = Field(min_length=1, max_length=2048)
+
+
+class FeishuH5ConfigData(BaseModel):
+    """前端启动免登所需的最小公开配置。App ID 可公开，App Secret 不返回。"""
+
+    enabled: bool
+    app_id: str = ""
+
+
+class FeishuH5ConfigApiResponse(BaseModel):
+    """飞书网页应用免登配置（完整信封）。"""
+
+    code: int = 200
+    message: str = "success"
+    data: FeishuH5ConfigData
+
+
+class FeishuH5LoginApiResponse(BaseModel):
+    """飞书网页应用免登登录响应（完整信封）。"""
+
+    code: int = 200
+    message: str = "success"
+    data: TokenResponse
+
+
 class TestLoginUser(BaseModel):
     """E2E 测试账号信息。"""
 
