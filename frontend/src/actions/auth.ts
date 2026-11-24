@@ -4,9 +4,10 @@ import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import type { User, ImpersonationStatusExtended } from '@/types/user'
-import type { LoginActionState } from '@/types/auth'
+import type { FeishuLoginActionResult, LoginActionState } from '@/types/auth'
 import {
   loginApi,
+  h5LoginApi,
   getCurrentUserApi,
   startImpersonateApi,
   getImpersonationStatusApi,
@@ -35,6 +36,34 @@ function getErrorMessage(value: unknown): string {
   if (!value || typeof value !== 'object') return '登录失败，请重试'
   const payload = value as { message?: string; detail?: string }
   return payload.detail || payload.message || '登录失败，请重试'
+}
+
+/**
+ * 判断浏览器实际使用的协议。
+ *
+ * 不能用 NODE_ENV：当前部署是 nginx 80 端口纯 HTTP（生产构建），
+ * 若写 Secure cookie，浏览器会直接丢弃，下一个请求就是未登录，
+ * dashboard layout 随即 redirect('/login') → 表现为「登录成功又被弹回飞书登录页」。
+ */
+async function isHttpsRequest(): Promise<boolean> {
+  const headersList = await headers()
+  const forwardedProto = headersList.get('x-forwarded-proto')?.split(',')[0]?.trim().toLowerCase()
+  return (
+    forwardedProto === 'https' ||
+    (forwardedProto === undefined && (process.env.FRONTEND_URL ?? '').startsWith('https://'))
+  )
+}
+
+/** 写入登录 cookie（密码登录与飞书免登共用，Secure 按浏览器实际协议）。 */
+async function setAuthTokenCookie(token: string): Promise<void> {
+  const cookieStore = await cookies()
+  cookieStore.set('auth_token', token, {
+    httpOnly: true,
+    secure: await isHttpsRequest(),
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 7,
+  })
 }
 
 export async function getCurrentUser(): Promise<User | null> {
@@ -67,24 +96,7 @@ export async function loginWithPassword(
       return { error: '登录响应缺少 token，请检查后端接口' }
     }
 
-    // Secure 必须按「浏览器实际使用的协议」判断，不能用 NODE_ENV：
-    // 当前部署是 nginx 80 端口纯 HTTP（生产构建），若写 Secure cookie，浏览器会直接丢弃，
-    // 下一个请求就是未登录，dashboard layout 随即 redirect('/login') → 表现为「登录成功又被弹回飞书登录页」。
-    // 这与飞书 SSO 状态不一致（后端按 request.url.scheme 判断），也是只坏密码登录的原因。
-    const headersList = await headers()
-    const forwardedProto = headersList.get('x-forwarded-proto')?.split(',')[0]?.trim().toLowerCase()
-    const isHttps =
-      forwardedProto === 'https' ||
-      (forwardedProto === undefined && (process.env.FRONTEND_URL ?? '').startsWith('https://'))
-
-    const cookieStore = await cookies()
-    cookieStore.set('auth_token', token, {
-      httpOnly: true,
-      secure: isHttps,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7,
-    })
+    await setAuthTokenCookie(token)
   } catch (error) {
     return {
       error:
@@ -110,6 +122,47 @@ export async function loginWithPassword(
   // 落地页 = 第一个「可见」模块（未接入权限控制的模块恒可见，见 lib/permissions/modules.ts）
   const landingPath = await resolveLandingPath()
   redirect(landingPath)
+}
+
+/**
+ * 飞书网页应用免登：用 H5 JSSDK 取到的预授权码登录。
+ *
+ * 成功后会 redirect（NEXT_REDIRECT 是异常，必须在 try 之外抛出，不能被 catch 吞掉）；
+ * 失败返回错误文案，由登录页降级到普通按钮。
+ */
+export async function loginWithFeishuCode(code: string): Promise<FeishuLoginActionResult> {
+  let token: string
+  try {
+    const { response, json } = await h5LoginApi(code)
+
+    if (!response.ok) {
+      return { error: getErrorMessage(json) }
+    }
+
+    const accessToken = json?.data?.access_token
+    if (!accessToken) {
+      return { error: '登录响应缺少 token，请检查后端接口' }
+    }
+    token = accessToken
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : '网络异常，请稍后重试',
+    }
+  }
+
+  await setAuthTokenCookie(token)
+
+  // 失效整棵 layout 树：否则会复用未登录时的 RSC 结果，表现为登进去又被弹回 /login
+  revalidatePath('/', 'layout')
+
+  const cookieStore = await cookies()
+  const redirectTarget = readSafeRedirect(cookieStore.get('login_redirect')?.value)
+  if (redirectTarget) {
+    cookieStore.delete('login_redirect')
+    return { redirectTo: redirectTarget }
+  }
+
+  return { redirectTo: await resolveLandingPath() }
 }
 
 export async function logout() {

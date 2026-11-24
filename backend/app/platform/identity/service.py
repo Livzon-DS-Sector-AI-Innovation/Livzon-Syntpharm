@@ -1451,15 +1451,28 @@ async def restore_soft_deleted_user(
 async def handle_oauth_callback(
     db: AsyncSession,
     code: str,
+    *,
+    preauth_code: bool = False,
 ) -> tuple[User, str]:
     """Complete the OAuth flow: exchange code → get user info → upsert → JWT.
+
+    `preauth_code=True` 表示 code 来自网页应用免登（H5 JSSDK `tt.requestAccess`）：
+    先走 OAuth 标准接口兑换但**不带 redirect_uri**，失败再退回旧版
+    `authen/v1/access_token`（官方免登示例用的接口）。
 
     Returns (user, jwt_token).
     """
     oauth = FeishuOAuthClient.from_settings()
 
-    # 1. Exchange authorization code for tokens (v2 endpoint)
-    token_data = await oauth.exchange_code(code)
+    # 1. Exchange authorization code for tokens
+    if preauth_code:
+        try:
+            token_data = await oauth.exchange_code(code, include_redirect_uri=False)
+        except Exception as exc:
+            logger.warning("免登预授权码 v2 兑换失败，回退 authen/v1/access_token: %s", exc)
+            token_data = await oauth.exchange_preauth_code(code)
+    else:
+        token_data = await oauth.exchange_code(code)
     user_access_token = token_data["access_token"]
 
     # 2. Fetch user profile from Feishu (v1 user_info endpoint)
