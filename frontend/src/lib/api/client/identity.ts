@@ -74,3 +74,16 @@ export async function fetchUserLookup(params?: UserLookupQuery): Promise<UserLoo
   )
   return { items: data?.items ?? [], total: data?.total ?? 0 }
 }
+
+/**
+ * 飞书网页应用免登配置（公开接口，登录前调用）。
+ *
+ * 只返回 App ID 与开关；App Secret 永远不下发到浏览器。
+ */
+export async function fetchFeishuH5Config(): Promise<components['schemas']['FeishuH5ConfigData']> {
+  const data = await apiGet<components['schemas']['FeishuH5ConfigData']>(
+    `${API_BASE}/identity/auth/h5/config`,
+    { cache: 'no-store' },
+  )
+  return data ?? { enabled: false, app_id: '' }
+}

@@ -40,6 +40,10 @@ from app.platform.identity.schemas import (
     FeishuConfigApiResponse,
     FeishuConfigUpsert,
     FeishuDiagnosticApiResponse,
+    FeishuH5ConfigApiResponse,
+    FeishuH5ConfigData,
+    FeishuH5LoginApiResponse,
+    FeishuH5LoginRequest,
     LocalLoginApiResponse,
     LocalLoginRequest,
     LocalUserCreate,
@@ -229,6 +233,96 @@ async def local_login(
     await db.commit()
 
     return LocalLoginApiResponse(
+        data=TokenResponse(access_token=token, user=UserResponse.model_validate(user)),
+    )
+
+
+# ── 飞书网页应用免登（H5） ───────────────────────────────────────────
+
+
+@auth_router.get(
+    "/h5/config",
+    summary="飞书网页应用免登配置（公开）",
+    response_model=FeishuH5ConfigApiResponse,
+)
+async def feishu_h5_config() -> FeishuH5ConfigApiResponse:
+    """前端判断是否具备免登条件用。只返回 App ID（可公开），不返回 App Secret。"""
+    platform_cfg = get_settings().feishu.platform
+    enabled = bool(platform_cfg.h5_login_enabled and platform_cfg.app_id)
+    return FeishuH5ConfigApiResponse(
+        data=FeishuH5ConfigData(enabled=enabled, app_id=platform_cfg.app_id if enabled else ""),
+    )
+
+
+@auth_router.post(
+    "/h5/login",
+    summary="飞书网页应用免登登录",
+    response_model=FeishuH5LoginApiResponse,
+)
+async def feishu_h5_login(
+    payload: FeishuH5LoginRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> FeishuH5LoginApiResponse:
+    """用 H5 JSSDK 取到的登录预授权码完成登录（免账号密码、免授权页跳转）。
+
+    公开接口：登录前没有 token，身份由飞书下发的 code 证明；code 一次性、5 分钟有效。
+    """
+    from app.platform.identity.repository import LoginLogRepository
+    from app.platform.identity.service import AccountDeletedError, handle_oauth_callback
+
+    if not get_settings().feishu.platform.h5_login_enabled:
+        raise NotFoundException("未启用飞书网页应用免登")
+
+    ip_address = _client_ip(request)
+    user_agent = request.headers.get("user-agent")
+    log_repo = LoginLogRepository()
+
+    try:
+        user, token = await handle_oauth_callback(db, payload.code, preauth_code=True)
+    except Exception as exc:
+        # 区分可解释的拒绝原因，避免前端一律显示「登录失败」让用户反复试
+        if isinstance(exc, AccountDeletedError):
+            error_message = "账号已被删除，请联系管理员处理"
+            http_exc: AppException = UnauthorizedException(error_message)
+        elif isinstance(exc, PermissionError):
+            error_message = f"账号已被禁用: {exc}"
+            http_exc = ForbiddenException(error_message)
+        else:
+            error_message = "飞书免登失败，请改用飞书授权登录"
+            http_exc = UnauthorizedException(error_message)
+            logger.exception("Feishu H5 login failed")
+
+        await db.rollback()
+        try:
+            await log_repo.create(
+                db,
+                status="failed",
+                login_type="feishu_h5",
+                ip_address=ip_address,
+                user_agent=user_agent,
+                error_message=error_message,
+            )
+            await db.commit()
+        except Exception:
+            logger.exception("Failed to record feishu_h5 login failure")
+        raise http_exc from exc
+
+    await log_repo.create(
+        db,
+        user_id=user.id,
+        user_name=user.name,
+        status="success",
+        login_type="feishu_h5",
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+    await db.commit()
+
+    # 会话登记（踢下线用）
+    await _record_login_session(token, user, ip_address, user_agent)
+
+    return FeishuH5LoginApiResponse(
         data=TokenResponse(access_token=token, user=UserResponse.model_validate(user)),
     )
 
