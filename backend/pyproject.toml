@@ -127,6 +127,7 @@ module = [
     "kokoro.*",
     "melo.*",
     "misaki.*",
+    "huggingface_hub.*",
 ]
 ignore_missing_imports = true
 
