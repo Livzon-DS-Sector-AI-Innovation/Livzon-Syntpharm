@@ -8,8 +8,8 @@ import type {
   AuthorizationLetterListItem,
   AuthorizationLetterTrail,
   AuthorizationLetterFilterOptions,
+  ProductInfo,
   ReferenceStandardListItem,
-  SupplementaryReplyListItem,
   RegistrationProject,
 } from '@/types/registration'
 import { apiGet, apiFetchPaginated } from '@/lib/api/client'
@@ -50,6 +50,12 @@ export async function fetchAuthorizationLetterDownloadUrl(id: string): Promise<s
   return result.url
 }
 
+/** 品种登记号对照表（生成授权书弹窗的品种下拉建议） */
+export async function fetchAuthorizationLetterProducts(): Promise<ProductInfo[]> {
+  const result = await apiGet<ProductInfo[]>('/api/v1/registration/authorization-letters/products')
+  return result || []
+}
+
 /** 筛选下拉选项：品种（主数据 ∪ 已有记录）+ 年份（降序） */
 export async function fetchAuthorizationLetterFilterOptions(): Promise<AuthorizationLetterFilterOptions> {
   return apiGet<AuthorizationLetterFilterOptions>(
@@ -83,28 +89,6 @@ export async function fetchReferenceStandards(params?: {
 export async function fetchReferenceStandardDownloadUrl(id: string): Promise<string> {
   const result = await apiGet<{ url: string }>(
     `/api/v1/registration/reference-standards/${id}/download-url`
-  )
-  return result.url
-}
-
-export async function fetchSupplementaryReplies(params?: {
-  page?: number
-  page_size?: number
-  drug_name?: string
-}): Promise<PageResult<SupplementaryReplyListItem>> {
-  const searchParams = new URLSearchParams()
-  if (params?.page) searchParams.set('page', String(params.page))
-  if (params?.page_size) searchParams.set('page_size', String(params.page_size))
-  if (params?.drug_name) searchParams.set('drug_name', params.drug_name)
-  const query = searchParams.toString()
-  return apiFetchPaginated<SupplementaryReplyListItem>(
-    `/api/v1/registration/supplementary-replies${query ? `?${query}` : ''}`
-  )
-}
-
-export async function fetchSupplementaryReplyDownloadUrl(id: string): Promise<string> {
-  const result = await apiGet<{ url: string }>(
-    `/api/v1/registration/supplementary-replies/${id}/download-url`
   )
   return result.url
 }

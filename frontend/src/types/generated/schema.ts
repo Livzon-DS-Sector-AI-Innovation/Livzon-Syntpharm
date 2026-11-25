@@ -11973,7 +11973,7 @@ export interface paths {
         };
         /**
          * 获取药品列表
-         * @description 获取所有药品及其审评节点
+         * @description 获取所有药品及其审评节点与当前阶段摘要
          */
         get: operations["list_drugs_api_v1_registration_drugs_get"];
         put?: never;
@@ -12396,241 +12396,6 @@ export interface paths {
         get: operations["get_api_v1_registration_reference_standards__record_id__download_get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/registration/supplementary-replies/generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 生成发补回复文档 */
-        post: operations["post_api_v1_registration_supplementary_replies_generate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/registration/supplementary-replies": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 发补回复记录列表 */
-        get: operations["get_api_v1_registration_supplementary_replies_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/registration/supplementary-replies/{reply_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 发补回复记录详情 */
-        get: operations["get_api_v1_registration_supplementary_replies__reply_id__get"];
-        put?: never;
-        post?: never;
-        /** 删除发补回复记录 */
-        delete: operations["delete_api_v1_registration_supplementary_replies__reply_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/registration/supplementary-replies/{reply_id}/download-url": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 获取发补回复文件下载URL */
-        get: operations["get_api_v1_registration_supplementary_replies__reply_id__download_url_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/registration/supplementary-replies/{reply_id}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 下载生成的发补回复文件 */
-        get: operations["get_api_v1_registration_supplementary_replies__reply_id__download_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/registration/validation-audit/tasks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 任务列表 */
-        get: operations["get_api_v1_registration_validation_audit_tasks_get"];
-        put?: never;
-        /** 创建审核任务 */
-        post: operations["post_api_v1_registration_validation_audit_tasks_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/registration/validation-audit/tasks/{task_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 任务详情 */
-        get: operations["get_api_v1_registration_validation_audit_tasks__task_id__get"];
-        /** 更新任务 */
-        put: operations["put_api_v1_registration_validation_audit_tasks__task_id__put"];
-        post?: never;
-        /** 删除任务 */
-        delete: operations["delete_api_v1_registration_validation_audit_tasks__task_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/registration/validation-audit/tasks/{task_id}/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 文件列表 */
-        get: operations["get_api_v1_registration_validation_audit_tasks__task_id__files_get"];
-        put?: never;
-        /**
-         * 上传文件
-         * @description 上传审核文件。file_type: protocol / report / attachment
-         */
-        post: operations["post_api_v1_registration_validation_audit_tasks__task_id__files_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/registration/validation-audit/tasks/{task_id}/parse": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 解析文件
-         * @description 提交文件解析后台任务（解析耗时 >5s，不再阻塞请求；前端轮询任务状态）。
-         */
-        post: operations["post_api_v1_registration_validation_audit_tasks__task_id__parse_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/registration/validation-audit/tasks/{task_id}/audit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 执行审核
-         * @description 提交 AI 审核后台任务（多轮 LLM 调用 >5s，不再阻塞请求；前端轮询任务状态）。
-         */
-        post: operations["post_api_v1_registration_validation_audit_tasks__task_id__audit_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/registration/validation-audit/tasks/{task_id}/issues": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 问题列表 */
-        get: operations["get_api_v1_registration_validation_audit_tasks__task_id__issues_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/registration/validation-audit/tasks/{task_id}/report": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 审核报告 */
-        get: operations["get_api_v1_registration_validation_audit_tasks__task_id__report_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/registration/validation-audit/tasks/{task_id}/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 导出报告 */
-        post: operations["post_api_v1_registration_validation_audit_tasks__task_id__export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -22045,11 +21810,6 @@ export interface components {
             message: string;
             data: components["schemas"]["AuditLogListData"];
         };
-        /**
-         * AuditMode
-         * @enum {string}
-         */
-        AuditMode: "protocol" | "report" | "protocol_report";
         /** AuditRequest */
         AuditRequest: {
             /**
@@ -23605,45 +23365,6 @@ export interface components {
         Body_post_api_v1_registration_reference_standards_parse_coa_post: {
             /** Coa */
             coa: string;
-        };
-        /** Body_post_api_v1_registration_supplementary_replies_generate_post */
-        Body_post_api_v1_registration_supplementary_replies_generate_post: {
-            /** Notice */
-            notice: string;
-            /** Template */
-            template?: string | null;
-            /**
-             * Drug Name
-             * @description 药品名称（可选，默认从PDF提取）
-             */
-            drug_name?: string | null;
-            /**
-             * Registration Number
-             * @description 登记号（可选）
-             */
-            registration_number?: string | null;
-            /**
-             * Acceptance Number
-             * @description 受理号（可选）
-             */
-            acceptance_number?: string | null;
-            /**
-             * Company Name
-             * @description 申请人/公司名称（可选）
-             */
-            company_name?: string | null;
-            /**
-             * Remarks
-             * @description 备注
-             */
-            remarks?: string | null;
-        };
-        /** Body_post_api_v1_registration_validation_audit_tasks__task_id__files_post */
-        Body_post_api_v1_registration_validation_audit_tasks__task_id__files_post: {
-            /** Files */
-            files: string[];
-            /** File Type */
-            file_type: string;
         };
         /** Body_preview_import_api_v1_production_product_output_import_preview_post */
         Body_preview_import_api_v1_production_product_output_import_preview_post: {
@@ -29448,21 +29169,6 @@ export interface components {
             data?: components["schemas"]["StatsOverviewResponse"] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
-        /** DataResponse[SupplementaryReplyResponse] */
-        DataResponse_SupplementaryReplyResponse_: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["SupplementaryReplyResponse"] | null;
-            meta?: components["schemas"]["PaginationMeta"] | null;
-        };
         /** DataResponse[SyncStatusResponse] */
         DataResponse_SyncStatusResponse_: {
             /**
@@ -29898,8 +29604,8 @@ export interface components {
             data?: components["schemas"]["DomesticApprovalResponse"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
-        /** DataResponse[list[DrugWithNodesResponse]] */
-        DataResponse_list_DrugWithNodesResponse__: {
+        /** DataResponse[list[DrugWithStageResponse]] */
+        DataResponse_list_DrugWithStageResponse__: {
             /**
              * Code
              * @default 200
@@ -29911,7 +29617,7 @@ export interface components {
              */
             message: string;
             /** Data */
-            data?: components["schemas"]["DrugWithNodesResponse"][] | null;
+            data?: components["schemas"]["DrugWithStageResponse"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[list[EmployeeResponse]] */
@@ -30456,22 +30162,6 @@ export interface components {
             message: string;
             /** Data */
             data?: components["schemas"]["SopAiConfigResponse"][] | null;
-            meta?: components["schemas"]["PaginationMeta"] | null;
-        };
-        /** DataResponse[list[SupplementaryReplyListItem]] */
-        DataResponse_list_SupplementaryReplyListItem__: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            /** Data */
-            data?: components["schemas"]["SupplementaryReplyListItem"][] | null;
             meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /** DataResponse[list[TrainingLedgerPageResponse]] */
@@ -32854,6 +32544,43 @@ export interface components {
             updated_at: string;
             /** Nodes */
             nodes: components["schemas"]["DrugNodeResponse"][];
+        };
+        /**
+         * DrugWithStageResponse
+         * @description 带当前阶段摘要的药品（列表接口返回）
+         */
+        DrugWithStageResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+            /**
+             * Acceptance Date
+             * Format: date
+             */
+            acceptance_date: string;
+            /** Acceptance Number */
+            acceptance_number?: string | null;
+            /** Current Node */
+            current_node: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Nodes */
+            nodes: components["schemas"]["DrugNodeResponse"][];
+            stage: components["schemas"]["NodeStageSummary"];
         };
         /**
          * EDBOOptimizeApiResponse
@@ -45374,7 +45101,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "completed" | "in_progress" | "pending" | "skipped";
+            status: "completed" | "in_progress" | "pending" | "overdue" | "skipped";
             /** Actual Date */
             actual_date?: string | null;
             /** Estimated Date */
@@ -45386,6 +45113,36 @@ export interface components {
             ] | null;
             /** Delta Days */
             delta_days?: number | null;
+        };
+        /**
+         * NodeStageSummary
+         * @description 药品当前阶段轻量摘要（列表接口用，不含历史统计区间）
+         */
+        NodeStageSummary: {
+            /** Current Node Index */
+            current_node_index?: number | null;
+            /** Current Node Name */
+            current_node_name?: string | null;
+            /**
+             * Overdue Indexes
+             * @default []
+             */
+            overdue_indexes: number[];
+            /**
+             * Completed Nodes
+             * @default 0
+             */
+            completed_nodes: number;
+            /**
+             * Total Nodes
+             * @default 0
+             */
+            total_nodes: number;
+            /**
+             * Approved
+             * @default false
+             */
+            approved: boolean;
         };
         /**
          * NotifyEvents
@@ -60171,64 +59928,6 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
-        /** SupplementaryReplyListItem */
-        SupplementaryReplyListItem: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Drug Name */
-            drug_name?: string | null;
-            /** Registration Number */
-            registration_number?: string | null;
-            /** Acceptance Number */
-            acceptance_number?: string | null;
-            /** Company Name */
-            company_name?: string | null;
-            /** Output File Name */
-            output_file_name?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /** SupplementaryReplyResponse */
-        SupplementaryReplyResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Drug Name */
-            drug_name?: string | null;
-            /** Registration Number */
-            registration_number?: string | null;
-            /** Acceptance Number */
-            acceptance_number?: string | null;
-            /** Company Name */
-            company_name?: string | null;
-            /** Remarks */
-            remarks?: string | null;
-            /** Output File Name */
-            output_file_name?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
         /** SupplierImportResponse */
         SupplierImportResponse: {
             /**
@@ -63355,384 +63054,6 @@ export interface components {
              * @default false
              */
             account_deleted: boolean;
-        };
-        /** ValidationAuditFileListApiResponse */
-        ValidationAuditFileListApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            /** Data */
-            data?: components["schemas"]["ValidationAuditFileListItem"][] | null;
-        };
-        /**
-         * ValidationAuditFileListItem
-         * @description 审核文件列表项
-         */
-        ValidationAuditFileListItem: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** File Type */
-            file_type: string;
-            /** Original Filename */
-            original_filename: string;
-            /** File Size */
-            file_size: number;
-            /** Parse Status */
-            parse_status: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
-        /** ValidationAuditFileUploadApiResponse */
-        ValidationAuditFileUploadApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            /** Data */
-            data?: components["schemas"]["ValidationAuditFileUploadItem"][] | null;
-        };
-        /** ValidationAuditFileUploadItem */
-        ValidationAuditFileUploadItem: {
-            /** Filename */
-            filename?: string | null;
-            /** Status */
-            status: string;
-            /** Error */
-            error?: string | null;
-            /** File Id */
-            file_id?: string | null;
-            /** File Size */
-            file_size?: number | null;
-        };
-        /** ValidationAuditIssueListApiResponse */
-        ValidationAuditIssueListApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            /** Data */
-            data?: components["schemas"]["ValidationAuditIssueResponse"][] | null;
-        };
-        /**
-         * ValidationAuditIssueResponse
-         * @description 审核问题详情
-         */
-        ValidationAuditIssueResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Task Id
-             * Format: uuid
-             */
-            task_id: string;
-            /** File Id */
-            file_id?: string | null;
-            /** Issue No */
-            issue_no: string;
-            /** Dimension */
-            dimension: string;
-            /** Check Item */
-            check_item: string;
-            /** Description */
-            description: string;
-            /** Suggestion */
-            suggestion?: string | null;
-            /** Issue Type */
-            issue_type: string;
-            /** Page No */
-            page_no?: number | null;
-            /** Evidence Text */
-            evidence_text?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
-        /** ValidationAuditMessageApiResponse */
-        ValidationAuditMessageApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            /** Data */
-            data?: null;
-        };
-        /** ValidationAuditReportApiResponse */
-        ValidationAuditReportApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["ValidationAuditReportResponse"] | null;
-        };
-        /**
-         * ValidationAuditReportResponse
-         * @description 审核报告详情
-         */
-        ValidationAuditReportResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Task Id
-             * Format: uuid
-             */
-            task_id: string;
-            /** Report Title */
-            report_title: string;
-            /** Report Markdown */
-            report_markdown?: string | null;
-            /** Report File Path */
-            report_file_path?: string | null;
-            /** Version */
-            version: number;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
-        /** ValidationAuditTaskApiResponse */
-        ValidationAuditTaskApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["ValidationAuditTaskResponse"] | null;
-        };
-        /**
-         * ValidationAuditTaskCreate
-         * @description 创建审核任务
-         */
-        ValidationAuditTaskCreate: {
-            /**
-             * Task Name
-             * @description 任务名称
-             */
-            task_name: string;
-            /**
-             * Product Name
-             * @description 品种名称
-             */
-            product_name: string;
-            /**
-             * Method Name
-             * @description 方法名称
-             */
-            method_name: string;
-            /**
-             * Source Company
-             * @description 来源公司
-             */
-            source_company: string;
-            /** @description 审核模式 */
-            audit_mode: components["schemas"]["AuditMode"];
-        };
-        /** ValidationAuditTaskListApiResponse */
-        ValidationAuditTaskListApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["ValidationAuditTaskListData"] | null;
-            meta?: components["schemas"]["PaginationMeta"] | null;
-        };
-        /** ValidationAuditTaskListData */
-        ValidationAuditTaskListData: {
-            /** Items */
-            items: components["schemas"]["ValidationAuditTaskListItem"][];
-            /** Total */
-            total: number;
-        };
-        /**
-         * ValidationAuditTaskListItem
-         * @description 审核任务列表项
-         */
-        ValidationAuditTaskListItem: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Task Name */
-            task_name: string;
-            /** Product Name */
-            product_name: string;
-            /** Source Company */
-            source_company: string;
-            /** Audit Mode */
-            audit_mode: string;
-            /** Status */
-            status: string;
-            /** Conclusion */
-            conclusion?: string | null;
-            /**
-             * Serious Count
-             * @default 0
-             */
-            serious_count: number;
-            /**
-             * General Count
-             * @default 0
-             */
-            general_count: number;
-            /**
-             * Suggestion Count
-             * @default 0
-             */
-            suggestion_count: number;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
-        /**
-         * ValidationAuditTaskResponse
-         * @description 审核任务详情
-         */
-        ValidationAuditTaskResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Task Name */
-            task_name: string;
-            /** Product Name */
-            product_name: string;
-            /** Method Name */
-            method_name: string;
-            /** Source Company */
-            source_company: string;
-            /** Audit Mode */
-            audit_mode: string;
-            /** Status */
-            status: string;
-            /** Conclusion */
-            conclusion?: string | null;
-            /** Risk Level */
-            risk_level?: string | null;
-            /**
-             * Serious Count
-             * @default 0
-             */
-            serious_count: number;
-            /**
-             * General Count
-             * @default 0
-             */
-            general_count: number;
-            /**
-             * Suggestion Count
-             * @default 0
-             */
-            suggestion_count: number;
-            /**
-             * Compliant Count
-             * @default 0
-             */
-            compliant_count: number;
-            /**
-             * Non Compliant Count
-             * @default 0
-             */
-            non_compliant_count: number;
-            /** Report Path */
-            report_path?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /**
-         * ValidationAuditTaskUpdate
-         * @description 更新审核任务
-         */
-        ValidationAuditTaskUpdate: {
-            /**
-             * Task Name
-             * @description 任务名称
-             */
-            task_name?: string | null;
-            /**
-             * Product Name
-             * @description 品种名称
-             */
-            product_name?: string | null;
-            /**
-             * Method Name
-             * @description 方法名称
-             */
-            method_name?: string | null;
-            /**
-             * Source Company
-             * @description 来源公司
-             */
-            source_company?: string | null;
-            /** @description 审核模式 */
-            audit_mode?: components["schemas"]["AuditMode"] | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -95191,7 +94512,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_DrugWithNodesResponse__"];
+                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_DrugWithStageResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -96228,621 +95549,6 @@ export interface operations {
             header?: never;
             path: {
                 record_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_api_v1_registration_supplementary_replies_generate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_post_api_v1_registration_supplementary_replies_generate_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_SupplementaryReplyResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_api_v1_registration_supplementary_replies_get: {
-        parameters: {
-            query?: {
-                /** @description 药品名称搜索 */
-                drug_name?: string | null;
-                page?: number;
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_list_SupplementaryReplyListItem__"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_api_v1_registration_supplementary_replies__reply_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                reply_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_SupplementaryReplyResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_api_v1_registration_supplementary_replies__reply_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                reply_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_NoneType_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_api_v1_registration_supplementary_replies__reply_id__download_url_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                reply_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DataResponse_DownloadUrlResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_api_v1_registration_supplementary_replies__reply_id__download_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                reply_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_api_v1_registration_validation_audit_tasks_get: {
-        parameters: {
-            query?: {
-                product_name?: string | null;
-                source_company?: string | null;
-                status?: string | null;
-                page?: number;
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskListApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_api_v1_registration_validation_audit_tasks_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ValidationAuditTaskCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_api_v1_registration_validation_audit_tasks__task_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    put_api_v1_registration_validation_audit_tasks__task_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ValidationAuditTaskUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_api_v1_registration_validation_audit_tasks__task_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditMessageApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_api_v1_registration_validation_audit_tasks__task_id__files_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditFileListApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_api_v1_registration_validation_audit_tasks__task_id__files_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_post_api_v1_registration_validation_audit_tasks__task_id__files_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditFileUploadApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_api_v1_registration_validation_audit_tasks__task_id__parse_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_api_v1_registration_validation_audit_tasks__task_id__audit_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_api_v1_registration_validation_audit_tasks__task_id__issues_get: {
-        parameters: {
-            query?: {
-                issue_type?: string | null;
-            };
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditIssueListApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_api_v1_registration_validation_audit_tasks__task_id__report_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditReportApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_api_v1_registration_validation_audit_tasks__task_id__export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: string;
             };
             cookie?: {
                 auth_token?: string | null;

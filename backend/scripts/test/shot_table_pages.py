@@ -19,7 +19,6 @@ FRONTEND_URL = os.environ["FRONTEND_URL"]
 PAGES = [
     ("auth-letter", "/registration/authorization-letter", "table tbody tr, div[class*=emptyBody]"),
     ("ref-standard", "/registration/reference-standard", "table tbody tr, div[class*=emptyBody]"),
-    ("supp-reply", "/registration/supplementary-reply", "table tbody tr, div[class*=emptyBody]"),
     ("dossier-writer", "/registration/dossier-writer", "table tbody tr, div[class*=emptyBody]"),
 ]
 

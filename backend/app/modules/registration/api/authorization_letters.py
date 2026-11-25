@@ -41,7 +41,7 @@ async def list_products(
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:read")),
     service: AuthorizationLetterService = Depends(get_service),
 ) -> DataResponse[list[ProductInfo]]:
-    products = service.get_product_list()
+    products = await service.get_product_list()
     return DataResponse[list[ProductInfo]](data=products)
 
 

@@ -11,7 +11,7 @@ from app.modules.registration.schemas.dashboard import (
     DashboardSummaryResponse,
 )
 
-SUBMITTED_STATUSES = ("submitted", "accepted", "under_review")
+SUBMITTED_STATUSES = ("submitted", "accepted", "under_review", "supplementary")
 TERMINAL_STATUSES = ("approved", "withdrawn", "terminated")
 
 

@@ -277,3 +277,48 @@ async def test_filter_options_union_and_year_desc(auth_client, mock_storage):
     years = options["years"]
     assert years == sorted(years, reverse=True)
     assert date.today().year in years
+
+
+# ── 品种登记号对照表（仅新增、不覆盖） ──────────────────
+
+
+async def test_products_endpoint_reads_db(auth_client):
+    """GET /products 读数据库映射表，返回种子数据且按品种名升序。"""
+    resp = await auth_client.get("/api/v1/registration/authorization-letters/products")
+    assert resp.status_code == 200
+    products = resp.json()["data"]
+    assert any(p["product_name"] == "头孢曲松钠" and p["registration_number"] == "Y20190009444" for p in products)
+    names = [p["product_name"] for p in products]
+    assert names == sorted(names)
+
+
+async def test_generate_new_product_inserts_mapping(auth_client, mock_storage):
+    """新品种生成授权书后自动入库，/products 可查到。"""
+    await _generate_via_api(auth_client, product_name="全新测试品种", registration_number="TEST-REG-001")
+
+    resp = await auth_client.get("/api/v1/registration/authorization-letters/products")
+    products = resp.json()["data"]
+    assert any(p["product_name"] == "全新测试品种" and p["registration_number"] == "TEST-REG-001" for p in products)
+
+
+async def test_upsert_does_not_overwrite_existing(db_session: AsyncSession):
+    """已存在品种的登记号不被覆盖；不存在才插入。"""
+    service = AuthorizationLetterService(db_session)
+
+    # 种子已含「头孢曲松钠 -> Y20190009444」，尝试插入新值应被忽略
+    await service.repo.insert_product_registration_number_if_missing("头孢曲松钠", "SHOULD-NOT-OVERWRITE")
+    assert await service.repo.get_registration_number("头孢曲松钠") == "Y20190009444"
+
+    # 新品种才真正插入
+    await service.repo.insert_product_registration_number_if_missing("另一个新品种", "NEW-002")
+    assert await service.repo.get_registration_number("另一个新品种") == "NEW-002"
+
+
+async def test_generate_existing_product_keeps_original_number(auth_client, mock_storage):
+    """老品种生成授权书（即便传入不同登记号）不改变映射库中的原登记号。"""
+    await _generate_via_api(auth_client, product_name="头孢曲松钠", registration_number="Y99999999999")
+
+    resp = await auth_client.get("/api/v1/registration/authorization-letters/products")
+    products = resp.json()["data"]
+    entry = next(p for p in products if p["product_name"] == "头孢曲松钠")
+    assert entry["registration_number"] == "Y20190009444"

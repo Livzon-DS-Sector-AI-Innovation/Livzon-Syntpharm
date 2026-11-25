@@ -148,11 +148,20 @@ async def get_project_logs(db: AsyncSession, project_id: uuid.UUID) -> list[dict
 # ── 创建 / 更新 / 删除 ──
 
 
+async def _ensure_drug_exists(db: AsyncSession, drug_id: uuid.UUID | None) -> None:
+    """关联审评品种必须存在且未删除。"""
+    if drug_id is None:
+        return
+    if not await repo.get_drug_by_id(db, drug_id):
+        raise ValueError("关联的审评品种不存在或已删除")
+
+
 async def create_project(
     db: AsyncSession,
     data: ProjectCreate,
     created_by: uuid.UUID | None = None,
 ) -> RegistrationProject:
+    await _ensure_drug_exists(db, data.drug_id)
     payload = data.model_dump(exclude_unset=True)
     if not payload.get("project_no"):
         payload["project_no"] = await project_repo.next_project_no(db, _now().year)
@@ -171,7 +180,10 @@ async def create_project(
 
 async def update_project(db: AsyncSession, project_id: uuid.UUID, data: ProjectUpdate) -> RegistrationProject:
     project = await get_project(db, project_id)
-    for field, value in data.model_dump(exclude_unset=True).items():
+    updates = data.model_dump(exclude_unset=True)
+    if "drug_id" in updates:
+        await _ensure_drug_exists(db, updates["drug_id"])
+    for field, value in updates.items():
         setattr(project, field, value)
     await db.commit()
     await db.refresh(project)
@@ -278,10 +290,39 @@ def _desired_status_from_drug(drug: Drug, nodes: list[DrugNode]) -> str | None:
     return "supplementary" if deficiency else "under_review"
 
 
+#: 受理号清空后可回退的状态（进行中的受理后状态）；已获批属完成结局，需人工处理
+ROLLBACK_STATUSES = {"accepted", "under_review", "supplementary"}
+
+
+async def _rollback_projects_without_acceptance(db: AsyncSession, projects: list[RegistrationProject]) -> int:
+    """受理号被清空：进行中的受理后项目退回「已申报」，并清空受理信息与留痕。
+
+    已获批 / 已撤回 / 已终止不动（撤回、终止由人工维护，获批是完成结局）。
+    """
+    changed = 0
+    for project in projects:
+        if project.status not in ROLLBACK_STATUSES:
+            continue
+        old_status = project.status
+        project.status = "submitted"
+        project.acceptance_number = None
+        project.accepted_at = None
+        project.expected_completion_at = None
+        if project.pre_stage == "accepted":
+            completed = dict(project.stage_completed_at or {})
+            completed.pop("accepted", None)
+            project.stage_completed_at = completed
+            project.pre_stage = "submission"
+        await _write_system_log(db, project.id, f"{_status_label(old_status)} → 已申报（受理号已清空）")
+        changed += 1
+    return changed
+
+
 async def sync_from_drug(db: AsyncSession, drug_id: uuid.UUID) -> int:
     """申报进度查询侧变化后回写关联项目状态（受理号登记 / 节点推进 / 审评结束）。
 
     每次状态变更自动写入 system 进展记录；撤回/终止状态不被同步覆盖。
+    受理号被清空时，进行中的受理后项目回退「已申报」。
     返回状态发生变更的项目数。
     """
     drug = await repo.get_drug_by_id(db, drug_id)
@@ -294,6 +335,12 @@ async def sync_from_drug(db: AsyncSession, drug_id: uuid.UUID) -> int:
 
     # 节点走全新查询，避免会话内已加载的 drug.nodes 集合看不到同事务新增/修改的节点
     nodes = await repo.get_drug_nodes(db, drug_id)
+
+    if not drug.acceptance_number:
+        rolled_back = await _rollback_projects_without_acceptance(db, projects)
+        if rolled_back:
+            await db.commit()
+        return rolled_back
 
     changed = 0
     for project in projects:

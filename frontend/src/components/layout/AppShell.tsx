@@ -18,6 +18,8 @@ interface AppShellProps {
   /** 当前登录用户展示信息（服务端下发，避免首屏「未登录」闪动） */
   userName: string
   avatarUrl?: string | null
+  /** 菜单 key → 外部系统地址：命中时侧栏点击改为新标签页打开，未配置时为空对象 */
+  externalLinks?: Record<string, string>
 }
 
 export function AppShell({
@@ -26,6 +28,7 @@ export function AppShell({
   userId,
   userName,
   avatarUrl,
+  externalLinks = {},
 }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const queryClient = useQueryClient()
@@ -62,7 +65,7 @@ export function AppShell({
         <div className="flex flex-1 overflow-hidden">
           {/* 桌面侧栏：md(≥768px) 显示；移动端由下方 Drawer 承载，用 CSS 决定显示避免首屏闪动 */}
           <div className="hidden md:flex shrink-0 overflow-hidden">
-            <Sidebar permissionView={permissionView} menus={resolvedMenus} />
+            <Sidebar permissionView={permissionView} menus={resolvedMenus} externalLinks={externalLinks} />
           </div>
           <Drawer
             placement="left"
@@ -73,6 +76,7 @@ export function AppShell({
             <Sidebar
               permissionView={permissionView}
               menus={resolvedMenus}
+              externalLinks={externalLinks}
               forceExpanded
               onNavigate={() => setSidebarOpen(false)}
             />

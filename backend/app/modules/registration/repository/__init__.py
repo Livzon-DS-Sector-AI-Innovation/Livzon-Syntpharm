@@ -3,7 +3,6 @@
 from app.modules.registration.repository.authorization import (
     AuthorizationLetterRepository,
     ReferenceStandardRepository,
-    SupplementaryReplyRepository,
 )
 from app.modules.registration.repository.drug import (
     create_drug,
@@ -29,23 +28,10 @@ from app.modules.registration.repository.reference_substance import (
     get_reference_substances,
     update_reference_substance,
 )
-from app.modules.registration.repository.validation_audit import (
-    ValidationAuditFileRepository,
-    ValidationAuditIssueRepository,
-    ValidationAuditKnowledgeBaseRepository,
-    ValidationAuditReportRepository,
-    ValidationAuditTaskRepository,
-)
 
 __all__ = [
     "AuthorizationLetterRepository",
     "ReferenceStandardRepository",
-    "SupplementaryReplyRepository",
-    "ValidationAuditFileRepository",
-    "ValidationAuditIssueRepository",
-    "ValidationAuditKnowledgeBaseRepository",
-    "ValidationAuditReportRepository",
-    "ValidationAuditTaskRepository",
     "create_drug",
     "create_drug_node",
     "create_holiday",

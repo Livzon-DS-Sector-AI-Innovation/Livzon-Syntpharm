@@ -11,7 +11,6 @@ import type {
   ProjectProgressLog,
   ReferenceStandardListItem,
   RegistrationProject,
-  SupplementaryReplyListItem,
 } from '@/types/registration'
 
 type DrugCreate = components['schemas']['DrugCreate']
@@ -26,19 +25,6 @@ export async function generateAuthorizationLetter(formData: FormData) {
 
 export async function deleteAuthorizationLetter(id: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/registration/authorization-letters/${id}`, {
-    method: 'DELETE',
-  })
-}
-
-export async function generateSupplementaryReply(formData: FormData) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/supplementary-replies/generate`, {
-    method: 'POST',
-    body: formData,
-  })
-}
-
-export async function deleteSupplementaryReply(id: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/supplementary-replies/${id}`, {
     method: 'DELETE',
   })
 }
@@ -94,18 +80,6 @@ export async function fetchReferenceStandards(
   })
   return apiFetchPaginated<ReferenceStandardListItem>(
     `${getApiBaseUrl()}/api/v1/registration/reference-standards?${searchParams.toString()}`,
-  )
-}
-
-export async function fetchSupplementaryReplies(
-  params: { page: number; page_size: number },
-): Promise<PageResult<SupplementaryReplyListItem>> {
-  const searchParams = new URLSearchParams({
-    page: params.page.toString(),
-    page_size: params.page_size.toString(),
-  })
-  return apiFetchPaginated<SupplementaryReplyListItem>(
-    `${getApiBaseUrl()}/api/v1/registration/supplementary-replies?${searchParams.toString()}`,
   )
 }
 

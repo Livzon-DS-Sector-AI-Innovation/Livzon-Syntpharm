@@ -6,13 +6,11 @@ import Link from 'next/link'
 const PATH_LABELS: Record<string, string> = {
   ledger: '注册台账',
   projects: '注册项目管理',
-  review: '审评进度查询',
+  review: '申报进度查询',
   regulation: '法规跟踪',
   'dossier-writer': '申报资料撰写',
-  'validation-audit': '验证文件审核',
   'authorization-letter': '授权书管理',
-  'supplementary-reply': '发补回复',
-  'reference-standard': '对照物质说明表',
+  'reference-standard': '标准物质说明书管理',
   'docx-translator': '文档翻译',
 }
 
@@ -33,8 +31,6 @@ function getBreadcrumbItems(pathname: string) {
       const parentPath = segments.slice(0, i).join('/')
       if (parentPath === 'dossier-writer') {
         items.push({ title: '品种详情' })
-      } else if (parentPath === 'validation-audit') {
-        items.push({ title: '任务详情' })
       } else {
         items.push({ title: '详情' })
       }

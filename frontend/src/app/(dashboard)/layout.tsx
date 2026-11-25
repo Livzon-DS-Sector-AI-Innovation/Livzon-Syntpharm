@@ -2,6 +2,7 @@ import { AppShell } from "@/components/layout/AppShell"
 import { AntdProvider } from "@/components/AntdProvider"
 import { getCurrentUser } from "@/actions/auth"
 import { getPermissionView } from "@/lib/permissions/server"
+import { getExternalMenuLinks } from "@/lib/registration/external"
 import { redirect } from "next/navigation"
 import '@/lib/dayjs-config'
 
@@ -25,11 +26,14 @@ export default async function DashboardLayout({
   // 导航可见性在服务端算好再下发，避免客户端「先渲染全部 Tab、拿到权限后再消失」的闪烁。
   // 规则：未接入权限控制的模块恒可见（见 lib/permissions/modules.ts）。
   const permissionView = await getPermissionView()
+  // 外部系统入口地址在服务端读一次下发，避免客户端再取配置产生闪烁
+  const externalLinks = getExternalMenuLinks()
 
   return (
     <AntdProvider>
       <AppShell
         permissionView={permissionView}
+        externalLinks={externalLinks}
         userId={user.id}
         userName={user.name}
         avatarUrl={user.avatar_url}

@@ -49,26 +49,6 @@ export interface AuthorizationLetterListParams {
   page_size?: number
 }
 
-// ── 发补回复 ──
-
-/** 契约模型，来自后端 OpenAPI */
-export type SupplementaryReply = components['schemas']['SupplementaryReplyResponse']
-
-
-/** 契约模型，来自后端 OpenAPI */
-export type SupplementaryReplyListItem = components['schemas']['SupplementaryReplyListItem']
-
-
-/** 契约模型，来自后端 OpenAPI */
-export type SupplementaryReplyResponse = components['schemas']['DataResponse_SupplementaryReplyResponse_']
-
-
-export interface SupplementaryReplyListParams {
-  drug_name?: string
-  page?: number
-  page_size?: number
-}
-
 // ── 对照物质说明表 ──
 
 /** 契约模型，来自后端 OpenAPI */
@@ -125,7 +105,12 @@ export interface Drug {
   created_at: string
   updated_at: string
   nodes: DrugNode[]
+  /** 当前阶段摘要（列表接口返回；详情接口无此字段） */
+  stage?: NodeStageSummary
 }
+
+/** 契约模型，来自后端 OpenAPI */
+export type NodeStageSummary = components['schemas']['NodeStageSummary']
 
 export interface DrugNode {
   id: string

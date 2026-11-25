@@ -1,13 +1,16 @@
 """Drug service: business logic."""
 
 import uuid
+from datetime import date
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import BadRequestException, NotFoundException
 from app.modules.registration import repository as repo
 from app.modules.registration.models.drug import Drug
-from app.modules.registration.schemas.drug import DrugCreate, DrugUpdate
+from app.modules.registration.models.review import ReviewNode
+from app.modules.registration.schemas.drug import DrugCreate, DrugUpdate, NodeStageSummary
+from app.modules.registration.service.prediction import load_calendar, locate_stage_light
 
 
 async def create_drug(db: AsyncSession, data: DrugCreate) -> Drug:
@@ -18,6 +21,32 @@ async def create_drug(db: AsyncSession, data: DrugCreate) -> Drug:
 async def get_drugs(db: AsyncSession) -> list[Drug]:
     """获取所有药品"""
     return await repo.get_drugs(db)
+
+
+async def get_drugs_with_stage(db: AsyncSession) -> list[tuple[Drug, NodeStageSummary]]:
+    """获取所有药品及其当前阶段摘要（列表接口用，不含历史统计区间）。
+
+    节假日集合只加载一次并复用于全部品种，避免每品种重复查询。
+    """
+    drugs = await repo.get_drugs(db)
+    if not drugs:
+        return []
+    holidays, makeups = await load_calendar(db)
+    configs = ReviewNode.get_all()
+    today = date.today()
+    result: list[tuple[Drug, NodeStageSummary]] = []
+    for drug in drugs:
+        node_records = {n.node_index: n for n in drug.nodes}
+        _, summary, _ = locate_stage_light(
+            drug.acceptance_date,
+            node_records,
+            configs,
+            holidays,
+            makeups,
+            today,
+        )
+        result.append((drug, summary))
+    return result
 
 
 async def get_drug(db: AsyncSession, drug_id: uuid.UUID) -> Drug:

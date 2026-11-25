@@ -536,6 +536,9 @@ const registrationRoutes: RouteCase[] = [
     // 首屏首页由服务端直出，浏览器侧不另发请求；翻页才会取数
     expectData: antdTableData,
   },
+  // 覆盖「DOSSIER_WRITER_URL 未配置 → 回退系统内旧页面」的降级路径。
+  // 配置了外部地址的环境该路由会 307 跳外部系统，CI 不注入该变量，故断言仍成立；
+  // 也不适合改用 kind:'redirect'（其实现用 page.goto + toHaveURL 并断言无网络失败，跨主机不可达）。
   { path: '/registration/dossier-writer', module: 'registration', kind: 'normal', expected: heading('申报资料撰写') },
   {
     path: '/registration/reference-standard',
@@ -546,17 +549,7 @@ const registrationRoutes: RouteCase[] = [
     expectData: antdTableData,
   },
   { path: '/registration/review', module: 'registration', kind: 'normal', expected: heading('申报进度查询') },
-  {
-    path: '/registration/supplementary-reply',
-    module: 'registration',
-    kind: 'normal',
-    expected: heading('补充回复'),
-    // 首屏首页由服务端直出，浏览器侧不另发请求；翻页才会取数
-    expectData: antdTableData,
-  },
-  { path: '/registration/validation-audit', module: 'registration', kind: 'normal', expected: heading('验证审计') },
   { path: '/registration/docx-translator', module: 'registration', kind: 'normal', expected: heading('文档翻译') },
-  // Excluded: /registration/validation-audit/new — form page
 ]
 
 const researchRoutes: RouteCase[] = [
