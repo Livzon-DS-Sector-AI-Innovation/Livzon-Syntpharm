@@ -17,6 +17,23 @@ Create Date: 2026-11-24
 
 已确认不保留存量数据（业务方同意直接 drop，未做数据导出）。
 downgrade() 仅重建空表结构，历史数据与磁盘文件均不可恢复。
+
+Orphan Table 处置留痕（AGENTS.md「Orphan Table 处理规则」）：
+
+1. 代码引用：本 PR 已删除全部读写代码（api/models/schemas/repository/service/
+   prompts/reply_generator 与前端页面/组件/actions/types），迁移之外零残留，
+   由 `grep -rn "validation_audit|supplementary_repl|reply_generator"` 复核。
+2. 业务确认：产品确认两模块下线、历史数据无需留档（2026-11-25，PR #248 描述
+   「数据影响」章节），因此未执行导出。
+3. 备份：uat 侧已随 #247 部署执行过本迁移；生产部署前如需留档，运维可按下列
+   语句在目标库先行导出（表名固定，无参数拼接）：
+
+       pg_dump -t 'registration.validation_audit*' \
+               -t 'registration.supplementary_replies' <db> > before_0223.sql
+
+   若未执行导出，则视为接受数据不可恢复。
+4. 行数核对：本迁移在 uat 已执行、源表不再存在，无法回填 row count；
+   部署到新环境前可用 `SELECT count(*) FROM registration.<table>` 逐表记录。
 """
 
 from collections.abc import Sequence
@@ -133,9 +150,7 @@ def downgrade() -> None:
     op.create_table(
         "validation_audit_files",
         sa.Column("task_id", sa.UUID(), nullable=False, comment="任务ID（逻辑关联）"),
-        sa.Column(
-            "file_type", sa.String(length=30), nullable=False, comment="文件类型: protocol/report/attachment"
-        ),
+        sa.Column("file_type", sa.String(length=30), nullable=False, comment="文件类型: protocol/report/attachment"),
         sa.Column("original_filename", sa.String(length=500), nullable=False, comment="原始文件名"),
         sa.Column("file_path", sa.String(length=500), nullable=False, comment="文件存储路径"),
         sa.Column("file_size", sa.Integer(), server_default="0", nullable=False, comment="文件大小(字节)"),

@@ -101632,26 +101632,31 @@
           },
           "product_name": {
             "type": "string",
+            "maxLength": 128,
             "title": "Product Name",
             "description": "\u4ea7\u54c1\u540d\u79f0"
           },
           "registration_number": {
             "type": "string",
+            "maxLength": 32,
             "title": "Registration Number",
             "description": "\u767b\u8bb0\u53f7"
           },
           "preparation_unit": {
             "type": "string",
+            "maxLength": 256,
             "title": "Preparation Unit",
             "description": "\u5236\u5242\u5355\u4f4d\u540d\u79f0"
           },
           "preparation_name": {
             "type": "string",
+            "maxLength": 256,
             "title": "Preparation Name",
             "description": "\u5236\u5242\u540d\u79f0"
           },
           "administration_route": {
             "type": "string",
+            "maxLength": 64,
             "title": "Administration Route",
             "description": "\u7ed9\u836f\u9014\u5f84"
           },

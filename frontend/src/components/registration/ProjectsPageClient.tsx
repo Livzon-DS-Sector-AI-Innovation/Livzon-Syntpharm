@@ -9,9 +9,9 @@
  * 数据全部来自真实接口：/registration/projects（列表/KPI/阶段/进展记录）
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { App, DatePicker, Drawer, Empty, Form, Input, Modal, Pagination, Popconfirm, Select, Spin, Table } from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
@@ -150,10 +150,7 @@ export function ProjectsPageClient() {
   const [linkSaving, setLinkSaving] = useState(false)
   const [createForm] = Form.useForm()
 
-  const router = useRouter()
-  const pathname = usePathname()
   const projectParam = useSearchParams().get('project')
-  const autoOpenedRef = useRef<string | null>(null)
 
   // 集合端点规范路径带尾斜杠，浏览器直连会被 trailingSlash 归一化打断 → 统一走 Server Action 服务端取数
   const projectsQuery = useQuery({
@@ -165,7 +162,31 @@ export function ProjectsPageClient() {
         status: statusFilter === '全部' ? undefined : statusFilter,
       }),
   })
+
   const projects = useMemo(() => projectsQuery.data ?? [], [projectsQuery.data])
+
+  // 申报进度页「查看 ›」跳转：当前筛选结果里找不到时，用 React Query 拉全量再定位；
+  // 目标项目由 URL + 列表派生（useMemo），不在 effect 里 setState
+  const deepLinkQuery = useQuery({
+    queryKey: ['registration-projects', 'deep-link', projectParam],
+    queryFn: () => fetchRegistrationProjectsServer({}),
+    enabled: Boolean(projectParam) && !projectsQuery.isPending && !projects.some(p => p.id === projectParam),
+    staleTime: 30_000,
+  })
+
+  const deepLinkProject = useMemo(() => {
+    if (!projectParam) return null
+    return (
+      projects.find(p => p.id === projectParam) ??
+      deepLinkQuery.data?.find(p => p.id === projectParam) ??
+      null
+    )
+  }, [projectParam, projects, deepLinkQuery.data])
+
+  // 用户手动点击优先，深链目标作为回落
+  const activeProject = selected ?? deepLinkProject
+  const drawerVisible = drawerOpen || Boolean(deepLinkProject)
+
 
   const kpiQuery = useQuery({
     queryKey: ['registration-projects-kpi'],
@@ -173,9 +194,9 @@ export function ProjectsPageClient() {
   })
 
   const logsQuery = useQuery({
-    queryKey: ['registration-project-logs', selected?.id],
+    queryKey: ['registration-project-logs', activeProject?.id],
     queryFn: () => fetchProjectLogsServer(selected!.id),
-    enabled: !!selected && drawerOpen,
+    enabled: !!activeProject && drawerOpen,
   })
   const logs = useMemo(() => logsQuery.data ?? [], [logsQuery.data])
 
@@ -194,9 +215,10 @@ export function ProjectsPageClient() {
       })),
     [drugs],
   )
+  const activeDrugId = activeProject?.drug_id
   const linkedDrug = useMemo(
-    () => (selected?.drug_id ? (drugs.find(d => d.id === selected.drug_id) ?? null) : null),
-    [drugs, selected],
+    () => (activeDrugId ? (drugs.find(d => d.id === activeDrugId) ?? null) : null),
+    [drugs, activeDrugId],
   )
 
   const refreshAll = () => {
@@ -233,7 +255,7 @@ export function ProjectsPageClient() {
     try {
       await deleteRegistrationProject(id)
       message.success('删除成功')
-      if (selected?.id === id) setDrawerOpen(false)
+      if (activeProject?.id === id) setDrawerOpen(false)
       refreshAll()
     } catch {
       message.error('删除失败')
@@ -272,8 +294,8 @@ export function ProjectsPageClient() {
   }
 
   const handleStageClick = async (stageKey: PreStage) => {
-    if (!selected || advancing) return
-    if (isPostAcceptance(selected.status)) {
+    if (!activeProject || advancing) return
+    if (isPostAcceptance(activeProject.status)) {
       message.info('项目已受理，阶段与状态由申报进度查询维护，此处只读')
       return
     }
@@ -281,10 +303,10 @@ export function ProjectsPageClient() {
       message.info('「已受理」阶段由申报进度查询登记受理号后自动同步置达')
       return
     }
-    if (stageKey === selected.pre_stage) return
+    if (stageKey === activeProject.pre_stage) return
     setAdvancing(true)
     try {
-      const result = await advanceProjectStage(selected.id, stageKey)
+      const result = await advanceProjectStage(activeProject.id, stageKey)
       if (!result.success) {
         message.error(result.message)
         return
@@ -299,10 +321,10 @@ export function ProjectsPageClient() {
 
   const handleAddLog = async () => {
     const content = logText.trim()
-    if (!selected || !content || logSaving) return
+    if (!activeProject || !content || logSaving) return
     setLogSaving(true)
     try {
-      const result = await addProjectProgressLog(selected.id, content)
+      const result = await addProjectProgressLog(activeProject.id, content)
       if (!result.success) {
         message.error(result.message)
         return
@@ -318,16 +340,16 @@ export function ProjectsPageClient() {
   // ── 关联审评品种（关联 / 解绑） ──
 
   const openLinkModal = () => {
-    if (!selected) return
-    setLinkDrugId(selected.drug_id ?? null)
+    if (!activeProject) return
+    setLinkDrugId(activeProject.drug_id ?? null)
     setLinkOpen(true)
   }
 
   const handleSetDrugLink = async (drugId: string | null) => {
-    if (!selected || linkSaving) return
+    if (!activeProject || linkSaving) return
     setLinkSaving(true)
     try {
-      const result = await updateRegistrationProject(selected.id, { drug_id: drugId })
+      const result = await updateRegistrationProject(activeProject.id, { drug_id: drugId })
       if (result.code !== 200) {
         message.error(result.message || '操作失败')
         return
@@ -344,34 +366,6 @@ export function ProjectsPageClient() {
       setLinkSaving(false)
     }
   }
-
-  // 申报进度页「查看 ›」跳转：列表就绪后自动打开对应项目抽屉，并清掉参数避免重复触发
-  useEffect(() => {
-    if (!projectParam || projectsQuery.isPending) return
-    if (autoOpenedRef.current === projectParam) return
-    autoOpenedRef.current = projectParam
-    const targetId = projectParam
-    router.replace(pathname)
-    void (async () => {
-      let target = projects.find(p => p.id === targetId)
-      if (!target) {
-        // 当前筛选结果中找不到时，拉全量再定位一次
-        try {
-          const all = await fetchRegistrationProjectsServer({})
-          target = all.find(p => p.id === targetId)
-        } catch {
-          target = undefined
-        }
-      }
-      if (target) {
-        setSelected(target)
-        setLogText('')
-        setDrawerOpen(true)
-      } else {
-        message.warning('未找到对应的注册项目，可能已被删除')
-      }
-    })()
-  }, [projectParam, projects, projectsQuery.isPending, router, pathname, message])
 
   // ── 表格列 ──
 
@@ -508,8 +502,8 @@ export function ProjectsPageClient() {
 
   // ── 抽屉派生 ──
 
-  const stageIdx = selected ? Math.max(0, STAGES.findIndex(s => s.key === selected.pre_stage)) : 0
-  const locked = !!selected && isPostAcceptance(selected.status)
+  const stageIdx = activeProject ? Math.max(0, STAGES.findIndex(s => s.key === activeProject.pre_stage)) : 0
+  const locked = !!activeProject && isPostAcceptance(activeProject.status)
 
   return (
     <div className={ui.regUi}>
@@ -618,21 +612,21 @@ export function ProjectsPageClient() {
       {/* 维护抽屉 */}
       <Drawer
         size={580}
-        open={drawerOpen}
+        open={drawerVisible}
         onClose={() => {
           setDrawerOpen(false)
           setSelected(null)
         }}
         title={
-          selected && (
+          activeProject && (
             <div>
               <div className={styles.drawerName}>
-                {selected.name || selected.product_name}
-                <span className={ui.tagBrand}>{selected.registration_type}</span>
-                <StatusTag status={selected.status} />
+                {activeProject.name || activeProject.product_name}
+                <span className={ui.tagBrand}>{activeProject.registration_type}</span>
+                <StatusTag status={activeProject.status} />
               </div>
               <div className={styles.drawerSub}>
-                {selected.project_no || '—'} · {selected.product_name} · 负责人 {selected.owner || '—'}
+                {activeProject.project_no || '—'} · {activeProject.product_name} · 负责人 {activeProject.owner || '—'}
               </div>
             </div>
           )
@@ -640,7 +634,7 @@ export function ProjectsPageClient() {
         styles={{ body: { padding: 0 } }}
       >
         <div className={`${ui.tokenScope} ${styles.drawerBody}`}>
-          {selected && (
+          {activeProject && (
             <Spin spinning={advancing}>
               {/* 阶段轨 */}
               <div className={styles.secTitle}>
@@ -682,48 +676,48 @@ export function ProjectsPageClient() {
               <div className={styles.kvGrid}>
                 <div className={styles.kv}>
                   <div className={styles.kvK}>编号</div>
-                  <div className={styles.kvV}>{selected.project_no || '—'}</div>
+                  <div className={styles.kvV}>{activeProject.project_no || '—'}</div>
                 </div>
                 <div className={styles.kv}>
                   <div className={styles.kvK}>品种</div>
-                  <div className={styles.kvV}>{selected.product_name}</div>
+                  <div className={styles.kvV}>{activeProject.product_name}</div>
                 </div>
                 <div className={styles.kv}>
                   <div className={styles.kvK}>类型</div>
-                  <div className={styles.kvV}>{selected.registration_type || '—'}</div>
+                  <div className={styles.kvV}>{activeProject.registration_type || '—'}</div>
                 </div>
                 <div className={styles.kv}>
                   <div className={styles.kvK}>当前状态</div>
-                  <div className={styles.kvV}>{projectStatusMeta(selected.status).label}</div>
+                  <div className={styles.kvV}>{projectStatusMeta(activeProject.status).label}</div>
                 </div>
                 <div className={styles.kv}>
                   <div className={styles.kvK}>目标市场</div>
-                  <div className={styles.kvV}>{selected.market || '—'}</div>
+                  <div className={styles.kvV}>{activeProject.market || '—'}</div>
                 </div>
                 <div className={styles.kv}>
                   <div className={styles.kvK}>负责人</div>
-                  <div className={styles.kvV}>{selected.owner || '—'}</div>
+                  <div className={styles.kvV}>{activeProject.owner || '—'}</div>
                 </div>
                 <div className={styles.kv}>
                   <div className={styles.kvK}>预计递交日期</div>
-                  <div className={styles.kvV}>{selected.planned_submission_date || '—'}</div>
+                  <div className={styles.kvV}>{activeProject.planned_submission_date || '—'}</div>
                 </div>
                 <div className={styles.kv}>
                   <div className={styles.kvK}>受理号</div>
-                  <div className={selected.acceptance_number ? styles.kvV : styles.kvVMuted}>
-                    {selected.acceptance_number || '—（受理后自动同步）'}
+                  <div className={activeProject.acceptance_number ? styles.kvV : styles.kvVMuted}>
+                    {activeProject.acceptance_number || '—（受理后自动同步）'}
                   </div>
                 </div>
                 <div className={`${styles.kv} ${styles.kvSpan2}`}>
                   <div className={styles.kvK}>关联审评品种</div>
                   <div className={styles.kvV}>
                     <div className={styles.drugLinkRow}>
-                      {selected.drug_id ? (
+                      {activeProject.drug_id ? (
                         <>
                           <span>
                             {linkedDrug?.name || '审评品种'}
                             <span className={styles.drugLinkSub}>
-                              （{linkedDrug?.acceptance_number || selected.acceptance_number || '未登记受理号'}）
+                              （{linkedDrug?.acceptance_number || activeProject.acceptance_number || '未登记受理号'}）
                             </span>
                           </span>
                           <Popconfirm
