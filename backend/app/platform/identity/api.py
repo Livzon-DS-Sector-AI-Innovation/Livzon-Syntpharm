@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import secrets
 import uuid
@@ -23,7 +24,7 @@ from app.core.jobs import submit_job
 from app.core.response import build_response
 from app.platform.audit.service import record_audit_log
 from app.platform.identity.models import User
-from app.platform.identity.repository import DepartmentRepository, UserRepository
+from app.platform.identity.repository import DepartmentRepository, LoginLogRepository, UserRepository
 from app.platform.identity.schemas import (
     ChangePasswordApiResponse,
     ChangePasswordData,
@@ -40,6 +41,10 @@ from app.platform.identity.schemas import (
     FeishuConfigApiResponse,
     FeishuConfigUpsert,
     FeishuDiagnosticApiResponse,
+    FeishuH5ConfigApiResponse,
+    FeishuH5ConfigData,
+    FeishuH5LoginApiResponse,
+    FeishuH5LoginRequest,
     LocalLoginApiResponse,
     LocalLoginRequest,
     LocalUserCreate,
@@ -83,6 +88,7 @@ from app.platform.identity.schemas import (
     UserUnbindFeishuApiResponse,
 )
 from app.platform.permission.public_api import get_role_briefs_by_user_ids
+from app.shared.config_reader import get_module_setting_bool
 from app.shared.module_registry import BUSINESS_MODULES
 
 # 模块编码 → 中文名（用户列表角色列的提示文案用，不额外 join 表）
@@ -229,6 +235,143 @@ async def local_login(
     await db.commit()
 
     return LocalLoginApiResponse(
+        data=TokenResponse(access_token=token, user=UserResponse.model_validate(user)),
+    )
+
+
+# ── 飞书网页应用免登（H5） ───────────────────────────────────────────
+
+# 开关放在运行时配置（core.module_settings → identity.H5_LOGIN_ENABLED），
+# 运营可在 Web UI 灰度/关停，不需要改部署环境变量重启。缺行时默认开启（与旧行为一致）。
+_H5_LOGIN_SETTING_MODULE = "identity"
+_H5_LOGIN_SETTING_KEY = "H5_LOGIN_ENABLED"
+
+# 登录请求内的总预算：外部链路（v2 兑换 → app_access_token → v1 兑换 → user_info）
+# 任一步卡住都必须在这个时间内收口，避免 HTTP 请求长时间挂起。
+_H5_LOGIN_BUDGET_SECONDS = 5.0
+
+
+async def _h5_login_enabled() -> bool:
+    return await get_module_setting_bool(_H5_LOGIN_SETTING_MODULE, _H5_LOGIN_SETTING_KEY, True)
+
+
+async def _record_h5_login_failure(
+    db: AsyncSession,
+    log_repo: LoginLogRepository,
+    *,
+    ip_address: str | None,
+    user_agent: str | None,
+    error_message: str,
+) -> None:
+    """回滚未完成事务并写一条失败登录日志；日志写不进去也不改变登录错误的返回。"""
+    await db.rollback()
+    try:
+        await log_repo.create(
+            db,
+            status="failed",
+            login_type="feishu_h5",
+            ip_address=ip_address,
+            user_agent=user_agent,
+            error_message=error_message,
+        )
+        await db.commit()
+    except Exception:
+        logger.exception(
+            "Failed to record feishu_h5 login failure",
+            extra={"biz_module": "identity", "ip_address": ip_address, "user_agent": user_agent},
+        )
+
+
+@auth_router.get(
+    "/h5/config",
+    summary="飞书网页应用免登配置（公开）",
+    response_model=FeishuH5ConfigApiResponse,
+)
+async def feishu_h5_config() -> FeishuH5ConfigApiResponse:
+    """前端判断是否具备免登条件用。只返回 App ID（可公开），不返回 App Secret。"""
+    platform_cfg = get_settings().feishu.platform
+    enabled = bool(await _h5_login_enabled() and platform_cfg.app_id)
+    return FeishuH5ConfigApiResponse(
+        data=FeishuH5ConfigData(enabled=enabled, app_id=platform_cfg.app_id if enabled else ""),
+    )
+
+
+@auth_router.post(
+    "/h5/login",
+    summary="飞书网页应用免登登录",
+    response_model=FeishuH5LoginApiResponse,
+)
+async def feishu_h5_login(
+    payload: FeishuH5LoginRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> FeishuH5LoginApiResponse:
+    """用 H5 JSSDK 取到的登录预授权码完成登录（免账号密码、免授权页跳转）。
+
+    公开接口：登录前没有 token，身份由飞书下发的 code 证明；code 一次性、5 分钟有效。
+    """
+    from app.platform.identity.service import AccountDeletedError, handle_oauth_callback
+
+    if not await _h5_login_enabled():
+        raise NotFoundException("未启用飞书网页应用免登")
+
+    ip_address = _client_ip(request)
+    user_agent = request.headers.get("user-agent")
+    log_repo = LoginLogRepository()
+    log_extra = {"biz_module": "identity", "ip_address": ip_address, "user_agent": user_agent}
+
+    try:
+        async with asyncio.timeout(_H5_LOGIN_BUDGET_SECONDS):
+            user, token = await handle_oauth_callback(db, payload.code, preauth_code=True)
+    except TimeoutError:
+        # 外部链路超出请求预算：按可重试失败处理，不让请求继续挂住
+        error_message = "飞书响应超时，请重试"
+        logger.warning("Feishu H5 login timed out", extra=log_extra)
+        await _record_h5_login_failure(
+            db,
+            log_repo,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            error_message=error_message,
+        )
+        raise UnauthorizedException(error_message) from None
+    except Exception as exc:
+        # 区分可解释的拒绝原因，避免前端一律显示「登录失败」让用户反复试
+        if isinstance(exc, AccountDeletedError):
+            error_message = "账号已被删除，请联系管理员处理"
+            http_exc: AppException = UnauthorizedException(error_message)
+        elif isinstance(exc, PermissionError):
+            error_message = f"账号已被禁用: {exc}"
+            http_exc = ForbiddenException(error_message)
+        else:
+            error_message = "飞书免登失败，请改用飞书授权登录"
+            http_exc = UnauthorizedException(error_message)
+            logger.exception("Feishu H5 login failed", extra=log_extra)
+
+        await _record_h5_login_failure(
+            db,
+            log_repo,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            error_message=error_message,
+        )
+        raise http_exc from exc
+
+    await log_repo.create(
+        db,
+        user_id=user.id,
+        user_name=user.name,
+        status="success",
+        login_type="feishu_h5",
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+    await db.commit()
+
+    # 会话登记（踢下线用）
+    await _record_login_session(token, user, ip_address, user_agent)
+
+    return FeishuH5LoginApiResponse(
         data=TokenResponse(access_token=token, user=UserResponse.model_validate(user)),
     )
 

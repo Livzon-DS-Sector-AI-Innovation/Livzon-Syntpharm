@@ -46,6 +46,8 @@ class FeishuPlatformConfig(BaseModel):
     app_secret: str = ""
     scopes: str = "contact:contact.base:readonly contact:user.base:readonly"
     ws_enabled: bool = True
+    # 飞书客户端内网页应用免登（H5 JSSDK）的开关属运行时配置：
+    # core.module_settings → identity.H5_LOGIN_ENABLED（Web UI 可改，缺行默认开启）。
     bot_name: str = ""
     # Org sync
     sync_root_dept_id: str = ""
