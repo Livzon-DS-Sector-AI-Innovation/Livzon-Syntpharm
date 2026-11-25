@@ -345,6 +345,42 @@
   font-size: 16px;
 }
 
+/* 关联审评品种（占满整行） */
+.kvSpan2 {
+  grid-column: 1 / -1;
+}
+.drugLinkRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.drugLinkSub {
+  color: var(--ink-3);
+  font-weight: 400;
+  font-size: 15px;
+}
+.drugLinkEmpty {
+  color: var(--ink-3);
+  font-weight: 400;
+  font-size: 16px;
+}
+.btnSmBrand {
+  composes: btnSm;
+  border-color: var(--brand-500);
+  color: var(--brand-600);
+}
+.btnSmBrand:hover {
+  background: var(--brand-50);
+  border-color: var(--brand-600);
+  color: var(--brand-600);
+}
+.btnSmBrand:disabled,
+.btnSm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* 进展记录 */
 .logLock {
   display: flex;

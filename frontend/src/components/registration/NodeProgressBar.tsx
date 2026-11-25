@@ -11,6 +11,7 @@ interface NodeProgressBarProps {
 const STATUS_STYLES: Record<NodeStatus, { dot: string; label: string }> = {
   completed: { dot: 'bg-[#1aae39]', label: '已完成' },
   in_progress: { dot: 'bg-[#5645d4] animate-pulse', label: '进行中' },
+  overdue: { dot: 'bg-[#1aae39]', label: '已完成' },
   pending: { dot: 'bg-[#c8c4be]', label: '未开始' },
   skipped: { dot: 'bg-transparent border border-[#a4a097] text-[#a4a097]', label: '已跳过' },
 }
@@ -29,6 +30,7 @@ export function NodeProgressBar({ nodes, size = 'sm' }: NodeProgressBarProps) {
                 {node.node_index}. {node.node_name}
               </div>
               <div>{STATUS_STYLES[node.status].label}</div>
+              {node.status === 'overdue' && <div>按预测已通过，实际日期未填</div>}
               {node.actual_date && <div>实际：{node.actual_date}</div>}
               {!node.actual_date && node.estimated_date && <div>预计：{node.estimated_date}</div>}
               {node.estimated_range && (

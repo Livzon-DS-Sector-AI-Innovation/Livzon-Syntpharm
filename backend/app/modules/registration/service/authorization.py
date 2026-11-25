@@ -17,11 +17,9 @@ from app.modules.registration.models import (
     AuthorizationLetter,
     AuthorizationLetterTrail,
     Drug,
-    SupplementaryReply,
 )
 from app.modules.registration.repository import (
     AuthorizationLetterRepository,
-    SupplementaryReplyRepository,
 )
 from app.modules.registration.schemas import (
     AuthorizationLetterCreate,
@@ -30,8 +28,6 @@ from app.modules.registration.schemas import (
     AuthorizationLetterResponse,
     AuthorizationLetterTrailItem,
     ProductInfo,
-    SupplementaryReplyListItem,
-    SupplementaryReplyResponse,
 )
 from app.platform.identity.public_api import resolve_user_names
 
@@ -62,48 +58,6 @@ BUILTIN_PLACEHOLDER_FIELDS: dict[str, str] = {
     "{制剂单位}": "preparation_unit",
     "{制剂名称}": "preparation_name",
     "{给药途径}": "administration_route",
-}
-
-# 品种登记号对照表
-REGISTRATION_NUMBERS: dict[str, str] = {
-    "阿魏酸钠": "Y20190001800",
-    "艾普拉唑": "Y20190009784",
-    "艾普拉唑钠": "Y20170001429",
-    "奥美拉唑钠": "Y20190006673",
-    "丙氨酰谷氨酰胺": "Y20190002584",
-    "布南色林": "Y20210001289",
-    "丹曲林钠": "Y20170001099",
-    "丁苯酞": "Y20170001569",
-    "厄贝沙坦": "Y20190001962",
-    "更昔洛韦": "Y20190008005",
-    "枸酸铋钾 (干品)": "Y20200001089",
-    "枸橼酸铋钾 (湿品)": "Y20190003316",
-    "枸橼酸铋雷尼替丁 (1:1)": "Y20190005110",
-    "枸橼酸铋雷尼替丁 (1:1.1)": "Y20190001948",
-    "桂利嗪": "Y20190007743",
-    "酒石酸托特罗定": "Y20190001881",
-    "卡维地洛": "Y20190001959",
-    "磷酸川芎嗪": "Y20190007731",
-    "硫酸钾": "Y20230000325",
-    "硫酸头孢匹罗": "Y20190002699",
-    "氯雷他定": "Y20190008122",
-    "马来酸氟伏沙明": "Y20170001958",
-    "马来酸茚达特罗": "Y20220000555",
-    "舒巴坦钠": "Y20190001952",
-    "他唑巴坦": "Y20190003875",
-    "头孢地嗪钠": "Y20190001846",
-    "头孢呋辛钠": "Y20190009596",
-    "头孢曲松钠": "Y20190009444",
-    "头孢他啶/碳酸钠": "Y20190006854",
-    "头孢他啶": "Y20190007742",
-    "无水碳酸钠": "Y20190006967",
-    "盐酸哌罗匹隆 (新工艺)": "Y20220000720",
-    "盐酸哌罗匹隆": "Y20190006883",
-    "盐酸头孢吡肟": "Y20190001951",
-    "盐酸伊托必利": "Y20190001876",
-    "阿立哌唑": "Y20230000505",
-    "盐酸鲁拉西酮": "Y20230001106",
-    "棕榈酸帕利哌酮": "Y20240000016",
 }
 
 
@@ -274,18 +228,10 @@ class AuthorizationLetterService:
         item.created_by_name = names.get(obj.created_by) if obj.created_by else None
         return item
 
-    @staticmethod
-    def get_product_list() -> list[ProductInfo]:
-        """获取品种登记号对照表"""
-        return [
-            ProductInfo(product_name=name, registration_number=number)
-            for name, number in sorted(REGISTRATION_NUMBERS.items())
-        ]
-
-    @staticmethod
-    def get_registration_number(product_name: str) -> str | None:
-        """根据品种名称获取登记号"""
-        return REGISTRATION_NUMBERS.get(product_name)
+    async def get_product_list(self) -> list[ProductInfo]:
+        """获取品种登记号对照表（读数据库，含自动入库的新品种）"""
+        rows = await self.repo.list_products()
+        return [ProductInfo(product_name=row.product_name, registration_number=row.registration_number) for row in rows]
 
     @staticmethod
     def get_builtin_template_variants() -> list[str]:
@@ -388,6 +334,10 @@ class AuthorizationLetterService:
             detail=f"使用{template_desc}生成授权书",
             created_by=operator_id,
         )
+
+        # 品种登记号自动入库（仅新增，老品种不覆盖）
+        await self.repo.insert_product_registration_number_if_missing(data.product_name, data.registration_number)
+
         return self._to_response(created)
 
     async def get_letter(self, letter_id: UUID) -> AuthorizationLetterResponse:
@@ -483,145 +433,3 @@ class AuthorizationLetterService:
             return legacy_path.read_bytes(), _object_media_type(letter.output_file_key)
 
         raise NotFoundException("授权书文件")
-
-
-# ─── 发补回复 ────────────────────────────────────────────
-
-
-def _get_reply_upload_dir() -> Path:
-    """获取发补回复文件存储目录"""
-    settings = get_settings()
-    upload_dir_setting = getattr(settings, "UPLOAD_DIR", "uploads")
-    base = Path(upload_dir_setting)
-    upload_dir = base / "supplementary_replies"
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    return upload_dir
-
-
-class SupplementaryReplyService:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-        self.repo = SupplementaryReplyRepository(session)
-
-    def _to_response(self, obj: SupplementaryReply) -> SupplementaryReplyResponse:
-        return SupplementaryReplyResponse.model_validate(obj)
-
-    def _to_list_item(self, obj: SupplementaryReply) -> SupplementaryReplyListItem:
-        return SupplementaryReplyListItem.model_validate(obj)
-
-    async def generate_reply(
-        self,
-        notice_data: bytes,
-        notice_file_name: str,
-        template_data: bytes | None = None,
-        template_file_name: str | None = None,
-        drug_name_override: str | None = None,
-        registration_number_override: str | None = None,
-        acceptance_number_override: str | None = None,
-        company_name_override: str | None = None,
-        remarks: str | None = None,
-    ) -> SupplementaryReplyResponse:
-        """
-        生成发补回复文档。
-
-        流程：解析 PDF → 提取药品信息和问题 → 生成 Word → 保存记录
-        """
-        from app.modules.registration.reply_generator import (
-            generate_reply_document,
-            parse_cde_notice,
-        )
-
-        # 1. 解析 CDE 通知函 PDF
-        parsed = parse_cde_notice(notice_data)
-        metadata = parsed["metadata"]
-        questions = parsed["questions"]
-
-        # 2. 合并药品信息（用户手动输入优先于 PDF 提取）
-        drug_info = {
-            "drug_name": drug_name_override or metadata.get("drug_name", "未知药品"),
-            "registration_number": registration_number_override or metadata.get("registration_number", ""),
-            "acceptance_number": acceptance_number_override or metadata.get("acceptance_number", ""),
-            "company_name": company_name_override or metadata.get("company_name", API_COMPANY),
-            "doc_type": "补充资料",
-            "application_type": "首次登记",
-            "contact": "魏永红",
-            "phone": "0756-8686208",
-            "address": "中国，广东省，珠海市，珠海保税区联峰路22号",
-            "zipcode": "519030",
-            "related_no": "/",
-            "email": "lzsyntpharmzhucebu@livzon.cn",
-        }
-
-        # 3. 生成 Word 文档
-        output_data = generate_reply_document(drug_info, questions)
-
-        # 4. 保存文件
-        file_id = uuid.uuid4().hex[:12]
-        output_file_name = f"发补回复-{drug_info['drug_name']}.docx"
-        upload_dir = _get_reply_upload_dir()
-
-        # 保存通知函
-        notice_path = upload_dir / f"{file_id}_notice.pdf"
-        notice_path.write_bytes(notice_data)
-
-        # 保存模板（如有）
-        template_key = None
-        if template_data:
-            template_path = upload_dir / f"{file_id}_template.docx"
-            template_path.write_bytes(template_data)
-            template_key = f"{file_id}_template.docx"
-
-        # 保存生成的文档
-        output_path = upload_dir / f"{file_id}.docx"
-        output_path.write_bytes(output_data)
-
-        # 5. 创建数据库记录
-        reply = SupplementaryReply(
-            drug_name=drug_info["drug_name"],
-            registration_number=drug_info["registration_number"],
-            acceptance_number=drug_info["acceptance_number"],
-            company_name=drug_info["company_name"],
-            notice_file_key=f"{file_id}_notice.pdf",
-            notice_file_name=notice_file_name,
-            template_file_key=template_key,
-            template_file_name=template_file_name,
-            output_file_key=f"{file_id}.docx",
-            output_file_name=output_file_name,
-            question_count=len(questions),
-            remarks=remarks,
-        )
-        created = await self.repo.create(reply)
-        return self._to_response(created)
-
-    async def get_reply(self, reply_id: UUID) -> SupplementaryReplyResponse:
-        """获取单条发补回复记录"""
-        reply = await self.repo.get_by_id(reply_id)
-        if not reply:
-            raise NotFoundException("发补回复记录", str(reply_id))
-        return self._to_response(reply)
-
-    async def list_replies(
-        self,
-        *,
-        drug_name: str | None = None,
-        page: int = 1,
-        page_size: int = 20,
-    ) -> tuple[list[SupplementaryReplyListItem], int]:
-        """查询发补回复列表"""
-        replies, total = await self.repo.list_replies(
-            drug_name=drug_name,
-            page=page,
-            page_size=page_size,
-        )
-        return [self._to_list_item(r) for r in replies], total
-
-    async def delete_reply(self, reply_id: UUID) -> None:
-        """删除发补回复记录（软删除）"""
-        reply = await self.repo.get_by_id(reply_id)
-        if not reply:
-            raise NotFoundException("发补回复记录", str(reply_id))
-        await self.repo.soft_delete(reply)
-
-    def get_output_file_path(self, reply: SupplementaryReply) -> Path:
-        """获取生成文件路径"""
-        return _get_reply_upload_dir() / reply.output_file_key

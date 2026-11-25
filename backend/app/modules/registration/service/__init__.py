@@ -2,7 +2,6 @@
 
 from app.modules.registration.service.authorization import (
     AuthorizationLetterService,
-    SupplementaryReplyService,
 )
 from app.modules.registration.service.certificate import (
     create_certificate,
@@ -17,6 +16,7 @@ from app.modules.registration.service.drug import (
     delete_drug,
     get_drug,
     get_drugs,
+    get_drugs_with_stage,
     update_drug,
 )
 from app.modules.registration.service.holiday import (
@@ -36,15 +36,10 @@ from app.modules.registration.service.project import (
 from app.modules.registration.service.reference_standard import (
     ReferenceStandardService,
 )
-from app.modules.registration.service.validation_audit import (
-    ValidationAuditService,
-)
 
 __all__ = [
     "AuthorizationLetterService",
     "ReferenceStandardService",
-    "SupplementaryReplyService",
-    "ValidationAuditService",
     "create_certificate",
     "create_drug",
     "create_holiday",
@@ -58,6 +53,7 @@ __all__ = [
     "get_dashboard_summary",
     "get_drug",
     "get_drugs",
+    "get_drugs_with_stage",
     "get_holidays",
     "get_project",
     "get_projects",

@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.shared.base_model import BaseModel
@@ -40,6 +40,19 @@ class AuthorizationLetter(BaseModel):
     remarks: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
 
 
+class ProductRegistrationNumber(BaseModel):
+    """品种登记号对照表（品种名在未软删记录内唯一；入库仅新增、不覆盖）"""
+
+    __tablename__ = "product_registration_numbers"
+    __table_args__ = (
+        UniqueConstraint("product_name", "is_deleted", name="uq_product_registration_numbers_name"),
+        {"schema": "registration"},
+    )
+
+    product_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="品种名称")
+    registration_number: Mapped[str] = mapped_column(String(32), nullable=False, comment="登记号")
+
+
 class AuthorizationLetterTrail(BaseModel):
     """授权书留痕日志表（审计追踪：只增不删不改，不提供更新/删除接口）"""
 
@@ -63,27 +76,3 @@ class AuthorizationLetterTrail(BaseModel):
         default=lambda: datetime.now(ZoneInfo("Asia/Shanghai")),
         server_default=func.now(),
     )
-
-
-class SupplementaryReply(BaseModel):
-    """发补回复生成记录表"""
-
-    __tablename__ = "supplementary_replies"
-    __table_args__ = (
-        Index("ix_supplementary_replies_drug_name", "drug_name"),
-        Index("ix_supplementary_replies_registration_number", "registration_number"),
-        {"schema": "registration"},
-    )
-
-    drug_name: Mapped[str] = mapped_column(String(128), nullable=False, comment="药品名称")
-    registration_number: Mapped[str] = mapped_column(String(32), nullable=True, comment="登记号")
-    acceptance_number: Mapped[str] = mapped_column(String(64), nullable=True, comment="受理号")
-    company_name: Mapped[str] = mapped_column(String(256), nullable=True, comment="申请人/公司名称")
-    notice_file_key: Mapped[str] = mapped_column(String(256), nullable=False, comment="CDE通知函文件 key")
-    notice_file_name: Mapped[str] = mapped_column(String(256), nullable=True, comment="CDE通知函文件名")
-    template_file_key: Mapped[str | None] = mapped_column(String(256), nullable=True, comment="公司模板文件 key")
-    template_file_name: Mapped[str | None] = mapped_column(String(256), nullable=True, comment="公司模板文件名")
-    output_file_key: Mapped[str] = mapped_column(String(256), nullable=False, comment="生成文件 key")
-    output_file_name: Mapped[str] = mapped_column(String(256), nullable=False, comment="生成文件名")
-    question_count: Mapped[int] = mapped_column(nullable=False, server_default="0", comment="提取的问题数量")
-    remarks: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")

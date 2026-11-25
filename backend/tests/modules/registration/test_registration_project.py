@@ -11,7 +11,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.registration.models.drug import Drug, DrugNode
-from app.modules.registration.schemas.project import ProjectCreate
+from app.modules.registration.schemas.project import ProjectCreate, ProjectUpdate
 from app.modules.registration.service import project as project_service
 from app.modules.registration.service.project import sync_from_drug
 
@@ -211,3 +211,129 @@ async def test_project_api_flow(auth_client: AsyncClient):
     # 受理后状态无修改入口：stage 接口拒绝 accepted
     reject = await auth_client.post(f"/api/v1/registration/projects/{project['id']}/stage", json={"stage": "accepted"})
     assert reject.status_code == 400
+
+
+def _make_drug(**overrides) -> Drug:
+    data = {"name": f"测试药品-{uuid.uuid4().hex[:6]}", "type": "原料药", "acceptance_date": date(2026, 11, 1)}
+    data.update(overrides)
+    return Drug(**data)
+
+
+async def test_link_drug_rejects_nonexistent(db_session: AsyncSession):
+    """关联审评品种：品种不存在或已删除时，创建 / 更新均报 ValueError。"""
+    ghost_id = uuid.uuid4()
+    with pytest.raises(ValueError, match="审评品种"):
+        await project_service.create_project(db_session, _create_payload(drug_id=ghost_id))
+
+    project = await project_service.create_project(db_session, _create_payload())
+    with pytest.raises(ValueError, match="审评品种"):
+        await project_service.update_project(db_session, project.id, ProjectUpdate(drug_id=ghost_id))
+
+
+async def test_link_drug_via_update_syncs_status(db_session: AsyncSession):
+    """更新时关联已受理品种：状态立即跟随申报进度对齐（无需等待后续同步）。"""
+    drug = _make_drug(acceptance_number="CXHS2600002")
+    db_session.add(drug)
+    await db_session.flush()
+
+    project = await project_service.create_project(db_session, _create_payload())
+    assert project.status == "draft"
+
+    project = await project_service.update_project(db_session, project.id, ProjectUpdate(drug_id=drug.id))
+    assert project.status == "accepted"
+    assert project.pre_stage == "accepted"
+    assert project.acceptance_number == "CXHS2600002"
+
+    # 解绑：状态保持，不再随申报进度同步
+    project = await project_service.update_project(db_session, project.id, ProjectUpdate(drug_id=None))
+    assert project.drug_id is None
+    assert project.status == "accepted"
+
+
+async def test_acceptance_cleared_rolls_back_inflight_project(db_session: AsyncSession):
+    """受理号被清空：已受理/审评中/发补中的项目退回「已申报」，受理信息清空并留痕。"""
+    drug = _make_drug(acceptance_number="CXHS2600003")
+    db_session.add(drug)
+    await db_session.flush()
+
+    project = await project_service.create_project(db_session, _create_payload())
+    await project_service.advance_stage(db_session, project.id, "submission")
+    # 关联已登记受理号的品种 → 已受理
+    await project_service.update_project(db_session, project.id, ProjectUpdate(drug_id=drug.id))
+    db_session.add(DrugNode(drug_id=drug.id, node_index=1, actual_date=date(2026, 11, 5)))
+    await db_session.flush()
+    await sync_from_drug(db_session, drug.id)
+    await db_session.refresh(project)
+    assert project.status == "under_review"
+
+    # 申报进度侧清空受理号 → 回退
+    drug.acceptance_number = None
+    changed = await sync_from_drug(db_session, drug.id)
+    await db_session.refresh(project)
+    assert changed == 1
+    assert project.status == "submitted"
+    assert project.pre_stage == "submission"
+    assert project.acceptance_number is None
+    assert project.accepted_at is None
+    assert project.expected_completion_at is None
+    assert "accepted" not in (project.stage_completed_at or {})
+    contents = [log["content"] for log in await project_service.get_project_logs(db_session, project.id)]
+    assert "审评中 → 已申报（受理号已清空）" in contents
+
+
+async def test_acceptance_cleared_keeps_approved_project(db_session: AsyncSession):
+    """受理号被清空：已获批项目不回退（获批属完成结局，需人工处理）。"""
+    drug = _make_drug(acceptance_number="CXHS2600004")
+    db_session.add(drug)
+    await db_session.flush()
+
+    project = await project_service.create_project(db_session, _create_payload(drug_id=drug.id))
+    for idx in range(1, 11):
+        db_session.add(DrugNode(drug_id=drug.id, node_index=idx, actual_date=date(2026, 11, 9)))
+    await db_session.flush()
+    await sync_from_drug(db_session, drug.id)
+    await db_session.refresh(project)
+    assert project.status == "approved"
+
+    drug.acceptance_number = None
+    changed = await sync_from_drug(db_session, drug.id)
+    await db_session.refresh(project)
+    assert changed == 0
+    assert project.status == "approved"
+    assert project.approved_at is not None
+
+
+async def test_skipped_last_node_does_not_mark_approved(db_session: AsyncSession):
+    """末节点被跳过：不再作为获批判定依据，项目保持「审评中」而非「已获批」。"""
+    drug = _make_drug(acceptance_number="CXHS2600005")
+    db_session.add(drug)
+    await db_session.flush()
+
+    project = await project_service.create_project(db_session, _create_payload(drug_id=drug.id))
+    for idx in range(1, 10):
+        db_session.add(DrugNode(drug_id=drug.id, node_index=idx, actual_date=date(2026, 11, 9)))
+    # 末节点（10 获批时间）有日期但被标记跳过 → 不计入获批判定
+    db_session.add(DrugNode(drug_id=drug.id, node_index=10, actual_date=date(2026, 11, 10), skipped=True))
+    await db_session.flush()
+    await sync_from_drug(db_session, drug.id)
+    await db_session.refresh(project)
+    assert project.status == "supplementary"  # 含发补节点 7/8 的完成记录
+
+
+async def test_kpi_accepted_reviewing_includes_supplementary(db_session: AsyncSession):
+    """KPI「已受理·审评中」口径纳入发补中；四卡合计口径与台账一致。"""
+    baseline = await project_service.get_kpi(db_session)
+
+    drug = _make_drug(acceptance_number="CXHS2600006")
+    db_session.add(drug)
+    await db_session.flush()
+
+    project = await project_service.create_project(db_session, _create_payload(drug_id=drug.id))
+    db_session.add(DrugNode(drug_id=drug.id, node_index=7, actual_date=date(2026, 11, 8)))
+    await db_session.flush()
+    await sync_from_drug(db_session, drug.id)
+    await db_session.refresh(project)
+    assert project.status == "supplementary"
+
+    kpi = await project_service.get_kpi(db_session)
+    assert kpi["accepted_reviewing"] - baseline["accepted_reviewing"] == 1

@@ -128,7 +128,7 @@ async def latest_logs_for_projects(
 
 
 async def count_kpi(db: AsyncSession, due_before: date) -> dict[str, int]:
-    """KPI 统计：申报前 / 已受理·审评中 / 临期未递交（含逾期）/ 已获批。"""
+    """KPI 统计：申报前 / 已受理·审评中（含发补中）/ 临期未递交（含逾期）/ 已获批。"""
     base = select(func.count()).select_from(RegistrationProject).where(~RegistrationProject.is_deleted)
 
     async def _count(*conditions: Any) -> int:
@@ -136,7 +136,7 @@ async def count_kpi(db: AsyncSession, due_before: date) -> dict[str, int]:
         return result.scalar_one()
 
     pre_submission = await _count(RegistrationProject.status.in_(("draft", "preparing", "submitted")))
-    accepted_reviewing = await _count(RegistrationProject.status.in_(("accepted", "under_review")))
+    accepted_reviewing = await _count(RegistrationProject.status.in_(("accepted", "under_review", "supplementary")))
     due_soon = await _count(
         RegistrationProject.status.in_(("draft", "preparing")),
         RegistrationProject.planned_submission_date.is_not(None),
