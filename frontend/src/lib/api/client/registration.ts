@@ -11,6 +11,8 @@ import type {
   ProductInfo,
   ReferenceStandardListItem,
   RegistrationProject,
+  AuthorizationLetterListParams,
+  ReferenceStandardListParams,
 } from '@/types/registration'
 import { apiGet, apiFetchPaginated } from '@/lib/api/client'
 import type { PageResult } from '@/lib/api/page'
@@ -24,13 +26,9 @@ export async function fetchModuleInfo(): Promise<{ code: string; name: string; d
   return apiGet(`/api/v1/registration/`)
 }
 
-export async function fetchAuthorizationLetters(params?: {
-  page?: number
-  page_size?: number
-  keyword?: string
-  product_name?: string
-  year?: number
-}): Promise<PageResult<AuthorizationLetterListItem>> {
+export async function fetchAuthorizationLetters(
+  params?: AuthorizationLetterListParams
+): Promise<PageResult<AuthorizationLetterListItem>> {
   const searchParams = new URLSearchParams()
   if (params?.page) searchParams.set('page', String(params.page))
   if (params?.page_size) searchParams.set('page_size', String(params.page_size))
@@ -44,7 +42,7 @@ export async function fetchAuthorizationLetters(params?: {
 }
 
 export async function fetchAuthorizationLetterDownloadUrl(id: string): Promise<string> {
-  const result = await apiGet<{ url: string }>(
+  const result = await apiGet<components['schemas']['DownloadUrlResponse']>(
     `/api/v1/registration/authorization-letters/${id}/download-url`
   )
   return result.url
@@ -71,11 +69,9 @@ export async function fetchAuthorizationLetterTrails(letterId: string): Promise<
   return result || []
 }
 
-export async function fetchReferenceStandards(params?: {
-  page?: number
-  page_size?: number
-  drug_name?: string
-}): Promise<PageResult<ReferenceStandardListItem>> {
+export async function fetchReferenceStandards(
+  params?: ReferenceStandardListParams
+): Promise<PageResult<ReferenceStandardListItem>> {
   const searchParams = new URLSearchParams()
   if (params?.page) searchParams.set('page', String(params.page))
   if (params?.page_size) searchParams.set('page_size', String(params.page_size))
@@ -87,7 +83,7 @@ export async function fetchReferenceStandards(params?: {
 }
 
 export async function fetchReferenceStandardDownloadUrl(id: string): Promise<string> {
-  const result = await apiGet<{ url: string }>(
+  const result = await apiGet<components['schemas']['DownloadUrlResponse']>(
     `/api/v1/registration/reference-standards/${id}/download-url`
   )
   return result.url

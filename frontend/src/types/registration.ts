@@ -8,7 +8,7 @@
  * - `Drug` / `DrugNode` / `RegistrationProject` / `Holiday` / `DashboardSummary`：后端尚未导出契约
  */
 
-import type { components } from '@/types/generated/schema'
+import type { components, operations } from '@/types/generated/schema'
 
 /** 契约模型，来自后端 OpenAPI */
 export type ProductInfo = components['schemas']['ProductInfo']
@@ -38,14 +38,6 @@ export type AuthorizationLetterCreateInput = Omit<
 export type AuthorizationLetterResponse = components['schemas']['DataResponse_AuthorizationLetterResponse_']
 
 
-export interface AuthorizationLetterListParams {
-  keyword?: string
-  product_name?: string
-  year?: number
-  page?: number
-  page_size?: number
-}
-
 // ── 对照物质说明表 ──
 
 /** 契约模型，来自后端 OpenAPI */
@@ -59,12 +51,6 @@ export type ReferenceStandardListItem = components['schemas']['ReferenceStandard
 /** 契约模型，来自后端 OpenAPI */
 export type ReferenceStandardResponse = components['schemas']['DataResponse_ReferenceStandardResponse_']
 
-
-export interface ReferenceStandardListParams {
-  drug_name?: string
-  page?: number
-  page_size?: number
-}
 
 export interface ReferenceStandardCreateInput {
   drug_name: string
@@ -92,32 +78,18 @@ export type ParseCOAResponse = components['schemas']['CoaParseResult']
 
 
 
-export interface Drug {
-  id: string
-  name: string
-  type: '仿制药' | '创新药' | '原料药'
-  acceptance_date: string
-  acceptance_number?: string | null
-  current_node: number
-  created_at: string
-  updated_at: string
-  nodes: DrugNode[]
+/** 契约模型，来自后端 OpenAPI；列表接口额外带 stage，故用交叉类型补可选字段 */
+export type Drug = components['schemas']['DrugWithNodesResponse'] & {
   /** 当前阶段摘要（列表接口返回；详情接口无此字段） */
   stage?: NodeStageSummary
+  nodes: DrugNode[]
 }
 
 /** 契约模型，来自后端 OpenAPI */
 export type NodeStageSummary = components['schemas']['NodeStageSummary']
 
-export interface DrugNode {
-  id: string
-  drug_id: string
-  node_index: number
-  actual_date: string | null
-  skipped: boolean
-  created_at: string
-  updated_at: string
-}
+/** 契约模型，来自后端 OpenAPI */
+export type DrugNode = components['schemas']['DrugNodeResponse']
 
 /** 契约模型，来自后端 OpenAPI（后端恒返回该字段，故去掉可选性，值仍可能为 null） */
 export type NodePrediction = Required<components['schemas']['NodePrediction']>
@@ -132,6 +104,24 @@ export type DrugPrediction = Omit<
 > & {
   nodes: NodePrediction[]
 }
+
+// ── 列表查询参数：直接取自生成契约，避免手写漂移（曾漏过 drug_id） ──
+type Operations = operations
+
+/** 授权书列表查询参数 */
+export type AuthorizationLetterListParams = NonNullable<
+  Operations['list_letters_api_v1_registration_authorization_letters_get']['parameters']['query']
+>
+
+/** 注册项目列表查询参数 */
+export type RegistrationProjectListParams = NonNullable<
+  Operations['list_projects_api_v1_registration_projects__get']['parameters']['query']
+>
+
+/** 对照物质说明表列表查询参数 */
+export type ReferenceStandardListParams = NonNullable<
+  Operations['get_api_v1_registration_reference_standards_get']['parameters']['query']
+>
 
 /** 契约模型，来自后端 OpenAPI（`projects.py` 已声明 `DataResponse[ProjectResponse]`） */
 export type RegistrationProject = components['schemas']['ProjectResponse']

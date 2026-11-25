@@ -272,7 +272,7 @@ export function ProjectsPageClient() {
         registration_type: regType,
         project_no: values.project_no?.trim() || null,
         market: values.market ?? null,
-        owner: values.owner ?? null,
+        owner_id: values.owner_id ?? null,
         planned_submission_date: values.planned_submission_date
           ? (values.planned_submission_date as Dayjs).format('YYYY-MM-DD')
           : null,
@@ -909,11 +909,11 @@ export function ProjectsPageClient() {
                 />
               </Form.Item>
               <Form.Item
-                name="owner"
+                name="owner_id"
                 label="负责人"
                 rules={[{ required: true, message: '请选择负责人' }]}
-                // 后端 owner 存姓名快照（str），这里从选中人员取 name 写入表单
-                getValueFromEvent={(person: { id: string; name: string } | null) => person?.name ?? null}
+                // 人员选择统一存 UUID；姓名快照由后端按 owner_id 回填
+                getValueFromEvent={(person: { id: string; name: string } | null) => person?.id ?? null}
               >
                 <RemoteUserSelect placeholder="选择负责人" allowClear feishuBoundOnly={false} />
               </Form.Item>

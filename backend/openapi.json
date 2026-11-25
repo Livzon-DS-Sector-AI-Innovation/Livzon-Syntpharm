@@ -162579,6 +162579,18 @@
             ],
             "title": "Market"
           },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
           "owner": {
             "anyOf": [
               {
@@ -162589,7 +162601,8 @@
                 "type": "null"
               }
             ],
-            "title": "Owner"
+            "title": "Owner",
+            "description": "\u8d1f\u8d23\u4eba\u59d3\u540d\u5feb\u7167\uff0c\u53ef\u7531 owner_id \u81ea\u52a8\u56de\u586b"
           },
           "planned_submission_date": {
             "anyOf": [
@@ -163137,6 +163150,18 @@
             ],
             "title": "Expected Completion At"
           },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
           "owner": {
             "anyOf": [
               {
@@ -163197,6 +163222,7 @@
           "accepted_at",
           "approved_at",
           "expected_completion_at",
+          "owner_id",
           "owner",
           "latest_progress",
           "created_at",
@@ -163388,6 +163414,18 @@
             ],
             "title": "Market"
           },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
           "owner": {
             "anyOf": [
               {
@@ -163398,7 +163436,8 @@
                 "type": "null"
               }
             ],
-            "title": "Owner"
+            "title": "Owner",
+            "description": "\u8d1f\u8d23\u4eba\u59d3\u540d\u5feb\u7167\uff0c\u53ef\u7531 owner_id \u81ea\u52a8\u56de\u586b"
           },
           "planned_submission_date": {
             "anyOf": [

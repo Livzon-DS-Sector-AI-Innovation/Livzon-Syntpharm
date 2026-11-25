@@ -70,7 +70,13 @@ class RegistrationProject(BaseModel):
     accepted_at: Mapped[date | None] = mapped_column(Date, nullable=True, comment="受理日期")
     approved_at: Mapped[date | None] = mapped_column(Date, nullable=True, comment="获批日期")
     expected_completion_at: Mapped[date | None] = mapped_column(Date, nullable=True, comment="预计完成时间")
-    owner: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="负责人")
+    owner_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("identity.users.id"),
+        nullable=True,
+        comment="负责人用户 ID（人员选择存 UUID）",
+    )
+    # 姓名快照：历史数据只有姓名、且详情页需免联表展示，改名后仍显示当时的值
+    owner: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="负责人姓名快照")
     latest_progress: Mapped[str | None] = mapped_column(Text, nullable=True, comment="最新进展")
 
 

@@ -4,6 +4,9 @@ import type { ApiResponse } from '@/types/common'
 import type { PageResult } from '@/lib/api/page'
 import type {
   AuthorizationLetterFilterOptions,
+  AuthorizationLetterListParams,
+  ReferenceStandardListParams,
+  RegistrationProjectListParams,
   AuthorizationLetterListItem,
   ParseCOAResponse,
   ProductInfo,
@@ -49,11 +52,11 @@ export async function deleteReferenceStandard(id: string) {
 }
 
 export async function fetchAuthorizationLetters(
-  params: { page: number; page_size: number; keyword?: string; product_name?: string; year?: number },
+  params: AuthorizationLetterListParams,
 ): Promise<PageResult<AuthorizationLetterListItem>> {
   const searchParams = new URLSearchParams({
-    page: params.page.toString(),
-    page_size: params.page_size.toString(),
+    page: String(params.page ?? 1),
+    page_size: String(params.page_size ?? 20),
   })
   if (params.keyword) searchParams.set('keyword', params.keyword)
   if (params.product_name) searchParams.set('product_name', params.product_name)
@@ -78,11 +81,11 @@ export async function fetchRegistrationProducts(): Promise<ProductInfo[]> {
 }
 
 export async function fetchReferenceStandards(
-  params: { page: number; page_size: number },
+  params: ReferenceStandardListParams,
 ): Promise<PageResult<ReferenceStandardListItem>> {
   const searchParams = new URLSearchParams({
-    page: params.page.toString(),
-    page_size: params.page_size.toString(),
+    page: String(params.page ?? 1),
+    page_size: String(params.page_size ?? 20),
   })
   return apiFetchPaginated<ReferenceStandardListItem>(
     `${getApiBaseUrl()}/api/v1/registration/reference-standards?${searchParams.toString()}`,
@@ -123,11 +126,9 @@ export async function parseCOA(file: File): Promise<ParseCOAResponse> {
   return unwrapResponse(raw)
 }
 
-export async function fetchRegistrationProjects(params?: {
-  search?: string
-  registration_type?: string
-  status?: string
-}): Promise<RegistrationProject[]> {
+export async function fetchRegistrationProjects(
+  params?: RegistrationProjectListParams
+): Promise<RegistrationProject[]> {
   // 该集合端点的规范路径带尾斜杠（后端 @router.get("/")）；浏览器直连会被 Next 的
   // trailingSlash 归一化 308 掉、再被后端 307 到 backend:8000 触发跨域，因此必须服务端取数。
   const searchParams = new URLSearchParams()

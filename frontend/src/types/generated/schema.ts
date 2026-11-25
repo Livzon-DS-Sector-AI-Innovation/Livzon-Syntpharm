@@ -49727,7 +49727,12 @@ export interface components {
             project_no?: string | null;
             /** Market */
             market?: string | null;
-            /** Owner */
+            /** Owner Id */
+            owner_id?: string | null;
+            /**
+             * Owner
+             * @description 负责人姓名快照，可由 owner_id 自动回填
+             */
             owner?: string | null;
             /** Planned Submission Date */
             planned_submission_date?: string | null;
@@ -49934,6 +49939,8 @@ export interface components {
             approved_at: string | null;
             /** Expected Completion At */
             expected_completion_at: string | null;
+            /** Owner Id */
+            owner_id: string | null;
             /** Owner */
             owner: string | null;
             /** Latest Progress */
@@ -50011,7 +50018,12 @@ export interface components {
             project_no?: string | null;
             /** Market */
             market?: string | null;
-            /** Owner */
+            /** Owner Id */
+            owner_id?: string | null;
+            /**
+             * Owner
+             * @description 负责人姓名快照，可由 owner_id 自动回填
+             */
             owner?: string | null;
             /** Planned Submission Date */
             planned_submission_date?: string | null;
