@@ -16,6 +16,7 @@ from app.modules.registration.schemas.drug import (
     DrugResponse,
     DrugUpdate,
     DrugWithNodesResponse,
+    DrugWithStageResponse,
 )
 from app.modules.registration.schemas.review import ReviewNodeConfig
 
@@ -27,11 +28,14 @@ async def list_drugs(
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:drug:read")),
     db: AsyncSession = Depends(get_db),
-) -> DataResponse[list[DrugWithNodesResponse]]:
-    """获取所有药品及其审评节点"""
-    drugs = await service.get_drugs(db)
-    data = [DrugWithNodesResponse.model_validate(d) for d in drugs]
-    return DataResponse[list[DrugWithNodesResponse]](data=data)
+) -> DataResponse[list[DrugWithStageResponse]]:
+    """获取所有药品及其审评节点与当前阶段摘要"""
+    pairs = await service.get_drugs_with_stage(db)
+    data: list[DrugWithStageResponse] = []
+    for drug, stage in pairs:
+        base = DrugWithNodesResponse.model_validate(drug)
+        data.append(DrugWithStageResponse(**base.model_dump(), stage=stage))
+    return DataResponse[list[DrugWithStageResponse]](data=data)
 
 
 @router.post("", summary="创建药品")

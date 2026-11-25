@@ -173,9 +173,7 @@ RESOURCE_LABELS: dict[str, str] = {
     "authorization-letter": "授权书",
     "reference-standard": "对照物质说明表",
     "reference-substance": "对照品说明表",
-    "supplementary-reply": "发补回复",
     "holiday": "节假日管理",
-    "validation-audit": "验证文件审核",
     "dossier": "申报资料",
     "regulatory-tracker": "法规追踪",
     "dashboard": "注册看板",
@@ -845,26 +843,11 @@ REGISTRATION_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef(
         "registration:reference-substance:delete", "删除对照品", "registration", "reference-substance", "delete"
     ),
-    # supplementary-reply（发补回复）
-    PermissionDef(
-        "registration:supplementary-reply:read", "查看发补回复", "registration", "supplementary-reply", "read"
-    ),
-    PermissionDef(
-        "registration:supplementary-reply:create", "生成发补回复", "registration", "supplementary-reply", "create"
-    ),
-    PermissionDef(
-        "registration:supplementary-reply:delete", "删除发补回复", "registration", "supplementary-reply", "delete"
-    ),
     # holiday（节假日管理）
     PermissionDef("registration:holiday:read", "查看节假日", "registration", "holiday", "read"),
     PermissionDef("registration:holiday:create", "创建节假日", "registration", "holiday", "create"),
     PermissionDef("registration:holiday:update", "更新节假日", "registration", "holiday", "update"),
     PermissionDef("registration:holiday:delete", "删除节假日", "registration", "holiday", "delete"),
-    # validation-audit（验证文件审核）
-    PermissionDef("registration:validation-audit:read", "查看验证审核", "registration", "validation-audit", "read"),
-    PermissionDef("registration:validation-audit:create", "创建验证审核", "registration", "validation-audit", "create"),
-    PermissionDef("registration:validation-audit:update", "更新验证审核", "registration", "validation-audit", "update"),
-    PermissionDef("registration:validation-audit:delete", "删除验证审核", "registration", "validation-audit", "delete"),
     # dossier（申报资料）
     PermissionDef("registration:dossier:read", "查看申报资料", "registration", "dossier", "read"),
     PermissionDef("registration:dossier:create", "创建申报资料", "registration", "dossier", "create"),
@@ -2351,56 +2334,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ),
     ApiBindingDef("registration:regulatory-tracker:read", "GET", "/api/v1/registration/regulatory-tracker/dashboard"),
     ApiBindingDef("registration:regulatory-tracker:read", "GET", "/api/v1/registration/regulatory-tracker/summary"),
-    ApiBindingDef("registration:supplementary-reply:read", "GET", "/api/v1/registration/supplementary-replies"),
-    ApiBindingDef(
-        "registration:supplementary-reply:create", "POST", "/api/v1/registration/supplementary-replies/generate"
-    ),
-    ApiBindingDef(
-        "registration:supplementary-reply:read", "GET", "/api/v1/registration/supplementary-replies/{reply_id}"
-    ),
-    ApiBindingDef(
-        "registration:supplementary-reply:delete", "DELETE", "/api/v1/registration/supplementary-replies/{reply_id}"
-    ),
-    ApiBindingDef(
-        "registration:supplementary-reply:read", "GET", "/api/v1/registration/supplementary-replies/{reply_id}/download"
-    ),
-    ApiBindingDef(
-        "registration:supplementary-reply:read",
-        "GET",
-        "/api/v1/registration/supplementary-replies/{reply_id}/download-url",
-    ),
     ApiBindingDef("registration:regulatory-tracker:read", "GET", "/api/v1/registration/sync-jobs"),
     ApiBindingDef("registration:regulatory-tracker:manage", "POST", "/api/v1/registration/sync-jobs/trigger"),
-    ApiBindingDef("registration:validation-audit:create", "POST", "/api/v1/registration/validation-audit/tasks"),
-    ApiBindingDef("registration:validation-audit:read", "GET", "/api/v1/registration/validation-audit/tasks"),
-    ApiBindingDef("registration:validation-audit:read", "GET", "/api/v1/registration/validation-audit/tasks/{task_id}"),
-    ApiBindingDef(
-        "registration:validation-audit:update", "PUT", "/api/v1/registration/validation-audit/tasks/{task_id}"
-    ),
-    ApiBindingDef(
-        "registration:validation-audit:delete", "DELETE", "/api/v1/registration/validation-audit/tasks/{task_id}"
-    ),
-    ApiBindingDef(
-        "registration:validation-audit:create", "POST", "/api/v1/registration/validation-audit/tasks/{task_id}/audit"
-    ),
-    ApiBindingDef(
-        "registration:validation-audit:read", "POST", "/api/v1/registration/validation-audit/tasks/{task_id}/export"
-    ),
-    ApiBindingDef(
-        "registration:validation-audit:create", "POST", "/api/v1/registration/validation-audit/tasks/{task_id}/files"
-    ),
-    ApiBindingDef(
-        "registration:validation-audit:read", "GET", "/api/v1/registration/validation-audit/tasks/{task_id}/files"
-    ),
-    ApiBindingDef(
-        "registration:validation-audit:read", "GET", "/api/v1/registration/validation-audit/tasks/{task_id}/issues"
-    ),
-    ApiBindingDef(
-        "registration:validation-audit:create", "POST", "/api/v1/registration/validation-audit/tasks/{task_id}/parse"
-    ),
-    ApiBindingDef(
-        "registration:validation-audit:read", "GET", "/api/v1/registration/validation-audit/tasks/{task_id}/report"
-    ),
     ApiBindingDef("quality:ai-log:read", "GET", "/api/v1/quality/ai/logs"),
     ApiBindingDef("quality:ai-log:read", "GET", "/api/v1/quality/ai/logs/{log_id}"),
     ApiBindingDef("quality:doc-check:create", "POST", "/api/v1/quality/batch"),
@@ -3121,7 +3056,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ),
     ApiBindingDef("registration:dossier:create", "POST", "/api/v1/registration/dossier-writer/field-mappings/init-s6"),
     ApiBindingDef("registration:dossier:create", "POST", "/api/v1/registration/dossier-writer/field-mappings/init-s7"),
-    ApiBindingDef("registration:authorization-letter:read", "GET", "/api/v1/registration/dossier-writer/products"),
+    ApiBindingDef("registration:dossier:read", "GET", "/api/v1/registration/dossier-writer/products"),
     ApiBindingDef("registration:dossier:create", "POST", "/api/v1/registration/dossier-writer/products"),
     ApiBindingDef("registration:dossier:delete", "DELETE", "/api/v1/registration/dossier-writer/products/{dossier_id}"),
     ApiBindingDef("registration:dossier:read", "GET", "/api/v1/registration/dossier-writer/products/{dossier_id}"),
