@@ -1,7 +1,7 @@
 """registration product registration numbers mapping table
 
-Revision ID: 0221_registration_product_registration_numbers
-Revises: 0220_deprecate_registration_removed_permissions
+Revision ID: 0225_registration_product_registration_numbers
+Revises: 0224_deprecate_registration_removed_permissions
 Create Date: 2026-11-24
 
 把原先硬编码在 service/authorization.py 的「品种→登记号」对照表迁入数据库，
@@ -16,8 +16,8 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from alembic import op
 
-revision: str = "0221_registration_product_registration_numbers"
-down_revision: str | None = "0220_deprecate_registration_removed_permissions"
+revision: str = "0225_registration_product_registration_numbers"
+down_revision: str | None = "0224_deprecate_registration_removed_permissions"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

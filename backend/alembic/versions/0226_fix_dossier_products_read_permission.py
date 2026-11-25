@@ -1,7 +1,7 @@
 """fix dossier-writer products list permission binding
 
-Revision ID: 0222_fix_dossier_products_read_permission
-Revises: 0221_registration_product_registration_numbers
+Revision ID: 0226_fix_dossier_products_read_permission
+Revises: 0225_registration_product_registration_numbers
 Create Date: 2026-11-24
 
 `GET /api/v1/registration/dossier-writer/products`（申报资料撰写列表）在代码注册表里
@@ -20,8 +20,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0222_fix_dossier_products_read_permission"
-down_revision: str | None = "0221_registration_product_registration_numbers"
+revision: str = "0226_fix_dossier_products_read_permission"
+down_revision: str | None = "0225_registration_product_registration_numbers"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

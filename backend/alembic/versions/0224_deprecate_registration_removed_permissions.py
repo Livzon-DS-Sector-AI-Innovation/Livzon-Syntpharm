@@ -1,7 +1,7 @@
 """deprecate registration removed permissions
 
-Revision ID: 0220_deprecate_registration_removed_permissions
-Revises: 0219_drop_validation_audit_and_supplementary_reply_tables
+Revision ID: 0224_deprecate_registration_removed_permissions
+Revises: 0223_drop_validation_audit_and_supplementary_reply_tables
 Create Date: 2026-11-24
 
 「验证审计」「补充回复」两个功能已下线，其权限码与接口绑定已从代码注册表
@@ -19,8 +19,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0220_deprecate_registration_removed_permissions"
-down_revision: str | None = "0219_drop_validation_audit_and_supplementary_reply_tables"
+revision: str = "0224_deprecate_registration_removed_permissions"
+down_revision: str | None = "0223_drop_validation_audit_and_supplementary_reply_tables"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

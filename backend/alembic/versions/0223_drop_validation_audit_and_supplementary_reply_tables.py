@@ -1,6 +1,6 @@
 """drop validation audit and supplementary reply tables
 
-Revision ID: 0219_drop_validation_audit_and_supplementary_reply_tables
+Revision ID: 0223_drop_validation_audit_and_supplementary_reply_tables
 Revises: 0218_docx_translation_terms_partial_unique
 Create Date: 2026-11-24
 
@@ -25,7 +25,7 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0219_drop_validation_audit_and_supplementary_reply_tables"
+revision: str = "0223_drop_validation_audit_and_supplementary_reply_tables"
 down_revision: str | None = "0218_docx_translation_terms_partial_unique"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
