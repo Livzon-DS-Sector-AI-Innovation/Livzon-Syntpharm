@@ -204,14 +204,36 @@ class FeishuOAuthClient:
         enterprise_email, user_id, mobile, tenant_key.
         """
         headers = {"Authorization": f"Bearer {user_access_token}"}
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(
-                _USER_INFO_URL,
-                headers=headers,
-                timeout=10.0,
-            )
-            resp.raise_for_status()
-            data = resp.json()
+        data: dict[str, Any] = {}
+        for attempt in range(1, _MAX_ATTEMPTS + 1):
+            try:
+                async with httpx.AsyncClient() as client:
+                    resp = await client.get(
+                        _USER_INFO_URL,
+                        headers=headers,
+                        timeout=10.0,
+                    )
+                    resp.raise_for_status()
+                    data = resp.json()
+                break
+            except httpx.HTTPError:
+                # 只重试网络层 / HTTP 层错误；飞书业务码错误在下面单独抛，不重试
+                if attempt == _MAX_ATTEMPTS:
+                    logger.exception(
+                        "获取飞书用户信息失败（已尝试 %d 次）",
+                        _MAX_ATTEMPTS,
+                        extra={"biz_module": "platform", "step": "get_user_info"},
+                    )
+                    raise
+                logger.warning(
+                    "获取飞书用户信息失败，%d 秒后重试（第 %d/%d 次）",
+                    _RETRY_BACKOFF_SECONDS[attempt - 1],
+                    attempt,
+                    _MAX_ATTEMPTS,
+                    extra={"biz_module": "platform", "step": "get_user_info"},
+                    exc_info=True,
+                )
+                await asyncio.sleep(_RETRY_BACKOFF_SECONDS[attempt - 1])
 
         if data.get("code") != 0:
             raise OAuthError(

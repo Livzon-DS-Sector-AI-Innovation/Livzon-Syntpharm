@@ -1,9 +1,10 @@
 import type { User, ImpersonationStatusExtended } from '@/types/user'
-import type { LoginResponse } from '@/types/auth'
 import type { components } from '@/types/generated/schema'
-import { apiFetch, unwrapResponse, getApiBaseUrl } from './base'
+import { apiFetch, apiFetchRaw, unwrapResponse, getApiBaseUrl } from './base'
 
-export async function loginApi(body: { username: string; password: string }): Promise<{ response: Response; json: LoginResponse | null }> {
+export async function loginApi(
+  body: components['schemas']['LocalLoginRequest'],
+): Promise<{ response: Response; json: components['schemas']['LocalLoginApiResponse'] | null }> {
   const url = `${getApiBaseUrl()}/api/v1/identity/auth/local/login`
   const response = await fetch(url, {
     method: 'POST',
@@ -14,12 +15,36 @@ export async function loginApi(body: { username: string; password: string }): Pr
   return { response, json: await response.json().catch(() => null) }
 }
 
+/**
+ * 契约数据（`UserResponse`）→ 前端展示用 `User`。
+ *
+ * 两个类型不是同一个东西：`User` 是 UI/display 类型（见 `types/user.ts` 的说明），
+ * 只保留界面要用的字段；`/me` 不返回账号状态，因此不在此处凭空补 `status`。
+ */
+function toDisplayUser(data: components['schemas']['UserResponse']): User {
+  return {
+    id: data.id,
+    name: data.name,
+    username: data.username ?? null,
+    auth_source: data.auth_source,
+    email: data.email ?? null,
+    mobile: data.mobile ?? null,
+    avatar_url: data.avatar_url ?? null,
+    employee_no: data.employee_no ?? null,
+    department: data.department ?? null,
+    position: data.position ?? null,
+    must_change_password: data.must_change_password,
+  }
+}
+
 export async function getCurrentUserApi(authToken: string): Promise<User | null> {
   try {
-    return unwrapResponse(await apiFetch<{ code: number; data: User; message?: string; meta?: unknown }>(
-      '/api/v1/identity/me',
-      { headers: { Authorization: `Bearer ${authToken}` } },
-    ))
+    const data = unwrapResponse(
+      await apiFetch<components['schemas']['CurrentUserApiResponse']>('/api/v1/identity/me', {
+        headers: { Authorization: `Bearer ${authToken}` },
+      }),
+    )
+    return toDisplayUser(data)
   } catch {
     return null
   }
@@ -90,11 +115,22 @@ export async function h5LoginApi(
  */
 export async function getFeishuH5ConfigApi(): Promise<components['schemas']['FeishuH5ConfigData']> {
   try {
-    const res = await apiFetch<components['schemas']['FeishuH5ConfigApiResponse']>(
-      '/api/v1/identity/auth/h5/config',
+    return unwrapResponse(
+      await apiFetch<components['schemas']['FeishuH5ConfigApiResponse']>('/api/v1/identity/auth/h5/config'),
     )
-    return res.data
   } catch {
     return { enabled: false, app_id: '' }
   }
+}
+
+/**
+ * 登出：让后端把当前 token 的 jti 写入吊销黑名单（否则退出后 token 在剩余有效期内仍可用）。
+ *
+ * 后端会 302 到 `/login`，重定向结果无意义，只有「请求是否送达」有意义；
+ * 是否阻塞登出由调用方决定（清 cookie 才是用户感知的结果）。
+ */
+export async function logoutApi(authToken: string): Promise<void> {
+  await apiFetchRaw('/api/v1/identity/auth/logout', {
+    headers: { Authorization: `Bearer ${authToken}` },
+  })
 }
