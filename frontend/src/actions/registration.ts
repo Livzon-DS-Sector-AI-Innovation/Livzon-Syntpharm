@@ -73,12 +73,12 @@ export async function generateAuthorizationLetter(
       submitData.append('replacements', replacements as string)
     }
 
-    const json = (await generateAuthorizationLetterApi(submitData)) as ApiResponse<AuthorizationLetterData>
+    const dataPayload = (await generateAuthorizationLetterApi(submitData)) as AuthorizationLetterData
     revalidatePath('/registration')
     return {
       success: true,
-      message: json.message || '授权书生成成功',
-      data: json.data,
+      message: '授权书生成成功',
+      data: dataPayload,
     }
   } catch (error) {
     return {
@@ -132,12 +132,12 @@ export async function generateReferenceStandard(
     if (data.storage_condition) submitData.append('storage_condition', data.storage_condition)
     if (data.remarks) submitData.append('remarks', data.remarks)
 
-    const json = (await generateReferenceStandardApi(submitData)) as ApiResponse<ReferenceStandardData>
+    const dataPayload = (await generateReferenceStandardApi(submitData)) as ReferenceStandardData
     revalidatePath('/registration')
     return {
       success: true,
-      message: json.message || '对照物质说明表生成成功',
-      data: json.data,
+      message: '对照物质说明表生成成功',
+      data: dataPayload,
     }
   } catch (error) {
     return {
@@ -240,9 +240,9 @@ export async function advanceProjectStage(
   stage: string
 ): Promise<{ success: boolean; message: string; data?: ProjectData }> {
   try {
-    const json = (await advanceProjectStageApi(id, stage)) as ApiResponse<ProjectData>
+    const dataPayload = (await advanceProjectStageApi(id, stage)) as ProjectData
     revalidatePath('/registration/projects')
-    return { success: true, message: json.message || '阶段已更新', data: json.data }
+    return { success: true, message: '阶段已更新', data: dataPayload }
   } catch (error) {
     return { success: false, message: error instanceof Error ? error.message : '阶段推进失败' }
   }
@@ -254,9 +254,9 @@ export async function addProjectProgressLog(
   content: string
 ): Promise<{ success: boolean; message: string; data?: components['schemas']['ProgressLogResponse'] }> {
   try {
-    const json = (await addProjectLogApi(id, content)) as ApiResponse<components['schemas']['ProgressLogResponse']>
+    const dataPayload = (await addProjectLogApi(id, content)) as components['schemas']['ProgressLogResponse']
     revalidatePath('/registration/projects')
-    return { success: true, message: json.message || '记录已添加', data: json.data }
+    return { success: true, message: '记录已添加', data: dataPayload }
   } catch (error) {
     return { success: false, message: error instanceof Error ? error.message : '添加记录失败' }
   }

@@ -28,14 +28,11 @@ export type AuthorizationLetterTrail = components['schemas']['AuthorizationLette
 export type AuthorizationLetterFilterOptions = components['schemas']['AuthorizationLetterFilterOptions']
 
 
-export interface AuthorizationLetterCreateInput {
-  product_name: string
-  registration_number: string
-  preparation_unit: string
-  preparation_name: string
-  administration_route: string
-  remarks?: string
-}
+/** 契约模型，来自后端 OpenAPI（生成端点为 multipart，字段与 AuthorizationLetterCreate 一致） */
+export type AuthorizationLetterCreateInput = Omit<
+  components['schemas']['AuthorizationLetterResponse'],
+  'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'is_deleted' | 'api_company' | 'output_file_name' | 'output_file_key'
+>
 
 /** 契约模型，来自后端 OpenAPI */
 export type AuthorizationLetterResponse = components['schemas']['DataResponse_AuthorizationLetterResponse_']
@@ -154,15 +151,8 @@ export type ProjectUpdatePayload = components['schemas']['ProjectUpdate']
 /** 申报前阶段 key（与后端 PreStage 一致） */
 export type PreStage = 'initiation' | 'data_preparation' | 'internal_review' | 'submission' | 'accepted'
 
-export interface Holiday {
-  id: string
-  year: number
-  date: string
-  type: 'holiday' | 'makeup'
-  description: string | null
-  created_at: string
-  updated_at: string
-}
+/** 契约模型，来自后端 OpenAPI */
+export type Holiday = components['schemas']['HolidayResponse']
 
 /** 契约模型，来自后端 OpenAPI */
 export type ReviewNodeConfig = components['schemas']['ReviewNodeConfig']
@@ -178,10 +168,7 @@ export type DashboardProjectItem = components['schemas']['DashboardProjectItem']
 export type DashboardCertificateItem = components['schemas']['DashboardCertificateItem']
 
 
-export interface DashboardSummary {
-  approved_product_count: number
-  overseas_approval_count: number
-  submitted_project_count: number
-  active_project_count: number
+/** 契约模型，来自后端 OpenAPI（recent_projects 后端恒返回，故收紧为非可选） */
+export type DashboardSummary = Omit<components['schemas']['DashboardSummaryResponse'], 'recent_projects'> & {
   recent_projects: DashboardProjectItem[]
 }

@@ -9,6 +9,7 @@
  * 数据全部来自真实接口：/registration/drugs、/drugs/nodes、/drugs/{id}/prediction
  */
 
+import type { components } from '@/types/generated/schema'
 import { usePathname, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
@@ -250,15 +251,16 @@ export function ReviewPageClient() {
     }
   }
 
-  const handleUpdateNode = async (drugId: string, nodeIndex: number, payload: { actual_date?: string | null; skipped?: boolean }) => {
+  const handleUpdateNode = async (
+    drugId: string,
+    nodeIndex: number,
+    payload: Omit<components['schemas']['DrugNodeUpdate'], 'node_index'>,
+  ) => {
     try {
-      const result = await updateDrug(drugId, {
-        nodes: [{ node_index: nodeIndex, ...payload }],
+      // 契约类型取自生成 schema；失败由 apiFetch 抛错，统一走 catch
+      await updateDrug(drugId, {
+        nodes: [{ ...payload, node_index: nodeIndex }],
       })
-      if (result && 'success' in result && result.success === false) {
-        message.error(result.message || '更新失败')
-        return
-      }
       message.success('节点更新成功')
       refreshData()
     } catch {
@@ -278,11 +280,8 @@ export function ReviewPageClient() {
     if (!activeDrug || acceptanceSaving) return
     setAcceptanceSaving(true)
     try {
-      const result = await updateDrug(activeDrug.id, { acceptance_number: acceptanceValue.trim() || null })
-      if (result && 'success' in result && result.success === false) {
-        message.error(result.message || '保存失败')
-        return
-      }
+      // updateDrug 失败会抛 ApiError（apiFetch 非 2xx 即抛），此处无需再判 success 字段
+      await updateDrug(activeDrug.id, { acceptance_number: acceptanceValue.trim() || null })
       message.success('受理号已登记，关联注册项目状态将自动同步')
       refreshData()
     } catch {

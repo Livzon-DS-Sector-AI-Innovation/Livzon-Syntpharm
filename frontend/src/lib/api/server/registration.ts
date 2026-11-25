@@ -13,14 +13,18 @@ import type {
   RegistrationProject,
 } from '@/types/registration'
 
+type UnknownRecord = Record<string, unknown>
+
 type DrugCreate = components['schemas']['DrugCreate']
 type DrugUpdate = components['schemas']['DrugUpdate']
 
-export async function generateAuthorizationLetter(formData: FormData) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/authorization-letters/generate`, {
-    method: 'POST',
-    body: formData,
-  })
+export async function generateAuthorizationLetter(formData: FormData): Promise<UnknownRecord> {
+  return unwrapResponse(
+    await apiFetch<ApiResponse<UnknownRecord>>(`${getApiBaseUrl()}/api/v1/registration/authorization-letters/generate`, {
+      method: 'POST',
+      body: formData,
+    }),
+  )
 }
 
 export async function deleteAuthorizationLetter(id: string) {
@@ -29,11 +33,13 @@ export async function deleteAuthorizationLetter(id: string) {
   })
 }
 
-export async function generateReferenceStandard(formData: FormData) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/reference-standards/generate`, {
-    method: 'POST',
-    body: formData,
-  })
+export async function generateReferenceStandard(formData: FormData): Promise<UnknownRecord> {
+  return unwrapResponse(
+    await apiFetch<ApiResponse<UnknownRecord>>(`${getApiBaseUrl()}/api/v1/registration/reference-standards/generate`, {
+      method: 'POST',
+      body: formData,
+    }),
+  )
 }
 
 export async function deleteReferenceStandard(id: string) {
@@ -149,18 +155,22 @@ export async function fetchProjectLogs(projectId: string): Promise<ProjectProgre
   return unwrapResponse(raw) ?? []
 }
 
-export async function advanceProjectStage(id: string, stage: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/projects/${id}/stage`, {
-    method: 'POST',
-    body: JSON.stringify({ stage }),
-  })
+export async function advanceProjectStage(id: string, stage: string): Promise<UnknownRecord> {
+  return unwrapResponse(
+    await apiFetch<ApiResponse<UnknownRecord>>(`${getApiBaseUrl()}/api/v1/registration/projects/${id}/stage`, {
+      method: 'POST',
+      body: JSON.stringify({ stage }),
+    }),
+  )
 }
 
-export async function addProjectLog(id: string, content: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/projects/${id}/logs`, {
-    method: 'POST',
-    body: JSON.stringify({ content }),
-  })
+export async function addProjectLog(id: string, content: string): Promise<UnknownRecord> {
+  return unwrapResponse(
+    await apiFetch<ApiResponse<UnknownRecord>>(`${getApiBaseUrl()}/api/v1/registration/projects/${id}/logs`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    }),
+  )
 }
 
 export async function createRegistrationProject(data: components['schemas']['ProjectCreate']) {
