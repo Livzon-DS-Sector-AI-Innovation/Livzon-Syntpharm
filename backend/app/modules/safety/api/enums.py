@@ -1,11 +1,15 @@
 """Safety API — enums endpoints."""
 
+import logging
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.core.response import build_response
+from app.modules.hr.public_api import list_pickable_department_names
 from app.modules.safety.risk_grading import (
     CONSEQUENCE_MAX,
     CONSEQUENCE_MIN,
@@ -134,6 +138,9 @@ async def get(current_user: RequiredUser) -> Any:
     )
 
 
+logger = logging.getLogger(__name__)
+
+
 def _value_label_options(options: tuple[dict[str, str], ...]) -> list[RiskGradingValueLabel]:
     return [RiskGradingValueLabel(value=item["key"], label=item["label"]) for item in options]
 
@@ -143,12 +150,24 @@ def _value_label_options(options: tuple[dict[str, str], ...]) -> list[RiskGradin
     response_model=RiskGradingOptionsApiResponse,
     summary="获取风险分级管控台账的选项、矩阵与分级阈值",
 )
-async def get_risk_grading_options(current_user: RequiredUser) -> Any:
-    """风险分级管控台账的权威选项字典；前端不得再手写这些常量。"""
+async def get_risk_grading_options(
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """风险分级管控台账的权威选项字典；前端不得再手写这些常量。
+
+    管控层级候选来自组织目录（与部门选择器同源）；查库失败时回退常量，
+    仅保证读接口可用，写接口此时仍会因同样的查询失败而拒绝。
+    """
+    try:
+        departments = sorted(await list_pickable_department_names(db))
+    except Exception:
+        logger.warning("读取组织部门失败，回退风险分级常量部门", exc_info=True)
+        departments = list(RISK_GRADING_DEPARTMENTS)
 
     return build_response(
         data=RiskGradingOptions(
-            departments=list(RISK_GRADING_DEPARTMENTS),
+            departments=departments,
             control_measures=_value_label_options(CONTROL_MEASURE_OPTIONS),
             equipment_measures=_value_label_options(EQUIPMENT_MEASURE_OPTIONS),
             residual_risks=_value_label_options(RESIDUAL_RISK_OPTIONS),

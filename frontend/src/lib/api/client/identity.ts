@@ -1,4 +1,4 @@
-import type { components } from '@/types/generated/schema'
+import type { components, operations } from '@/types/generated/schema'
 import { apiGet } from '@/lib/api/client'
 
 const API_BASE = '/api/v1'
@@ -39,4 +39,51 @@ export async function searchPersonnel(
   )
   const items = data?.items ?? []
   return { items, total: data?.total ?? items.length }
+}
+
+// ── 人员下拉（选人组件数据源）────────────────────────────────────────
+
+/** 人员下拉项：系统账号口径，只含展示字段（不含手机号/邮箱/角色）。 */
+export type UserLookupItem = components['schemas']['UserLookupItem']
+
+export interface UserLookupPage {
+  items: UserLookupItem[]
+  total: number
+}
+
+/** 人员下拉查询参数：直接取生成契约，避免手写 query 类型。 */
+export type UserLookupQuery = NonNullable<
+  operations['lookup_users_api_v1_identity_users_lookup_get']['parameters']['query']
+>
+
+/**
+ * 分页获取启用账号（选人组件的唯一数据源）。
+ *
+ * 与 HR 公共目录的区别：这里只返回 `identity.users` 中 `status=active` 的账号，
+ * 即「系统管理 → 用户管理」里能登录的人；未开号的 HR 员工不会被列出。
+ */
+export async function fetchUserLookup(params?: UserLookupQuery): Promise<UserLookupPage> {
+  const searchParams = new URLSearchParams()
+  if (params?.keyword) searchParams.set('keyword', params.keyword)
+  if (params?.feishu_bound_only) searchParams.set('feishu_bound_only', 'true')
+  searchParams.set('offset', String(params?.offset ?? 0))
+  searchParams.set('limit', String(params?.limit ?? 50))
+  const data = await apiGet<components['schemas']['UserLookupListApiResponse']['data']>(
+    `${API_BASE}/identity/users/lookup?${searchParams.toString()}`,
+    { cache: 'no-store' },
+  )
+  return { items: data?.items ?? [], total: data?.total ?? 0 }
+}
+
+/**
+ * 飞书网页应用免登配置（公开接口，登录前调用）。
+ *
+ * 只返回 App ID 与开关；App Secret 永远不下发到浏览器。
+ */
+export async function fetchFeishuH5Config(): Promise<components['schemas']['FeishuH5ConfigData']> {
+  const data = await apiGet<components['schemas']['FeishuH5ConfigData']>(
+    `${API_BASE}/identity/auth/h5/config`,
+    { cache: 'no-store' },
+  )
+  return data ?? { enabled: false, app_id: '' }
 }

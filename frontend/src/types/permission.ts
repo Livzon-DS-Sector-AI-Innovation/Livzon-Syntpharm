@@ -20,8 +20,14 @@ export type MyPermissions = components['schemas']['MyPermissionsData']
 export type RoleCreateInput = components['schemas']['app__platform__permission__schemas__RoleCreate']
 export type RoleUpdateInput = components['schemas']['app__platform__permission__schemas__RoleUpdate']
 export type GrantCreateInput = components['schemas']['GrantCreate']
+export type GrantBatchCreateInput = components['schemas']['GrantBatchCreate']
 export type GrantUpdateInput = components['schemas']['GrantUpdate']
 export type DepartmentOption = components['schemas']['DepartmentOption']
+export type ModuleAdminGroup = components['schemas']['ModuleAdminGroup']
+export type ModuleAdminUser = components['schemas']['ModuleAdminUser']
+export type ModuleAdminAssignInput = components['schemas']['ModuleAdminAssignRequest']
+export type UserAccessData = components['schemas']['UserAccessData']
+export type UserAccessItem = components['schemas']['UserAccessItem']
 
 export type { BatchFailureItem, BatchResult } from '@/types/batch'
 

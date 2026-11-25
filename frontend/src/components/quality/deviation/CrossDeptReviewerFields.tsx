@@ -3,7 +3,7 @@
 import { Button, Form, Select, Tag } from 'antd'
 import type { FormInstance } from 'antd'
 import { CheckCircleOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
-import { RemoteUserMultiSelect, RemoteUserSelect } from '@/components/common/RemoteUserSelect'
+import { PersonMultiSelect, PersonSelect } from '@/components/common/PersonSelect'
 import { toPersonId, toPersonIds } from '@/lib/utils/form-person'
 import type { DeviationCrossDeptReviewer, DeviationLedgerOption } from '@/types/quality'
 
@@ -114,7 +114,7 @@ export function CrossDeptReviewerFields({
                   className="!mb-0 min-w-0 flex-1"
                   normalize={toPersonIds}
                 >
-                  <RemoteUserMultiSelect
+                  <PersonMultiSelect
                     placeholder="该部门调查人（可留空，由负责人直接审核）"
                     labels={investigatorLabels}
                     avatarSrcs={investigatorAvatars}
@@ -128,7 +128,7 @@ export function CrossDeptReviewerFields({
                   className="!mb-0 w-full sm:w-[200px]"
                   normalize={toPersonId}
                 >
-                  <RemoteUserSelect
+                  <PersonSelect
                     placeholder="该部门负责人（审核人）"
                     label={headSnapshot?.name ?? row?.dept_head_name ?? null}
                     avatarSrc={headSnapshot?.avatar ?? null}

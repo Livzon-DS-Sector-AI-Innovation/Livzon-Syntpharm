@@ -32,6 +32,8 @@ export interface ResolvedModule {
   icon: string
   path: string
   isCustom: boolean
+  /** 当前账号无本模块访问权限：保留 Tab，灰显加锁，仍可点击（进无权限页） */
+  noAccess: boolean
   children: SubMenuItem[]
 }
 
@@ -75,20 +77,27 @@ function filterChildren(
   const kept: SortableChild[] = []
 
   items.forEach((item, index) => {
-    const perms = resolvePerms(config, item.key, SUBMENU_ACCESS_PERMS[item.key])
-    if (!canAccess(granted, isSuperuser, perms)) return
+    // 管理员显式隐藏的菜单项：对所有人（含超管）都不显示
     if (!isVisible(config, item.key)) return
+
+    const perms = resolvePerms(config, item.key, SUBMENU_ACCESS_PERMS[item.key])
+    // 三态：无权限不再丢弃，而是标记 noAccess（灰显 + 锁 + 可点击 → 页面守卫渲染无权限页）
+    const allowed = canAccess(granted, isSuperuser, perms)
+    // 功能未开发（disabled）优先于无权限：不可点
+    const noAccess = !allowed && !item.disabled
 
     let children: SubMenuItem[] | undefined
     if (item.children && item.children.length > 0) {
       children = filterChildren(item.children, item.key, config, granted, isSuperuser)
-      if (children.length === 0) return // 子项全被过滤 → 父分组不显示
+      // 子项全部被管理员隐藏 → 父分组不显示（无权限的子项会被保留，不算被隐藏）
+      if (children.length === 0) return
     }
 
     kept.push({
       ...item,
       label: resolveLabel(config, item.key, item.label),
       children,
+      noAccess,
       __sort: resolveSort(config, item.key, (index + 1) * DEFAULT_SORT_STEP),
       __order: index,
     })
@@ -97,11 +106,11 @@ function filterChildren(
   const custom: SortableChild[] = config.custom
     .filter((c) => c.parent === parentKey)
     .filter((c) => c.visible)
-    .filter((c) => canAccess(granted, isSuperuser, c.perms.length > 0 ? c.perms : undefined))
     .map((c, index) => ({
       key: c.id,
       label: c.title,
       path: c.path,
+      noAccess: !canAccess(granted, isSuperuser, c.perms.length > 0 ? c.perms : undefined),
       __sort: c.sort,
       __order: 1000 + index,
     }))
@@ -127,13 +136,16 @@ export function resolveMenus(
   const modules: Array<ResolvedModule & { __sort: number; __order: number }> = []
 
   moduleMenus.forEach((mod, index) => {
-    const perms = resolvePerms(config, mod.key, MODULE_ACCESS_PERMS[mod.key])
-    if (!canAccess(granted, isSuperuser, perms)) return
+    // 管理员显式隐藏 → 所有人都不显示
     if (!isVisible(config, mod.key)) return
 
+    const perms = resolvePerms(config, mod.key, MODULE_ACCESS_PERMS[mod.key])
+    // 无权限：保留模块 Tab（灰显 + 锁 + 可点击），点击后由模块 layout 守卫渲染无权限页
+    const noAccess = !canAccess(granted, isSuperuser, perms)
+
     const children = filterChildren(mod.children, mod.key, config, granted, isSuperuser)
-    // 模块下原本有子菜单、但被隐藏或权限过滤后一个不剩 → 模块 Tab 也一并隐藏，
-    // 避免顶部留一个点进去空空如也的模块（保护项不会走到这里）
+    // 子菜单全被管理员隐藏 → 模块 Tab 一并隐藏，避免顶部留下点进去空空如也的模块。
+    // 注意：仅"无权限"不会触发隐藏（无权限项保留为灰显）。
     if (mod.children.length > 0 && children.length === 0) return
 
     modules.push({
@@ -142,6 +154,7 @@ export function resolveMenus(
       icon: mod.icon,
       path: mod.path,
       isCustom: false,
+      noAccess,
       children,
       __sort: resolveSort(config, mod.key, (index + 1) * DEFAULT_SORT_STEP),
       __order: index,
@@ -151,13 +164,13 @@ export function resolveMenus(
   const customModules: Array<ResolvedModule & { __sort: number; __order: number }> = config.custom
     .filter((c) => c.parent === null)
     .filter((c) => c.visible)
-    .filter((c) => canAccess(granted, isSuperuser, c.perms.length > 0 ? c.perms : undefined))
     .map((c, index) => ({
       key: c.id,
       label: c.title,
       icon: c.icon,
       path: c.path,
       isCustom: true,
+      noAccess: !canAccess(granted, isSuperuser, c.perms.length > 0 ? c.perms : undefined),
       children: filterChildren([], c.id, config, granted, isSuperuser),
       __sort: c.sort,
       __order: 1000 + index,

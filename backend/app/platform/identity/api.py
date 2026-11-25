@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import secrets
 import uuid
@@ -10,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
-from app.core.deps import PermissionContext, RequiredUser, require_any_permission, require_permission
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import (
     AppException,
     BadRequestException,
@@ -23,7 +24,7 @@ from app.core.jobs import submit_job
 from app.core.response import build_response
 from app.platform.audit.service import record_audit_log
 from app.platform.identity.models import User
-from app.platform.identity.repository import DepartmentRepository, UserRepository
+from app.platform.identity.repository import DepartmentRepository, LoginLogRepository, UserRepository
 from app.platform.identity.schemas import (
     ChangePasswordApiResponse,
     ChangePasswordData,
@@ -33,10 +34,17 @@ from app.platform.identity.schemas import (
     DepartmentListApiResponse,
     DepartmentResponse,
     DepartmentTreeNode,
+    EnsureIdentityUserApiResponse,
+    EnsureIdentityUserData,
+    EnsureIdentityUserRequest,
     FeishuBindRequest,
     FeishuConfigApiResponse,
     FeishuConfigUpsert,
     FeishuDiagnosticApiResponse,
+    FeishuH5ConfigApiResponse,
+    FeishuH5ConfigData,
+    FeishuH5LoginApiResponse,
+    FeishuH5LoginRequest,
     LocalLoginApiResponse,
     LocalLoginRequest,
     LocalUserCreate,
@@ -47,15 +55,18 @@ from app.platform.identity.schemas import (
     PersonnelItem,
     PersonnelListApiResponse,
     PersonnelListResponse,
+    RoleBrief,
     SessionListApiResponse,
     SessionRevokeApiResponse,
     SyncAllTriggerApiResponse,
     SyncDepartmentsTriggerApiResponse,
     SyncMembersTriggerApiResponse,
-    SyncUserInfoTriggerApiResponse,
     TestLoginResponse,
     TestLoginUser,
     TokenResponse,
+    UserBatchDeleteApiResponse,
+    UserBatchDeleteData,
+    UserBatchDeleteRequest,
     UserBatchFailure,
     UserBatchStatusApiResponse,
     UserBatchStatusData,
@@ -65,6 +76,9 @@ from app.platform.identity.schemas import (
     UserCreateData,
     UserDeleteApiResponse,
     UserDeleteData,
+    UserLookupItem,
+    UserLookupListApiResponse,
+    UserLookupListResponse,
     UserManagementApiResponse,
     UserManagementItem,
     UserManagementListApiResponse,
@@ -73,6 +87,12 @@ from app.platform.identity.schemas import (
     UserResponse,
     UserUnbindFeishuApiResponse,
 )
+from app.platform.permission.public_api import get_role_briefs_by_user_ids
+from app.shared.config_reader import get_module_setting_bool
+from app.shared.module_registry import BUSINESS_MODULES
+
+# 模块编码 → 中文名（用户列表角色列的提示文案用，不额外 join 表）
+_MODULE_NAME_BY_CODE = {module.code: module.name for module in BUSINESS_MODULES}
 
 logger = logging.getLogger(__name__)
 
@@ -219,6 +239,143 @@ async def local_login(
     )
 
 
+# ── 飞书网页应用免登（H5） ───────────────────────────────────────────
+
+# 开关放在运行时配置（core.module_settings → identity.H5_LOGIN_ENABLED），
+# 运营可在 Web UI 灰度/关停，不需要改部署环境变量重启。缺行时默认开启（与旧行为一致）。
+_H5_LOGIN_SETTING_MODULE = "identity"
+_H5_LOGIN_SETTING_KEY = "H5_LOGIN_ENABLED"
+
+# 登录请求内的总预算：外部链路（v2 兑换 → app_access_token → v1 兑换 → user_info）
+# 任一步卡住都必须在这个时间内收口，避免 HTTP 请求长时间挂起。
+_H5_LOGIN_BUDGET_SECONDS = 5.0
+
+
+async def _h5_login_enabled() -> bool:
+    return await get_module_setting_bool(_H5_LOGIN_SETTING_MODULE, _H5_LOGIN_SETTING_KEY, True)
+
+
+async def _record_h5_login_failure(
+    db: AsyncSession,
+    log_repo: LoginLogRepository,
+    *,
+    ip_address: str | None,
+    user_agent: str | None,
+    error_message: str,
+) -> None:
+    """回滚未完成事务并写一条失败登录日志；日志写不进去也不改变登录错误的返回。"""
+    await db.rollback()
+    try:
+        await log_repo.create(
+            db,
+            status="failed",
+            login_type="feishu_h5",
+            ip_address=ip_address,
+            user_agent=user_agent,
+            error_message=error_message,
+        )
+        await db.commit()
+    except Exception:
+        logger.exception(
+            "Failed to record feishu_h5 login failure",
+            extra={"biz_module": "identity", "ip_address": ip_address, "user_agent": user_agent},
+        )
+
+
+@auth_router.get(
+    "/h5/config",
+    summary="飞书网页应用免登配置（公开）",
+    response_model=FeishuH5ConfigApiResponse,
+)
+async def feishu_h5_config() -> FeishuH5ConfigApiResponse:
+    """前端判断是否具备免登条件用。只返回 App ID（可公开），不返回 App Secret。"""
+    platform_cfg = get_settings().feishu.platform
+    enabled = bool(await _h5_login_enabled() and platform_cfg.app_id)
+    return FeishuH5ConfigApiResponse(
+        data=FeishuH5ConfigData(enabled=enabled, app_id=platform_cfg.app_id if enabled else ""),
+    )
+
+
+@auth_router.post(
+    "/h5/login",
+    summary="飞书网页应用免登登录",
+    response_model=FeishuH5LoginApiResponse,
+)
+async def feishu_h5_login(
+    payload: FeishuH5LoginRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> FeishuH5LoginApiResponse:
+    """用 H5 JSSDK 取到的登录预授权码完成登录（免账号密码、免授权页跳转）。
+
+    公开接口：登录前没有 token，身份由飞书下发的 code 证明；code 一次性、5 分钟有效。
+    """
+    from app.platform.identity.service import AccountDeletedError, handle_oauth_callback
+
+    if not await _h5_login_enabled():
+        raise NotFoundException("未启用飞书网页应用免登")
+
+    ip_address = _client_ip(request)
+    user_agent = request.headers.get("user-agent")
+    log_repo = LoginLogRepository()
+    log_extra = {"biz_module": "identity", "ip_address": ip_address, "user_agent": user_agent}
+
+    try:
+        async with asyncio.timeout(_H5_LOGIN_BUDGET_SECONDS):
+            user, token = await handle_oauth_callback(db, payload.code, preauth_code=True)
+    except TimeoutError:
+        # 外部链路超出请求预算：按可重试失败处理，不让请求继续挂住
+        error_message = "飞书响应超时，请重试"
+        logger.warning("Feishu H5 login timed out", extra=log_extra)
+        await _record_h5_login_failure(
+            db,
+            log_repo,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            error_message=error_message,
+        )
+        raise UnauthorizedException(error_message) from None
+    except Exception as exc:
+        # 区分可解释的拒绝原因，避免前端一律显示「登录失败」让用户反复试
+        if isinstance(exc, AccountDeletedError):
+            error_message = "账号已被删除，请联系管理员处理"
+            http_exc: AppException = UnauthorizedException(error_message)
+        elif isinstance(exc, PermissionError):
+            error_message = f"账号已被禁用: {exc}"
+            http_exc = ForbiddenException(error_message)
+        else:
+            error_message = "飞书免登失败，请改用飞书授权登录"
+            http_exc = UnauthorizedException(error_message)
+            logger.exception("Feishu H5 login failed", extra=log_extra)
+
+        await _record_h5_login_failure(
+            db,
+            log_repo,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            error_message=error_message,
+        )
+        raise http_exc from exc
+
+    await log_repo.create(
+        db,
+        user_id=user.id,
+        user_name=user.name,
+        status="success",
+        login_type="feishu_h5",
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+    await db.commit()
+
+    # 会话登记（踢下线用）
+    await _record_login_session(token, user, ip_address, user_agent)
+
+    return FeishuH5LoginApiResponse(
+        data=TokenResponse(access_token=token, user=UserResponse.model_validate(user)),
+    )
+
+
 @auth_router.get("/login", summary="发起飞书 SSO 登录")
 async def login(request: Request) -> RedirectResponse:
     """Generate state token and redirect user to Feishu authorization page.
@@ -259,6 +416,7 @@ async def auth_callback(
     """
     from app.platform.identity.repository import LoginLogRepository
     from app.platform.identity.service import (
+        AccountDeletedError,
         handle_oauth_callback,
         validate_state_token,
     )
@@ -287,7 +445,20 @@ async def auth_callback(
     try:
         user, token = await handle_oauth_callback(db, code)
     except Exception as exc:
-        logger.exception("OAuth callback failed")
+        # 区分可解释的拒绝原因，避免一律显示「登录失败，请重试」让用户反复试
+        if isinstance(exc, AccountDeletedError):
+            error_code = "account_deleted"
+            error_message = "账号已被删除，请联系管理员处理"
+            logger.warning("OAuth callback rejected: account deleted")
+        elif isinstance(exc, PermissionError):
+            error_code = "account_disabled"
+            error_message = f"账号已被禁用: {exc}"
+            logger.warning("OAuth callback rejected: account disabled")
+        else:
+            error_code = "callback_failed"
+            error_message = f"OAuth回调失败: {exc}"
+            logger.exception("OAuth callback failed")
+
         # Rollback any pending transaction before logging the failure
         await db.rollback()
         try:
@@ -297,13 +468,13 @@ async def auth_callback(
                 login_type="feishu_sso",
                 ip_address=ip_address,
                 user_agent=user_agent,
-                error_message=f"OAuth回调失败: {exc}",
+                error_message=error_message,
             )
             await db.commit()
         except Exception as log_exc:
-            logger.error("Failed to record login failure: %s", log_exc)
+            logger.exception("Failed to record login failure: %s", log_exc)
         return RedirectResponse(
-            url="/login?error=callback_failed",
+            url=f"/login?error={error_code}",
             status_code=302,
         )
 
@@ -370,12 +541,37 @@ async def logout(
 @user_router.get("/me", summary="获取当前登录用户信息", response_model=CurrentUserApiResponse)
 async def get_me(
     current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Return the currently authenticated user's profile.
 
     Authentication via Bearer header or auth_token cookie.
+
+    #219：姓名 / 手机 / 邮箱 / 部门 / 职务 / 工号 / 头像以 HR 员工档案为准，
+    账号表只提供认证字段。逐字段「HR 有值才覆盖」——HR 档案存在但某字段尚未
+    同步（如部门为空、last_synced_at 为空）时必须回退登录快照，否则个人中心
+    会被空值清空，与用户管理列表的口径也不一致。
     """
-    return build_response(data=UserResponse.model_validate(current_user).model_dump())
+    payload = UserResponse.model_validate(current_user)
+    open_id = (current_user.feishu_open_id or "").strip()
+    if open_id:
+        from app.modules.hr.public_api import get_profile_by_open_id
+
+        profile = await get_profile_by_open_id(db, open_id)
+        if profile is not None:
+            department_names = profile.get("department_names") or []
+            payload = payload.model_copy(
+                update={
+                    "name": profile.get("name") or payload.name,
+                    "mobile": profile.get("mobile") or payload.mobile,
+                    "email": profile.get("email") or payload.email,
+                    "department": (department_names[-1] if department_names else None) or payload.department,
+                    "position": profile.get("job_title_name") or payload.position,
+                    "employee_no": profile.get("employee_no") or payload.employee_no,
+                    "avatar_url": profile.get("avatar_url") or payload.avatar_url,
+                }
+            )
+    return build_response(data=payload.model_dump())
 
 
 # ── Departments ─────────────────────────────────────────────────────
@@ -545,30 +741,10 @@ async def trigger_sync_all(
     )
 
 
-@sync_router.post(
-    "/user-info",
-    summary="同步飞书用户信息（资料 + 头像 + 部门，后台执行）",
-    response_model=SyncUserInfoTriggerApiResponse,
-)
-async def trigger_sync_user_info(
-    ctx: PermissionContext = Depends(require_any_permission("platform:config:manage", "platform:user:manage")),
-) -> Any:
-    """用户管理页「同步飞书用户信息」入口。
-
-    与 `/sync/all` 复用同一后台任务（部门 + 成员全量同步），区别只在权限：
-    这里额外允许仅持有「用户管理」权限的账号触发，方便管理员自行补齐头像与部门。
-    本次不分配账号（飞书 user_id / 工号权限未开通），只回填资料。
-    """
-    from app.platform.identity.service import sync_livzon_feishu_contacts_all
-
-    await submit_job("identity.sync-user-info", lambda _job_id: sync_livzon_feishu_contacts_all())
-    logger.info("Feishu user info sync triggered")
-    return build_response(
-        data={
-            "status": "ok",
-            "message": "已开始在后台同步飞书用户信息（姓名 / 部门 / 职位 / 头像），约 1 分钟后刷新列表查看结果。",
-        },
-    )
+# 用户管理页的「同步飞书用户信息」入口已下线（#219）：
+# 人员属性统一以 HR 员工档案为唯一来源、在列表接口实时装配，
+# 不再保留「把飞书写回 identity.users」的入口，避免两套口径并存。
+# 组织与人员同步请走 HR 模块：POST /api/v1/hr/org/sync。
 
 
 # ── Livzon Feishu Config ──────────────────────────────────────────
@@ -675,9 +851,15 @@ async def list_users_management(
     super_ids = set(await list_superuser_user_ids(db))
     exclude_user_ids = None if await user_is_superuser(db, ctx.user) else list(super_ids)
 
+    # #219：列表展示值以 HR 档案为准，搜索也要覆盖 HR 侧命中的人（姓名/工号/手机号），
+    # 否则会出现「列表显示 HR 新姓名却搜不到」。两次查询均为百级 IN 查询，无 N+1。
+    from app.modules.hr.public_api import get_profiles_by_open_ids, search_profile_open_ids
+
+    keyword_open_ids = await search_profile_open_ids(db, keyword) if keyword else []
     users, total = await repo.list_users(
         db,
         keyword=keyword,
+        keyword_open_ids=keyword_open_ids,
         status=status,
         auth_source=auth_source,
         unbound_only=unbound_only,
@@ -687,15 +869,156 @@ async def list_users_management(
         limit=limit,
     )
     items = []
-    roles_map = await repo.get_roles_for_users(db, [u.id for u in users])
+    user_ids = [u.id for u in users]
+    roles_map = await repo.get_roles_for_users(db, user_ids)
+    role_briefs_map = await get_role_briefs_by_user_ids(db, user_ids)
+    # 需要已移出的历史档案来区分「在职」与「已离职/调出」，故 include_inactive=True
+    profiles = await get_profiles_by_open_ids(
+        db,
+        [u.feishu_open_id or "" for u in users],
+        include_inactive=True,
+    )
     for u in users:
         item = UserManagementItem.model_validate(u)
         item.roles = roles_map.get(u.id, [])
+        item.role_details = [
+            RoleBrief(
+                id=brief.id,
+                name=brief.name,
+                module_code=brief.module_code,
+                module_name=_MODULE_NAME_BY_CODE.get(brief.module_code or ""),
+            )
+            for brief in role_briefs_map.get(u.id, [])
+        ]
         # 批量操作的复选框据此置灰（前端体验层，后端批量接口仍逐条校验）
         item.is_superuser = u.id in super_ids
+        profile = profiles.get((u.feishu_open_id or "").strip())
+        if profile is not None:
+            # 姓名/联系方式/工号/部门/职务/头像都以 HR 为唯一来源，本地列仅作缺值回退
+            item.name = profile.get("name") or item.name
+            item.mobile = profile.get("mobile") or item.mobile
+            item.email = profile.get("email") or item.email
+            item.employee_no = profile.get("employee_no") or item.employee_no
+            item.position = profile.get("job_title_name") or item.position
+            department_names = profile.get("department_names") or []
+            item.department = department_names[-1] if department_names else item.department
+            # 头像同样以 HR 为准：前端优先消费 avatar_thumb，本地旧快照不能覆盖 HR 值
+            avatar = profile.get("avatar_url") or item.avatar_url
+            item.avatar_url = avatar
+            item.avatar_thumb = avatar or item.avatar_thumb
+            item.has_profile = True
+            # 在职口径：先用 HR 的 is_current 近似（staff_status 上游尚未落值）
+            if profile.get("is_current"):
+                item.employment_status = "active"
+                item.employment_label = "在职"
+            else:
+                item.employment_status = "left"
+                item.employment_label = "已离职/调出"
+        else:
+            item.has_profile = False
+            item.employment_status = None
+            item.employment_label = "未建档案"
         items.append(item.model_dump())
     resp = UserManagementListResponse(items=items, total=total, offset=offset, limit=limit)
     return build_response(data=resp.model_dump())
+
+
+@user_router.get(
+    "/users/lookup",
+    summary="人员下拉（仅启用账号）",
+    response_model=UserLookupListApiResponse,
+)
+async def lookup_users(
+    current_user: RequiredUser,
+    keyword: str | None = Query(None, description="按姓名/账号/工号/手机号搜索"),
+    feishu_bound_only: bool = Query(False, description="仅返回已绑定飞书身份的账号"),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """选人组件的数据源：只返回「HR 在册且已有系统账号」的启用人员。
+
+    与「用户管理」列表的区别：
+    - 固定 ``status=active``：停用账号不参与任何选人；
+    - 只列 HR 在册档案（``hr.employee_profiles.is_current=true``）对应的账号：
+      已离职/调出、以及没有 HR 档案的本地账号（如 admin、测试账号）都不参与选人；
+    - 只返回展示字段（姓名 / 账号 / 部门 / 职务 / 头像），不含联系方式与角色；
+    - 沿用同一条保护规则：非超管调用时看不到超管账号；
+    - ``feishu_bound_only=true`` 时只返回已绑定飞书身份的账号（审批人、整改负责人
+      等需要收飞书通知的场景用），口径与 ``identity/personnel`` 一致。
+
+    准入只要求登录（不再挂 ``platform:person:lookup``）：选人下拉是各业务模块、
+    模块负责人授权页的基础能力，挂平台级权限码会让负责人必须先持有一枚与本事
+    无关的平台权限才能维护本模块角色与授权。
+    """
+    from app.platform.permission.public_api import list_superuser_user_ids, user_is_superuser
+
+    repo = UserRepository()
+    super_ids = set(await list_superuser_user_ids(db))
+    exclude_user_ids = None if await user_is_superuser(db, current_user) else list(super_ids)
+
+    # 展示值与搜索口径都以 HR 档案为准（与用户管理列表一致）：
+    # 否则会出现「列表显示 HR 新姓名，按新姓名却搜不到」。
+    from app.modules.hr.public_api import get_profiles_by_open_ids, search_profile_open_ids
+
+    keyword_open_ids = await search_profile_open_ids(db, keyword) if keyword else []
+    users, total = await repo.list_users(
+        db,
+        keyword=keyword,
+        keyword_open_ids=keyword_open_ids,
+        status="active",
+        exclude_user_ids=exclude_user_ids,
+        feishu_bound_only=feishu_bound_only,
+        hr_in_service_only=True,
+        offset=offset,
+        limit=limit,
+    )
+    profiles = await get_profiles_by_open_ids(db, [u.feishu_open_id or "" for u in users])
+    items: list[UserLookupItem] = []
+    for u in users:
+        profile = profiles.get((u.feishu_open_id or "").strip())
+        name = u.name
+        department = u.department
+        position = u.position
+        avatar_url = u.avatar_url
+        if profile is not None:
+            name = profile.get("name") or name
+            position = profile.get("job_title_name") or position
+            department_names = profile.get("department_names") or []
+            department = department_names[-1] if department_names else department
+            avatar_url = profile.get("avatar_url") or avatar_url
+        items.append(
+            UserLookupItem(
+                id=u.id,
+                name=name,
+                username=u.username,
+                department=department,
+                position=position,
+                avatar_url=avatar_url,
+            )
+        )
+    resp = UserLookupListResponse(items=items, total=total)
+    return build_response(data=resp.model_dump())
+
+
+@user_router.post(
+    "/ensure-by-profile",
+    summary="按 HR 员工档案预建/复用平台账号（登录前授权用）",
+    response_model=EnsureIdentityUserApiResponse,
+)
+async def ensure_user_by_employee_profile(
+    payload: EnsureIdentityUserRequest,
+    ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """幂等地把 HR 员工物化成平台账号，返回 ``user_id`` 供授权挂载。
+
+    被授权人可能从未登录过；首次飞书登录会按 ``feishu_open_id`` 认领同一行。
+    """
+    from app.platform.identity.service import ensure_identity_user as _ensure_identity_user
+
+    user = await _ensure_identity_user(db, payload.employee_profile_id)
+    return build_response(data=EnsureIdentityUserData(user_id=user.id).model_dump(mode="json"))
 
 
 @user_router.post(
@@ -830,6 +1153,14 @@ async def update_user_management(
         user.department = payload.department
     if payload.position is not None:
         user.position = payload.position
+
+    # 停用超管账号受「至少保留 2 名生效超管」约束（与删除、撤销授权同口径）
+    status_changed = payload.status is not None and payload.status != user.status
+    if status_changed and payload.status == "disabled":
+        from app.platform.permission.public_api import assert_superadmin_disable_allowed
+
+        await assert_superadmin_disable_allowed(db, user.id)
+
     if payload.status is not None:
         user.status = payload.status
 
@@ -847,6 +1178,20 @@ async def update_user_management(
         },
     )
     await db.commit()
+
+    # 状态变更后立即失效权限缓存；停用还要吊销现有会话，避免旧 token 继续按原权限放行。
+    if status_changed:
+        from app.platform.permission.public_api import evict_user_permission_cache
+
+        if payload.status == "disabled":
+            from app.platform.identity.session import revoke_all_user_sessions
+
+            try:
+                await revoke_all_user_sessions(user.id)
+            except Exception:
+                logger.warning("停用账号后吊销会话失败 user_id=%s", user.id, exc_info=True)
+        await evict_user_permission_cache(user.id)
+
     return build_response(data=UserManagementItem.model_validate(user).model_dump())
 
 
@@ -867,11 +1212,17 @@ async def batch_update_user_status(
     状态与目标一致的条目按幂等处理（计入成功，不写审计）。
     """
     from app.platform.identity.service import SYSTEM_ADMIN_USERNAME
-    from app.platform.permission.public_api import guard_manage_target
+    from app.platform.permission.public_api import (
+        assert_superadmin_disable_allowed,
+        evict_user_permission_cache,
+        guard_manage_target,
+    )
 
     repo = UserRepository()
     succeeded: list[uuid.UUID] = []
     failed: list[UserBatchFailure] = []
+    changed_user_ids: set[uuid.UUID] = set()
+    disabled_user_ids: set[uuid.UUID] = set()
 
     # dict.fromkeys 去重且保持顺序：前端重复选同一条不应重复处理
     for user_id in dict.fromkeys(payload.user_ids):
@@ -898,9 +1249,24 @@ async def batch_update_user_status(
             succeeded.append(user.id)
             continue
 
+        # 批量停用同样受「至少保留 2 名生效超管」约束
+        if payload.status == "disabled" and user.status != "disabled":
+            try:
+                await assert_superadmin_disable_allowed(db, user.id)
+            except ForbiddenException as exc:
+                failed.append(
+                    UserBatchFailure(id=user.id, username=user.username, reason=exc.message or "无法停用该账号"),
+                )
+                continue
+
         old_status = user.status
         user.status = payload.status
         user.updated_by = ctx.user.id
+        # flush 让同批后续的「至少保留 2 名超管」判断能看到本次停用
+        await db.flush()
+        changed_user_ids.add(user.id)
+        if payload.status == "disabled":
+            disabled_user_ids.add(user.id)
         await record_audit_log(
             db,
             user=ctx.user,
@@ -913,7 +1279,122 @@ async def batch_update_user_status(
         succeeded.append(user.id)
 
     await db.commit()
+
+    # 状态变更后立即失效权限缓存；停用还要吊销现有会话，避免旧 token 继续按原权限放行。
+    for user_id in changed_user_ids:
+        if user_id in disabled_user_ids:
+            from app.platform.identity.session import revoke_all_user_sessions
+
+            try:
+                await revoke_all_user_sessions(user_id)
+            except Exception:
+                logger.warning("批量停用账号后吊销会话失败 user_id=%s", user_id, exc_info=True)
+        await evict_user_permission_cache(user_id)
+
     return build_response(data=UserBatchStatusData(succeeded=succeeded, failed=failed).model_dump())
+
+
+@user_router.post(
+    "/users/batch-delete",
+    summary="批量删除账号（仅超级管理员，软删除）",
+    response_model=UserBatchDeleteApiResponse,
+)
+async def batch_delete_users(
+    payload: UserBatchDeleteRequest,
+    ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """批量删除账号（单次最多 100 个）。
+
+    逐条复用单条删除的全部护栏：仅超级管理员、不能删自己、不能删系统内置账号、
+    不能删引导账号、不能删最后一个超级管理员。失败条目不影响其他条目，结果里返回失败原因。
+    删除动作与单条删除一致：软删除 + 清空角色授权 + 审计；会话在提交后吊销，
+    Redis 不可用时只降级为「会话未吊销」，不回滚已完成的删除。
+    """
+    from app.platform.identity.service import (
+        BOOTSTRAP_ACCOUNT_DELETE_FORBIDDEN,
+        SYSTEM_ADMIN_USERNAME,
+        is_bootstrap_username,
+    )
+    from app.platform.identity.session import revoke_all_user_sessions
+    from app.platform.permission.public_api import (
+        assert_superadmin_removal_allowed,
+        revoke_all_user_grants,
+        user_is_superuser,
+    )
+
+    if not await user_is_superuser(db, ctx.user):
+        raise ForbiddenException("只有超级管理员可以删除账号")
+
+    repo = UserRepository()
+    succeeded: list[uuid.UUID] = []
+    failed: list[UserBatchFailure] = []
+    deleted_ids: list[uuid.UUID] = []
+
+    # dict.fromkeys 去重且保持顺序：前端重复选同一条不应重复处理
+    for user_id in dict.fromkeys(payload.user_ids):
+        user = await repo.get_by_id(db, user_id)
+        if user is None:
+            failed.append(UserBatchFailure(id=user_id, reason="账号不存在或已删除"))
+            continue
+        if user.id == ctx.user.id:
+            failed.append(UserBatchFailure(id=user.id, username=user.username, reason="不能删除当前登录账号"))
+            continue
+        if (user.username or "").strip().lower() == SYSTEM_ADMIN_USERNAME.lower():
+            failed.append(UserBatchFailure(id=user.id, username=user.username, reason="系统内置账号不允许删除"))
+            continue
+        if is_bootstrap_username(user.username):
+            failed.append(
+                UserBatchFailure(
+                    id=user.id,
+                    username=user.username,
+                    reason=BOOTSTRAP_ACCOUNT_DELETE_FORBIDDEN,
+                )
+            )
+            continue
+
+        try:
+            await assert_superadmin_removal_allowed(db, user.id)
+        except ForbiddenException as exc:
+            failed.append(UserBatchFailure(id=user.id, username=user.username, reason=str(exc)))
+            continue
+
+        old_value = {
+            "username": user.username,
+            "name": user.name,
+            "status": user.status,
+            "auth_source": user.auth_source,
+        }
+        # soft_delete_user 内部 flush：同批后续的「最后一个超管」判断能看到本次删除
+        await repo.soft_delete_user(db, user, operator_id=ctx.user.id)
+        revoked_grants = await revoke_all_user_grants(db, user.id)
+        await record_audit_log(
+            db,
+            user=ctx.user,
+            action="user.delete",
+            resource_type="user",
+            resource_id=user.id,
+            old_value=old_value,
+            new_value={
+                "is_deleted": True,
+                "status": "disabled",
+                "revoked_grants": revoked_grants,
+                "batch": True,
+            },
+        )
+        succeeded.append(user.id)
+        deleted_ids.append(user.id)
+
+    await db.commit()
+
+    # 会话存放在 Redis，提交成功之后再吊销：事务回滚时不应把用户误踢下线。
+    for deleted_id in deleted_ids:
+        try:
+            await revoke_all_user_sessions(deleted_id)
+        except Exception:
+            logger.warning("批量删除账号后吊销会话失败 user_id=%s", deleted_id, exc_info=True)
+
+    return build_response(data=UserBatchDeleteData(succeeded=succeeded, failed=failed).model_dump())
 
 
 @user_router.delete(
@@ -933,12 +1414,20 @@ async def delete_user_management(
 
     账号名不会被释放——`uq_identity_users_username` 不区分 `is_deleted`，删除后同名
     账号无法重建；如需复用名称，请另建新名（或后续做改名迁移）。
+
+    软删行仍占用飞书身份唯一约束，因此本人再次飞书登录时会**原地复活该行**
+    （`auth_source=feishu` 时）：复活后零权限，需管理员重新授予角色。要彻底阻断
+    登录请改用「禁用」，不要用「删除」。
     """
     from app.core.exceptions import NotFoundException
-    from app.platform.identity.service import SYSTEM_ADMIN_USERNAME
+    from app.platform.identity.service import (
+        BOOTSTRAP_ACCOUNT_DELETE_FORBIDDEN,
+        SYSTEM_ADMIN_USERNAME,
+        is_bootstrap_username,
+    )
     from app.platform.identity.session import revoke_all_user_sessions
     from app.platform.permission.public_api import (
-        list_superuser_user_ids,
+        assert_superadmin_removal_allowed,
         revoke_all_user_grants,
         user_is_superuser,
     )
@@ -955,10 +1444,11 @@ async def delete_user_management(
         raise ForbiddenException("不能删除当前登录账号")
     if (user.username or "").strip().lower() == SYSTEM_ADMIN_USERNAME.lower():
         raise ForbiddenException("系统内置账号不允许删除")
+    if is_bootstrap_username(user.username):
+        # 软删不释放用户名：删掉引导账号会让下次启动撞 uq_identity_users_username。
+        raise ForbiddenException(BOOTSTRAP_ACCOUNT_DELETE_FORBIDDEN)
 
-    super_ids = await list_superuser_user_ids(db)
-    if user.id in super_ids and len(super_ids) <= 1:
-        raise ForbiddenException("不能删除最后一个超级管理员账号")
+    await assert_superadmin_removal_allowed(db, user.id)
 
     old_value = {
         "username": user.username,
@@ -1240,11 +1730,9 @@ async def unbind_user_feishu(
 
     delete_account = user.auth_source == "feishu"
     if delete_account:
-        from app.platform.permission.public_api import list_superuser_user_ids
+        from app.platform.permission.public_api import assert_superadmin_removal_allowed
 
-        super_ids = await list_superuser_user_ids(db)
-        if user.id in super_ids and len(super_ids) <= 1:
-            raise ForbiddenException("不能删除最后一个超级管理员账号")
+        await assert_superadmin_removal_allowed(db, user.id)
 
     await unbind_feishu_user(
         db,

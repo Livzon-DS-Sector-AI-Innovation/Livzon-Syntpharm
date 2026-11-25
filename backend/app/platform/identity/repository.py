@@ -125,6 +125,52 @@ class UserRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_by_feishu_open_id_including_deleted(
+        self,
+        session: AsyncSession,
+        open_id: str,
+    ) -> User | None:
+        """按 open_id 查账号，**含软删行**（登录复活 / 预授权用）。
+
+        `feishu_open_id` 没有唯一约束，历史解绑会留下同 open_id 的软删行，
+        因此不能 `scalar_one_or_none`；按「未删优先、最近创建优先」取第一条。
+        """
+        result = await session.execute(
+            select(User)
+            .where(User.feishu_open_id == open_id)
+            .order_by(User.is_deleted.asc(), User.created_at.desc())
+            .limit(1),
+        )
+        return result.scalars().first()
+
+    async def get_by_feishu_user_id_including_deleted(
+        self,
+        session: AsyncSession,
+        user_id: str,
+    ) -> User | None:
+        """按飞书 user_id 查账号，含软删行（口径同上）。"""
+        result = await session.execute(
+            select(User)
+            .where(User.feishu_user_id == user_id)
+            .order_by(User.is_deleted.asc(), User.created_at.desc())
+            .limit(1),
+        )
+        return result.scalars().first()
+
+    async def employee_no_taken(
+        self,
+        session: AsyncSession,
+        employee_no: str,
+        *,
+        exclude_user_id: UUID | None = None,
+    ) -> bool:
+        """工号是否已被占用（**含软删行**，因为唯一约束不过滤 is_deleted）。"""
+        stmt = select(User.id).where(User.employee_no == employee_no)
+        if exclude_user_id is not None:
+            stmt = stmt.where(User.id != exclude_user_id)
+        result = await session.execute(stmt.limit(1))
+        return result.scalar_one_or_none() is not None
+
     async def create(
         self,
         session: AsyncSession,
@@ -206,11 +252,14 @@ class UserRepository:
         session: AsyncSession,
         *,
         keyword: str | None = None,
+        keyword_open_ids: list[str] | None = None,
         status: str | None = None,
         auth_source: str | None = None,
         unbound_only: bool = False,
+        feishu_bound_only: bool = False,
         must_change_password: bool | None = None,
         exclude_user_ids: list[UUID] | None = None,
+        hr_in_service_only: bool = False,
         offset: int = 0,
         limit: int = 100,
     ) -> tuple[list[User], int]:
@@ -223,6 +272,16 @@ class UserRepository:
             )
         )
 
+        # 选人下拉口径：只保留在 HR 在册档案里有对应 open_id 的账号。
+        # 子查询由 hr.public_api 提供（跨模块只走公共入口），过滤与计数同一条 SQL；
+        # 无 feishu_open_id 的本地账号会因 `NULL IN (...)` 结果为 NULL 被天然排除。
+        if hr_in_service_only:
+            from app.modules.hr.public_api import in_service_profile_open_id_select
+
+            profile_open_ids = in_service_profile_open_id_select()
+            base = base.where(User.feishu_open_id.in_(profile_open_ids))
+            count_stmt = count_stmt.where(User.feishu_open_id.in_(profile_open_ids))
+
         # 对非超管隐藏超管账号（调用方传入超管 id 列表）
         if exclude_user_ids:
             base = base.where(User.id.not_in(exclude_user_ids))
@@ -231,13 +290,18 @@ class UserRepository:
         if keyword:
             # 用户管理搜索：与 list_all 同一套转义口径，避免 `%`/`_` 被当通配符
             pattern = _like_pattern(keyword)
-            filter_expr = or_(
+            conditions = [
                 User.name.ilike(pattern, escape="\\"),
                 User.username.ilike(pattern, escape="\\"),
                 User.email.ilike(pattern, escape="\\"),
                 User.mobile.ilike(pattern, escape="\\"),
                 User.employee_no.ilike(pattern, escape="\\"),
-            )
+            ]
+            # 列表展示值以 HR 档案为准（#219）：HR 侧命中的 open_id 也要纳入，
+            # 否则会出现「列表显示 HR 新姓名/新工号却搜不到」。
+            if keyword_open_ids:
+                conditions.append(User.feishu_open_id.in_(keyword_open_ids))
+            filter_expr = or_(*conditions)
             base = base.where(filter_expr)
             count_stmt = count_stmt.where(filter_expr)
         if status:
@@ -250,6 +314,15 @@ class UserRepository:
             # 仅返回尚未绑定飞书身份的账号（供「绑定飞书」选择器使用）
             base = base.where(User.feishu_user_id.is_(None), User.feishu_open_id.is_(None))
             count_stmt = count_stmt.where(User.feishu_user_id.is_(None), User.feishu_open_id.is_(None))
+        if feishu_bound_only:
+            # 仅返回已绑定飞书身份的账号：审批人 / 整改负责人要能收到飞书通知，
+            # 判定口径与 list_all 一致（两个飞书 ID 任一存在即视为已绑定）
+            bound_filter = or_(
+                User.feishu_user_id.isnot(None),
+                User.feishu_open_id.isnot(None),
+            )
+            base = base.where(bound_filter)
+            count_stmt = count_stmt.where(bound_filter)
         if must_change_password is not None:
             base = base.where(User.must_change_password == must_change_password)
             count_stmt = count_stmt.where(User.must_change_password == must_change_password)

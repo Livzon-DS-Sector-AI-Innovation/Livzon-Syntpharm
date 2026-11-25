@@ -316,7 +316,13 @@ const energyRoutes: RouteCase[] = [
   { path: '/energy/devices', module: 'energy', kind: 'normal', expected: heading('数据源配置') },
   { path: '/energy/alerts', module: 'energy', kind: 'normal', expected: heading('预警管理') },
   { path: '/energy/collect-logs', module: 'energy', kind: 'normal', expected: heading('采集日志') },
-  { path: '/energy/settings', module: 'energy', kind: 'normal', expected: heading('能源管理配置') },
+  {
+    path: '/energy/settings',
+    module: 'energy',
+    kind: 'normal',
+    expected: heading('模块配置 · 能源管理'),
+    topLevelHeading: '模块配置 · 能源管理',
+  },
 ]
 
 const administrationRoutes: RouteCase[] = [
@@ -364,7 +370,13 @@ const hrRoutes: RouteCase[] = [
   { path: '/hr/onboarding', module: 'hr', kind: 'normal', expected: heading('入职台账') },
   { path: '/hr/profile', module: 'hr', kind: 'normal', expected: heading('员工档案') },
   { path: '/hr/recruitment', module: 'hr', kind: 'normal', expected: heading('候选人筛选') },
-  { path: '/hr/settings', module: 'hr', kind: 'normal', expected: heading('人事管理配置') },
+  {
+    path: '/hr/settings',
+    module: 'hr',
+    kind: 'normal',
+    expected: heading('模块配置 · 人事管理'),
+    topLevelHeading: '模块配置 · 人事管理',
+  },
   { path: '/hr/training', module: 'hr', kind: 'normal', expected: heading('培训管理') },
   { path: '/hr/training/ai-exam', module: 'hr', kind: 'normal', expected: heading('AI 出题') },
   { path: '/hr/training/annual-plan', module: 'hr', kind: 'normal', expected: heading('年度培训计划') },
@@ -389,7 +401,7 @@ const hrRoutes: RouteCase[] = [
   // /hr/training/ledger/new
   // /hr/training/select-tasks
   // /hr/new/* — duplicate aliases
-  // /hr/system/settings — duplicate alias
+  // /hr/system/settings — 已重定向到 /hr/settings?tab=feishu（内容由 /hr/settings 断言覆盖）
 ]
 
 const procurementRoutes: RouteCase[] = [
@@ -407,7 +419,15 @@ const qualityRoutes: RouteCase[] = [
   { path: '/quality/deviation/new', module: 'quality', kind: 'normal', expected: heading('新建偏差') },
   { path: '/quality/calculator', module: 'quality', kind: 'normal', expected: heading('计算器') },
   { path: '/quality/cpv', module: 'quality', kind: 'normal', expected: heading('CPV') },
-  { path: '/quality/department-contacts', module: 'quality', kind: 'normal', expected: heading('部门联系人配置') },
+  // 部门联系人已并入「质量管理 · 模块配置」页签，旧地址只做重定向（页签内容由 /quality/settings 断言覆盖）
+  {
+    path: '/quality/department-contacts',
+    module: 'quality',
+    kind: 'redirect',
+    expectedPath: '/quality/settings',
+    expected: heading('模块配置 · 质量管理'),
+    skipContentCheck: true,
+  },
   { path: '/quality/doc-check', module: 'quality', kind: 'normal', expected: heading('审核管理') },
   { path: '/quality/fqc', module: 'quality', kind: 'normal', expected: heading('FQC'), expectData: antdTableData, expectFetch: 'server-action' },
   {
@@ -426,15 +446,38 @@ const qualityRoutes: RouteCase[] = [
   { path: '/quality/instrument', module: 'quality', kind: 'normal', expected: heading('仪器校准管理') },
   { path: '/quality/instrument/list', module: 'quality', kind: 'normal', expected: heading('仪器设备台账') },
   { path: '/quality/instrument/records', module: 'quality', kind: 'normal', expected: heading('校准记录') },
-  { path: '/quality/instrument/settings', module: 'quality', kind: 'normal', expected: heading('提醒设置') },
+  // 仪器提醒已并入「质量管理 · 模块配置」，旧地址只做重定向（目标页在下方 /quality/settings 断言）
+  {
+    path: '/quality/instrument/settings',
+    module: 'quality',
+    kind: 'redirect',
+    expectedPath: '/quality/settings',
+    expected: heading('模块配置 · 质量管理'),
+    skipContentCheck: true,
+  },
   { path: '/quality/ipqc', module: 'quality', kind: 'normal', expected: heading('IPQC'), expectData: antdTableData, expectFetch: 'server-action' },
   { path: '/quality/iqc', module: 'quality', kind: 'normal', expected: heading('IQC'), expectData: antdTableData, expectFetch: 'server-action' },
   { path: '/quality/material-report', module: 'quality', kind: 'normal', expected: text('原料报告单管理') },
   { path: '/quality/material-report/template', module: 'quality', kind: 'normal', expected: text('Word模板管理') },
   { path: '/quality/reagent', module: 'quality', kind: 'normal', expected: heading('试剂管理') },
-  { path: '/quality/reagent/reminder', module: 'quality', kind: 'normal', expected: heading('试剂库存提醒') },
+  // 试剂库存提醒已并入「质量管理 · 模块配置」
+  {
+    path: '/quality/reagent/reminder',
+    module: 'quality',
+    kind: 'redirect',
+    expectedPath: '/quality/settings',
+    expected: heading('模块配置 · 质量管理'),
+    skipContentCheck: true,
+  },
   { path: '/quality/retention', module: 'quality', kind: 'normal', expected: heading('留样管理') },
   { path: '/quality/sampling', module: 'quality', kind: 'normal', expected: heading('取样管理'), expectData: antdTableData, expectFetch: 'server-action' },
+  {
+    path: '/quality/settings',
+    module: 'quality',
+    kind: 'normal',
+    expected: heading('模块配置 · 质量管理'),
+    topLevelHeading: '模块配置 · 质量管理',
+  },
   { path: '/quality/sop-ai/records', module: 'quality', kind: 'normal', expected: heading('校验记录台账') },
   { path: '/quality/stability', module: 'quality', kind: 'normal', expected: heading('稳定性'), expectData: antdTableData, expectFetch: 'server-action' },
   { path: '/quality/stability/plan', module: 'quality', kind: 'normal', expected: heading('稳定性实验管理 - 方案录入') },
@@ -559,7 +602,13 @@ const safetyRoutes: RouteCase[] = [
   { path: '/safety/regulation', module: 'safety', kind: 'normal', expected: heading('安全操规管理'), topLevelHeading: '安全操规管理' },
   { path: '/safety/regulation/generator', module: 'safety', kind: 'normal', expected: heading('操规标准化生成') },
   { path: '/safety/risk-reporting', module: 'safety', kind: 'normal', expected: heading('关键风险作业报备'), topLevelHeading: '关键风险作业报备' },
-  { path: '/safety/settings', module: 'safety', kind: 'normal', expected: heading('安全管理配置') },
+  {
+    path: '/safety/settings',
+    module: 'safety',
+    kind: 'normal',
+    expected: heading('模块配置 · 安全管理'),
+    topLevelHeading: '模块配置 · 安全管理',
+  },
   { path: '/safety/special-ops', module: 'safety', kind: 'normal', expected: heading('特殊作业') },
   { path: '/safety/special-ops/personnel', module: 'safety', kind: 'normal', expected: heading('作业人员') },
   { path: '/safety/training', module: 'safety', kind: 'normal', expected: heading('安全培训') },

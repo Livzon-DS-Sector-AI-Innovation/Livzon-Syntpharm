@@ -15,6 +15,7 @@ from uuid import UUID, uuid4
 
 import jwt
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -1320,27 +1321,25 @@ async def handle_livzon_feishu_card_action_event(
     }
 
 
-def _apply_contact_profile(user: User, detail: dict[str, Any]) -> None:
-    """把通讯录详情里的 部门 / 职务 / 工号 / 企业邮箱 写入用户记录（只补齐非空值）。"""
+async def _apply_contact_profile(db: AsyncSession, user: User, detail: dict[str, Any]) -> None:
+    """把通讯录详情里的 工号 / 企业邮箱 / 头像 / 冻结状态 写入用户记录。
+
+    #219：`department` / `position` / `feishu_department_ids` 不再写入
+    `identity.users`——部门与职务统一从 `hr.employee_profiles` 读取，账号表只保留
+    认证所需的登录快照。只补齐非空值，不清空已有快照。
+    """
     employee_no = (detail.get("employee_no") or "").strip()
-    if employee_no:
-        user.employee_no = employee_no
-
-    job_title = (detail.get("job_title") or "").strip()
-    if job_title:
-        user.position = job_title
-
-    # 部门名取部门路径的最后一级（最具体的部门）
-    department_path = detail.get("department_path") or []
-    department_name = ""
-    if department_path:
-        department_name = (department_path[-1].get("department_name") or "").strip()
-    if department_name:
-        user.department = department_name
-
-    department_ids = detail.get("department_ids") or []
-    if department_ids:
-        user.feishu_department_ids = json.dumps(list(department_ids), ensure_ascii=False)
+    if employee_no and employee_no != (user.employee_no or ""):
+        # 工号唯一约束不过滤 is_deleted：被离职/重入职的历史行占用时直接写入会撞键，
+        # 让整次登录失败。这里降级为「跳过写入 + 告警」，不阻塞登录。
+        if await _repo.employee_no_taken(db, employee_no, exclude_user_id=user.id):
+            logger.warning(
+                "工号已被其它账号占用（含软删行），跳过写入: employee_no=%s user_id=%s",
+                employee_no,
+                user.id,
+            )
+        else:
+            user.employee_no = employee_no
 
     enterprise_email = (detail.get("enterprise_email") or "").strip()
     if enterprise_email:
@@ -1354,11 +1353,14 @@ def _apply_contact_profile(user: User, detail: dict[str, Any]) -> None:
 
     # 飞书侧已冻结（离职/停用）→ 单向禁用平台账号。
     # 注意只做单向：飞书恢复正常时不自动启用，避免覆盖管理员在平台上的手工禁用。
+    # 这是人事事件路径，不属于「管理员手工移除超管」；TC-007 的保底守卫只覆盖
+    # 删除/停用/撤权接口，不阻断飞书离职同步（否则离职人员会一直保留平台权限）。
     if detail.get("is_frozen"):
         user.status = "disabled"
 
 
 async def enrich_user_from_feishu_contact(
+    db: AsyncSession,
     user: User,
     *,
     open_id: str | None,
@@ -1386,30 +1388,91 @@ async def enrich_user_from_feishu_contact(
                 identifier,
             )
             return
-        _apply_contact_profile(user, detail)
+        await _apply_contact_profile(db, user, detail)
         logger.info(
-            "已补齐飞书通讯录资料: open_id=%s 部门=%s 职务=%s 工号=%s",
+            "已补齐飞书通讯录资料: open_id=%s 工号=%s 状态=%s",
             open_id,
-            user.department,
-            user.position,
             user.employee_no,
+            user.status,
         )
     except Exception:  # noqa: BLE001 - 资料补齐失败绝不能影响登录主流程
         logger.warning("补齐飞书通讯录资料失败（不影响登录）: %s", identifier, exc_info=True)
 
 
+class AccountDeletedError(Exception):
+    """账号已被删除且不属于「可复活」类型（本地密码账号），登录需管理员处理。"""
+
+
+async def restore_soft_deleted_user(
+    db: AsyncSession,
+    user: User,
+    *,
+    trigger: str,
+) -> int:
+    """把软删账号原地复活为「活跃但零权限」状态。
+
+    背景：账号「删除」是软删，飞书身份字段仍占用唯一约束（约束不过滤 is_deleted），
+    本人再次飞书登录若走新建分支必然撞 `uq_identity_users_feishu_user_id`。
+    这里复用同一行，保留 username / employee_no / 历史单据与审计关联。
+
+    「零权限」由清空全部角色授权保证；不 commit，由调用方统一提交——
+    若通讯录显示飞书侧已冻结，后续判定抛错会让本次复活随事务一起回滚。
+    """
+    old_value = {"is_deleted": True, "status": user.status}
+    user.is_deleted = False
+    user.status = "active"
+    await db.flush()
+
+    from app.platform.audit.service import record_audit_log
+    from app.platform.permission.public_api import revoke_all_user_grants
+
+    revoked = await revoke_all_user_grants(db, user.id)
+    await record_audit_log(
+        db,
+        action="user.restore",
+        user_id=user.id,
+        resource_type="user",
+        resource_id=user.id,
+        old_value=old_value,
+        new_value={
+            "is_deleted": False,
+            "status": "active",
+            "revoked_grants": revoked,
+            "trigger": trigger,
+        },
+    )
+    logger.warning(
+        "软删账号已恢复为零权限状态，需管理员重新授权",
+        extra={"user_id": str(user.id), "biz_module": "identity", "trigger": trigger},
+    )
+    return revoked
+
+
 async def handle_oauth_callback(
     db: AsyncSession,
     code: str,
+    *,
+    preauth_code: bool = False,
 ) -> tuple[User, str]:
     """Complete the OAuth flow: exchange code → get user info → upsert → JWT.
+
+    `preauth_code=True` 表示 code 来自网页应用免登（H5 JSSDK `tt.requestAccess`）：
+    先走 OAuth 标准接口兑换但**不带 redirect_uri**，失败再退回旧版
+    `authen/v1/access_token`（官方免登示例用的接口）。
 
     Returns (user, jwt_token).
     """
     oauth = FeishuOAuthClient.from_settings()
 
-    # 1. Exchange authorization code for tokens (v2 endpoint)
-    token_data = await oauth.exchange_code(code)
+    # 1. Exchange authorization code for tokens
+    if preauth_code:
+        try:
+            token_data = await oauth.exchange_code(code, include_redirect_uri=False)
+        except Exception as exc:
+            logger.warning("免登预授权码 v2 兑换失败，回退 authen/v1/access_token: %s", exc)
+            token_data = await oauth.exchange_preauth_code(code)
+    else:
+        token_data = await oauth.exchange_code(code)
     user_access_token = token_data["access_token"]
 
     # 2. Fetch user profile from Feishu (v1 user_info endpoint)
@@ -1447,6 +1510,23 @@ async def handle_oauth_callback(
     if user is None:
         # Also try matching by feishu_user_id in case user was synced earlier
         user = await _repo.get_by_feishu_user_id(db, user_id) if user_id else None
+
+    if user is None:
+        # 软删行仍占用飞书身份唯一约束（约束不过滤 is_deleted），直接 create 必撞键。
+        # 命中软删行则原地复活：保留原 username 与审计链，清空全部授权（零权限），
+        # 由管理员重新授角色。本地密码账号不在此列——删除后不自动恢复登录能力。
+        deleted_user = await _repo.get_by_feishu_open_id_including_deleted(db, open_id)
+        if deleted_user is None and user_id:
+            deleted_user = await _repo.get_by_feishu_user_id_including_deleted(db, user_id)
+        if deleted_user is not None:
+            if not deleted_user.is_deleted:
+                # 并发回调已先行复活：直接复用
+                user = deleted_user
+            elif (deleted_user.auth_source or "feishu") == "feishu":
+                await restore_soft_deleted_user(db, deleted_user, trigger="feishu_login")
+                user = deleted_user
+            else:
+                raise AccountDeletedError("User account was deleted")
 
     if user is None:
         user = await _repo.create(
@@ -1493,7 +1573,7 @@ async def handle_oauth_callback(
 
     # 3.1 登录时补齐通讯录资料（部门 / 职务 / 工号 / 企业邮箱 / 冻结状态）
     #     user_info 不返回这些字段，需另调 contact/v3/users；失败只记日志，不影响登录
-    await enrich_user_from_feishu_contact(user, open_id=open_id, feishu_user_id=user_id)
+    await enrich_user_from_feishu_contact(db, user, open_id=open_id, feishu_user_id=user_id)
 
     # 放在补齐之后判断：若本次发现飞书侧已冻结，当场就拒绝登录
     if user.status == "disabled":
@@ -1524,6 +1604,70 @@ def generate_jwt(user: User) -> str:
         "exp": now + timedelta(seconds=settings.JWT_EXPIRE_SECONDS),
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+
+
+async def ensure_identity_user(db: AsyncSession, employee_profile_id: UUID) -> User:
+    """幂等地按 HR 员工档案确保存在平台账号（#219 预授权接缝）。
+
+    权限授予仍以 ``identity.users.id`` 为键，但被授权人可能从未登录过，因此
+    授权前先把账号行物化出来：
+
+    * 按 profile 的 ``open_id`` 查已有账号，存在则直接复用；
+    * 不存在则创建最小无密码账号（``auth_source=feishu``），员工首次飞书登录时
+      会按 ``feishu_open_id`` 认领同一行。
+
+    部门 / 职务 / 工号不在账号表落地，展示时经 HR ``public_api`` 读取。
+    """
+    from app.modules.hr.public_api import get_profile_by_id
+
+    profile = await get_profile_by_id(db, employee_profile_id)
+    if profile is None:
+        raise AppException(status_code=404, message="员工档案不存在")
+    open_id = str(profile.get("open_id") or "").strip()
+    if not open_id:
+        raise AppException(status_code=422, message="员工档案缺少飞书 open_id，无法建号")
+
+    user = await _repo.get_by_feishu_open_id(db, open_id)
+    if user is not None:
+        return user
+
+    # 同 open_id 的软删行仍占着唯一约束（feishu_open_id 本身无约束，employee_no 有）：
+    # 先复活它再返回，随后的授权会挂在这条既有账号上（零权限 → 管理员本次授权）。
+    deleted_user = await _repo.get_by_feishu_open_id_including_deleted(db, open_id)
+    if deleted_user is not None:
+        if deleted_user.is_deleted:
+            await restore_soft_deleted_user(db, deleted_user, trigger="grant_preprovision")
+        logger.info(
+            "按 HR 档案复用已有账号（含软删复活）: open_id=%s user_id=%s",
+            open_id,
+            deleted_user.id,
+        )
+        return deleted_user
+
+    employee_no = str(profile.get("employee_no") or "") or None
+    if employee_no and await _repo.employee_no_taken(db, employee_no):
+        logger.warning(
+            "HR 档案工号已被其它账号占用（含软删行），预建账号不写入工号: employee_no=%s open_id=%s",
+            employee_no,
+            open_id,
+        )
+        employee_no = None
+
+    user = await _repo.create(
+        db,
+        name=str(profile.get("name") or "未命名员工"),
+        username=await allocate_default_username(db),
+        employee_no=employee_no,
+        feishu_open_id=open_id,
+        status="active",
+        auth_source="feishu",
+    )
+    logger.info(
+        "已按 HR 档案预建平台账号: open_id=%s user_id=%s",
+        open_id,
+        user.id,
+    )
+    return user
 
 
 async def get_or_create_e2e_user(db: AsyncSession) -> User:
@@ -1663,9 +1807,26 @@ async def unbind_feishu_user(
     if delete_account:
         user.is_deleted = True
         user.status = "disabled"
-    else:
-        for field in FEISHU_IDENTITY_FIELDS:
-            setattr(user, field, None)
+        user.updated_by = operator_id
+        await db.flush()
+        # 与「删除账号」口径一致：清空授权，避免解绑到本人下次登录之间的窗口期
+        # 旧 JWT 仍带着旧权限访问（复活时也会再清一次，这里是第一道）。
+        from app.platform.permission.public_api import revoke_all_user_grants
+
+        revoked = await revoke_all_user_grants(db, user.id)
+        await db.commit()
+        # 会话存放在 Redis，提交成功后再吊销；Redis 不可用时只降级，不让解绑失败。
+        try:
+            from app.platform.identity.session import revoke_all_user_sessions
+
+            await revoke_all_user_sessions(user.id)
+        except Exception:
+            logger.warning("解绑并软删账号后吊销会话失败 user_id=%s", user.id, exc_info=True)
+        logger.info("解绑飞书并软删账号: user_id=%s revoked_grants=%s", user.id, revoked)
+        return
+
+    for field in FEISHU_IDENTITY_FIELDS:
+        setattr(user, field, None)
     user.updated_by = operator_id
     await db.commit()
 
@@ -1731,6 +1892,26 @@ async def change_own_password(
     await db.commit()
 
 
+BOOTSTRAP_ACCOUNT_DELETE_FORBIDDEN = "引导账号不允许删除，请在部署配置中调整 BOOTSTRAP_* 后再操作"
+
+
+def is_bootstrap_username(username: str | None) -> bool:
+    """账号名是否命中 `.env` 配置的引导账号（大小写、首尾空白不敏感）。
+
+    `BOOTSTRAP_*` 默认空串，未配置的项不参与比较，避免空账号名互相命中。
+    """
+    normalized = (username or "").strip().lower()
+    if not normalized:
+        return False
+    settings = get_settings()
+    configured = {
+        (settings.BOOTSTRAP_ADMIN_USERNAME or "").strip().lower(),
+        (settings.BOOTSTRAP_USER_USERNAME or "").strip().lower(),
+    }
+    configured.discard("")
+    return normalized in configured
+
+
 async def bootstrap_local_users() -> None:
     """创建引导账号（幂等）。
 
@@ -1738,6 +1919,9 @@ async def bootstrap_local_users() -> None:
     状态 —— 否则用户自己改过的密码会在容器重启后被 `.env` 里的初始值打回，
     「密码只有本人能改」形同虚设；运维在界面上的改名、禁用也会被静默还原。
     确实需要按 `.env` 强制回灌时，显式打开 `BOOTSTRAP_ADMIN_FORCE_RESET=true`。
+
+    已软删的引导账号不会被复活（软删是运营的明确意图），也不会再 INSERT 撞
+    `uq_identity_users_username` 导致启动失败；恢复需人工把 is_deleted 置回 false。
     """
     settings = get_settings()
     force_reset = settings.BOOTSTRAP_ADMIN_FORCE_RESET
@@ -1760,25 +1944,61 @@ async def bootstrap_local_users() -> None:
         for username, password, name, email in entries:
             if not username or not password:
                 continue
-            existing = await _repo.get_by_username(session, username)
-            if existing is None:
-                await _repo.create(
-                    session,
-                    username=username,
-                    password_hash=hash_password(password),
-                    name=name or username,
-                    email=email or None,
-                    status="active",
-                    auth_source="local",
-                    # 引导密码是公开的初始值 → 首次登录必须改密
-                    must_change_password=True,
+            # `uq_identity_users_username` 不区分 is_deleted，查重必须含软删行，
+            # 否则软删账号会被判为「不存在」→ INSERT 撞唯一键 → 启动失败。
+            existing = await _repo.get_by_username_including_deleted(session, username)
+            if existing is not None and existing.is_deleted:
+                # 软删是运营的明确意图：不复活、不改密码、不发授权，只跳过创建。
+                logger.warning(
+                    "引导账号 %s 的库内行已被软删除：跳过创建（不复活）。恢复方式："
+                    "UPDATE identity.users SET is_deleted=false, status='active' WHERE username='%s' 后重启；"
+                    "如密码未知，恢复行后临时设 BOOTSTRAP_ADMIN_FORCE_RESET=true 重启一次并立即关闭。",
+                    username,
+                    username,
+                    extra={"bootstrap_username": username},
                 )
+                continue
+
+            if existing is None:
+                try:
+                    # SAVEPOINT：单条冲突只回滚本条，不丢弃同批已 flush 的其它账号。
+                    async with session.begin_nested():
+                        await _repo.create(
+                            session,
+                            username=username,
+                            password_hash=hash_password(password),
+                            name=name or username,
+                            email=email or None,
+                            status="active",
+                            auth_source="local",
+                            # 引导密码是公开的初始值 → 首次登录必须改密
+                            must_change_password=True,
+                        )
+                except IntegrityError:
+                    logger.warning(
+                        "引导账号 %s 创建失败（唯一约束冲突），跳过该条",
+                        username,
+                        extra={"bootstrap_username": username},
+                    )
+                    logger.exception(
+                        "Bootstrap user create failed, rolled back to savepoint: %s",
+                        username,
+                        extra={"bootstrap_username": username},
+                    )
+                    continue
                 logger.info("Bootstrapped local user: %s", username)
                 continue
 
             if not force_reset:
                 # 只补建、不覆盖：账号一旦存在，姓名 / 邮箱 / 状态 / 密码都以库内为准，
                 # 避免每次重启把运维在界面上的改动（改名、禁用）静默打回。
+                if existing.status != "active":
+                    logger.info(
+                        "引导账号 %s 已存在但状态为 %s（force_reset=false，保持不变）",
+                        username,
+                        existing.status,
+                        extra={"bootstrap_username": username},
+                    )
                 continue
 
             if not verify_password(password, existing.password_hash):

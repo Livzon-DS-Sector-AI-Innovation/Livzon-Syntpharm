@@ -25,7 +25,7 @@ import {
   submitHazardIdentification,
   getRegulations,
 } from '@/actions/safety'
-import { DEPARTMENT_OPTIONS } from '@/types/safety'
+import DepartmentTreeSelect from '@/components/common/DepartmentTreeSelect'
 import type { OperationRegulation } from '@/types/safety'
 
 const { Text } = Typography
@@ -182,14 +182,8 @@ export default function HazardIdentificationDrawer({ open, onClose, onDone }: Pr
                 label="部门"
                 rules={[{ required: true, message: '请选择部门' }]}
               >
-                <Select
-                  showSearch
-                  placeholder="请选择部门"
-                  options={DEPARTMENT_OPTIONS}
-                  filterOption={(input, option) =>
-                    (option?.label as string)?.includes(input)
-                  }
-                />
+                {/* 台账以部门名关联，写回值保持部门名 */}
+                <DepartmentTreeSelect valueField="name" placeholder="请选择部门（可搜索）" />
               </Form.Item>
             </Col>
             <Col span={12}>

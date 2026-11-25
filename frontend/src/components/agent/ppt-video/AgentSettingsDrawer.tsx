@@ -3,7 +3,7 @@
 import { Drawer } from 'antd'
 import { SettingOutlined } from '@ant-design/icons'
 
-import { ModuleSettingsClient } from '@/components/settings'
+import { ModuleSettingsClient } from '@/components/module-settings/client'
 
 interface Props {
   open: boolean

@@ -791,8 +791,8 @@ function WarningPanels({
       emptyText: '暂无逾期计划',
       items: overduePlans.slice(0, 5).map(p => ({
         key: p.id,
-        label: p.plan_name || p.equipment_name || '',
-        sub: p.equipment_name || p.asset_no || '',
+        label: p.plan_name,
+        sub: `每${p.frequency}${p.frequency_unit}`,
         meta: (
           <span style={{ color: '#f59e0b', fontWeight: 600, fontSize: 13 }}>
             应于 {p.next_maintenance_date || '—'}

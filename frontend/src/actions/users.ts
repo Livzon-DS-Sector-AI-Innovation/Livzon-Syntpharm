@@ -3,12 +3,13 @@
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { unwrapResponse } from '@/lib/api/server/base'
-import { normalizeUserBatchStatus } from '@/lib/api/batch'
+import { normalizeUserBatchDelete, normalizeUserBatchStatus } from '@/lib/api/batch'
 import {
   getUsers as getUsersServer,
   createUser as createUserServer,
   updateUser as updateUserServer,
   deleteUser as deleteUserServer,
+  batchDeleteUsers as batchDeleteUsersServer,
   batchUpdateUserStatus as batchUpdateUserStatusServer,
   resetUserPassword as resetUserPasswordServer,
   changeMyPassword as changeMyPasswordServer,
@@ -17,6 +18,8 @@ import {
   listSessions as listSessionsServer,
   revokeSession as revokeSessionServer,
 } from '@/lib/api/server/users'
+import type { UserListQuery } from '@/lib/api/server/users'
+import type { components } from '@/types/generated/schema'
 import type {
   UserManagementItem,
   UserManagementListResponse,
@@ -25,6 +28,8 @@ import type {
   UserManagementUpdate,
   PasswordResetRequest,
   PasswordResetResult,
+  UserBatchDeleteRequest,
+  UserBatchDeleteResult,
   UserBatchStatusRequest,
   UserBatchStatusResult,
   ChangePasswordRequest,
@@ -46,17 +51,7 @@ async function getAuthToken(): Promise<string | undefined> {
  */
 type UsersActionResult<T> = { ok: true; data: T } | { ok: false; message: string }
 
-export async function getUsers(params?: {
-  keyword?: string
-  role?: 'admin' | 'user'
-  status?: 'active' | 'disabled'
-  auth_source?: 'local' | 'feishu'
-  unbound_only?: boolean
-  must_change_password?: boolean
-  // 服务端分页：offset/limit 直接透传给后端（后端 limit 上限 100）
-  offset?: number
-  limit?: number
-}): Promise<UserManagementListResponse> {
+export async function getUsers(params?: UserListQuery): Promise<UserManagementListResponse> {
   const token = await getAuthToken()
   const data = unwrapResponse(await getUsersServer(params, token))
   return data ?? { items: [], total: 0 }
@@ -101,6 +96,20 @@ export async function batchUpdateUserStatus(
   }
 }
 
+/** 批量删除账号：逐条软删除 + 清空授权 + 吊销会话（后端限定仅超级管理员）。 */
+export async function batchDeleteUsers(
+  data: UserBatchDeleteRequest,
+): Promise<UsersActionResult<UserBatchDeleteResult>> {
+  const token = await getAuthToken()
+  try {
+    const result = normalizeUserBatchDelete(unwrapResponse(await batchDeleteUsersServer(data, token)))
+    revalidatePath('/settings/users')
+    return { ok: true, data: result }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '批量删除失败' }
+  }
+}
+
 /** 删除账号：软删除 + 清空授权 + 吊销会话（后端限定仅超级管理员）。 */
 export async function deleteUser(id: string): Promise<UsersActionResult<UserDeleteResult>> {
   const token = await getAuthToken()
@@ -134,7 +143,7 @@ export async function resetUserPassword(
 /** 当前登录用户自助改密（被标记「首登强制改密」的用户必须走这里）。 */
 export async function changeMyPassword(
   data: ChangePasswordRequest,
-): Promise<UsersActionResult<{ message: string }>> {
+): Promise<UsersActionResult<components['schemas']['ChangePasswordData']>> {
   const token = await getAuthToken()
   try {
     const result = unwrapResponse(await changeMyPasswordServer(data, token))

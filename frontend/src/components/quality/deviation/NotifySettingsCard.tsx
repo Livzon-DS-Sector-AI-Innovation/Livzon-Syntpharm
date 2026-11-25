@@ -89,7 +89,7 @@ export function NotifySettingsCard({ initialSettings }: NotifySettingsCardProps)
   const unboundContacts = testResult?.contacts?.filter((item) => !item.bound) ?? []
 
   return (
-    <Card size="small" title="通知设置" className="shadow-sm">
+    <Card size="small" title="通知设置" className="settings-region-card">
       <Form form={form} layout="vertical" initialValues={initialValues}>
         <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
           <Form.Item name="enabled" label="启用偏差通知" valuePropName="checked">

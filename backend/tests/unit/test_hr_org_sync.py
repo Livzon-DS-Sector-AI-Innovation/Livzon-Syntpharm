@@ -21,6 +21,7 @@ import pytest
 from app.modules.hr.models import HrOrgSyncRun
 from app.modules.hr.org_domain import OrgDepartmentRecord
 from app.modules.hr.org_sync import OrgSyncStats, SyncRunRecord, sync_org_departments
+from app.modules.hr.people_sync import ProfilesFetchEmptyError
 from tests.fixtures.org_scope import (
     IN_SCOPE_COMPANY_ID,
     IN_SCOPE_COMPANY_NAME,
@@ -334,6 +335,46 @@ async def test_sync_rolls_back_partial_writes_before_recording_failure() -> None
     assert store.hidden == []
     assert store.runs[-1].status == "failed"
     assert "database write failed" in (store.runs[-1].error_message or "")
+
+
+async def test_sync_fails_run_when_people_fetch_returns_nothing() -> None:
+    """An empty directory response must abort the run and keep the previous mirror."""
+    existing = OrgDepartmentRecord(id="od-101", name="101车间", parent_id=IN_SCOPE_COMPANY_ID)
+    fetcher = FakeFetcher(
+        departments=[_contact("od-101", "101车间", IN_SCOPE_COMPANY_ID)],
+        details=[_detail("od-101", "101车间", IN_SCOPE_COMPANY_ID)],
+    )
+    store = FakeStore(existing=[existing])
+
+    class EmptyPeopleFetcher:
+        async def fetch_employees_by_filter(self, department_ids: list[str]) -> list[dict[str, Any]]:
+            return []
+
+    class PeopleStore:
+        async def list_scope_department_ids(self) -> list[str]:
+            return ["od-101"]
+
+        async def upsert_profile(self, record: Any, *, department_ids: list[str]) -> bool:
+            return False
+
+        async def list_current_open_ids(self) -> set[str]:
+            return set()
+
+        async def mark_removed(self, open_ids: list[str], *, removed_at: datetime) -> int:
+            return 0
+
+    with pytest.raises(ProfilesFetchEmptyError):
+        await sync_org_departments(
+            store,
+            fetcher,
+            people_store=PeopleStore(),
+            people_fetcher=EmptyPeopleFetcher(),
+        )
+
+    assert store.runs[-1].status == "failed"
+    assert "no records" in (store.runs[-1].error_message or "")
+    assert set(store.records) == {"od-101"}
+    assert store.records["od-101"].name == "101车间"
 
 
 async def test_sync_stores_company_root_and_requests_its_detail() -> None:

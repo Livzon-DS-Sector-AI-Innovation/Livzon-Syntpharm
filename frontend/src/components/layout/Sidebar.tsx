@@ -2,16 +2,19 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useMemo, useState } from "react"
+import type { ReactNode } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Menu } from "antd"
 import type { MenuProps } from "antd"
 import type { SubMenuItem } from "@/lib/menu-config"
-import { resolveMenus } from "@/lib/menu/resolve"
+import type { ResolvedModule } from "@/lib/menu/resolve"
 import type { PermissionView } from "@/lib/permissions/modules"
 import { fetchWarehouseFeishuTablesByParams } from "@/lib/api/client/warehouse"
 import type { WarehouseFeishuBusinessDomain, WarehouseFeishuTable } from "@/types/warehouse"
 import { HomeOutlined, IdcardOutlined, SettingOutlined } from "@ant-design/icons"
+import { ModuleIcon } from "@/components/Icons"
 import { useSidebarStore } from "@/stores/sidebar"
+import { MenuLockLabel } from "./MenuLockLabel"
 
 type MenuItem = Required<MenuProps>['items'][number]
 
@@ -21,16 +24,18 @@ type MenuItem = Required<MenuProps>['items'][number]
  */
 const SIMPLE_PAGES: Record<
   string,
-  { title: string; selectedKey: string; path: string; items: MenuItem[] }
+  { title: string; icon: ReactNode; selectedKey: string; path: string; items: MenuItem[] }
 > = {
   home: {
     title: "首页",
+    icon: <HomeOutlined />,
     selectedKey: "home",
     path: "/home",
     items: [{ key: "home", label: "工作台", icon: <HomeOutlined /> }],
   },
   profile: {
     title: "个人中心",
+    icon: <IdcardOutlined />,
     selectedKey: "profile",
     path: "/profile",
     items: [{ key: "profile", label: "个人信息", icon: <IdcardOutlined /> }],
@@ -122,11 +127,26 @@ function buildKeyPathMap(items: SubMenuItem[]): Map<string, string> {
   return map
 }
 
+/**
+ * 菜单标签：
+ * - `noAccess`（无权限）→ 灰显 + 锁图标，**仍可点击**（点击后由模块 layout 守卫渲染无权限页）
+ * - `disabled`（未开发）→ 由 Antd Menu 的 disabled 处理，灰显且不可点
+ */
+function renderMenuLabel(label: string, noAccess?: boolean) {
+  if (!noAccess) return label
+  return (
+    <span className="opacity-55">
+      <MenuLockLabel label={label} />
+    </span>
+  )
+}
+
 function buildMenuItems(
   items: SubMenuItem[],
   onNavigateToPath: (path: string) => void,
 ): MenuItem[] {
   return items.map((item): MenuItem => {
+    const label = renderMenuLabel(item.label, item.noAccess)
     if (item.children && item.children.length > 0) {
       const children = buildMenuItems(item.children, onNavigateToPath)
       const parentPath = item.path
@@ -134,18 +154,18 @@ function buildMenuItems(
       if (parentPath) {
         return {
           key: item.key,
-          label: item.label,
+          label,
           children,
           onTitleClick: () => onNavigateToPath(parentPath),
         }
       }
       return {
         key: item.key,
-        label: item.label,
+        label,
         children,
       }
     }
-    const leaf: MenuItem = { key: item.key, label: item.label }
+    const leaf: MenuItem = { key: item.key, label }
     if (item.disabled) {
       leaf.disabled = true
     }
@@ -231,6 +251,8 @@ interface SidebarProps {
   /** 移动端抽屉内使用：强制展开，忽略桌面折叠状态 */
   forceExpanded?: boolean
   permissionView: PermissionView
+  /** 由 AppShell 统一解析的菜单树（桌面侧栏与移动抽屉共用，避免重复计算） */
+  menus: ResolvedModule[]
   /** 菜单 key → 外部系统地址：命中时点击在新标签页打开，未配置时走原有本地路由 */
   externalLinks?: Record<string, string>
 }
@@ -239,6 +261,7 @@ export function Sidebar({
   onNavigate,
   forceExpanded = false,
   permissionView,
+  menus,
   externalLinks = {},
 }: SidebarProps) {
   const pathname = usePathname()
@@ -259,13 +282,8 @@ export function Sidebar({
   )
   const queryString = searchParams.toString()
   const query = useMemo(() => new URLSearchParams(queryString), [queryString])
-  const granted = useMemo(() => new Set(permissionView.granted), [permissionView.granted])
-  // 菜单树 = 代码结构 + 服务端下发的菜单配置（显隐 / 权重 / 权限 / 自定义项）
-  const resolvedModules = useMemo(
-    () => resolveMenus(permissionView.menuConfig, granted, permissionView.isSuperuser),
-    [permissionView, granted],
-  )
-  const currentModule = resolvedModules.find((mod) => mod.key === moduleKey)
+  // 菜单树 = 代码结构 + 服务端下发的菜单配置（显隐 / 权重 / 权限 / 自定义项），已在 AppShell 解析
+  const currentModule = menus.find((mod) => mod.key === moduleKey)
 
   const moduleChildren = useMemo(() => {
     if (!currentModule) return []
@@ -291,7 +309,9 @@ export function Sidebar({
 
   // Sync openKeys when navigation changes (adjusting state during render)
   const [prevNavKey, setPrevNavKey] = useState<string>('')
-  const navKey = currentModule ? `${currentModule}-${pathname}-${query}` : ''
+  // 用模块 key 拼导航指纹：以前直接把 currentModule 对象插进模板串，得到的是 "[object Object]"，
+  // 换模块时指纹不变，上一模块的展开项会被带到新模块。
+  const navKey = currentModule ? `${currentModule.key}|${pathname}|${queryString}` : ''
   if (navKey !== prevNavKey && currentModule) {
     setPrevNavKey(navKey)
     const ancestorKeys = collectAncestorKeys(moduleChildren, pathname, query)
@@ -330,7 +350,10 @@ export function Sidebar({
         }`}
       >
         <div className="flex-1 overflow-y-auto min-w-[224px]">
-          <div className="px-4 pt-5 pb-3">
+          <div className="px-4 pt-5 pb-3 flex items-center gap-2">
+            <span className="shrink-0 text-[18px] text-[var(--color-steel)]">
+              {simple.icon}
+            </span>
             <h2 className="text-[18px] font-semibold text-[var(--color-charcoal)]">
               {simple.title}
             </h2>
@@ -362,9 +385,18 @@ export function Sidebar({
     >
       <div className="flex-1 overflow-y-auto min-w-[224px]">
         <div
-          className={`px-4 pt-5 pb-3${moduleKey === "safety" ? " cursor-pointer group" : ""}`}
+          className={`px-4 pt-5 pb-3 flex items-center gap-2${
+            moduleKey === "safety" ? " cursor-pointer group" : ""
+          }`}
           onClick={moduleKey === "safety" ? () => router.push(currentModule.path) : undefined}
         >
+          <span
+            className={`shrink-0 text-[var(--color-steel)]${
+              moduleKey === "safety" ? " group-hover:text-[var(--color-primary)] transition-colors" : ""
+            }`}
+          >
+            <ModuleIcon name={currentModule.icon} className="w-[18px] h-[18px]" />
+          </span>
           <h2
             className={`text-[18px] font-semibold text-[var(--color-charcoal)]${
               moduleKey === "safety" ? " group-hover:text-[var(--color-primary)] transition-colors" : ""

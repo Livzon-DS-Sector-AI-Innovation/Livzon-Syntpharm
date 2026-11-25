@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { App, Button, DatePicker, Form, Input, Select, Switch } from 'antd'
 import dayjs from 'dayjs'
 import { updateDeviationLedger } from '@/actions/quality'
-import { RemoteUserMultiSelect } from '@/components/common/RemoteUserSelect'
+import { PersonMultiSelect } from '@/components/common/PersonSelect'
 import { toPersonIds } from '@/lib/utils/form-person'
 import {
   CrossDeptReviewerFields,
@@ -186,7 +186,7 @@ export function BasicInfoCard({
           extra="调查人收到调查任务，可为多人"
           normalize={toPersonIds}
         >
-          <RemoteUserMultiSelect
+          <PersonMultiSelect
             placeholder="搜索姓名选择调查人，可多选"
             labels={handlerLabels}
             avatarSrcs={handlerAvatars}

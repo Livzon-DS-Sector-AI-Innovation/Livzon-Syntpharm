@@ -17,11 +17,14 @@ class RoleResponse(BaseModel):
     code: str
     name: str
     category: str
+    role_type: str = "job"
     module_code: str | None = None
     description: str | None = None
     is_builtin: bool = False
     is_superuser: bool = False
     status: str = "active"
+    # 内置角色是否已被人工接管（true 时启动同步不再改动其权限）
+    sync_locked: bool = False
 
 
 class RoleDetailResponse(RoleResponse):
@@ -41,7 +44,12 @@ class RoleDetailApiResponse(BaseModel):
 
 
 class RoleCreate(BaseModel):
-    code: str = Field(..., min_length=2, max_length=128)
+    code: str | None = Field(
+        None,
+        min_length=2,
+        max_length=128,
+        description="留空时由后端自动生成（模块角色为 {module}:role-NNN，平台角色为 platform:role-NNN）",
+    )
     name: str = Field(..., min_length=1, max_length=200)
     category: str = Field(default="module", pattern="^(platform|module)$")
     module_code: str | None = Field(None, max_length=64)
@@ -97,12 +105,19 @@ class GrantResponse(BaseModel):
     status: str = "active"
     granted_by: UUID | None = None
     version: int = 1
+    # 授予时间（授权列表展示，取自 user_role_grants.created_at）
+    created_at: str | None = None
     # 冗余展示字段（join 查询填充）
     role_code: str | None = None
     role_name: str | None = None
     user_name: str | None = None
     username: str | None = None
     avatar_url: str | None = None
+    # 部门 / 职务实时取自 HR 员工档案（identity.users 自 #219 起不再维护这两个字段）；
+    # 无档案的账号（本地账号等）为空，前端显示「—」。
+    department_name: str | None = None
+    department_path_text: str | None = None
+    position_name: str | None = None
 
 
 class GrantListResponse(BaseModel):
@@ -214,6 +229,19 @@ class StatusBatchRequest(IdsBatchRequest):
     status: str = Field(..., pattern="^(active|disabled)$")
 
 
+class GrantBatchCreate(BaseModel):
+    """批量授权：多用户 × 多角色，统一套用同一个数据范围。
+
+    `user_ids` 可以是统一人员选择器返回的 `hr.employee_profiles.id`，也可以是
+    `identity.users.id`；端点内部统一经 `resolve_person_user_id` 转换。
+    """
+
+    user_ids: list[UUID] = Field(..., min_length=1, max_length=100, description="单次最多 100 个用户")
+    role_ids: list[UUID] = Field(..., min_length=1, max_length=20, description="单次最多 20 个角色")
+    scope_type: str = Field(default="all", pattern="^(self|department|department_and_children|all)$")
+    scope_dept_codes: list[str] | None = None
+
+
 class BatchFailure(BaseModel):
     key: str
     label: str | None = None
@@ -257,3 +285,78 @@ class PermissionTreeResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: PermissionTreeData
+
+
+# ── 模块负责人 / 模块管理员（系统管理员侧）───────────────────────────
+
+
+class ModuleAdminUser(BaseModel):
+    """某个模块下的一名负责人/管理人。"""
+
+    grant_id: UUID
+    user_id: UUID
+    name: str | None = None
+    username: str | None = None
+    role_code: str
+    role_type: str
+
+
+class ModuleAdminGroup(BaseModel):
+    """一个模块的负责人与管理人清单。"""
+
+    module_code: str
+    module_name: str
+    heads: list[ModuleAdminUser] = Field(default_factory=list)
+    managers: list[ModuleAdminUser] = Field(default_factory=list)
+
+
+class ModuleAdminListResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[ModuleAdminGroup]
+
+
+class ModuleAdminAssignRequest(BaseModel):
+    module_code: str = Field(..., max_length=64)
+    role_type: str = Field(
+        ...,
+        pattern="^owner$",
+        description="owner=模块负责人（本入口只指派负责人；模块代表由负责人在模块配置页指派）",
+    )
+    user_id: UUID = Field(..., description="identity.users.id 或 hr.employee_profiles.id")
+
+
+class UserAccessItem(BaseModel):
+    """某用户的一条模块权限（离职/调岗收权兜底视图）。"""
+
+    grant_id: UUID
+    role_id: UUID
+    role_code: str
+    role_name: str
+    role_type: str
+    module_code: str | None = None
+    status: str
+
+
+class UserAccessData(BaseModel):
+    user_id: UUID
+    name: str | None = None
+    username: str | None = None
+    is_superuser: bool = False
+    items: list[UserAccessItem] = Field(default_factory=list)
+
+
+class UserAccessResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: UserAccessData
+
+
+class UserAccessDisableData(BaseModel):
+    disabled: int = 0
+
+
+class UserAccessDisableResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: UserAccessDisableData

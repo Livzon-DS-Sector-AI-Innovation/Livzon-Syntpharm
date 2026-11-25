@@ -22,9 +22,13 @@ from app.platform.permission.public_api import PermissionContext
 class StubSession:
     def __init__(self) -> None:
         self.commits = 0
+        self.flushes = 0
 
     async def commit(self) -> None:
         self.commits += 1
+
+    async def flush(self) -> None:
+        self.flushes += 1
 
 
 class StubRepo:
@@ -57,9 +61,21 @@ def _patch(monkeypatch: pytest.MonkeyPatch, repo: StubRepo, *, blocked_ids: set[
         if target.id in blocked:
             raise ForbiddenException("不能操作超级管理员账号")
 
+    async def allow_disable(db: Any, user_id: Any) -> None:
+        return None
+
+    async def fake_evict(user_id: Any) -> None:
+        return None
+
+    async def fake_revoke(user_id: Any) -> int:
+        return 0
+
     monkeypatch.setattr(identity_api, "UserRepository", lambda: repo)
     monkeypatch.setattr(identity_api, "record_audit_log", fake_audit)
     monkeypatch.setattr("app.platform.permission.public_api.guard_manage_target", fake_guard)
+    monkeypatch.setattr("app.platform.permission.public_api.assert_superadmin_disable_allowed", allow_disable)
+    monkeypatch.setattr("app.platform.permission.public_api.evict_user_permission_cache", fake_evict)
+    monkeypatch.setattr("app.platform.identity.session.revoke_all_user_sessions", fake_revoke)
     return audits
 
 
@@ -172,3 +188,50 @@ async def test_batch_rejects_too_many_ids() -> None:
 
     with pytest.raises(ValidationError):
         identity_api.UserBatchStatusRequest(user_ids=[uuid.uuid4() for _ in range(101)], status="active")
+
+
+# ── 超管保底：停用入口（TC-007）─────────────────────────────────────
+
+
+async def test_batch_disable_rejects_when_only_two_superadmins(monkeypatch: pytest.MonkeyPatch) -> None:
+    operator = _user(username="manager")
+    superuser = _user(username="root", status="active")
+    repo = StubRepo([superuser])
+    _patch(monkeypatch, repo)
+
+    async def deny_disable(db: Any, user_id: Any) -> None:
+        raise ForbiddenException("系统管理员至少保留 2 名，无法停用该账号")
+
+    monkeypatch.setattr("app.platform.permission.public_api.assert_superadmin_disable_allowed", deny_disable)
+
+    resp = await batch_update_user_status(
+        identity_api.UserBatchStatusRequest(user_ids=[superuser.id], status="disabled"),
+        ctx=_ctx(operator),
+        db=StubSession(),
+    )
+
+    assert resp.data["succeeded"] == []
+    assert "至少保留 2 名" in resp.data["failed"][0]["reason"]
+    assert superuser.status == "active"
+
+
+async def test_update_user_rejects_disabling_superadmin(monkeypatch: pytest.MonkeyPatch) -> None:
+    operator = _user(username="manager")
+    superuser = _user(username="root", status="active")
+    repo = StubRepo([superuser])
+    _patch(monkeypatch, repo)
+
+    async def deny_disable(db: Any, user_id: Any) -> None:
+        raise ForbiddenException("系统管理员至少保留 2 名，无法停用该账号")
+
+    monkeypatch.setattr("app.platform.permission.public_api.assert_superadmin_disable_allowed", deny_disable)
+
+    with pytest.raises(ForbiddenException, match="至少保留 2 名"):
+        await identity_api.update_user_management(
+            superuser.id,
+            identity_api.UserManagementUpdate(status="disabled"),
+            ctx=_ctx(operator),
+            db=StubSession(),
+        )
+
+    assert superuser.status == "active"

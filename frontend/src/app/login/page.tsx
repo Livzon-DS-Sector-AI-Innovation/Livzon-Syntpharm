@@ -1,70 +1,38 @@
-'use client'
+import { headers } from 'next/headers'
+import { FeishuLoginPanel } from '@/components/auth'
+import { getFeishuH5ConfigApi } from '@/lib/api/server/auth'
 
-import { Suspense } from "react"
-import { useSearchParams } from "next/navigation"
-import { Button, Card, Typography } from "antd"
+/** 按 UA 预判是否飞书容器、并取免登配置，属于运行时数据，禁止静态预渲染。 */
+export const dynamic = 'force-dynamic'
 
-const errorMessages: Record<string, string> = {
-  invalid_state: "登录状态已过期，请重新登录",
-  callback_failed: "登录失败，请重试",
-  access_denied: "您拒绝了授权",
-  auth_failed: "登录失败，请重试",
+interface LoginPageProps {
+  searchParams: Promise<{ error?: string; detail?: string; retry?: string }>
 }
 
 /**
- * 默认登录页 = 飞书登录。
+ * 登录页 = 飞书登录。
  *
- * 账号密码登录已拆到独立页面 `/login/password`，本页不再暴露入口，需直接访问该 URL。
+ * 在服务端读 User-Agent 决定首帧展示什么：飞书客户端内直接渲染「飞书登录中」
+ * （避免先闪一下登录按钮页），普通浏览器直接渲染登录按钮页。
+ * 免登配置也在服务端取，客户端不再用 useEffect 拉配置。
+ * 账号密码登录已拆到独立页面 `/login/password`，本页不暴露入口。
  */
-function FeishuLoginCard() {
-  const searchParams = useSearchParams()
-  const error = searchParams.get("error")
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const [params, headerList, h5Config] = await Promise.all([
+    searchParams,
+    headers(),
+    getFeishuH5ConfigApi(),
+  ])
+  const userAgent = headerList.get('user-agent') ?? ''
+  const inFeishu = /Lark|Feishu/i.test(userAgent)
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-sm shadow-lg" variant="borderless">
-        <div className="mb-6 text-center">
-          <Typography.Title level={1} style={{ marginBottom: 4, fontSize: 24 }}>
-            工厂管理平台
-          </Typography.Title>
-          <Typography.Text type="secondary">
-            原料药制药厂综合业务管理系统
-          </Typography.Text>
-        </div>
-
-        {error && (
-          <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-600">
-            {errorMessages[error] || "登录出错，请重试"}
-            {error === "auth_failed" && searchParams.get("detail") && (
-              <div className="mt-2 text-xs text-red-500">
-                {searchParams.get("detail")}
-              </div>
-            )}
-          </div>
-        )}
-
-        <Button
-          type="primary"
-          size="large"
-          block
-          href="/api/v1/identity/auth/login"
-          style={{ height: 44 }}
-        >
-          飞书登录
-        </Button>
-
-        <p className="m-0 mt-3 text-center text-[12px] text-[var(--color-steel)]">
-          使用企业飞书账号扫码 / 授权登录
-        </p>
-      </Card>
-    </div>
-  )
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense>
-      <FeishuLoginCard />
-    </Suspense>
+    <FeishuLoginPanel
+      inFeishu={inFeishu}
+      h5Config={h5Config}
+      error={params.error}
+      detail={params.detail}
+      forceRetry={params.retry === '1'}
+    />
   )
 }

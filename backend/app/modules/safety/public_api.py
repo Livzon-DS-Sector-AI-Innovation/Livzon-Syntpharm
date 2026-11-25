@@ -5,6 +5,10 @@
 ``service/``、``repository/``、``models.py`` 等实现细节。
 """
 
+from app.modules.safety.service.hazard_workbench import (
+    list_hazard_processes,
+    list_hazard_review_todos,
+)
 from app.modules.safety.template_export import (
     # 配置
     HAZARD_COLUMN_MAPPING,
@@ -27,6 +31,9 @@ from app.modules.safety.template_export import (
 )
 
 __all__ = [
+    # 首页工作台（审核待办 / 我参与的流程）
+    "list_hazard_review_todos",
+    "list_hazard_processes",
     # 配置
     "TemplateConfig",
     "PageSetup",

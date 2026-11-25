@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/actions/auth'
 import { HomeWorkspace, type HomeModuleEntry } from '@/components/home'
+import { fetchWorkbenchOverview } from '@/lib/api/server/workbench'
 import { resolveMenus } from '@/lib/menu/resolve'
 import { getPermissionView } from '@/lib/permissions/server'
 
@@ -16,7 +17,7 @@ export default async function HomePage() {
   const user = await getCurrentUser()
   if (!user) redirect('/login')
 
-  const view = await getPermissionView()
+  const [view, overview] = await Promise.all([getPermissionView(), fetchWorkbenchOverview()])
   const granted = new Set(view.granted)
   const modules = resolveMenus(view.menuConfig, granted, view.isSuperuser)
 
@@ -42,6 +43,7 @@ export default async function HomePage() {
       position={user.position}
       today={today}
       modules={entries}
+      overview={overview}
     />
   )
 }

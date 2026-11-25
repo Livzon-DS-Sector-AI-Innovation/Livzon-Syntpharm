@@ -1,18 +1,20 @@
-"""SQLAlchemy adapter for the personnel mirror (ticket #198).
+"""SQLAlchemy adapter for the personnel mirror (ticket #198 / #219).
 
 Implements the :class:`app.modules.hr.people_sync.EmployeeProfileStore` port over
-``hr.employee_profiles`` and reads the platform directory (``identity.users`` /
-``identity.departments``) to decide which people are in scope. Never deletes:
-the nightly sync only enriches known people.
+``hr.employee_profiles``. Scope comes from ``hr.departments`` (the HR mirror), not
+from the platform identity tables. Rows are never deleted: people who leave the
+Feishu directory are flagged ``is_current=False`` and kept as history so that
+``hr.departure_records`` keeps a valid profile reference.
 """
 
 from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
-from sqlalchemy import Text, cast, func, or_, select
+from sqlalchemy import CursorResult, Text, func, or_, select, update
+from sqlalchemy import cast as sa_cast
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ColumnElement
 
@@ -131,12 +133,20 @@ class SqlAlchemyEmployeeProfileStore:
         *,
         department_ids: list[str],
     ) -> bool:
-        result = await self.session.execute(select(EmployeeProfile).where(EmployeeProfile.open_id == record.open_id))
+        result = await self.session.execute(
+            select(EmployeeProfile).where(
+                EmployeeProfile.open_id == record.open_id,
+                EmployeeProfile.is_current.is_(True),
+            )
+        )
         profile = result.scalar_one_or_none()
         created = profile is None
         if profile is None:
-            profile = EmployeeProfile(open_id=record.open_id)
+            # No current row (first sync, or a rejoin after removal): open a new
+            # employment row and keep the historical rows untouched.
+            profile = EmployeeProfile(open_id=record.open_id, is_current=True)
             self.session.add(profile)
+        profile.removed_at = None
 
         department_names, department_path = await _resolve_department_fields(self.session, department_ids)
 
@@ -193,6 +203,34 @@ class SqlAlchemyEmployeeProfileStore:
         await self.session.flush()
         return created
 
+    async def list_current_open_ids(self) -> set[str]:
+        """Return the open ids of every row currently marked as in post."""
+        result = await self.session.execute(
+            select(EmployeeProfile.open_id).where(
+                EmployeeProfile.is_deleted.is_(False),
+                EmployeeProfile.is_current.is_(True),
+            )
+        )
+        return set(result.scalars().all())
+
+    async def mark_removed(self, open_ids: list[str], *, removed_at: datetime) -> int:
+        """Flag current rows as historical; never deletes the row."""
+        if not open_ids:
+            return 0
+        result = cast(
+            CursorResult[Any],
+            await self.session.execute(
+                update(EmployeeProfile)
+                .where(
+                    EmployeeProfile.open_id.in_(open_ids),
+                    EmployeeProfile.is_current.is_(True),
+                )
+                .values(is_current=False, removed_at=removed_at)
+            ),
+        )
+        await self.session.flush()
+        return int(result.rowcount or 0)
+
     async def list_profiles(
         self,
         *,
@@ -203,6 +241,10 @@ class SqlAlchemyEmployeeProfileStore:
         page_size: int,
     ) -> tuple[list[EmployeeProfile], int]:
         conditions: list[ColumnElement[bool]] = [EmployeeProfile.is_deleted.is_(False)]
+        # Keep the picker on in-post people: only explicit 离职/取消入职 filters
+        # look at historical rows.
+        if status is None or status not in (2, 4):
+            conditions.append(EmployeeProfile.is_current.is_(True))
         if department_ids is not None:
             if not department_ids:
                 return [], 0
@@ -223,7 +265,7 @@ class SqlAlchemyEmployeeProfileStore:
                     EmployeeProfile.name.ilike(pattern),
                     EmployeeProfile.employee_no.ilike(pattern),
                     EmployeeProfile.job_title_name.ilike(pattern),
-                    cast(EmployeeProfile.department_names, Text).ilike(pattern),
+                    sa_cast(EmployeeProfile.department_names, Text).ilike(pattern),
                 )
             )
 
@@ -255,12 +297,16 @@ class SqlAlchemyEmployeeProfileStore:
                 )
             ).scalar_one_or_none()
         if profile is None:
+            # An open id may own several employment rows; prefer the current one.
             profile = (
                 await self.session.execute(
-                    select(EmployeeProfile).where(
+                    select(EmployeeProfile)
+                    .where(
                         EmployeeProfile.open_id == identifier,
                         EmployeeProfile.is_deleted.is_(False),
                     )
+                    .order_by(EmployeeProfile.is_current.desc(), EmployeeProfile.created_at.desc())
+                    .limit(1)
                 )
             ).scalar_one_or_none()
         return profile

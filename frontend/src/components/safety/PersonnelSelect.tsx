@@ -1,14 +1,14 @@
 'use client'
 
 import {
-  RemoteUserMultiSelect,
-  RemoteUserSelect,
-} from '@/components/common/RemoteUserSelect'
+  PersonMultiSelect,
+  PersonSelect,
+} from '@/components/common/PersonSelect'
 
 /**
  * 系统用户选择器（安全模块的对外门面）。
  *
- * 取数与分页逻辑已统一收口到 `components/common/RemoteUserSelect`：
+ * 取数与分页逻辑已统一收口到 `components/common/PersonSelect`：
  * 打开即 50 条、滚到底自动续载、关键字走服务端搜索。
  * 这里只保留历史 props 形状，让隐患登记、隐患详情、设备巡检抽屉等既有调用点零改动。
  *
@@ -38,7 +38,7 @@ export default function PersonnelSelect({
   onChange,
 }: PersonnelSelectProps) {
   return (
-    <RemoteUserSelect
+    <PersonSelect
       value={value}
       label={label}
       avatarSrc={avatarSrc}
@@ -79,7 +79,7 @@ export function PersonnelMultiSelect({
   onChange,
 }: PersonnelMultiSelectProps) {
   return (
-    <RemoteUserMultiSelect
+    <PersonMultiSelect
       value={value}
       labels={labels}
       avatarSrcs={avatarSrcs}

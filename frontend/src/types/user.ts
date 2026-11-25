@@ -12,7 +12,8 @@ export interface User {
   id: string
   name: string
   username: string | null
-  status: 'active' | 'disabled'
+  /** 账号状态：`/me`（UserResponse）不返回，只有用户管理列表才有；缺省时界面不显示状态 */
+  status?: 'active' | 'disabled'
   auth_source: 'local' | 'feishu'
   email: string | null
   mobile: string | null
