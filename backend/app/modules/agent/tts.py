@@ -92,6 +92,73 @@ def _english_g2p() -> Callable[[str], str] | None:
     return _phonemes
 
 
+#: 单块最大字符数。中文音素约是字数的 2~3 倍（含数字/英文时更高），kokoro 中文分支
+#: 对单个 chunk 超过 510 音素会**静默截断**（`ps = ps[:510]`，只打一条 warning 日志），
+#: 表现为「旁白只念一半、无任何报错」。120 字 ≈ 300 音素以内，同时给英文 G2P 的
+#: 音素膨胀留出余量。
+TTS_CHUNK_MAX_CHARS = 120
+
+#: 切块口径版本。它进 `KokoroEngine.version()` → 音频指纹，改了切块逻辑必须同步改这里，
+#: 否则旧缓存里被截断的 wav 会继续命中，改了也听不出变化。
+KOKORO_CHUNKING_VERSION = "split2"
+
+_SENTENCE_BOUNDARY = "。！？；!?;"
+_CLAUSE_BOUNDARY = "，、：,:"
+
+
+def _split_after(text: str, boundaries: str) -> list[str]:
+    """按标点切分并保留标点（标点跟随前一段，避免句末语气丢失）。
+
+    连续标点（`！！！`、`？！`）会并入前一段而不是各自成块：单送一个「！」给 TTS
+    既浪费一次推理，也容易被念成怪声。
+    """
+    parts: list[str] = []
+    start = 0
+    for index, char in enumerate(text):
+        if char not in boundaries:
+            continue
+        segment = text[start : index + 1]
+        if parts and not segment.strip(_SENTENCE_BOUNDARY + _CLAUSE_BOUNDARY):
+            parts[-1] += segment
+        else:
+            parts.append(segment)
+        start = index + 1
+    if start < len(text):
+        parts.append(text[start:])
+    return [part for part in parts if part.strip()]
+
+
+def split_text_for_tts(text: str, max_chars: int = TTS_CHUNK_MAX_CHARS) -> list[str]:
+    """把讲稿切成适合逐块送 TTS 的片段（纯函数，结果只取决于入参）。
+
+    优先级：句末标点 → 逗号/顿号等句内标点 → 按 `max_chars` 硬切。
+    这样绝大多数切点落在自然停顿上，听感与整段合成一致；硬切只在「整句无标点且
+    超长」时发生（人工讲稿极少见），代价是个别字可能被切开，但好过被静默截断。
+    """
+    limit = max(1, max_chars)
+    chunks: list[str] = []
+    for sentence in _split_after(text, _SENTENCE_BOUNDARY):
+        if len(sentence) <= limit:
+            chunks.append(sentence)
+            continue
+        buffer = ""
+        for clause in _split_after(sentence, _CLAUSE_BOUNDARY):
+            if len(clause) > limit:
+                if buffer:
+                    chunks.append(buffer)
+                    buffer = ""
+                chunks.extend(clause[offset : offset + limit] for offset in range(0, len(clause), limit))
+                continue
+            if len(buffer) + len(clause) > limit:
+                chunks.append(buffer)
+                buffer = clause
+            else:
+                buffer += clause
+        if buffer:
+            chunks.append(buffer)
+    return [chunk.strip() for chunk in chunks if chunk.strip()]
+
+
 class KokoroEngine:
     """Kokoro-82M：中文用 v1.1-zh 仓库，英文用 v1.0 仓库。"""
 
@@ -104,9 +171,9 @@ class KokoroEngine:
         try:
             from importlib.metadata import version
 
-            return f"kokoro-{version('kokoro')}"
+            return f"kokoro-{version('kokoro')}-{KOKORO_CHUNKING_VERSION}"
         except Exception:  # noqa: BLE001 - 版本读不到不影响合成，退化为固定标识
-            return "kokoro-unknown"
+            return f"kokoro-unknown-{KOKORO_CHUNKING_VERSION}"
 
     def _pipeline(self, language: str) -> object:
         if language in self._pipelines:
@@ -133,18 +200,21 @@ class KokoroEngine:
         if voice is None or not is_voice_in_language(voice_id, language):
             raise TtsError(f"音色 {voice_id} 不属于语言 {language}，请重新选择")
         pipeline = self._pipeline(language)
-        try:
-            chunks = list(pipeline(text, voice=voice_id, speed=speed))  # type: ignore[operator]
-        except Exception as exc:  # noqa: BLE001 - 引擎内部异常类型不稳定
-            logger.exception("kokoro synthesize failed")
-            raise TtsError(f"旁白合成失败：{exc}") from exc
-
+        # 必须自己切块：KPipeline 默认只按换行切（`split_pattern="\n+"`），中文讲稿通常
+        # 一整段没有换行，189 字就会成为单个 chunk（≈572 音素）并被静默截断到 510。
+        blocks = split_text_for_tts(text)
         samples: list[float] = []
-        for chunk in chunks:
-            audio = getattr(chunk, "audio", None)
-            if audio is None:
-                continue
-            samples.extend(audio.detach().cpu().numpy().tolist() if hasattr(audio, "detach") else list(audio))
+        for index, block in enumerate(blocks, start=1):
+            try:
+                chunks = list(pipeline(block, voice=voice_id, speed=speed))  # type: ignore[operator]
+            except Exception as exc:  # noqa: BLE001 - 引擎内部异常类型不稳定
+                logger.exception("kokoro synthesize failed: block %s/%s", index, len(blocks))
+                raise TtsError(f"旁白合成失败（第 {index}/{len(blocks)} 块）：{exc}") from exc
+            for chunk in chunks:
+                audio = getattr(chunk, "audio", None)
+                if audio is None:
+                    continue
+                samples.extend(audio.detach().cpu().numpy().tolist() if hasattr(audio, "detach") else list(audio))
         if not samples:
             raise TtsError("旁白合成失败：引擎未返回音频，请检查讲稿是否为空")
 
