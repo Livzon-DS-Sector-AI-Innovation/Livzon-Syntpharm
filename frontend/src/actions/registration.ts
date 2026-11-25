@@ -11,7 +11,6 @@ import {
   ProjectProgressLog,
   ReferenceStandardListItem,
   RegistrationProject,
-  SupplementaryReplyListItem,
 } from '@/types/registration'
 import type { components } from '@/types/generated/schema'
 import type { ApiResponse, MessageResponse } from '@/types/common'
@@ -20,8 +19,6 @@ import type { PageResult } from '@/lib/api/page'
 import {
   generateAuthorizationLetter as generateAuthorizationLetterApi,
   deleteAuthorizationLetter as deleteAuthorizationLetterApi,
-  generateSupplementaryReply as generateSupplementaryReplyApi,
-  deleteSupplementaryReply as deleteSupplementaryReplyApi,
   generateReferenceStandard as generateReferenceStandardApi,
   deleteReferenceStandard as deleteReferenceStandardApi,
   fetchAuthorizationLetters as fetchAuthorizationLettersApi,
@@ -29,7 +26,6 @@ import {
   fetchRegistrationProducts as fetchRegistrationProductsApi,
   fetchRegistrationProjects as fetchRegistrationProjectsApi,
   fetchReferenceStandards as fetchReferenceStandardsApi,
-  fetchSupplementaryReplies as fetchSupplementaryRepliesApi,
   createDrug as createDrugApi,
   updateDrug as updateDrugApi,
   deleteDrug as deleteDrugApi,
@@ -46,7 +42,6 @@ import {
 type DrugCreate = components['schemas']['DrugCreate']
 type DrugUpdate = components['schemas']['DrugUpdate']
 type AuthorizationLetterData = components['schemas']['AuthorizationLetterResponse']
-type SupplementaryReplyData = components['schemas']['SupplementaryReplyResponse']
 type ReferenceStandardData = components['schemas']['ReferenceStandardResponse']
 type DrugData = components['schemas']['DrugWithNodesResponse']
 type ProjectData = components['schemas']['ProjectResponse']
@@ -95,52 +90,6 @@ export async function generateAuthorizationLetter(
 
 export async function deleteAuthorizationLetter(id: string): Promise<MessageResponse> {
   const result = (await deleteAuthorizationLetterApi(id)) as MessageResponse
-  revalidatePath('/registration')
-  return result
-}
-
-export async function generateSupplementaryReply(
-  formData: FormData,
-  data: {
-    drug_name?: string
-    registration_number?: string
-    acceptance_number?: string
-    company_name?: string
-    remarks?: string
-  }
-): Promise<{ success: boolean; message: string; data?: SupplementaryReplyData }> {
-  try {
-    const submitData = new FormData()
-    submitData.append('notice', formData.get('notice') as File)
-    
-    const template = formData.get('template')
-    if (template) {
-      submitData.append('template', template as File)
-    }
-    
-    if (data.drug_name) submitData.append('drug_name', data.drug_name)
-    if (data.registration_number) submitData.append('registration_number', data.registration_number)
-    if (data.acceptance_number) submitData.append('acceptance_number', data.acceptance_number)
-    if (data.company_name) submitData.append('company_name', data.company_name)
-    if (data.remarks) submitData.append('remarks', data.remarks)
-
-    const json = (await generateSupplementaryReplyApi(submitData)) as ApiResponse<SupplementaryReplyData>
-    revalidatePath('/registration')
-    return {
-      success: true,
-      message: json.message || '发补回复文档生成成功',
-      data: json.data,
-    }
-  } catch (error) {
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : '生成发补回复文档失败',
-    }
-  }
-}
-
-export async function deleteSupplementaryReplyAction(id: string): Promise<MessageResponse> {
-  const result = (await deleteSupplementaryReplyApi(id)) as MessageResponse
   revalidatePath('/registration')
   return result
 }
@@ -238,12 +187,6 @@ export async function fetchReferenceStandardsServer(
   params: { page: number; page_size: number }
 ): Promise<PageResult<ReferenceStandardListItem>> {
   return fetchReferenceStandardsApi(params)
-}
-
-export async function fetchSupplementaryRepliesServer(
-  params: { page: number; page_size: number }
-): Promise<PageResult<SupplementaryReplyListItem>> {
-  return fetchSupplementaryRepliesApi(params)
 }
 
 export async function createDrug(data: DrugCreate): Promise<ApiResponse<DrugData>> {

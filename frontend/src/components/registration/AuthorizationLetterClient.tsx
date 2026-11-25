@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { DataUnavailable } from '@/components/common/DataUnavailable'
-import { Table, Input, Select, App, Modal, Form, Upload, Radio, Drawer, Spin, Empty, Popconfirm, Pagination } from 'antd'
+import { Table, Input, Select, AutoComplete, App, Modal, Form, Upload, Radio, Drawer, Spin, Empty, Popconfirm, Pagination } from 'antd'
 import type { UploadFile } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { UploadOutlined, SearchOutlined } from '@ant-design/icons'
@@ -17,6 +17,7 @@ import {
   fetchAuthorizationLetters,
   fetchAuthorizationLetterDownloadUrl,
   fetchAuthorizationLetterFilterOptions,
+  fetchAuthorizationLetterProducts,
   fetchAuthorizationLetterTrails,
 } from '@/lib/api/client/registration'
 import { generateAuthorizationLetter, deleteAuthorizationLetter } from '@/actions/registration'
@@ -53,14 +54,14 @@ interface AuthorizationLetterClientProps {
   initialLetters: AuthorizationLetterListItem[]
   initialTotal: number
   initialFilterOptions: AuthorizationLetterFilterOptions
-  products: ProductInfo[]
+  initialProducts: ProductInfo[]
 }
 
 export default function AuthorizationLetterClient({
   initialLetters,
   initialTotal,
   initialFilterOptions,
-  products,
+  initialProducts,
 }: AuthorizationLetterClientProps) {
   const { message } = App.useApp()
   const queryClient = useQueryClient()
@@ -130,6 +131,20 @@ export default function AuthorizationLetterClient({
   })
   const filterOptions = optionsQuery.data ?? initialFilterOptions
 
+  // 品种登记号对照表（生成弹窗下拉建议；生成新映射后刷新）
+  const productsQuery = useQuery({
+    queryKey: ['authorization-letter-products'],
+    queryFn: fetchAuthorizationLetterProducts,
+    initialData: initialProducts,
+  })
+  const products = productsQuery.data ?? initialProducts
+
+  // 当前填写的品种名（用于判定是否命中老品种、锁死登记号）
+  const watchedProductName: string | undefined = Form.useWatch('product_name', form)
+  const currentRegistrationNumber = watchedProductName
+    ? products.find(p => p.product_name === watchedProductName)?.registration_number
+    : undefined
+
   const trailsQuery = useQuery({
     queryKey: ['authorization-letter-trails', selected?.id],
     queryFn: () => fetchAuthorizationLetterTrails(selected!.id),
@@ -140,6 +155,7 @@ export default function AuthorizationLetterClient({
   const refreshAll = () => {
     void queryClient.invalidateQueries({ queryKey: ['authorization-letters'] })
     void queryClient.invalidateQueries({ queryKey: ['authorization-letter-filter-options'] })
+    void queryClient.invalidateQueries({ queryKey: ['authorization-letter-products'] })
   }
 
   // ── 行为 ──
@@ -226,7 +242,8 @@ export default function AuthorizationLetterClient({
     void queryClient.invalidateQueries({ queryKey: ['authorization-letter-trails', record.id] })
   }
 
-  const handleProductChange = (value: string) => {
+  const applyModalProduct = (value: string) => {
+    // 命中老品种才自动带出登记号；新品种留空由用户手填
     form.setFieldsValue({
       product_name: value,
       registration_number: products.find(p => p.product_name === value)?.registration_number || '',
@@ -503,13 +520,16 @@ export default function AuthorizationLetterClient({
             <Form.Item
               name="product_name"
               label="产品名称"
-              rules={[{ required: true, message: '请选择产品名称' }]}
+              rules={[{ required: true, message: '请选择或输入产品名称' }]}
             >
-              <Select
-                placeholder="请选择产品"
-                showSearch
-                onChange={handleProductChange}
+              <AutoComplete
+                placeholder="选择或输入品种名称"
                 options={products.map(p => ({ label: p.product_name, value: p.product_name }))}
+                onChange={applyModalProduct}
+                onSelect={applyModalProduct}
+                filterOption={(input, option) =>
+                  (option?.value ?? '').toLowerCase().includes(input.toLowerCase())
+                }
               />
             </Form.Item>
 
@@ -517,8 +537,12 @@ export default function AuthorizationLetterClient({
               name="registration_number"
               label="登记号"
               rules={[{ required: true, message: '请输入登记号' }]}
+              extra={currentRegistrationNumber ? '该品种已存在，登记号自动锁定' : '新品种请输入登记号，生成后自动入库'}
             >
-              <Input placeholder="选择产品后自动填充" disabled />
+              <Input
+                placeholder={currentRegistrationNumber ? '已自动填充' : '请输入登记号'}
+                disabled={!!currentRegistrationNumber}
+              />
             </Form.Item>
 
             <Form.Item

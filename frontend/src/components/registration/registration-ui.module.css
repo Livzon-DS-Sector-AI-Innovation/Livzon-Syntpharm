@@ -13,20 +13,22 @@
   --info-50: #EAF4FB;
   --ok-600: #0E8568;
   --ok-50: #E9F6F1;
-  --warn-600: #B4640A;
+  --warn-600: #A65D08;
   --warn-50: #FCF3E3;
   --risk-600: #C03A2E;
   --risk-50: #FBEBE9;
+  --teal-600: #0E7490;
+  --teal-50: #ECF9FC;
   --ink-1: #1F2333;
   --ink-2: #4D5266;
-  --ink-3: #878DA3;
+  --ink-3: #6B7194;
   --line: #E7E8F0;
-  --bg: #F5F6FA;
+  --bg: #F7F8FB;
   --card: #FFFFFF;
   --r-lg: 12px;
   --r-md: 8px;
-  --shadow-1: 0 1px 2px rgba(31, 35, 51, 0.04);
-  --shadow-2: 0 6px 16px -6px rgba(31, 35, 51, 0.10);
+  --shadow-1: 0 1px 2px rgba(31, 35, 51, 0.04), 0 1px 3px rgba(31, 35, 51, 0.03);
+  --shadow-2: 0 8px 20px -8px rgba(31, 35, 51, 0.12), 0 2px 6px -2px rgba(31, 35, 51, 0.06);
   --t-fast: 150ms ease;
 
   font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
@@ -307,6 +309,11 @@
   composes: tag;
   background: var(--ok-50);
   color: var(--ok-600);
+}
+.tagTeal {
+  composes: tag;
+  background: var(--teal-50);
+  color: var(--teal-600);
 }
 
 /* ============ KPI 卡 ============ */

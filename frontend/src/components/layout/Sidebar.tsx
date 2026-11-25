@@ -231,9 +231,16 @@ interface SidebarProps {
   /** 移动端抽屉内使用：强制展开，忽略桌面折叠状态 */
   forceExpanded?: boolean
   permissionView: PermissionView
+  /** 菜单 key → 外部系统地址：命中时点击在新标签页打开，未配置时走原有本地路由 */
+  externalLinks?: Record<string, string>
 }
 
-export function Sidebar({ onNavigate, forceExpanded = false, permissionView }: SidebarProps) {
+export function Sidebar({
+  onNavigate,
+  forceExpanded = false,
+  permissionView,
+  externalLinks = {},
+}: SidebarProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { collapsed: collapsedState } = useSidebarStore()
@@ -298,6 +305,14 @@ export function Sidebar({ onNavigate, forceExpanded = false, permissionView }: S
   }
 
   const handleClick: MenuProps['onClick'] = ({ key }) => {
+    // 配置了外部系统地址的菜单项：新标签页打开，本系统页面不跳走；
+    // 未配置时保持原有本地路由跳转，选中态逻辑不受影响。
+    const externalUrl = externalLinks[key]
+    if (externalUrl) {
+      window.open(externalUrl, '_blank', 'noopener,noreferrer')
+      onNavigate?.()
+      return
+    }
     const path = keyPathMap.get(key)
     if (path) {
       navigateToPath(path)

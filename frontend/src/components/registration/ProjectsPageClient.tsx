@@ -9,8 +9,9 @@
  * 数据全部来自真实接口：/registration/projects（列表/KPI/阶段/进展记录）
  */
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { App, DatePicker, Drawer, Empty, Form, Input, Modal, Pagination, Popconfirm, Select, Spin, Table } from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
@@ -26,10 +27,13 @@ import {
   fetchProjectKpiServer,
   fetchProjectLogsServer,
   fetchRegistrationProjectsServer,
+  updateRegistrationProject,
 } from '@/actions/registration'
+import { fetchDrugs } from '@/lib/api/client/registration'
 import type { PreStage, ProjectCreatePayload, RegistrationProject } from '@/types/registration'
 import { RemoteUserSelect } from '@/components/common/RemoteUserSelect'
 import { DataUnavailable } from '@/components/common/DataUnavailable'
+import { PROJECT_STATUS_OPTIONS, isPostAcceptance, projectStatusMeta } from './projectStatus'
 import { RegistrationPageHeader } from './RegistrationPageHeader'
 import { RegSvg } from './RegistrationIcons'
 import ui from './registration-ui.module.css'
@@ -54,21 +58,6 @@ const STAGES: { key: PreStage; label: string }[] = [
   { key: 'submission', label: '递交' },
   { key: 'accepted', label: '已受理' },
 ]
-
-const STATUS_LABELS: Record<string, string> = {
-  draft: '草稿',
-  preparing: '准备中',
-  submitted: '已申报',
-  accepted: '已受理',
-  under_review: '审评中',
-  supplementary: '发补中',
-  approved: '已获批',
-  withdrawn: '已撤回',
-  terminated: '已终止',
-}
-
-/** 受理后状态：唯一维护入口为申报进度查询，本页只读并带「· 同步」标 */
-const POST_ACCEPTANCE = new Set(['accepted', 'under_review', 'supplementary', 'approved', 'withdrawn', 'terminated'])
 
 const TYPE_CARDS = [
   { value: '新注册', desc: '品种首次申请注册，从零递交整套资料', icon: <RegSvg size={15}><path d="M12 5v14M5 12h14" /></RegSvg> },
@@ -97,32 +86,14 @@ const IconLock = (
 
 const PAGE_SIZE = 10
 
-function statusTagClass(status: string): string {
-  switch (status) {
-    case 'draft':
-    case 'terminated':
-      return ui.tagPlain
-    case 'submitted':
-      return ui.tagBrand
-    case 'supplementary':
-      return ui.tagWarn
-    case 'approved':
-      return ui.tagOk
-    case 'withdrawn':
-      return ui.tagRisk
-    default:
-      return ui.tagInfo
-  }
-}
-
 /** 状态标签：受理后状态前带同步图标 + 「· 同步」后缀 */
 function StatusTag({ status }: { status: string }) {
-  const synced = POST_ACCEPTANCE.has(status)
+  const meta = projectStatusMeta(status)
   return (
-    <span className={`${statusTagClass(status)} ${synced ? styles.syncTag : ''}`}>
-      {synced && IconSync}
-      {STATUS_LABELS[status] ?? status}
-      {synced && ' · 同步'}
+    <span className={`${meta.tagClass} ${meta.postAcceptance ? styles.syncTag : ''}`}>
+      {meta.postAcceptance && IconSync}
+      {meta.label}
+      {meta.postAcceptance && ' · 同步'}
     </span>
   )
 }
@@ -174,7 +145,15 @@ export function ProjectsPageClient() {
   const [logText, setLogText] = useState('')
   const [logSaving, setLogSaving] = useState(false)
   const [advancing, setAdvancing] = useState(false)
+  const [linkOpen, setLinkOpen] = useState(false)
+  const [linkDrugId, setLinkDrugId] = useState<string | null>(null)
+  const [linkSaving, setLinkSaving] = useState(false)
   const [createForm] = Form.useForm()
+
+  const router = useRouter()
+  const pathname = usePathname()
+  const projectParam = useSearchParams().get('project')
+  const autoOpenedRef = useRef<string | null>(null)
 
   // 集合端点规范路径带尾斜杠，浏览器直连会被 trailingSlash 归一化打断 → 统一走 Server Action 服务端取数
   const projectsQuery = useQuery({
@@ -199,6 +178,26 @@ export function ProjectsPageClient() {
     enabled: !!selected && drawerOpen,
   })
   const logs = useMemo(() => logsQuery.data ?? [], [logsQuery.data])
+
+  // 审评品种候选（关联入口）：与申报进度页共用同一缓存键，切换页面不重复拉取
+  const drugsQuery = useQuery({
+    queryKey: ['registration-drugs'],
+    queryFn: fetchDrugs,
+    staleTime: 60_000,
+  })
+  const drugs = useMemo(() => drugsQuery.data ?? [], [drugsQuery.data])
+  const drugOptions = useMemo(
+    () =>
+      drugs.map(d => ({
+        value: d.id,
+        label: `${d.name}（${d.type}）${d.acceptance_number ? ` · ${d.acceptance_number}` : ' · 未登记受理号'}`,
+      })),
+    [drugs],
+  )
+  const linkedDrug = useMemo(
+    () => (selected?.drug_id ? (drugs.find(d => d.id === selected.drug_id) ?? null) : null),
+    [drugs, selected],
+  )
 
   const refreshAll = () => {
     void queryClient.invalidateQueries({ queryKey: ['registration-projects'] })
@@ -255,6 +254,7 @@ export function ProjectsPageClient() {
         planned_submission_date: values.planned_submission_date
           ? (values.planned_submission_date as Dayjs).format('YYYY-MM-DD')
           : null,
+        drug_id: values.drug_id ?? null,
       })
       if (result.code !== 200) {
         message.error(result.message || '创建失败')
@@ -273,7 +273,7 @@ export function ProjectsPageClient() {
 
   const handleStageClick = async (stageKey: PreStage) => {
     if (!selected || advancing) return
-    if (POST_ACCEPTANCE.has(selected.status)) {
+    if (isPostAcceptance(selected.status)) {
       message.info('项目已受理，阶段与状态由申报进度查询维护，此处只读')
       return
     }
@@ -315,6 +315,64 @@ export function ProjectsPageClient() {
     }
   }
 
+  // ── 关联审评品种（关联 / 解绑） ──
+
+  const openLinkModal = () => {
+    if (!selected) return
+    setLinkDrugId(selected.drug_id ?? null)
+    setLinkOpen(true)
+  }
+
+  const handleSetDrugLink = async (drugId: string | null) => {
+    if (!selected || linkSaving) return
+    setLinkSaving(true)
+    try {
+      const result = await updateRegistrationProject(selected.id, { drug_id: drugId })
+      if (result.code !== 200) {
+        message.error(result.message || '操作失败')
+        return
+      }
+      if (result.data) setSelected(result.data as RegistrationProject)
+      setLinkOpen(false)
+      message.success(
+        drugId ? '已关联审评品种，状态已按申报进度对齐并持续同步' : '已解除关联，状态不再随申报进度同步',
+      )
+      refreshAll()
+    } catch (error) {
+      if (error instanceof Error) message.error(error.message)
+    } finally {
+      setLinkSaving(false)
+    }
+  }
+
+  // 申报进度页「查看 ›」跳转：列表就绪后自动打开对应项目抽屉，并清掉参数避免重复触发
+  useEffect(() => {
+    if (!projectParam || projectsQuery.isPending) return
+    if (autoOpenedRef.current === projectParam) return
+    autoOpenedRef.current = projectParam
+    const targetId = projectParam
+    router.replace(pathname)
+    void (async () => {
+      let target = projects.find(p => p.id === targetId)
+      if (!target) {
+        // 当前筛选结果中找不到时，拉全量再定位一次
+        try {
+          const all = await fetchRegistrationProjectsServer({})
+          target = all.find(p => p.id === targetId)
+        } catch {
+          target = undefined
+        }
+      }
+      if (target) {
+        setSelected(target)
+        setLogText('')
+        setDrawerOpen(true)
+      } else {
+        message.warning('未找到对应的注册项目，可能已被删除')
+      }
+    })()
+  }, [projectParam, projects, projectsQuery.isPending, router, pathname, message])
+
   // ── 表格列 ──
 
   const renderStageCell = (p: RegistrationProject) => {
@@ -336,12 +394,13 @@ export function ProjectsPageClient() {
   }
 
   const renderDeadline = (p: RegistrationProject) => {
-    if (POST_ACCEPTANCE.has(p.status)) {
+    if (isPostAcceptance(p.status)) {
+      const meta = projectStatusMeta(p.status)
       return (
         <div>
           <div className={styles.dateMain}>—</div>
           <div className={styles.dateSub}>
-            <span className={statusTagClass(p.status)}>{STATUS_LABELS[p.status]}</span>
+            <span className={meta.tagClass}>{meta.label}</span>
           </div>
         </div>
       )
@@ -450,7 +509,7 @@ export function ProjectsPageClient() {
   // ── 抽屉派生 ──
 
   const stageIdx = selected ? Math.max(0, STAGES.findIndex(s => s.key === selected.pre_stage)) : 0
-  const locked = !!selected && POST_ACCEPTANCE.has(selected.status)
+  const locked = !!selected && isPostAcceptance(selected.status)
 
   return (
     <div className={ui.regUi}>
@@ -522,7 +581,7 @@ export function ProjectsPageClient() {
               style={{ width: 130 }}
               options={[
                 { label: '全部状态', value: '全部' },
-                ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ label, value })),
+                ...PROJECT_STATUS_OPTIONS,
               ]}
             />
           </div>
@@ -635,7 +694,7 @@ export function ProjectsPageClient() {
                 </div>
                 <div className={styles.kv}>
                   <div className={styles.kvK}>当前状态</div>
-                  <div className={styles.kvV}>{STATUS_LABELS[selected.status] ?? selected.status}</div>
+                  <div className={styles.kvV}>{projectStatusMeta(selected.status).label}</div>
                 </div>
                 <div className={styles.kv}>
                   <div className={styles.kvK}>目标市场</div>
@@ -653,6 +712,46 @@ export function ProjectsPageClient() {
                   <div className={styles.kvK}>受理号</div>
                   <div className={selected.acceptance_number ? styles.kvV : styles.kvVMuted}>
                     {selected.acceptance_number || '—（受理后自动同步）'}
+                  </div>
+                </div>
+                <div className={`${styles.kv} ${styles.kvSpan2}`}>
+                  <div className={styles.kvK}>关联审评品种</div>
+                  <div className={styles.kvV}>
+                    <div className={styles.drugLinkRow}>
+                      {selected.drug_id ? (
+                        <>
+                          <span>
+                            {linkedDrug?.name || '审评品种'}
+                            <span className={styles.drugLinkSub}>
+                              （{linkedDrug?.acceptance_number || selected.acceptance_number || '未登记受理号'}）
+                            </span>
+                          </span>
+                          <Popconfirm
+                            title="解除与该品种的关联？"
+                            description="解除后项目状态不再随申报进度自动同步。"
+                            okText="解绑"
+                            cancelText="取消"
+                            onConfirm={() => void handleSetDrugLink(null)}
+                          >
+                            <button type="button" className={styles.btnSm} disabled={linkSaving}>
+                              解绑
+                            </button>
+                          </Popconfirm>
+                        </>
+                      ) : (
+                        <>
+                          <span className={styles.drugLinkEmpty}>未关联</span>
+                          <button
+                            type="button"
+                            className={styles.btnSmBrand}
+                            onClick={openLinkModal}
+                            disabled={linkSaving}
+                          >
+                            关联
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -713,6 +812,37 @@ export function ProjectsPageClient() {
           )}
         </div>
       </Drawer>
+
+      {/* 关联审评品种弹窗 */}
+      <Modal
+        width={440}
+        open={linkOpen}
+        onCancel={() => setLinkOpen(false)}
+        onOk={() => void handleSetDrugLink(linkDrugId)}
+        okText="确认关联"
+        cancelText="取消"
+        confirmLoading={linkSaving}
+        okButtonProps={{ disabled: !linkDrugId }}
+        title="关联审评品种"
+        className={styles.modalRoot}
+      >
+        <div className={ui.tokenScope}>
+          <Select
+            showSearch
+            allowClear
+            style={{ width: '100%' }}
+            placeholder="搜索并选择审评品种"
+            optionFilterProp="label"
+            loading={drugsQuery.isPending}
+            options={drugOptions}
+            value={linkDrugId}
+            onChange={v => setLinkDrugId(v ?? null)}
+          />
+          <div className={styles.fieldHelp} style={{ marginTop: 14 }}>
+            确认后项目状态将立即按该品种的申报进度对齐，后续随申报进度自动同步。
+          </div>
+        </div>
+      </Modal>
 
       {/* 新建项目弹窗 */}
       <Modal
@@ -801,6 +931,21 @@ export function ProjectsPageClient() {
               extra={<div className={styles.fieldHelp}>用于临期提醒，可在项目详情中随时调整</div>}
             >
               <DatePicker style={{ width: '100%' }} placeholder="选择日期" />
+            </Form.Item>
+
+            <Form.Item
+              name="drug_id"
+              label="关联审评品种（可选）"
+              extra={<div className={styles.fieldHelp}>关联后项目状态将随申报进度自动同步</div>}
+            >
+              <Select
+                showSearch
+                allowClear
+                placeholder="搜索并选择审评品种"
+                optionFilterProp="label"
+                loading={drugsQuery.isPending}
+                options={drugOptions}
+              />
             </Form.Item>
           </Form>
         </div>

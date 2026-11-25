@@ -144,6 +144,8 @@ services:
     restart: unless-stopped
     environment:
     - API_BASE_URL=http://backend:8000
+    # 注册管理「申报资料撰写」外部系统地址；留空则回退系统内原页面
+    - DOSSIER_WRITER_URL=${DOSSIER_WRITER_URL:-}
     depends_on:
     - backend
     ports:

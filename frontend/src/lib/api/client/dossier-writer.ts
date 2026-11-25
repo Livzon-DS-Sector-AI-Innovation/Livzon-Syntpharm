@@ -9,110 +9,97 @@ import type {
 } from '@/types/dossier-writer'
 import type { ApiResponse, PaginatedResponse } from '@/types/common'
 
+const API_BASE = '/api/v1/registration/dossier-writer'
 
-const _headers = { 'Content-Type': 'application/json' }
+/**
+ * 统一拉取并校验 JSON 响应：
+ * - 非 2xx（如 401/502 返回 HTML 错误页）直接抛错，避免 `res.json()` 抛 SyntaxError 后被上游静默成「空列表」；
+ * - 响应不是 JSON 时给出可读提示；
+ * - 业务 code 非 200 抛后端 message；
+ * - 成功返回 data。
+ */
+async function fetchJsonData<T>(url: string): Promise<T> {
+  const res = await fetch(url)
+  if (!res.ok) {
+    throw new Error(`请求失败: ${res.status} ${res.statusText}`)
+  }
+  let json: ApiResponse<T>
+  try {
+    json = (await res.json()) as ApiResponse<T>
+  } catch {
+    throw new Error('响应格式异常，请稍后重试')
+  }
+  if (json.code !== 200) {
+    throw new Error(json.message || '请求失败')
+  }
+  return json.data
+}
 
 // ====== Product Dossier ======
 
-export async function fetchProductDossiers(
+export function fetchProductDossiers(
   skip: number = 0,
   limit: number = 100
 ): Promise<PaginatedResponse<ProductDossier>> {
-  const res = await fetch(
-    `/api/v1/registration/dossier-writer/products?skip=${skip}&limit=${limit}`
+  return fetchJsonData<PaginatedResponse<ProductDossier>>(
+    `${API_BASE}/products?skip=${skip}&limit=${limit}`
   )
-  const json: ApiResponse<PaginatedResponse<ProductDossier>> = await res.json()
-  return json.data
 }
 
-export async function fetchProductDossier(id: string): Promise<ProductDossier> {
-  const res = await fetch(`/api/v1/registration/dossier-writer/products/${id}`)
-  const json: ApiResponse<ProductDossier> = await res.json()
-  return json.data
+export function fetchProductDossier(id: string): Promise<ProductDossier> {
+  return fetchJsonData<ProductDossier>(`${API_BASE}/products/${id}`)
 }
 
 // ====== Template Upload ======
-
-
-
 
 // ====== Template Parsing ======
 
 // ====== Chapter ======
 
-export async function fetchChapterTree(dossierId: string): Promise<Chapter[]> {
-  const res = await fetch(
-    `/api/v1/registration/dossier-writer/products/${dossierId}/chapters`
-  )
-  const json: ApiResponse<Chapter[]> = await res.json()
-  return json.data
+export function fetchChapterTree(dossierId: string): Promise<Chapter[]> {
+  return fetchJsonData<Chapter[]>(`${API_BASE}/products/${dossierId}/chapters`)
 }
 
-export async function fetchChapterDetail(chapterId: string): Promise<ChapterDetail> {
-  const res = await fetch(
-    `/api/v1/registration/dossier-writer/chapters/${chapterId}`
-  )
-  const json: ApiResponse<ChapterDetail> = await res.json()
-  return json.data
+export function fetchChapterDetail(chapterId: string): Promise<ChapterDetail> {
+  return fetchJsonData<ChapterDetail>(`${API_BASE}/chapters/${chapterId}`)
 }
 
 // ====== Asset ======
 
-export async function fetchChapterAssets(chapterId: string): Promise<ChapterAsset[]> {
-  const res = await fetch(
-    `/api/v1/registration/dossier-writer/chapters/${chapterId}/assets`
-  )
-  const json: ApiResponse<ChapterAsset[]> = await res.json()
-  return json.data
+export function fetchChapterAssets(chapterId: string): Promise<ChapterAsset[]> {
+  return fetchJsonData<ChapterAsset[]>(`${API_BASE}/chapters/${chapterId}/assets`)
 }
 
 // ====== Export ======
 
 export function getDownloadUrl(dossierId: string, filename: string): string {
-  return `/api/v1/registration/dossier-writer/products/${dossierId}/download?filename=${encodeURIComponent(filename)}`
+  return `${API_BASE}/products/${dossierId}/download?filename=${encodeURIComponent(filename)}`
 }
-
 
 // ====== Chapter Preview ======
 
-export async function getChapterPreview(chapterId: string): Promise<ChapterPreview> {
-  const res = await fetch(
-    `/api/v1/registration/dossier-writer/chapters/${chapterId}/preview`
-  )
-  const json: ApiResponse<ChapterPreview> = await res.json()
-  
-  if (json.code !== 200) {
-    throw new Error(json.message || '获取预览失败')
-  }
-  
-  return json.data
+export function getChapterPreview(chapterId: string): Promise<ChapterPreview> {
+  return fetchJsonData<ChapterPreview>(`${API_BASE}/chapters/${chapterId}/preview`)
 }
 
 // ====== Asset Matching ======
 
 // ====== AI Fill ======
 
-export async function fetchAssetCategories(chapterCode: string): Promise<AssetCategory[]> {
-  const res = await fetch(
-    `/api/v1/registration/dossier-writer/chapters/${chapterCode}/asset-categories`
-  )
-  const json: ApiResponse<AssetCategory[]> = await res.json()
-  if (json.code !== 200) {
-    throw new Error(json.message || '获取素材分类失败')
-  }
-  return json.data
+export function fetchAssetCategories(chapterCode: string): Promise<AssetCategory[]> {
+  return fetchJsonData<AssetCategory[]>(`${API_BASE}/chapters/${chapterCode}/asset-categories`)
 }
 
 // ====== Chapter Docx File ======
 
 export function getChapterDocxUrl(chapterId: string): string {
-  return `/api/v1/registration/dossier-writer/chapters/${chapterId}/docx-file`
+  return `${API_BASE}/chapters/${chapterId}/docx-file`
 }
 
 export async function fetchChapterDocx(chapterId: string): Promise<ArrayBuffer | null> {
   try {
     // Add cache-busting timestamp to avoid browser caching
-    const url = `/api/v1/registration/dossier-writer/chapters/${chapterId}/docx-file?t=${Date.now()}`
+    const url = `${API_BASE}/chapters/${chapterId}/docx-file?t=${Date.now()}`
     const res = await fetch(url, {
       cache: 'no-cache',
       headers: {
@@ -128,30 +115,14 @@ export async function fetchChapterDocx(chapterId: string): Promise<ArrayBuffer |
 
 // ====== Asset Category ======
 
-
-
 // ====== Asset Usage (素材使用管理) ======
 
-export async function fetchAvailableAssets(chapterId: string): Promise<AvailableAsset[]> {
-  const res = await fetch(
-    `/api/v1/registration/dossier-writer/chapters/${chapterId}/available-assets`
-  )
-  const json: ApiResponse<AvailableAsset[]> = await res.json()
-  if (json.code !== 200) {
-    throw new Error(json.message || '获取可用素材失败')
-  }
-  return json.data
+export function fetchAvailableAssets(chapterId: string): Promise<AvailableAsset[]> {
+  return fetchJsonData<AvailableAsset[]>(`${API_BASE}/chapters/${chapterId}/available-assets`)
 }
 
-export async function fetchSelectedAssets(chapterId: string): Promise<ChapterAsset[]> {
-  const res = await fetch(
-    `/api/v1/registration/dossier-writer/chapters/${chapterId}/selected-assets`
-  )
-  const json: ApiResponse<ChapterAsset[]> = await res.json()
-  if (json.code !== 200) {
-    throw new Error(json.message || '获取已选素材失败')
-  }
-  return json.data
+export function fetchSelectedAssets(chapterId: string): Promise<ChapterAsset[]> {
+  return fetchJsonData<ChapterAsset[]>(`${API_BASE}/chapters/${chapterId}/selected-assets`)
 }
 
 // ====== AI Preview (客户端调用，绕过 server action 超时) ======

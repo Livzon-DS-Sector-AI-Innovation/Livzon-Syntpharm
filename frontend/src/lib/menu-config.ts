@@ -354,9 +354,16 @@ export const moduleMenus: ModuleMenu[] = [
     label: "注册管理",
     icon: "file-text",
     path: "/registration",
+    // 顺序按主流程编排：看项目/看审评/看结果 → 出文件的资料工具 → 外部情报
     children: [
       { key: "registration-overview", label: "注册概览", path: "/registration" },
       { key: "registration-projects", label: "注册项目", path: "/registration/projects" },
+      { key: "review", label: "申报进度查询", path: "/registration/review" },
+      { key: "ledger", label: "注册台账", path: "/registration/ledger" },
+      { key: "dossier-writer", label: "申报资料撰写", path: "/registration/dossier-writer" },
+      { key: "docx-translator", label: "文档翻译", path: "/registration/docx-translator" },
+      { key: "authorization-letter", label: "授权书管理", path: "/registration/authorization-letter" },
+      { key: "reference-standard", label: "标准物质说明书管理", path: "/registration/reference-standard" },
       {
         key: "registration-regulation",
         label: "法规跟踪",
@@ -366,14 +373,6 @@ export const moduleMenus: ModuleMenu[] = [
           { key: "registration-regulation-list", label: "法规列表", path: "/registration/regulation/list" },
         ],
       },
-      { key: "authorization-letter", label: "授权书管理", path: "/registration/authorization-letter" },
-      { key: "dossier-writer", label: "申报资料撰写", path: "/registration/dossier-writer" },
-      { key: "reference-standard", label: "参考标准", path: "/registration/reference-standard" },
-      { key: "review", label: "申报进度查询", path: "/registration/review" },
-      { key: "supplementary-reply", label: "补充回复", path: "/registration/supplementary-reply" },
-      { key: "validation-audit", label: "验证审计", path: "/registration/validation-audit" },
-      { key: "docx-translator", label: "文档翻译", path: "/registration/docx-translator" },
-      { key: "ledger", label: "注册台账", path: "/registration/ledger" },
     ],
   },
 

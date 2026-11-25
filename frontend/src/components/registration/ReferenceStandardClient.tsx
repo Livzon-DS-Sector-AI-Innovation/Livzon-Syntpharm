@@ -240,8 +240,8 @@ export default function ReferenceStandardClient({
     <div className={ui.regUi}>
       <RegistrationPageHeader
         icon={IconBook}
-        title="参考标准"
-        sub="上传 COA 检验报告，自动提取信息并生成对照物质说明表"
+        title="标准物质说明书管理"
+        sub="上传 COA 检验报告，自动提取信息并生成标准物质说明书"
         actions={
           <button type="button" className={ui.btnPrimary} onClick={() => setGenerateModalOpen(true)}>
             {IconPlus}

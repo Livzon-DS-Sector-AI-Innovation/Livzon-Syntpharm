@@ -18,7 +18,7 @@ export default async function AuthorizationLetterPage() {
     <AuthorizationLetterClient
       initialLetters={lettersRes.items}
       initialTotal={lettersRes.total}
-      products={productsRes}
+      initialProducts={productsRes}
       initialFilterOptions={filterOptionsRes}
     />
   )
