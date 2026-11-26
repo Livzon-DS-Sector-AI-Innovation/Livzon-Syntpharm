@@ -249,7 +249,7 @@ id 由 layout 内序号**确定性生成**，不落库、不迁移历史 layout�
 
 | 情况 | 行为 |
 |---|---|
-| 高亮关闭 / 逐段合成关闭 | 整页单段合成 + 旧的字数加权时间轴（与改造前完全一致） |
+| 高亮关闭 / 逐段合成关闭 | 整页文本按句读切块后逐块合成（再拼成一个 WAV）+ 旧的字数加权时间轴；切块口径见 `tts.split_text_for_tts`（单块 ≤120 字，避免 kokoro 单 chunk 超 510 音素被静默截断） |
 | 讲稿被手改（段结构与文本不一致） | 按标点重切、无绑定，退回字面匹配（覆盖率阈值 `AGENT_PPT_VIDEO_HIGHLIGHT_TEXT_MATCH_COVERAGE`） |
 | 模型给了不存在的元素 id | 丢弃该 target；回落到字面匹配 → guess → page |
 | 区域配置里的元素 id 在 layout 里查不到 | 保存时丢弃该条；渲染时再查不到就跳过，不亮也不报错 |
@@ -451,12 +451,21 @@ uv run alembic upgrade head   # 至少到 0096（agent schema + AI 初稿字段�
 
 ### 4.4 TTS 权重
 
-- 模型下载默认走 `HF_ENDPOINT`（compose 里默认 `https://hf-mirror.com`，**huggingface.co 在厂区内网不可达**）。
-- 需要完全离线：构建时加 `--build-arg PRELOAD_TTS_MODELS=true`，权重烤进镜像 `/opt/tts-models`（`HF_HOME`）。
-  预下载脚本 `scripts/ci/preload_tts_models.py` 会按固定 revision 拉取并**逐文件校验 sha256**，
-  任何一个不符即构建失败。
-- 运行时 `KPipeline(repo_id=…)` 不带 revision 参数，命中本地缓存即为钉住的版本；
-  若要求「运行时也绝不联网」，在 worker 上额外设 `HF_HUB_OFFLINE=1`（当前默认未设）。
+- **权重在构建期预装**（`PRELOAD_TTS_MODELS=true`，`docker-compose.yml` / `docker-compose.uat.yml` 已默认开启），
+  烤进镜像的 `HF_HOME=/opt/tts-models`（真实缓存根 `HF_HUB_CACHE=/opt/tts-models/hub`）。
+  运行期不再下载：厂区内网到 `hf-mirror.com` 只有约 20KB/s，现场拉 327MB×2 会拖到心跳超时（issue #236）。
+- 下载通道由 `PRELOAD_TTS_SOURCE` 控制，默认 `modelscope`：直连 `modelscope.cn` 的
+  `/models/{repo}/resolve/{revision}/{path}` 逐文件拉取（匿名、支持 Range），失败自动回退
+  `huggingface` 通道（走 `HF_ENDPOINT`）。两个仓库与 HF 同名同内容，sha256 逐文件一致。
+- **双钉**：`app/modules/agent/tts_assets.py` 同时登记 HF revision（运行时 `refs/main` 指向它）与
+  ModelScope revision（下载来源可复现）；`ASSET_SHA256` 钉住文件内容（含 `config.json`，
+  缺它 `KModel` 启动即报错）。任一文件缺失/不符 → **构建失败**。
+- 脚本会手工物化 HF hub 布局（`snapshots/<commit>/…` + `refs/main`）并做离线自检；
+  直接拷文件到 `models--…/` 根目录是无效的，`KPipeline` 只认 snapshots 目录。
+- 运行期 `HF_HUB_OFFLINE=1`（compose 已设）让「权重缺失」快速失败而不是静默慢拉；
+  `AGENT_TTS_ASSETS_REQUIRED=true` 时 worker 启动预检不过直接退出。该开关属部署配置
+  （`core/config.py`），生产/UAT compose 显式置 true；本地开发缺省 false（`docker-compose.dev.yml`
+  也显式置 false），只告警——dev 可能挂载空的宿主缓存，硬退出会直接破坏开发环境。
 
 ### 4.5 英文 G2P（spaCy 模型）
 

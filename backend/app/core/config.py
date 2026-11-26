@@ -166,6 +166,18 @@ class FeishuSettings(BaseModel):
 # ============================================================================
 
 
+def _coerce_env_bool(value: Any) -> bool:
+    """把 .env / compose 注入的字符串布尔归一为 bool（true/1/yes 为真）。
+
+    VS Code 等工具可能注入 `DEBUG=release` 这类非布尔值，统一按「非真即假」处理。
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in ("true", "1", "yes")
+    return bool(value)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=_ENV_FILE,
@@ -186,17 +198,11 @@ class Settings(BaseSettings):
     # 空字符串 = 对所有受保护前缀强制（最终态）；非空 = 仅所列模块强制（灰度节奏：接入一个开一个）。
     PERMISSION_ENFORCE_MODULES: str = ""
 
-    @field_validator("DEBUG", mode="before")
+    @field_validator("DEBUG", "AGENT_TTS_ASSETS_REQUIRED", mode="before")
     @classmethod
-    def coerce_debug_bool(cls, v) -> Any:  # type: ignore[no-untyped-def]
-        """兼容 VS Code 等注入的非布尔值（如 DEBUG=release）。"""
-        if isinstance(v, bool):
-            return v
-        if isinstance(v, str):
-            if v.lower() in ("true", "1", "yes"):
-                return True
-            return False
-        return bool(v)
+    def coerce_env_bool_fields(cls, v) -> Any:  # type: ignore[no-untyped-def]
+        """兼容 VS Code / compose 等注入的非布尔值（如 DEBUG=release、AGENT_TTS_ASSETS_REQUIRED=1）。"""
+        return _coerce_env_bool(v)
 
     SECRET_KEY: str = "change-me-in-production"
     ENCRYPTION_KEY: str | None = None
@@ -286,6 +292,11 @@ class Settings(BaseSettings):
     # Livzon Agent (Hermes)
     HERMES_AGENT_URL: str = ""
     HERMES_AGENT_TOKEN: str = ""
+
+    # PPT 配音视频 worker：启动时 TTS 权重缺失是否直接退出（部署配置，非运行时配置）。
+    # 生产/UAT compose 显式置 true（快速失败好过「看着在跑、永远出不了片」）；
+    # 本地开发缺省 false = 只告警，避免硬退出破坏 dev 环境。
+    AGENT_TTS_ASSETS_REQUIRED: bool = False
 
     # HR Bitable
     # HR 多维表格配置统一走嵌套键 FEISHU__HR_BITABLE__*（见 FeishuHRBitableConfig），
