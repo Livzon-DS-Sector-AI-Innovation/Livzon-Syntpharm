@@ -101,6 +101,9 @@ RUN .venv/bin/python scripts/ci/install_spacy_en_model.py
 ARG PRELOAD_TTS_MODELS=false
 # 下载通道：modelscope（默认，厂区内网唯一可用速度）/ huggingface（回退，走 HF_ENDPOINT）
 ARG PRELOAD_TTS_SOURCE=modelscope
+# 权重清单（revision + 每文件 sha256）被 preload 脚本按文件路径加载，必须在使用前 COPY。
+# 整个 app 目录要到最后的 `COPY . .` 才进镜像，缺这行构建期会 FileNotFoundError 直接失败。
+COPY app/modules/agent/tts_assets.py ./app/modules/agent/tts_assets.py
 COPY scripts/ci/preload_tts_models.py ./scripts/ci/preload_tts_models.py
 RUN if [ "$PRELOAD_TTS_MODELS" = "true" ]; then \
         PRELOAD_TTS_SOURCE="$PRELOAD_TTS_SOURCE" .venv/bin/python scripts/ci/preload_tts_models.py; \
