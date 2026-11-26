@@ -74,7 +74,10 @@ def _english_g2p() -> Callable[[str], str] | None:
     try:
         from misaki import en as misaki_en
     except ImportError:
-        logger.warning("misaki 英文 G2P 不可用，中文讲稿中的英文缩写将被跳过")
+        logger.warning(
+            "misaki 英文 G2P 不可用，中文讲稿中的英文缩写将被跳过",
+            extra={"biz_module": "agent", "tts_engine": "kokoro"},
+        )
         return None
     try:
         g2p = misaki_en.G2P(trf=False)
@@ -82,6 +85,7 @@ def _english_g2p() -> Callable[[str], str] | None:
         logger.warning(
             "英文 G2P 初始化失败（多为缺 en_core_web_sm），中文讲稿中的英文缩写将被跳过",
             exc_info=True,
+            extra={"biz_module": "agent", "tts_engine": "kokoro"},
         )
         return None
 
@@ -173,6 +177,13 @@ class KokoroEngine:
 
             return f"kokoro-{version('kokoro')}-{KOKORO_CHUNKING_VERSION}"
         except Exception:  # noqa: BLE001 - 版本读不到不影响合成，退化为固定标识
+            # 版本串进音频指纹：静默降级会让「缓存为何全量失效」无从排查，必须留日志
+            logger.warning(
+                "读取 kokoro 版本失败，退化为固定标识: %s",
+                KOKORO_CHUNKING_VERSION,
+                exc_info=True,
+                extra={"biz_module": "agent", "tts_engine": "kokoro"},
+            )
             return f"kokoro-unknown-{KOKORO_CHUNKING_VERSION}"
 
     def _pipeline(self, language: str) -> object:
@@ -208,11 +219,36 @@ class KokoroEngine:
             try:
                 chunks = list(pipeline(block, voice=voice_id, speed=speed))  # type: ignore[operator]
             except Exception as exc:  # noqa: BLE001 - 引擎内部异常类型不稳定
-                logger.exception("kokoro synthesize failed: block %s/%s", index, len(blocks))
+                logger.exception(
+                    "kokoro synthesize failed: block %s/%s",
+                    index,
+                    len(blocks),
+                    extra={
+                        "biz_module": "agent",
+                        "tts_engine": "kokoro",
+                        "language": language,
+                        "voice_id": voice_id,
+                        "block_index": index,
+                        "block_total": len(blocks),
+                    },
+                )
                 raise TtsError(f"旁白合成失败（第 {index}/{len(blocks)} 块）：{exc}") from exc
             for chunk in chunks:
                 audio = getattr(chunk, "audio", None)
                 if audio is None:
+                    # 空块静默跳过会让该段讲稿无声消失（与 #244 同症状），必须留痕
+                    logger.warning(
+                        "引擎返回空音频块，已跳过: block=%s/%s",
+                        index,
+                        len(blocks),
+                        extra={
+                            "biz_module": "agent",
+                            "tts_engine": "kokoro",
+                            "language": language,
+                            "voice_id": voice_id,
+                            "block_index": index,
+                        },
+                    )
                     continue
                 samples.extend(audio.detach().cpu().numpy().tolist() if hasattr(audio, "detach") else list(audio))
         if not samples:
@@ -238,6 +274,11 @@ class MeloEngine:
 
             return f"melo-{version('melotts')}"
         except Exception:  # noqa: BLE001
+            logger.warning(
+                "读取 melotts 版本失败，退化为固定标识",
+                exc_info=True,
+                extra={"biz_module": "agent", "tts_engine": "melo"},
+            )
             return "melo-unknown"
 
     def _model(self, language: str) -> object:
@@ -258,7 +299,15 @@ class MeloEngine:
             speaker_id = model.hps.data.spk2id[speaker_key]  # type: ignore[attr-defined]
             model.tts_to_file(text, speaker_id, str(out_path), speed=speed)  # type: ignore[attr-defined]
         except Exception as exc:  # noqa: BLE001
-            logger.exception("melo synthesize failed")
+            logger.exception(
+                "melo synthesize failed",
+                extra={
+                    "biz_module": "agent",
+                    "tts_engine": "melo",
+                    "language": language,
+                    "voice_id": voice_id,
+                },
+            )
             raise TtsError(f"旁白合成失败：{exc}") from exc
 
         rate = 44100

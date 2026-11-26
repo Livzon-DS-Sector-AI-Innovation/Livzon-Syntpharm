@@ -19,6 +19,10 @@ commit sha，不可变；`ASSET_SHA256` 取的是文件 LFS oid（即文件内�
 - https://modelscope.cn/models/hexgrad/Kokoro-82M / ...-v1.1-zh（同仓同名镜像）
 """
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 KOKORO_EN_REPO = "hexgrad/Kokoro-82M"
 KOKORO_EN_REVISION = "f3ff3571791e39611d31c381e3a41a3af07b4987"
 KOKORO_EN_LAST_MODIFIED = "2025-04-10"

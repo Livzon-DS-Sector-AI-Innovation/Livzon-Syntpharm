@@ -70,13 +70,15 @@ services:
       MINIO_ENDPOINT: uat-minio:9000
       HF_ENDPOINT: ${HF_ENDPOINT:-https://hf-mirror.com}
       HF_HUB_OFFLINE: "1"
-      TTS_ASSETS_REQUIRED: "true"
+      AGENT_TTS_ASSETS_REQUIRED: "true"
     depends_on:
       migrate:
         condition: service_completed_successfully
       postgres:
         condition: service_healthy
       minio:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - ./uploads:/app/uploads

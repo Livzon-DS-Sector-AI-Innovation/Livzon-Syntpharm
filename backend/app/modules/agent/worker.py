@@ -29,6 +29,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import storage
+from app.core.config import get_settings
 from app.core.database import async_session_factory, engine
 from app.modules.agent import highlight, page_images, queue, render, service, tts_assets
 from app.modules.agent.alignment import Layout
@@ -123,7 +124,13 @@ async def _keepalive(job_id: uuid.UUID, worker_id: str, lost: asyncio.Event) -> 
                 alive = await queue.touch(session, job_id, worker_id)
                 await session.commit()
         except Exception:  # noqa: BLE001 - 保活失败只记日志，下一轮再试
-            logger.warning("保活心跳失败: job=%s", job_id, exc_info=True)
+            logger.warning(
+                "保活心跳失败: job=%s worker=%s",
+                job_id,
+                worker_id,
+                exc_info=True,
+                extra={"biz_module": "agent", "job_id": str(job_id)},
+            )
             continue
         if not alive:
             lost.set()
@@ -192,7 +199,12 @@ async def _resolve_slide_images(
         try:
             return await asyncio.to_thread(page_images.download_slide_images, project.id, slides, work_dir / "png")
         except Exception:  # noqa: BLE001 - 缓存不可用就重转，渲染不能因此失败
-            logger.warning("页图缓存不可用，回退到重新转换: project=%s", project.id, exc_info=True)
+            logger.warning(
+                "页图缓存不可用，回退到重新转换: project=%s",
+                project.id,
+                exc_info=True,
+                extra={"biz_module": "agent", "project_id": str(project.id)},
+            )
     pdf_path = await asyncio.to_thread(page_images.ensure_source_pdf, project.source_sha256, source_path, work_dir)
     # 与页图任务走同一个函数（逐页 pdftoppm），只是这里不需要进度回调：
     # 两条路径的字体与转换参数必须完全一致，否则预览和成片会不一样。
@@ -521,7 +533,12 @@ def _build_highlight_plan(
             return plan
         return highlight.build_plan(script, layout, total_ms, settings.highlight_max_steps, config)
     except Exception:  # noqa: BLE001 - 引导失败不能让整条视频渲不出来
-        logger.exception("页内视觉引导计划生成失败，退化为整页常亮")
+        logger.exception(
+            "页内视觉引导计划生成失败，退化为整页常亮: language=%s duration_ms=%s",
+            language,
+            total_ms,
+            extra={"biz_module": "agent", "language": language, "duration_ms": total_ms},
+        )
         return highlight.HighlightPlan(steps=[], total_ms=total_ms)
 
 
@@ -799,14 +816,34 @@ async def _handle_failure(session: AsyncSession, job: PptVideoJob, message: str,
     await session.commit()
 
 
+async def _mark_succeeded(
+    session: AsyncSession,
+    job_id: uuid.UUID,
+    worker_id: str,
+    *,
+    version_id: uuid.UUID | None = None,
+    result: dict[str, Any] | None = None,
+) -> None:
+    """任务成功收尾；租约已丢（写 0 行）时只留痕——结果不写库，由接管方跑完。"""
+    if not await queue.mark_succeeded(session, job_id, version_id, result=result, worker_id=worker_id):
+        logger.warning(
+            "任务已被接管，本次结果未被采纳: job=%s worker=%s",
+            job_id,
+            worker_id,
+            extra={"biz_module": "agent", "job_id": str(job_id)},
+        )
+
+
 async def _run_parse_job(session: AsyncSession, job: PptVideoJob, settings: PptVideoSettings) -> None:
     """解析任务：PPT→PPTX→逐页，落 slides 后触发初稿与页图。"""
     worker_id = job.worker_id or WORKER_ID
     await _beat(session, job.id, worker_id, "parse", PROGRESS_START)
     await session.commit()
-    await service.parse_project(session, job.project_id, settings)
+    # 整本转换 + 逐页初稿可能几分钟，期间保活，避免被 requeue_stale 误判为死 worker
+    async with _lease_keepalive(job.id, worker_id):
+        await service.parse_project(session, job.project_id, settings)
     await session.commit()
-    await queue.mark_succeeded(session, job.id, worker_id=worker_id)
+    await _mark_succeeded(session, job.id, worker_id)
     await session.commit()
 
 
@@ -817,9 +854,11 @@ async def _run_audio_job(session: AsyncSession, job: PptVideoJob, settings: PptV
     slide_uid = str(payload.get("slide_uid") or "")
     if not slide_uid:
         raise JobFailedError("试听任务缺少页标识")
-    result = await service.render_slide_audio(session, job.project_id, slide_uid, settings)
+    # 首次合成可能要先加载模型，单页也可能很久，期间保活
+    async with _lease_keepalive(job.id, worker_id):
+        result = await service.render_slide_audio(session, job.project_id, slide_uid, settings)
     await session.commit()
-    await queue.mark_succeeded(session, job.id, result=result, worker_id=worker_id)
+    await _mark_succeeded(session, job.id, result=result, worker_id=worker_id)
     await session.commit()
 
 
@@ -831,17 +870,28 @@ async def _run_source_preview_job(session: AsyncSession, job: PptVideoJob, setti
     filename = str(payload.get("filename") or "presentation.pptx")
     if not pending_key:
         raise JobFailedError("换源预览任务缺少临时文件")
-    data = await asyncio.to_thread(storage.get_object, service.BUCKET_MODULE, pending_key)
-    if data is None:
+    # 下载 + 整本转换 + 比对同样是分钟级，期间保活；空块的业务错误留到块外再抛
+    async with _lease_keepalive(job.id, worker_id):
+        data = await asyncio.to_thread(storage.get_object, service.BUCKET_MODULE, pending_key)
+        diff = (
+            await service.preview_source_replace(session, job.project_id, data[0], filename)
+            if data is not None
+            else None
+        )
+    if diff is None:
         raise JobFailedError("临时文件已失效，请重新上传")
-    diff = await service.preview_source_replace(session, job.project_id, data[0], filename)
     await session.commit()
-    await queue.mark_succeeded(session, job.id, result=diff.model_dump(mode="json"), worker_id=worker_id)
+    await _mark_succeeded(session, job.id, result=diff.model_dump(mode="json"), worker_id=worker_id)
     await session.commit()
     try:
         await asyncio.to_thread(storage.delete_object, service.BUCKET_MODULE, pending_key)
     except Exception:  # noqa: BLE001 - 清理失败不影响预览结果
-        logger.warning("换源预览临时对象清理失败: job=%s", job.id, exc_info=True)
+        logger.warning(
+            "换源预览临时对象清理失败: job=%s",
+            job.id,
+            exc_info=True,
+            extra={"biz_module": "agent", "job_id": str(job.id)},
+        )
 
 
 async def _dispatch(session: AsyncSession, job: PptVideoJob, settings: PptVideoSettings) -> None:
@@ -903,58 +953,84 @@ async def process_once(worker_id: str = WORKER_ID, kinds: list[str] | None = Non
                 extra={"biz_module": "agent", "job_id": str(job_id)},
             )
             message = str(exc) or exc.__class__.__name__
-            # populate_existing：identity map 里可能还是 claim 时的旧值，
-            # 归属校验必须看库里的真实状态，否则会误写别人正在跑的任务
-            refreshed = await session.scalar(
-                select(PptVideoJob).where(PptVideoJob.id == job_id).execution_options(populate_existing=True)
-            )
-            if refreshed is not None and refreshed.status != JOB_STATUS_SUCCEEDED:
-                await _handle_failure(session, refreshed, message, worker_id)
+            # DB 层异常会把 session 留在失效事务里：不回滚，下面的 select 会抛
+            # PendingRollbackError，_handle_failure 永远执行不到，任务只能等超时被重排。
+            try:
+                await session.rollback()
+            except Exception:  # noqa: BLE001 - 连接级故障时无法再写库，只留日志
+                logger.exception(
+                    "任务失败后回滚 session 失败，跳过失败收尾: job=%s",
+                    job_id,
+                    extra={"biz_module": "agent", "job_id": str(job_id)},
+                )
+            else:
+                # populate_existing：identity map 里可能还是 claim 时的旧值，
+                # 归属校验必须看库里的真实状态，否则会误写别人正在跑的任务
+                refreshed = await session.scalar(
+                    select(PptVideoJob).where(PptVideoJob.id == job_id).execution_options(populate_existing=True)
+                )
+                if refreshed is not None and refreshed.status != JOB_STATUS_SUCCEEDED:
+                    await _handle_failure(session, refreshed, message, worker_id)
         return True
 
 
 async def _loop(stop_event: asyncio.Event, name: str, kinds: list[str]) -> None:
     """一个类别组的消费循环；单次异常只记日志，不退出。"""
-    logger.info("ppt-video %s loop started (%s)", name, ",".join(kinds))
+    logger.info(
+        "ppt-video %s loop started (%s)",
+        name,
+        ",".join(kinds),
+        extra={"biz_module": "agent", "loop": name, "kinds": ",".join(kinds)},
+    )
     while not stop_event.is_set():
         try:
             handled = await process_once(kinds=kinds)
         except Exception:  # noqa: BLE001 - 轮询不能因单次异常退出
-            logger.exception("%s loop error", name)
+            logger.exception(
+                "%s loop error",
+                name,
+                extra={"biz_module": "agent", "loop": name},
+            )
             handled = False
         if not handled:
             try:
                 await asyncio.wait_for(stop_event.wait(), timeout=POLL_INTERVAL_SECONDS)
             except TimeoutError:
                 continue
-    logger.info("ppt-video %s loop stopped", name)
+    logger.info("ppt-video %s loop stopped", name, extra={"biz_module": "agent", "loop": name})
 
 
 async def run_forever(stop_event: asyncio.Event) -> None:
     """渲染与解析分两条循环并行：长渲染不会把上传后的解析一起堵住。"""
-    logger.info("ppt-video worker started: %s", WORKER_ID)
+    logger.info("ppt-video worker started: %s", WORKER_ID, extra={"biz_module": "agent", "worker_id": WORKER_ID})
     await asyncio.gather(
         _loop(stop_event, "render", [JOB_KIND_RENDER]),
         _loop(stop_event, "parse", [JOB_KIND_PARSE, JOB_KIND_SOURCE_PREVIEW, JOB_KIND_AUDIO]),
     )
-    logger.info("ppt-video worker stopped")
+    logger.info("ppt-video worker stopped", extra={"biz_module": "agent", "worker_id": WORKER_ID})
+
+
+def _tts_assets_required() -> bool:
+    """是否要求 TTS 权重必须已就位（部署配置，非运行时配置）。"""
+    return get_settings().AGENT_TTS_ASSETS_REQUIRED
 
 
 def _precheck_tts_assets() -> None:
     """启动即校验 TTS 权重，缺了当场失败，别等首次合成时静默卡住。
 
-    `TTS_ASSETS_REQUIRED=true`（生产/UAT compose 都设了）时直接退出，容器不健康，
-    比「任务永远停在 progress=10」更容易被发现；本地开发不设该变量，只告警——
-    dev 依赖挂载缓存或按需下载，硬退出会直接破坏开发环境。
+    `AGENT_TTS_ASSETS_REQUIRED=true`（生产/UAT compose 都设了）时直接退出，容器不健康，
+    比「任务永远停在 progress=10」更容易被发现；本地开发缺省 false（dev compose 显式
+    置 false），只告警——dev 依赖挂载缓存或按需下载，硬退出会直接破坏开发环境。
     """
     problems = tts_assets.missing_assets()
     if not problems:
         return
     message = "TTS 权重不可用：\n  - " + "\n  - ".join(problems[:10])
-    if os.environ.get("TTS_ASSETS_REQUIRED") == "true":
-        logger.error(message)
+    extra = {"biz_module": "agent", "tts_assets_missing": len(problems)}
+    if _tts_assets_required():
+        logger.error(message, extra=extra)
         raise SystemExit(1)
-    logger.warning(message)
+    logger.warning(message, extra=extra)
 
 
 def main() -> None:

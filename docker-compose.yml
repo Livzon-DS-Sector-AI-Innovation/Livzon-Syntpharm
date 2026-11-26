@@ -123,13 +123,15 @@ services:
     # 权重已在镜像内：禁止再去联网（缺权重时快速失败，而不是静默慢拉）
     - HF_HUB_OFFLINE=1
     # 启动预检硬失败：容器不健康好过「看着在跑、永远出不了片」
-    - TTS_ASSETS_REQUIRED=true
+    - AGENT_TTS_ASSETS_REQUIRED=true
     depends_on:
       migrate:
         condition: service_completed_successfully
       postgres:
         condition: service_healthy
       minio:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
     - ./uploads:/app/uploads

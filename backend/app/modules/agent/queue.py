@@ -9,6 +9,7 @@
   `requeue_stale` 把它放回队列；`attempts > max_attempts` 直接置失败。
 """
 
+import logging
 import uuid
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
@@ -26,6 +27,8 @@ from app.modules.agent.models import (
     JOB_STATUS_SUCCEEDED,
     PptVideoJob,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _now() -> datetime:
@@ -232,6 +235,13 @@ async def requeue_stale(session: AsyncSession, stale_seconds: int = 300) -> int:
             job.worker_id = None
             job.heartbeat_at = None
     await session.flush()
+    if stale:
+        logger.info(
+            "重排心跳超时任务: count=%s stale_seconds=%s",
+            len(stale),
+            stale_seconds,
+            extra={"biz_module": "agent", "job_count": len(stale), "stale_seconds": stale_seconds},
+        )
     return len(stale)
 
 

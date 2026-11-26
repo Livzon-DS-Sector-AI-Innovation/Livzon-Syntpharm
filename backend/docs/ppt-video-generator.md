@@ -463,7 +463,9 @@ uv run alembic upgrade head   # 至少到 0096（agent schema + AI 初稿字段�
 - 脚本会手工物化 HF hub 布局（`snapshots/<commit>/…` + `refs/main`）并做离线自检；
   直接拷文件到 `models--…/` 根目录是无效的，`KPipeline` 只认 snapshots 目录。
 - 运行期 `HF_HUB_OFFLINE=1`（compose 已设）让「权重缺失」快速失败而不是静默慢拉；
-  `TTS_ASSETS_REQUIRED=true` 时 worker 启动预检不过直接退出（本地开发不设，仅告警）。
+  `AGENT_TTS_ASSETS_REQUIRED=true` 时 worker 启动预检不过直接退出。该开关属部署配置
+  （`core/config.py`），生产/UAT compose 显式置 true；本地开发缺省 false（`docker-compose.dev.yml`
+  也显式置 false），只告警——dev 可能挂载空的宿主缓存，硬退出会直接破坏开发环境。
 
 ### 4.5 英文 G2P（spaCy 模型）
 
