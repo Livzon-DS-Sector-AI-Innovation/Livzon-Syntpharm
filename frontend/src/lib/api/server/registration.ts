@@ -4,6 +4,9 @@ import type { ApiResponse } from '@/types/common'
 import type { PageResult } from '@/lib/api/page'
 import type {
   AuthorizationLetterFilterOptions,
+  AuthorizationLetterListParams,
+  ReferenceStandardListParams,
+  RegistrationProjectListParams,
   AuthorizationLetterListItem,
   ParseCOAResponse,
   ProductInfo,
@@ -11,17 +14,20 @@ import type {
   ProjectProgressLog,
   ReferenceStandardListItem,
   RegistrationProject,
-  SupplementaryReplyListItem,
 } from '@/types/registration'
+
+type UnknownRecord = Record<string, unknown>
 
 type DrugCreate = components['schemas']['DrugCreate']
 type DrugUpdate = components['schemas']['DrugUpdate']
 
-export async function generateAuthorizationLetter(formData: FormData) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/authorization-letters/generate`, {
-    method: 'POST',
-    body: formData,
-  })
+export async function generateAuthorizationLetter(formData: FormData): Promise<UnknownRecord> {
+  return unwrapResponse(
+    await apiFetch<ApiResponse<UnknownRecord>>(`${getApiBaseUrl()}/api/v1/registration/authorization-letters/generate`, {
+      method: 'POST',
+      body: formData,
+    }),
+  )
 }
 
 export async function deleteAuthorizationLetter(id: string) {
@@ -30,24 +36,13 @@ export async function deleteAuthorizationLetter(id: string) {
   })
 }
 
-export async function generateSupplementaryReply(formData: FormData) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/supplementary-replies/generate`, {
-    method: 'POST',
-    body: formData,
-  })
-}
-
-export async function deleteSupplementaryReply(id: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/supplementary-replies/${id}`, {
-    method: 'DELETE',
-  })
-}
-
-export async function generateReferenceStandard(formData: FormData) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/reference-standards/generate`, {
-    method: 'POST',
-    body: formData,
-  })
+export async function generateReferenceStandard(formData: FormData): Promise<UnknownRecord> {
+  return unwrapResponse(
+    await apiFetch<ApiResponse<UnknownRecord>>(`${getApiBaseUrl()}/api/v1/registration/reference-standards/generate`, {
+      method: 'POST',
+      body: formData,
+    }),
+  )
 }
 
 export async function deleteReferenceStandard(id: string) {
@@ -57,11 +52,11 @@ export async function deleteReferenceStandard(id: string) {
 }
 
 export async function fetchAuthorizationLetters(
-  params: { page: number; page_size: number; keyword?: string; product_name?: string; year?: number },
+  params: AuthorizationLetterListParams,
 ): Promise<PageResult<AuthorizationLetterListItem>> {
   const searchParams = new URLSearchParams({
-    page: params.page.toString(),
-    page_size: params.page_size.toString(),
+    page: String(params.page ?? 1),
+    page_size: String(params.page_size ?? 20),
   })
   if (params.keyword) searchParams.set('keyword', params.keyword)
   if (params.product_name) searchParams.set('product_name', params.product_name)
@@ -86,26 +81,14 @@ export async function fetchRegistrationProducts(): Promise<ProductInfo[]> {
 }
 
 export async function fetchReferenceStandards(
-  params: { page: number; page_size: number },
+  params: ReferenceStandardListParams,
 ): Promise<PageResult<ReferenceStandardListItem>> {
   const searchParams = new URLSearchParams({
-    page: params.page.toString(),
-    page_size: params.page_size.toString(),
+    page: String(params.page ?? 1),
+    page_size: String(params.page_size ?? 20),
   })
   return apiFetchPaginated<ReferenceStandardListItem>(
     `${getApiBaseUrl()}/api/v1/registration/reference-standards?${searchParams.toString()}`,
-  )
-}
-
-export async function fetchSupplementaryReplies(
-  params: { page: number; page_size: number },
-): Promise<PageResult<SupplementaryReplyListItem>> {
-  const searchParams = new URLSearchParams({
-    page: params.page.toString(),
-    page_size: params.page_size.toString(),
-  })
-  return apiFetchPaginated<SupplementaryReplyListItem>(
-    `${getApiBaseUrl()}/api/v1/registration/supplementary-replies?${searchParams.toString()}`,
   )
 }
 
@@ -143,11 +126,9 @@ export async function parseCOA(file: File): Promise<ParseCOAResponse> {
   return unwrapResponse(raw)
 }
 
-export async function fetchRegistrationProjects(params?: {
-  search?: string
-  registration_type?: string
-  status?: string
-}): Promise<RegistrationProject[]> {
+export async function fetchRegistrationProjects(
+  params?: RegistrationProjectListParams
+): Promise<RegistrationProject[]> {
   // 该集合端点的规范路径带尾斜杠（后端 @router.get("/")）；浏览器直连会被 Next 的
   // trailingSlash 归一化 308 掉、再被后端 307 到 backend:8000 触发跨域，因此必须服务端取数。
   const searchParams = new URLSearchParams()
@@ -175,18 +156,22 @@ export async function fetchProjectLogs(projectId: string): Promise<ProjectProgre
   return unwrapResponse(raw) ?? []
 }
 
-export async function advanceProjectStage(id: string, stage: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/projects/${id}/stage`, {
-    method: 'POST',
-    body: JSON.stringify({ stage }),
-  })
+export async function advanceProjectStage(id: string, stage: string): Promise<UnknownRecord> {
+  return unwrapResponse(
+    await apiFetch<ApiResponse<UnknownRecord>>(`${getApiBaseUrl()}/api/v1/registration/projects/${id}/stage`, {
+      method: 'POST',
+      body: JSON.stringify({ stage }),
+    }),
+  )
 }
 
-export async function addProjectLog(id: string, content: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/projects/${id}/logs`, {
-    method: 'POST',
-    body: JSON.stringify({ content }),
-  })
+export async function addProjectLog(id: string, content: string): Promise<UnknownRecord> {
+  return unwrapResponse(
+    await apiFetch<ApiResponse<UnknownRecord>>(`${getApiBaseUrl()}/api/v1/registration/projects/${id}/logs`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    }),
+  )
 }
 
 export async function createRegistrationProject(data: components['schemas']['ProjectCreate']) {

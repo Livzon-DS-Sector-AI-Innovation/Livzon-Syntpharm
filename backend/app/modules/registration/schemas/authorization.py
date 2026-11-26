@@ -83,43 +83,6 @@ class AuthorizationLetterFilterOptions(BaseModel):
     years: list[int] = Field(default_factory=list, description="年份选项（按生成时间提取，降序）")
 
 
-class SupplementaryReplyCreate(BaseModel):
-    """生成发补回复请求"""
-
-    drug_name: str | None = Field(None, max_length=128, description="药品名称")
-    registration_number: str | None = Field(None, max_length=64, description="登记号")
-    acceptance_number: str | None = Field(None, max_length=64, description="受理号")
-    company_name: str | None = Field(None, max_length=256, description="申请人/公司名称")
-    remarks: str | None = Field(None, description="备注")
-
-
-class SupplementaryReplyResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    drug_name: str | None = None
-    registration_number: str | None = None
-    acceptance_number: str | None = None
-    company_name: str | None = None
-    remarks: str | None = None
-    output_file_name: str | None = None
-    created_at: datetime
-    updated_at: datetime
-
-
-class SupplementaryReplyListItem(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    drug_name: str | None = None
-    registration_number: str | None = None
-    acceptance_number: str | None = None
-    company_name: str | None = None
-    output_file_name: str | None = None
-    created_at: datetime
-    updated_at: datetime
-
-
 # ── 对照物质说明表 ──────────────────────────────────────────
 
 

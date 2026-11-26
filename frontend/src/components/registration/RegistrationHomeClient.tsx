@@ -2,266 +2,222 @@
 
 /**
  * 注册概览（注册管理首页）
- * 视觉按 registration-home-redesign.html 原型实现；数据全部来自真实接口：
- * - KPI：GET /registration/ledger/summary
- * - 审评中品种 / 需要关注：GET /registration/drugs + /drugs/{id}/prediction + /drugs/nodes
+ * 严格按 registration-home-redesign.html 实现：
+ * - 一屏固定：页头 + 三张 KPI + 左「审评中品种」/ 右上「申报资料撰写」/ 右下「AI 辅助」
+ * - 数据全部来自接口：台账汇总 + 品种列表 + 逐品种规则推算（节点/预计完成/预计获批同源）
+ * - 节点只由日期规则推算，本页不提供任何人工维护入口
  */
 
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Alert, Button, Spin } from 'antd'
+import dayjs from 'dayjs'
 import { fetchLedgerSummary } from '@/lib/api/client/registration-ledger'
-import { fetchDrugs, fetchReviewNodes, fetchDrugPrediction } from '@/lib/api/client/registration'
-import type { Drug, DrugPrediction, NodePrediction, ReviewNodeConfig } from '@/types/registration'
+import { fetchDrugs, fetchDrugPrediction } from '@/lib/api/client/registration'
+import type { Drug, DrugPrediction, NodePrediction } from '@/types/registration'
 import type { LedgerSummary } from '@/types/registration-ledger'
-import { RegistrationPageHeader } from './RegistrationPageHeader'
-import ui from './registration-ui.module.css'
 import styles from './registration-home.module.css'
 import {
-  IconTitleDoc, IconRefresh, IconPlus, IconShieldCheck, IconGlobe, IconLink,
-  IconCert, IconList, IconWarn, IconCheckCircle, IconGrid, IconFile, IconBulb,
-  IconBook, IconActivity, IconSliders, IconEdit, IconCheckSquare, IconMessage, IconFlask,
+  IconCert, IconGlobe, IconList, IconPlus, IconRefresh, IconShieldCheck, IconTitleDoc,
 } from './RegistrationIcons'
 
-/* ---------- 业务功能区配置（分组语义：紫=台账与进度 / 蓝=申报资料 / 绿=AI 与合规） ---------- */
-interface BizItem {
+/* ---------- 渠道：后端暂无字段，先按「受理号 + 品种类型」临时归口 ---------- */
+type ChannelKey = '国家局' | 'CEP' | 'US DMF'
+
+interface ChannelMeta {
+  key: ChannelKey
+  badge: string
+  tagLabel: string
+  color: string
+  tagClass: string
+}
+
+const CHANNELS: Record<ChannelKey, ChannelMeta> = {
+  国家局: { key: '国家局', badge: '国', tagLabel: '国家局审评', color: 'var(--brand-600)', tagClass: styles.tagBrand },
+  CEP: { key: 'CEP', badge: 'CEP', tagLabel: 'CEP 审评', color: 'var(--info-600)', tagClass: styles.tagInfo },
+  'US DMF': { key: 'US DMF', badge: 'US', tagLabel: 'US DMF', color: 'var(--teal-600)', tagClass: styles.tagTeal },
+}
+
+function channelOf(drug: Drug): ChannelMeta {
+  const no = drug.acceptance_number ?? ''
+  if (/^cep/i.test(no)) return CHANNELS.CEP
+  if (/dmf/i.test(no)) return CHANNELS['US DMF']
+  // 临时映射（待后端增加 channel 字段后替换）
+  if (drug.type === '创新药') return CHANNELS.CEP
+  return CHANNELS.国家局
+}
+
+/* ---------- 节点 → 语义色（配置驱动，与申报进度查询页同一套） ---------- */
+function nodeTagClass(nodeName: string): string {
+  if (/发补递交|缺陷信回复/.test(nodeName)) return styles.tagWarn
+  if (/开展核查|完整性初审/.test(nodeName)) return styles.tagTeal
+  if (/技术审评/.test(nodeName)) return styles.tagInfo
+  return styles.tagBrand
+}
+
+/* ---------- KPI 数字滚动：rAF 缓出 + 超时兜底 + 减弱动效直出 ---------- */
+function CountUp({ value, delay = 0 }: { value: number; delay?: number }) {
+  const [text, setText] = useState(0)
+  const rafRef = useRef<number | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduce || !Number.isFinite(value)) {
+      // 用 rAF 异步写回终值：在 effect 体内同步 setState 会触发级联渲染，故延后一帧
+      rafRef.current = requestAnimationFrame(() => setText(value))
+      return () => {
+        if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      }
+    }
+    const duration = 900
+    const startAt = performance.now() + delay
+    const tick = (now: number) => {
+      const p = Math.min((now - startAt) / duration, 1)
+      if (p < 0) {
+        rafRef.current = requestAnimationFrame(tick)
+        return
+      }
+      const eased = 1 - Math.pow(1 - p, 3)
+      setText(Math.round(value * eased))
+      if (p < 1) rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    // 兜底：帧异常时强制写回终值，避免数字卡 0
+    timerRef.current = setTimeout(() => setText(value), delay + duration + 300)
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [value, delay])
+
+  return <>{text}</>
+}
+
+/* ---------- 单行推算：节点名 / 节点预计完成 / 项目预计获批（同一条结果） ---------- */
+interface QueueItem {
+  drug: Drug
+  channel: ChannelMeta
+  prediction: DrugPrediction
+  nodeName: string
+  nodeDue: string | null
+  approveDate: string | null
+  overdue: boolean
+}
+
+function toQueueItem(drug: Drug, channel: ChannelMeta, prediction: DrugPrediction): QueueItem {
+  // 节点定位以接口 stage（后端日期规则引擎）为准，日期取同一条预测链里对应节点的结果
+  const stage = drug.stage
+  const currentIndex = stage?.current_node_index ?? prediction.current_node_index
+  const current: NodePrediction | undefined =
+    prediction.nodes.find(n => n.node_index === currentIndex)
+    ?? prediction.nodes.find(n => n.node_index === prediction.current_node_index)
+
+  return {
+    drug,
+    channel,
+    prediction,
+    nodeName: stage?.current_node_name ?? current?.node_name ?? '等待节点推算',
+    nodeDue: current?.estimated_date ?? null,
+    approveDate: prediction.estimated_approval_date ?? null,
+    overdue: (stage?.overdue_indexes?.length ?? 0) > 0,
+  }
+}
+
+/* ---------- AI 辅助卡（按设计稿 4 项） ---------- */
+interface AiItem {
   key: string
   name: string
   desc: string
-  icon: React.ReactNode
   href: string
-}
-interface BizGroup {
-  key: string
-  title: string
+  accent: string
+  accentBg: string
   icon: React.ReactNode
-  accentVar: string
-  accentBgVar: string
-  items: BizItem[]
 }
 
-const BIZ_GROUPS: BizGroup[] = [
+const AI_ITEMS: AiItem[] = [
   {
-    key: 'ledger-progress',
-    title: '台账与进度',
-    icon: IconGrid,
-    accentVar: 'var(--brand-600)',
-    accentBgVar: 'var(--brand-50)',
-    items: [
-      { key: 'ledger', name: '注册台账', desc: '6 类注册台账维护，Excel 导入导出', icon: IconBook, href: '/registration/ledger' },
-      { key: 'review', name: '审评进度', desc: '节点进度跟踪与预测', icon: IconActivity, href: '/registration/review' },
-      { key: 'projects', name: '注册项目', desc: '项目全周期状态管理', icon: IconSliders, href: '/registration/projects' },
-    ],
+    key: 'docx-translator',
+    name: '文档翻译',
+    desc: '中英互译保格式',
+    href: '/registration/docx-translator',
+    accent: 'var(--info-600)',
+    accentBg: 'var(--info-50)',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+        <path d="M3 5h12M9 3v2c1.6 4.5 4.3 8.5 8 11M5 9c0 2.1.9 4.5 2.5 6.5M13 21l4-9 4 9m-7.5-2h5" />
+      </svg>
+    ),
   },
   {
-    key: 'dossier',
-    title: '申报资料',
-    icon: IconFile,
-    accentVar: 'var(--info-600)',
-    accentBgVar: 'var(--info-50)',
-    items: [
-      { key: 'dossier-writer', name: '申报资料撰写', desc: 'CTD 章节素材与 AI 填充', icon: IconEdit, href: '/registration/dossier-writer' },
-      { key: 'authorization-letter', name: '授权书', desc: '按品种快速生成授权信', icon: IconCheckSquare, href: '/registration/authorization-letter' },
-      { key: 'supplementary-reply', name: '发补回复', desc: '基于通知函生成回复草稿', icon: IconMessage, href: '/registration/supplementary-reply' },
-    ],
+    key: 'authorization-letter',
+    name: '授权书',
+    desc: '快速生成授权信',
+    href: '/registration/authorization-letter',
+    accent: 'var(--brand-600)',
+    accentBg: 'var(--brand-50)',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+        <path d="m12 15 2 2 4-4" />
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+      </svg>
+    ),
   },
   {
-    key: 'ai-compliance',
-    title: 'AI 与合规',
-    icon: IconBulb,
-    accentVar: 'var(--ok-600)',
-    accentBgVar: 'var(--ok-50)',
-    items: [
-      { key: 'validation-audit', name: '验证文件审核', desc: 'AI 合规性检查', icon: IconShieldCheck, href: '/registration/validation-audit' },
-      { key: 'docx-translator', name: '文档翻译', desc: 'Word 中英互译，保留原文格式', icon: IconGlobe, href: '/registration/docx-translator' },
-      { key: 'reference-standard', name: '对照物质说明表', desc: '对照物质 COA 与说明表', icon: IconFlask, href: '/registration/reference-standard' },
-      { key: 'regulation', name: '法规跟踪', desc: '国内外法规动态跟踪', icon: IconGlobe, href: '/registration/regulation' },
-    ],
+    key: 'reference-standard',
+    name: '标准物质说明书',
+    desc: 'COA 与说明书',
+    href: '/registration/reference-standard',
+    accent: 'var(--teal-600)',
+    accentBg: 'var(--teal-50)',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+        <path d="M10 2v7.31L4.16 19.16A2 2 0 0 0 5.93 22h12.14a2 2 0 0 0 1.77-2.84L14 9.31V2" />
+        <path d="M8.5 2h7M7 16h10" />
+      </svg>
+    ),
+  },
+  {
+    key: 'regulation',
+    name: '法规跟踪',
+    desc: '法规动态跟踪',
+    href: '/registration/regulation',
+    accent: 'var(--violet-600)',
+    accentBg: 'var(--violet-50)',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20" />
+      </svg>
+    ),
   },
 ]
-
-/* ---------- 提醒规则（真实数据驱动：节点停滞/逾期两档递进；预计获批 < 30 天 → 临期；证书三档见 computeCertAlerts） ---------- */
-interface AlertItem {
-  key: string
-  severity: 'warn' | 'risk'
-  severityLabel: string
-  text: string
-  suggestion: string
-  href: string
-}
-
-function computeAlerts(
-  items: { drug: Drug; prediction: DrugPrediction }[],
-  reviewNodes: ReviewNodeConfig[],
-): AlertItem[] {
-  const alerts: AlertItem[] = []
-  const today = new Date()
-  for (const { drug, prediction } of items) {
-    const current = prediction.nodes.find(n => n.node_index === prediction.current_node_index)
-    const cfg = current ? reviewNodes.find(n => n.index === current.node_index) : null
-    if (current && cfg && prediction.days_in_current_node !== null) {
-      const overdueThreshold = Math.ceil(cfg.days * 1.5)
-      if (prediction.days_in_current_node > overdueThreshold) {
-        alerts.push({
-          key: `${drug.id}-stall`,
-          severity: 'risk',
-          severityLabel: '逾期',
-          text: `「${drug.name}」在「${current.node_name}」已停留 ${prediction.days_in_current_node} 天，超过常规周期（${cfg.days} 天）的 1.5 倍`,
-          suggestion: '建议尽快核实审评状态并更新节点进度',
-          href: '/registration/review',
-        })
-      } else if (prediction.days_in_current_node > cfg.days) {
-        alerts.push({
-          key: `${drug.id}-linger`,
-          severity: 'warn',
-          severityLabel: '停滞',
-          text: `「${drug.name}」在「${current.node_name}」已停留 ${prediction.days_in_current_node} 天，超过常规周期（${cfg.days} 天）`,
-          suggestion: '建议关注该节点进展，必要时与审评机构沟通',
-          href: '/registration/review',
-        })
-      }
-    }
-    if (prediction.estimated_approval_date) {
-      const eta = new Date(prediction.estimated_approval_date)
-      const daysLeft = Math.ceil((eta.getTime() - today.getTime()) / 86400000)
-      if (daysLeft >= 0 && daysLeft < 30) {
-        alerts.push({
-          key: `${drug.id}-eta`,
-          severity: 'warn',
-          severityLabel: '临期',
-          text: `「${drug.name}」距预计获批仅剩 ${daysLeft} 天`,
-          suggestion: '建议提前准备获批后登记与证书维护工作',
-          href: '/registration/review',
-        })
-      }
-    }
-  }
-  return alerts
-}
-
-/** 台账子表类型 → 中文标签（证书预警文案用）；certificate = 主证书表 */
-const LEDGER_TYPE_LABELS: Record<string, string> = {
-  domestic: '国内已获批',
-  overseas: '国外已获批',
-  copp: 'COPP证书',
-  wc: 'WC证书',
-  certificate: '注册证书',
-}
-
-/**
- * 再注册法定申请死线（天）：届满前 6 个月。
- * 依据：《药品注册管理办法》第82条（前6个月申请再注册）；
- * NMPA 2024年第38号通告（申报窗口为届满前12~6个月）。
- */
-const REREG_DEADLINE_DAYS = 180
-
-/**
- * 证书有效期预警三档（点击定位台账；主证书表无独立页面，统一跳台账首页）：
- * 已过期 → 红「已过期」；≤180 天 → 红「紧急」（逼近再注册死线）；≤365 天 → 橙「临期」（申报窗口期）
- */
-function computeCertAlerts(summary: LedgerSummary | null): AlertItem[] {
-  if (!summary) return []
-  return summary.expiring_certificates.map(cert => {
-    const typeLabel = LEDGER_TYPE_LABELS[cert.ledger_type] ?? cert.ledger_type
-    const name = cert.certificate_name || cert.product_name
-    const href =
-      cert.ledger_type === 'certificate'
-        ? '/registration/ledger'
-        : `/registration/ledger?type=${cert.ledger_type}`
-    if (cert.days_left < 0) {
-      return {
-        key: `cert-${cert.id}`,
-        severity: 'risk' as const,
-        severityLabel: '已过期',
-        text: `「${name}」（${typeLabel}）已过期 ${-cert.days_left} 天`,
-        suggestion: '证书已失效，请立即安排再注册或申报，避免影响业务',
-        href,
-      }
-    }
-    if (cert.days_left <= REREG_DEADLINE_DAYS) {
-      return {
-        key: `cert-${cert.id}`,
-        severity: 'risk' as const,
-        severityLabel: '紧急',
-        text: `「${name}」（${typeLabel}）仅剩 ${cert.days_left} 天到期，已逼近再注册申请死线（届满前6个月）`,
-        suggestion: '请立即启动再注册申报，为审查审批预留时间',
-        href,
-      }
-    }
-    return {
-      key: `cert-${cert.id}`,
-      severity: 'warn' as const,
-      severityLabel: '临期',
-      text: `「${name}」（${typeLabel}）${cert.days_left} 天后到期，已进入再注册申报窗口（届满前12~6个月）`,
-      suggestion: '建议在届满前6个月前提交再注册申请',
-      href,
-    }
-  })
-}
-
-/** "需要关注"卡片最多展示的条目数，超出以"还有 N 条"收口 */
-const ALERT_DISPLAY_LIMIT = 5
-
-/** 完整日期格式：YYYY-MM-DD（含年份） */
-function fmtDate(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-interface DueTag {
-  key: string
-  className: string
-  label: string
-}
-
-/** 三档变色共用判定：已逾期红 / ≤30 天橙 / 其余绿；无日期 → 灰"日期待估" */
-function dueTagOf(key: string, dateStr: string | null, baseLabel: string): DueTag {
-  if (!dateStr) {
-    return { key, className: styles.tagBrand, label: `${baseLabel} · 日期待估` }
-  }
-  const d = new Date(dateStr)
-  const daysLeft = Math.ceil((d.getTime() - Date.now()) / 86400000)
-  if (daysLeft < 0) {
-    return { key, className: styles.tagRisk, label: `${baseLabel} ${fmtDate(d)} · 已逾期 ${-daysLeft} 天` }
-  }
-  if (daysLeft <= 30) {
-    return { key, className: styles.tagWarn, label: `${baseLabel} ${fmtDate(d)} · 剩 ${daysLeft} 天` }
-  }
-  return { key, className: styles.tagOk, label: `${baseLabel} ${fmtDate(d)}` }
-}
-
-/**
- * 审评中品种右侧标签：仅当前节点的预测完成时间（随节点推进自动变化、三档变色）；
- * 品种整体预计获批日期移至品种名下方展示。
- */
-function nodeDueTag(current: NodePrediction | undefined): DueTag | null {
-  if (!current) return null
-  return dueTagOf(`node-${current.node_index}`, current.estimated_date, `${current.node_name} · 预计`)
-}
 
 function accentStyle(accent: string, accentBg: string): React.CSSProperties {
   return { '--accent': accent, '--accent-bg': accentBg } as React.CSSProperties
 }
 
-export default function RegistrationHomeClient() {
+interface RegistrationHomeClientProps {
+  /** 外部申报资料撰写系统地址；为空时卡片保持系统内页面入口 */
+  dossierWriterUrl?: string
+}
+
+export default function RegistrationHomeClient({ dossierWriterUrl }: RegistrationHomeClientProps) {
   const queryClient = useQueryClient()
-  // 概览统计每次进入页面都取最新（品种/台账在其他页增删后，回来不能看到旧缓存）
   const fresh = { staleTime: 0, refetchOnMount: 'always' as const }
   const summaryQuery = useQuery({ queryKey: ['registration-ledger-summary'], queryFn: fetchLedgerSummary, ...fresh })
   const drugsQuery = useQuery({ queryKey: ['registration-drugs'], queryFn: fetchDrugs, ...fresh })
-  const nodesQuery = useQuery({ queryKey: ['registration-review-nodes'], queryFn: fetchReviewNodes, ...fresh })
 
-  const summary = summaryQuery.data ?? null
+  const summary: LedgerSummary | null = summaryQuery.data ?? null
   const drugs = drugsQuery.data ?? []
-  const reviewNodes = nodesQuery.data ?? []
 
-  // 审评中口径：与申报进度查询页一致——除"全部节点已完成"外的品种都算审评中
-  // （含新受理尚无节点、节点全部跳过的品种）
+  // 审评中口径：以后端 stage 为准（已获批品种不计入列表，直接计入 KPI）
   const inProgressDrugs = drugs.filter(d => {
+    if (d.stage) return !d.stage.approved
     const nodes = (d.nodes || []).filter(n => !n.skipped)
     return nodes.length === 0 || nodes.some(n => !n.actual_date)
   })
 
-  // 审评中品种逐个拉预测（数量少，无瀑布问题）
   const predictionQueries = useQueries({
     queries: inProgressDrugs.map(d => ({
       queryKey: ['registration-drug-prediction', d.id],
@@ -269,243 +225,257 @@ export default function RegistrationHomeClient() {
     })),
   })
 
-  const reviewing = inProgressDrugs
-    .map((drug, i) => ({ drug, prediction: predictionQueries[i]?.data }))
-    .filter((x): x is { drug: Drug; prediction: DrugPrediction } => !!x.prediction)
+  const queue: QueueItem[] = inProgressDrugs
+    .map((drug, i) => {
+      const prediction = predictionQueries[i]?.data
+      return prediction ? toQueueItem(drug, channelOf(drug), prediction) : null
+    })
+    .filter((x): x is QueueItem => x !== null)
+    // 逾期置顶，其余按当前节点预计完成日期升序
+    .sort((a, b) => {
+      if (a.overdue !== b.overdue) return a.overdue ? -1 : 1
+      const da = a.nodeDue ? dayjs(a.nodeDue).valueOf() : Number.MAX_SAFE_INTEGER
+      const db = b.nodeDue ? dayjs(b.nodeDue).valueOf() : Number.MAX_SAFE_INTEGER
+      return da - db
+    })
 
-  // 证书有效期预警（更紧急）排在审评预警之前
-  const alerts = [...computeCertAlerts(summary), ...computeAlerts(reviewing, reviewNodes)]
-  const loading = summaryQuery.isFetching || drugsQuery.isFetching || nodesQuery.isFetching
+  const loading = summaryQuery.isFetching || drugsQuery.isFetching
 
   const handleRefresh = () => {
     void summaryQuery.refetch()
     void drugsQuery.refetch()
-    void nodesQuery.refetch()
     void queryClient.invalidateQueries({ queryKey: ['registration-drug-prediction'] })
   }
 
-  const kpis = [
-    {
-      key: 'domestic',
-      label: '国内获批',
-      icon: IconShieldCheck,
-      accentVar: 'var(--brand-600)',
-      accentBgVar: 'var(--brand-50)',
-      href: '/registration/ledger?type=domestic',
-      num: <>{summary?.domestic_count ?? 0}</>,
-      sub: <>国内获批品种数量 · 今年新增 <b>{summary?.domestic_new_this_year ?? 0}</b></>,
-    },
-    {
-      key: 'overseas',
-      label: '国外获批',
-      icon: IconGlobe,
-      accentVar: 'var(--info-600)',
-      accentBgVar: 'var(--info-50)',
-      href: '/registration/ledger?type=overseas',
-      num: <>{summary?.overseas_count ?? 0}</>,
-      sub: <>覆盖 <b>{summary?.overseas_countries ?? 0}</b> 个国家/地区 · 今年新增 <b>{summary?.overseas_new_this_year ?? 0}</b></>,
-    },
-    {
-      key: 'international',
-      label: '国际关联审评',
-      icon: IconLink,
-      accentVar: 'var(--ok-600)',
-      accentBgVar: 'var(--ok-50)',
-      href: '/registration/ledger?type=international',
-      num: <>{summary?.international_review_count ?? 0}</>,
-      sub: '国际关联审评品种数',
-    },
-    {
-      key: 'copp-wc',
-      label: 'COPP / WC',
-      icon: IconCert,
-      accentVar: 'var(--warn-600)',
-      accentBgVar: 'var(--warn-50)',
-      href: '/registration/ledger?type=copp',
-      num: <>{summary?.copp_count ?? 0}<small> / {summary?.wc_count ?? 0}</small></>,
-      sub: `COPP ${summary?.copp_count ?? 0} 份 · WC ${summary?.wc_count ?? 0} 份证书 · 今年新增 ${(summary?.copp_new_this_year ?? 0) + (summary?.wc_new_this_year ?? 0)}`,
-    },
-  ]
+  // 申报资料撰写卡片内容。配置了外部系统地址时，文案改为「外部系统 + 新窗口」，
+  // 避免仍暗示可以在系统内编辑；未配置时保持原有文案与内部页面入口。
+  const externalDocUrl = (dossierWriterUrl ?? '').trim()
+  const docCardBody = (
+    <>
+      <div>
+        <div className={styles.docEyebrow}>申报资料</div>
+        <div className={styles.docTitle}>申报资料撰写</div>
+        <div className={styles.docDesc}>
+          {externalDocUrl
+            ? '外部申报资料撰写系统，点击后在新窗口打开'
+            : 'CTD 章节素材管理，AI 辅助填充，按品种组织申报文档'}
+        </div>
+        <div className={styles.docChips}>
+          <span className={styles.docChip}>CTD 章节</span>
+          <span className={styles.docChip}>AI 填充</span>
+          <span className={styles.docChip}>按品种归档</span>
+        </div>
+        <div className={styles.docCta}>
+          {externalDocUrl ? '前往外部系统' : '进入撰写'}{' '}
+          <span className={styles.arr}>{externalDocUrl ? '↗' : '›'}</span>
+        </div>
+      </div>
+      <svg className={styles.docArt} viewBox="0 0 205 150" fill="none" aria-hidden>
+        <ellipse cx="72" cy="82" rx="64" ry="56" fill="#E9EAFC" opacity=".55" />
+        <g className={styles.docFloat}>
+          <rect x="26" y="32" width="76" height="96" rx="10" fill="#fff" stroke="#D9DBF7" />
+          <rect x="38" y="46" width="38" height="6" rx="3" fill="#E9EAFC" />
+          <rect x="38" y="60" width="52" height="5" rx="2.5" fill="#EFF0FD" />
+          <rect x="38" y="72" width="45" height="5" rx="2.5" fill="#EFF0FD" />
+          <rect x="38" y="84" width="52" height="5" rx="2.5" fill="#EFF0FD" />
+          <rect x="38" y="104" width="30" height="14" rx="7" fill="#4F46C9" />
+          <text x="53" y="114.5" textAnchor="middle" fontSize="8" fontWeight="700" fill="#fff">AI</text>
+        </g>
+        <path d="M94 14l1.8 4.2 4.2 1.8-4.2 1.8L94 26l-1.8-4.2-4.2-1.8 4.2-1.8z" fill="#C9CDF2" />
+        <path className={styles.flow} d="M102 58 C 132 58, 140 40, 164 40" stroke="#A5A0EE" strokeWidth="1.6" />
+        <path className={styles.flow} d="M102 76 C 132 76, 140 70, 164 70" stroke="#A5A0EE" strokeWidth="1.6" />
+        <path className={styles.flow} d="M102 94 C 132 94, 140 100, 164 100" stroke="#A5A0EE" strokeWidth="1.6" />
+        <path className={styles.flow} d="M102 112 C 132 112, 140 130, 164 130" stroke="#A5A0EE" strokeWidth="1.6" />
+        <g className={styles.nodePulse}>
+          <circle cx="178" cy="40" r="12" fill="#fff" stroke="#C9CDF2" />
+          <text x="178" y="43.5" textAnchor="middle" fontSize="9" fontWeight="700" fill="#4F46C9">M2</text>
+          <circle cx="178" cy="70" r="12" fill="#4F46C9" />
+          <text x="178" y="73.5" textAnchor="middle" fontSize="9" fontWeight="700" fill="#fff">M3</text>
+          <circle cx="178" cy="100" r="12" fill="#fff" stroke="#C9CDF2" />
+          <text x="178" y="103.5" textAnchor="middle" fontSize="9" fontWeight="700" fill="#4F46C9">M4</text>
+          <circle cx="178" cy="130" r="12" fill="#fff" stroke="#C9CDF2" />
+          <text x="178" y="133.5" textAnchor="middle" fontSize="9" fontWeight="700" fill="#4F46C9">M5</text>
+        </g>
+      </svg>
+    </>
+  )
 
   return (
-    <div className={`${ui.regUi} ${styles.root}`}>
-      <RegistrationPageHeader
-        icon={IconTitleDoc}
-        title="注册管理"
-        sub="注册台账、审评进展与申报资料一览"
-        actions={
-          <>
-            <button type="button" className={ui.btn} onClick={handleRefresh} disabled={loading}>
-              {IconRefresh}
-              刷新
-            </button>
-            <Link href="/registration/projects" className={ui.btnPrimary}>
-              {IconPlus}
-              新建注册项目
-            </Link>
-          </>
-        }
-      />
+    <div className={styles.root}>
+      {/* ===== 页头 ===== */}
+      <header className={styles.pageHead}>
+        <div>
+          <div className={styles.pageTitle}>
+            <span className={styles.titleIco}>{IconTitleDoc}</span>
+            <h1>注册管理</h1>
+          </div>
+          <div className={styles.pageSub}>注册台账、审评进展与申报资料一览</div>
+        </div>
+        <div className={styles.headActions}>
+          <button type="button" className={styles.btn} onClick={handleRefresh} disabled={loading}>
+            {IconRefresh}
+            刷新
+          </button>
+          <Link href="/registration/projects" className={styles.btnPrimary}>
+            {IconPlus}
+            新建注册项目
+          </Link>
+        </div>
+      </header>
 
-      {summaryQuery.isError && (
-        <Alert
-          type="warning"
-          showIcon
-          message="统计数据加载失败"
-          description="注册台账汇总接口暂时不可用，下方功能不受影响。"
-          action={<Button size="small" onClick={() => void summaryQuery.refetch()}>重试</Button>}
-        />
-      )}
-      {drugsQuery.isError && (
-        <Alert
-          type="warning"
-          showIcon
-          message="审评品种加载失败"
-          description="审评进度接口暂时不可用，请稍后重试。"
-          action={<Button size="small" onClick={() => void drugsQuery.refetch()}>重试</Button>}
-        />
-      )}
+      {/* ===== ① KPI 三卡 ===== */}
+      <section className={styles.kpiRow} aria-label="关键指标">
+        <Link
+          href="/registration/ledger?type=domestic"
+          className={styles.kpi}
+          style={accentStyle('var(--ok-600)', 'var(--ok-50)')}
+        >
+          <div className={styles.kpiTop}>
+            <span className={styles.kpiChip}>{IconShieldCheck}</span>
+            <span className={styles.kpiLabel}>国内获批</span>
+            <span className={styles.kpiLink}>明细 ›</span>
+          </div>
+          <div className={styles.kpiNum}><CountUp value={summary?.domestic_count ?? 0} delay={120} /></div>
+          <div className={styles.kpiSub}>国内获批品种数量</div>
+        </Link>
 
-      {/* ① KPI 条 */}
-      <Spin spinning={summaryQuery.isPending}>
-        <section className={styles.kpiRow}>
-          {kpis.map(kpi => (
-            <Link href={kpi.href} key={kpi.key} style={{ textDecoration: 'none' }}>
-              <div className={styles.kpi} style={accentStyle(kpi.accentVar, kpi.accentBgVar)}>
-                <div className={styles.kpiTop}>
-                  <div className={styles.kpiChip}>{kpi.icon}</div>
-                  <div className={styles.kpiLabel}>{kpi.label}</div>
-                  <div className={styles.kpiLink}>明细 ›</div>
-                </div>
-                <div className={styles.kpiNum}>{kpi.num}</div>
-                <div className={styles.kpiSub}>{kpi.sub}</div>
-              </div>
-            </Link>
-          ))}
-        </section>
-      </Spin>
+        <Link
+          href="/registration/ledger?type=overseas"
+          className={styles.kpi}
+          style={accentStyle('var(--info-600)', 'var(--info-50)')}
+        >
+          <div className={styles.kpiTop}>
+            <span className={styles.kpiChip}>{IconGlobe}</span>
+            <span className={styles.kpiLabel}>国外获批</span>
+            <span className={styles.kpiLink}>明细 ›</span>
+          </div>
+          <div className={styles.kpiNum}><CountUp value={summary?.overseas_count ?? 0} delay={210} /></div>
+          <div className={styles.kpiSub}>覆盖 <b>{summary?.overseas_countries ?? 0}</b> 个国家/地区</div>
+        </Link>
 
-      {/* ② 工作区：审评中品种（7）+ 需要关注（5） */}
+        <Link
+          href="/registration/ledger?type=copp"
+          className={styles.kpi}
+          style={accentStyle('var(--warn-600)', 'var(--warn-50)')}
+        >
+          <div className={styles.kpiTop}>
+            <span className={styles.kpiChip}>{IconCert}</span>
+            <span className={styles.kpiLabel}>COPP / WC</span>
+            <span className={styles.kpiLink}>明细 ›</span>
+          </div>
+          <div className={styles.kpiNum}>
+            <CountUp value={summary?.copp_count ?? 0} delay={300} />
+            <small> / {summary?.wc_count ?? 0}</small>
+          </div>
+          <div className={styles.kpiSub}>
+            COPP {summary?.copp_count ?? 0} 份 · WC {summary?.wc_count ?? 0} 份证书
+          </div>
+        </Link>
+      </section>
+
+      {/* ===== ② 工作区 ===== */}
       <section className={styles.workRow}>
+        {/* 审评中品种 */}
         <div className={styles.panel}>
           <div className={styles.panelHead}>
-            <div className={styles.panelIco} style={{ background: 'var(--brand-50)', color: 'var(--brand-600)' }}>
-              {IconList}
-            </div>
+            <span className={styles.panelIco}>{IconList}</span>
             <div className={styles.panelTitle}>审评中品种</div>
-            <span className={styles.countPillBrand}>{inProgressDrugs.length}</span>
+            <span className={styles.countPill}>{queue.length}</span>
             <Link className={styles.panelMore} href="/registration/review">查看全部 ›</Link>
           </div>
-          <Spin spinning={drugsQuery.isPending}>
-            {reviewing.length === 0 ? (
-              <div className={styles.emptyBody}>当前没有审评中的品种</div>
-            ) : (
-              // 最多展示 6 条（每行约 64px），超出卡片内部滚动
-              <div style={{ maxHeight: 384, overflowY: 'auto' }}>
-                {reviewing.map(({ drug, prediction }) => {
-                  const current = prediction.nodes.find(n => n.node_index === prediction.current_node_index)
-                  const nodeTag = nodeDueTag(current)
-                  return (
-                    <Link key={drug.id} href="/registration/review" className={styles.queueRow}>
-                      <div>
-                        <div className={styles.queueName}>{drug.name}</div>
-                        <div className={styles.queueMeta}>
-                          <span className={styles.tagBrand}>{drug.type}</span>
-                          <span>预计获批：{prediction.estimated_approval_date ?? '日期待估'}</span>
-                        </div>
-                      </div>
-                      <div className={styles.queueRight}>
-                        {nodeTag && <span className={nodeTag.className}>{nodeTag.label}</span>}
-                      </div>
-                    </Link>
-                  )
-                })}
+
+          <div className={styles.queueList}>
+            {queue.length === 0 ? (
+              <div className={styles.emptyBody}>
+                {loading ? '正在加载审评品种…' : '当前没有审评中的品种'}
               </div>
+            ) : (
+              queue.map(item => (
+                <Link
+                  key={item.drug.id}
+                  href={`/registration/review?drug=${item.drug.id}`}
+                  className={styles.queueRow}
+                  style={{ '--q-color': item.channel.color } as React.CSSProperties}
+                >
+                  <span className={styles.qBadge} aria-hidden>{item.channel.badge}</span>
+                  <div className={styles.queueBody}>
+                    <div className={styles.queueName}>{item.drug.name}</div>
+                    <div className={styles.queueMeta}>
+                      <span className={item.channel.tagClass}>{item.channel.tagLabel}</span>
+                      <span className={item.overdue ? styles.tagRisk : nodeTagClass(item.nodeName)}>
+                        {item.nodeName}
+                      </span>
+                      <span className={styles.qDueDate}>
+                        预计完成 {item.nodeDue ?? '待估'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className={styles.queueRight}>
+                    <span className={styles.qDate}>
+                      预计项目获批
+                      <b className={styles.approve}>{item.approveDate ?? '待估'}</b>
+                    </span>
+                  </div>
+                </Link>
+              ))
             )}
-          </Spin>
+          </div>
+
           <div className={styles.panelFoot}>
-            <span>无审评任务时，可前往「审评进度」添加品种</span>
+            <span>节点与日期由系统按自然日期自动推测，无需人工维护</span>
             <Link className={styles.panelMore} href="/registration/review">去添加 ›</Link>
           </div>
         </div>
 
-        <div className={styles.panel}>
-          <div className={styles.panelHead}>
-            <div className={styles.panelIco} style={{ background: 'var(--warn-50)', color: 'var(--warn-600)' }}>
-              {IconWarn}
+        <div className={styles.sideCol}>
+          {/* 申报资料撰写卡：配置了外部系统地址时新标签页打开，否则进系统内页面 */}
+          {externalDocUrl ? (
+            <a
+              href={externalDocUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.docCard}
+              aria-label="在新标签页打开外部申报资料撰写系统"
+            >
+              {docCardBody}
+            </a>
+          ) : (
+            <Link href="/registration/dossier-writer" className={styles.docCard} aria-label="进入申报资料撰写">
+              {docCardBody}
+            </Link>
+          )}
+
+          {/* AI 辅助 */}
+          <div className={styles.bizAi}>
+            <div className={styles.bizAiHead}>
+              <span className={styles.kpiChip}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+                  <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />
+                  <path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z" />
+                </svg>
+              </span>
+              <div className={styles.bizAiTitle}>AI 辅助</div>
+              <div className={styles.bizAiCount}>{AI_ITEMS.length} 项</div>
             </div>
-            <div className={styles.panelTitle}>需要关注</div>
-            {alerts.length > 0 ? (
-              <span className={styles.countPillWarn}>{alerts.length} 项待处理</span>
-            ) : (
-              <span className={styles.countPillOk}>0 项</span>
-            )}
-          </div>
-          <Spin spinning={drugsQuery.isPending || predictionQueries.some(q => q.isPending)}>
-            {alerts.length === 0 ? (
-              <div className={styles.okState}>
-                {IconCheckCircle}
-                一切正常，暂无需要关注的事项
-              </div>
-            ) : (
-              <>
-                {alerts.slice(0, ALERT_DISPLAY_LIMIT).map(alert => (
-                  <Link key={alert.key} href={alert.href} className={styles.alertRow}>
-                    <span className={`${alert.severity === 'warn' ? styles.tagWarn : styles.tagRisk} ${styles.alertTag}`}>
-                      {alert.severityLabel}
-                    </span>
-                    <div>
-                      <div className={styles.alertText}>{alert.text}</div>
-                      <div className={styles.alertSub}>{alert.suggestion}</div>
-                    </div>
-                    <span className={styles.alertAct}>去处理 ›</span>
-                  </Link>
-                ))}
-                {alerts.length > ALERT_DISPLAY_LIMIT && (
-                  <Link href="/registration/ledger" className={styles.alertRow}>
-                    <div className={styles.alertText}>
-                      还有 {alerts.length - ALERT_DISPLAY_LIMIT} 条预警，前往注册台账查看 ›
-                    </div>
-                  </Link>
-                )}
-              </>
-            )}
-          </Spin>
-          <div className={styles.panelFoot}>
-            <span>提醒基于审评节点停滞、获批临期与证书有效期规则自动生成</span>
+            <div className={styles.bizAiGrid}>
+              {AI_ITEMS.map(item => (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  className={styles.aiItem}
+                  style={accentStyle(item.accent, item.accentBg)}
+                >
+                  <span className={styles.aiIco}>{item.icon}</span>
+                  <span className={styles.aiBody}>
+                    <span className={styles.bizName}>{item.name}</span>
+                    <span className={styles.bizDesc}>{item.desc}</span>
+                  </span>
+                  <span className={styles.bizArrow}>›</span>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
-      </section>
-
-      {/* ③ 业务功能区 */}
-      <div className={styles.bizHead}>
-        <h2>业务功能</h2>
-        <span>按工作流分组 · 共 {BIZ_GROUPS.reduce((n, g) => n + g.items.length, 0)} 项</span>
-      </div>
-      <section className={styles.bizGrid}>
-        {BIZ_GROUPS.map(group => (
-          <div
-            key={group.key}
-            className={styles.bizGroup}
-            style={accentStyle(group.accentVar, group.accentBgVar)}
-          >
-            <div className={styles.bizGroupHead}>
-              <div className={styles.kpiChip}>{group.icon}</div>
-              <div className={styles.bizGroupTitle}>{group.title}</div>
-              <div className={styles.bizGroupCount}>{group.items.length} 项</div>
-            </div>
-            {group.items.map(item => (
-              <Link key={item.key} href={item.href} className={styles.bizItem}>
-                <div className={styles.bizIco}>{item.icon}</div>
-                <div>
-                  <div className={styles.bizName}>{item.name}</div>
-                  <div className={styles.bizDesc}>{item.desc}</div>
-                </div>
-                <span className={styles.bizArrow}>›</span>
-              </Link>
-            ))}
-          </div>
-        ))}
       </section>
     </div>
   )

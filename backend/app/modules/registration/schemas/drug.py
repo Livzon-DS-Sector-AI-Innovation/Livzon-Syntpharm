@@ -67,7 +67,7 @@ class NodePrediction(BaseModel):
 
     node_index: int
     node_name: str
-    status: Literal["completed", "in_progress", "pending", "skipped"]
+    status: Literal["completed", "in_progress", "pending", "overdue", "skipped"]
     actual_date: date | None = None
     estimated_date: date | None = None
     estimated_range: tuple[date, date] | None = None
@@ -84,3 +84,20 @@ class DrugPredictionResponse(BaseModel):
     days_in_current_node: int | None = None
     estimated_approval_date: date | None = None
     nodes: list[NodePrediction]
+
+
+class NodeStageSummary(BaseModel):
+    """药品当前阶段轻量摘要（列表接口用，不含历史统计区间）"""
+
+    current_node_index: int | None = None
+    current_node_name: str | None = None
+    overdue_indexes: list[int] = []
+    completed_nodes: int = 0
+    total_nodes: int = 0
+    approved: bool = False
+
+
+class DrugWithStageResponse(DrugWithNodesResponse):
+    """带当前阶段摘要的药品（列表接口返回）"""
+
+    stage: NodeStageSummary

@@ -8,7 +8,7 @@
  * - `Drug` / `DrugNode` / `RegistrationProject` / `Holiday` / `DashboardSummary`：后端尚未导出契约
  */
 
-import type { components } from '@/types/generated/schema'
+import type { components, operations } from '@/types/generated/schema'
 
 /** 契约模型，来自后端 OpenAPI */
 export type ProductInfo = components['schemas']['ProductInfo']
@@ -28,46 +28,15 @@ export type AuthorizationLetterTrail = components['schemas']['AuthorizationLette
 export type AuthorizationLetterFilterOptions = components['schemas']['AuthorizationLetterFilterOptions']
 
 
-export interface AuthorizationLetterCreateInput {
-  product_name: string
-  registration_number: string
-  preparation_unit: string
-  preparation_name: string
-  administration_route: string
-  remarks?: string
-}
+/** 契约模型，来自后端 OpenAPI（生成端点为 multipart，字段与 AuthorizationLetterCreate 一致） */
+export type AuthorizationLetterCreateInput = Omit<
+  components['schemas']['AuthorizationLetterResponse'],
+  'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'is_deleted' | 'api_company' | 'output_file_name' | 'output_file_key'
+>
 
 /** 契约模型，来自后端 OpenAPI */
 export type AuthorizationLetterResponse = components['schemas']['DataResponse_AuthorizationLetterResponse_']
 
-
-export interface AuthorizationLetterListParams {
-  keyword?: string
-  product_name?: string
-  year?: number
-  page?: number
-  page_size?: number
-}
-
-// ── 发补回复 ──
-
-/** 契约模型，来自后端 OpenAPI */
-export type SupplementaryReply = components['schemas']['SupplementaryReplyResponse']
-
-
-/** 契约模型，来自后端 OpenAPI */
-export type SupplementaryReplyListItem = components['schemas']['SupplementaryReplyListItem']
-
-
-/** 契约模型，来自后端 OpenAPI */
-export type SupplementaryReplyResponse = components['schemas']['DataResponse_SupplementaryReplyResponse_']
-
-
-export interface SupplementaryReplyListParams {
-  drug_name?: string
-  page?: number
-  page_size?: number
-}
 
 // ── 对照物质说明表 ──
 
@@ -82,12 +51,6 @@ export type ReferenceStandardListItem = components['schemas']['ReferenceStandard
 /** 契约模型，来自后端 OpenAPI */
 export type ReferenceStandardResponse = components['schemas']['DataResponse_ReferenceStandardResponse_']
 
-
-export interface ReferenceStandardListParams {
-  drug_name?: string
-  page?: number
-  page_size?: number
-}
 
 export interface ReferenceStandardCreateInput {
   drug_name: string
@@ -115,27 +78,18 @@ export type ParseCOAResponse = components['schemas']['CoaParseResult']
 
 
 
-export interface Drug {
-  id: string
-  name: string
-  type: '仿制药' | '创新药' | '原料药'
-  acceptance_date: string
-  acceptance_number?: string | null
-  current_node: number
-  created_at: string
-  updated_at: string
+/** 契约模型，来自后端 OpenAPI；列表接口额外带 stage，故用交叉类型补可选字段 */
+export type Drug = components['schemas']['DrugWithNodesResponse'] & {
+  /** 当前阶段摘要（列表接口返回；详情接口无此字段） */
+  stage?: NodeStageSummary
   nodes: DrugNode[]
 }
 
-export interface DrugNode {
-  id: string
-  drug_id: string
-  node_index: number
-  actual_date: string | null
-  skipped: boolean
-  created_at: string
-  updated_at: string
-}
+/** 契约模型，来自后端 OpenAPI */
+export type NodeStageSummary = components['schemas']['NodeStageSummary']
+
+/** 契约模型，来自后端 OpenAPI */
+export type DrugNode = components['schemas']['DrugNodeResponse']
 
 /** 契约模型，来自后端 OpenAPI（后端恒返回该字段，故去掉可选性，值仍可能为 null） */
 export type NodePrediction = Required<components['schemas']['NodePrediction']>
@@ -150,6 +104,24 @@ export type DrugPrediction = Omit<
 > & {
   nodes: NodePrediction[]
 }
+
+// ── 列表查询参数：直接取自生成契约，避免手写漂移（曾漏过 drug_id） ──
+type Operations = operations
+
+/** 授权书列表查询参数 */
+export type AuthorizationLetterListParams = NonNullable<
+  Operations['list_letters_api_v1_registration_authorization_letters_get']['parameters']['query']
+>
+
+/** 注册项目列表查询参数 */
+export type RegistrationProjectListParams = NonNullable<
+  Operations['list_projects_api_v1_registration_projects__get']['parameters']['query']
+>
+
+/** 对照物质说明表列表查询参数 */
+export type ReferenceStandardListParams = NonNullable<
+  Operations['get_api_v1_registration_reference_standards_get']['parameters']['query']
+>
 
 /** 契约模型，来自后端 OpenAPI（`projects.py` 已声明 `DataResponse[ProjectResponse]`） */
 export type RegistrationProject = components['schemas']['ProjectResponse']
@@ -169,15 +141,8 @@ export type ProjectUpdatePayload = components['schemas']['ProjectUpdate']
 /** 申报前阶段 key（与后端 PreStage 一致） */
 export type PreStage = 'initiation' | 'data_preparation' | 'internal_review' | 'submission' | 'accepted'
 
-export interface Holiday {
-  id: string
-  year: number
-  date: string
-  type: 'holiday' | 'makeup'
-  description: string | null
-  created_at: string
-  updated_at: string
-}
+/** 契约模型，来自后端 OpenAPI */
+export type Holiday = components['schemas']['HolidayResponse']
 
 /** 契约模型，来自后端 OpenAPI */
 export type ReviewNodeConfig = components['schemas']['ReviewNodeConfig']
@@ -193,10 +158,7 @@ export type DashboardProjectItem = components['schemas']['DashboardProjectItem']
 export type DashboardCertificateItem = components['schemas']['DashboardCertificateItem']
 
 
-export interface DashboardSummary {
-  approved_product_count: number
-  overseas_approval_count: number
-  submitted_project_count: number
-  active_project_count: number
+/** 契约模型，来自后端 OpenAPI（recent_projects 后端恒返回，故收紧为非可选） */
+export type DashboardSummary = Omit<components['schemas']['DashboardSummaryResponse'], 'recent_projects'> & {
   recent_projects: DashboardProjectItem[]
 }

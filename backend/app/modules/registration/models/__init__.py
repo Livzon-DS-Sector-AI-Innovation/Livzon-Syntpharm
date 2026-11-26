@@ -8,7 +8,7 @@ from app.modules.registration.docx_translator import models as docx_translation_
 from app.modules.registration.models.authorization import (
     AuthorizationLetter,
     AuthorizationLetterTrail,
-    SupplementaryReply,
+    ProductRegistrationNumber,
 )
 from app.modules.registration.models.certificate import RegistrationCertificate
 from app.modules.registration.models.copp_certificate import CoppCertificate
@@ -20,13 +20,6 @@ from app.modules.registration.models.project import ProjectProgressLog, Registra
 from app.modules.registration.models.reference_standard import ReferenceStandard
 from app.modules.registration.models.reference_substance import ReferenceSubstance
 from app.modules.registration.models.review import ReviewNode
-from app.modules.registration.models.validation_audit import (
-    ValidationAuditFile,
-    ValidationAuditIssue,
-    ValidationAuditKnowledgeBase,
-    ValidationAuditReport,
-    ValidationAuditTask,
-)
 from app.modules.registration.models.wc_certificate import WcCertificate
 
 __all__ = [
@@ -39,18 +32,13 @@ __all__ = [
     "Holiday",
     "InternationalReview",
     "OverseasApproval",
+    "ProductRegistrationNumber",
     "ProjectProgressLog",
     "ReferenceStandard",
     "ReferenceSubstance",
     "RegistrationCertificate",
     "RegistrationProject",
     "ReviewNode",
-    "SupplementaryReply",
-    "ValidationAuditFile",
-    "ValidationAuditIssue",
-    "ValidationAuditKnowledgeBase",
-    "ValidationAuditReport",
-    "ValidationAuditTask",
     "WcCertificate",
 ]
 

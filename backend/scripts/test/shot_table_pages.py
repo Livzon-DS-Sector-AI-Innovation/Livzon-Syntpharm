@@ -1,6 +1,7 @@
 """临时脚本：4 个改版表格页截图 + 控制台报错检查。"""
 
 import asyncio
+import tempfile
 import os
 import sys
 from pathlib import Path
@@ -19,7 +20,6 @@ FRONTEND_URL = os.environ["FRONTEND_URL"]
 PAGES = [
     ("auth-letter", "/registration/authorization-letter", "table tbody tr, div[class*=emptyBody]"),
     ("ref-standard", "/registration/reference-standard", "table tbody tr, div[class*=emptyBody]"),
-    ("supp-reply", "/registration/supplementary-reply", "table tbody tr, div[class*=emptyBody]"),
     ("dossier-writer", "/registration/dossier-writer", "table tbody tr, div[class*=emptyBody]"),
 ]
 
@@ -60,7 +60,7 @@ async def main() -> None:
               }
             }""")
             print(f"{name}: {info} errors={errors if errors else 'none'}")
-            await page.screenshot(path=f"/tmp/page-{name}.png")
+            await page.screenshot(path=str(Path(tempfile.gettempdir()) / f"page-{name}.png"))
         await browser.close()
 
 

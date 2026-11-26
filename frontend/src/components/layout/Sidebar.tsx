@@ -253,9 +253,17 @@ interface SidebarProps {
   permissionView: PermissionView
   /** 由 AppShell 统一解析的菜单树（桌面侧栏与移动抽屉共用，避免重复计算） */
   menus: ResolvedModule[]
+  /** 菜单 key → 外部系统地址：命中时点击在新标签页打开，未配置时走原有本地路由 */
+  externalLinks?: Record<string, string>
 }
 
-export function Sidebar({ onNavigate, forceExpanded = false, permissionView, menus }: SidebarProps) {
+export function Sidebar({
+  onNavigate,
+  forceExpanded = false,
+  permissionView,
+  menus,
+  externalLinks = {},
+}: SidebarProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { collapsed: collapsedState } = useSidebarStore()
@@ -317,6 +325,14 @@ export function Sidebar({ onNavigate, forceExpanded = false, permissionView, men
   }
 
   const handleClick: MenuProps['onClick'] = ({ key }) => {
+    // 配置了外部系统地址的菜单项：新标签页打开，本系统页面不跳走；
+    // 未配置时保持原有本地路由跳转，选中态逻辑不受影响。
+    const externalUrl = externalLinks[key]
+    if (externalUrl) {
+      window.open(externalUrl, '_blank', 'noopener,noreferrer')
+      onNavigate?.()
+      return
+    }
     const path = keyPathMap.get(key)
     if (path) {
       navigateToPath(path)

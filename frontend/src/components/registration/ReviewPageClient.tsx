@@ -3,20 +3,20 @@
 /**
  * 申报进度查询（审评进度）
  * 视觉按 review-progress-redesign.html 原型实现：
- * - KPI 卡（芯片图标 + 32px 彩色数字）
- * - 表格「审评进度」列 = 6px 进度条 + n/m，替代原圆点
- * - 详情抽屉 540px：摘要卡 + 节点时间轴；节点操作默认收起，仅当前进行中节点默认展开
+ * - 页头 + 4 张 KPI 卡（数字滚动入场）
+ * - 审评节点导轨（10 节点单行 + 流动虚线 + 轮回点亮动画）
+ * - 六列表格：药品名称 / 类型 / 受理日期 / 审评进度（十分段条 + x/10）/ 当前节点 / 操作
  * 数据全部来自真实接口：/registration/drugs、/drugs/nodes、/drugs/{id}/prediction
  */
 
-import { useState, useCallback, useMemo } from 'react'
+import type { components } from '@/types/generated/schema'
+import { usePathname, useRouter } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Table, Space, Input, Select, Modal, App, Form, DatePicker,
-  Popconfirm, Drawer, Empty, Spin, Switch, Pagination,
+  Modal, App, Form, Input, Select, DatePicker, Popconfirm, Drawer, Empty, Spin, Switch,
 } from 'antd'
-import { SearchOutlined } from '@ant-design/icons'
 import type { Dayjs } from 'dayjs'
 import {
   Drug,
@@ -24,57 +24,99 @@ import {
 } from '@/lib/api/client/registration'
 import type { ReviewNodeConfig } from '@/types/registration'
 import { createDrug, updateDrug, deleteDrug } from '@/actions/registration'
-import { RegistrationPageHeader } from './RegistrationPageHeader'
+import { ReviewFlowGuide } from './ReviewFlowGuide'
+import { projectStatusMeta } from './projectStatus'
 import ui from './registration-ui.module.css'
 import styles from './review-progress.module.css'
 import {
-  IconActivity, IconRefresh, IconPlus, IconFlask, IconBulb,
-  IconClock, IconShieldCheck, IconTrash, IconCheck,
+  IconRefresh, IconPlus, IconFlask, IconBulb, IconClock, IconShieldCheck,
+  IconTrash, IconCheck, IconList,
 } from './RegistrationIcons'
 
 type DrugType = '仿制药' | '创新药' | '原料药'
 
 const PAGE_SIZE = 10
-
-/** 注册项目状态标签（与注册项目页保持一致） */
-const PROJECT_STATUS: Record<string, { label: string; className: string }> = {
-  draft: { label: '草稿', className: ui.tagPlain },
-  preparing: { label: '准备中', className: ui.tagPlain },
-  submitted: { label: '已申报', className: ui.tagInfo },
-  accepted: { label: '已受理', className: ui.tagInfo },
-  under_review: { label: '审评中', className: ui.tagWarn },
-  supplementary: { label: '发补中', className: ui.tagWarn },
-  approved: { label: '已获批', className: ui.tagOk },
-  withdrawn: { label: '已撤回', className: ui.tagPlain },
-  terminated: { label: '已终止', className: ui.tagRisk },
-}
+const TOTAL_NODES = 10
 
 interface RowProgress {
-  completed: number
-  total: number
-  percent: number
-  currentNodeName: string | null
+  current: number | null
+  approved: boolean
+  label: string | null
 }
 
-/** 列表行进度：有效节点 = 全部节点 - 已跳过；当前节点 = 首个未完成且未跳过的节点 */
+/** 列表行进度：优先用后端 stage（含自动定位与逾期），无 stage 时本地兜底 */
 function computeRowProgress(drug: Drug, reviewNodes: ReviewNodeConfig[]): RowProgress {
+  const stage = drug.stage
+  if (stage) {
+    return {
+      approved: stage.approved,
+      current: stage.approved ? null : (stage.current_node_index ?? null),
+      label: stage.approved ? '已获批' : (stage.current_node_name ?? null),
+    }
+  }
   const records = drug.nodes ?? []
-  const skippedCount = records.filter(n => n.skipped).length
-  const completed = records.filter(n => !n.skipped && n.actual_date).length
-  const total = Math.max(reviewNodes.length - skippedCount, 0)
+  const lastIndex = reviewNodes.length
+  const approved = records.some(n => n.node_index === lastIndex && n.actual_date)
   const current = reviewNodes.find(n => {
     const rec = records.find(x => x.node_index === n.index)
     return !rec?.skipped && !rec?.actual_date
   })
   return {
-    completed,
-    total,
-    percent: total ? Math.round((completed / total) * 100) : 0,
-    currentNodeName: current?.name ?? null,
+    approved,
+    current: approved ? null : (current?.index ?? null),
+    label: approved ? '已获批' : (current?.name ?? null),
   }
 }
 
+/** 当前节点标签配色映射：发补递交=橙、CDE 发补审评=蓝、开展核查=青、已获批=绿、其他=紫 */
+function nodeTagClass(name: string | null | undefined, approved: boolean): string {
+  if (approved) return ui.tagOk
+  if (!name) return ui.tagBrand
+  if (name.includes('发补递交')) return ui.tagWarn
+  if (name.includes('发补审评')) return ui.tagInfo
+  if (name.includes('开展核查')) return ui.tagTeal
+  if (name.includes('获批')) return ui.tagOk
+  return ui.tagBrand
+}
+
+/** KPI 数字滚动入场：0 → 目标值，900ms 三次缓出；减弱动效时直接显示终值 */
+function CountUp({ value, delay = 0 }: { value: number; delay?: number }) {
+  const [display, setDisplay] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? value : 0,
+  )
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      // 初始值已是目标值，无需动画
+      return
+    }
+    let raf = 0
+    const startTimer = window.setTimeout(() => {
+      const dur = 900
+      const t0 = performance.now()
+      const tick = (t: number) => {
+        const p = Math.min((t - t0) / dur, 1)
+        const e = 1 - Math.pow(1 - p, 3)
+        setDisplay(Math.round(value * e))
+        if (p < 1) raf = requestAnimationFrame(tick)
+      }
+      raf = requestAnimationFrame(tick)
+    }, delay)
+    // 兜底：动画结束后写回真实值，防止 rAF 被挂起时数字停在中间值
+    const fallback = window.setTimeout(() => setDisplay(value), delay + 900 + 300)
+    return () => {
+      clearTimeout(startTimer)
+      clearTimeout(fallback)
+      cancelAnimationFrame(raf)
+    }
+  }, [value, delay])
+
+  return <>{display}</>
+}
+
 export function ReviewPageClient() {
+  const router = useRouter()
+  const pathname = usePathname()
   const { message } = App.useApp()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<string>('全部')
@@ -82,10 +124,13 @@ export function ReviewPageClient() {
   const [selectedDrug, setSelectedDrug] = useState<Drug | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [expandedNode, setExpandedNode] = useState<number | null>(null)
+  // 从概览页「?drug=xxx」进入时只定位一次，避免轮询刷新反复弹抽屉
+
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [page, setPage] = useState(1)
   const [acceptanceNo, setAcceptanceNo] = useState('')
+
   const [acceptanceSaving, setAcceptanceSaving] = useState(false)
   const [form] = Form.useForm()
 
@@ -96,21 +141,37 @@ export function ReviewPageClient() {
     queryFn: fetchDrugs,
   })
 
+  // 概览页点击品种行 → /registration/review?drug=<id>：
+  // 深链目标由 URL + 列表派生（useMemo），不用 effect 取数/写 state
+  const focusedId = useMemo(
+    () => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("drug")),
+    [],
+  )
+  const focusedDrug = useMemo(
+    () => (focusedId ? (drugs.find(d => d.id === focusedId) ?? null) : null),
+    [focusedId, drugs],
+  )
+
+  // 用户手动选择优先，否则回落到深链目标
+  const activeDrug = selectedDrug ?? focusedDrug
+  const drawerVisible = drawerOpen || Boolean(focusedDrug)
+  // 深链进入时用该品种的受理编号作为初值
+  const acceptanceValue = acceptanceNo || (activeDrug?.acceptance_number ?? '')
+
   const { data: reviewNodes = [], isLoading: nodesLoading } = useQuery({
     queryKey: ['registration-review-nodes'],
     queryFn: fetchReviewNodes,
   })
 
   const { data: prediction, isLoading: predictionLoading } = useQuery({
-    queryKey: ['registration-drug-prediction', selectedDrug?.id],
-    queryFn: () => fetchDrugPrediction(selectedDrug!.id),
-    enabled: !!selectedDrug && drawerOpen,
+    queryKey: ['registration-drug-prediction', activeDrug?.id],
+    queryFn: () => fetchDrugPrediction(activeDrug!.id),
+    enabled: !!activeDrug && drawerVisible,
   })
 
-  // 该品种关联的注册项目（抽屉内展示，双向联动）
   const { data: drugProjects = [] } = useQuery({
-    queryKey: ['registration-drug-projects', selectedDrug?.id],
-    queryFn: () => fetchProjectsByDrug(selectedDrug!.id),
+    queryKey: ['registration-drug-projects', activeDrug?.id],
+    queryFn: () => fetchProjectsByDrug(activeDrug!.id),
     enabled: !!selectedDrug && drawerOpen,
   })
 
@@ -120,8 +181,11 @@ export function ReviewPageClient() {
     queryClient.invalidateQueries({ queryKey: ['registration-drugs'] })
     queryClient.invalidateQueries({ queryKey: ['registration-review-nodes'] })
     queryClient.invalidateQueries({ queryKey: ['registration-drug-prediction'] })
-    // 品种增删会影响概览页 KPI 的"审评中"计数，同步失效
     queryClient.invalidateQueries({ queryKey: ['registration-ledger-summary'] })
+    // 受理号登记 / 节点推进都会回写关联项目状态，抽屉内「关联注册项目」需即时刷新
+    queryClient.invalidateQueries({ queryKey: ['registration-drug-projects'] })
+    queryClient.invalidateQueries({ queryKey: ['registration-projects'] })
+    queryClient.invalidateQueries({ queryKey: ['registration-projects-kpi'] })
   }, [queryClient])
 
   const filtered = useMemo(() => drugs.filter(d => {
@@ -131,29 +195,31 @@ export function ReviewPageClient() {
     return true
   }), [drugs, search, typeFilter, yearFilter])
 
-  // 筛选变化后回到第一页；当前页数据切片
   const safePage = Math.min(page, Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)))
   const pagedDrugs = useMemo(
     () => filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
     [filtered, safePage],
   )
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
 
-  const stats = useMemo(() => {
-    const lastIndex = reviewNodes.length
-    return {
-      total: filtered.length,
-      innovative: filtered.filter(d => d.type === '创新药').length,
-      inProgress: filtered.filter(d => {
-        const nodes = (d.nodes || []).filter(n => !n.skipped)
-        return nodes.some(n => n.actual_date) && nodes.some(n => !n.actual_date)
-      }).length,
-      approved: filtered.filter(d => {
-        const nodes = (d.nodes || []).filter(n => !n.skipped)
-        const last = nodes.find(n => n.node_index === lastIndex)
-        return !!last?.actual_date
-      }).length,
-    }
-  }, [filtered, reviewNodes.length])
+  // KPI 卡：全局口径（不随搜索/筛选变化）
+  const stats = useMemo(() => ({
+    total: drugs.length,
+    innovative: drugs.filter(d => d.type === '创新药').length,
+    inProgress: drugs.filter(d => {
+      const stage = d.stage
+      if (stage) return stage.current_node_index != null && !stage.approved
+      const nodes = (d.nodes || []).filter(n => !n.skipped)
+      return nodes.some(n => n.actual_date) && nodes.some(n => !n.actual_date)
+    }).length,
+    approved: drugs.filter(d => {
+      const stage = d.stage
+      if (stage) return stage.approved
+      const nodes = (d.nodes || []).filter(n => !n.skipped)
+      const last = nodes.find(n => n.node_index === reviewNodes.length)
+      return !!last?.actual_date
+    }).length,
+  }), [drugs, reviewNodes.length])
 
   const handleAdd = async (values: { name: string; type: DrugType; acceptance_date: Dayjs }) => {
     setSubmitting(true)
@@ -174,15 +240,27 @@ export function ReviewPageClient() {
     }
   }
 
-  const handleUpdateNode = async (drugId: string, nodeIndex: number, payload: { actual_date?: string | null; skipped?: boolean }) => {
+  const handleDelete = async (id: string) => {
     try {
-      const result = await updateDrug(drugId, {
-        nodes: [{ node_index: nodeIndex, ...payload }],
+      await deleteDrug(id)
+      message.success('删除成功')
+      if (activeDrug?.id === id) { setSelectedDrug(null); setDrawerOpen(false) }
+      refreshData()
+    } catch {
+      message.error('删除失败')
+    }
+  }
+
+  const handleUpdateNode = async (
+    drugId: string,
+    nodeIndex: number,
+    payload: Omit<components['schemas']['DrugNodeUpdate'], 'node_index'>,
+  ) => {
+    try {
+      // 契约类型取自生成 schema；失败由 apiFetch 抛错，统一走 catch
+      await updateDrug(drugId, {
+        nodes: [{ ...payload, node_index: nodeIndex }],
       })
-      if (result && 'success' in result && result.success === false) {
-        message.error(result.message || '更新失败')
-        return
-      }
       message.success('节点更新成功')
       refreshData()
     } catch {
@@ -190,38 +268,22 @@ export function ReviewPageClient() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteDrug(id)
-      message.success('删除成功')
-      if (selectedDrug?.id === id) { setSelectedDrug(null); setDrawerOpen(false) }
-      refreshData()
-    } catch {
-      message.error('删除失败')
-    }
-  }
-
   const openDetail = (drug: Drug) => {
     setSelectedDrug(drug)
     setAcceptanceNo(drug.acceptance_number ?? '')
-    setExpandedNode(null) // 重置为「当前进行中节点默认展开」
+    setExpandedNode(null)
     setDrawerOpen(true)
   }
 
-  /** 登记受理号：回写后触发后端同步，关联注册项目状态自动置「已受理」并留痕 */
+
   const handleSaveAcceptanceNo = async () => {
-    if (!selectedDrug || acceptanceSaving) return
+    if (!activeDrug || acceptanceSaving) return
     setAcceptanceSaving(true)
     try {
-      const result = await updateDrug(selectedDrug.id, { acceptance_number: acceptanceNo.trim() || null })
-      if (result && 'success' in result && result.success === false) {
-        message.error(result.message || '保存失败')
-        return
-      }
+      // updateDrug 失败会抛 ApiError（apiFetch 非 2xx 即抛），此处无需再判 success 字段
+      await updateDrug(activeDrug.id, { acceptance_number: acceptanceValue.trim() || null })
       message.success('受理号已登记，关联注册项目状态将自动同步')
       refreshData()
-      // 同步刷新注册项目页缓存（若已打开）
-      queryClient.invalidateQueries({ queryKey: ['registration-projects'] })
     } catch {
       message.error('保存失败')
     } finally {
@@ -230,233 +292,242 @@ export function ReviewPageClient() {
   }
 
   const statCards = [
-    { key: 'total', label: '药品总数', value: stats.total, icon: IconFlask, accent: 'var(--brand-600)', accentBg: 'var(--brand-50)' },
-    { key: 'innovative', label: '创新药', value: stats.innovative, icon: IconBulb, accent: 'var(--info-600)', accentBg: 'var(--info-50)' },
-    { key: 'inProgress', label: '审评中', value: stats.inProgress, icon: IconClock, accent: 'var(--warn-600)', accentBg: 'var(--warn-50)' },
-    { key: 'approved', label: '已获批', value: stats.approved, icon: IconShieldCheck, accent: 'var(--ok-600)', accentBg: 'var(--ok-50)' },
-  ]
-
-  // 列宽按原型固定百分比（tableLayout="fixed" 生效）；两端钉死：首列左、末列右、中间居中
-  const columns = [
-    {
-      title: '药品名称',
-      dataIndex: 'name',
-      key: 'name',
-      width: '14%',
-      align: 'left' as const,
-      render: (text: string) => <span className={styles.drugName}>{text}</span>,
-    },
-    {
-      title: '类型',
-      dataIndex: 'type',
-      key: 'type',
-      width: '9%',
-      align: 'center' as const,
-      render: (type: DrugType) => <span className={ui.tagOk}>{type}</span>,
-    },
-    {
-      title: '受理日期',
-      dataIndex: 'acceptance_date',
-      key: 'acceptance_date',
-      width: '12%',
-      align: 'center' as const,
-    },
-    {
-      title: '审评进度',
-      key: 'progress',
-      width: '34%',
-      align: 'center' as const,
-      render: (_: unknown, record: Drug) => {
-        // 分段短横线：每个节点一根；已完成或已跳过=实心紫，未到达=描边空心
-        const records = record.nodes ?? []
-        const skippedCount = records.filter(n => n.skipped).length
-        const completed = records.filter(n => !n.skipped && n.actual_date).length
-        const total = Math.max(reviewNodes.length - skippedCount, 0)
-        return (
-          <div className={styles.progressCell}>
-            <div className={styles.segments}>
-              {reviewNodes.map(n => {
-                const rec = records.find(x => x.node_index === n.index)
-                const filled = !!rec?.actual_date || !!rec?.skipped
-                return <i key={n.index} className={filled ? styles.segFilled : styles.seg} />
-              })}
-            </div>
-            <span className={styles.segNum}>{completed}/{total}</span>
-          </div>
-        )
-      },
-    },
-    {
-      title: '当前节点',
-      key: 'currentNode',
-      width: '21%',
-      align: 'center' as const,
-      render: (_: unknown, record: Drug) => {
-        const p = computeRowProgress(record, reviewNodes)
-        return p.currentNodeName
-          ? <span className={ui.tagInfo}>{p.currentNodeName}</span>
-          : <span className={ui.tagOk}>已完成</span>
-      },
-    },
-    {
-      title: '操作',
-      key: 'action',
-      width: '10%',
-      align: 'right' as const,
-      render: (_: unknown, record: Drug) => (
-        <Space size={0} onClick={e => e.stopPropagation()}>
-          <button type="button" className={styles.opLink} onClick={() => openDetail(record)}>
-            详情
-          </button>
-          <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)} okText="确定" cancelText="取消">
-            <button type="button" className={styles.opDel} title="删除">{IconTrash}</button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
+    { key: 'total', label: '药品总数', value: stats.total, sub: '在册申报品种', icon: IconFlask, accent: 'var(--brand-600)', accentBg: 'var(--brand-50)' },
+    { key: 'innovative', label: '创新药', value: stats.innovative, sub: '创新药申报数量', icon: IconBulb, accent: 'var(--info-600)', accentBg: 'var(--info-50)' },
+    { key: 'inProgress', label: '审评中', value: stats.inProgress, sub: '已有审评节点推进、尚未获批（含发补）', icon: IconClock, accent: 'var(--warn-600)', accentBg: 'var(--warn-50)' },
+    { key: 'approved', label: '已获批', value: stats.approved, sub: '已获批准的品种', icon: IconShieldCheck, accent: 'var(--ok-600)', accentBg: 'var(--ok-50)' },
   ]
 
   // 抽屉时间轴：展开的节点 = 用户点选的，否则默认当前进行中节点
   const expandedIndex = expandedNode ?? prediction?.current_node_index ?? null
+  const completedWithOverdue = (prediction?.completed_nodes ?? 0)
+    + (prediction?.nodes?.filter(n => n.status === 'overdue').length ?? 0)
   const summaryPercent = prediction?.total_nodes
-    ? Math.round((prediction.completed_nodes / prediction.total_nodes) * 100)
+    ? Math.round((completedWithOverdue / prediction.total_nodes) * 100)
     : 0
 
   return (
-    <div className={ui.regUi}>
-      <RegistrationPageHeader
-        icon={IconActivity}
-        title="申报进度查询"
-        sub="审评节点进度跟踪与预测"
-        actions={
-          <>
-            <button type="button" className={ui.btn} onClick={refreshData} disabled={loading}>
-              {IconRefresh}
-              刷新
-            </button>
-            <button type="button" className={ui.btnPrimary} onClick={() => setAddModalOpen(true)}>
-              {IconPlus}
-              添加药品
-            </button>
-          </>
-        }
-      />
+    <div className={styles.reviewPage}>
+      {/* 页头 */}
+      <div className={styles.pageHead}>
+        <div>
+          <div className={styles.pageTitle}>
+            <div className={styles.titleIco}>{IconClock}</div>
+            <h1>申报进度查询</h1>
+          </div>
+          <div className={styles.pageSub}>审评节点进度跟踪与查询</div>
+        </div>
+        <div className={styles.headActions}>
+          <button type="button" className={styles.btn} onClick={refreshData} disabled={loading}>
+            {IconRefresh}
+            刷新
+          </button>
+          <button type="button" className={styles.btnPrimary} onClick={() => setAddModalOpen(true)}>
+            {IconPlus}
+            添加药品
+          </button>
+        </div>
+      </div>
 
-      {/* 指标条：与原型一致的芯片 KPI 卡 */}
-      <div className={ui.kpiRow}>
-        {statCards.map(card => (
+      {/* ① KPI 条 */}
+      <div className={styles.kpiRow} aria-label="进度概览">
+        {statCards.map((card, i) => (
           <div
             key={card.key}
-            className={ui.kpi}
+            className={styles.kpi}
+            tabIndex={0}
             style={{ '--accent': card.accent, '--accent-bg': card.accentBg } as React.CSSProperties}
           >
-            <div className={ui.kpiTop}>
-              <div className={ui.kpiChip}>{card.icon}</div>
-              <div className={ui.kpiLabel}>{card.label}</div>
+            <div className={styles.kpiTop}>
+              <div className={styles.kpiChip}>{card.icon}</div>
+              <div className={styles.kpiLabel}>{card.label}</div>
             </div>
-            <div className={ui.kpiNum}>{card.value}</div>
+            <div className={styles.kpiNum}>
+              <CountUp value={card.value} delay={120 + i * 90} />
+            </div>
+            <div className={styles.kpiSub}>{card.sub}</div>
           </div>
         ))}
       </div>
 
-      {/* 列表面板 */}
-      <div className={ui.panel}>
-        <div className={ui.toolbar}>
-          <div className={ui.toolbarGroup}>
-            <Input
-              placeholder="搜索药品名称"
-              prefix={<SearchOutlined />}
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{ width: 240 }}
-              allowClear
-            />
-            <Select value={typeFilter} onChange={setTypeFilter} style={{ width: 120 }}
-              options={[
-                { label: '全部类型', value: '全部' },
-                { label: '创新药', value: '创新药' },
-                { label: '仿制药', value: '仿制药' },
-                { label: '原料药', value: '原料药' },
-              ]}
-            />
-            <Select value={yearFilter} onChange={setYearFilter} style={{ width: 120 }}
-              options={[
-                { label: '全部年份', value: '全部' },
-                { label: '2025', value: '2025' },
-                { label: '2026', value: '2026' },
-                { label: '2027', value: '2027' },
-              ]}
-            />
+      {/* ② 审评节点导轨 */}
+      <ReviewFlowGuide />
+
+      {/* ③ 进度表格面板 */}
+      <div className={styles.panel}>
+        <div className={styles.panelHead}>
+          <div className={styles.panelIco}>{IconList}</div>
+          <div className={styles.panelTitle}>审评进度</div>
+          <span className={styles.countPill}>{filtered.length}</span>
+          <div className={styles.toolbar}>
+            <div className={styles.search}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                type="text"
+                placeholder="药品名称"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+            <select className={styles.select} value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+              <option value="全部">全部类型</option>
+              <option value="原料药">原料药</option>
+              <option value="创新药">创新药</option>
+              <option value="仿制药">仿制药</option>
+            </select>
+            <select className={styles.select} value={yearFilter} onChange={e => setYearFilter(e.target.value)}>
+              <option value="全部">全部年份</option>
+              <option value="2025">2025</option>
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+            </select>
           </div>
-          <div className={styles.toolbarHint}>点击任意行可打开进度详情</div>
         </div>
-        <div className={`${ui.tableWrap} ${styles.tableLg}`}>
-          <Table
-            dataSource={pagedDrugs}
-            columns={columns}
-            rowKey="id"
-            loading={loading}
-            pagination={false}
-            tableLayout="fixed"
-            size="middle"
-            onRow={record => ({
-              onClick: () => openDetail(record),
-              style: { cursor: 'pointer' },
-            })}
-          />
+
+        <div className={styles.tableWrap}>
+          {loading ? (
+            <div className={styles.emptyRow}><Spin /></div>
+          ) : pagedDrugs.length === 0 ? (
+            <div className={styles.emptyRow}>暂无数据</div>
+          ) : (
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th className={styles.th}>药品名称</th>
+                  <th className={styles.th}>类型</th>
+                  <th className={styles.th}>受理日期</th>
+                  <th className={styles.th}>审评进度</th>
+                  <th className={styles.th}>当前节点</th>
+                  <th className={styles.th}>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pagedDrugs.map(record => {
+                  const p = computeRowProgress(record, reviewNodes)
+                  const current = p.approved ? TOTAL_NODES : (p.current ?? 0)
+                  return (
+                    <tr key={record.id} className={styles.row} tabIndex={0} onClick={() => openDetail(record)}>
+                      <td className={styles.td}>
+                        <div className={styles.drug}>
+                          <div className={styles.drugIco}>{IconFlask}</div>
+                          <div>
+                            <div className={styles.drugName}>{record.name}</div>
+                            <div className={styles.drugSub}>
+                              {record.acceptance_number ? `受理号 ${record.acceptance_number}` : '未登记受理号'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className={styles.td}><span className={ui.tagBrand}>{record.type}</span></td>
+                      <td className={styles.td}>{record.acceptance_date}</td>
+                      <td className={styles.td}>
+                        <div className={styles.prog}>
+                          <div className={styles.steps}>
+                            {Array.from({ length: TOTAL_NODES }, (_, idx) => {
+                              const i = idx + 1
+                              const cls = p.approved || i < current
+                                ? styles.segmentDone
+                                : i === current
+                                  ? styles.segmentCur
+                                  : styles.segment
+                              return (
+                                <i
+                                  key={i}
+                                  className={cls}
+                                  style={{ animationDelay: `${0.5 + idx * 0.05}s` }}
+                                />
+                              )
+                            })}
+                          </div>
+                          <span className={styles.pct}>{current}/{TOTAL_NODES}</span>
+                        </div>
+                      </td>
+                      <td className={styles.td}>
+                        {p.label
+                          ? <span className={nodeTagClass(p.label, p.approved)}>{p.label}</span>
+                          : <span className={ui.tagPlain}>未开始</span>}
+                      </td>
+                      <td className={styles.td}>
+                        <button type="button" className={styles.link} onClick={e => { e.stopPropagation(); openDetail(record) }}>
+                          详情 ›
+                        </button>
+                        <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)} okText="确定" cancelText="取消">
+                          <button type="button" className={styles.opDel} title="删除" onClick={e => e.stopPropagation()}>
+                            {IconTrash}
+                          </button>
+                        </Popconfirm>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
-        {/* 底部栏：左侧总数，右侧分页（当前页紫底白字） */}
-        <div className={styles.tableFoot}>
-          <span className={styles.totalText}>共 {filtered.length} 条</span>
-          <Pagination
-            current={safePage}
-            pageSize={PAGE_SIZE}
-            total={filtered.length}
-            onChange={setPage}
-            size="small"
-            showSizeChanger={false}
-          />
+
+        <div className={styles.panelFoot}>
+          <span>共 {filtered.length} 条</span>
+          <div className={styles.pager}>
+            <button type="button" className={styles.pg} disabled={safePage <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>‹</button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+              <button
+                key={p}
+                type="button"
+                className={`${styles.pg} ${p === safePage ? styles.on : ''}`}
+                onClick={() => setPage(p)}
+              >
+                {p}
+              </button>
+            ))}
+            <button type="button" className={styles.pg} disabled={safePage >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>›</button>
+          </div>
         </div>
       </div>
 
       {/* 详情抽屉：540px，摘要卡 + 节点时间轴 */}
       <Drawer
         size={540}
-        open={drawerOpen}
-        onClose={() => { setDrawerOpen(false); setSelectedDrug(null) }}
+        open={drawerVisible}
+        onClose={() => {
+          setDrawerOpen(false)
+          setSelectedDrug(null)
+          if (focusedId) router.replace(pathname)
+        }}
         title={
-          selectedDrug && (
+          activeDrug && (
             <div>
               <div className={styles.drawerName}>
-                {selectedDrug.name}
-                <span className={ui.tagOk}>{selectedDrug.type}</span>
+                {activeDrug.name}
+                <span className={ui.tagBrand}>{activeDrug.type}</span>
               </div>
-              <div className={styles.drawerSub}>受理日期：{selectedDrug.acceptance_date}</div>
+              <div className={styles.drawerSub}>受理日期：{activeDrug.acceptance_date}</div>
             </div>
           )
         }
         styles={{ body: { padding: 0 } }}
       >
         <div className={`${ui.tokenScope} ${styles.drawerBody}`}>
-          {selectedDrug && (
+          {activeDrug && (
             <Spin spinning={predictionLoading}>
               {prediction && (
                 <>
-                  {/* 摘要卡 */}
                   <div className={styles.summary}>
                     <div className={styles.summaryTop}>
                       <span className={styles.summaryLabel}>整体进度</span>
                       <span className={styles.summaryNum}>
-                        {prediction.completed_nodes}/{prediction.total_nodes} · {summaryPercent}%
+                        {completedWithOverdue}/{prediction.total_nodes} · {summaryPercent}%
                       </span>
                     </div>
                     <div className={styles.summaryBar}>
-                      <i className={styles.barFill} style={{ width: `${summaryPercent}%` }} />
+                      <i className={styles.summaryBarFill} style={{ width: `${summaryPercent}%` }} />
                     </div>
                     <div className={styles.summaryDates}>
                       <div>
                         <div className={styles.dLabel}>受理日期</div>
-                        <div className={styles.dVal}>{selectedDrug.acceptance_date}</div>
+                        <div className={styles.dVal}>{activeDrug.acceptance_date}</div>
                       </div>
                       {prediction.estimated_approval_date && (
                         <div>
@@ -467,55 +538,61 @@ export function ReviewPageClient() {
                     </div>
                   </div>
 
-                  {/* 受理号登记：登记后自动同步关联注册项目状态为「已受理」 */}
                   <div className={styles.acceptanceRow}>
                     <span className={styles.acceptanceLabel}>受理号</span>
                     <Input
                       size="small"
                       placeholder="登记受理号，如 CXHS2600001"
-                      value={acceptanceNo}
+                      value={acceptanceValue}
                       onChange={e => setAcceptanceNo(e.target.value)}
                       style={{ flex: 1 }}
                     />
                     <button
                       type="button"
                       className={styles.acceptanceSave}
-                      disabled={acceptanceSaving || acceptanceNo.trim() === (selectedDrug.acceptance_number ?? '')}
+                      disabled={acceptanceSaving || acceptanceNo.trim() === (activeDrug.acceptance_number ?? '')}
                       onClick={() => void handleSaveAcceptanceNo()}
                     >
                       登记
                     </button>
                   </div>
 
-                  {/* 关联注册项目 */}
-                  {drugProjects.length > 0 && (
-                    <>
-                      <div className={styles.tlTitle}>
-                        关联注册项目
-                        <span className={styles.tlCount}>共 {drugProjects.length} 个</span>
-                      </div>
-                      <div className={styles.projList}>
-                        {drugProjects.map(project => {
-                          const cfg = PROJECT_STATUS[project.status] || { label: project.status, className: ui.tagPlain }
-                          return (
-                            <Link key={project.id} href="/registration/projects" className={styles.projItem}>
-                              <span className={styles.projName}>
-                                {project.market} · {project.registration_type || '注册'}
-                              </span>
-                              <span className={cfg.className}>{cfg.label}</span>
-                              <span className={styles.projMeta}>
-                                {project.owner || '未指定负责人'}
-                                {project.expected_completion_at ? ` · 预计 ${project.expected_completion_at}` : ''}
-                              </span>
-                              <span className={styles.projLink}>查看 ›</span>
-                            </Link>
-                          )
-                        })}
-                      </div>
-                    </>
+                  <div className={styles.tlTitle}>
+                    关联注册项目
+                    <span className={styles.tlCount}>共 {drugProjects.length} 个</span>
+                  </div>
+                  {drugProjects.length > 0 ? (
+                    <div className={styles.projList}>
+                      {drugProjects.map(project => {
+                        const cfg = projectStatusMeta(project.status)
+                        return (
+                          <Link
+                            key={project.id}
+                            href={`/registration/projects?project=${project.id}`}
+                            className={styles.projItem}
+                          >
+                            <span className={styles.projName}>
+                              {project.market} · {project.registration_type || '注册'}
+                            </span>
+                            <span className={cfg.tagClass}>{cfg.label}</span>
+                            <span className={styles.projMeta}>
+                              {project.owner || '未指定负责人'}
+                              {project.expected_completion_at ? ` · 预计 ${project.expected_completion_at}` : ''}
+                            </span>
+                            <span className={styles.projLink}>查看 ›</span>
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className={styles.projEmpty}>
+                      <div className={styles.projEmptyText}>该品种暂未关联注册项目</div>
+                      <Link href="/registration/projects" className={styles.projEmptyLink}>
+                        去注册项目页创建 ›
+                      </Link>
+                    </div>
                   )}
 
-                  {/* 节点时间轴 */}
                   <div className={styles.tlTitle}>
                     审评节点
                     <span className={styles.tlCount}>共 {prediction.total_nodes} 个</span>
@@ -524,7 +601,7 @@ export function ReviewPageClient() {
                     const expanded = expandedIndex === node.node_index
                     const stateClass =
                       node.status === 'in_progress' ? styles.tlItemCurrent
-                      : node.status === 'completed' ? styles.tlItemDone
+                      : node.status === 'completed' || node.status === 'overdue' ? styles.tlItemDone
                       : ''
                     return (
                       <div
@@ -533,7 +610,7 @@ export function ReviewPageClient() {
                         onClick={() => setExpandedNode(expanded ? -1 : node.node_index)}
                       >
                         <div className={styles.tlDot}>
-                          {node.status === 'completed' ? IconCheck
+                          {node.status === 'completed' || node.status === 'overdue' ? IconCheck
                             : node.status === 'skipped' ? '–'
                             : node.node_index}
                         </div>
@@ -550,11 +627,12 @@ export function ReviewPageClient() {
                           <div className={styles.tlMeta}>
                             {node.status === 'skipped'
                               ? '该节点不发生（已跳过）'
-                              : node.actual_date
-                                ? `实际：${node.actual_date}`
-                                : `预计：${node.estimated_date ?? '-'}`}
+                              : node.status === 'overdue'
+                                ? `预计 ${node.estimated_date ?? '-'}（按预测已通过，实际日期未填）`
+                                : node.actual_date
+                                  ? `实际：${node.actual_date}`
+                                  : `预计：${node.estimated_date ?? '-'}`}
                           </div>
-                          {/* 节点操作区：默认收起，仅当前进行中节点默认展开 */}
                           <div className={styles.tlControls} onClick={e => e.stopPropagation()}>
                             {node.status !== 'skipped' && (
                               <>
@@ -563,7 +641,7 @@ export function ReviewPageClient() {
                                   size="small"
                                   placeholder="选择日期"
                                   onChange={(date: Dayjs | null) =>
-                                    handleUpdateNode(selectedDrug.id, node.node_index, {
+                                    handleUpdateNode(activeDrug.id, node.node_index, {
                                       actual_date: date ? date.format('YYYY-MM-DD') : null,
                                     })
                                   }
@@ -572,7 +650,7 @@ export function ReviewPageClient() {
                                   <button
                                     type="button"
                                     className={styles.undoLink}
-                                    onClick={() => handleUpdateNode(selectedDrug.id, node.node_index, { actual_date: null })}
+                                    onClick={() => handleUpdateNode(activeDrug.id, node.node_index, { actual_date: null })}
                                   >
                                     撤销完成
                                   </button>
@@ -584,7 +662,7 @@ export function ReviewPageClient() {
                               size="small"
                               checked={node.status === 'skipped'}
                               onChange={checked =>
-                                handleUpdateNode(selectedDrug.id, node.node_index, { skipped: checked })
+                                handleUpdateNode(activeDrug.id, node.node_index, { skipped: checked })
                               }
                             />
                           </div>

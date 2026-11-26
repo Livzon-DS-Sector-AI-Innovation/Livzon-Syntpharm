@@ -30,7 +30,8 @@ class ProjectCreate(BaseModel):
     registration_type: RegistrationType
     project_no: str | None = Field(None, max_length=64)
     market: str | None = Field(None, max_length=128)
-    owner: str | None = Field(None, max_length=128)
+    owner_id: uuid.UUID | None = None
+    owner: str | None = Field(None, max_length=128, description="负责人姓名快照，可由 owner_id 自动回填")
     planned_submission_date: date | None = None
     drug_id: uuid.UUID | None = None
 
@@ -43,7 +44,8 @@ class ProjectUpdate(BaseModel):
     registration_type: RegistrationType | None = None
     project_no: str | None = Field(None, max_length=64)
     market: str | None = Field(None, max_length=128)
-    owner: str | None = Field(None, max_length=128)
+    owner_id: uuid.UUID | None = None
+    owner: str | None = Field(None, max_length=128, description="负责人姓名快照，可由 owner_id 自动回填")
     planned_submission_date: date | None = None
     expected_completion_at: date | None = None
     drug_id: uuid.UUID | None = None
@@ -87,6 +89,7 @@ class ProjectResponse(BaseModel):
     accepted_at: date | None
     approved_at: date | None
     expected_completion_at: date | None
+    owner_id: uuid.UUID | None
     owner: str | None
     latest_progress: str | None
     latest_log: ProgressLogResponse | None = None

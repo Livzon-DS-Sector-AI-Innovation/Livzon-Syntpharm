@@ -11,7 +11,11 @@ import {
   ProjectProgressLog,
   ReferenceStandardListItem,
   RegistrationProject,
-  SupplementaryReplyListItem,
+  AuthorizationLetterListParams,
+  ProjectCreatePayload,
+  ProjectUpdatePayload,
+  RegistrationProjectListParams,
+  ReferenceStandardListParams,
 } from '@/types/registration'
 import type { components } from '@/types/generated/schema'
 import type { ApiResponse, MessageResponse } from '@/types/common'
@@ -20,8 +24,6 @@ import type { PageResult } from '@/lib/api/page'
 import {
   generateAuthorizationLetter as generateAuthorizationLetterApi,
   deleteAuthorizationLetter as deleteAuthorizationLetterApi,
-  generateSupplementaryReply as generateSupplementaryReplyApi,
-  deleteSupplementaryReply as deleteSupplementaryReplyApi,
   generateReferenceStandard as generateReferenceStandardApi,
   deleteReferenceStandard as deleteReferenceStandardApi,
   fetchAuthorizationLetters as fetchAuthorizationLettersApi,
@@ -29,7 +31,6 @@ import {
   fetchRegistrationProducts as fetchRegistrationProductsApi,
   fetchRegistrationProjects as fetchRegistrationProjectsApi,
   fetchReferenceStandards as fetchReferenceStandardsApi,
-  fetchSupplementaryReplies as fetchSupplementaryRepliesApi,
   createDrug as createDrugApi,
   updateDrug as updateDrugApi,
   deleteDrug as deleteDrugApi,
@@ -42,11 +43,9 @@ import {
   advanceProjectStage as advanceProjectStageApi,
   addProjectLog as addProjectLogApi,
 } from '@/lib/api/server/registration'
+import type { DrugCreate, DrugUpdate } from '@/lib/api/client/registration'
 
-type DrugCreate = components['schemas']['DrugCreate']
-type DrugUpdate = components['schemas']['DrugUpdate']
 type AuthorizationLetterData = components['schemas']['AuthorizationLetterResponse']
-type SupplementaryReplyData = components['schemas']['SupplementaryReplyResponse']
 type ReferenceStandardData = components['schemas']['ReferenceStandardResponse']
 type DrugData = components['schemas']['DrugWithNodesResponse']
 type ProjectData = components['schemas']['ProjectResponse']
@@ -78,12 +77,12 @@ export async function generateAuthorizationLetter(
       submitData.append('replacements', replacements as string)
     }
 
-    const json = (await generateAuthorizationLetterApi(submitData)) as ApiResponse<AuthorizationLetterData>
+    const dataPayload = (await generateAuthorizationLetterApi(submitData)) as AuthorizationLetterData
     revalidatePath('/registration')
     return {
       success: true,
-      message: json.message || '授权书生成成功',
-      data: json.data,
+      message: '授权书生成成功',
+      data: dataPayload,
     }
   } catch (error) {
     return {
@@ -99,70 +98,10 @@ export async function deleteAuthorizationLetter(id: string): Promise<MessageResp
   return result
 }
 
-export async function generateSupplementaryReply(
-  formData: FormData,
-  data: {
-    drug_name?: string
-    registration_number?: string
-    acceptance_number?: string
-    company_name?: string
-    remarks?: string
-  }
-): Promise<{ success: boolean; message: string; data?: SupplementaryReplyData }> {
-  try {
-    const submitData = new FormData()
-    submitData.append('notice', formData.get('notice') as File)
-    
-    const template = formData.get('template')
-    if (template) {
-      submitData.append('template', template as File)
-    }
-    
-    if (data.drug_name) submitData.append('drug_name', data.drug_name)
-    if (data.registration_number) submitData.append('registration_number', data.registration_number)
-    if (data.acceptance_number) submitData.append('acceptance_number', data.acceptance_number)
-    if (data.company_name) submitData.append('company_name', data.company_name)
-    if (data.remarks) submitData.append('remarks', data.remarks)
-
-    const json = (await generateSupplementaryReplyApi(submitData)) as ApiResponse<SupplementaryReplyData>
-    revalidatePath('/registration')
-    return {
-      success: true,
-      message: json.message || '发补回复文档生成成功',
-      data: json.data,
-    }
-  } catch (error) {
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : '生成发补回复文档失败',
-    }
-  }
-}
-
-export async function deleteSupplementaryReplyAction(id: string): Promise<MessageResponse> {
-  const result = (await deleteSupplementaryReplyApi(id)) as MessageResponse
-  revalidatePath('/registration')
-  return result
-}
-
 export async function generateReferenceStandard(
   formData: FormData,
-  data: {
-    drug_name: string
-    reference_substance_name?: string
-    batch_number?: string
-    manufacturer?: string
-    english_name?: string
-    molecular_formula?: string
-    molecular_weight?: string
-    cas_number?: string
-    content?: string
-    moisture?: string
-    rsd?: string
-    expiration_date?: string
-    storage_condition?: string
-    remarks?: string
-  }
+  // 契约类型取自生成 OpenAPI（含 coa 之外的 13 个可选字段）
+  data: Omit<components['schemas']['Body_post_api_v1_registration_reference_standards_generate_post'], 'coa'>
 ): Promise<{ success: boolean; message: string; data?: ReferenceStandardData }> {
   try {
     const submitData = new FormData()
@@ -183,12 +122,12 @@ export async function generateReferenceStandard(
     if (data.storage_condition) submitData.append('storage_condition', data.storage_condition)
     if (data.remarks) submitData.append('remarks', data.remarks)
 
-    const json = (await generateReferenceStandardApi(submitData)) as ApiResponse<ReferenceStandardData>
+    const dataPayload = (await generateReferenceStandardApi(submitData)) as ReferenceStandardData
     revalidatePath('/registration')
     return {
       success: true,
-      message: json.message || '对照物质说明表生成成功',
-      data: json.data,
+      message: '对照物质说明表生成成功',
+      data: dataPayload,
     }
   } catch (error) {
     return {
@@ -205,7 +144,7 @@ export async function deleteReferenceStandardAction(id: string): Promise<Message
 }
 
 export async function fetchAuthorizationLettersServer(
-  params: { page: number; page_size: number; keyword?: string; product_name?: string; year?: number }
+  params: AuthorizationLetterListParams
 ): Promise<PageResult<AuthorizationLetterListItem>> {
   return fetchAuthorizationLettersApi(params)
 }
@@ -218,11 +157,9 @@ export async function fetchProductsServer(): Promise<ProductInfo[]> {
   return fetchRegistrationProductsApi()
 }
 
-export async function fetchRegistrationProjectsServer(params?: {
-  search?: string
-  registration_type?: string
-  status?: string
-}): Promise<RegistrationProject[]> {
+export async function fetchRegistrationProjectsServer(
+  params?: RegistrationProjectListParams
+): Promise<RegistrationProject[]> {
   return fetchRegistrationProjectsApi(params)
 }
 
@@ -235,15 +172,9 @@ export async function fetchProjectLogsServer(projectId: string): Promise<Project
 }
 
 export async function fetchReferenceStandardsServer(
-  params: { page: number; page_size: number }
+  params: ReferenceStandardListParams
 ): Promise<PageResult<ReferenceStandardListItem>> {
   return fetchReferenceStandardsApi(params)
-}
-
-export async function fetchSupplementaryRepliesServer(
-  params: { page: number; page_size: number }
-): Promise<PageResult<SupplementaryReplyListItem>> {
-  return fetchSupplementaryRepliesApi(params)
 }
 
 export async function createDrug(data: DrugCreate): Promise<ApiResponse<DrugData>> {
@@ -269,7 +200,7 @@ export async function parseCOA(file: File): Promise<ParseCOAResponse> {
 }
 
 export async function createRegistrationProject(
-  data: components['schemas']['ProjectCreate']
+  data: ProjectCreatePayload
 ): Promise<ApiResponse<ProjectData>> {
   const result = (await createRegistrationProjectApi(data)) as ApiResponse<ProjectData>
   revalidatePath('/registration')
@@ -278,7 +209,7 @@ export async function createRegistrationProject(
 
 export async function updateRegistrationProject(
   id: string,
-  data: components['schemas']['ProjectUpdate']
+  data: ProjectUpdatePayload
 ): Promise<ApiResponse<ProjectData>> {
   const result = (await updateRegistrationProjectApi(id, data)) as ApiResponse<ProjectData>
   revalidatePath('/registration')
@@ -297,9 +228,9 @@ export async function advanceProjectStage(
   stage: string
 ): Promise<{ success: boolean; message: string; data?: ProjectData }> {
   try {
-    const json = (await advanceProjectStageApi(id, stage)) as ApiResponse<ProjectData>
+    const dataPayload = (await advanceProjectStageApi(id, stage)) as ProjectData
     revalidatePath('/registration/projects')
-    return { success: true, message: json.message || '阶段已更新', data: json.data }
+    return { success: true, message: '阶段已更新', data: dataPayload }
   } catch (error) {
     return { success: false, message: error instanceof Error ? error.message : '阶段推进失败' }
   }
@@ -311,9 +242,9 @@ export async function addProjectProgressLog(
   content: string
 ): Promise<{ success: boolean; message: string; data?: components['schemas']['ProgressLogResponse'] }> {
   try {
-    const json = (await addProjectLogApi(id, content)) as ApiResponse<components['schemas']['ProgressLogResponse']>
+    const dataPayload = (await addProjectLogApi(id, content)) as components['schemas']['ProgressLogResponse']
     revalidatePath('/registration/projects')
-    return { success: true, message: json.message || '记录已添加', data: json.data }
+    return { success: true, message: '记录已添加', data: dataPayload }
   } catch (error) {
     return { success: false, message: error instanceof Error ? error.message : '添加记录失败' }
   }
