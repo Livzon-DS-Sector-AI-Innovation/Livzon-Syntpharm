@@ -18,6 +18,8 @@ import socket
 import tempfile
 import time
 import uuid
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -27,8 +29,9 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import storage
+from app.core.config import get_settings
 from app.core.database import async_session_factory, engine
-from app.modules.agent import highlight, page_images, queue, render, service
+from app.modules.agent import highlight, page_images, queue, render, service, tts_assets
 from app.modules.agent.alignment import Layout
 from app.modules.agent.cache import (
     Manifest,
@@ -59,6 +62,7 @@ from app.modules.agent.models import (
     JOB_KIND_PARSE,
     JOB_KIND_RENDER,
     JOB_KIND_SOURCE_PREVIEW,
+    JOB_STATUS_RUNNING,
     JOB_STATUS_SUCCEEDED,
     PAGE_IMAGES_STATUS_DONE,
     PROJECT_STATUS_FAILED,
@@ -85,10 +89,71 @@ PROGRESS_RENDER = 10
 PROGRESS_TTS_END = 85
 PROGRESS_CONCAT = 88
 PROGRESS_UPLOAD = 92
+#: 长耗时步骤（首次模型加载、首句合成、整片拼接）的保活间隔；远小于 STALE_SECONDS
+KEEPALIVE_INTERVAL_SECONDS = 120
 
 
 class JobFailedError(RuntimeError):
     """任务级失败（消息会回写到 job.error_message 并展示给用户）。"""
+
+
+class JobLeaseLostError(RuntimeError):
+    """任务租约已丢失：被 `requeue_stale` 打回队列，或已被别的 worker 抢走。
+
+    本地必须立刻停手且**不写任何库**：此时手上的页/项目改动已不属于本次执行，
+    继续写会和真正持有任务的那个 worker 互相覆盖。
+    """
+
+
+async def _beat(session: AsyncSession, job_id: uuid.UUID, worker_id: str, stage: str, progress: int) -> None:
+    """带租约的心跳：写 0 行说明任务已不归本 worker，抛 `JobLeaseLostError` 中止。"""
+    if not await queue.heartbeat(session, job_id, stage, progress, worker_id):
+        raise JobLeaseLostError(f"任务 {job_id} 已不属于 worker {worker_id}")
+
+
+async def _keepalive(job_id: uuid.UUID, worker_id: str, lost: asyncio.Event) -> None:
+    """长耗时步骤期间只刷心跳时间，避免被 `requeue_stale` 误判为死 worker。
+
+    单独开 session：主 session 在 `asyncio.to_thread` 期间可能被其它协程使用，
+    AsyncSession 不是并发安全的。只写 `heartbeat_at`，不动 stage/progress。
+    """
+    while True:
+        await asyncio.sleep(KEEPALIVE_INTERVAL_SECONDS)
+        try:
+            async with async_session_factory() as session:
+                alive = await queue.touch(session, job_id, worker_id)
+                await session.commit()
+        except Exception:  # noqa: BLE001 - 保活失败只记日志，下一轮再试
+            logger.warning(
+                "保活心跳失败: job=%s worker=%s",
+                job_id,
+                worker_id,
+                exc_info=True,
+                extra={"biz_module": "agent", "job_id": str(job_id)},
+            )
+            continue
+        if not alive:
+            lost.set()
+            return
+
+
+@asynccontextmanager
+async def _lease_keepalive(job_id: uuid.UUID, worker_id: str) -> AsyncIterator[None]:
+    """包住长耗时步骤：期间保活，退出时若租约已丢则抛 `JobLeaseLostError`。
+
+    这里的 `asyncio.create_task` 属 AGENTS.md 允许的例外（长驻后台进程内部的心跳）：
+    任务只刷新 `heartbeat_at`，不承载业务逻辑，异常也不会逃出事件循环。
+    """
+    lost = asyncio.Event()
+    task = asyncio.create_task(_keepalive(job_id, worker_id, lost))
+    try:
+        yield
+    finally:
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
+    if lost.is_set():
+        raise JobLeaseLostError(f"任务 {job_id} 在长耗时步骤中被接管")
 
 
 async def _load_project(session: AsyncSession, project_id: uuid.UUID) -> PptVideoProject:
@@ -134,7 +199,12 @@ async def _resolve_slide_images(
         try:
             return await asyncio.to_thread(page_images.download_slide_images, project.id, slides, work_dir / "png")
         except Exception:  # noqa: BLE001 - 缓存不可用就重转，渲染不能因此失败
-            logger.warning("页图缓存不可用，回退到重新转换: project=%s", project.id, exc_info=True)
+            logger.warning(
+                "页图缓存不可用，回退到重新转换: project=%s",
+                project.id,
+                exc_info=True,
+                extra={"biz_module": "agent", "project_id": str(project.id)},
+            )
     pdf_path = await asyncio.to_thread(page_images.ensure_source_pdf, project.source_sha256, source_path, work_dir)
     # 与页图任务走同一个函数（逐页 pdftoppm），只是这里不需要进度回调：
     # 两条路径的字体与转换参数必须完全一致，否则预览和成片会不一样。
@@ -144,6 +214,8 @@ async def _resolve_slide_images(
 async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVideoSettings) -> None:
     """执行一个渲染任务；异常一律向上抛，由调用方落库。"""
     render.ensure_tools()
+    # 先取成局部变量：rollback 后 ORM 对象会 expire，异步环境里惰性刷新会炸
+    worker_id = job.worker_id or WORKER_ID
     project = await _load_project(session, job.project_id)
     slides = await _load_slides(session, job.project_id)
     if not slides:
@@ -154,11 +226,11 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
     dict_fingerprint = service.build_lexicon(settings, project).fingerprint
     work_dir = Path(tempfile.mkdtemp(prefix=f"pptvideo-job-{job.id.hex[:8]}-"))
     try:
-        await queue.heartbeat(session, job.id, "parse", PROGRESS_START)
+        await _beat(session, job.id, worker_id, "parse", PROGRESS_START)
         await session.commit()
 
         source_path = _download(service.BUCKET_MODULE, project.source_object_key, work_dir / "source.pptx")
-        await queue.heartbeat(session, job.id, "render", PROGRESS_RENDER)
+        await _beat(session, job.id, worker_id, "render", PROGRESS_RENDER)
         await session.commit()
 
         images = await _resolve_slide_images(project, slides, source_path, work_dir, settings)
@@ -232,14 +304,17 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
                     if image_index < 1 or image_index > len(images):
                         raise JobFailedError(f"第 {batch_slide.slide_no} 页在源 PPT 中找不到对应的第 {image_index} 页")
                     batch_images.append(images[image_index - 1])
-                prepared = list(
-                    await asyncio.gather(
-                        *(
-                            _prepare_page(batch_slide, batch_image)
-                            for batch_slide, batch_image in zip(batch, batch_images, strict=True)
+                # 这一批包含「首次模型加载 + 首句合成」，是最容易超过心跳超时的一段；
+                # 期间只刷心跳，避免任务被 requeue_stale 打回后重复渲染。
+                async with _lease_keepalive(job.id, worker_id):
+                    prepared = list(
+                        await asyncio.gather(
+                            *(
+                                _prepare_page(batch_slide, batch_image)
+                                for batch_slide, batch_image in zip(batch, batch_images, strict=True)
+                            )
                         )
                     )
-                )
                 prepared_from = index
 
             item = prepared[index - prepared_from]
@@ -341,7 +416,7 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
             )
 
             progress = PROGRESS_RENDER + int((index + 1) / total * (PROGRESS_TTS_END - PROGRESS_RENDER))
-            await queue.heartbeat(session, job.id, "tts", progress)
+            await _beat(session, job.id, worker_id, "tts", progress)
             await session.commit()
 
         # 页图已随本次渲染对齐到当前源：下次重渲可直接跳过整本转换。
@@ -358,11 +433,13 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
         project.page_images_done = total
         project.page_images_error = None
 
-        await queue.heartbeat(session, job.id, "concat", PROGRESS_CONCAT)
+        await _beat(session, job.id, worker_id, "concat", PROGRESS_CONCAT)
         await session.commit()
         final_path = work_dir / "output.mp4"
-        await asyncio.to_thread(render.concat_segments, segment_paths, final_path, work_dir / "concat.txt")
-        await queue.heartbeat(session, job.id, "upload", PROGRESS_UPLOAD)
+        # 整片拼接是 CPU 密集且可能几十秒，期间保活
+        async with _lease_keepalive(job.id, worker_id):
+            await asyncio.to_thread(render.concat_segments, segment_paths, final_path, work_dir / "concat.txt")
+        await _beat(session, job.id, worker_id, "upload", PROGRESS_UPLOAD)
         await session.commit()
 
         version = await _save_version(
@@ -376,7 +453,14 @@ async def process_job(session: AsyncSession, job: PptVideoJob, settings: PptVide
             engine_version,
             dict_fingerprint,
         )
-        await queue.mark_succeeded(session, job.id, version.id)
+        if not await queue.mark_succeeded(session, job.id, version.id, worker_id=worker_id):
+            # 版本行已落库（同一内容指纹重复上传代价很低），只记日志不抛错
+            logger.warning(
+                "任务已被接管，本次成片结果未被采纳: job=%s version=%s",
+                job.id,
+                version.id,
+                extra={"biz_module": "agent", "job_id": str(job.id)},
+            )
         await session.commit()
     except Exception:
         await session.rollback()
@@ -449,7 +533,12 @@ def _build_highlight_plan(
             return plan
         return highlight.build_plan(script, layout, total_ms, settings.highlight_max_steps, config)
     except Exception:  # noqa: BLE001 - 引导失败不能让整条视频渲不出来
-        logger.exception("页内视觉引导计划生成失败，退化为整页常亮")
+        logger.exception(
+            "页内视觉引导计划生成失败，退化为整页常亮: language=%s duration_ms=%s",
+            language,
+            total_ms,
+            extra={"biz_module": "agent", "language": language, "duration_ms": total_ms},
+        )
         return highlight.HighlightPlan(steps=[], total_ms=total_ms)
 
 
@@ -698,7 +787,23 @@ async def _save_version(
     return version
 
 
-async def _handle_failure(session: AsyncSession, job: PptVideoJob, message: str) -> None:
+async def _handle_failure(session: AsyncSession, job: PptVideoJob, message: str, worker_id: str) -> None:
+    """失败收尾；只有仍持有租约的 worker 才能写库。
+
+    心跳超时被 `requeue_stale` 打回队列（或已被别人抢走）后，原 worker 手上的失败
+    信息已不属于当前执行者：写 `project.last_error` 会覆盖别人正在跑的结果，甚至把
+    项目置 failed。这里先校验归属，不匹配就只记日志。
+    """
+    if job.status != JOB_STATUS_RUNNING or (job.worker_id or "") != worker_id:
+        logger.warning(
+            "任务已不归本 worker，跳过失败收尾: job=%s worker=%s status=%s owner=%s",
+            job.id,
+            worker_id,
+            job.status,
+            job.worker_id,
+            extra={"biz_module": "agent", "job_id": str(job.id)},
+        )
+        return
     project = await session.get(PptVideoProject, job.project_id)
     retry = (job.attempts or 0) < (job.max_attempts or 3)
     await queue.mark_failed(session, job.id, message, retry)
@@ -711,46 +816,82 @@ async def _handle_failure(session: AsyncSession, job: PptVideoJob, message: str)
     await session.commit()
 
 
+async def _mark_succeeded(
+    session: AsyncSession,
+    job_id: uuid.UUID,
+    worker_id: str,
+    *,
+    version_id: uuid.UUID | None = None,
+    result: dict[str, Any] | None = None,
+) -> None:
+    """任务成功收尾；租约已丢（写 0 行）时只留痕——结果不写库，由接管方跑完。"""
+    if not await queue.mark_succeeded(session, job_id, version_id, result=result, worker_id=worker_id):
+        logger.warning(
+            "任务已被接管，本次结果未被采纳: job=%s worker=%s",
+            job_id,
+            worker_id,
+            extra={"biz_module": "agent", "job_id": str(job_id)},
+        )
+
+
 async def _run_parse_job(session: AsyncSession, job: PptVideoJob, settings: PptVideoSettings) -> None:
     """解析任务：PPT→PPTX→逐页，落 slides 后触发初稿与页图。"""
-    await queue.heartbeat(session, job.id, "parse", PROGRESS_START)
+    worker_id = job.worker_id or WORKER_ID
+    await _beat(session, job.id, worker_id, "parse", PROGRESS_START)
     await session.commit()
-    await service.parse_project(session, job.project_id, settings)
+    # 整本转换 + 逐页初稿可能几分钟，期间保活，避免被 requeue_stale 误判为死 worker
+    async with _lease_keepalive(job.id, worker_id):
+        await service.parse_project(session, job.project_id, settings)
     await session.commit()
-    await queue.mark_succeeded(session, job.id)
+    await _mark_succeeded(session, job.id, worker_id)
     await session.commit()
 
 
 async def _run_audio_job(session: AsyncSession, job: PptVideoJob, settings: PptVideoSettings) -> None:
     """试听任务：合成单页音频，产物（音频地址等）写入 job.result。"""
+    worker_id = job.worker_id or WORKER_ID
     payload = job.payload or {}
     slide_uid = str(payload.get("slide_uid") or "")
     if not slide_uid:
         raise JobFailedError("试听任务缺少页标识")
-    result = await service.render_slide_audio(session, job.project_id, slide_uid, settings)
+    # 首次合成可能要先加载模型，单页也可能很久，期间保活
+    async with _lease_keepalive(job.id, worker_id):
+        result = await service.render_slide_audio(session, job.project_id, slide_uid, settings)
     await session.commit()
-    await queue.mark_succeeded(session, job.id, result=result)
+    await _mark_succeeded(session, job.id, result=result, worker_id=worker_id)
     await session.commit()
 
 
 async def _run_source_preview_job(session: AsyncSession, job: PptVideoJob, settings: PptVideoSettings) -> None:
     """换源预览任务：读临时上传对象，跑转换与比对，差异写入 job.result。"""
+    worker_id = job.worker_id or WORKER_ID
     payload = job.payload or {}
     pending_key = str(payload.get("pending_key") or "")
     filename = str(payload.get("filename") or "presentation.pptx")
     if not pending_key:
         raise JobFailedError("换源预览任务缺少临时文件")
-    data = await asyncio.to_thread(storage.get_object, service.BUCKET_MODULE, pending_key)
-    if data is None:
+    # 下载 + 整本转换 + 比对同样是分钟级，期间保活；空块的业务错误留到块外再抛
+    async with _lease_keepalive(job.id, worker_id):
+        data = await asyncio.to_thread(storage.get_object, service.BUCKET_MODULE, pending_key)
+        diff = (
+            await service.preview_source_replace(session, job.project_id, data[0], filename)
+            if data is not None
+            else None
+        )
+    if diff is None:
         raise JobFailedError("临时文件已失效，请重新上传")
-    diff = await service.preview_source_replace(session, job.project_id, data[0], filename)
     await session.commit()
-    await queue.mark_succeeded(session, job.id, result=diff.model_dump(mode="json"))
+    await _mark_succeeded(session, job.id, result=diff.model_dump(mode="json"), worker_id=worker_id)
     await session.commit()
     try:
         await asyncio.to_thread(storage.delete_object, service.BUCKET_MODULE, pending_key)
     except Exception:  # noqa: BLE001 - 清理失败不影响预览结果
-        logger.warning("换源预览临时对象清理失败: job=%s", job.id, exc_info=True)
+        logger.warning(
+            "换源预览临时对象清理失败: job=%s",
+            job.id,
+            exc_info=True,
+            extra={"biz_module": "agent", "job_id": str(job.id)},
+        )
 
 
 async def _dispatch(session: AsyncSession, job: PptVideoJob, settings: PptVideoSettings) -> None:
@@ -795,6 +936,16 @@ async def process_once(worker_id: str = WORKER_ID, kinds: list[str] | None = Non
         )
         try:
             await _dispatch(session, job, settings)
+        except JobLeaseLostError:
+            # 任务是别人的了：本地产物一律丢弃，也绝不写库（任务仍由当前持有者跑）
+            logger.warning(
+                "任务租约已丢失，放弃本地处理: job=%s worker=%s",
+                job_id,
+                worker_id,
+                extra={"biz_module": "agent", "job_id": str(job_id)},
+            )
+            await session.rollback()
+            return True
         except Exception as exc:  # noqa: BLE001 - 任何异常都要落库并继续消费下一个任务
             logger.exception(
                 "job %s failed",
@@ -802,37 +953,84 @@ async def process_once(worker_id: str = WORKER_ID, kinds: list[str] | None = Non
                 extra={"biz_module": "agent", "job_id": str(job_id)},
             )
             message = str(exc) or exc.__class__.__name__
-            refreshed = await session.get(PptVideoJob, job_id)
-            if refreshed is not None and refreshed.status != JOB_STATUS_SUCCEEDED:
-                await _handle_failure(session, refreshed, message)
+            # DB 层异常会把 session 留在失效事务里：不回滚，下面的 select 会抛
+            # PendingRollbackError，_handle_failure 永远执行不到，任务只能等超时被重排。
+            try:
+                await session.rollback()
+            except Exception:  # noqa: BLE001 - 连接级故障时无法再写库，只留日志
+                logger.exception(
+                    "任务失败后回滚 session 失败，跳过失败收尾: job=%s",
+                    job_id,
+                    extra={"biz_module": "agent", "job_id": str(job_id)},
+                )
+            else:
+                # populate_existing：identity map 里可能还是 claim 时的旧值，
+                # 归属校验必须看库里的真实状态，否则会误写别人正在跑的任务
+                refreshed = await session.scalar(
+                    select(PptVideoJob).where(PptVideoJob.id == job_id).execution_options(populate_existing=True)
+                )
+                if refreshed is not None and refreshed.status != JOB_STATUS_SUCCEEDED:
+                    await _handle_failure(session, refreshed, message, worker_id)
         return True
 
 
 async def _loop(stop_event: asyncio.Event, name: str, kinds: list[str]) -> None:
     """一个类别组的消费循环；单次异常只记日志，不退出。"""
-    logger.info("ppt-video %s loop started (%s)", name, ",".join(kinds))
+    logger.info(
+        "ppt-video %s loop started (%s)",
+        name,
+        ",".join(kinds),
+        extra={"biz_module": "agent", "loop": name, "kinds": ",".join(kinds)},
+    )
     while not stop_event.is_set():
         try:
             handled = await process_once(kinds=kinds)
         except Exception:  # noqa: BLE001 - 轮询不能因单次异常退出
-            logger.exception("%s loop error", name)
+            logger.exception(
+                "%s loop error",
+                name,
+                extra={"biz_module": "agent", "loop": name},
+            )
             handled = False
         if not handled:
             try:
                 await asyncio.wait_for(stop_event.wait(), timeout=POLL_INTERVAL_SECONDS)
             except TimeoutError:
                 continue
-    logger.info("ppt-video %s loop stopped", name)
+    logger.info("ppt-video %s loop stopped", name, extra={"biz_module": "agent", "loop": name})
 
 
 async def run_forever(stop_event: asyncio.Event) -> None:
     """渲染与解析分两条循环并行：长渲染不会把上传后的解析一起堵住。"""
-    logger.info("ppt-video worker started: %s", WORKER_ID)
+    logger.info("ppt-video worker started: %s", WORKER_ID, extra={"biz_module": "agent", "worker_id": WORKER_ID})
     await asyncio.gather(
         _loop(stop_event, "render", [JOB_KIND_RENDER]),
         _loop(stop_event, "parse", [JOB_KIND_PARSE, JOB_KIND_SOURCE_PREVIEW, JOB_KIND_AUDIO]),
     )
-    logger.info("ppt-video worker stopped")
+    logger.info("ppt-video worker stopped", extra={"biz_module": "agent", "worker_id": WORKER_ID})
+
+
+def _tts_assets_required() -> bool:
+    """是否要求 TTS 权重必须已就位（部署配置，非运行时配置）。"""
+    return get_settings().AGENT_TTS_ASSETS_REQUIRED
+
+
+def _precheck_tts_assets() -> None:
+    """启动即校验 TTS 权重，缺了当场失败，别等首次合成时静默卡住。
+
+    `AGENT_TTS_ASSETS_REQUIRED=true`（生产/UAT compose 都设了）时直接退出，容器不健康，
+    比「任务永远停在 progress=10」更容易被发现；本地开发缺省 false（dev compose 显式
+    置 false），只告警——dev 依赖挂载缓存或按需下载，硬退出会直接破坏开发环境。
+    """
+    problems = tts_assets.missing_assets()
+    if not problems:
+        return
+    message = "TTS 权重不可用：\n  - " + "\n  - ".join(problems[:10])
+    extra = {"biz_module": "agent", "tts_assets_missing": len(problems)}
+    if _tts_assets_required():
+        logger.error(message, extra=extra)
+        raise SystemExit(1)
+    logger.warning(message, extra=extra)
 
 
 def main() -> None:
@@ -845,6 +1043,8 @@ def main() -> None:
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
     )
+
+    _precheck_tts_assets()
 
     if args.once:
         handled = asyncio.run(process_once())

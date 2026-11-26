@@ -109,6 +109,10 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.worker
+      args:
+        # 权重烤进镜像（/opt/tts-models/hub）：运行期再下载会被 20KB/s 出口拖到心跳超时
+        PRELOAD_TTS_MODELS: "true"
+        PRELOAD_TTS_SOURCE: "modelscope"
     container_name: erp-ppt-video-worker
     restart: unless-stopped
     env_file:
@@ -116,12 +120,18 @@ services:
     environment:
     - REDIS_URL=redis://erp-redis:6379/0
     - HF_ENDPOINT=${HF_ENDPOINT:-https://hf-mirror.com}
+    # 权重已在镜像内：禁止再去联网（缺权重时快速失败，而不是静默慢拉）
+    - HF_HUB_OFFLINE=1
+    # 启动预检硬失败：容器不健康好过「看着在跑、永远出不了片」
+    - AGENT_TTS_ASSETS_REQUIRED=true
     depends_on:
       migrate:
         condition: service_completed_successfully
       postgres:
         condition: service_healthy
       minio:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
     - ./uploads:/app/uploads

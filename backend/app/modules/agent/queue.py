@@ -9,12 +9,14 @@
   `requeue_stale` 把它放回队列；`attempts > max_attempts` 直接置失败。
 """
 
+import logging
 import uuid
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import func, select, update
+from sqlalchemy import cast, func, select, update
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.agent.models import (
@@ -25,6 +27,8 @@ from app.modules.agent.models import (
     JOB_STATUS_SUCCEEDED,
     PptVideoJob,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _now() -> datetime:
@@ -47,8 +51,11 @@ async def enqueue(
         PptVideoJob.is_deleted.is_(False),
     ]
     if payload is not None:
-        # 同一类任务可能对应不同入参（比如不同页的试听），入参不同不能复用
-        conditions.append(PptVideoJob.payload == payload)
+        # 同一类任务可能对应不同入参（比如不同页的试听），入参不同不能复用。
+        # `payload` 列是 PG `json`，**没有等值运算符**（只有 `jsonb` 有），直接比较会在
+        # SQL 规划阶段报 `operator does not exist: json = json`，试听/换源预览必现 500。
+        # cast 到 JSONB 后按结构化等值比较，键序与空白无关，去重语义符合预期。
+        conditions.append(cast(PptVideoJob.payload, JSONB) == payload)
     existing = await session.scalar(
         select(PptVideoJob).where(*conditions).order_by(PptVideoJob.created_at.desc()).limit(1)
     )
@@ -105,13 +112,50 @@ async def claim(session: AsyncSession, worker_id: str, kinds: Sequence[str] | No
     return job
 
 
-async def heartbeat(session: AsyncSession, job_id: uuid.UUID, stage: str, progress: int) -> None:
-    """回写进度与心跳（调用方按页节流，不要每帧写）。"""
-    await session.execute(
+async def heartbeat(
+    session: AsyncSession,
+    job_id: uuid.UUID,
+    stage: str,
+    progress: int,
+    worker_id: str | None = None,
+) -> bool:
+    """回写进度与心跳（调用方按页节流，不要每帧写）。
+
+    Args:
+        worker_id: 传入时按**租约**写库（同时匹配 `worker_id` 与 `status=running`）。
+            任务若已被 `requeue_stale` 打回队列、或已被别的 worker 抢走，影响行数为 0，
+            返回 False；调用方必须立刻停手，否则会出现两个 worker 同时写同一任务的
+            「双跑」——心跳超时重排后原进程并没停，这正是首次渲染反复重来的成因之一。
+            None 保持旧行为（不校验归属），供测试与运维脚本使用。
+    """
+    conditions = [PptVideoJob.id == job_id]
+    if worker_id is not None:
+        conditions.append(PptVideoJob.worker_id == worker_id)
+        conditions.append(PptVideoJob.status == JOB_STATUS_RUNNING)
+    result = await session.execute(
         update(PptVideoJob)
-        .where(PptVideoJob.id == job_id)
+        .where(*conditions)
         .values(stage=stage, progress=max(0, min(100, progress)), heartbeat_at=_now())
     )
+    return bool(getattr(result, "rowcount", 0))
+
+
+async def touch(session: AsyncSession, job_id: uuid.UUID, worker_id: str) -> bool:
+    """只刷新心跳时间（长耗时步骤保活用），不动 stage/progress。
+
+    保活若走 `heartbeat` 会带上阶段与进度，进度可能因此被写回退（保活不知道当前
+    进度），前端进度条会来回跳；这里只写 `heartbeat_at`。返回 False 表示租约已丢。
+    """
+    result = await session.execute(
+        update(PptVideoJob)
+        .where(
+            PptVideoJob.id == job_id,
+            PptVideoJob.worker_id == worker_id,
+            PptVideoJob.status == JOB_STATUS_RUNNING,
+        )
+        .values(heartbeat_at=_now())
+    )
+    return bool(getattr(result, "rowcount", 0))
 
 
 async def mark_succeeded(
@@ -119,11 +163,20 @@ async def mark_succeeded(
     job_id: uuid.UUID,
     version_id: uuid.UUID | None = None,
     result: dict[str, Any] | None = None,
-) -> None:
-    """任务成功收尾。只有 render 任务有产出视频版本，其余任务传 `version_id=None`。"""
-    await session.execute(
+    worker_id: str | None = None,
+) -> bool:
+    """任务成功收尾。只有 render 任务有产出视频版本，其余任务传 `version_id=None`。
+
+    `worker_id` 语义同 `heartbeat`：租约已丢时不写库并返回 False，由调用方只记日志。
+    这里不抛错——版本行已经落库，回滚它的代价大于保留一条多出来的版本记录。
+    """
+    conditions = [PptVideoJob.id == job_id]
+    if worker_id is not None:
+        conditions.append(PptVideoJob.worker_id == worker_id)
+        conditions.append(PptVideoJob.status == JOB_STATUS_RUNNING)
+    outcome = await session.execute(
         update(PptVideoJob)
-        .where(PptVideoJob.id == job_id)
+        .where(*conditions)
         .values(
             status=JOB_STATUS_SUCCEEDED,
             stage="done",
@@ -135,6 +188,7 @@ async def mark_succeeded(
             error_message=None,
         )
     )
+    return bool(getattr(outcome, "rowcount", 0))
 
 
 async def mark_failed(session: AsyncSession, job_id: uuid.UUID, message: str, retry: bool) -> None:
@@ -181,6 +235,13 @@ async def requeue_stale(session: AsyncSession, stale_seconds: int = 300) -> int:
             job.worker_id = None
             job.heartbeat_at = None
     await session.flush()
+    if stale:
+        logger.info(
+            "重排心跳超时任务: count=%s stale_seconds=%s",
+            len(stale),
+            stale_seconds,
+            extra={"biz_module": "agent", "job_count": len(stale), "stale_seconds": stale_seconds},
+        )
     return len(stale)
 
 

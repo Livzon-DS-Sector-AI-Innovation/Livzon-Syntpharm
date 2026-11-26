@@ -9,9 +9,13 @@
 # 构建（必须限资源，本机是共用服务器）：
 #   docker buildx build --memory=4g --cpu-quota=200000 -f Dockerfile.worker -t erp-backend-worker .
 #
-# 权重离线化：huggingface.co 在内网不可达，默认走 hf-mirror.com；
-# 需要完全离线时在构建期加 `--build-arg PRELOAD_TTS_MODELS=true`，
-# 权重会被烤进镜像的 /opt/tts-models，运行时通过 HF_HOME 直接命中。
+# 权重离线化：huggingface.co 在内网不可达；hf-mirror.com 出口被限速到约 20KB/s，
+# 首次合成现场拉 327MB×2 会拖到心跳超时（issue #236）。因此默认在构建期预装：
+# `--build-arg PRELOAD_TTS_MODELS=true` + `PRELOAD_TTS_SOURCE=modelscope`，
+# 权重经 ModelScope 拉到 `/opt/tts-models/hub`（HF_HUB_CACHE），
+# 并在镜像内物化 `snapshots/<commit>` 与 `refs/main`，运行时离线直接命中。
+# compose 里再配 `HF_HUB_OFFLINE=1` + `AGENT_TTS_ASSETS_REQUIRED=true`：
+# 缺权重时启动即报错退出，而不是静默卡在「下载中」。
 
 FROM python:3.12-slim-bookworm
 
@@ -95,9 +99,11 @@ COPY scripts/ci/install_spacy_en_model.py ./scripts/ci/install_spacy_en_model.py
 RUN .venv/bin/python scripts/ci/install_spacy_en_model.py
 
 ARG PRELOAD_TTS_MODELS=false
+# 下载通道：modelscope（默认，厂区内网唯一可用速度）/ huggingface（回退，走 HF_ENDPOINT）
+ARG PRELOAD_TTS_SOURCE=modelscope
 COPY scripts/ci/preload_tts_models.py ./scripts/ci/preload_tts_models.py
 RUN if [ "$PRELOAD_TTS_MODELS" = "true" ]; then \
-        .venv/bin/python scripts/ci/preload_tts_models.py; \
+        PRELOAD_TTS_SOURCE="$PRELOAD_TTS_SOURCE" .venv/bin/python scripts/ci/preload_tts_models.py; \
     else \
         echo "跳过权重预下载（运行时首次合成会通过 HF_ENDPOINT 拉取）"; \
     fi
