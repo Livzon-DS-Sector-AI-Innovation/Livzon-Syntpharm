@@ -36,11 +36,14 @@ Orphan Table 处置留痕（AGENTS.md「Orphan Table 处理规则」）：
    部署到新环境前可用 `SELECT count(*) FROM registration.<table>` 逐表记录。
 """
 
+import logging
 from collections.abc import Sequence
 
 import sqlalchemy as sa
 
 from alembic import op
+
+logger = logging.getLogger(__name__)
 
 revision: str = "0223_drop_validation_audit_and_supplementary_reply_tables"
 down_revision: str | None = "0218_docx_translation_terms_partial_unique"
@@ -75,7 +78,39 @@ def _base_columns() -> list[sa.Column]:
     ]
 
 
+def _existing_tables(bind: sa.engine.Connection) -> dict[str, int]:
+    """返回待删表中仍存在者的行数（表不存在则不出现）。"""
+    inspector = sa.inspect(bind)
+    present = set(inspector.get_table_names(schema=_SCHEMA))
+    counts: dict[str, int] = {}
+    for table in _DROP_ORDER:
+        if table not in present:
+            continue
+        counts[table] = int(bind.execute(sa.text(f'SELECT count(*) FROM "{_SCHEMA}"."{table}"')).scalar_one())
+    return counts
+
+
 def upgrade() -> None:
+    """删除 6 张表。
+
+    有数据时必须显式批准后才允许删除：迁移会先统计行数，若存在非空表且未提供
+    `-x allow_drop_nonempty=1`，直接失败并打印备份命令，避免误删生产数据。
+    """
+    bind = op.get_bind()
+    counts = _existing_tables(bind)
+    nonempty = {name: n for name, n in counts.items() if n > 0}
+    logger.info("0223 drop tables row counts: %s", counts)
+
+    # alembic 1.20 的 MigrationContext 没有 get_x_argument()，-x 参数挂在 config.cmd_opts.x 上
+    x_opts = getattr(op.get_context().config.cmd_opts, "x", None) or []
+    x_args = dict(item.split("=", 1) for item in x_opts if "=" in item)
+    if nonempty and x_args.get("allow_drop_nonempty") != "1":
+        raise RuntimeError(
+            "待删除表仍有数据，已中止："
+            f"{nonempty}。请先备份（见本文件 docstring 的 pg_dump 命令），"
+            "确认无需保留后，用 `alembic -x allow_drop_nonempty=1 upgrade head` 重跑。"
+        )
+
     for table in _DROP_ORDER:
         op.drop_table(table, schema=_SCHEMA)
 

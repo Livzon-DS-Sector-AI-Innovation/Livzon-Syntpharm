@@ -90,9 +90,12 @@ async def list_letters(
     summary="生成授权书",
     status_code=201,
 )
-# 注：本仓库 FastAPI 版本不会把表单模型摊平到 multipart 字段（会生成嵌套 data），
-# 故此处显式声明扁平字段，但长度约束与 AuthorizationLetterCreate 保持一致，
-# 保证超长入参在 422 阶段被拦下而不是落进 handler 抛 500。
+# 注：入参本应复用 AuthorizationLetterCreate，但本端点还要接收模板文件与其它表单字段。
+# 实测（fastapi 0.141.1）表单模型**仅在它是唯一请求体参数时**才摊平为扁平字段，
+# 一旦与 UploadFile / 其它 Form 参数混用，OpenAPI 会生成嵌套的 `data` 对象
+# （Body_* → properties.data），前端需改成发送嵌套结构，属于破坏性契约变更。
+# 因此这里保留扁平字段，但长度约束与 AuthorizationLetterCreate 逐项保持一致，
+# 保证超长入参在 422 阶段被拦下，而不是落进 handler 抛 500。
 async def generate_letter(
     current_user: RequiredUser,
     template: UploadFile | None = None,
