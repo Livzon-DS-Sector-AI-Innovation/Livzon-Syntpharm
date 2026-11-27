@@ -20,7 +20,7 @@ export default async function QcInspectionPage() {
   try {
     attention = await fetchQcAttentionBatches(20)
   } catch (error) {
-    console.error('需关注批号加载失败', error)
+    console.error('需关注批次加载失败', error)
   }
 
   return (
