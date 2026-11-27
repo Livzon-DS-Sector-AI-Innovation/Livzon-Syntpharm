@@ -16577,6 +16577,225 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quality/qc-report/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 品种列表（含批次统计） */
+        get: operations["list_products_api_api_v1_quality_qc_report_products_get"];
+        put?: never;
+        /** 新建品种（不含文件） */
+        post: operations["create_product_api_api_v1_quality_qc_report_products_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/qc-report/products/{product_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 品种详情 */
+        get: operations["get_product_api_api_v1_quality_qc_report_products__product_id__get"];
+        /** 修改品种 */
+        put: operations["update_product_api_api_v1_quality_qc_report_products__product_id__put"];
+        post?: never;
+        /** 删除品种（软删） */
+        delete: operations["delete_product_api_api_v1_quality_qc_report_products__product_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/qc-report/products/{product_id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 检验项目清单 */
+        get: operations["list_items_api_api_v1_quality_qc_report_products__product_id__items_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/qc-report/items/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 修改项目标准或 3σ */
+        put: operations["update_item_api_api_v1_quality_qc_report_items__item_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/qc-report/products/{product_id}/rejudge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 标准变更后重算全部批次 */
+        post: operations["rejudge_api_api_v1_quality_qc_report_products__product_id__rejudge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/qc-report/import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 解析两个文件并预览 */
+        post: operations["preview_import_api_api_v1_quality_qc_report_import_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/qc-report/import/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 确认导入并入库
+         * @description 导入提交。返回 text/event-stream，边写库边推真实进度。
+         *
+         *     所有可能失败的校验（文件格式、未裁决冲突）都在流开始前完成，
+         *     仍以普通 JSON + 状态码返回；流里只出现进度、done、error 三类事件。
+         */
+        post: operations["commit_import_api_api_v1_quality_qc_report_import_commit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/qc-report/products/{product_id}/batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 批次分页 */
+        get: operations["list_batches_api_api_v1_quality_qc_report_products__product_id__batches_get"];
+        put?: never;
+        /** 手工新增一批 */
+        post: operations["create_batch_api_api_v1_quality_qc_report_products__product_id__batches_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/qc-report/products/{product_id}/batches/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 从 Excel 批量新增检验批次
+         * @description 上传结果表批量新增批次。
+         *
+         *     列按位置对应已有项目，列数或表头对不上直接拒绝；批号重复的行跳过。
+         */
+        post: operations["import_batches_api_api_v1_quality_qc_report_products__product_id__batches_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/qc-report/products/{product_id}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 五级统计 */
+        get: operations["get_stats_api_api_v1_quality_qc_report_products__product_id__stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/qc-report/attention-batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 全品种需关注批号 */
+        get: operations["attention_batches_api_api_v1_quality_qc_report_attention_batches_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/qc-report/products/{product_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 导出当前筛选结果为 Excel */
+        get: operations["export_api_api_v1_quality_qc_report_products__product_id__export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quality/sop-ai/config": {
         parameters: {
             query?: never;
@@ -22779,6 +22998,49 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_commit_import_api_api_v1_quality_qc_report_import_commit_post */
+        Body_commit_import_api_api_v1_quality_qc_report_import_commit_post: {
+            /**
+             * Standard File
+             * @description 标准表（docx）
+             */
+            standard_file: string;
+            /**
+             * Result File
+             * @description 结果表（xlsx）
+             */
+            result_file: string;
+            /**
+             * Name
+             * @description 品种名称
+             */
+            name: string;
+            /**
+             * Abbr
+             * @description 品名缩写
+             */
+            abbr: string;
+            /**
+             * Category
+             * @description 物料分类
+             */
+            category: string;
+            /**
+             * Quality Standard
+             * @description 质量标准
+             */
+            quality_standard?: string | null;
+            /**
+             * Manual Mapping
+             * @description 人工指认的 JSON：{项目名: 列名}
+             */
+            manual_mapping?: string | null;
+            /**
+             * Resolutions
+             * @description 冲突裁决 JSON：{"列号|层": "docx"|"excel"|"none"}
+             */
+            resolutions?: string | null;
+        };
         /** Body_confirm_import_api_v1_quality_cpv_import_confirm_post */
         Body_confirm_import_api_v1_quality_cpv_import_confirm_post: {
             /** File */
@@ -23057,6 +23319,14 @@ export interface components {
         /** Body_handler_api_v1_safety_revisions__revision_id__manual_complete_post */
         Body_handler_api_v1_safety_revisions__revision_id__manual_complete_post: {
             /** File */
+            file: string;
+        };
+        /** Body_import_batches_api_api_v1_quality_qc_report_products__product_id__batches_import_post */
+        Body_import_batches_api_api_v1_quality_qc_report_products__product_id__batches_import_post: {
+            /**
+             * File
+             * @description 检验结果表 xlsx
+             */
             file: string;
         };
         /** Body_import_excel_api_v1_equipment_equipments_import__post */
@@ -23365,6 +23635,29 @@ export interface components {
         Body_post_api_v1_registration_reference_standards_parse_coa_post: {
             /** Coa */
             coa: string;
+        };
+        /** Body_preview_import_api_api_v1_quality_qc_report_import_preview_post */
+        Body_preview_import_api_api_v1_quality_qc_report_import_preview_post: {
+            /**
+             * Standard File
+             * @description 标准表（docx）
+             */
+            standard_file: string;
+            /**
+             * Result File
+             * @description 结果表（xlsx）
+             */
+            result_file: string;
+            /**
+             * Product Id
+             * @description 再次导入时传入已有品种，复用历史映射
+             */
+            product_id?: string | null;
+            /**
+             * Manual Mapping
+             * @description 本次人工指定的对应关系 JSON：{"项目名": "列字母"}
+             */
+            manual_mapping?: string | null;
         };
         /** Body_preview_import_api_v1_production_product_output_import_preview_post */
         Body_preview_import_api_v1_production_product_output_import_preview_post: {
@@ -50517,6 +50810,814 @@ export interface components {
              * @description 申请明细
              */
             items?: components["schemas"]["PurchaseRequestItemInput"][] | null;
+        };
+        /** QcAttentionBatch */
+        QcAttentionBatch: {
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Product Name */
+            product_name: string;
+            /**
+             * Batch Id
+             * Format: uuid
+             */
+            batch_id: string;
+            /** Batch No */
+            batch_no: string;
+            /** Level */
+            level: string;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** QcAttentionBatchListApiResponse */
+        QcAttentionBatchListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["QcAttentionBatch"][];
+        };
+        /** QcBatchApiResponse */
+        QcBatchApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["QcBatchRow"];
+        };
+        /**
+         * QcBatchCreate
+         * @description 手工新增一批。
+         */
+        QcBatchCreate: {
+            /** Batch No */
+            batch_no: string;
+            /** Note */
+            note?: string | null;
+            /**
+             * Values
+             * @description item_id -> 实测值
+             */
+            values?: {
+                [key: string]: string;
+            };
+        };
+        /** QcBatchImportApiResponse */
+        QcBatchImportApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["QcBatchImportResult"];
+        };
+        /** QcBatchImportResult */
+        QcBatchImportResult: {
+            /**
+             * Created Count
+             * @default 0
+             */
+            created_count: number;
+            /**
+             * Skipped Count
+             * @default 0
+             */
+            skipped_count: number;
+            /** Skipped Batch Nos */
+            skipped_batch_nos?: string[];
+            /** Level Counts */
+            level_counts?: {
+                [key: string]: number;
+            };
+        };
+        /** QcBatchPageApiResponse */
+        QcBatchPageApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["QcBatchPageData"];
+        };
+        /** QcBatchPageData */
+        QcBatchPageData: {
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Items */
+            items: components["schemas"]["QcBatchRow"][];
+        };
+        /**
+         * QcBatchRow
+         * @description 一行批次，values/levels 以 item_id 为键，前端按项目顺序渲染列。
+         */
+        QcBatchRow: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Batch No */
+            batch_no: string;
+            /** Level */
+            level: string;
+            /** Note */
+            note: string | null;
+            /** Entered By Name */
+            entered_by_name: string | null;
+            /** Source */
+            source: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Values */
+            values?: {
+                [key: string]: string | null;
+            };
+            /** Levels */
+            levels?: {
+                [key: string]: string;
+            };
+        };
+        /** QcDeleteApiResponse */
+        QcDeleteApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["QcDeleteResponse"];
+        };
+        /** QcDeleteResponse */
+        QcDeleteResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Deleted
+             * @default true
+             */
+            deleted: boolean;
+        };
+        /** QcImportCommitApiResponse */
+        QcImportCommitApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["QcImportCommitResponse"];
+        };
+        /** QcImportCommitResponse */
+        QcImportCommitResponse: {
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Product Name */
+            product_name: string;
+            /** Item Count */
+            item_count: number;
+            /** Record Only Count */
+            record_only_count: number;
+            /** Batch Count */
+            batch_count: number;
+            /** Value Count */
+            value_count: number;
+            /** Unrecognized Items */
+            unrecognized_items: string[];
+            /**
+             * Skipped Standard Items
+             * @description 标准表里有、但结果表找不到对应列的项目，未建档
+             */
+            skipped_standard_items?: string[];
+            /**
+             * Resolved Conflicts
+             * @description 本次按人工选择落地的冲突层数
+             * @default 0
+             */
+            resolved_conflicts: number;
+            /**
+             * Standard Sources
+             * @description 两份文件不一致的层，最终用了哪份的值、是否人工裁决
+             */
+            standard_sources?: components["schemas"]["QcStandardSourceItem"][];
+        };
+        /**
+         * QcImportExtraColumn
+         * @description 结果表有、标准表没有的列，将建成「仅记录」项目。
+         */
+        QcImportExtraColumn: {
+            /** Column Index */
+            column_index: number;
+            /** Column Name */
+            column_name: string;
+        };
+        /** QcImportPreviewApiResponse */
+        QcImportPreviewApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["QcImportPreviewResponse"];
+        };
+        /**
+         * QcImportPreviewItem
+         * @description 解析出的检验项目及其匹配情况。
+         */
+        QcImportPreviewItem: {
+            /** Item No */
+            item_no: number;
+            /** Item Name */
+            item_name: string;
+            /** Value Type */
+            value_type: string;
+            /** Unit */
+            unit: string | null;
+            /** Legal Text */
+            legal_text: string | null;
+            /** Internal Text */
+            internal_text: string | null;
+            /** Sigma Text */
+            sigma_text: string | null;
+            /**
+             * Matched Column
+             * @description 自动匹配到的结果表列名
+             */
+            matched_column?: string | null;
+            /**
+             * Match Kind
+             * @description saved / exact / contain / pending
+             * @default pending
+             */
+            match_kind: string;
+            /**
+             * Candidates
+             * @description 需要人工指认时的候选列
+             */
+            candidates?: string[];
+        };
+        /** QcImportPreviewResponse */
+        QcImportPreviewResponse: {
+            /** Docx File Name */
+            docx_file_name: string;
+            /** Xlsx File Name */
+            xlsx_file_name: string;
+            /** Sheet Title */
+            sheet_title: string;
+            /** Batch Count */
+            batch_count: number;
+            /** Data Start Row */
+            data_start_row: number;
+            /** Column Count */
+            column_count: number;
+            /** Product Name Suggestion */
+            product_name_suggestion: string;
+            /** Abbr Suggestion */
+            abbr_suggestion: string;
+            /** Quality Standard Suggestion */
+            quality_standard_suggestion: string | null;
+            /** Items */
+            items: components["schemas"]["QcImportPreviewItem"][];
+            /** Extra Columns */
+            extra_columns: components["schemas"]["QcImportExtraColumn"][];
+            /** Batch No Samples */
+            batch_no_samples: string[];
+            /** Sample Values */
+            sample_values: {
+                [key: string]: string | null;
+            }[];
+            /**
+             * Unrecognized Items
+             * @description 三层标准都解析不出数值的项目，需人工补
+             */
+            unrecognized_items?: string[];
+            /**
+             * Conflicts
+             * @description 两份文件写法不一致、需人工逐条判断的标准
+             */
+            conflicts?: components["schemas"]["QcStandardConflict"][];
+            /**
+             * Unmatched Items
+             * @description 标准表有、但没能自动对上结果表列的项目
+             */
+            unmatched_items?: components["schemas"]["QcUnmatchedItem"][];
+            /** @description 交叉印证统计：一致 / 待确认 / 仅结果表有 */
+            summary?: components["schemas"]["QcImportSummary"] | null;
+        };
+        /** QcImportSummary */
+        QcImportSummary: {
+            /** Total Columns */
+            total_columns: number;
+            /** Same Count */
+            same_count: number;
+            /** Conflict Count */
+            conflict_count: number;
+            /** Only Excel Count */
+            only_excel_count: number;
+            /** Skipped Standard Items */
+            skipped_standard_items?: string[];
+        };
+        /** QcItemApiResponse */
+        QcItemApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["QcItemResponse"];
+        };
+        /** QcItemListApiResponse */
+        QcItemListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["QcItemResponse"][];
+        };
+        /** QcItemResponse */
+        QcItemResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Item No */
+            item_no: number;
+            /** Item Name */
+            item_name: string;
+            /** Standard Item Name */
+            standard_item_name?: string | null;
+            /** Standard Source */
+            standard_source?: string | null;
+            /** Column Group Start */
+            column_group_start?: number | null;
+            /** Sub Label */
+            sub_label?: string | null;
+            /** Value Type */
+            value_type: string;
+            /** Unit */
+            unit: string | null;
+            /** Legal Text */
+            legal_text: string | null;
+            /** Internal Text */
+            internal_text: string | null;
+            /** Sigma Text */
+            sigma_text: string | null;
+            /** Source Column */
+            source_column: string | null;
+            /** Is Record Only */
+            is_record_only: boolean;
+            /** Sigma Basis Period */
+            sigma_basis_period: string | null;
+            /** Sigma Updated By */
+            sigma_updated_by: string | null;
+            /** Sigma Updated At */
+            sigma_updated_at: string | null;
+            /** Sort Order */
+            sort_order: number;
+            /** Is Enabled */
+            is_enabled: boolean;
+        };
+        /**
+         * QcItemUpdate
+         * @description 修改标准原文（限值以文本保存，不拆上下限）。
+         */
+        QcItemUpdate: {
+            /** Legal Text */
+            legal_text?: string | null;
+            /** Internal Text */
+            internal_text?: string | null;
+            /** Sigma Text */
+            sigma_text?: string | null;
+            /** Sigma Basis Period */
+            sigma_basis_period?: string | null;
+            /** Is Enabled */
+            is_enabled?: boolean | null;
+        };
+        /** QcProductApiResponse */
+        QcProductApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["QcProductResponse"];
+        };
+        /**
+         * QcProductCreate
+         * @description 仅建品种（不上传文件）。
+         */
+        QcProductCreate: {
+            /**
+             * Name
+             * @description 品种名称
+             */
+            name: string;
+            /**
+             * Abbr
+             * @description 品名缩写，批号前缀
+             */
+            abbr: string;
+            /**
+             * Category
+             * @description 物料分类
+             * @enum {string}
+             */
+            category: "raw" | "intermediate" | "finished";
+            /**
+             * Quality Standard
+             * @description 质量标准
+             */
+            quality_standard?: string | null;
+            /**
+             * Status
+             * @description 状态
+             * @default active
+             */
+            status: string;
+        };
+        /** QcProductListApiResponse */
+        QcProductListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["QcProductListItem"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * QcProductListItem
+         * @description 品种列表行，含批次统计。
+         */
+        QcProductListItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Abbr */
+            abbr: string;
+            /** Category */
+            category: string;
+            /** Quality Standard */
+            quality_standard: string | null;
+            /** Status */
+            status: string;
+            /** Last Inspected At */
+            last_inspected_at: string | null;
+            /**
+             * Batch Count
+             * @default 0
+             */
+            batch_count: number;
+            /**
+             * Normal Count
+             * @default 0
+             */
+            normal_count: number;
+            /**
+             * Oos Count
+             * @default 0
+             */
+            oos_count: number;
+            /**
+             * Internal Count
+             * @default 0
+             */
+            internal_count: number;
+            /**
+             * Trend Count
+             * @default 0
+             */
+            trend_count: number;
+            /**
+             * Pending Count
+             * @default 0
+             */
+            pending_count: number;
+            /**
+             * Pass Rate
+             * @default 0
+             */
+            pass_rate: number;
+            /**
+             * Top Level
+             * @default pending
+             */
+            top_level: string;
+        };
+        /** QcProductResponse */
+        QcProductResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Abbr */
+            abbr: string;
+            /** Category */
+            category: string;
+            /** Quality Standard */
+            quality_standard: string | null;
+            /** Source File Name */
+            source_file_name: string | null;
+            /** Status */
+            status: string;
+            /** Last Inspected At */
+            last_inspected_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** QcProductUpdate */
+        QcProductUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Abbr */
+            abbr?: string | null;
+            /** Category */
+            category?: ("raw" | "intermediate" | "finished") | null;
+            /** Quality Standard */
+            quality_standard?: string | null;
+            /** Status */
+            status?: string | null;
+        };
+        /** QcRejudgeApiResponse */
+        QcRejudgeApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["QcRejudgeResponse"];
+        };
+        /** QcRejudgeResponse */
+        QcRejudgeResponse: {
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Batch Count */
+            batch_count: number;
+            /** Value Count */
+            value_count: number;
+            /**
+             * Changed Batch Count
+             * @description 有任一单元格判定变化的批次数
+             */
+            changed_batch_count: number;
+            /**
+             * Changed Value Count
+             * @description 判定发生变化的检验值条数
+             * @default 0
+             */
+            changed_value_count: number;
+        };
+        /**
+         * QcStandardConflict
+         * @description 两份文件对同一层标准的写法不一致，交由人工判断。
+         */
+        QcStandardConflict: {
+            /** Column Index */
+            column_index: number;
+            /** Column Letter */
+            column_letter: string;
+            /** Item Name */
+            item_name: string;
+            /**
+             * Layer
+             * @description legal / internal / sigma
+             */
+            layer: string;
+            /** Layer Label */
+            layer_label: string;
+            /** Excel Text */
+            excel_text?: string | null;
+            /** Docx Text */
+            docx_text?: string | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Severity
+             * @description numeric 数值范围不同（必须确认）/ text 仅文字表述不同（默认采用结果表）
+             * @default text
+             */
+            severity: string;
+        };
+        /**
+         * QcStandardSourceItem
+         * @description 某一层的标准最终取自哪份文件，供导入完成页核对。
+         */
+        QcStandardSourceItem: {
+            /** Column Letter */
+            column_letter: string;
+            /** Item Name */
+            item_name: string;
+            /** Layer */
+            layer: string;
+            /** Layer Label */
+            layer_label: string;
+            /** Final Text */
+            final_text?: string | null;
+            /**
+             * Source
+             * @description excel 结果表 / docx 标准表 / none 留空
+             */
+            source: string;
+            /**
+             * From Choice
+             * @description True=按人工裁决，False=默认取值
+             * @default false
+             */
+            from_choice: boolean;
+        };
+        /** QcStatsApiResponse */
+        QcStatsApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["QcStatsResponse"];
+        };
+        /** QcStatsResponse */
+        QcStatsResponse: {
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Oos
+             * @default 0
+             */
+            oos: number;
+            /**
+             * Internal
+             * @default 0
+             */
+            internal: number;
+            /**
+             * Trend
+             * @default 0
+             */
+            trend: number;
+            /**
+             * Normal
+             * @default 0
+             */
+            normal: number;
+            /**
+             * Skip
+             * @default 0
+             */
+            skip: number;
+            /**
+             * Pending
+             * @default 0
+             */
+            pending: number;
+        };
+        /**
+         * QcUnmatchedCandidate
+         * @description 待指定的候选列。用列字母区分同名列。
+         */
+        QcUnmatchedCandidate: {
+            /** Letter */
+            letter: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * QcUnmatchedItem
+         * @description 标准表里有、但没能自动对上结果表列的项目，可由人工点一次指定。
+         */
+        QcUnmatchedItem: {
+            /** Item Name */
+            item_name: string;
+            /** Candidates */
+            candidates?: components["schemas"]["QcUnmatchedCandidate"][];
+            /** Docx Legal Text */
+            docx_legal_text?: string | null;
+            /** Docx Internal Text */
+            docx_internal_text?: string | null;
+            /** Docx Sigma Text */
+            docx_sigma_text?: string | null;
+            /**
+             * Matched Column Letter
+             * @description 当前已对应的列字母；未对应为 None
+             */
+            matched_column_letter?: string | null;
+            /**
+             * Matched Column Name
+             * @description 当前已对应的列名
+             */
+            matched_column_name?: string | null;
         };
         /**
          * QualificationLevelEnum
@@ -105545,6 +106646,571 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DataResponse_CpvImportTaskResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_products_api_api_v1_quality_qc_report_products_get: {
+        parameters: {
+            query?: {
+                /** @description 品种名称或缩写 */
+                keyword?: string | null;
+                /** @description 物料分类 */
+                category?: string | null;
+                /** @description 最高等级筛选 */
+                top_level?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["QcProductListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_product_api_api_v1_quality_qc_report_products_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QcProductCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["QcProductApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_product_api_api_v1_quality_qc_report_products__product_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["QcProductApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_product_api_api_v1_quality_qc_report_products__product_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QcProductUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["QcProductApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_product_api_api_v1_quality_qc_report_products__product_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["QcDeleteApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_items_api_api_v1_quality_qc_report_products__product_id__items_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["QcItemListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_item_api_api_v1_quality_qc_report_items__item_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QcItemUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["QcItemApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rejudge_api_api_v1_quality_qc_report_products__product_id__rejudge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["QcRejudgeApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_import_api_api_v1_quality_qc_report_import_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_preview_import_api_api_v1_quality_qc_report_import_preview_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["QcImportPreviewApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    commit_import_api_api_v1_quality_qc_report_import_commit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_commit_import_api_api_v1_quality_qc_report_import_commit_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["QcImportCommitApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_batches_api_api_v1_quality_qc_report_products__product_id__batches_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+                /** @description 批号模糊搜索 */
+                batch_no?: string | null;
+                /** @description 判定等级 */
+                level?: string | null;
+            };
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["QcBatchPageApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_batch_api_api_v1_quality_qc_report_products__product_id__batches_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QcBatchCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["QcBatchApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_batches_api_api_v1_quality_qc_report_products__product_id__batches_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_batches_api_api_v1_quality_qc_report_products__product_id__batches_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["QcBatchImportApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_stats_api_api_v1_quality_qc_report_products__product_id__stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["QcStatsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attention_batches_api_api_v1_quality_qc_report_attention_batches_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["QcAttentionBatchListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_api_api_v1_quality_qc_report_products__product_id__export_get: {
+        parameters: {
+            query?: {
+                batch_no?: string | null;
+                level?: string | null;
+            };
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
