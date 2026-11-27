@@ -9,7 +9,9 @@
  * 数据全部来自真实接口：/registration/drugs、/drugs/nodes、/drugs/{id}/prediction
  */
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
+import type { components } from '@/types/generated/schema'
+import { usePathname, useRouter } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -113,6 +115,8 @@ function CountUp({ value, delay = 0 }: { value: number; delay?: number }) {
 }
 
 export function ReviewPageClient() {
+  const router = useRouter()
+  const pathname = usePathname()
   const { message } = App.useApp()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<string>('全部')
@@ -121,11 +125,12 @@ export function ReviewPageClient() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [expandedNode, setExpandedNode] = useState<number | null>(null)
   // 从概览页「?drug=xxx」进入时只定位一次，避免轮询刷新反复弹抽屉
-  const focusedHandledRef = useRef<string | null>(null)
+
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [page, setPage] = useState(1)
   const [acceptanceNo, setAcceptanceNo] = useState('')
+
   const [acceptanceSaving, setAcceptanceSaving] = useState(false)
   const [form] = Form.useForm()
 
@@ -136,20 +141,37 @@ export function ReviewPageClient() {
     queryFn: fetchDrugs,
   })
 
+  // 概览页点击品种行 → /registration/review?drug=<id>：
+  // 深链目标由 URL + 列表派生（useMemo），不用 effect 取数/写 state
+  const focusedId = useMemo(
+    () => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("drug")),
+    [],
+  )
+  const focusedDrug = useMemo(
+    () => (focusedId ? (drugs.find(d => d.id === focusedId) ?? null) : null),
+    [focusedId, drugs],
+  )
+
+  // 用户手动选择优先，否则回落到深链目标
+  const activeDrug = selectedDrug ?? focusedDrug
+  const drawerVisible = drawerOpen || Boolean(focusedDrug)
+  // 深链进入时用该品种的受理编号作为初值
+  const acceptanceValue = acceptanceNo || (activeDrug?.acceptance_number ?? '')
+
   const { data: reviewNodes = [], isLoading: nodesLoading } = useQuery({
     queryKey: ['registration-review-nodes'],
     queryFn: fetchReviewNodes,
   })
 
   const { data: prediction, isLoading: predictionLoading } = useQuery({
-    queryKey: ['registration-drug-prediction', selectedDrug?.id],
-    queryFn: () => fetchDrugPrediction(selectedDrug!.id),
-    enabled: !!selectedDrug && drawerOpen,
+    queryKey: ['registration-drug-prediction', activeDrug?.id],
+    queryFn: () => fetchDrugPrediction(activeDrug!.id),
+    enabled: !!activeDrug && drawerVisible,
   })
 
   const { data: drugProjects = [] } = useQuery({
-    queryKey: ['registration-drug-projects', selectedDrug?.id],
-    queryFn: () => fetchProjectsByDrug(selectedDrug!.id),
+    queryKey: ['registration-drug-projects', activeDrug?.id],
+    queryFn: () => fetchProjectsByDrug(activeDrug!.id),
     enabled: !!selectedDrug && drawerOpen,
   })
 
@@ -222,22 +244,23 @@ export function ReviewPageClient() {
     try {
       await deleteDrug(id)
       message.success('删除成功')
-      if (selectedDrug?.id === id) { setSelectedDrug(null); setDrawerOpen(false) }
+      if (activeDrug?.id === id) { setSelectedDrug(null); setDrawerOpen(false) }
       refreshData()
     } catch {
       message.error('删除失败')
     }
   }
 
-  const handleUpdateNode = async (drugId: string, nodeIndex: number, payload: { actual_date?: string | null; skipped?: boolean }) => {
+  const handleUpdateNode = async (
+    drugId: string,
+    nodeIndex: number,
+    payload: Omit<components['schemas']['DrugNodeUpdate'], 'node_index'>,
+  ) => {
     try {
-      const result = await updateDrug(drugId, {
-        nodes: [{ node_index: nodeIndex, ...payload }],
+      // 契约类型取自生成 schema；失败由 apiFetch 抛错，统一走 catch
+      await updateDrug(drugId, {
+        nodes: [{ ...payload, node_index: nodeIndex }],
       })
-      if (result && 'success' in result && result.success === false) {
-        message.error(result.message || '更新失败')
-        return
-      }
       message.success('节点更新成功')
       refreshData()
     } catch {
@@ -252,32 +275,13 @@ export function ReviewPageClient() {
     setDrawerOpen(true)
   }
 
-  // 概览页点击品种行 → /registration/review?drug=<id>：自动打开该品种详情
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const focusedId = new URLSearchParams(window.location.search).get('drug')
-    if (!focusedId || !drugs.length) return
-    if (focusedHandledRef.current === focusedId) return
-    const target = drugs.find(d => d.id === focusedId)
-    if (!target) return
-    focusedHandledRef.current = focusedId
-    // setState 挪入微任务，避免在 effect 体内同步触发级联渲染
-    queueMicrotask(() => {
-      setSelectedDrug(target)
-      setAcceptanceNo(target.acceptance_number ?? '')
-      setDrawerOpen(true)
-    })
-  }, [drugs])
 
   const handleSaveAcceptanceNo = async () => {
-    if (!selectedDrug || acceptanceSaving) return
+    if (!activeDrug || acceptanceSaving) return
     setAcceptanceSaving(true)
     try {
-      const result = await updateDrug(selectedDrug.id, { acceptance_number: acceptanceNo.trim() || null })
-      if (result && 'success' in result && result.success === false) {
-        message.error(result.message || '保存失败')
-        return
-      }
+      // updateDrug 失败会抛 ApiError（apiFetch 非 2xx 即抛），此处无需再判 success 字段
+      await updateDrug(activeDrug.id, { acceptance_number: acceptanceValue.trim() || null })
       message.success('受理号已登记，关联注册项目状态将自动同步')
       refreshData()
     } catch {
@@ -486,23 +490,27 @@ export function ReviewPageClient() {
       {/* 详情抽屉：540px，摘要卡 + 节点时间轴 */}
       <Drawer
         size={540}
-        open={drawerOpen}
-        onClose={() => { setDrawerOpen(false); setSelectedDrug(null) }}
+        open={drawerVisible}
+        onClose={() => {
+          setDrawerOpen(false)
+          setSelectedDrug(null)
+          if (focusedId) router.replace(pathname)
+        }}
         title={
-          selectedDrug && (
+          activeDrug && (
             <div>
               <div className={styles.drawerName}>
-                {selectedDrug.name}
-                <span className={ui.tagBrand}>{selectedDrug.type}</span>
+                {activeDrug.name}
+                <span className={ui.tagBrand}>{activeDrug.type}</span>
               </div>
-              <div className={styles.drawerSub}>受理日期：{selectedDrug.acceptance_date}</div>
+              <div className={styles.drawerSub}>受理日期：{activeDrug.acceptance_date}</div>
             </div>
           )
         }
         styles={{ body: { padding: 0 } }}
       >
         <div className={`${ui.tokenScope} ${styles.drawerBody}`}>
-          {selectedDrug && (
+          {activeDrug && (
             <Spin spinning={predictionLoading}>
               {prediction && (
                 <>
@@ -519,7 +527,7 @@ export function ReviewPageClient() {
                     <div className={styles.summaryDates}>
                       <div>
                         <div className={styles.dLabel}>受理日期</div>
-                        <div className={styles.dVal}>{selectedDrug.acceptance_date}</div>
+                        <div className={styles.dVal}>{activeDrug.acceptance_date}</div>
                       </div>
                       {prediction.estimated_approval_date && (
                         <div>
@@ -535,14 +543,14 @@ export function ReviewPageClient() {
                     <Input
                       size="small"
                       placeholder="登记受理号，如 CXHS2600001"
-                      value={acceptanceNo}
+                      value={acceptanceValue}
                       onChange={e => setAcceptanceNo(e.target.value)}
                       style={{ flex: 1 }}
                     />
                     <button
                       type="button"
                       className={styles.acceptanceSave}
-                      disabled={acceptanceSaving || acceptanceNo.trim() === (selectedDrug.acceptance_number ?? '')}
+                      disabled={acceptanceSaving || acceptanceNo.trim() === (activeDrug.acceptance_number ?? '')}
                       onClick={() => void handleSaveAcceptanceNo()}
                     >
                       登记
@@ -633,7 +641,7 @@ export function ReviewPageClient() {
                                   size="small"
                                   placeholder="选择日期"
                                   onChange={(date: Dayjs | null) =>
-                                    handleUpdateNode(selectedDrug.id, node.node_index, {
+                                    handleUpdateNode(activeDrug.id, node.node_index, {
                                       actual_date: date ? date.format('YYYY-MM-DD') : null,
                                     })
                                   }
@@ -642,7 +650,7 @@ export function ReviewPageClient() {
                                   <button
                                     type="button"
                                     className={styles.undoLink}
-                                    onClick={() => handleUpdateNode(selectedDrug.id, node.node_index, { actual_date: null })}
+                                    onClick={() => handleUpdateNode(activeDrug.id, node.node_index, { actual_date: null })}
                                   >
                                     撤销完成
                                   </button>
@@ -654,7 +662,7 @@ export function ReviewPageClient() {
                               size="small"
                               checked={node.status === 'skipped'}
                               onChange={checked =>
-                                handleUpdateNode(selectedDrug.id, node.node_index, { skipped: checked })
+                                handleUpdateNode(activeDrug.id, node.node_index, { skipped: checked })
                               }
                             />
                           </div>

@@ -3,6 +3,7 @@
 import asyncio
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -44,7 +45,7 @@ async def main() -> None:
             await page.wait_for_timeout(3000)
             title = await page.evaluate("document.querySelector('h1')?.textContent")
             print(f"{name}: title={title}")
-            await page.screenshot(path=f"/tmp/p2-{name}.png")
+            await page.screenshot(path=str(Path(tempfile.gettempdir()) / f"p2-{name}.png"))
 
         # 法规详情：从列表点第一行进入
         await page.goto(f"{FRONTEND_URL}/registration/regulation/list", wait_until="domcontentloaded")
@@ -57,7 +58,7 @@ async def main() -> None:
         if clicked:
             await page.wait_for_timeout(4000)
             print("reg-detail: url=", page.url)
-            await page.screenshot(path="/tmp/p2-reg-detail.png")
+            await page.screenshot(path=str(Path(tempfile.gettempdir()) / "p2-reg-detail.png"))
         else:
             print("reg-detail: no rows, skipped")
 

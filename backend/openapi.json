@@ -81353,6 +81353,1119 @@
         }
       }
     },
+    "/api/v1/quality/qc-report/products": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u8d28\u91cf\u68c0\u9a8c"
+        ],
+        "summary": "\u54c1\u79cd\u5217\u8868\uff08\u542b\u6279\u6b21\u7edf\u8ba1\uff09",
+        "operationId": "list_products_api_api_v1_quality_qc_report_products_get",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u54c1\u79cd\u540d\u79f0\u6216\u7f29\u5199",
+              "title": "Keyword"
+            },
+            "description": "\u54c1\u79cd\u540d\u79f0\u6216\u7f29\u5199"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u7269\u6599\u5206\u7c7b",
+              "title": "Category"
+            },
+            "description": "\u7269\u6599\u5206\u7c7b"
+          },
+          {
+            "name": "top_level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6700\u9ad8\u7b49\u7ea7\u7b5b\u9009",
+              "title": "Top Level"
+            },
+            "description": "\u6700\u9ad8\u7b49\u7ea7\u7b5b\u9009"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/QcProductListApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u8d28\u91cf\u68c0\u9a8c"
+        ],
+        "summary": "\u65b0\u5efa\u54c1\u79cd\uff08\u4e0d\u542b\u6587\u4ef6\uff09",
+        "operationId": "create_product_api_api_v1_quality_qc_report_products_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QcProductCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/QcProductApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/qc-report/products/{product_id}": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u8d28\u91cf\u68c0\u9a8c"
+        ],
+        "summary": "\u54c1\u79cd\u8be6\u60c5",
+        "operationId": "get_product_api_api_v1_quality_qc_report_products__product_id__get",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/QcProductApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u8d28\u91cf\u68c0\u9a8c"
+        ],
+        "summary": "\u4fee\u6539\u54c1\u79cd",
+        "operationId": "update_product_api_api_v1_quality_qc_report_products__product_id__put",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QcProductUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/QcProductApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u8d28\u91cf\u68c0\u9a8c"
+        ],
+        "summary": "\u5220\u9664\u54c1\u79cd\uff08\u8f6f\u5220\uff09",
+        "operationId": "delete_product_api_api_v1_quality_qc_report_products__product_id__delete",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/QcDeleteApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/qc-report/products/{product_id}/items": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u8d28\u91cf\u68c0\u9a8c"
+        ],
+        "summary": "\u68c0\u9a8c\u9879\u76ee\u6e05\u5355",
+        "operationId": "list_items_api_api_v1_quality_qc_report_products__product_id__items_get",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/QcItemListApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/qc-report/items/{item_id}": {
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u8d28\u91cf\u68c0\u9a8c"
+        ],
+        "summary": "\u4fee\u6539\u9879\u76ee\u6807\u51c6\u6216 3\u03c3",
+        "operationId": "update_item_api_api_v1_quality_qc_report_items__item_id__put",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QcItemUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/QcItemApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/qc-report/products/{product_id}/rejudge": {
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u8d28\u91cf\u68c0\u9a8c"
+        ],
+        "summary": "\u6807\u51c6\u53d8\u66f4\u540e\u91cd\u7b97\u5168\u90e8\u6279\u6b21",
+        "operationId": "rejudge_api_api_v1_quality_qc_report_products__product_id__rejudge_post",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/QcRejudgeApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/qc-report/import/preview": {
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u8d28\u91cf\u68c0\u9a8c"
+        ],
+        "summary": "\u89e3\u6790\u4e24\u4e2a\u6587\u4ef6\u5e76\u9884\u89c8",
+        "operationId": "preview_import_api_api_v1_quality_qc_report_import_preview_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_preview_import_api_api_v1_quality_qc_report_import_preview_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/QcImportPreviewApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/qc-report/import/commit": {
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u8d28\u91cf\u68c0\u9a8c"
+        ],
+        "summary": "\u786e\u8ba4\u5bfc\u5165\u5e76\u5165\u5e93",
+        "description": "\u5bfc\u5165\u63d0\u4ea4\u3002\u8fd4\u56de text/event-stream\uff0c\u8fb9\u5199\u5e93\u8fb9\u63a8\u771f\u5b9e\u8fdb\u5ea6\u3002\n\n\u6240\u6709\u53ef\u80fd\u5931\u8d25\u7684\u6821\u9a8c\uff08\u6587\u4ef6\u683c\u5f0f\u3001\u672a\u88c1\u51b3\u51b2\u7a81\uff09\u90fd\u5728\u6d41\u5f00\u59cb\u524d\u5b8c\u6210\uff0c\n\u4ecd\u4ee5\u666e\u901a JSON + \u72b6\u6001\u7801\u8fd4\u56de\uff1b\u6d41\u91cc\u53ea\u51fa\u73b0\u8fdb\u5ea6\u3001done\u3001error \u4e09\u7c7b\u4e8b\u4ef6\u3002",
+        "operationId": "commit_import_api_api_v1_quality_qc_report_import_commit_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_commit_import_api_api_v1_quality_qc_report_import_commit_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/QcImportCommitApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/qc-report/products/{product_id}/batches": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u8d28\u91cf\u68c0\u9a8c"
+        ],
+        "summary": "\u6279\u6b21\u5206\u9875",
+        "operationId": "list_batches_api_api_v1_quality_qc_report_products__product_id__batches_get",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "batch_no",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6279\u53f7\u6a21\u7cca\u641c\u7d22",
+              "title": "Batch No"
+            },
+            "description": "\u6279\u53f7\u6a21\u7cca\u641c\u7d22"
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u5224\u5b9a\u7b49\u7ea7",
+              "title": "Level"
+            },
+            "description": "\u5224\u5b9a\u7b49\u7ea7"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/QcBatchPageApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u8d28\u91cf\u68c0\u9a8c"
+        ],
+        "summary": "\u624b\u5de5\u65b0\u589e\u4e00\u6279",
+        "operationId": "create_batch_api_api_v1_quality_qc_report_products__product_id__batches_post",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QcBatchCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/QcBatchApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/qc-report/products/{product_id}/batches/import": {
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u8d28\u91cf\u68c0\u9a8c"
+        ],
+        "summary": "\u4ece Excel \u6279\u91cf\u65b0\u589e\u68c0\u9a8c\u6279\u6b21",
+        "description": "\u4e0a\u4f20\u7ed3\u679c\u8868\u6279\u91cf\u65b0\u589e\u6279\u6b21\u3002\n\n\u5217\u6309\u4f4d\u7f6e\u5bf9\u5e94\u5df2\u6709\u9879\u76ee\uff0c\u5217\u6570\u6216\u8868\u5934\u5bf9\u4e0d\u4e0a\u76f4\u63a5\u62d2\u7edd\uff1b\u6279\u53f7\u91cd\u590d\u7684\u884c\u8df3\u8fc7\u3002",
+        "operationId": "import_batches_api_api_v1_quality_qc_report_products__product_id__batches_import_post",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_batches_api_api_v1_quality_qc_report_products__product_id__batches_import_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/QcBatchImportApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/qc-report/products/{product_id}/stats": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u8d28\u91cf\u68c0\u9a8c"
+        ],
+        "summary": "\u4e94\u7ea7\u7edf\u8ba1",
+        "operationId": "get_stats_api_api_v1_quality_qc_report_products__product_id__stats_get",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/QcStatsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/qc-report/attention-batches": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u8d28\u91cf\u68c0\u9a8c"
+        ],
+        "summary": "\u5168\u54c1\u79cd\u9700\u5173\u6ce8\u6279\u53f7",
+        "operationId": "attention_batches_api_api_v1_quality_qc_report_attention_batches_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/QcAttentionBatchListApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/qc-report/products/{product_id}/export": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u8d28\u91cf\u68c0\u9a8c"
+        ],
+        "summary": "\u5bfc\u51fa\u5f53\u524d\u7b5b\u9009\u7ed3\u679c\u4e3a Excel",
+        "operationId": "export_api_api_v1_quality_qc_report_products__product_id__export_get",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "batch_no",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Batch No"
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Level"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/quality/sop-ai/config": {
       "get": {
         "tags": [
@@ -101308,6 +102421,82 @@
         ],
         "title": "Body_analyze_literature_api_v1_research_literature_analyze_post"
       },
+      "Body_commit_import_api_api_v1_quality_qc_report_import_commit_post": {
+        "properties": {
+          "standard_file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Standard File",
+            "description": "\u6807\u51c6\u8868\uff08docx\uff09"
+          },
+          "result_file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Result File",
+            "description": "\u7ed3\u679c\u8868\uff08xlsx\uff09"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "\u54c1\u79cd\u540d\u79f0"
+          },
+          "abbr": {
+            "type": "string",
+            "title": "Abbr",
+            "description": "\u54c1\u540d\u7f29\u5199"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "description": "\u7269\u6599\u5206\u7c7b"
+          },
+          "quality_standard": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Standard",
+            "description": "\u8d28\u91cf\u6807\u51c6"
+          },
+          "manual_mapping": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manual Mapping",
+            "description": "\u4eba\u5de5\u6307\u8ba4\u7684 JSON\uff1a{\u9879\u76ee\u540d: \u5217\u540d}"
+          },
+          "resolutions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolutions",
+            "description": "\u51b2\u7a81\u88c1\u51b3 JSON\uff1a{\"\u5217\u53f7|\u5c42\": \"docx\"|\"excel\"|\"none\"}"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_file",
+          "result_file",
+          "name",
+          "abbr",
+          "category"
+        ],
+        "title": "Body_commit_import_api_api_v1_quality_qc_report_import_commit_post"
+      },
       "Body_confirm_import_api_v1_quality_cpv_import_confirm_post": {
         "properties": {
           "file": {
@@ -101632,26 +102821,31 @@
           },
           "product_name": {
             "type": "string",
+            "maxLength": 128,
             "title": "Product Name",
             "description": "\u4ea7\u54c1\u540d\u79f0"
           },
           "registration_number": {
             "type": "string",
+            "maxLength": 32,
             "title": "Registration Number",
             "description": "\u767b\u8bb0\u53f7"
           },
           "preparation_unit": {
             "type": "string",
+            "maxLength": 256,
             "title": "Preparation Unit",
             "description": "\u5236\u5242\u5355\u4f4d\u540d\u79f0"
           },
           "preparation_name": {
             "type": "string",
+            "maxLength": 256,
             "title": "Preparation Name",
             "description": "\u5236\u5242\u540d\u79f0"
           },
           "administration_route": {
             "type": "string",
+            "maxLength": 64,
             "title": "Administration Route",
             "description": "\u7ed9\u836f\u9014\u5f84"
           },
@@ -101866,6 +103060,21 @@
           "file"
         ],
         "title": "Body_handler_api_v1_safety_revisions__revision_id__manual_complete_post"
+      },
+      "Body_import_batches_api_api_v1_quality_qc_report_products__product_id__batches_import_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "\u68c0\u9a8c\u7ed3\u679c\u8868 xlsx"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_batches_api_api_v1_quality_qc_report_products__product_id__batches_import_post"
       },
       "Body_import_excel_api_v1_equipment_equipments_import__post": {
         "properties": {
@@ -102495,6 +103704,53 @@
           "coa"
         ],
         "title": "Body_post_api_v1_registration_reference_standards_parse_coa_post"
+      },
+      "Body_preview_import_api_api_v1_quality_qc_report_import_preview_post": {
+        "properties": {
+          "standard_file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Standard File",
+            "description": "\u6807\u51c6\u8868\uff08docx\uff09"
+          },
+          "result_file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Result File",
+            "description": "\u7ed3\u679c\u8868\uff08xlsx\uff09"
+          },
+          "product_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Id",
+            "description": "\u518d\u6b21\u5bfc\u5165\u65f6\u4f20\u5165\u5df2\u6709\u54c1\u79cd\uff0c\u590d\u7528\u5386\u53f2\u6620\u5c04"
+          },
+          "manual_mapping": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manual Mapping",
+            "description": "\u672c\u6b21\u4eba\u5de5\u6307\u5b9a\u7684\u5bf9\u5e94\u5173\u7cfb JSON\uff1a{\"\u9879\u76ee\u540d\": \"\u5217\u5b57\u6bcd\"}"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard_file",
+          "result_file"
+        ],
+        "title": "Body_preview_import_api_api_v1_quality_qc_report_import_preview_post"
       },
       "Body_preview_import_api_v1_production_product_output_import_preview_post": {
         "properties": {
@@ -162574,6 +163830,18 @@
             ],
             "title": "Market"
           },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
           "owner": {
             "anyOf": [
               {
@@ -162584,7 +163852,8 @@
                 "type": "null"
               }
             ],
-            "title": "Owner"
+            "title": "Owner",
+            "description": "\u8d1f\u8d23\u4eba\u59d3\u540d\u5feb\u7167\uff0c\u53ef\u7531 owner_id \u81ea\u52a8\u56de\u586b"
           },
           "planned_submission_date": {
             "anyOf": [
@@ -163132,6 +164401,18 @@
             ],
             "title": "Expected Completion At"
           },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
           "owner": {
             "anyOf": [
               {
@@ -163192,6 +164473,7 @@
           "accepted_at",
           "approved_at",
           "expected_completion_at",
+          "owner_id",
           "owner",
           "latest_progress",
           "created_at",
@@ -163383,6 +164665,18 @@
             ],
             "title": "Market"
           },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
           "owner": {
             "anyOf": [
               {
@@ -163393,7 +164687,8 @@
                 "type": "null"
               }
             ],
-            "title": "Owner"
+            "title": "Owner",
+            "description": "\u8d1f\u8d23\u4eba\u59d3\u540d\u5feb\u7167\uff0c\u53ef\u7531 owner_id \u81ea\u52a8\u56de\u586b"
           },
           "planned_submission_date": {
             "anyOf": [
@@ -164288,6 +165583,1780 @@
         },
         "type": "object",
         "title": "PurchaseRequestUpdate"
+      },
+      "QcAttentionBatch": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "batch_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Batch Id"
+          },
+          "batch_no": {
+            "type": "string",
+            "title": "Batch No"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_id",
+          "product_name",
+          "batch_id",
+          "batch_no",
+          "level"
+        ],
+        "title": "QcAttentionBatch"
+      },
+      "QcAttentionBatchListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/QcAttentionBatch"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "QcAttentionBatchListApiResponse"
+      },
+      "QcBatchApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/QcBatchRow"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "QcBatchApiResponse"
+      },
+      "QcBatchCreate": {
+        "properties": {
+          "batch_no": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Batch No"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "values": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Values",
+            "description": "item_id -> \u5b9e\u6d4b\u503c"
+          }
+        },
+        "type": "object",
+        "required": [
+          "batch_no"
+        ],
+        "title": "QcBatchCreate",
+        "description": "\u624b\u5de5\u65b0\u589e\u4e00\u6279\u3002"
+      },
+      "QcBatchImportApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/QcBatchImportResult"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "QcBatchImportApiResponse"
+      },
+      "QcBatchImportResult": {
+        "properties": {
+          "created_count": {
+            "type": "integer",
+            "title": "Created Count",
+            "default": 0
+          },
+          "skipped_count": {
+            "type": "integer",
+            "title": "Skipped Count",
+            "default": 0
+          },
+          "skipped_batch_nos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skipped Batch Nos"
+          },
+          "level_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Level Counts"
+          }
+        },
+        "type": "object",
+        "title": "QcBatchImportResult"
+      },
+      "QcBatchPageApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/QcBatchPageData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "QcBatchPageApiResponse"
+      },
+      "QcBatchPageData": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/QcBatchRow"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "page",
+          "page_size",
+          "items"
+        ],
+        "title": "QcBatchPageData"
+      },
+      "QcBatchRow": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "batch_no": {
+            "type": "string",
+            "title": "Batch No"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "entered_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entered By Name"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "values": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Values"
+          },
+          "levels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Levels"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "batch_no",
+          "level",
+          "note",
+          "entered_by_name",
+          "source",
+          "created_at"
+        ],
+        "title": "QcBatchRow",
+        "description": "\u4e00\u884c\u6279\u6b21\uff0cvalues/levels \u4ee5 item_id \u4e3a\u952e\uff0c\u524d\u7aef\u6309\u9879\u76ee\u987a\u5e8f\u6e32\u67d3\u5217\u3002"
+      },
+      "QcDeleteApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/QcDeleteResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "QcDeleteApiResponse"
+      },
+      "QcDeleteResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "deleted": {
+            "type": "boolean",
+            "title": "Deleted",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "QcDeleteResponse"
+      },
+      "QcImportCommitApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/QcImportCommitResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "QcImportCommitApiResponse"
+      },
+      "QcImportCommitResponse": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "item_count": {
+            "type": "integer",
+            "title": "Item Count"
+          },
+          "record_only_count": {
+            "type": "integer",
+            "title": "Record Only Count"
+          },
+          "batch_count": {
+            "type": "integer",
+            "title": "Batch Count"
+          },
+          "value_count": {
+            "type": "integer",
+            "title": "Value Count"
+          },
+          "unrecognized_items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unrecognized Items"
+          },
+          "skipped_standard_items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skipped Standard Items",
+            "description": "\u6807\u51c6\u8868\u91cc\u6709\u3001\u4f46\u7ed3\u679c\u8868\u627e\u4e0d\u5230\u5bf9\u5e94\u5217\u7684\u9879\u76ee\uff0c\u672a\u5efa\u6863"
+          },
+          "resolved_conflicts": {
+            "type": "integer",
+            "title": "Resolved Conflicts",
+            "description": "\u672c\u6b21\u6309\u4eba\u5de5\u9009\u62e9\u843d\u5730\u7684\u51b2\u7a81\u5c42\u6570",
+            "default": 0
+          },
+          "standard_sources": {
+            "items": {
+              "$ref": "#/components/schemas/QcStandardSourceItem"
+            },
+            "type": "array",
+            "title": "Standard Sources",
+            "description": "\u4e24\u4efd\u6587\u4ef6\u4e0d\u4e00\u81f4\u7684\u5c42\uff0c\u6700\u7ec8\u7528\u4e86\u54ea\u4efd\u7684\u503c\u3001\u662f\u5426\u4eba\u5de5\u88c1\u51b3"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_id",
+          "product_name",
+          "item_count",
+          "record_only_count",
+          "batch_count",
+          "value_count",
+          "unrecognized_items"
+        ],
+        "title": "QcImportCommitResponse"
+      },
+      "QcImportExtraColumn": {
+        "properties": {
+          "column_index": {
+            "type": "integer",
+            "title": "Column Index"
+          },
+          "column_name": {
+            "type": "string",
+            "title": "Column Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "column_index",
+          "column_name"
+        ],
+        "title": "QcImportExtraColumn",
+        "description": "\u7ed3\u679c\u8868\u6709\u3001\u6807\u51c6\u8868\u6ca1\u6709\u7684\u5217\uff0c\u5c06\u5efa\u6210\u300c\u4ec5\u8bb0\u5f55\u300d\u9879\u76ee\u3002"
+      },
+      "QcImportPreviewApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/QcImportPreviewResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "QcImportPreviewApiResponse"
+      },
+      "QcImportPreviewItem": {
+        "properties": {
+          "item_no": {
+            "type": "integer",
+            "title": "Item No"
+          },
+          "item_name": {
+            "type": "string",
+            "title": "Item Name"
+          },
+          "value_type": {
+            "type": "string",
+            "title": "Value Type"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "legal_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Text"
+          },
+          "internal_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Internal Text"
+          },
+          "sigma_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sigma Text"
+          },
+          "matched_column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Column",
+            "description": "\u81ea\u52a8\u5339\u914d\u5230\u7684\u7ed3\u679c\u8868\u5217\u540d"
+          },
+          "match_kind": {
+            "type": "string",
+            "title": "Match Kind",
+            "description": "saved / exact / contain / pending",
+            "default": "pending"
+          },
+          "candidates": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Candidates",
+            "description": "\u9700\u8981\u4eba\u5de5\u6307\u8ba4\u65f6\u7684\u5019\u9009\u5217"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_no",
+          "item_name",
+          "value_type",
+          "unit",
+          "legal_text",
+          "internal_text",
+          "sigma_text"
+        ],
+        "title": "QcImportPreviewItem",
+        "description": "\u89e3\u6790\u51fa\u7684\u68c0\u9a8c\u9879\u76ee\u53ca\u5176\u5339\u914d\u60c5\u51b5\u3002"
+      },
+      "QcImportPreviewResponse": {
+        "properties": {
+          "docx_file_name": {
+            "type": "string",
+            "title": "Docx File Name"
+          },
+          "xlsx_file_name": {
+            "type": "string",
+            "title": "Xlsx File Name"
+          },
+          "sheet_title": {
+            "type": "string",
+            "title": "Sheet Title"
+          },
+          "batch_count": {
+            "type": "integer",
+            "title": "Batch Count"
+          },
+          "data_start_row": {
+            "type": "integer",
+            "title": "Data Start Row"
+          },
+          "column_count": {
+            "type": "integer",
+            "title": "Column Count"
+          },
+          "product_name_suggestion": {
+            "type": "string",
+            "title": "Product Name Suggestion"
+          },
+          "abbr_suggestion": {
+            "type": "string",
+            "title": "Abbr Suggestion"
+          },
+          "quality_standard_suggestion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Standard Suggestion"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/QcImportPreviewItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "extra_columns": {
+            "items": {
+              "$ref": "#/components/schemas/QcImportExtraColumn"
+            },
+            "type": "array",
+            "title": "Extra Columns"
+          },
+          "batch_no_samples": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Batch No Samples"
+          },
+          "sample_values": {
+            "items": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Sample Values"
+          },
+          "unrecognized_items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unrecognized Items",
+            "description": "\u4e09\u5c42\u6807\u51c6\u90fd\u89e3\u6790\u4e0d\u51fa\u6570\u503c\u7684\u9879\u76ee\uff0c\u9700\u4eba\u5de5\u8865"
+          },
+          "conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/QcStandardConflict"
+            },
+            "type": "array",
+            "title": "Conflicts",
+            "description": "\u4e24\u4efd\u6587\u4ef6\u5199\u6cd5\u4e0d\u4e00\u81f4\u3001\u9700\u4eba\u5de5\u9010\u6761\u5224\u65ad\u7684\u6807\u51c6"
+          },
+          "unmatched_items": {
+            "items": {
+              "$ref": "#/components/schemas/QcUnmatchedItem"
+            },
+            "type": "array",
+            "title": "Unmatched Items",
+            "description": "\u6807\u51c6\u8868\u6709\u3001\u4f46\u6ca1\u80fd\u81ea\u52a8\u5bf9\u4e0a\u7ed3\u679c\u8868\u5217\u7684\u9879\u76ee"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QcImportSummary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "\u4ea4\u53c9\u5370\u8bc1\u7edf\u8ba1\uff1a\u4e00\u81f4 / \u5f85\u786e\u8ba4 / \u4ec5\u7ed3\u679c\u8868\u6709"
+          }
+        },
+        "type": "object",
+        "required": [
+          "docx_file_name",
+          "xlsx_file_name",
+          "sheet_title",
+          "batch_count",
+          "data_start_row",
+          "column_count",
+          "product_name_suggestion",
+          "abbr_suggestion",
+          "quality_standard_suggestion",
+          "items",
+          "extra_columns",
+          "batch_no_samples",
+          "sample_values"
+        ],
+        "title": "QcImportPreviewResponse"
+      },
+      "QcImportSummary": {
+        "properties": {
+          "total_columns": {
+            "type": "integer",
+            "title": "Total Columns"
+          },
+          "same_count": {
+            "type": "integer",
+            "title": "Same Count"
+          },
+          "conflict_count": {
+            "type": "integer",
+            "title": "Conflict Count"
+          },
+          "only_excel_count": {
+            "type": "integer",
+            "title": "Only Excel Count"
+          },
+          "skipped_standard_items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skipped Standard Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_columns",
+          "same_count",
+          "conflict_count",
+          "only_excel_count"
+        ],
+        "title": "QcImportSummary"
+      },
+      "QcItemApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/QcItemResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "QcItemApiResponse"
+      },
+      "QcItemListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/QcItemResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "QcItemListApiResponse"
+      },
+      "QcItemResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "item_no": {
+            "type": "integer",
+            "title": "Item No"
+          },
+          "item_name": {
+            "type": "string",
+            "title": "Item Name"
+          },
+          "standard_item_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Item Name"
+          },
+          "standard_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Source"
+          },
+          "column_group_start": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Column Group Start"
+          },
+          "sub_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sub Label"
+          },
+          "value_type": {
+            "type": "string",
+            "title": "Value Type"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "legal_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Text"
+          },
+          "internal_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Internal Text"
+          },
+          "sigma_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sigma Text"
+          },
+          "source_column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Column"
+          },
+          "is_record_only": {
+            "type": "boolean",
+            "title": "Is Record Only"
+          },
+          "sigma_basis_period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sigma Basis Period"
+          },
+          "sigma_updated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sigma Updated By"
+          },
+          "sigma_updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sigma Updated At"
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "product_id",
+          "item_no",
+          "item_name",
+          "value_type",
+          "unit",
+          "legal_text",
+          "internal_text",
+          "sigma_text",
+          "source_column",
+          "is_record_only",
+          "sigma_basis_period",
+          "sigma_updated_by",
+          "sigma_updated_at",
+          "sort_order",
+          "is_enabled"
+        ],
+        "title": "QcItemResponse"
+      },
+      "QcItemUpdate": {
+        "properties": {
+          "legal_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Text"
+          },
+          "internal_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Internal Text"
+          },
+          "sigma_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sigma Text"
+          },
+          "sigma_basis_period": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sigma Basis Period"
+          },
+          "is_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Enabled"
+          }
+        },
+        "type": "object",
+        "title": "QcItemUpdate",
+        "description": "\u4fee\u6539\u6807\u51c6\u539f\u6587\uff08\u9650\u503c\u4ee5\u6587\u672c\u4fdd\u5b58\uff0c\u4e0d\u62c6\u4e0a\u4e0b\u9650\uff09\u3002"
+      },
+      "QcProductApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/QcProductResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "QcProductApiResponse"
+      },
+      "QcProductCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "description": "\u54c1\u79cd\u540d\u79f0"
+          },
+          "abbr": {
+            "type": "string",
+            "maxLength": 16,
+            "minLength": 2,
+            "title": "Abbr",
+            "description": "\u54c1\u540d\u7f29\u5199\uff0c\u6279\u53f7\u524d\u7f00"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "raw",
+              "intermediate",
+              "finished"
+            ],
+            "title": "Category",
+            "description": "\u7269\u6599\u5206\u7c7b"
+          },
+          "quality_standard": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Standard",
+            "description": "\u8d28\u91cf\u6807\u51c6"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "\u72b6\u6001",
+            "default": "active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "abbr",
+          "category"
+        ],
+        "title": "QcProductCreate",
+        "description": "\u4ec5\u5efa\u54c1\u79cd\uff08\u4e0d\u4e0a\u4f20\u6587\u4ef6\uff09\u3002"
+      },
+      "QcProductListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/QcProductListItem"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "QcProductListApiResponse"
+      },
+      "QcProductListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "abbr": {
+            "type": "string",
+            "title": "Abbr"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "quality_standard": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Standard"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "last_inspected_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Inspected At"
+          },
+          "batch_count": {
+            "type": "integer",
+            "title": "Batch Count",
+            "default": 0
+          },
+          "normal_count": {
+            "type": "integer",
+            "title": "Normal Count",
+            "default": 0
+          },
+          "oos_count": {
+            "type": "integer",
+            "title": "Oos Count",
+            "default": 0
+          },
+          "internal_count": {
+            "type": "integer",
+            "title": "Internal Count",
+            "default": 0
+          },
+          "trend_count": {
+            "type": "integer",
+            "title": "Trend Count",
+            "default": 0
+          },
+          "pending_count": {
+            "type": "integer",
+            "title": "Pending Count",
+            "default": 0
+          },
+          "pass_rate": {
+            "type": "number",
+            "title": "Pass Rate",
+            "default": 0.0
+          },
+          "top_level": {
+            "type": "string",
+            "title": "Top Level",
+            "default": "pending"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "abbr",
+          "category",
+          "quality_standard",
+          "status",
+          "last_inspected_at"
+        ],
+        "title": "QcProductListItem",
+        "description": "\u54c1\u79cd\u5217\u8868\u884c\uff0c\u542b\u6279\u6b21\u7edf\u8ba1\u3002"
+      },
+      "QcProductResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "abbr": {
+            "type": "string",
+            "title": "Abbr"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "quality_standard": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Standard"
+          },
+          "source_file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source File Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "last_inspected_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Inspected At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "abbr",
+          "category",
+          "quality_standard",
+          "source_file_name",
+          "status",
+          "last_inspected_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "QcProductResponse"
+      },
+      "QcProductUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "abbr": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abbr"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "raw",
+                  "intermediate",
+                  "finished"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "quality_standard": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Standard"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "title": "QcProductUpdate"
+      },
+      "QcRejudgeApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/QcRejudgeResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "QcRejudgeApiResponse"
+      },
+      "QcRejudgeResponse": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Id"
+          },
+          "batch_count": {
+            "type": "integer",
+            "title": "Batch Count"
+          },
+          "value_count": {
+            "type": "integer",
+            "title": "Value Count"
+          },
+          "changed_batch_count": {
+            "type": "integer",
+            "title": "Changed Batch Count",
+            "description": "\u6709\u4efb\u4e00\u5355\u5143\u683c\u5224\u5b9a\u53d8\u5316\u7684\u6279\u6b21\u6570"
+          },
+          "changed_value_count": {
+            "type": "integer",
+            "title": "Changed Value Count",
+            "description": "\u5224\u5b9a\u53d1\u751f\u53d8\u5316\u7684\u68c0\u9a8c\u503c\u6761\u6570",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_id",
+          "batch_count",
+          "value_count",
+          "changed_batch_count"
+        ],
+        "title": "QcRejudgeResponse"
+      },
+      "QcStandardConflict": {
+        "properties": {
+          "column_index": {
+            "type": "integer",
+            "title": "Column Index"
+          },
+          "column_letter": {
+            "type": "string",
+            "title": "Column Letter"
+          },
+          "item_name": {
+            "type": "string",
+            "title": "Item Name"
+          },
+          "layer": {
+            "type": "string",
+            "title": "Layer",
+            "description": "legal / internal / sigma"
+          },
+          "layer_label": {
+            "type": "string",
+            "title": "Layer Label"
+          },
+          "excel_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excel Text"
+          },
+          "docx_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Docx Text"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity",
+            "description": "numeric \u6570\u503c\u8303\u56f4\u4e0d\u540c\uff08\u5fc5\u987b\u786e\u8ba4\uff09/ text \u4ec5\u6587\u5b57\u8868\u8ff0\u4e0d\u540c\uff08\u9ed8\u8ba4\u91c7\u7528\u7ed3\u679c\u8868\uff09",
+            "default": "text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "column_index",
+          "column_letter",
+          "item_name",
+          "layer",
+          "layer_label"
+        ],
+        "title": "QcStandardConflict",
+        "description": "\u4e24\u4efd\u6587\u4ef6\u5bf9\u540c\u4e00\u5c42\u6807\u51c6\u7684\u5199\u6cd5\u4e0d\u4e00\u81f4\uff0c\u4ea4\u7531\u4eba\u5de5\u5224\u65ad\u3002"
+      },
+      "QcStandardSourceItem": {
+        "properties": {
+          "column_letter": {
+            "type": "string",
+            "title": "Column Letter"
+          },
+          "item_name": {
+            "type": "string",
+            "title": "Item Name"
+          },
+          "layer": {
+            "type": "string",
+            "title": "Layer"
+          },
+          "layer_label": {
+            "type": "string",
+            "title": "Layer Label"
+          },
+          "final_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Text"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "description": "excel \u7ed3\u679c\u8868 / docx \u6807\u51c6\u8868 / none \u7559\u7a7a"
+          },
+          "from_choice": {
+            "type": "boolean",
+            "title": "From Choice",
+            "description": "True=\u6309\u4eba\u5de5\u88c1\u51b3\uff0cFalse=\u9ed8\u8ba4\u53d6\u503c",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "column_letter",
+          "item_name",
+          "layer",
+          "layer_label",
+          "source"
+        ],
+        "title": "QcStandardSourceItem",
+        "description": "\u67d0\u4e00\u5c42\u7684\u6807\u51c6\u6700\u7ec8\u53d6\u81ea\u54ea\u4efd\u6587\u4ef6\uff0c\u4f9b\u5bfc\u5165\u5b8c\u6210\u9875\u6838\u5bf9\u3002"
+      },
+      "QcStatsApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/QcStatsResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "QcStatsApiResponse"
+      },
+      "QcStatsResponse": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "oos": {
+            "type": "integer",
+            "title": "Oos",
+            "default": 0
+          },
+          "internal": {
+            "type": "integer",
+            "title": "Internal",
+            "default": 0
+          },
+          "trend": {
+            "type": "integer",
+            "title": "Trend",
+            "default": 0
+          },
+          "normal": {
+            "type": "integer",
+            "title": "Normal",
+            "default": 0
+          },
+          "skip": {
+            "type": "integer",
+            "title": "Skip",
+            "default": 0
+          },
+          "pending": {
+            "type": "integer",
+            "title": "Pending",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "QcStatsResponse"
+      },
+      "QcUnmatchedCandidate": {
+        "properties": {
+          "letter": {
+            "type": "string",
+            "title": "Letter"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "letter",
+          "name"
+        ],
+        "title": "QcUnmatchedCandidate",
+        "description": "\u5f85\u6307\u5b9a\u7684\u5019\u9009\u5217\u3002\u7528\u5217\u5b57\u6bcd\u533a\u5206\u540c\u540d\u5217\u3002"
+      },
+      "QcUnmatchedItem": {
+        "properties": {
+          "item_name": {
+            "type": "string",
+            "title": "Item Name"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/QcUnmatchedCandidate"
+            },
+            "type": "array",
+            "title": "Candidates"
+          },
+          "docx_legal_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Docx Legal Text"
+          },
+          "docx_internal_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Docx Internal Text"
+          },
+          "docx_sigma_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Docx Sigma Text"
+          },
+          "matched_column_letter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Column Letter",
+            "description": "\u5f53\u524d\u5df2\u5bf9\u5e94\u7684\u5217\u5b57\u6bcd\uff1b\u672a\u5bf9\u5e94\u4e3a None"
+          },
+          "matched_column_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Column Name",
+            "description": "\u5f53\u524d\u5df2\u5bf9\u5e94\u7684\u5217\u540d"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_name"
+        ],
+        "title": "QcUnmatchedItem",
+        "description": "\u6807\u51c6\u8868\u91cc\u6709\u3001\u4f46\u6ca1\u80fd\u81ea\u52a8\u5bf9\u4e0a\u7ed3\u679c\u8868\u5217\u7684\u9879\u76ee\uff0c\u53ef\u7531\u4eba\u5de5\u70b9\u4e00\u6b21\u6307\u5b9a\u3002"
       },
       "QualificationLevelEnum": {
         "type": "string",

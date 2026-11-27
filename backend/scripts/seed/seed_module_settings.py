@@ -35,6 +35,13 @@ DEFAULT_SETTINGS = [
         "string",
         "默认本地用户名前缀（飞书首登自动建号）",
     ),
+    (
+        "identity",
+        "H5_LOGIN_ENABLED",
+        "true",
+        "bool",
+        "飞书客户端内网页应用免登（H5 JSSDK）开关，关闭后前端退回 OAuth 授权跳转",
+    ),
     # Safety module
     (
         "safety",
@@ -461,6 +468,12 @@ SETTING_METADATA: dict[tuple[str, str], tuple[str, str, bool, str | None]] = {
         "账号与身份",
         False,
         "启用后飞书同步发现离职即停用账号",
+    ),
+    ("identity", "H5_LOGIN_ENABLED"): (
+        "飞书网页应用免登",
+        "账号与身份",
+        False,
+        "开启后飞书客户端内打开系统自动免登；关闭后前端退回 OAuth 授权跳转",
     ),
     # ── 安全管理 ──
     ("safety", "SAFETY_AI_TEXT_MODEL"): ("隐患文本分析模型", "AI 模型", False, "模型名或 LLM 配置名"),

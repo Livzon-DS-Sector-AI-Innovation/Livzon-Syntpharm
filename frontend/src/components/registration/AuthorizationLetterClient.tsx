@@ -614,22 +614,22 @@ export default function AuthorizationLetterClient({
                         <Input
                           placeholder="原文本"
                           value={item.old}
-                          onChange={e => {
-                            const next = [...replacements]
-                            next[index].old = e.target.value
-                            setReplacements(next)
-                          }}
+                          onChange={e =>
+                            setReplacements(prev =>
+                              prev.map((row, i) => (i === index ? { ...row, old: e.target.value } : row))
+                            )
+                          }
                           style={{ flex: 1 }}
                         />
                         <span>→</span>
                         <Input
                           placeholder="新文本"
                           value={item.new}
-                          onChange={e => {
-                            const next = [...replacements]
-                            next[index].new = e.target.value
-                            setReplacements(next)
-                          }}
+                          onChange={e =>
+                            setReplacements(prev =>
+                              prev.map((row, i) => (i === index ? { ...row, new: e.target.value } : row))
+                            )
+                          }
                           style={{ flex: 1 }}
                         />
                         {replacements.length > 1 && (

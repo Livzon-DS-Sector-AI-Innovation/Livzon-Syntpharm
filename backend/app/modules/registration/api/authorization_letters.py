@@ -1,5 +1,6 @@
 """Authorization letter API routes."""
 
+import asyncio
 import json
 import logging
 from io import BytesIO
@@ -89,15 +90,21 @@ async def list_letters(
     summary="生成授权书",
     status_code=201,
 )
+# 注：入参本应复用 AuthorizationLetterCreate，但本端点还要接收模板文件与其它表单字段。
+# 实测（fastapi 0.141.1）表单模型**仅在它是唯一请求体参数时**才摊平为扁平字段，
+# 一旦与 UploadFile / 其它 Form 参数混用，OpenAPI 会生成嵌套的 `data` 对象
+# （Body_* → properties.data），前端需改成发送嵌套结构，属于破坏性契约变更。
+# 因此这里保留扁平字段，但长度约束与 AuthorizationLetterCreate 逐项保持一致，
+# 保证超长入参在 422 阶段被拦下，而不是落进 handler 抛 500。
 async def generate_letter(
     current_user: RequiredUser,
     template: UploadFile | None = None,
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:create")),
-    product_name: str = Form(..., description="产品名称"),
-    registration_number: str = Form(..., description="登记号"),
-    preparation_unit: str = Form(..., description="制剂单位名称"),
-    preparation_name: str = Form(..., description="制剂名称"),
-    administration_route: str = Form(..., description="给药途径"),
+    product_name: str = Form(..., max_length=128, description="产品名称"),
+    registration_number: str = Form(..., max_length=32, description="登记号"),
+    preparation_unit: str = Form(..., max_length=256, description="制剂单位名称"),
+    preparation_name: str = Form(..., max_length=256, description="制剂名称"),
+    administration_route: str = Form(..., max_length=64, description="给药途径"),
     remarks: str | None = Form(None, description="备注"),
     template_variant: str = Form("zh", description="内置模板版本：zh=中文"),
     replacements: str | None = Form(
@@ -198,7 +205,10 @@ async def download_letter(
     # 下载即留痕：先写入记录（不存在则 404，不落留痕），由请求结束统一提交
     letter_model = await service.record_download(letter_id, operator_id=current_user.id)
 
-    content, media_type = service.load_output_file(letter_model)
+    content, media_type = await asyncio.wait_for(
+        asyncio.to_thread(service.load_output_file, letter_model),
+        timeout=60.0,
+    )
     filename = letter_model.output_file_name
     return StreamingResponse(
         BytesIO(content),

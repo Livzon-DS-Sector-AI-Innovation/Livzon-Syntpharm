@@ -17,13 +17,33 @@ Create Date: 2026-11-24
 
 已确认不保留存量数据（业务方同意直接 drop，未做数据导出）。
 downgrade() 仅重建空表结构，历史数据与磁盘文件均不可恢复。
+
+Orphan Table 处置留痕（AGENTS.md「Orphan Table 处理规则」）：
+
+1. 代码引用：本 PR 已删除全部读写代码（api/models/schemas/repository/service/
+   prompts/reply_generator 与前端页面/组件/actions/types），迁移之外零残留，
+   由 `grep -rn "validation_audit|supplementary_repl|reply_generator"` 复核。
+2. 业务确认：产品确认两模块下线、历史数据无需留档（2026-11-25，PR #248 描述
+   「数据影响」章节），因此未执行导出。
+3. 备份：uat 侧已随 #247 部署执行过本迁移；生产部署前如需留档，运维可按下列
+   语句在目标库先行导出（表名固定，无参数拼接）：
+
+       pg_dump -t 'registration.validation_audit*' \
+               -t 'registration.supplementary_replies' <db> > before_0223.sql
+
+   若未执行导出，则视为接受数据不可恢复。
+4. 行数核对：本迁移在 uat 已执行、源表不再存在，无法回填 row count；
+   部署到新环境前可用 `SELECT count(*) FROM registration.<table>` 逐表记录。
 """
 
+import logging
 from collections.abc import Sequence
 
 import sqlalchemy as sa
 
 from alembic import op
+
+logger = logging.getLogger(__name__)
 
 revision: str = "0223_drop_validation_audit_and_supplementary_reply_tables"
 down_revision: str | None = "0218_docx_translation_terms_partial_unique"
@@ -58,7 +78,39 @@ def _base_columns() -> list[sa.Column]:
     ]
 
 
+def _existing_tables(bind: sa.engine.Connection) -> dict[str, int]:
+    """返回待删表中仍存在者的行数（表不存在则不出现）。"""
+    inspector = sa.inspect(bind)
+    present = set(inspector.get_table_names(schema=_SCHEMA))
+    counts: dict[str, int] = {}
+    for table in _DROP_ORDER:
+        if table not in present:
+            continue
+        counts[table] = int(bind.execute(sa.text(f'SELECT count(*) FROM "{_SCHEMA}"."{table}"')).scalar_one())
+    return counts
+
+
 def upgrade() -> None:
+    """删除 6 张表。
+
+    有数据时必须显式批准后才允许删除：迁移会先统计行数，若存在非空表且未提供
+    `-x allow_drop_nonempty=1`，直接失败并打印备份命令，避免误删生产数据。
+    """
+    bind = op.get_bind()
+    counts = _existing_tables(bind)
+    nonempty = {name: n for name, n in counts.items() if n > 0}
+    logger.info("0223 drop tables row counts: %s", counts)
+
+    # alembic 1.20 的 MigrationContext 没有 get_x_argument()，-x 参数挂在 config.cmd_opts.x 上
+    x_opts = getattr(op.get_context().config.cmd_opts, "x", None) or []
+    x_args = dict(item.split("=", 1) for item in x_opts if "=" in item)
+    if nonempty and x_args.get("allow_drop_nonempty") != "1":
+        raise RuntimeError(
+            "待删除表仍有数据，已中止："
+            f"{nonempty}。请先备份（见本文件 docstring 的 pg_dump 命令），"
+            "确认无需保留后，用 `alembic -x allow_drop_nonempty=1 upgrade head` 重跑。"
+        )
+
     for table in _DROP_ORDER:
         op.drop_table(table, schema=_SCHEMA)
 
@@ -133,9 +185,7 @@ def downgrade() -> None:
     op.create_table(
         "validation_audit_files",
         sa.Column("task_id", sa.UUID(), nullable=False, comment="任务ID（逻辑关联）"),
-        sa.Column(
-            "file_type", sa.String(length=30), nullable=False, comment="文件类型: protocol/report/attachment"
-        ),
+        sa.Column("file_type", sa.String(length=30), nullable=False, comment="文件类型: protocol/report/attachment"),
         sa.Column("original_filename", sa.String(length=500), nullable=False, comment="原始文件名"),
         sa.Column("file_path", sa.String(length=500), nullable=False, comment="文件存储路径"),
         sa.Column("file_size", sa.Integer(), server_default="0", nullable=False, comment="文件大小(字节)"),

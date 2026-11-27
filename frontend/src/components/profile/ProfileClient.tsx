@@ -15,7 +15,8 @@ export interface ProfileInfo {
   mobile: string | null
   authSource: 'local' | 'feishu'
   avatarUrl: string | null
-  status: 'active' | 'disabled'
+  /** `/me` 不返回账号状态，缺省时不显示该标签 */
+  status?: 'active' | 'disabled'
   mustChangePassword: boolean
 }
 
@@ -67,9 +68,11 @@ export function ProfileClient({ user, isSuperuser, permissionCount }: ProfileCli
               {user.username || user.email || EMPTY}
             </div>
             <div className="mt-2 flex flex-wrap gap-2">
-              <Tag color={user.status === 'active' ? 'success' : 'error'}>
-                {user.status === 'active' ? '启用' : '禁用'}
-              </Tag>
+              {user.status && (
+                <Tag color={user.status === 'active' ? 'success' : 'error'}>
+                  {user.status === 'active' ? '启用' : '禁用'}
+                </Tag>
+              )}
               <Tag color={isSuperuser ? 'purple' : 'default'}>
                 {isSuperuser ? '超级管理员' : '普通账号'}
               </Tag>

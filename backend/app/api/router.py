@@ -33,6 +33,7 @@ from app.modules.quality import (
 )
 from app.modules.quality.ai.logs_api import router as ai_logs_router
 from app.modules.quality.label_verification import router as label_verification_router
+from app.modules.quality.qc_report import router as qc_report_router
 from app.modules.quality.qms.material_report_api import router as material_report_router
 from app.modules.quality.sop_ai import router as sop_ai_router
 from app.modules.registration import router as registration_router
@@ -113,6 +114,8 @@ api_router.include_router(instrument_router, prefix="/quality", tags=["质量管
 api_router.include_router(capa_router, prefix="/quality", tags=["质量管理 - CAPA"])
 # CPV router
 api_router.include_router(cpv_router, prefix="/quality", tags=["质量管理 - CPV"])
+# 质量检验台账（检验管理 > 质量检验）
+api_router.include_router(qc_report_router, prefix="/quality/qc-report", tags=["质量管理 - 质量检验"])
 api_router.include_router(sop_ai_router, prefix="/quality/sop-ai", tags=["SOP AI"])
 api_router.include_router(ai_logs_router, prefix="/quality/ai", tags=["质量管理 - AI 交互日志"])
 api_router.include_router(label_verification_router, prefix="/quality", tags=["质量管理 - 标签复核"])

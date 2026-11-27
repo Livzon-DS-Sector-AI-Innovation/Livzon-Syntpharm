@@ -50,6 +50,8 @@ services:
     environment:
     - HF_ENDPOINT=${HF_ENDPOINT:-https://hf-mirror.com}
     - HF_HUB_OFFLINE=1
+    # 本地开发不硬失败：宿主缓存可能为空，只告警（基础栈默认是 true，这里显式压回 false）
+    - AGENT_TTS_ASSETS_REQUIRED=false
     volumes:
     - ./backend/app:/app/app:ro
     - ./uploads:/app/uploads

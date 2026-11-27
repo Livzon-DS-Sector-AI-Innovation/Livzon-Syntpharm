@@ -544,7 +544,7 @@ const registrationRoutes: RouteCase[] = [
     path: '/registration/reference-standard',
     module: 'registration',
     kind: 'normal',
-    expected: heading('参考标准'),
+    expected: heading('标准物质说明书管理'),
     // 首屏首页由服务端直出，浏览器侧不另发请求；翻页才会取数
     expectData: antdTableData,
   },
