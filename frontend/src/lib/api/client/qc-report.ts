@@ -6,6 +6,7 @@
  */
 
 import type {
+  QcAttentionBatch,
   QcBatchImportResult,
   QcBatchPageData,
   QcImportCommitResult,
@@ -314,4 +315,9 @@ export async function rejudgeQcProduct(productId: string): Promise<QcRejudgeResu
 /** 删除品种（软删除，连带其下检验项目、批次与检验值）。 */
 export async function deleteQcProduct(productId: string): Promise<void> {
   await qcRequest<null>(`${BASE}/products/${productId}`, { method: 'DELETE' })
+}
+
+/** 关注批次：删除品种后局部刷新右栏用，避免整页重渲染。 */
+export async function fetchQcAttentionBatchesClient(limit = 20): Promise<QcAttentionBatch[]> {
+  return qcRequest<QcAttentionBatch[]>(`${BASE}/attention-batches?limit=${limit}`)
 }
