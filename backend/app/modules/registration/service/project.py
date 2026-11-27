@@ -156,6 +156,16 @@ async def _ensure_drug_exists(db: AsyncSession, drug_id: uuid.UUID | None) -> No
         raise ValueError("关联的审评品种不存在或已删除")
 
 
+async def _fill_owner_snapshot(db: AsyncSession, payload: dict[str, Any]) -> None:
+    """负责人以 owner_id 为准；姓名快照由 ID 解析回填，供免联表展示与历史兼容。"""
+    owner_id = payload.get("owner_id")
+    if not owner_id:
+        return
+    names = await resolve_user_names(db, {owner_id})
+    if owner_id in names:
+        payload["owner"] = names[owner_id]
+
+
 async def create_project(
     db: AsyncSession,
     data: ProjectCreate,
@@ -163,6 +173,7 @@ async def create_project(
 ) -> RegistrationProject:
     await _ensure_drug_exists(db, data.drug_id)
     payload = data.model_dump(exclude_unset=True)
+    await _fill_owner_snapshot(db, payload)
     if not payload.get("project_no"):
         payload["project_no"] = await project_repo.next_project_no(db, _now().year)
     payload["status"] = "draft"
@@ -181,6 +192,7 @@ async def create_project(
 async def update_project(db: AsyncSession, project_id: uuid.UUID, data: ProjectUpdate) -> RegistrationProject:
     project = await get_project(db, project_id)
     updates = data.model_dump(exclude_unset=True)
+    await _fill_owner_snapshot(db, updates)
     if "drug_id" in updates:
         await _ensure_drug_exists(db, updates["drug_id"])
     for field, value in updates.items():

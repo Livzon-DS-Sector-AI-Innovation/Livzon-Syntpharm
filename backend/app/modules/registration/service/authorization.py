@@ -1,5 +1,6 @@
 """Registration business workflows live here."""
 
+import asyncio
 import io
 import logging
 import uuid
@@ -32,6 +33,11 @@ from app.modules.registration.schemas import (
 from app.platform.identity.public_api import resolve_user_names
 
 logger = logging.getLogger(__name__)
+
+# 模板替换与对象存储均为同步阻塞调用，统一 offload 到线程并设硬超时，
+# 避免长时间占用事件循环（AGENTS.md：HTTP 请求内不做超过 5 秒的阻塞操作）。
+_GEN_TIMEOUT_SECONDS = 60.0
+_STORAGE_TIMEOUT_SECONDS = 60.0
 
 # 固定原料药企业
 API_COMPANY = "珠海保税区丽珠合成制药有限公司"
@@ -131,10 +137,13 @@ def _docx_replace(
             for old_text, new_text in replacement_dict.items():
                 if old_text in doc_xml:
                     doc_xml = doc_xml.replace(old_text, new_text)
-                    logger.info(f"替换：'{old_text}' -> '{new_text}'")
+                    logger.info(
+                        "授权书模板文本替换",
+                        extra={"old_text": old_text, "new_text": new_text},
+                    )
                 else:
                     missed.append(old_text)
-                    logger.warning(f"未找到文本：'{old_text}'")
+                    logger.warning("授权书模板未找到待替换文本", extra={"old_text": old_text})
 
             if missed and strict:
                 raise AppException(
@@ -260,7 +269,7 @@ class AuthorizationLetterService:
         """
         use_builtin = template_data is None
         if use_builtin:
-            template_bytes, builtin_name = get_builtin_template(template_variant)
+            template_bytes, builtin_name = await asyncio.to_thread(get_builtin_template, template_variant)
             # 内置模板：按占位符映射自动替换，无等长限制
             replacements = [
                 (placeholder, getattr(data, field_name))
@@ -278,7 +287,15 @@ class AuthorizationLetterService:
 
         # 执行替换
         try:
-            output_data = generate_authorization_letter_bytes(template_bytes, replacements, strict=use_builtin)
+            output_data = await asyncio.wait_for(
+                asyncio.to_thread(
+                    generate_authorization_letter_bytes,
+                    template_bytes,
+                    replacements,
+                    strict=use_builtin,
+                ),
+                timeout=_GEN_TIMEOUT_SECONDS,
+            )
         except ValueError as exc:
             raise BadRequestException(str(exc)) from exc
 
@@ -291,19 +308,31 @@ class AuthorizationLetterService:
         ext = ".docx" if is_docx else ".doc"
         output_file_key = f"{_OBJECT_PREFIX}/{file_id}{ext}"
         output_file_name = f"授权书-{data.product_name}-{data.preparation_unit}{ext}"
-        storage.upload_object(
-            _STORAGE_MODULE, output_file_key, output_data, len(output_data), _object_media_type(output_file_key)
+        await asyncio.wait_for(
+            asyncio.to_thread(
+                storage.upload_object,
+                _STORAGE_MODULE,
+                output_file_key,
+                output_data,
+                len(output_data),
+                _object_media_type(output_file_key),
+            ),
+            timeout=_STORAGE_TIMEOUT_SECONDS,
         )
 
         if not use_builtin:
             template_ext = ".docx" if _is_docx_format(template_bytes) else ".doc"
             template_file_key = f"{_OBJECT_PREFIX}/{file_id}_template{template_ext}"
-            storage.upload_object(
-                _STORAGE_MODULE,
-                template_file_key,
-                template_bytes,
-                len(template_bytes),
-                _object_media_type(template_file_key),
+            await asyncio.wait_for(
+                asyncio.to_thread(
+                    storage.upload_object,
+                    _STORAGE_MODULE,
+                    template_file_key,
+                    template_bytes,
+                    len(template_bytes),
+                    _object_media_type(template_file_key),
+                ),
+                timeout=_STORAGE_TIMEOUT_SECONDS,
             )
 
         # 创建数据库记录

@@ -224,6 +224,7 @@ export const KNOWN_DYNAMIC_ROUTE_PATTERNS: readonly string[] = [
   '/quality/deviation/[^/]+',
   '/quality/doc-check/[^/]+',
   '/quality/inspection-table/[^/]+',
+  '/quality/inspection/[^/]+',
   '/quality/material-report/[^/]+',
   '/quality/static-data/[^/]+/[^/]+',
   '/registration/dossier-writer/[^/]+',

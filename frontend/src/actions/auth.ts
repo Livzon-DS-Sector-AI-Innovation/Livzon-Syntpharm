@@ -9,10 +9,10 @@ import {
   loginApi,
   h5LoginApi,
   getCurrentUserApi,
+  logoutApi,
   startImpersonateApi,
   getImpersonationStatusApi,
 } from '@/lib/api/server/auth'
-import { getApiBaseUrl } from '@/lib/api/server/base'
 import { resolveLandingPath } from '@/lib/permissions/server'
 
 /**
@@ -91,7 +91,7 @@ export async function loginWithPassword(
       return { error: getErrorMessage(json) }
     }
 
-    const token = json?.data?.access_token
+    const token = json?.data.access_token
     if (!token) {
       return { error: '登录响应缺少 token，请检查后端接口' }
     }
@@ -139,7 +139,7 @@ export async function loginWithFeishuCode(code: string): Promise<FeishuLoginActi
       return { error: getErrorMessage(json) }
     }
 
-    const accessToken = json?.data?.access_token
+    const accessToken = json?.data.access_token
     if (!accessToken) {
       return { error: '登录响应缺少 token，请检查后端接口' }
     }
@@ -172,10 +172,7 @@ export async function logout() {
     // 通知后端把该 jti 写入吊销黑名单（否则退出后 token 在剩余有效期内仍可用）。
     // 失败不阻塞登出：清 cookie 才是用户感知的结果。
     try {
-      await fetch(`${getApiBaseUrl()}/api/v1/identity/auth/logout`, {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: 'no-store',
-      })
+      await logoutApi(token)
     } catch {
       // 忽略：后端不可用时仍允许本地登出
     }

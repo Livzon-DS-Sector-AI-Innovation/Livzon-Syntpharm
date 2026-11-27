@@ -8,7 +8,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.agent import queue
@@ -16,6 +16,7 @@ from app.modules.agent.models import (
     JOB_KIND_AUDIO,
     JOB_KIND_PARSE,
     JOB_KIND_RENDER,
+    JOB_KIND_SOURCE_PREVIEW,
     JOB_STATUS_FAILED,
     JOB_STATUS_QUEUED,
     JOB_STATUS_RUNNING,
@@ -241,3 +242,116 @@ async def test_get_latest_filters_kind(db_session: AsyncSession) -> None:
     assert latest is not None and latest.id == render_job.id
     parse_latest = await queue.get_latest(db_session, project.id, kind=JOB_KIND_PARSE)
     assert parse_latest is not None and parse_latest.kind == JOB_KIND_PARSE
+
+
+# ── 带 payload 的去重（#243：json 列没有等值运算符，必须 cast 到 jsonb） ────────
+
+
+async def test_enqueue_dedupes_same_payload(db_session: AsyncSession) -> None:
+    """试听/换源预览每次都带 payload：同入参连点两次只能有一条排队任务。
+
+    修复前这里会直接抛 `operator does not exist: json = json`（接口 500）。
+    """
+    project = await _make_project(db_session)
+    payload = {"slide_uid": uuid.uuid4().hex}
+
+    first = await queue.enqueue(db_session, project.id, kind=JOB_KIND_AUDIO, payload=payload)
+    second = await queue.enqueue(db_session, project.id, kind=JOB_KIND_AUDIO, payload=payload)
+
+    assert first.id == second.id
+    rows = (
+        await db_session.scalars(
+            select(PptVideoJob).where(
+                PptVideoJob.project_id == project.id,
+                PptVideoJob.kind == JOB_KIND_AUDIO,
+            )
+        )
+    ).all()
+    assert len(rows) == 1
+
+
+async def test_enqueue_new_job_for_different_payload(db_session: AsyncSession) -> None:
+    """入参不同（比如换一页试听）不能复用上一条排队任务。"""
+    project = await _make_project(db_session)
+
+    first = await queue.enqueue(db_session, project.id, kind=JOB_KIND_AUDIO, payload={"slide_uid": uuid.uuid4().hex})
+    second = await queue.enqueue(db_session, project.id, kind=JOB_KIND_AUDIO, payload={"slide_uid": uuid.uuid4().hex})
+
+    assert first.id != second.id
+
+
+async def test_enqueue_payload_dedupe_is_key_order_insensitive(db_session: AsyncSession) -> None:
+    """JSONB 是结构化比较：键序不同但内容相同视为同一入参。"""
+    project = await _make_project(db_session)
+
+    first = await queue.enqueue(
+        db_session, project.id, kind=JOB_KIND_SOURCE_PREVIEW, payload={"filename": "a.pptx", "suffix": ".pptx"}
+    )
+    second = await queue.enqueue(
+        db_session, project.id, kind=JOB_KIND_SOURCE_PREVIEW, payload={"suffix": ".pptx", "filename": "a.pptx"}
+    )
+
+    assert first.id == second.id
+
+
+# ── 租约（#236：心跳/收尾带 worker_id，避免重排后双跑） ──────────────────────
+
+
+async def test_heartbeat_fenced_by_worker_id(db_session: AsyncSession) -> None:
+    """任务被别的 worker 持有后，原 worker 的心跳必须写 0 行并返回 False。"""
+    project = await _make_project(db_session)
+    job = await queue.enqueue(db_session, project.id)
+    await queue.claim(db_session, "worker-1")
+    job.worker_id = "worker-2"
+    await db_session.flush()
+
+    alive = await queue.heartbeat(db_session, job.id, "tts", 42, worker_id="worker-1")
+
+    await db_session.refresh(job)
+    assert alive is False
+    assert job.stage != "tts"
+    assert job.progress != 42
+
+
+async def test_heartbeat_without_worker_id_keeps_old_behavior(db_session: AsyncSession) -> None:
+    project = await _make_project(db_session)
+    job = await queue.enqueue(db_session, project.id)
+    await queue.claim(db_session, "worker-1")
+
+    assert await queue.heartbeat(db_session, job.id, "render", 12) is True
+
+
+async def test_heartbeat_fenced_returns_false_when_requeued(db_session: AsyncSession) -> None:
+    """requeue_stale 把任务打回队列后，原 worker 的心跳必须失败（否则双跑）。"""
+    project = await _make_project(db_session)
+    job = await queue.enqueue(db_session, project.id)
+    await queue.claim(db_session, "worker-dead")
+    job.heartbeat_at = datetime.now(UTC) - timedelta(seconds=1200)
+    await db_session.flush()
+    await queue.requeue_stale(db_session, stale_seconds=600)
+
+    assert await queue.heartbeat(db_session, job.id, "tts", 50, worker_id="worker-dead") is False
+
+
+async def test_touch_only_refreshes_heartbeat(db_session: AsyncSession) -> None:
+    """保活只刷心跳，不能把 stage/progress 写回退。"""
+    project = await _make_project(db_session)
+    job = await queue.enqueue(db_session, project.id)
+    await queue.claim(db_session, "worker-1")
+    await queue.heartbeat(db_session, job.id, "tts", 60, worker_id="worker-1")
+    before = job.heartbeat_at
+
+    assert await queue.touch(db_session, job.id, "worker-1") is True
+
+    await db_session.refresh(job)
+    assert job.stage == "tts"
+    assert job.progress == 60
+    assert job.heartbeat_at is not None and before is not None and job.heartbeat_at >= before
+
+
+async def test_touch_returns_false_for_other_worker(db_session: AsyncSession) -> None:
+    project = await _make_project(db_session)
+    job = await queue.enqueue(db_session, project.id)
+    await queue.claim(db_session, "worker-1")
+
+    assert await queue.touch(db_session, job.id, "worker-2") is False

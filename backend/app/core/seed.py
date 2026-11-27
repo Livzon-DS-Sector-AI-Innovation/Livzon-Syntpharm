@@ -21,6 +21,13 @@ logger = logging.getLogger(__name__)
 # ── 模块运行配置 ─────────────────────────────────────────────────
 
 _DEFAULT_SETTINGS = [
+    (
+        "identity",
+        "H5_LOGIN_ENABLED",
+        "true",
+        "bool",
+        "飞书客户端内网页应用免登（H5 JSSDK），关闭后前端退回 OAuth 授权跳转",
+    ),
     ("safety", "SAFETY_AI_TEXT_MODEL", "deepseek-v4-flash", "string", "AI model for text analysis"),
     ("safety", "SAFETY_AI_VISION_MODEL", "qwen-vl-max", "string", "AI model for image analysis"),
     ("safety", "SAFETY_FEISHU_BITABLE_APP_TOKEN", "", "string", "Feishu bitable app token for safety module"),
