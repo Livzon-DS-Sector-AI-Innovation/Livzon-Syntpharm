@@ -10,15 +10,15 @@ interface Props {
 
 export function AttentionBatchPanel({ batches }: Props) {
   return (
-    <aside className="qc-rail-card min-[1100px]:sticky min-[1100px]:top-[68px]">
+    <aside className="qc-rail-card">
       <div className="qc-panel-head" style={{ padding: '15px 18px 13px' }}>
         <div>
-          <h2 className="text-[14px] font-extrabold tracking-[-0.01em] text-[var(--ink)]">需关注批号</h2>
+          <h2 className="text-[14px] font-extrabold tracking-[-0.01em] text-[var(--ink)]">需关注批次</h2>
           <div className="qc-sub">全品种 · 按风险层级排序</div>
         </div>
         <span className="qc-pill" style={{ color: 'var(--red)', backgroundColor: 'var(--red-bg)', borderColor: 'var(--red-border)' }}>
           <span className="sq" style={{ backgroundColor: 'var(--red)' }} />
-          <span className="qc-num">{batches.length}</span> 批
+          <span className="qc-num">{batches.length}</span> 批次
         </span>
       </div>
 

@@ -2,7 +2,11 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { deleteQcProduct, fetchQcProductsClient } from '@/lib/api/client/qc-report'
+import {
+  deleteQcProduct,
+  fetchQcAttentionBatchesClient,
+  fetchQcProductsClient,
+} from '@/lib/api/client/qc-report'
 import { CreateProductDrawer } from './CreateProductDrawer'
 import { QcStandardDrawer } from './QcStandardDrawer'
 import { AttentionBatchPanel } from './AttentionBatchPanel'
@@ -48,6 +52,8 @@ function DistributionBar({ product }: { product: QcProductListItem }) {
 
 export function QcProductListClient({ initialProducts, initialAttention, loadFailed }: Props) {
   const [products, setProducts] = useState(initialProducts)
+  // 关注批次初始来自 SSR，删除品种后需要局部重取，否则右栏会残留已删品种的数据
+  const [attention, setAttention] = useState(initialAttention)
   const [keyword, setKeyword] = useState('')
   const [category, setCategory] = useState<QcCategory | ''>('')
   const [level, setLevel] = useState<QcLevel | ''>('')
@@ -70,24 +76,48 @@ export function QcProductListClient({ initialProducts, initialAttention, loadFai
     })
   }, [products, keyword, category, level])
 
+  /**
+   * 刷新首页两栏数据。
+   *
+   * 导入完成、标准重判都会走这里：左栏品种与右栏关注批次必须一起更新，
+   * 否则会看到「新品种出来了，但它的异常批次没出现」。
+   * 用 allSettled 而非 all，一侧接口挂了另一侧照样更新。
+   */
   async function refresh() {
     setRefreshing(true)
-    try {
-      const data = await fetchQcProductsClient()
-      setProducts(data)
-    } catch (error) {
-      console.error('品种列表刷新失败', error)
-    } finally {
-      setRefreshing(false)
+    const [productResult, attentionResult] = await Promise.allSettled([
+      fetchQcProductsClient(),
+      fetchQcAttentionBatchesClient(20),
+    ])
+
+    if (productResult.status === 'fulfilled') {
+      setProducts(productResult.value)
+    } else {
+      console.error('品种列表刷新失败', productResult.reason)
     }
+
+    if (attentionResult.status === 'fulfilled') {
+      setAttention(attentionResult.value)
+    } else {
+      console.error('需关注批次刷新失败', attentionResult.reason)
+    }
+
+    setRefreshing(false)
   }
 
   async function removeProduct(product: QcProductListItem) {
     setDeletingId(product.id)
     try {
       await deleteQcProduct(product.id)
+      // 本地过滤即可：剩余行按 key 重排，自动向上补位，无需整页重渲染
       setProducts((prev) => prev.filter((entry) => entry.id !== product.id))
       if (standardProduct?.id === product.id) setStandardProduct(null)
+
+      // 右栏是 SSR 一次性数据，必须重取，否则已删品种的批次还挂在那里。
+      // 重取失败不回滚删除结果，只保留旧列表并记录日志。
+      await fetchQcAttentionBatchesClient(20)
+        .then(setAttention)
+        .catch((err: unknown) => console.error('刷新需关注批次失败', err))
     } catch (err: unknown) {
       console.error('删除品种失败', err)
       window.alert(err instanceof Error ? err.message : '删除失败')
@@ -101,7 +131,8 @@ export function QcProductListClient({ initialProducts, initialAttention, loadFai
 
   return (
     <div className="p-6">
-      <section className="qc-panel qc-enter">
+      {/* 固定撑满一屏：页头与筛选栏不滚，只有下面两栏各自滚 */}
+      <section className="qc-panel qc-enter flex h-full min-h-0 flex-col overflow-hidden">
         <div className="qc-panel-head">
           <div>
             <h1 className="qc-title">品种台账</h1>
@@ -186,8 +217,8 @@ export function QcProductListClient({ initialProducts, initialAttention, loadFai
           </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 p-4 min-[1100px]:grid-cols-[minmax(0,1fr)_336px]">
-          <div className="min-w-0">
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto p-4 min-[1100px]:grid-cols-[minmax(0,1fr)_336px] min-[1100px]:overflow-hidden">
+          <div className="qc-list-scroll min-w-0">
             {loadFailed && (
               <p className="mb-3 rounded-lg border border-[#FBF6DE] bg-[#FBF6DE] px-4 py-2 text-[12px] text-[#9A7B0A]">
                 数据加载不完整，请刷新页面重试
@@ -316,7 +347,7 @@ export function QcProductListClient({ initialProducts, initialAttention, loadFai
             )}
           </div>
 
-          <AttentionBatchPanel batches={initialAttention} />
+          <AttentionBatchPanel batches={attention} />
         </div>
       </section>
 
